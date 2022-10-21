@@ -1,0 +1,901 @@
+package store
+
+import (
+	"bytes"
+	"context"
+	"crypto/ed25519"
+	"encoding/base64"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"io/fs"
+	"net"
+	"net/http"
+	"os"
+	"path/filepath"
+	"sort"
+	"strconv"
+	"strings"
+
+	"github.com/ipfs/kubo/core/node/libp2p"
+	"github.com/ipfs/kubo/repo/fsrepo"
+	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
+	sockets "github.com/libp2p/go-socket-activation"
+	manet "github.com/multiformats/go-multiaddr/net"
+
+	"code.vegaprotocol.io/vega/datanode/dehistory/fsutil"
+	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
+	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/ipfs/go-cid"
+	files "github.com/ipfs/go-ipfs-files"
+	icore "github.com/ipfs/interface-go-ipfs-core"
+	"github.com/ipfs/interface-go-ipfs-core/path"
+	ipfs "github.com/ipfs/kubo"
+	"github.com/ipfs/kubo/commands"
+	"github.com/ipfs/kubo/config"
+	serialize "github.com/ipfs/kubo/config/serialize"
+	"github.com/ipfs/kubo/core"
+	"github.com/ipfs/kubo/core/coreapi"
+	"github.com/ipfs/kubo/core/corehttp"
+	"github.com/ipfs/kubo/plugin/loader"
+	ma "github.com/multiformats/go-multiaddr"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+)
+
+const segmentMetaDataFile = "metadata.json"
+
+var ErrSegmentNotFound = errors.New("segment not found")
+
+type index interface {
+	Get(height int64) (SegmentIndexEntry, error)
+	Add(metaData SegmentIndexEntry) error
+	ListAllEntriesOldestFirst() ([]SegmentIndexEntry, error)
+	GetHighestBlockHeightEntry() (SegmentIndexEntry, error)
+	Close() error
+}
+
+type SegmentMetaData struct {
+	HeightFrom               int64
+	HeightTo                 int64
+	ChainID                  string
+	PreviousHistorySegmentID string
+}
+
+type SegmentIndexEntry struct {
+	SegmentMetaData
+	HistorySegmentID string
+}
+
+type Store struct {
+	log      *logging.Logger
+	cfg      Config
+	identity config.Identity
+	ipfsAPI  icore.CoreAPI
+	ipfsNode *core.IpfsNode
+	index    index
+
+	indexPath  string
+	stagingDir string
+	ipfsPath   string
+}
+
+func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, deHistoryHome string, wipeOnStartup bool) (*Store, error) {
+	deHistoryStorePath := filepath.Join(deHistoryHome, "store")
+
+	p := &Store{
+		log:        log,
+		cfg:        cfg,
+		indexPath:  filepath.Join(deHistoryStorePath, "index"),
+		stagingDir: filepath.Join(deHistoryStorePath, "staging"),
+		ipfsPath:   filepath.Join(deHistoryStorePath, "ipfs"),
+	}
+
+	err := p.setupPaths(deHistoryStorePath, wipeOnStartup)
+	if err != nil {
+		return nil, fmt.Errorf("failed to setup paths:%w", err)
+	}
+
+	p.index, err = NewIndex(p.indexPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create index:%w", err)
+	}
+
+	var bootstrapPeers []string
+
+	if len(cfg.IDSeed) == 0 {
+		return nil, fmt.Errorf("the configurations id seed must be set")
+	}
+
+	if len(chainID) == 0 {
+		return nil, fmt.Errorf("chain ID must be set")
+	}
+
+	p.identity, err = createIdentityFromSeed([]byte(cfg.IDSeed))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ipfs identity from id seed:%w", err)
+	}
+
+	log.Infof("starting decentralized history store with ipfs Peer Id:%s", p.identity.PeerID)
+
+	plugins, err := loadPlugins(p.ipfsPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load ipfs plugins:%w", err)
+	}
+
+	log.Debugf("ipfs swarm port:%d", cfg.SwarmPort)
+	ipfsCfg, err := createIpfsNodeConfiguration(p.log, p.identity, bootstrapPeers,
+		cfg.SwarmPort, bool(cfg.UseIpfsDefaultPeers))
+
+	log.Debugf("ipfs bootstrap peers:%v", ipfsCfg.Bootstrap)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ipfs node configuration:%w", err)
+	}
+
+	swarmKey := chainID
+	if len(cfg.SwarmKeyOverride) > 0 {
+		swarmKey = cfg.SwarmKeyOverride
+		log.Infof("Using swarm key override %s as the swarm key", cfg.SwarmKeyOverride)
+	} else {
+		log.Infof("Using chain id %s as the swarm key", chainID)
+	}
+
+	p.ipfsNode, err = createIpfsNode(ctx, log, p.ipfsPath, ipfsCfg, swarmKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ipfs node:%w", err)
+	}
+
+	if p.ipfsNode.PNetFingerprint != nil {
+		log.Infof("Swarm is limited to private network of peers with the fingerprint %x", p.ipfsNode.PNetFingerprint)
+	}
+
+	p.ipfsAPI, err = coreapi.NewCoreAPI(p.ipfsNode)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ipfs api:%w", err)
+	}
+
+	setupMetrics(p.ipfsNode)
+
+	if cfg.StartWebUI {
+		err = p.startWebUI(plugins, cfg.WebUIPort)
+		if err != nil {
+			return nil, fmt.Errorf("failed to start web UI:%w", err)
+		}
+	}
+
+	go func() {
+		for range ctx.Done() {
+			if p.ipfsNode != nil {
+				_ = p.ipfsNode.Close()
+			}
+
+			if p.index != nil {
+				_ = p.index.Close()
+			}
+		}
+	}()
+
+	return p, nil
+}
+
+func (p *Store) GetPeerAddrs() []ma.Multiaddr {
+	addrs := make([]ma.Multiaddr, 0, 10)
+	connections := p.ipfsNode.PeerHost.Network().Conns()
+	for _, conn := range connections {
+		addrs = append(addrs, conn.RemoteMultiaddr())
+	}
+
+	return addrs
+}
+
+func (p *Store) ResetIndex() error {
+	err := os.RemoveAll(p.indexPath)
+	if err != nil {
+		return fmt.Errorf("failed to remove index path:%w", err)
+	}
+
+	err = os.MkdirAll(p.indexPath, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create index path:%w", err)
+	}
+
+	p.index, err = NewIndex(p.indexPath)
+	if err != nil {
+		return fmt.Errorf("failed to create index:%w", err)
+	}
+
+	return nil
+}
+
+func (p *Store) GetPeerID() string {
+	return p.identity.PeerID
+}
+
+func (p *Store) ConnectedToPeer(peerIDStr string) (bool, error) {
+	p.ipfsNode.PeerHost.Network().Conns()
+
+	for _, pr := range p.ipfsNode.PeerHost.Network().Peers() {
+		if pr.String() == peerIDStr {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (p *Store) AddSnapshotData(ctx context.Context, historySnapshot snapshot.History, currentState snapshot.CurrentState,
+	sourceDir string,
+) (err error) {
+	historyID := fmt.Sprintf("%s-%d-%d", historySnapshot.ChainID, historySnapshot.HeightFrom, historySnapshot.HeightTo)
+
+	p.log.Infof("adding history %s", historyID)
+
+	historyStagingDir := filepath.Join(p.stagingDir, historyID)
+	historyStagingSnapshotDir := filepath.Join(historyStagingDir, "snapshotData")
+
+	compressedCurrentStateSnapshotFile := filepath.Join(sourceDir, currentState.CompressedFileName())
+	compressedHistorySnapshotFile := filepath.Join(sourceDir, historySnapshot.CompressedFileName())
+
+	defer func() {
+		_ = os.RemoveAll(historyStagingDir)
+		_ = os.RemoveAll(compressedCurrentStateSnapshotFile)
+		_ = os.RemoveAll(compressedHistorySnapshotFile)
+	}()
+
+	historySegment := SegmentMetaData{
+		HeightFrom:               historySnapshot.HeightFrom,
+		HeightTo:                 historySnapshot.HeightTo,
+		ChainID:                  historySnapshot.ChainID,
+		PreviousHistorySegmentID: "",
+	}
+
+	historySegment.PreviousHistorySegmentID, err = p.getPreviousHistorySegmentID(historySegment)
+	if err != nil {
+		if !errors.Is(err, ErrSegmentNotFound) {
+			return fmt.Errorf("failed to get previous history segment id:%w", err)
+		}
+	}
+
+	if err = os.MkdirAll(historyStagingDir, fs.ModePerm); err != nil {
+		return fmt.Errorf("failed to make history staging directory:%w", err)
+	}
+
+	if err = os.MkdirAll(historyStagingSnapshotDir, fs.ModePerm); err != nil {
+		return fmt.Errorf("failed to make history staging snapshot directory:%w", err)
+	}
+
+	metaDataBytes, err := json.Marshal(historySegment)
+	if err != nil {
+		return fmt.Errorf("failed to marshal meta data:%w", err)
+	}
+
+	if err = os.WriteFile(filepath.Join(historyStagingSnapshotDir, segmentMetaDataFile), metaDataBytes, fs.ModePerm); err != nil {
+		return fmt.Errorf("failed to write meta data:%w", err)
+	}
+
+	err = os.Rename(compressedCurrentStateSnapshotFile, filepath.Join(historyStagingSnapshotDir, currentState.CompressedFileName()))
+	if err != nil {
+		return fmt.Errorf("failed to move currentState into publish staging directory:%w", err)
+	}
+
+	err = os.Rename(compressedHistorySnapshotFile, filepath.Join(historyStagingSnapshotDir, historySnapshot.CompressedFileName()))
+	if err != nil {
+		return fmt.Errorf("failed to move history into publish staging directory:%w", err)
+	}
+
+	tarFileName := filepath.Join(historyStagingDir, historyID+".tar")
+	tarFile, err := os.Create(tarFileName)
+	if err != nil {
+		return fmt.Errorf("failed to create tar file:%w", err)
+	}
+
+	if err = fsutil.TarDirectoryWithDeterministicHeader(tarFile, 0, historyStagingSnapshotDir); err != nil {
+		return fmt.Errorf("failed to create tar staging directory:%w", err)
+	}
+
+	contentID, err := p.addHistorySegment(ctx, tarFileName, historySegment)
+	if err != nil {
+		return fmt.Errorf("failed to add file:%w", err)
+	}
+
+	p.log.Info("finished adding history to decentralized store",
+		logging.String("history segment id", contentID.String()),
+		logging.String("chain id", historySegment.ChainID),
+		logging.Int64("from height", historySegment.HeightFrom),
+		logging.Int64("from to", historySegment.HeightTo),
+		logging.String("previous history segment id", historySegment.PreviousHistorySegmentID),
+	)
+
+	return nil
+}
+
+func (p *Store) GetHighestBlockHeightEntry() (SegmentIndexEntry, error) {
+	return p.index.GetHighestBlockHeightEntry()
+}
+
+func (p *Store) ListAllHistorySegments() ([]SegmentIndexEntry, error) {
+	return p.index.ListAllEntriesOldestFirst()
+}
+
+func (p *Store) CopySnapshotDataIntoDir(ctx context.Context, toHeight int64, targetDir string) (currentStateSnapshot snapshot.CurrentState,
+	historySnapshot snapshot.History, err error,
+) {
+	defer func() {
+		deferErr := fsutil.RemoveAllFromDirectoryIfExists(p.stagingDir)
+		if err == nil {
+			err = deferErr
+		}
+	}()
+
+	err = fsutil.RemoveAllFromDirectoryIfExists(p.stagingDir)
+	if err != nil {
+		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to empty staging directory:%w", err)
+	}
+
+	err = p.extractHistorySegmentToStagingArea(ctx, toHeight)
+	if err != nil {
+		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to extract history segment to staging area:%w", err)
+	}
+
+	currentStateSnapshot, historySnapshot, err = p.getSnapshotsFromStagingArea(toHeight)
+	if err != nil {
+		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to get snapshots from staging area:%w", err)
+	}
+
+	if err = moveSnapshotData(currentStateSnapshot, historySnapshot, p.stagingDir, targetDir); err != nil {
+		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to move snapshots from staging area to target directory %s:%w", targetDir, err)
+	}
+
+	return currentStateSnapshot, historySnapshot, nil
+}
+
+func setupMetrics(ipfsNode *core.IpfsNode) {
+	ipfsInfoMetric := promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "ipfs_info",
+		Help: "IPFS version information.",
+	}, []string{"version", "commit"})
+
+	// Setting to 1 lets us multiply it with other stats to add the version labels
+	ipfsInfoMetric.With(prometheus.Labels{
+		"version": ipfs.CurrentVersionNumber,
+		"commit":  ipfs.CurrentCommit,
+	}).Set(1)
+
+	// initialize metrics collector
+	prometheus.MustRegister(&corehttp.IpfsNodeCollector{Node: ipfsNode})
+}
+
+func (p *Store) startWebUI(plugins *loader.PluginLoader, port int) error {
+	commandsContext := &commands.Context{
+		ConfigRoot: p.ipfsPath,
+		ReqLog:     &commands.ReqLog{},
+		Plugins:    plugins,
+		ConstructNode: func() (n *core.IpfsNode, err error) {
+			return p.ipfsNode, nil
+		},
+	}
+
+	err := serveHTTPApi(p.log, p.ipfsNode, commandsContext, port)
+	if err != nil {
+		return fmt.Errorf("failed to serve http api:%w", err)
+	}
+	return nil
+}
+
+func (p *Store) getPreviousHistorySegmentID(history SegmentMetaData) (string, error) {
+	var err error
+	var previousHistorySegment SegmentIndexEntry
+	if history.HeightFrom > 0 {
+		height := history.HeightFrom - 1
+		previousHistorySegment, err = p.index.Get(height)
+		if errors.Is(err, ErrIndexEntryNotFound) {
+			return "", ErrSegmentNotFound
+		}
+
+		if err != nil {
+			return "", fmt.Errorf("failed to get index entry for height:%w", err)
+		}
+	}
+	return previousHistorySegment.HistorySegmentID, nil
+}
+
+func (p *Store) addHistorySegment(ctx context.Context, historySegmentFile string, fileIndexEntry SegmentMetaData) (cid.Cid, error) {
+	contentID, err := p.addFileToIpfs(ctx, historySegmentFile)
+	if err != nil {
+		return cid.Cid{}, fmt.Errorf("failed to add history segement %s to ipfs:%w", historySegmentFile, err)
+	}
+
+	if err = p.index.Add(SegmentIndexEntry{
+		SegmentMetaData:  fileIndexEntry,
+		HistorySegmentID: contentID.String(),
+	}); err != nil {
+		return cid.Cid{}, fmt.Errorf("failed to update meta data store:%w", err)
+	}
+	return contentID, nil
+}
+
+func (p *Store) setupPaths(deHistoryStorePath string, wipeOnStartup bool) error {
+	if wipeOnStartup {
+		err := os.RemoveAll(deHistoryStorePath)
+		if err != nil {
+			return fmt.Errorf("failed to remove dir:%w", err)
+		}
+	}
+
+	err := os.MkdirAll(p.indexPath, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create index path:%w", err)
+	}
+
+	err = os.MkdirAll(p.stagingDir, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create staging path:%w", err)
+	}
+
+	return nil
+}
+
+func moveSnapshotData(currentStateSnapshot snapshot.CurrentState, historySnapshot snapshot.History, sourceDir, targetDir string) error {
+	if err := os.Rename(filepath.Join(sourceDir, currentStateSnapshot.CompressedFileName()),
+		filepath.Join(targetDir, currentStateSnapshot.CompressedFileName())); err != nil {
+		return fmt.Errorf("failed to move current state snapshot:%w", err)
+	}
+
+	if err := os.Rename(filepath.Join(sourceDir, historySnapshot.CompressedFileName()), filepath.Join(targetDir, historySnapshot.CompressedFileName())); err != nil {
+		return fmt.Errorf("failed to move history snapshot:%w", err)
+	}
+
+	return nil
+}
+
+func (p *Store) getSnapshotsFromStagingArea(toHeight int64) (snapshot.CurrentState, snapshot.History, error) {
+	_, currentStateSnapshots, err := snapshot.GetCurrentStateSnapshots(p.stagingDir)
+	if err != nil {
+		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to get current state snapshot from staging area:%w", err)
+	}
+
+	if len(currentStateSnapshots) != 1 {
+		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("expected 1 current state snapshot in staging area, found %d", len(currentStateSnapshots))
+	}
+
+	currentStateSnapshot, ok := currentStateSnapshots[toHeight]
+	if !ok {
+		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to find current state snapshot for height %d in the staging area", toHeight)
+	}
+
+	_, historySnapshots, err := snapshot.GetHistorySnapshots(p.stagingDir)
+	if err != nil {
+		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to get history snapshot from staging area:%w", err)
+	}
+
+	if len(historySnapshots) != 1 {
+		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("expected 1 history state snapshot in staging area, found %d", len(historySnapshots))
+	}
+	historySnapshot := historySnapshots[0]
+
+	return currentStateSnapshot, historySnapshot, nil
+}
+
+func (p *Store) extractHistorySegmentToStagingArea(ctx context.Context, toHeight int64) error {
+	historySegmentPath, err := p.getHistorySegmentForHeight(ctx, toHeight, p.stagingDir)
+	if err != nil {
+		return fmt.Errorf("failed to get history segment:%w", err)
+	}
+
+	stagingFile, err := os.Open(historySegmentPath)
+	if err != nil {
+		return fmt.Errorf("failed to open staging file:%w", err)
+	}
+	defer func() { _ = stagingFile.Close() }()
+
+	_, err = fsutil.UntarFile(stagingFile, p.stagingDir)
+	if err != nil {
+		return fmt.Errorf("failed to untar staging file:%w", err)
+	}
+	return nil
+}
+
+func (p *Store) getHistorySegmentForHeight(ctx context.Context, toHeight int64, toDir string) (pathToSegment string, err error) {
+	indexEntry, err := p.index.Get(toHeight)
+	if err != nil {
+		return "", fmt.Errorf("failed to get index entry for height:%d:%w", toHeight, err)
+	}
+
+	ipfsCid, err := cid.Parse(indexEntry.HistorySegmentID)
+	if err != nil {
+		return "", fmt.Errorf("failed to create ipfs content id for history segment id %s:%w", indexEntry.HistorySegmentID, err)
+	}
+
+	ipfsFile, err := p.ipfsAPI.Unixfs().Get(ctx, path.IpfsPath(ipfsCid))
+	if err != nil {
+		return "", fmt.Errorf("failed to get ipfs file:%w", err)
+	}
+
+	segmentFileName := fmt.Sprintf("%s-%d-%d.tar", indexEntry.ChainID, indexEntry.HeightFrom, indexEntry.HeightTo)
+	pathToSegment = filepath.Join(toDir, segmentFileName)
+	if err = files.WriteTo(ipfsFile, pathToSegment); err != nil {
+		return "", fmt.Errorf("failed to write to staging file:%w", err)
+	}
+	return pathToSegment, nil
+}
+
+func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string) (SegmentIndexEntry, error) {
+	historySegment := filepath.Join(p.stagingDir, "historySegment.tar")
+
+	err := os.RemoveAll(historySegment)
+	if err != nil {
+		return SegmentIndexEntry{}, fmt.Errorf("failed to remove existing history segment tar: %w", err)
+	}
+
+	contentID, err := cid.Parse(historySegmentID)
+	if err != nil {
+		return SegmentIndexEntry{}, fmt.Errorf("failed to parse snapshotId into CID:%w", err)
+	}
+
+	rootNodeFile, err := p.ipfsAPI.Unixfs().Get(ctx, path.IpfsPath(contentID))
+	if err != nil {
+		return SegmentIndexEntry{}, fmt.Errorf("could not get file with CID: %s", err)
+	}
+
+	err = files.WriteTo(rootNodeFile, historySegment)
+	if err != nil {
+		return SegmentIndexEntry{}, fmt.Errorf("could not write out the fetched history segment: %w", err)
+	}
+
+	tarFile, err := os.Open(historySegment)
+	if err != nil {
+		return SegmentIndexEntry{}, fmt.Errorf("failed to open history segment: %w", err)
+	}
+	defer func() { _ = tarFile.Close() }()
+
+	historySegmentDir := filepath.Join(p.stagingDir, "historySegment")
+	err = os.RemoveAll(historySegmentDir)
+	if err != nil {
+		return SegmentIndexEntry{}, fmt.Errorf("failed to remove exisiting history segment dir: %w", err)
+	}
+
+	err = os.Mkdir(historySegmentDir, os.ModePerm)
+	if err != nil {
+		return SegmentIndexEntry{}, fmt.Errorf("failed to create history segment dir: %w", err)
+	}
+	_, err = fsutil.UntarFile(tarFile, historySegmentDir)
+	if err != nil {
+		return SegmentIndexEntry{}, fmt.Errorf("failed to untar history segment:%w", err)
+	}
+
+	indexEntryBytes, err := os.ReadFile(filepath.Join(historySegmentDir, segmentMetaDataFile))
+	if err != nil {
+		return SegmentIndexEntry{}, fmt.Errorf("failed to read index entry:%w", err)
+	}
+
+	var fileIndex SegmentMetaData
+	if err = json.Unmarshal(indexEntryBytes, &fileIndex); err != nil {
+		return SegmentIndexEntry{}, fmt.Errorf("failed to unmarshal index entry:%w", err)
+	}
+
+	indexEntry := SegmentIndexEntry{
+		SegmentMetaData:  fileIndex,
+		HistorySegmentID: historySegmentID,
+	}
+
+	if err = p.index.Add(indexEntry); err != nil {
+		return SegmentIndexEntry{}, fmt.Errorf("failed to add index entry:%w", err)
+	}
+
+	return indexEntry, nil
+}
+
+func createIpfsNodeConfiguration(log *logging.Logger, identity config.Identity, bootstrapPeers []string, swarmPort int,
+	useIpfsDefaultPeers bool,
+) (*config.Config, error) {
+	cfg, err := config.InitWithIdentity(identity)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initiliase ipfs config:%w", err)
+	}
+
+	updatedSwarmAddrs := make([]string, 0, 10)
+	for _, addr := range cfg.Addresses.Swarm {
+		updatedSwarmAddrs = append(updatedSwarmAddrs, strings.ReplaceAll(addr, "4001", strconv.Itoa(swarmPort)))
+	}
+
+	cfg.Addresses.Swarm = updatedSwarmAddrs
+
+	if useIpfsDefaultPeers {
+		cfg.Bootstrap = append(cfg.Bootstrap, bootstrapPeers...)
+	} else {
+		cfg.Bootstrap = bootstrapPeers
+	}
+
+	prettyCfgJSON, _ := json.MarshalIndent(cfg, "", "  ")
+	log.Debugf("IPFS Node Config:\n%s", prettyCfgJSON)
+
+	return cfg, nil
+}
+
+func updateRepoConfig(path string, conf *config.Config) error {
+	configFilename, err := config.Filename(path, "")
+	if err != nil {
+		return fmt.Errorf("failed to get the configuration file path:%w", err)
+	}
+
+	if err = serialize.WriteConfigFile(configFilename, conf); err != nil {
+		return fmt.Errorf("failed to write the config file:%w", err)
+	}
+
+	return nil
+}
+
+func loadPlugins(externalPluginsPath string) (*loader.PluginLoader, error) {
+	// Load any external plugins if available on externalPluginsPath
+	plugins, err := loader.NewPluginLoader(filepath.Join(externalPluginsPath, "plugins"))
+	if err != nil {
+		return nil, fmt.Errorf("error loading plugins: %s", err)
+	}
+
+	// Load preloaded and external plugins
+	if err := plugins.Initialize(); err != nil {
+		return nil, fmt.Errorf("error initializing plugins: %s", err)
+	}
+
+	if err := plugins.Inject(); err != nil {
+		return nil, fmt.Errorf("error injecting plugins: %s", err)
+	}
+
+	return plugins, nil
+}
+
+func serveHTTPApi(log *logging.Logger, node *core.IpfsNode, cmdCtx *commands.Context, port int) error {
+	listeners, err := sockets.TakeListeners("io.ipfs.api")
+	if err != nil {
+		return fmt.Errorf("serveHTTPApi: socket activation failed: %s", err)
+	}
+
+	listenerAddrs := make(map[string]bool, len(listeners))
+	for _, listener := range listeners {
+		listenerAddrs[string(listener.Multiaddr().Bytes())] = true
+	}
+
+	addr := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", port)
+	apiMaddr, err := ma.NewMultiaddr(addr)
+	if err != nil {
+		return fmt.Errorf("serveHTTPApi: invalid API address: %q (err: %s)", addr, err)
+	}
+
+	apiLis, err := manet.Listen(apiMaddr)
+	if err != nil {
+		return fmt.Errorf("serveHTTPApi: manet.Listen(%s) failed: %s", apiMaddr, err)
+	}
+
+	listenerAddrs[string(apiMaddr.Bytes())] = true
+	listeners = append(listeners, apiLis)
+
+	for _, listener := range listeners {
+		// we might have listened to /tcp/0 - let's see what we are listing on
+		log.Infof("IPFS API server listening on %s\n", listener.Multiaddr())
+		// Browsers require TCP.
+		switch listener.Addr().Network() {
+		case "tcp", "tcp4", "tcp6":
+			log.Infof("IPFS WebUI: http://%s/webui\n", listener.Addr())
+		}
+	}
+
+	gatewayOpt := corehttp.GatewayOption(false, corehttp.WebUIPaths...)
+
+	opts := []corehttp.ServeOption{
+		corehttp.MetricsCollectionOption("api"),
+		corehttp.MetricsOpenCensusCollectionOption(),
+		corehttp.MetricsOpenCensusDefaultPrometheusRegistry(),
+		corehttp.CheckVersionOption(),
+		corehttp.CommandsOption(*cmdCtx),
+		corehttp.WebUIOption,
+		gatewayOpt,
+		corehttp.VersionOption(),
+		defaultMux("/debug/vars"),
+		defaultMux("/debug/pprof/"),
+		defaultMux("/debug/stack"),
+		corehttp.MutexFractionOption("/debug/pprof-mutex/"),
+		corehttp.BlockProfileRateOption("/debug/pprof-block/"),
+		corehttp.MetricsScrapingOption("/debug/metrics/prometheus"),
+		corehttp.LogOption(),
+	}
+
+	if err := node.Repo.SetAPIAddr(listeners[0].Multiaddr()); err != nil {
+		return fmt.Errorf("serveHTTPApi: SetAPIAddr() failed: %s", err)
+	}
+
+	for _, listener := range listeners {
+		go func(lis manet.Listener) {
+			// This will exit when the node is closed
+			err = corehttp.Serve(node, manet.NetListener(lis), opts...)
+			if err != nil {
+				log.Errorf("failed to serve IPFS API:%s", err)
+			}
+		}(listener)
+	}
+
+	return nil
+}
+
+// defaultMux tells mux to serve path using the default muxer. This is
+// mostly useful to hook up things that register in the default muxer,
+// and don't provide a convenient http.Handler entry point, such as
+// expvar and http/pprof.
+func defaultMux(path string) corehttp.ServeOption {
+	return func(node *core.IpfsNode, _ net.Listener, mux *http.ServeMux) (*http.ServeMux, error) {
+		mux.Handle(path, http.DefaultServeMux)
+		return mux, nil
+	}
+}
+
+func generateSwarmKeyFile(swarmKey string, repoPath string) error {
+	file, err := os.Create(filepath.Join(repoPath, "swarm.key"))
+	defer func() { _ = file.Close() }()
+	if err != nil {
+		return fmt.Errorf("failed to create swarm key file:%w", err)
+	}
+
+	key := make([]byte, 32)
+
+	copy(key, swarmKey)
+	hx := hex.EncodeToString(key)
+
+	_, err = io.WriteString(file, fmt.Sprintf("/key/swarm/psk/1.0.0/\n/base16/\n%s\n", hx))
+
+	if err != nil {
+		return fmt.Errorf("failed to write to file:%w", err)
+	}
+
+	return nil
+}
+
+func createNode(ctx context.Context, log *logging.Logger, repoPath string) (*core.IpfsNode, error) {
+	repo, err := fsrepo.Open(repoPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open ipfs repo:%w", err)
+	}
+
+	// Construct the node
+
+	nodeOptions := &core.BuildCfg{
+		Online:    true,
+		Permanent: true,
+		Routing:   libp2p.DHTOption, // This option sets the node to be a full DHT node (both fetching and storing DHT Records)
+		Repo:      repo,
+	}
+
+	node, err := core.NewNode(ctx, nodeOptions)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new node:%w", err)
+	}
+
+	printSwarmAddrs(node, log)
+
+	// Attach the Core API to the constructed node
+	return node, nil
+}
+
+func printSwarmAddrs(node *core.IpfsNode, log *logging.Logger) {
+	if !node.IsOnline {
+		log.Debugf("Swarm not listening, running in offline mode.")
+		return
+	}
+
+	ifaceAddrs, err := node.PeerHost.Network().InterfaceListenAddresses()
+	if err != nil {
+		log.Debugf("failed to read listening addresses: %s", err)
+	}
+	lisAddrs := make([]string, len(ifaceAddrs))
+	for i, addr := range ifaceAddrs {
+		lisAddrs[i] = addr.String()
+	}
+	sort.Strings(lisAddrs)
+	for _, addr := range lisAddrs {
+		log.Debugf("Swarm listening on %s\n", addr)
+	}
+
+	nodePhostAddrs := node.PeerHost.Addrs()
+	addrs := make([]string, len(nodePhostAddrs))
+	for i, addr := range nodePhostAddrs {
+		addrs[i] = addr.String()
+	}
+	sort.Strings(addrs)
+	for _, addr := range addrs {
+		log.Debugf("Swarm announcing %s\n", addr)
+	}
+}
+
+func createIpfsNode(ctx context.Context, log *logging.Logger, repoPath string,
+	cfg *config.Config, swarmKey string,
+) (*core.IpfsNode, error) {
+	// Only inits the repo if it does not already exist
+	err := fsrepo.Init(repoPath, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialise ipfs configuration:%w", err)
+	}
+
+	// Update to take account of any new bootstrap nodes
+	err = updateRepoConfig(repoPath, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update ipfs configuration:%w", err)
+	}
+
+	err = generateSwarmKeyFile(swarmKey, repoPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate swarm key file:%w", err)
+	}
+
+	return createNode(ctx, log, repoPath)
+}
+
+func (p *Store) addFileToIpfs(ctx context.Context, path string) (cid.Cid, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return cid.Cid{}, err
+	}
+	defer func() { _ = file.Close() }()
+
+	st, err := file.Stat()
+	if err != nil {
+		return cid.Cid{}, err
+	}
+
+	f, err := files.NewReaderPathFile(path, file, st)
+	if err != nil {
+		return cid.Cid{}, err
+	}
+
+	fileCid, err := p.ipfsAPI.Unixfs().Add(ctx, f)
+	if err != nil {
+		return cid.Cid{}, fmt.Errorf("failed to add file: %s", err)
+	}
+
+	err = p.ipfsAPI.Pin().Add(ctx, fileCid)
+	if err != nil {
+		return cid.Cid{}, fmt.Errorf("failed to pin file: %s", err)
+	}
+
+	return fileCid.Cid(), nil
+}
+
+func createIdentityFromSeed(seed []byte) (config.Identity, error) {
+	ident := config.Identity{}
+
+	var sk crypto.PrivKey
+	var pk crypto.PubKey
+
+	for len(seed) < ed25519.SeedSize {
+		seed = append(seed, seed...)
+	}
+
+	if len(seed) < ed25519.SeedSize {
+		return config.Identity{},
+			fmt.Errorf("failed to create identity seed from node address, seed length %d is less than minimum seed size %d",
+				len(seed), ed25519.SeedSize)
+	}
+
+	priv, pub, err := crypto.GenerateEd25519Key(bytes.NewReader(seed))
+	if err != nil {
+		return ident, err
+	}
+
+	sk = priv
+	pk = pub
+
+	skbytes, err := crypto.MarshalPrivateKey(sk)
+	if err != nil {
+		return ident, err
+	}
+	ident.PrivKey = base64.StdEncoding.EncodeToString(skbytes)
+
+	id, err := peer.IDFromPublicKey(pk)
+	if err != nil {
+		return ident, err
+	}
+	ident.PeerID = id.Pretty()
+	return ident, nil
+}

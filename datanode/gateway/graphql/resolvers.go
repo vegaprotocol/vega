@@ -1365,6 +1365,16 @@ func (r *myQueryResolver) NetworkLimits(ctx context.Context) (*types.NetworkLimi
 	return resp.GetLimits(), nil
 }
 
+func (r *myQueryResolver) MostRecentHistorySegment(ctx context.Context) (*v2.HistorySegment, error) {
+	req := &v2.GetMostRecentDeHistorySegmentRequest{}
+
+	resp, err := r.tradingDataClientV2.GetMostRecentDeHistorySegment(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetSegment(), nil
+}
+
 // END: Root Resolver
 
 type myNodeSignatureResolver VegaResolverRoot

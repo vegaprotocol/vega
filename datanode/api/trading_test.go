@@ -89,7 +89,9 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 
 	mockCoreServiceClient.EXPECT().GetState().Return(connectivity.Ready).Times(2)
 
-	eventSource, err := broker.NewEventSource(conf.Broker, logging.NewTestLogger())
+	mockDeHistoryService := mocks.NewMockDeHistoryService(mockCtrl)
+
+	eventSource, err := broker.NewEventSource(conf.Broker, logging.NewTestLogger(), "")
 	if err != nil {
 		t.Fatalf("failed to create event source: %v", err)
 	}
@@ -99,10 +101,8 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	sqlConn := &sqlstore.ConnectionSource{
 		Connection: dummyConnection{},
 	}
-	sqlChainStore := sqlstore.NewChain(sqlConn)
-	sqlChainService := service.NewChain(sqlChainStore, logging.NewTestLogger())
 
-	bro, err := broker.New(ctx, logging.NewTestLogger(), conf.Broker, sqlChainService, eventSource)
+	bro, err := broker.New(ctx, logging.NewTestLogger(), conf.Broker, "", eventSource)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create broker")
 		return
@@ -186,6 +186,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 		sqlMarketDepthService,
 		sqlLedgerService,
 		sqlProtocolUpgradeService,
+		mockDeHistoryService,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")

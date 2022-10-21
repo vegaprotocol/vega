@@ -64,10 +64,9 @@ func testRenamingWalletWithInvalidParamsFails(t *testing.T) {
 			handler := newRenameWalletHandler(tt)
 
 			// when
-			result, errorDetails := handler.handle(t, ctx, tc.params)
+			errorDetails := handler.handle(t, ctx, tc.params)
 
 			// then
-			require.Empty(tt, result)
 			assertInvalidParams(tt, errorDetails, tc.expectedError)
 		})
 	}
@@ -87,14 +86,13 @@ func testRenamingWalletWithValidParamsSucceeds(t *testing.T) {
 	handler.walletStore.EXPECT().RenameWallet(ctx, name, newName).Times(1).Return(nil)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminRenameWalletParams{
+	errorDetails := handler.handle(t, ctx, api.AdminRenameWalletParams{
 		Wallet:  name,
 		NewName: newName,
 	})
 
 	// then
 	require.Nil(t, errorDetails)
-	assert.Nil(t, result)
 }
 
 func testRenamingWalletThatDoesNotExistsFails(t *testing.T) {
@@ -109,14 +107,13 @@ func testRenamingWalletThatDoesNotExistsFails(t *testing.T) {
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(false, nil)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminRenameWalletParams{
+	errorDetails := handler.handle(t, ctx, api.AdminRenameWalletParams{
 		Wallet:  name,
 		NewName: newName,
 	})
 
 	// then
 	require.NotNil(t, errorDetails)
-	assert.Empty(t, result)
 	assertInvalidParams(t, errorDetails, api.ErrWalletDoesNotExist)
 }
 
@@ -132,14 +129,13 @@ func testGettingInternalErrorDuringExistingWalletVerificationDoesNotRenameWallet
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(false, assert.AnError)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminRenameWalletParams{
+	errorDetails := handler.handle(t, ctx, api.AdminRenameWalletParams{
 		Wallet:  name,
 		NewName: newName,
 	})
 
 	// then
 	require.NotNil(t, errorDetails)
-	assert.Empty(t, result)
 	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
 }
 
@@ -156,14 +152,13 @@ func testRenamingWalletWithNameAlreadyTakenFails(t *testing.T) {
 	handler.walletStore.EXPECT().WalletExists(ctx, newName).Times(1).Return(true, nil)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminRenameWalletParams{
+	errorDetails := handler.handle(t, ctx, api.AdminRenameWalletParams{
 		Wallet:  name,
 		NewName: newName,
 	})
 
 	// then
 	require.NotNil(t, errorDetails)
-	assert.Empty(t, result)
 	assertInvalidParams(t, errorDetails, api.ErrWalletAlreadyExists)
 }
 
@@ -180,14 +175,13 @@ func testGettingInternalErrorDuringNonExistingWalletVerificationDoesNotRenameWal
 	handler.walletStore.EXPECT().WalletExists(ctx, newName).Times(1).Return(false, assert.AnError)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminRenameWalletParams{
+	errorDetails := handler.handle(t, ctx, api.AdminRenameWalletParams{
 		Wallet:  name,
 		NewName: newName,
 	})
 
 	// then
 	require.NotNil(t, errorDetails)
-	assert.Empty(t, result)
 	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
 }
 
@@ -205,14 +199,13 @@ func testGettingInternalErrorDuringRenamingDoesNotRenameWallet(t *testing.T) {
 	handler.walletStore.EXPECT().RenameWallet(ctx, name, newName).Times(1).Return(assert.AnError)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminRenameWalletParams{
+	errorDetails := handler.handle(t, ctx, api.AdminRenameWalletParams{
 		Wallet:  name,
 		NewName: newName,
 	})
 
 	// then
 	require.NotNil(t, errorDetails)
-	assert.Empty(t, result)
 	assertInternalError(t, errorDetails, fmt.Errorf("could not rename the wallet: %w", assert.AnError))
 }
 
@@ -222,10 +215,12 @@ type renameWalletHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *renameWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *renameWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
 	t.Helper()
 
-	return h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params)
+	require.Nil(t, rawResult)
+	return err
 }
 
 func newRenameWalletHandler(t *testing.T) *renameWalletHandler {

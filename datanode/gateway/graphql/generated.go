@@ -488,6 +488,13 @@ type ComplexityRoot struct {
 		SettlementDataDecimals          func(childComplexity int) int
 	}
 
+	HistorySegment struct {
+		ChainId          func(childComplexity int) int
+		FromHeight       func(childComplexity int) int
+		HistorySegmentId func(childComplexity int) int
+		ToHeight         func(childComplexity int) int
+	}
+
 	Instrument struct {
 		Code     func(childComplexity int) int
 		Id       func(childComplexity int) int
@@ -1265,6 +1272,7 @@ type ComplexityRoot struct {
 		Market                             func(childComplexity int, id string) int
 		Markets                            func(childComplexity int, id *string) int
 		MarketsConnection                  func(childComplexity int, id *string, pagination *v2.Pagination) int
+		MostRecentHistorySegment           func(childComplexity int) int
 		NetworkLimits                      func(childComplexity int) int
 		NetworkParameter                   func(childComplexity int, key string) int
 		NetworkParameters                  func(childComplexity int) int
@@ -2081,6 +2089,7 @@ type QueryResolver interface {
 	Market(ctx context.Context, id string) (*vega.Market, error)
 	Markets(ctx context.Context, id *string) ([]*vega.Market, error)
 	MarketsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.MarketConnection, error)
+	MostRecentHistorySegment(ctx context.Context) (*v2.HistorySegment, error)
 	NetworkLimits(ctx context.Context) (*vega.NetworkLimits, error)
 	NetworkParameter(ctx context.Context, key string) (*vega.NetworkParameter, error)
 	NetworkParameters(ctx context.Context) ([]*vega.NetworkParameter, error)
@@ -3692,6 +3701,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FutureProduct.SettlementDataDecimals(childComplexity), true
+
+	case "HistorySegment.chainID":
+		if e.complexity.HistorySegment.ChainId == nil {
+			break
+		}
+
+		return e.complexity.HistorySegment.ChainId(childComplexity), true
+
+	case "HistorySegment.fromHeight":
+		if e.complexity.HistorySegment.FromHeight == nil {
+			break
+		}
+
+		return e.complexity.HistorySegment.FromHeight(childComplexity), true
+
+	case "HistorySegment.historySegmentId":
+		if e.complexity.HistorySegment.HistorySegmentId == nil {
+			break
+		}
+
+		return e.complexity.HistorySegment.HistorySegmentId(childComplexity), true
+
+	case "HistorySegment.toHeight":
+		if e.complexity.HistorySegment.ToHeight == nil {
+			break
+		}
+
+		return e.complexity.HistorySegment.ToHeight(childComplexity), true
 
 	case "Instrument.code":
 		if e.complexity.Instrument.Code == nil {
@@ -7383,6 +7420,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.MarketsConnection(childComplexity, args["id"].(*string), args["pagination"].(*v2.Pagination)), true
 
+	case "Query.mostRecentHistorySegment":
+		if e.complexity.Query.MostRecentHistorySegment == nil {
+			break
+		}
+
+		return e.complexity.Query.MostRecentHistorySegment(childComplexity), true
+
 	case "Query.networkLimits":
 		if e.complexity.Query.NetworkLimits == nil {
 			break
@@ -9938,8 +9982,8 @@ input AccountFilter {
 "Filter for historical entry ledger queries"
 input LedgerEntryFilter {
   CloseOnAccountFilters: Boolean
-  AccountFromFilters: [AccountFilter]
-  AccountToFilters: [AccountFilter]
+  AccountFromFilter: AccountFilter
+  AccountToFilter: AccountFilter
 
   TransferTypes: [TransferType]
 }
@@ -10126,6 +10170,9 @@ type Query {
     "Optional pagination information"
     pagination: Pagination
   ): MarketConnection
+
+  "The most recent history segment"
+  mostRecentHistorySegment: HistorySegment!
 
   "Current network limits"
   networkLimits: NetworkLimits
@@ -13648,6 +13695,18 @@ type NetworkLimits {
   proposeMarketEnabledFrom: Timestamp!
   "The date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set)"
   proposeAssetEnabledFrom: Timestamp!
+}
+
+"A segment of datanode history"
+type HistorySegment {
+    "From height of the history segment"
+    fromHeight:       Int!
+    "To height of the history segment"
+    toHeight: Int!
+    "Chain ID of the history segment"
+    chainID: String!
+    "ID of the history segment"
+    historySegmentId: String!
 }
 
 input OffsetPagination {
@@ -23765,6 +23824,146 @@ func (ec *executionContext) _FutureProduct_settlementDataDecimals(ctx context.Co
 	res := resTmp.(uint32)
 	fc.Result = res
 	return ec.marshalNInt2uint32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HistorySegment_fromHeight(ctx context.Context, field graphql.CollectedField, obj *v2.HistorySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "HistorySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FromHeight, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HistorySegment_toHeight(ctx context.Context, field graphql.CollectedField, obj *v2.HistorySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "HistorySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ToHeight, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HistorySegment_chainID(ctx context.Context, field graphql.CollectedField, obj *v2.HistorySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "HistorySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChainId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HistorySegment_historySegmentId(ctx context.Context, field graphql.CollectedField, obj *v2.HistorySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "HistorySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HistorySegmentId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Instrument_id(ctx context.Context, field graphql.CollectedField, obj *vega.Instrument) (ret graphql.Marshaler) {
@@ -40681,6 +40880,41 @@ func (ec *executionContext) _Query_marketsConnection(ctx context.Context, field 
 	return ec.marshalOMarketConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketConnection(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_mostRecentHistorySegment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().MostRecentHistorySegment(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.HistorySegment)
+	fc.Result = res
+	return ec.marshalNHistorySegment2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐHistorySegment(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_networkLimits(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -51635,19 +51869,19 @@ func (ec *executionContext) unmarshalInputLedgerEntryFilter(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
-		case "AccountFromFilters":
+		case "AccountFromFilter":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AccountFromFilters"))
-			it.AccountFromFilters, err = ec.unmarshalOAccountFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AccountFromFilter"))
+			it.AccountFromFilter, err = ec.unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "AccountToFilters":
+		case "AccountToFilter":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AccountToFilters"))
-			it.AccountToFilters, err = ec.unmarshalOAccountFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AccountToFilter"))
+			it.AccountToFilter, err = ec.unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -55581,6 +55815,67 @@ func (ec *executionContext) _FutureProduct(ctx context.Context, sel ast.Selectio
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var historySegmentImplementors = []string{"HistorySegment"}
+
+func (ec *executionContext) _HistorySegment(ctx context.Context, sel ast.SelectionSet, obj *v2.HistorySegment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, historySegmentImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("HistorySegment")
+		case "fromHeight":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._HistorySegment_fromHeight(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "toHeight":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._HistorySegment_toHeight(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "chainID":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._HistorySegment_chainID(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "historySegmentId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._HistorySegment_historySegmentId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -64054,6 +64349,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "mostRecentHistorySegment":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_mostRecentHistorySegment(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "networkLimits":
 			field := field
 
@@ -69956,6 +70274,20 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 	return graphql.WrapContextMarshaler(ctx, res)
 }
 
+func (ec *executionContext) marshalNHistorySegment2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐHistorySegment(ctx context.Context, sel ast.SelectionSet, v v2.HistorySegment) graphql.Marshaler {
+	return ec._HistorySegment(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNHistorySegment2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐHistorySegment(ctx context.Context, sel ast.SelectionSet, v *v2.HistorySegment) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._HistorySegment(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalID(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -72367,26 +72699,6 @@ func (ec *executionContext) marshalOAccountField2ᚖcodeᚗvegaprotocolᚗioᚋv
 	}
 	res := marshallers.MarshalAccountField(v)
 	return res
-}
-
-func (ec *executionContext) unmarshalOAccountFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx context.Context, v interface{}) ([]*v2.AccountFilter, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
-	var err error
-	res := make([]*v2.AccountFilter, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
 }
 
 func (ec *executionContext) unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx context.Context, v interface{}) (*v2.AccountFilter, error) {

@@ -3,6 +3,10 @@ package orders
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -12,6 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgtype"
+	uuid "github.com/satori/go.uuid"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,13 +29,32 @@ var (
 )
 
 func TestMain(t *testing.M) {
-	databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource, dir string,
+	testID := uuid.NewV4().String()
+	tempDir, err := ioutil.TempDir("", testID)
+	if err != nil {
+		panic(err)
+	}
+	postgresRuntimePath := filepath.Join(tempDir, "sqlstore")
+	defer os.RemoveAll(postgresRuntimePath)
+
+	testID = uuid.NewV4().String()
+	tempDir, err = ioutil.TempDir("", testID)
+	if err != nil {
+		panic(err)
+	}
+	snapshotCopyToPath := filepath.Join(tempDir, "snapshotsCopyTo")
+	err = os.MkdirAll(snapshotCopyToPath, os.ModePerm)
+	if err != nil {
+		panic(fmt.Errorf("failed to create snapshots directory: %w", err))
+	}
+
+	databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource,
 		postgresLog *bytes.Buffer,
 	) {
 		sqlConfig = config
 		connectionSource = source
-		snapshotsDir = dir
-	})
+		snapshotsDir = snapshotCopyToPath
+	}, postgresRuntimePath)
 }
 
 func TestUpdateCurrentOrdersState(t *testing.T) {

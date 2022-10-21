@@ -21,6 +21,8 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/dehistory/store"
+
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -89,6 +91,7 @@ type tradingDataServiceV2 struct {
 	ethereumKeyRotationService *service.EthereumKeyRotation
 	blockService               BlockService
 	protocolUpgradeService     *service.ProtocolUpgrade
+	deHistoryService           DeHistoryService
 }
 
 func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {
@@ -2838,6 +2841,73 @@ func (t *tradingDataServiceV2) GetVegaTime(ctx context.Context, req *v2.GetVegaT
 
 	return &v2.GetVegaTimeResponse{
 		Timestamp: b.VegaTime.UnixNano(),
+	}, nil
+}
+
+// -- DeHistory --.
+
+func (t *tradingDataServiceV2) GetMostRecentDeHistorySegment(context.Context, *v2.GetMostRecentDeHistorySegmentRequest) (*v2.GetMostRecentDeHistorySegmentResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentDeHistorySegment")()
+	segment, err := t.deHistoryService.GetHighestBlockHeightHistorySegment()
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrGetMostRecentHistorySegment, err)
+	}
+
+	return &v2.GetMostRecentDeHistorySegmentResponse{
+		Segment: toHistorySegment(segment),
+	}, nil
+}
+
+func (t *tradingDataServiceV2) ListAllDeHistorySegments(context.Context, *v2.ListAllDeHistorySegmentsRequest) (*v2.ListAllDeHistorySegmentsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListAllDeHistorySegments")()
+	segments, err := t.deHistoryService.ListAllHistorySegments()
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrListAllDeHistorySegment, err)
+	}
+
+	historySegments := make([]*v2.HistorySegment, 0, len(segments))
+	for _, segment := range segments {
+		historySegments = append(historySegments, toHistorySegment(segment))
+	}
+
+	return &v2.ListAllDeHistorySegmentsResponse{
+		Segments: historySegments,
+	}, nil
+}
+
+func (t *tradingDataServiceV2) FetchDeHistorySegment(ctx context.Context, req *v2.FetchDeHistorySegmentRequest) (*v2.FetchDeHistorySegmentResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("FetchDeHistorySegment0'")()
+	segment, err := t.deHistoryService.FetchHistorySegment(ctx, req.HistorySegmentId)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrFetchDeHistorySegment, err)
+	}
+
+	return &v2.FetchDeHistorySegmentResponse{
+		Segment: toHistorySegment(segment),
+	}, nil
+}
+
+func (t *tradingDataServiceV2) Ping(context.Context, *v2.PingRequest) (*v2.PingResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Ping")()
+	return &v2.PingResponse{}, nil
+}
+
+func toHistorySegment(segment store.SegmentIndexEntry) *v2.HistorySegment {
+	return &v2.HistorySegment{
+		FromHeight:               segment.HeightFrom,
+		ToHeight:                 segment.HeightTo,
+		ChainId:                  segment.ChainID,
+		HistorySegmentId:         segment.HistorySegmentID,
+		PreviousHistorySegmentId: segment.PreviousHistorySegmentID,
+	}
+}
+
+func (t *tradingDataServiceV2) GetActiveDeHistoryPeerAddresses(_ context.Context, _ *v2.GetActiveDeHistoryPeerAddressesRequest) (*v2.GetActiveDeHistoryPeerAddressesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentHistorySegmentFromPeers")()
+	addresses := t.deHistoryService.GetActivePeerAddresses()
+
+	return &v2.GetActiveDeHistoryPeerAddressesResponse{
+		IpAddresses: addresses,
 	}, nil
 }
 

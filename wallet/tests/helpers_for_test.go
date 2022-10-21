@@ -14,7 +14,7 @@ const testRecoveryPhrase = "swing ceiling chaos green put insane ripple desk mat
 func NewPassphraseFile(t *testing.T, path string) (string, string) {
 	t.Helper()
 	passphrase := vgrand.RandomStr(10)
-	passphraseFilePath := NewFile(t, path, "passphrase.txt", passphrase)
+	passphraseFilePath := NewFile(t, path, fmt.Sprintf("passphrase-%s.txt", passphrase), passphrase)
 	return passphrase, passphraseFilePath
 }
 

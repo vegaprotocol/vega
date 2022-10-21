@@ -367,8 +367,8 @@ input AccountFilter {
 "Filter for historical entry ledger queries"
 input LedgerEntryFilter {
   CloseOnAccountFilters: Boolean
-  AccountFromFilters: [AccountFilter]
-  AccountToFilters: [AccountFilter]
+  AccountFromFilter: AccountFilter
+  AccountToFilter: AccountFilter
 
   TransferTypes: [TransferType]
 }
@@ -555,6 +555,9 @@ type Query {
     "Optional pagination information"
     pagination: Pagination
   ): MarketConnection
+
+  "The most recent history segment"
+  mostRecentHistorySegment: HistorySegment!
 
   "Current network limits"
   networkLimits: NetworkLimits
@@ -4077,6 +4080,18 @@ type NetworkLimits {
   proposeMarketEnabledFrom: Timestamp!
   "The date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set)"
   proposeAssetEnabledFrom: Timestamp!
+}
+
+"A segment of datanode history"
+type HistorySegment {
+    "From block height of the history segment"
+    fromHeight:       Int!
+    "To block height of the history segment"
+    toHeight: Int!
+    "Chain ID of the history segment"
+    chainID: String!
+    "ID of the history segment"
+    historySegmentId: String!
 }
 
 input OffsetPagination {
