@@ -282,6 +282,10 @@ func (t *tradingDataServiceV2) ListBalanceChanges(ctx context.Context, req *v2.L
 		return nil, fmt.Errorf("parsing filter: %w", err)
 	}
 
+	if len(filter.PartyIDs) == 0 {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("You filter by at least one party ID"))
+	}
+
 	// Always group by asset; it doesn't make sense to add up quantities of different things
 	groupBy := []entities.AccountField{
 		entities.AccountFieldAssetID,
