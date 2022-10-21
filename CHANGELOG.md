@@ -13,7 +13,7 @@
 - [6531](https://github.com/vegaprotocol/vega/issues/6531) - Add command to update the passphrase of a wallet
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6556](https://github.com/vegaprotocol/vega/issues/6556) - Limit ledger entries filtering complexity and potential number of items.
 
 
 ## 0.59.0

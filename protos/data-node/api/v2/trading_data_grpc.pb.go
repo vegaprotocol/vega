@@ -59,11 +59,12 @@ type TradingDataServiceClient interface {
 	// This query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
 	// It returns a timeseries (implemented as a list of AggregateLedgerEntry structs), with a row for every time
 	// the summed ledger entries of the set of specified accounts changes.
+	// Listed queries should be limited to a single party from each side only. If no or more than one parties are provided
+	// for sending and receiving accounts - the query returns error.
 	//
 	// Entries can be queried by:
-	//   - lising all ledger entries without filtering
-	//   - listing ledger entries with filtering on the sending account (party_id, market_id, asset_id, account_type)
-	//   - listing ledger entries with filtering on the receiving account (party_id, market_id, asset_id, account_type)
+	//   - listing ledger entries with filtering on the sending account (market_id, asset_id, account_type)
+	//   - listing ledger entries with filtering on the receiving account (market_id, asset_id, account_type)
 	//   - listing ledger entries with filtering on the sending AND receiving account
 	//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 	ListLedgerEntries(ctx context.Context, in *ListLedgerEntriesRequest, opts ...grpc.CallOption) (*ListLedgerEntriesResponse, error)
@@ -1459,11 +1460,12 @@ type TradingDataServiceServer interface {
 	// This query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
 	// It returns a timeseries (implemented as a list of AggregateLedgerEntry structs), with a row for every time
 	// the summed ledger entries of the set of specified accounts changes.
+	// Listed queries should be limited to a single party from each side only. If no or more than one parties are provided
+	// for sending and receiving accounts - the query returns error.
 	//
 	// Entries can be queried by:
-	//   - lising all ledger entries without filtering
-	//   - listing ledger entries with filtering on the sending account (party_id, market_id, asset_id, account_type)
-	//   - listing ledger entries with filtering on the receiving account (party_id, market_id, asset_id, account_type)
+	//   - listing ledger entries with filtering on the sending account (market_id, asset_id, account_type)
+	//   - listing ledger entries with filtering on the receiving account (market_id, asset_id, account_type)
 	//   - listing ledger entries with filtering on the sending AND receiving account
 	//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 	ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error)
