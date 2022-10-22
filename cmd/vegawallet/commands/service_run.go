@@ -176,7 +176,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 
 	cfg, err := netStore.GetNetwork(f.Network)
 	if err != nil {
-		return fmt.Errorf("couldn't initialise network store: %w", err)
+		return fmt.Errorf("couldn't retrieve the network configuration: %w", err)
 	}
 
 	if err := cfg.EnsureCanConnectGRPCNode(); err != nil {
