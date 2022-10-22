@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
+	vgzap "code.vegaprotocol.io/vega/libs/zap"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"code.vegaprotocol.io/vega/wallet/wallets"
@@ -115,7 +116,7 @@ func BuildCmdImportWallet(w io.Writer, handler ImportWalletHandler, rf *RootFlag
 		for i, v := range wallet.SupportedVersions {
 			vs[i] = strconv.FormatUint(uint64(v), 10) //nolint:gomnd
 		}
-		return SupportedLogLevels, cobra.ShellCompDirectiveDefault
+		return vgzap.SupportedLogLevels, cobra.ShellCompDirectiveDefault
 	})
 
 	return cmd

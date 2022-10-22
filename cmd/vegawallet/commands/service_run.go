@@ -17,7 +17,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
-	vglog "code.vegaprotocol.io/vega/libs/zap"
+	vgzap "code.vegaprotocol.io/vega/libs/zap"
 	"code.vegaprotocol.io/vega/paths"
 	coreversion "code.vegaprotocol.io/vega/version"
 	walletapi "code.vegaprotocol.io/vega/wallet/api"
@@ -193,11 +193,11 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		}
 	}
 
-	svcLog, svcLogPath, err := BuildJSONLogger(cfg.LogLevel.String(), vegaPaths, paths.WalletServiceLogsHome)
+	svcLog, svcLogPath, err := buildJSONFileLogger(vegaPaths, paths.WalletServiceLogsHome, cfg.LogLevel.String())
 	if err != nil {
 		return err
 	}
-	defer vglog.Sync(svcLog)
+	defer vgzap.Sync(svcLog)
 
 	svcLog = svcLog.Named("service")
 
@@ -225,11 +225,11 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		return fmt.Errorf("couldn't initialise the node forwarder: %w", err)
 	}
 
-	cliLog, cliLogPath, err := BuildJSONLogger(cfg.LogLevel.String(), vegaPaths, paths.WalletCLILogsHome)
+	cliLog, cliLogPath, err := buildJSONFileLogger(vegaPaths, paths.WalletCLILogsHome, cfg.LogLevel.String())
 	if err != nil {
 		return err
 	}
-	defer vglog.Sync(cliLog)
+	defer vgzap.Sync(cliLog)
 
 	cliLog = cliLog.Named("command")
 
@@ -308,6 +308,18 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 	waitSig(ctx, cancel, cliLog, consentRequests, sentTransactions, receptionChan, responseChan, f.EnableAutomaticConsent, p)
 
 	return nil
+}
+
+func buildJSONFileLogger(vegaPaths paths.Paths, logDir paths.StatePath, logLevel string) (*zap.Logger, string, error) {
+	loggerCfg := vgzap.WithFileOutputForDedicatedProcess(vgzap.DefaultConfig(), vegaPaths.StatePathFor(logDir))
+	logPath := loggerCfg.OutputPaths[0]
+
+	svcLog, err := vgzap.Build(vgzap.WithJSONFormat(vgzap.WithLevel(loggerCfg, logLevel)))
+	if err != nil {
+		return nil, "", err
+	}
+
+	return svcLog, logPath, nil
 }
 
 // waitSig will wait for a sigterm or sigint interrupt.

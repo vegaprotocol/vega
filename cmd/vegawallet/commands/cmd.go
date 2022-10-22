@@ -11,11 +11,13 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
+	vgzap "code.vegaprotocol.io/vega/libs/zap"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/api"
 	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 const (
@@ -115,9 +117,17 @@ func autoCompleteNetwork(cmd *cobra.Command, vegaHome string) {
 
 func autoCompleteLogLevel(cmd *cobra.Command) {
 	err := cmd.RegisterFlagCompletionFunc("level", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		return SupportedLogLevels, cobra.ShellCompDirectiveDefault
+		return vgzap.SupportedLogLevels, cobra.ShellCompDirectiveDefault
 	})
 	if err != nil {
 		panic(err)
 	}
+}
+
+func buildCmdLogger(output, level string) (*zap.Logger, error) {
+	if output == flags.InteractiveOutput {
+		return vgzap.BuildStandardConsoleLogger(level)
+	}
+
+	return vgzap.BuildStandardJSONLogger(level)
 }
