@@ -1137,7 +1137,9 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 		if transfer.Type == types.TransferTypeMarginLow &&
 			res.Balances[0].Account.Balance.LT(num.Sum(update.MarginBalance(), transfer.MinAmount)) {
 			closed = append(closed, mevt)
-		} else if !mevt.marginShortFall.IsZero() {
+		}
+		// always add the event as well
+		if !mevt.marginShortFall.IsZero() {
 			// party not closed out, but could also not fulfill it's margin requirement
 			// from it's general account we need to return this information so penalty can be
 			// calculated an taken out from him.

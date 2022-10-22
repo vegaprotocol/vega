@@ -40,6 +40,10 @@ Feature: Position resolution case 5 lognormal risk model
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
 
+    Then the parties should have the following account balances:
+      | party            | asset | market id | margin | general | bond |
+      | lpprov | USD   | ETH/DEC19  | 0       | 999999910000       | 90000 |
+
 # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -50,6 +54,11 @@ Feature: Position resolution case 5 lognormal risk model
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "150" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    Then the parties should have the following account balances:
+      | party            | asset | market id | margin   | general | bond |
+      | lpprov | USD   | ETH/DEC19           | 13642884 | 999986267116       | 90000 |
+
 
 # insurance pool generation - setup orderbook
     When the parties place the following orders:
@@ -62,11 +71,16 @@ Feature: Position resolution case 5 lognormal risk model
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
+
+    Then the parties should have the following account balances:
+      | party            | asset | market id | margin   | general | bond |
+      | lpprov | USD   | ETH/DEC19           | 1000000000000 | 0       | 0 |
+
     Then the parties should have the following account balances:
       | party            | asset | market id | margin  | general |
       | designatedLooser | USD   | ETH/DEC19 | 21600   | 0       |
 
-    Then the order book should have the following volumes for market "ETH/DEC19":   
+    Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price  | volume |
       | buy  | 1      | 10     |
       | buy  | 140    | 1      |
@@ -106,6 +120,7 @@ Feature: Position resolution case 5 lognormal risk model
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
       | designatedLooser | USD   | ETH/DEC19 | 0      | 0       |
+    And debug transfers
 
 # then we make sure the insurance pool collected the funds
     And the insurance pool balance should be "73900" for the market "ETH/DEC19"

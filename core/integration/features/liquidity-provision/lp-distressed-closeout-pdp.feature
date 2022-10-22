@@ -84,11 +84,11 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party  | asset | market id | margin | general | bond |
       | party0 | ETH   | ETH/DEC21 | 1864      | 0       | 0    |
     And the insurance pool balance should be "4571" for the market "ETH/DEC21"
-    
+
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status           |
       | lp1 | party0 | ETH/DEC21 | 5000              | STATUS_CANCELLED |
-  
+
     # existing LP position not liquidated as there isn't enough volume on the book
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
@@ -180,6 +180,6 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | 1055       | TRADING_MODE_CONTINUOUS | 1       | 1045      | 1065      | 3481         | 5000           | 3300          |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 1242   | 304     | 0    |
+      | party0 | ETH   | ETH/DEC21 | 1552   | 0     | 0    |
 
-    And the insurance pool balance should be "4577" for the market "ETH/DEC21"
+    And the insurance pool balance should be "4571" for the market "ETH/DEC21"

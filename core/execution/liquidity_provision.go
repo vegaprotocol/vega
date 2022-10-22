@@ -23,7 +23,6 @@ import (
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
-	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -356,43 +355,6 @@ func (m *Market) cancelPendingLiquidityProvision(
 	}
 
 	return m.rollBackMargin(ctx, party, initialMargin)
-}
-
-func (m *Market) cancelDistressedLiquidityProvision(
-	ctx context.Context,
-	party string,
-	order *types.Order,
-) ([]*types.Order, error) {
-	mktID := m.GetID()
-	asset, _ := m.mkt.GetAsset()
-
-	mpos, ok := m.position.GetPositionByPartyID(party)
-	if !ok {
-		m.log.Debug("error getting party position",
-			logging.PartyID(party),
-			logging.MarketID(mktID))
-		return nil, nil
-	}
-
-	margin, perr := m.collateral.GetPartyMargin(mpos, asset, mktID)
-	if perr != nil {
-		m.log.Debug("error getting party margin",
-			logging.PartyID(party),
-			logging.MarketID(mktID),
-			logging.Error(perr))
-		return nil, perr
-	}
-	orderUpdates, err := m.resolveClosedOutParties(
-		ctx, []events.Margin{margin}, ptr.From(order.ID))
-	if err != nil {
-		m.log.Error("could not resolve out parties",
-			logging.MarketID(mktID),
-			logging.PartyID(party),
-			logging.Error(err))
-		return nil, err
-	}
-
-	return orderUpdates, nil
 }
 
 func (m *Market) createInitialLPOrders(ctx context.Context, newOrders []*types.Order) (err error) {

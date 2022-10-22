@@ -1785,16 +1785,6 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		orderUpdates = append(orderUpdates, orders...)
 		// add all events to evts list
 		evts = append(evts, oevts...)
-
-		if m.liquidity.IsLiquidityProvider(v.Party()) {
-			if err := m.confiscateBondAccount(ctx, v.Party()); err != nil {
-				m.log.Error("unable to confiscate liquidity provision for a distressed party",
-					logging.String("party-id", v.Party()),
-					logging.String("market-id", mktID),
-					logging.Error(err),
-				)
-			}
-		}
 	}
 
 	// send all orders which got stopped through the event bus
@@ -2015,39 +2005,6 @@ func (m *Market) finalizePartiesCloseOut(
 				ctx, []*types.LedgerMovement{movements}),
 		)
 	}
-}
-
-func (m *Market) confiscateBondAccount(ctx context.Context, partyID string) error {
-	asset, err := m.mkt.GetAsset()
-	if err != nil {
-		return err
-	}
-	bacc, err := m.collateral.GetOrCreatePartyBondAccount(ctx, partyID, m.mkt.ID, asset)
-	if err != nil {
-		return err
-	}
-
-	// we may alreadu have confiscated all funds
-	if bacc.Balance.IsZero() {
-		return nil
-	}
-
-	transfer := &types.Transfer{
-		Owner: partyID,
-		Amount: &types.FinancialAmount{
-			Amount: bacc.Balance, // no need to clone, bacc isn't used after this
-			Asset:  asset,
-		},
-		Type:      types.TransferTypeBondSlashing,
-		MinAmount: bacc.Balance.Clone(),
-	}
-	tresp, err := m.collateral.BondUpdate(ctx, m.mkt.ID, transfer)
-	if err != nil {
-		return err
-	}
-	m.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{tresp}))
-
-	return nil
 }
 
 func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosition, settleOrder *types.Order, orderID *string, fees map[string]*types.Fee) {

@@ -16,7 +16,6 @@ package execution
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -249,11 +248,6 @@ func (m *Market) updateLPOrders(
 		}
 	}
 
-	fmt.Printf("BEFORE PROCESSING\n\n")
-
-	fmt.Printf("allorders len(%d)\n", len(allOrders))
-	fmt.Printf("submits len(%d)\n", len(submits))
-
 	subFn := func(order *types.Order) {
 		if order.OriginalPrice == nil {
 			order.OriginalPrice = order.Price.Clone()
@@ -284,7 +278,6 @@ func (m *Market) updateLPOrders(
 	}
 
 	for _, order := range submits {
-		fmt.Printf("%s\n", order.String())
 		order.UpdatedAt = now
 		subFn(order)
 	}
@@ -353,9 +346,6 @@ func (m *Market) applyBondPenaltiesAndLiquidationExcludingPending(
 		cancelled    = map[string]struct{}{}
 		reallyClosed = []events.Margin{}
 	)
-
-	fmt.Printf("\n\n\nBOND PENALITIES(%d)\n", len(bondPenalties))
-	fmt.Printf("\n\n\nCLOSED         (%d)\n", len(closed))
 
 	// alright, here we need to go weird over things because we want to find what
 	// parties have been considered distressed by the risk / collateral engine BUT
