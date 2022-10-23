@@ -27,19 +27,25 @@ type AggregatedLedgerEntries struct {
 func (ledgerEntries *AggregatedLedgerEntries) ToProto() *v2.AggregatedLedgerEntries {
 	lep := &v2.AggregatedLedgerEntries{}
 
-	partyIDString := ledgerEntries.PartyID.String()
-	if partyIDString != "" {
-		lep.PartyId = &partyIDString
+	if ledgerEntries.PartyID != nil {
+		partyIDString := ledgerEntries.PartyID.String()
+		if partyIDString != "" {
+			lep.PartyId = &partyIDString
+		}
 	}
 
-	assetIDString := ledgerEntries.AssetID.String()
-	if assetIDString != "" {
-		lep.AssetId = &assetIDString
+	if ledgerEntries.AssetID != nil {
+		assetIDString := ledgerEntries.AssetID.String()
+		if assetIDString != "" {
+			lep.AssetId = &assetIDString
+		}
 	}
 
-	marketIDString := ledgerEntries.MarketID.String()
-	if marketIDString != "" {
-		lep.MarketId = &marketIDString
+	if ledgerEntries.MarketID != nil {
+		marketIDString := ledgerEntries.MarketID.String()
+		if marketIDString != "" {
+			lep.MarketId = &marketIDString
+		}
 	}
 
 	if ledgerEntries.AccountType != nil {
