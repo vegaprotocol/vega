@@ -79,52 +79,9 @@ type TradingDataServiceClient interface {
 	//   - Certain account types do not have an associated market (for example general party accounts)
 	//     These are denoted by the special market identifier '!'
 	//
-	// In its default usage, `ListBalanceChangesRequest` will return a list of
+	// `ListBalanceChangesRequest` will return a list of
 	// `(vega_time, asset_id, account_type, party_id, market_id, balance)`
-	// with a set of entries for each block in which the balance of any account changes.
-	//
-	// Balances are 'filled forward', so for a given a set of results from `ListBalanceChanges`, looking
-	// at rows for a given vega_time will give you the complete set of balances at that time.
-	//
-	// For example, suppose that stored in the database was the following balance history:
-	//
-	// | vega_time | party_id | asset_id | market_id |  account_type | balance  |
-	// | --------- | -------- | -------- | --------- | ------------- | -------- |
-	// | 1         | dave     | eth      | !         | general       | 1        |
-	// | 2         | dave     | eth      | ethusd    | margin        | 10       |
-	// | 2         | jim      | eth      | !         | general       | 100      |
-	// | 3         | dave     | eth      | !         | general       | 2        |
-	//
-	// For clarity this uses example names for party, market and asset id; they are actually 256bit hex encoded hashes.
-	//
-	// Calling ListBalanceChanges with default arguments would just 'forward fill' balances:
-	//
-	// | vega_time | party_id | asset_id | market_id |  account_type | balance |
-	// | --------- | -------- | -------- | --------- | ------------- | --------|
-	// | 1         | dave     | eth      | !         |  general      | 1       |
-	// | 2         | dave     | eth      | !         |  general      | 1       |
-	// | 2         | dave     | eth      | ethusd    |  margin       | 10      |
-	// | 2         | jim      | eth      | !         |  general      | 100     |
-	// | 3         | dave     | eth      | !         |  general      | 2       |
-	// | 3         | dave     | eth      | ethusd    |  general      | 10      |
-	// | 3         | jim      | eth      | !         |  general      | 100     |
-	//
-	// You may optionally filter which accounts are queried using the `filter` argument.
-	//
-	// You may also optionally aggregate balances using the `sum_across_party`, `sum_across_markets`,
-	// and `sum_across_types` parameters. For example, let's say you want to see the balances of
-	// each party across all account types and markets.
-	//
-	// You can query that by passing `sum_accross_markets=true` and `sum_across_types=true` which would
-	// return
-	//
-	// | vega_time | party_id | asset_id | market_id | account_type | balance |
-	// | --------- | -------- | -------- | --------- | ------------ | ------- |
-	// | 1         | dave     | eth      |           |              | 1       |
-	// | 2         | dave     | eth      |           |              | 11      |
-	// | 2         | jim      | eth      |           |              | 100     |
-	// | 3         | dave     | eth      |           |              | 12      |
-	// | 3         | jim      | eth      |           |              | 100     |
+	// With a row for each block at which a given account's balance changes.
 	ListBalanceChanges(ctx context.Context, in *ListBalanceChangesRequest, opts ...grpc.CallOption) (*ListBalanceChangesResponse, error)
 	// Market Data
 	//
@@ -1545,52 +1502,9 @@ type TradingDataServiceServer interface {
 	//   - Certain account types do not have an associated market (for example general party accounts)
 	//     These are denoted by the special market identifier '!'
 	//
-	// In its default usage, `ListBalanceChangesRequest` will return a list of
+	// `ListBalanceChangesRequest` will return a list of
 	// `(vega_time, asset_id, account_type, party_id, market_id, balance)`
-	// with a set of entries for each block in which the balance of any account changes.
-	//
-	// Balances are 'filled forward', so for a given a set of results from `ListBalanceChanges`, looking
-	// at rows for a given vega_time will give you the complete set of balances at that time.
-	//
-	// For example, suppose that stored in the database was the following balance history:
-	//
-	// | vega_time | party_id | asset_id | market_id |  account_type | balance  |
-	// | --------- | -------- | -------- | --------- | ------------- | -------- |
-	// | 1         | dave     | eth      | !         | general       | 1        |
-	// | 2         | dave     | eth      | ethusd    | margin        | 10       |
-	// | 2         | jim      | eth      | !         | general       | 100      |
-	// | 3         | dave     | eth      | !         | general       | 2        |
-	//
-	// For clarity this uses example names for party, market and asset id; they are actually 256bit hex encoded hashes.
-	//
-	// Calling ListBalanceChanges with default arguments would just 'forward fill' balances:
-	//
-	// | vega_time | party_id | asset_id | market_id |  account_type | balance |
-	// | --------- | -------- | -------- | --------- | ------------- | --------|
-	// | 1         | dave     | eth      | !         |  general      | 1       |
-	// | 2         | dave     | eth      | !         |  general      | 1       |
-	// | 2         | dave     | eth      | ethusd    |  margin       | 10      |
-	// | 2         | jim      | eth      | !         |  general      | 100     |
-	// | 3         | dave     | eth      | !         |  general      | 2       |
-	// | 3         | dave     | eth      | ethusd    |  general      | 10      |
-	// | 3         | jim      | eth      | !         |  general      | 100     |
-	//
-	// You may optionally filter which accounts are queried using the `filter` argument.
-	//
-	// You may also optionally aggregate balances using the `sum_across_party`, `sum_across_markets`,
-	// and `sum_across_types` parameters. For example, let's say you want to see the balances of
-	// each party across all account types and markets.
-	//
-	// You can query that by passing `sum_accross_markets=true` and `sum_across_types=true` which would
-	// return
-	//
-	// | vega_time | party_id | asset_id | market_id | account_type | balance |
-	// | --------- | -------- | -------- | --------- | ------------ | ------- |
-	// | 1         | dave     | eth      |           |              | 1       |
-	// | 2         | dave     | eth      |           |              | 11      |
-	// | 2         | jim      | eth      |           |              | 100     |
-	// | 3         | dave     | eth      |           |              | 12      |
-	// | 3         | jim      | eth      |           |              | 100     |
+	// With a row for each block at which a given account's balance changes.
 	ListBalanceChanges(context.Context, *ListBalanceChangesRequest) (*ListBalanceChangesResponse, error)
 	// Market Data
 	//

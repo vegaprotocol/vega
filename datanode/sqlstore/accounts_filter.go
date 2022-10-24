@@ -20,12 +20,15 @@ import (
 
 // Return an SQL query string and corresponding bind arguments to return rows
 // from the account table filtered according to this AccountFilter.
-func filterAccountsQuery(af entities.AccountFilter) (string, []interface{}, error) {
+func filterAccountsQuery(af entities.AccountFilter, includeVegaTime bool) (string, []interface{}, error) {
 	var args []interface{}
 	var err error
 
-	query := `SELECT id, party_id, asset_id, market_id, type, tx_hash, vega_time
-	          FROM ACCOUNTS `
+	query := `SELECT id, party_id, asset_id, market_id, type FROM ACCOUNTS `
+	if includeVegaTime {
+		query = `SELECT id, party_id, asset_id, market_id, type, vega_time FROM ACCOUNTS `
+	}
+
 	if af.AssetID.String() != "" {
 		query = fmt.Sprintf("%s WHERE asset_id=%s", query, nextBindVar(&args, af.AssetID))
 	} else {

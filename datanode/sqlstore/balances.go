@@ -15,6 +15,7 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -48,106 +49,51 @@ func (bs *Balances) Add(b entities.AccountBalance) error {
 	return nil
 }
 
-// Query queries and sums the balances of a given subset of accounts, specified via the 'filter' argument.
-// It returns a timeseries (implemented as a list of AggregateBalance structs), with a row for every time
-// the summed balance of the set of specified accounts changes.
-//
-// Optionally you can supply a list of fields to market by, which will break down the results by those fields.
-//
-// # For example, if you have balances table that looks like
-//
-// Time  Account   Balance
-// 1     a         1
-// 2     b         10
-// 3     c         100
-//
-// Querying with no filter and no grouping would give you
-// Time  Balance    Party
-// 1     1          nil
-// 2     11         nil
-// 3     111        nil
-//
-// Suppose accounts a and b belonged to party x, and account c belonged to party y.
-// And you queried with groupBy=[AccountParty], you'd get
-//
-// Time  Balance    Party
-// 1     1          x
-// 2     11         x
-// 3     100        y.
-func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.AccountField, dateRange entities.DateRange,
+func (bs *Balances) Query(filter entities.AccountFilter, dateRange entities.DateRange,
 	pagination entities.CursorPagination,
 ) (*[]entities.AggregatedBalance, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
-	assetsQuery, args, err := filterAccountsQuery(filter)
+	accountsQ, args, err := filterAccountsQuery(filter, false)
 	if err != nil {
 		return nil, pageInfo, err
 	}
 
-	whereDate := ""
+	predicates := []string{}
 	if dateRange.Start != nil {
-		whereDate = fmt.Sprintf("WHERE vega_time >= %s", nextBindVar(&args, *dateRange.Start))
+		predicate := fmt.Sprintf("vega_time >= %s", nextBindVar(&args, *dateRange.Start))
+		predicates = append(predicates, predicate)
 	}
 
 	if dateRange.End != nil {
-		if whereDate != "" {
-			whereDate = fmt.Sprintf("%s AND", whereDate)
-		} else {
-			whereDate = "WHERE "
-		}
-		whereDate = fmt.Sprintf("%s vega_time < %s", whereDate, nextBindVar(&args, *dateRange.End))
+		predicate := fmt.Sprintf("vega_time < %s", nextBindVar(&args, *dateRange.End))
+		predicates = append(predicates, predicate)
 	}
 
-	// This query is the one that gives us our results
-	query := `
-        WITH our_accounts AS (%s),
-             timestamps AS (SELECT DISTINCT all_balances.vega_time
-                            FROM all_balances JOIN our_accounts ON all_balances.account_id=our_accounts.id),
-             keys AS (SELECT id AS account_id, timestamps.vega_time
-                      FROM our_accounts CROSS JOIN timestamps),
-             balances_with_nulls AS (SELECT keys.vega_time, keys.account_id, balance
-                                     FROM keys LEFT JOIN all_balances
-                                                      ON keys.account_id = all_balances.account_id
-                                                     AND keys.vega_time=all_balances.vega_time),
-             forward_filled_balances AS (SELECT vega_time, account_id, last(balance)
-                                         OVER (partition by account_id order by vega_time) AS balance
-                                         FROM balances_with_nulls),
-        balances as (
-			SELECT forward_filled_balances.vega_time %s, sum(balance) AS balance
-	        FROM forward_filled_balances
-    	    JOIN our_accounts ON account_id=our_accounts.id
-        	WHERE balance IS NOT NULL
-	        GROUP BY forward_filled_balances.vega_time %s
-    	    ORDER BY forward_filled_balances.vega_time %s
-		)
-		%s`
-
-	groups := ""
-	for _, col := range groupBy {
-		groups = fmt.Sprintf("%s, %s", groups, col.String())
+	whereClause := ""
+	if len(predicates) > 0 {
+		whereClause = fmt.Sprintf("WHERE %s", strings.Join(predicates, " AND "))
 	}
 
-	// This pageQuery is the part that gives us the results for the pagination. We will only pass this part of the query
-	// to the PaginateQuery function because the WHERE clause in the query above will cause an incorrect SQL statement
-	// to be generated
-	pageQuery := fmt.Sprintf(`SELECT vega_time %s, balance
-		FROM balances
-		%s`, groups, whereDate)
+	query := fmt.Sprintf(`
+    WITH a AS(%s)
+    SELECT b.vega_time,
+        a.asset_id,
+        a.party_id,
+        a.market_id,
+        a.type,
+        b.balance
+    FROM balances b JOIN a ON b.account_id = a.id
+	%s`, accountsQ, whereClause)
 
 	ordering := TableOrdering{
 		ColumnOrdering{Name: "vega_time", Sorting: ASC},
+		ColumnOrdering{Name: "account_id", Sorting: ASC},
 	}
 
-	for _, group := range groupBy {
-		ordering = append(ordering, ColumnOrdering{Name: group.String(), Sorting: ASC})
-	}
-
-	pageQuery, args, err = PaginateQuery[entities.AggregatedBalanceCursor](pageQuery, args, ordering, pagination)
+	query, args, err = PaginateQuery[entities.AggregatedBalanceCursor](query, args, ordering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}
-
-	// Here we stitch together all parts of the balances sub-query and the pagination to get the results we want.
-	query = fmt.Sprintf(query, assetsQuery, groups, groups, groups, pageQuery)
 
 	defer metrics.StartSQLQuery("Balances", "Query")()
 	rows, err := bs.Connection.Query(context.Background(), query, args...)
@@ -155,6 +101,13 @@ func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.Acco
 		return nil, pageInfo, fmt.Errorf("querying balances: %w", err)
 	}
 	defer rows.Close()
+
+	groupBy := []entities.AccountField{
+		entities.AccountFieldAssetID,
+		entities.AccountFieldPartyID,
+		entities.AccountFieldMarketID,
+		entities.AccountFieldType,
+	}
 
 	balances, err := entities.AggregatedBalanceScan(groupBy, rows)
 	if err != nil {
