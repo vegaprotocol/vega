@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	"code.vegaprotocol.io/vega/libs/crypto"
-	vglog "code.vegaprotocol.io/vega/libs/zap"
+	vgzap "code.vegaprotocol.io/vega/libs/zap"
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
@@ -125,7 +125,7 @@ func BuildCmdCommandSend(w io.Writer, handler SendCommandHandler, rf *RootFlags)
 	cmd.Flags().StringVar(&f.LogLevel,
 		"level",
 		zapcore.InfoLevel.String(),
-		fmt.Sprintf("Set the log level: %v", SupportedLogLevels),
+		fmt.Sprintf("Set the log level: %v", vgzap.SupportedLogLevels),
 	)
 	cmd.Flags().Uint64Var(&f.Retries,
 		"retries",
@@ -170,7 +170,7 @@ func (f *SendCommandFlags) Validate() (*SendCommandRequest, error) {
 	if len(f.LogLevel) == 0 {
 		return nil, flags.MustBeSpecifiedError("level")
 	}
-	if err := ValidateLogLevel(f.LogLevel); err != nil {
+	if err := vgzap.EnsureIsSupportedLogLevel(f.LogLevel); err != nil {
 		return nil, err
 	}
 	req.LogLevel = f.LogLevel
@@ -233,11 +233,11 @@ func SendCommand(w io.Writer, f *SendCommandFlags, rf *RootFlags, req *SendComma
 		p.Print(str)
 	}
 
-	log, err := BuildLogger(rf.Output, req.LogLevel)
+	log, err := buildCmdLogger(rf.Output, req.LogLevel)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not create logger: %w", err)
 	}
-	defer vglog.Sync(log)
+	defer vgzap.Sync(log)
 
 	// Login early to check passphrase before running any query
 	store, err := wallets.InitialiseStore(rf.Home)
