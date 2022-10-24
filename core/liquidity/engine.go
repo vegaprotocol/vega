@@ -610,6 +610,28 @@ func (e *Engine) Update(
 	return newOrders, toCancel, nil
 }
 
+// SynchronisePartyOrders updates the orders against the given changes to orders made during order amendment
+func (e *Engine) SynchronisePartyOrders(partyID string, orders []*types.Order) {
+	partyOrders, ok := e.orders.GetForParty(partyID)
+	if !ok {
+		return
+	}
+
+	for _, order := range orders {
+
+		if _, ok := partyOrders[order.ID]; !ok {
+			continue
+		}
+
+		// if it exists either delete it if its cancelled, or update it so that it shares the values
+		if order.Status != types.OrderStatusActive {
+			e.orders.Delete(order.Party, order.ID)
+			continue
+		}
+		e.orders.Add(order.Party, order)
+	}
+}
+
 // CalculateSuppliedStake returns the sum of commitment amounts from all the liquidity providers.
 func (e *Engine) CalculateSuppliedStake() *num.Uint {
 	ss := num.UintZero()

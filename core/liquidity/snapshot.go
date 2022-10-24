@@ -86,7 +86,7 @@ func NewSnapshotEngine(config Config,
 	return se
 }
 
-func reconcileOrders(orders *SnapshotablePartiesOrders, orderbook OrderBook) *SnapshotablePartiesOrders {
+func reconcileOrders(log *logging.Logger, orders *SnapshotablePartiesOrders, orderbook OrderBook) *SnapshotablePartiesOrders {
 	newOrders := newSnapshotablePartiesOrders()
 	for party, v := range orders.m {
 		newOrders.ResetForParty(party)
@@ -97,6 +97,20 @@ func reconcileOrders(orders *SnapshotablePartiesOrders, orderbook OrderBook) *Sn
 				newOrders.Add(o.Party, o)
 				continue
 			}
+
+			if order.Status != o.Status ||
+				order.Remaining != o.Remaining ||
+				order.Price.NEQ(o.Price) {
+				log.Panic("snapshot contains unexpected mismatch between orderbook and lp-engine's orders",
+					logging.String("ob-status", order.Status.String()),
+					logging.String("lp-status", o.Status.String()),
+					logging.String("ob-price", order.Price.String()),
+					logging.String("lp-price", o.Price.String()),
+					logging.Uint64("ob-remaining", order.Remaining),
+					logging.Uint64("lp-remaining", o.Remaining),
+				)
+			}
+
 			newOrders.Add(order.Party, order)
 		}
 	}
@@ -106,8 +120,8 @@ func reconcileOrders(orders *SnapshotablePartiesOrders, orderbook OrderBook) *Sn
 // ReconcileWithOrderBook ensures that when restoring state from a snapshot the orders in the matching engine and
 // liquidity engine are pointers to the same underlying order struct.
 func (e *SnapshotEngine) ReconcileWithOrderBook(orderbook OrderBook) {
-	e.orders = reconcileOrders(e.orders, orderbook)
-	e.liquidityOrders = reconcileOrders(e.liquidityOrders, orderbook)
+	e.orders = reconcileOrders(e.log, e.orders, orderbook)
+	e.liquidityOrders = reconcileOrders(e.log, e.liquidityOrders, orderbook)
 }
 
 func (e *SnapshotEngine) UpdateMarketConfig(model risk.Model, monitor PriceMonitor) {
