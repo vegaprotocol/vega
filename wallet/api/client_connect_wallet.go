@@ -52,6 +52,16 @@ func (h *ClientConnectWallet) Handle(ctx context.Context, rawParams jsonrpc.Para
 	}
 	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
 
+	availableWallets, err := h.walletStore.ListWallets(ctx)
+	if err != nil {
+		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not list the available wallets: %w", err))
+		return nil, internalError(ErrCouldNotConnectToWallet)
+	}
+	if len(availableWallets) == 0 {
+		h.interactor.NotifyError(ctx, traceID, ApplicationError, ErrNoWalletToConnectTo)
+		return nil, applicationCancellationError(ErrApplicationCanceledTheRequest)
+	}
+
 	var approval preferences.ConnectionApproval
 	for {
 		rawApproval, err := h.interactor.RequestWalletConnectionReview(ctx, traceID, params.Hostname)
@@ -74,12 +84,6 @@ func (h *ClientConnectWallet) Handle(ctx context.Context, rawParams jsonrpc.Para
 
 	if isConnectionRejected(approval) {
 		return nil, userRejectionError()
-	}
-
-	availableWallets, err := h.walletStore.ListWallets(ctx)
-	if err != nil {
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not list available wallets: %w", err))
-		return nil, internalError(ErrCouldNotConnectToWallet)
 	}
 
 	// Wallet selection process.

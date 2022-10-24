@@ -19,8 +19,14 @@ const (
 	// itself and its "business" rules. It ranges from 1000 to 1999, included.
 
 	// ErrorCodeRequestNotPermitted refers a request made by a third-party application
-	// that is not permitted to do.
+	// that is not permitted to do. This error is related to the permissions'
+	// system.
 	ErrorCodeRequestNotPermitted jsonrpc.ErrorCode = 2000
+
+	// ErrorCodeRequestHasBeenCanceledByApplication refers to an automated cancellation of a
+	// request by the application core. This happens when some requirements are
+	// missing to ensure correct handling of a request.
+	ErrorCodeRequestHasBeenCanceledByApplication jsonrpc.ErrorCode = 2001
 
 	// User error codes are errors that results from the user. It ranges
 	// from 2000 to 2999, included.
@@ -34,14 +40,15 @@ const (
 	// has withdrawn from the action, and thus, abort the action.
 	ErrorCodeRequestHasBeenRejected jsonrpc.ErrorCode = 3001
 
-	// ErrorCodeRequestHasBeenCanceled refers to a cancellation of a request by the
+	// ErrorCodeRequestHasBeenCanceledByUser refers to a cancellation of a request by the
 	// user. It's conceptually different from a rejection. Contrary to a rejection,
 	// when a cancellation is received, the third-party application should temporarily
 	// back off, maintain its state, and wait for the user to be ready to continue.
-	ErrorCodeRequestHasBeenCanceled jsonrpc.ErrorCode = 3002
+	ErrorCodeRequestHasBeenCanceledByUser jsonrpc.ErrorCode = 3002
 )
 
 var (
+	ErrApplicationCanceledTheRequest                      = errors.New("the application canceled the request")
 	ErrBlockHashIsRequired                                = errors.New("the block hash is required")
 	ErrBlockHeightIsRequired                              = errors.New("the block-height is required")
 	ErrCannotRotateKeysOnIsolatedWallet                   = errors.New("cannot rotate keys on an isolated wallet")
@@ -82,6 +89,7 @@ var (
 	ErrNextPublicKeyIsRequired                            = errors.New("the next public key is required")
 	ErrNextPublicKeyIsTainted                             = errors.New("the next public key is tainted")
 	ErrNoHealthyNodeAvailable                             = errors.New("no healthy node available")
+	ErrNoWalletToConnectTo                                = errors.New("there is no wallet to connect to, you should, first, create or import a wallet")
 	ErrParamsDoNotMatch                                   = errors.New("the params do not match expected ones")
 	ErrParamsRequired                                     = errors.New("the params are required")
 	ErrPassphraseIsRequired                               = errors.New("the passphrase is required")
@@ -146,11 +154,15 @@ func requestInterruptedError(err error) *jsonrpc.ErrorDetails {
 }
 
 func userCancellationError(err error) *jsonrpc.ErrorDetails {
-	return userError(ErrorCodeRequestHasBeenCanceled, err)
+	return userError(ErrorCodeRequestHasBeenCanceledByUser, err)
 }
 
 func userRejectionError() *jsonrpc.ErrorDetails {
 	return userError(ErrorCodeRequestHasBeenRejected, ErrUserRejectedTheRequest)
+}
+
+func applicationCancellationError(err error) *jsonrpc.ErrorDetails {
+	return applicationError(ErrorCodeRequestHasBeenCanceledByApplication, err)
 }
 
 func internalError(err error) *jsonrpc.ErrorDetails {
