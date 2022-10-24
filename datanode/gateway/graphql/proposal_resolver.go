@@ -17,8 +17,9 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	types "code.vegaprotocol.io/vega/protos/vega"
-	vega "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type proposalResolver VegaResolverRoot
@@ -88,10 +89,19 @@ func (r *proposalResolver) Terms(_ context.Context, data *types.GovernanceData) 
 	return data.Proposal.Terms, nil
 }
 
-func (r *proposalResolver) Votes(_ context.Context, obj *types.GovernanceData) (*ProposalVotes, error) {
-	if obj == nil {
+func (r *proposalResolver) Votes(ctx context.Context, obj *types.GovernanceData) (*ProposalVotes, error) {
+	if obj == nil || obj.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
+
+	voteResp, err := r.tradingDataClientV2.GetVotesByProposal(ctx, &v2.GetVotesByProposalRequest{
+		ProposalId: obj.Proposal.Id,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	obj.Yes, obj.No = voteResp.Yes, voteResp.No
 
 	var yesWeight float64
 	yesToken := num.UintZero()

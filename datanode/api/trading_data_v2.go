@@ -2644,6 +2644,31 @@ func (t *tradingDataServiceV2) proposalToGovernanceData(ctx context.Context, pro
 	return &gd, nil
 }
 
+func (t *tradingDataServiceV2) GetVotesByProposal(ctx context.Context, req *v2.GetVotesByProposalRequest) (*v2.GetVotesByProposalResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetVotesByProposal SQL")()
+
+	votes, err := t.governanceService.GetVotes(ctx, &req.ProposalId, nil, nil)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	var yesVotes, noVotes []entities.Vote
+
+	for _, vote := range votes {
+		switch vote.Value {
+		case entities.VoteValueYes:
+			yesVotes = append(yesVotes, vote)
+		case entities.VoteValueNo:
+			noVotes = append(noVotes, vote)
+		}
+	}
+
+	return &v2.GetVotesByProposalResponse{
+		Yes: voteListToProto(yesVotes),
+		No:  voteListToProto(noVotes),
+	}, nil
+}
+
 func (t *tradingDataServiceV2) ObserveVotes(req *v2.ObserveVotesRequest, stream v2.TradingDataService_ObserveVotesServer) error {
 	if req.PartyId != nil && *req.PartyId != "" {
 		return t.observePartyVotes(*req.PartyId, stream)

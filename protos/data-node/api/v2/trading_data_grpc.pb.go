@@ -111,6 +111,8 @@ type TradingDataServiceClient interface {
 	//
 	// Get Votes for a Party ID using a cursor based pagination model
 	ListVotes(ctx context.Context, in *ListVotesRequest, opts ...grpc.CallOption) (*ListVotesResponse, error)
+	// Get Votes for a Proposal ID
+	GetVotesByProposal(ctx context.Context, in *GetVotesByProposalRequest, opts ...grpc.CallOption) (*GetVotesByProposalResponse, error)
 	// Subscribe to a stream of votes
 	ObserveVotes(ctx context.Context, in *ObserveVotesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveVotesClient, error)
 	// ERC20 add signer bundle
@@ -683,6 +685,15 @@ func (c *tradingDataServiceClient) ListCandleIntervals(ctx context.Context, in *
 func (c *tradingDataServiceClient) ListVotes(ctx context.Context, in *ListVotesRequest, opts ...grpc.CallOption) (*ListVotesResponse, error) {
 	out := new(ListVotesResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListVotes", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) GetVotesByProposal(ctx context.Context, in *GetVotesByProposalRequest, opts ...grpc.CallOption) (*GetVotesByProposalResponse, error) {
+	out := new(GetVotesByProposalResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetVotesByProposal", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1456,6 +1467,8 @@ type TradingDataServiceServer interface {
 	//
 	// Get Votes for a Party ID using a cursor based pagination model
 	ListVotes(context.Context, *ListVotesRequest) (*ListVotesResponse, error)
+	// Get Votes for a Proposal ID
+	GetVotesByProposal(context.Context, *GetVotesByProposalRequest) (*GetVotesByProposalResponse, error)
 	// Subscribe to a stream of votes
 	ObserveVotes(*ObserveVotesRequest, TradingDataService_ObserveVotesServer) error
 	// ERC20 add signer bundle
@@ -1725,6 +1738,9 @@ func (UnimplementedTradingDataServiceServer) ListCandleIntervals(context.Context
 }
 func (UnimplementedTradingDataServiceServer) ListVotes(context.Context, *ListVotesRequest) (*ListVotesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListVotes not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetVotesByProposal(context.Context, *GetVotesByProposalRequest) (*GetVotesByProposalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVotesByProposal not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ObserveVotes(*ObserveVotesRequest, TradingDataService_ObserveVotesServer) error {
 	return status.Errorf(codes.Unimplemented, "method ObserveVotes not implemented")
@@ -2344,6 +2360,24 @@ func _TradingDataService_ListVotes_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).ListVotes(ctx, req.(*ListVotesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_GetVotesByProposal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVotesByProposalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetVotesByProposal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetVotesByProposal",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetVotesByProposal(ctx, req.(*GetVotesByProposalRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3390,6 +3424,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListVotes",
 			Handler:    _TradingDataService_ListVotes_Handler,
+		},
+		{
+			MethodName: "GetVotesByProposal",
+			Handler:    _TradingDataService_GetVotesByProposal_Handler,
 		},
 		{
 			MethodName: "ListERC20MultiSigSignerAddedBundles",

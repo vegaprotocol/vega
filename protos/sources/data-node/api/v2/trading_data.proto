@@ -135,6 +135,10 @@ service TradingDataService {
     //
     // Get Votes for a Party ID using a cursor based pagination model
     rpc ListVotes(ListVotesRequest) returns (ListVotesResponse);
+
+    // Get Votes for a Proposal ID
+    rpc GetVotesByProposal(GetVotesByProposalRequest) returns (GetVotesByProposalResponse);
+
     // Subscribe to a stream of votes
     rpc ObserveVotes(ObserveVotesRequest) returns (stream ObserveVotesResponse);
 
@@ -1026,6 +1030,15 @@ message VoteEdge {
 message VoteConnection {
     repeated VoteEdge edges = 1;
     PageInfo page_info = 2;
+}
+
+message GetVotesByProposalRequest {
+    string proposal_id = 1;
+}
+
+message GetVotesByProposalResponse {
+    repeated vega.Vote yes = 1;
+    repeated vega.Vote no = 2;
 }
 
 message ObserveVotesRequest {
