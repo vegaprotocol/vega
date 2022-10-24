@@ -2,7 +2,6 @@
 name: Release vega, data-node, vegawallet and visor binaries
 
 "on":
-  pull_request:
   push:
     branches:
       - develop
@@ -89,10 +88,8 @@ jobs:
           git rev-parse --verify HEAD
           git status
 
-      # - name: Get dependencies
-      #   run: go get -v -t -d ./...
       - name: Get dependencies
-        run: go mod vendor 
+        run: go get -v -t -d ./...
 
       # - name: Run tests
       #   if: ${{ env.GOARCH == 'amd64' && inputs.disableTests != true }}
@@ -113,16 +110,16 @@ jobs:
           directory: build
           filename: ${{ matrix.app }}-${{ env.GOOS }}-${{ env.GOARCH }}.zip
 
-      # - name: Release
-      #   if: ${{ inputs.publish || startsWith(github.ref, 'refs/tags/') }}
-      #   uses: softprops/action-gh-release@cd28b0f5ee8571b76cfdaa62a30d51d752317477
-      #   with:
-      #     files: build/*.zip
-      #     name: ${{ inputs.tag || github.ref_name }}
-      #     tag_name: ${{ inputs.tag || github.ref_name }}
-      #     prerelease: ${{ endsWith(github.ref, '-pre') || endsWith(inputs.tag, '-pre') }}
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        if: ${{ inputs.publish || startsWith(github.ref, 'refs/tags/') }}
+        uses: softprops/action-gh-release@cd28b0f5ee8571b76cfdaa62a30d51d752317477
+        with:
+          files: build/*.zip
+          name: ${{ inputs.tag || github.ref_name }}
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          prerelease: ${{ endsWith(github.ref, '-pre') || endsWith(inputs.tag, '-pre') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   #
   # macOS
@@ -158,10 +155,8 @@ jobs:
           git rev-parse --verify HEAD
           git status
 
-      # - name: Get dependencies
-      #   run: go get -v -t -d ./...
       - name: Get dependencies
-        run: go mod vendor 
+        run: go get -v -t -d ./...
 
       # - name: Run tests
       #   if: ${{ env.GOARCH == 'amd64' && inputs.disableTests != true }}
@@ -213,36 +208,36 @@ jobs:
           directory: build
           filename: ${{ matrix.app }}-${{ env.GOOS }}-${{ env.GOARCH }}.zip
 
-      # - name: Store notarization credentials
-      #   # we do notarization to vegawallet only
-      #   if: ${{ matrix.app == 'vegawallet' }}
-      #   run: |
-      #     xcrun notarytool store-credentials vega \
-      #       --apple-id "${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}" \
-      #       --team-id "${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
-      #       --password "${{ secrets.MACOS_NOTARIZATION_PASS }}"
+      - name: Store notarization credentials
+        # we do notarization to vegawallet only
+        if: ${{ matrix.app == 'vegawallet' }}
+        run: |
+          xcrun notarytool store-credentials vega \
+            --apple-id "${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}" \
+            --team-id "${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
+            --password "${{ secrets.MACOS_NOTARIZATION_PASS }}"
 
-      # - name: Notarize app
-      #   # we do notarization to vegawallet only
-      #   if: ${{ matrix.app == 'vegawallet' }}
-      #   working-directory: build
-      #   run: |
-      #     xcrun notarytool submit ${{ matrix.app }}-${{ env.GOOS }}-${{ env.GOARCH }}.zip \
-      #       --keychain-profile vega \
-      #       --output-format json \
-      #       --timeout "90m" \
-      #       --wait
+      - name: Notarize app
+        # we do notarization to vegawallet only
+        if: ${{ matrix.app == 'vegawallet' }}
+        working-directory: build
+        run: |
+          xcrun notarytool submit ${{ matrix.app }}-${{ env.GOOS }}-${{ env.GOARCH }}.zip \
+            --keychain-profile vega \
+            --output-format json \
+            --timeout "90m" \
+            --wait
 
-      # - name: Release
-      #   if: ${{ inputs.publish || startsWith(github.ref, 'refs/tags/') }}
-      #   uses: softprops/action-gh-release@cd28b0f5ee8571b76cfdaa62a30d51d752317477
-      #   with:
-      #     files: build/*.zip
-      #     name: ${{ inputs.tag || github.ref_name }}
-      #     tag_name: ${{ inputs.tag || github.ref_name }}
-      #     prerelease: ${{ endsWith(github.ref, '-pre') || endsWith(inputs.tag, '-pre') }}
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        if: ${{ inputs.publish || startsWith(github.ref, 'refs/tags/') }}
+        uses: softprops/action-gh-release@cd28b0f5ee8571b76cfdaa62a30d51d752317477
+        with:
+          files: build/*.zip
+          name: ${{ inputs.tag || github.ref_name }}
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          prerelease: ${{ endsWith(github.ref, '-pre') || endsWith(inputs.tag, '-pre') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   #
   # Windows
@@ -282,10 +277,8 @@ jobs:
           git rev-parse --verify HEAD
           git status
 
-      # - name: Get dependencies
-      #   run: go get -v -t -d ./...
       - name: Get dependencies
-        run: go mod vendor 
+        run: go get -v -t -d ./...
 
       # - name: Run tests
       #   if: ${{ env.GOARCH == 'amd64' && inputs.disableTests != true }}
@@ -294,16 +287,16 @@ jobs:
       - name: Build binary
         run: go build -o build/${{ matrix.app }}.exe ./cmd/${{ matrix.app }}
 
-      # - name: "Sign binary"
-      #   # we do notarization to vegawallet only
-      #   if: ${{ matrix.app == 'vegawallet' }}
-      #   uses: Dana-Prajea/code-sign-action@98c79121b376beab8d6a9484f445089db4461bca
-      #   with:
-      #     certificate: ${{ secrets.WINDOWS_CERTIFICATE }}
-      #     password: ${{ secrets.WINDOWS_CERTIFICATE_PASS }}
-      #     certificatesha1: ${{ secrets.WINDOWS_CERTIFICATE_HASH }}
-      #     folder: "build"
-      #     timestampUrl: "http://timestamp.sectigo.com"
+      - name: "Sign binary"
+        # we do notarization to vegawallet only
+        if: ${{ matrix.app == 'vegawallet' }}
+        uses: Dana-Prajea/code-sign-action@98c79121b376beab8d6a9484f445089db4461bca
+        with:
+          certificate: ${{ secrets.WINDOWS_CERTIFICATE }}
+          password: ${{ secrets.WINDOWS_CERTIFICATE_PASS }}
+          certificatesha1: ${{ secrets.WINDOWS_CERTIFICATE_HASH }}
+          folder: "build"
+          timestampUrl: "http://timestamp.sectigo.com"
 
       - name: Check version
         if: ${{ env.GOARCH == 'amd64' }}
@@ -317,13 +310,13 @@ jobs:
           directory: build
           filename: ${{ matrix.app }}-${{ env.GOOS }}-${{ env.GOARCH }}.zip
 
-      # - name: Release
-      #   if: ${{ inputs.publish || startsWith(github.ref, 'refs/tags/') }}
-      #   uses: softprops/action-gh-release@cd28b0f5ee8571b76cfdaa62a30d51d752317477
-      #   with:
-      #     files: build/*.zip
-      #     name: ${{ inputs.tag || github.ref_name }}
-      #     tag_name: ${{ inputs.tag || github.ref_name }}
-      #     prerelease: ${{ endsWith(github.ref, '-pre') || endsWith(inputs.tag, '-pre') }}
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        if: ${{ inputs.publish || startsWith(github.ref, 'refs/tags/') }}
+        uses: softprops/action-gh-release@cd28b0f5ee8571b76cfdaa62a30d51d752317477
+        with:
+          files: build/*.zip
+          name: ${{ inputs.tag || github.ref_name }}
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          prerelease: ${{ endsWith(github.ref, '-pre') || endsWith(inputs.tag, '-pre') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
