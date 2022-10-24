@@ -33,7 +33,7 @@ type AccountStore interface {
 type BalanceStore interface {
 	Flush(ctx context.Context) ([]entities.AccountBalance, error)
 	Add(b entities.AccountBalance) error
-	Query(filter entities.AccountFilter, groupBy []entities.AccountField, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedBalance, entities.PageInfo, error)
+	Query(filter entities.AccountFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedBalance, entities.PageInfo, error)
 }
 
 type Account struct {
@@ -89,8 +89,8 @@ func (a *Account) Flush(ctx context.Context) error {
 	return nil
 }
 
-func (a *Account) QueryAggregatedBalances(filter entities.AccountFilter, groupBy []entities.AccountField, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedBalance, entities.PageInfo, error) {
-	return a.bStore.Query(filter, groupBy, dateRange, pagination)
+func (a *Account) QueryAggregatedBalances(filter entities.AccountFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedBalance, entities.PageInfo, error) {
+	return a.bStore.Query(filter, dateRange, pagination)
 }
 
 func (a *Account) ObserveAccountBalances(ctx context.Context, retries int, marketID string,

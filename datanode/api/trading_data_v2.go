@@ -285,30 +285,13 @@ func (t *tradingDataServiceV2) ListBalanceChanges(ctx context.Context, req *v2.L
 		return nil, fmt.Errorf("parsing filter: %w", err)
 	}
 
-	// Always group by asset; it doesn't make sense to add up quantities of different things
-	groupBy := []entities.AccountField{
-		entities.AccountFieldAssetID,
-	}
-
-	if !req.SumAcrossParties {
-		groupBy = append(groupBy, entities.AccountFieldPartyID)
-	}
-
-	if !req.SumAcrossMarkets {
-		groupBy = append(groupBy, entities.AccountFieldMarketID)
-	}
-
-	if !req.SumAcrossTypes {
-		groupBy = append(groupBy, entities.AccountFieldType)
-	}
-
 	dateRange := entities.DateRangeFromProto(req.DateRange)
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid cursor: %w", err))
 	}
 
-	balances, pageInfo, err := t.accountService.QueryAggregatedBalances(filter, groupBy, dateRange, pagination)
+	balances, pageInfo, err := t.accountService.QueryAggregatedBalances(filter, dateRange, pagination)
 	if err != nil {
 		return nil, fmt.Errorf("querying balances: %w", err)
 	}

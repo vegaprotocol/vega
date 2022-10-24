@@ -509,16 +509,10 @@ type Query {
     "Optional Pagination"
     pagination: Pagination): MarketDataConnection
 
-  "Get historical balances for an account within the given date range, with optional netting over party, market and account type"
+  "Get historical balances for an account within the given date range"
   balanceChanges(
     "Optional filter to restrict queried accounts to those of a specific asset, party, market or type"
     filter: AccountFilter,
-    "Whether balances for different parties should be netted together. If so, party_id of results will be null"
-    sumAcrossParties: Boolean,
-    "Whether balances for different markets should be netted together. If so, market_id of results will be null"
-    sumAcrossMarkets: Boolean,
-    "Whether balances for different account types should be netted together. If so, account_type of will be null"
-    sumAcrossTypes: Boolean,
     "Date range to retrieve historical balances from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     "Optional pagination information"

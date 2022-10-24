@@ -16,6 +16,8 @@
 ### 🐛 Fixes
 - [6556](https://github.com/vegaprotocol/vega/issues/6556) - Limit ledger entries filtering complexity and potential number of items.
 - [6539](https://github.com/vegaprotocol/vega/issues/6539) - Fix total fee calculation in estimate order
+- [6584](https://github.com/vegaprotocol/vega/issues/6584) - Simplify `ListBalanceChanges`, removing aggregation and forward filling for now
+
 
 
 ## 0.59.0
