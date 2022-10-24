@@ -128,7 +128,7 @@ func TestMain(t *testing.M) {
 		sqlBroker, err := setupSQLBroker(ctx, eventsFile, sqlConfig, snapshotService,
 			func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64) {
 				if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
-					lastSnapshot, err := service.CreateSnapshotAsync(ctx, chainId, snapshot.GetFromHeight(lastCommittedBlockHeight, snapshotInterval), lastCommittedBlockHeight)
+					lastSnapshot, err := service.CreateSnapshot(ctx, chainId, snapshot.GetFromHeight(lastCommittedBlockHeight, snapshotInterval), lastCommittedBlockHeight)
 					if err != nil {
 						panic(fmt.Errorf("failed to create snapshot:%w", err))
 					}
@@ -297,91 +297,6 @@ func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {
 	}
 }
 
-func TestLoadingAllAvailableHistoryWithNonEmptyDatanode(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	deHistoryStore.ResetIndex()
-
-	log := logging.NewTestLogger()
-
-	emptyDatabase()
-
-	snapshotCopyFromPath := t.TempDir()
-	snapshotCopyToPath := t.TempDir()
-
-	inputSnapshotService := setupSnapshotService(sqlConfig, snapshotCopyFromPath, snapshotCopyToPath)
-
-	fetched, err := fetchBlocks(ctx, log, deHistoryStore, goldenSourceHistorySegment[4000].HistorySegmentID, 2000)
-	require.NoError(t, err)
-	require.Equal(t, int64(2000), fetched)
-
-	dehistoryService := setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
-
-	from, to, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, int64(2001), from)
-	assert.Equal(t, int64(4000), to)
-
-	fetched, err = fetchBlocks(ctx, log, deHistoryStore, goldenSourceHistorySegment[3000].HistorySegmentID, 3000)
-	require.NoError(t, err)
-	require.Equal(t, int64(3000), fetched)
-
-	dehistoryService = setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
-	from, to, err = dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
-	if err != nil {
-		log.Errorf("failed to load available history:%s", err)
-	}
-	require.NoError(t, err)
-	assert.Equal(t, int64(1), from)
-	assert.Equal(t, int64(4000), to)
-
-	summary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
-	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[3].currentTableSummaries, summary.currentTableSummaries)
-	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[3].historyTableSummaries, summary.historyTableSummaries)
-
-	connSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), sqlConfig.ConnectionConfig)
-	if err != nil {
-		panic(err)
-	}
-	defer connSource.Close()
-
-	// Play events to 5000
-
-	ctxWithCancel, cancelFn := context.WithCancel(ctx)
-
-	var snapshotAt5000 string
-	outDeHistoryHome := t.TempDir()
-	outputSnapshotService := setupSnapshotService(sqlConfig, outDeHistoryHome, t.TempDir())
-
-	sqlBroker, err := setupSQLBroker(ctx, eventsFile, sqlConfig, outputSnapshotService,
-		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64) {
-			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
-				if lastCommittedBlockHeight == 5000 {
-					ss, err := service.CreateSnapshotAsync(ctx, chainId, snapshot.GetFromHeight(lastCommittedBlockHeight, snapshotInterval), lastCommittedBlockHeight)
-					require.NoError(t, err)
-					waitForSnapshotToCompleteUseMeta(ss)
-					snapshotAt5000, err = snapshot.GetSnapshotMd5Hash(ss.CurrentStateSnapshotPath,
-						ss.HistorySnapshotPath)
-					require.NoError(t, err)
-					cancelFn()
-				}
-			}
-		})
-	require.NoError(t, err)
-
-	err = sqlBroker.Receive(ctxWithCancel)
-	if err != nil && !errors.Is(err, context.Canceled) {
-		panic(fmt.Errorf("failed to process events:%w", err))
-	}
-
-	summaryAt5000 := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
-
-	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[4].currentTableSummaries, summaryAt5000.currentTableSummaries)
-	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[4].historyTableSummaries, summaryAt5000.historyTableSummaries)
-
-	require.Equal(t, fromEventsSnapshotHashes[4], snapshotAt5000)
-}
-
 func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -424,7 +339,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 	sqlBroker, err := setupSQLBroker(ctx, eventsFile, sqlConfig, outputSnapshotService,
 		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64) {
 			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
-				snapshotMeta, err = service.CreateSnapshotAsync(ctx, chainId, snapshot.GetFromHeight(lastCommittedBlockHeight, snapshotInterval), lastCommittedBlockHeight)
+				snapshotMeta, err = service.CreateSnapshot(ctx, chainId, snapshot.GetFromHeight(lastCommittedBlockHeight, snapshotInterval), lastCommittedBlockHeight)
 				require.NoError(t, err)
 				waitForSnapshotToCompleteUseMeta(snapshotMeta)
 
@@ -500,7 +415,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64) {
 			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 				if lastCommittedBlockHeight == 3000 {
-					ss, err := service.CreateSnapshotAsync(ctx, chainId, snapshot.GetFromHeight(lastCommittedBlockHeight, snapshotInterval), lastCommittedBlockHeight)
+					ss, err := service.CreateSnapshot(ctx, chainId, snapshot.GetFromHeight(lastCommittedBlockHeight, snapshotInterval), lastCommittedBlockHeight)
 					require.NoError(t, err)
 					waitForSnapshotToCompleteUseMeta(ss)
 					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = snapshot.GetSnapshotMd5Hash(ss.CurrentStateSnapshotPath, ss.HistorySnapshotPath)

@@ -41,7 +41,7 @@ func NewSnapshotService(log *logging.Logger, config Config, connConfig sqlstore.
 }
 
 func (b *Service) SnapshotData(ctx context.Context, chainID string, toHeight int64, fromHeight int64) error {
-	_, err := b.CreateSnapshotAsync(ctx, chainID, fromHeight, toHeight)
+	_, err := b.CreateSnapshot(ctx, chainID, fromHeight, toHeight)
 	if err != nil {
 		return fmt.Errorf("failed to create snapshot from height %d to %d: %w", fromHeight, toHeight, err)
 	}

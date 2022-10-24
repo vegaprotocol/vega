@@ -27,15 +27,7 @@ type CreateSnapshotResult struct {
 	DatabaseVersion          int64
 }
 
-func (b *Service) CreateSnapshotAsync(ctx context.Context, chainID string, fromHeight int64, toHeight int64) (CreateSnapshotResult, error) {
-	return b.createSnapshot(ctx, chainID, fromHeight, toHeight, true)
-}
-
-func (b *Service) CreateSnapshotSynchronously(ctx context.Context, chainID string, fromHeight int64, toHeight int64) (CreateSnapshotResult, error) {
-	return b.createSnapshot(ctx, chainID, fromHeight, toHeight, false)
-}
-
-func (b *Service) createSnapshot(ctx context.Context, chainID string, fromHeight int64, toHeight int64, async bool) (CreateSnapshotResult, error) {
+func (b *Service) CreateSnapshot(ctx context.Context, chainID string, fromHeight int64, toHeight int64) (CreateSnapshotResult, error) {
 	var err error
 	if len(chainID) == 0 {
 		return CreateSnapshotResult{}, fmt.Errorf("chain id is required")
@@ -72,7 +64,7 @@ func (b *Service) createSnapshot(ctx context.Context, chainID string, fromHeight
 		return CreateSnapshotResult{}, fmt.Errorf("failed to begin copy table data transaction: %w", err)
 	}
 	// Rolling back a committed transaction does nothing
-	cleanUp = append(cleanUp, func() { copyDataTx.Rollback(ctx) })
+	cleanUp = append(cleanUp, func() { _ = copyDataTx.Rollback(ctx) })
 
 	if _, err = copyDataTx.Exec(ctx, "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"); err != nil {
 		runAllInReverseOrder(cleanUp)
@@ -84,26 +76,18 @@ func (b *Service) createSnapshot(ctx context.Context, chainID string, fromHeight
 		runAllInReverseOrder(cleanUp)
 		return CreateSnapshotResult{}, fmt.Errorf("failed to create write lock file:%w", err)
 	}
-	cleanUp = append(cleanUp, func() { os.Remove(snapshotInProgressFile) })
+	cleanUp = append(cleanUp, func() { _ = os.Remove(snapshotInProgressFile) })
 
-	if async {
-		go func() {
-			defer func() { runAllInReverseOrder(cleanUp) }()
-			err = b.snapshotData(ctx, copyDataTx, dbMetaData, currentSnapshot, historySnapshot)
-			if err != nil {
-				b.log.Error("failed to snapshot data", logging.Error(err))
-				if b.config.PanicOnSnapshotCreationError {
-					panic(fmt.Sprintf("failed to snapshot data:%s", err))
-				}
-			}
-		}()
-	} else {
+	go func() {
 		defer func() { runAllInReverseOrder(cleanUp) }()
 		err = b.snapshotData(ctx, copyDataTx, dbMetaData, currentSnapshot, historySnapshot)
 		if err != nil {
-			return CreateSnapshotResult{}, fmt.Errorf("failed to snapshot data:%w", err)
+			b.log.Error("failed to snapshot data", logging.Error(err))
+			if b.config.PanicOnSnapshotCreationError {
+				panic(fmt.Sprintf("failed to snapshot data:%s", err))
+			}
 		}
-	}
+	}()
 
 	return CreateSnapshotResult{
 		CurrentStateSnapshot:     currentSnapshot,
