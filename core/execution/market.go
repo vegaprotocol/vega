@@ -2434,6 +2434,9 @@ func (m *Market) AmendOrderWithIDGenerator(
 
 	if !m.as.InAuction() {
 		m.checkForReferenceMoves(ctx, allUpdatedOrders, false)
+	} else {
+		// make sure that the amended orders are updated in the liquidity engine too
+		m.liquidity.SynchronisePartyOrders(party, allUpdatedOrders)
 	}
 	return conf, nil
 }
