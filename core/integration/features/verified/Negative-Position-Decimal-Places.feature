@@ -58,7 +58,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         Then the market data for the market "USD/DEC22" should be:
             | target stake | supplied stake |
             | 35569        | 5000           |
-        # target stake= vol * mark price * rf = 1*1000*3.5569036*10 = 35569
+        # target stake= vol * mark price * rf = 1*10*1000*3.5569036*10 = 35569
         And the opening auction period ends for market "USD/DEC22"
         And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "USD/DEC22"
         And the mark price should be "0" for the market "USD/DEC22"
