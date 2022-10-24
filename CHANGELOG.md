@@ -12,6 +12,7 @@
 - [6530](https://github.com/vegaprotocol/vega/issues/6530) - Add command to rename a wallet
 - [6531](https://github.com/vegaprotocol/vega/issues/6531) - Add command to update the passphrase of a wallet
 - [6546](https://github.com/vegaprotocol/vega/issues/6546) - Add a separate README for datanode/api gRPC handling principles
+- [6582](https://github.com/vegaprotocol/vega/issues/6582) - Match validation to the required ranges
 
 ### 🐛 Fixes
 - [6556](https://github.com/vegaprotocol/vega/issues/6556) - Limit ledger entries filtering complexity and potential number of items.
