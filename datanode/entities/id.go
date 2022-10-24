@@ -87,6 +87,10 @@ func (id *ID[T]) Error() error {
 }
 
 func (id *ID[T]) String() string {
+	if id == nil {
+		return ""
+	}
+
 	return string(*id)
 }
 

@@ -13,11 +13,12 @@
 package sqlstore
 
 import (
-	"bytes"
 	"context"
+	"database/sql"
 	"embed"
 	"fmt"
 	"io"
+	"time"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -26,6 +27,7 @@ import (
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/pkg/errors"
 	"github.com/pressly/goose/v3"
+	"github.com/shopspring/decimal"
 )
 
 var ErrBadID = errors.New("Bad ID (must be hex string)")
@@ -101,9 +103,9 @@ func RecreateVegaDatabase(ctx context.Context, log *logging.Logger, connConfig C
 		}
 	}()
 
-	_, err = postgresDbConn.Exec(ctx, fmt.Sprintf("DROP DATABASE IF EXISTS %s WITH ( FORCE )", connConfig.Database))
+	err = dropDatabaseWithRetry(ctx, postgresDbConn, connConfig)
 	if err != nil {
-		return fmt.Errorf("unable to drop existing database:%w", err)
+		return fmt.Errorf("failed to drop database:%w", err)
 	}
 
 	_, err = postgresDbConn.Exec(ctx, fmt.Sprintf("CREATE DATABASE %s TEMPLATE template0 LC_COLLATE 'C' LC_CTYPE 'C';", connConfig.Database))
@@ -113,6 +115,25 @@ func RecreateVegaDatabase(ctx context.Context, log *logging.Logger, connConfig C
 	return nil
 }
 
+func dropDatabaseWithRetry(parentCtx context.Context, postgresDbConn *pgx.Conn, connConfig ConnectionConfig) error {
+	var err error
+	for i := 0; i < 5; i++ {
+		ctx, cancelFn := context.WithTimeout(parentCtx, 20*time.Second)
+		_, err = postgresDbConn.Exec(ctx, fmt.Sprintf("DROP DATABASE IF EXISTS %s WITH ( FORCE )", connConfig.Database))
+		cancelFn()
+		if err == nil {
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
+	if err != nil {
+		return fmt.Errorf("unable to drop existing database:%w", err)
+	}
+	return nil
+}
+
+const oneDayAsSeconds = 60 * 60 * 24
+
 func ApplyDataRetentionPolicies(config Config) error {
 	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
 	if err != nil {
@@ -121,46 +142,75 @@ func ApplyDataRetentionPolicies(config Config) error {
 
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
 	defer db.Close()
+
 	for _, policy := range config.RetentionPolicies {
+		// We have this check to avoid the datanode removing data that is required for creating data snapshots
+		aboveMinimum, err := checkPolicyPeriodIsAtOrAboveMinimum(oneDayAsSeconds, policy, db)
+		if err != nil {
+			return fmt.Errorf("checking retention policy period is above minimum:%w", err)
+		}
+
+		if !aboveMinimum {
+			return fmt.Errorf("policy for %s has a retention time less than one day, one day is the minimum permitted", policy.HypertableOrCaggName)
+		}
+
 		if _, err := db.Exec(fmt.Sprintf("SELECT remove_retention_policy('%s', true);", policy.HypertableOrCaggName)); err != nil {
-			return errors.Wrapf(err, "removing retention policy from %s", policy.HypertableOrCaggName)
+			return fmt.Errorf("removing retention policy from %s: %w", policy.HypertableOrCaggName, err)
 		}
 
 		if _, err := db.Exec(fmt.Sprintf("SELECT add_retention_policy('%s', INTERVAL '%s');", policy.HypertableOrCaggName, policy.DataRetentionPeriod)); err != nil {
-			return errors.Wrapf(err, "adding retention policy to %s", policy.HypertableOrCaggName)
+			return fmt.Errorf("adding retention policy to %s: %w", policy.HypertableOrCaggName, err)
 		}
 	}
 
 	return nil
 }
 
-func StartEmbeddedPostgres(log *logging.Logger, config Config, stateDir string) (*embeddedpostgres.EmbeddedPostgres, string, *bytes.Buffer, error) {
-	embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore")
-	embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore", "node-data")
+func checkPolicyPeriodIsAtOrAboveMinimum(minimumInSeconds int64, policy RetentionPolicy, db *sql.DB) (bool, error) {
+	query := fmt.Sprintf("SELECT EXTRACT(epoch FROM INTERVAL '%s')", policy.DataRetentionPeriod)
+	row := db.QueryRow(query)
 
-	postgresLog := &bytes.Buffer{}
+	var seconds decimal.Decimal
+	err := row.Scan(&seconds)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to get interval in seconds for policy %s", policy.HypertableOrCaggName)
+	}
 
-	embeddedPostgres := createEmbeddedPostgres(&embeddedPostgresRuntimePath, &embeddedPostgresDataPath,
+	secs := seconds.IntPart()
+
+	return secs >= minimumInSeconds, nil
+}
+
+type EmbeddedPostgresLog interface {
+	io.Writer
+	fmt.Stringer
+}
+
+func StartEmbeddedPostgres(log *logging.Logger, config Config, runtimeDir string, postgresLog EmbeddedPostgresLog) (*embeddedpostgres.EmbeddedPostgres, error) {
+	embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(runtimeDir), "node-data")
+
+	embeddedPostgres := createEmbeddedPostgres(runtimeDir, &embeddedPostgresDataPath,
 		postgresLog, config.ConnectionConfig)
 
 	if err := embeddedPostgres.Start(); err != nil {
 		log.Errorf("postgres log: \n%s", postgresLog.String())
-		return nil, "", postgresLog, fmt.Errorf("use embedded database was true, but failed to start: %w", err)
+		return nil, fmt.Errorf("use embedded database was true, but failed to start: %w", err)
 	}
 
-	return embeddedPostgres, embeddedPostgresRuntimePath.String(), postgresLog, nil
+	return embeddedPostgres, nil
 }
 
-func createEmbeddedPostgres(runtimePath *paths.StatePath, dataPath *paths.StatePath, writer io.Writer, conf ConnectionConfig) *embeddedpostgres.EmbeddedPostgres {
+func createEmbeddedPostgres(runtimePath string, dataPath *paths.StatePath, writer io.Writer, conf ConnectionConfig) *embeddedpostgres.EmbeddedPostgres {
 	dbConfig := embeddedpostgres.DefaultConfig().
 		Username(conf.Username).
 		Password(conf.Password).
 		Database(conf.Database).
-		Port(uint32(conf.Port)).
-		Logger(writer)
+		Port(uint32(conf.Port))
 
-	if runtimePath != nil {
-		dbConfig = dbConfig.RuntimePath(runtimePath.String()).BinariesPath(runtimePath.String())
+	dbConfig = dbConfig.Logger(writer)
+
+	if len(runtimePath) != 0 {
+		dbConfig = dbConfig.RuntimePath(runtimePath).BinariesPath(runtimePath)
 	}
 
 	if dataPath != nil {

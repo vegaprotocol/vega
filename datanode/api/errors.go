@@ -117,6 +117,8 @@ var (
 	ErrMissingWithdrawalID = errors.New("missing withdrawal ID")
 	// ErrMissingOracleSpecID is returned when the ID is missing from the request.
 	ErrMissingOracleSpecID = errors.New("missing oracle spec ID")
+	// ErrOracleServiceSpecID is returned when there was no data foind for the given ID.
+	ErrOracleServiceGetSpec = errors.New("failed retrieve data for oracle spec")
 	// ErrMissingDepositID is returned when the deposit ID is missing from the request.
 	ErrMissingDepositID = errors.New("missing deposit ID")
 	// ErrMissingAssetID is returned when the Asset ID is missing from the request.
@@ -125,6 +127,11 @@ var (
 	ErrGetNetworkLimits = errors.New("failed to get network limits")
 	// Rewards.
 	ErrGetRewards = errors.New("failed to get rewards")
+	// Decentralized History.
+	ErrGetActivePeerAddresses      = errors.New("failed to get active peer addresses")
+	ErrGetMostRecentHistorySegment = errors.New("failed to get most recent history segment")
+	ErrListAllDeHistorySegment     = errors.New("failed to list all history segments")
+	ErrFetchDeHistorySegment       = errors.New("failed to fetch segment")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

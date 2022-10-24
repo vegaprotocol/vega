@@ -137,6 +137,7 @@ func testTransfersGetTransfersByParty(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
+	reason := "some terrible reason"
 	sourceTransferProto := &eventspb.Transfer{
 		Id:              "deadd0d0",
 		From:            accountFrom.PartyID.String(),
@@ -158,6 +159,7 @@ func testTransfersGetTransfersByParty(t *testing.T) {
 				Metric:         vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
 			},
 		}},
+		Reason: &reason,
 	}
 
 	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)

@@ -35,7 +35,7 @@ func newCheckpointTestEngine(t *testing.T) *checkpointTestEngine {
 	conf := collateral.NewDefaultConfig()
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
 
-	broker.EXPECT().Send(gomock.Any()).Times(3)
+	broker.EXPECT().Send(gomock.Any()).Times(4)
 
 	e := collateral.New(logging.NewTestLogger(), conf, timeSvc, broker)
 	e.EnableAsset(context.Background(), types.Asset{

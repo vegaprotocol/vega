@@ -21,6 +21,8 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/dehistory/store"
+
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -89,6 +91,7 @@ type tradingDataServiceV2 struct {
 	ethereumKeyRotationService *service.EthereumKeyRotation
 	blockService               BlockService
 	protocolUpgradeService     *service.ProtocolUpgrade
+	deHistoryService           DeHistoryService
 }
 
 func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {
@@ -271,8 +274,8 @@ func (t *tradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.Li
 	}, nil
 }
 
-func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.GetBalanceHistoryRequest) (*v2.GetBalanceHistoryResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("GetBalanceHistoryV2")()
+func (t *tradingDataServiceV2) ListBalanceChanges(ctx context.Context, req *v2.ListBalanceChangesRequest) (*v2.ListBalanceChangesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListBalanceChangesV2")()
 	if t.accountService == nil {
 		return nil, fmt.Errorf("sql balance store not available")
 	}
@@ -282,13 +285,21 @@ func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.Ge
 		return nil, fmt.Errorf("parsing filter: %w", err)
 	}
 
-	groupBy := []entities.AccountField{}
-	for _, field := range req.GroupBy {
-		field, err := entities.AccountFieldFromProto(field)
-		if err != nil {
-			return nil, fmt.Errorf("parsing group by list: %w", err)
-		}
-		groupBy = append(groupBy, field)
+	// Always group by asset; it doesn't make sense to add up quantities of different things
+	groupBy := []entities.AccountField{
+		entities.AccountFieldAssetID,
+	}
+
+	if !req.SumAcrossParties {
+		groupBy = append(groupBy, entities.AccountFieldPartyID)
+	}
+
+	if !req.SumAcrossMarkets {
+		groupBy = append(groupBy, entities.AccountFieldMarketID)
+	}
+
+	if !req.SumAcrossTypes {
+		groupBy = append(groupBy, entities.AccountFieldType)
 	}
 
 	dateRange := entities.DateRangeFromProto(req.DateRange)
@@ -307,7 +318,7 @@ func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.Ge
 		return nil, apiError(codes.Internal, ErrAccountServiceListAccounts, err)
 	}
 
-	return &v2.GetBalanceHistoryResponse{
+	return &v2.ListBalanceChangesResponse{
 		Balances: &v2.AggregatedBalanceConnection{
 			Edges:    edges,
 			PageInfo: pageInfo.ToProto(),
@@ -715,8 +726,8 @@ func (t *tradingDataServiceV2) ListCandleIntervals(ctx context.Context, req *v2.
 	}, nil
 }
 
-// GetERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract.
-func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Context, req *v2.GetERC20MultiSigSignerAddedBundlesRequest) (*v2.GetERC20MultiSigSignerAddedBundlesResponse, error) {
+// ListERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract.
+func (t *tradingDataServiceV2) ListERC20MultiSigSignerAddedBundles(ctx context.Context, req *v2.ListERC20MultiSigSignerAddedBundlesRequest) (*v2.ListERC20MultiSigSignerAddedBundlesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetERC20MultiSigSignerAddedBundlesV2")()
 	if t.notaryService == nil {
 		return nil, errors.New("sql notary service not available")
@@ -782,13 +793,13 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 		PageInfo: pageInfo.ToProto(),
 	}
 
-	return &v2.GetERC20MultiSigSignerAddedBundlesResponse{
+	return &v2.ListERC20MultiSigSignerAddedBundlesResponse{
 		Bundles: connection,
 	}, nil
 }
 
-// GetERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract.
-func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.Context, req *v2.GetERC20MultiSigSignerRemovedBundlesRequest) (*v2.GetERC20MultiSigSignerRemovedBundlesResponse, error) {
+// ListERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract.
+func (t *tradingDataServiceV2) ListERC20MultiSigSignerRemovedBundles(ctx context.Context, req *v2.ListERC20MultiSigSignerRemovedBundlesRequest) (*v2.ListERC20MultiSigSignerRemovedBundlesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetERC20MultiSigSignerRemovedBundlesV2")()
 	if t.notaryService == nil {
 		return nil, errors.New("sql notary store not available")
@@ -851,7 +862,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 		PageInfo: pageInfo.ToProto(),
 	}
 
-	return &v2.GetERC20MultiSigSignerRemovedBundlesResponse{
+	return &v2.ListERC20MultiSigSignerRemovedBundlesResponse{
 		Bundles: connection,
 	}, nil
 }
@@ -1138,7 +1149,8 @@ func (t *tradingDataServiceV2) GetMarket(ctx context.Context, req *v2.GetMarketR
 
 	market, err := t.marketService.GetByID(ctx, req.MarketId)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		// Show a relevant error here -> no such market exists.
+		return nil, apiError(codes.NotFound, err)
 	}
 
 	return &v2.GetMarketResponse{
@@ -1728,7 +1740,7 @@ func (t *tradingDataServiceV2) ListOracleData(ctx context.Context, req *v2.ListO
 	}
 
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		apiError(codes.Internal, ErrOracleServiceGetSpec, fmt.Errorf("could not retrieve data for OracleSpecID: %s %w", *req.OracleSpecId, err))
 	}
 
 	edges, err := makeEdges[*v2.OracleDataEdge](data)
@@ -2829,6 +2841,73 @@ func (t *tradingDataServiceV2) GetVegaTime(ctx context.Context, req *v2.GetVegaT
 
 	return &v2.GetVegaTimeResponse{
 		Timestamp: b.VegaTime.UnixNano(),
+	}, nil
+}
+
+// -- DeHistory --.
+
+func (t *tradingDataServiceV2) GetMostRecentDeHistorySegment(context.Context, *v2.GetMostRecentDeHistorySegmentRequest) (*v2.GetMostRecentDeHistorySegmentResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentDeHistorySegment")()
+	segment, err := t.deHistoryService.GetHighestBlockHeightHistorySegment()
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrGetMostRecentHistorySegment, err)
+	}
+
+	return &v2.GetMostRecentDeHistorySegmentResponse{
+		Segment: toHistorySegment(segment),
+	}, nil
+}
+
+func (t *tradingDataServiceV2) ListAllDeHistorySegments(context.Context, *v2.ListAllDeHistorySegmentsRequest) (*v2.ListAllDeHistorySegmentsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListAllDeHistorySegments")()
+	segments, err := t.deHistoryService.ListAllHistorySegments()
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrListAllDeHistorySegment, err)
+	}
+
+	historySegments := make([]*v2.HistorySegment, 0, len(segments))
+	for _, segment := range segments {
+		historySegments = append(historySegments, toHistorySegment(segment))
+	}
+
+	return &v2.ListAllDeHistorySegmentsResponse{
+		Segments: historySegments,
+	}, nil
+}
+
+func (t *tradingDataServiceV2) FetchDeHistorySegment(ctx context.Context, req *v2.FetchDeHistorySegmentRequest) (*v2.FetchDeHistorySegmentResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("FetchDeHistorySegment0'")()
+	segment, err := t.deHistoryService.FetchHistorySegment(ctx, req.HistorySegmentId)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrFetchDeHistorySegment, err)
+	}
+
+	return &v2.FetchDeHistorySegmentResponse{
+		Segment: toHistorySegment(segment),
+	}, nil
+}
+
+func (t *tradingDataServiceV2) Ping(context.Context, *v2.PingRequest) (*v2.PingResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Ping")()
+	return &v2.PingResponse{}, nil
+}
+
+func toHistorySegment(segment store.SegmentIndexEntry) *v2.HistorySegment {
+	return &v2.HistorySegment{
+		FromHeight:               segment.HeightFrom,
+		ToHeight:                 segment.HeightTo,
+		ChainId:                  segment.ChainID,
+		HistorySegmentId:         segment.HistorySegmentID,
+		PreviousHistorySegmentId: segment.PreviousHistorySegmentID,
+	}
+}
+
+func (t *tradingDataServiceV2) GetActiveDeHistoryPeerAddresses(_ context.Context, _ *v2.GetActiveDeHistoryPeerAddressesRequest) (*v2.GetActiveDeHistoryPeerAddressesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentHistorySegmentFromPeers")()
+	addresses := t.deHistoryService.GetActivePeerAddresses()
+
+	return &v2.GetActiveDeHistoryPeerAddressesResponse{
+		IpAddresses: addresses,
 	}, nil
 }
 

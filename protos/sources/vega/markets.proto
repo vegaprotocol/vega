@@ -274,7 +274,7 @@ message Market {
   // Timestamps for when the market stay changes
   MarketTimestamps market_timestamps = 10;
   // The number of decimal places for position
-  uint64 position_decimal_places = 11;
+  int64 position_decimal_places = 11;
 }
 
 // Time stamps for important times about creating, enacting etc the market

@@ -37,7 +37,7 @@ type scheduledTransfer struct {
 
 func (s *scheduledTransfer) ToProto() *checkpoint.ScheduledTransfer {
 	return &checkpoint.ScheduledTransfer{
-		OneoffTransfer: s.oneoff.IntoEvent(),
+		OneoffTransfer: s.oneoff.IntoEvent(nil),
 		Transfer:       s.transfer.IntoProto(),
 		AccountType:    s.accountType,
 		Reference:      s.reference,
@@ -61,9 +61,13 @@ func scheduledTransferFromProto(p *checkpoint.ScheduledTransfer) (scheduledTrans
 func (e *Engine) oneOffTransfer(
 	ctx context.Context,
 	transfer *types.OneOffTransfer,
-) error {
+) (err error) {
 	defer func() {
-		e.broker.Send(events.NewOneOffTransferFundsEvent(ctx, transfer))
+		if err != nil {
+			e.broker.Send(events.NewOneOffTransferFundsEventWithReason(ctx, transfer, err.Error()))
+		} else {
+			e.broker.Send(events.NewOneOffTransferFundsEvent(ctx, transfer))
+		}
 	}()
 
 	// ensure asset exists

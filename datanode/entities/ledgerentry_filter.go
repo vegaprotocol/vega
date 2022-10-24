@@ -18,10 +18,10 @@ type LedgerEntryFilter struct {
 	// all match the criteria given in the `AccountFilter` type.
 	// Otherwise will contain entries that have a match the settings in both accounts (sending or receiving) or in one of them.
 	CloseOnAccountFilters CloseOnLimitOperation
-	// AccountFromFilters is a list of filters which is used to request properties for AccountFrom field.
-	AccountFromFilters []AccountFilter
-	// AccountToFilters is a list of filters which is used to request properties for AccountTo field.
-	AccountToFilters []AccountFilter
+	// AccountFromFilter is a filter which is used to request properties for AccountFrom field.
+	AccountFromFilter AccountFilter
+	// AccountToFilter is a filter which is used to request properties for AccountTo field.
+	AccountToFilter AccountFilter
 
 	// Filter on LedgerMovementType
 	TransferTypes []LedgerMovementType
@@ -32,28 +32,14 @@ func LedgerEntryFilterFromProto(pbFilter *v2.LedgerEntryFilter) (*LedgerEntryFil
 	if pbFilter != nil {
 		filter.CloseOnAccountFilters = CloseOnLimitOperation(pbFilter.CloseOnAccountFilters)
 
-		if len(pbFilter.AccountFromFilters) > 0 {
-			filter.AccountFromFilters = make([]AccountFilter, len(pbFilter.AccountFromFilters))
-			for i, afp := range pbFilter.AccountFromFilters {
-				af, err := AccountFilterFromProto(afp)
-				if err != nil {
-					return nil, err
-				}
-
-				filter.AccountFromFilters[i] = af
-			}
+		var err error
+		filter.AccountFromFilter, err = AccountFilterFromProto(pbFilter.AccountFromFilter)
+		if err != nil {
+			return nil, err
 		}
-
-		if len(pbFilter.AccountToFilters) > 0 {
-			filter.AccountToFilters = make([]AccountFilter, len(pbFilter.AccountToFilters))
-			for i, afp := range pbFilter.AccountToFilters {
-				af, err := AccountFilterFromProto(afp)
-				if err != nil {
-					return nil, err
-				}
-
-				filter.AccountToFilters[i] = af
-			}
+		filter.AccountToFilter, err = AccountFilterFromProto(pbFilter.AccountToFilter)
+		if err != nil {
+			return nil, err
 		}
 
 		if len(pbFilter.TransferTypes) > 0 {

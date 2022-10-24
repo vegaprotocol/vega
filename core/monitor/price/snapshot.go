@@ -129,11 +129,6 @@ func keyDecimalPairToMap(dms []*types.KeyDecimalPair) map[int64]num.Decimal {
 	return m
 }
 
-func wrappedDecimalFromDecimal(d num.Decimal) num.WrappedDecimal {
-	uit, _ := num.UintFromDecimal(d)
-	return num.NewWrappedDecimal(uit, d)
-}
-
 func priceBoundsToBounds(pbs []*types.PriceBound) []*bound {
 	bounds := make([]*bound, 0, len(pbs))
 	for _, pb := range pbs {
@@ -155,8 +150,8 @@ func newPriceRangeCacheFromSlice(prs []*types.PriceRangeCache) map[*bound]priceR
 	priceRangesCache := map[*bound]priceRange{}
 	for _, pr := range prs {
 		priceRangesCache[priceBoundTypeToInternal(pr.Bound)] = priceRange{
-			MinPrice:       wrappedDecimalFromDecimal(pr.Range.Min),
-			MaxPrice:       wrappedDecimalFromDecimal(pr.Range.Max),
+			MinPrice:       wrapPriceRange(pr.Range.Min, true),
+			MaxPrice:       wrapPriceRange(pr.Range.Max, false),
 			ReferencePrice: pr.Range.Ref,
 		}
 	}

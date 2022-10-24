@@ -1,82 +1,45 @@
 package sqlstore
 
 import (
+	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/protos/vega"
 )
 
+var ErrLedgerEntryFilterForParty = errors.New("filtering ledger entries should be limited to a single party")
+
 // Return an SQL query string and corresponding bind arguments to return
 // ledger entries rows resulting from different filter options.
 func filterLedgerEntriesQuery(filter *entities.LedgerEntryFilter) ([3]string, []interface{}, error) {
-	var args []interface{}
+	err := handlePartiesFiltering(filter)
+	if err != nil {
+		return [3]string{}, nil, err
+	}
 
+	var args []interface{}
 	filterQueries := [3]string{}
 
 	// AccountFrom filter
-	accountFromFilters := []string{}
-	if len(filter.AccountFromFilters) > 0 {
-		for _, af := range filter.AccountFromFilters {
-			singleAccountDBQuery, nargs, err := accountFilterToDBQuery(af, &args)
-			args = *nargs
-
-			if err != nil {
-				return [3]string{}, nil, fmt.Errorf("error parsing accountFrom filter values: %w", err)
-			}
-
-			if singleAccountDBQuery != "" {
-				accountFromFilters = append(accountFromFilters, singleAccountDBQuery)
-			}
-		}
+	accountFromDBQuery, nargs, err := accountFilterToDBQuery(filter.AccountFromFilter, &args)
+	if err != nil {
+		return [3]string{}, nil, fmt.Errorf("error parsing accountFrom filter values: %w", err)
 	}
+	args = *nargs
 
 	// AccountTo filter
-	accountToFilters := []string{}
-	if len(filter.AccountToFilters) > 0 {
-		for _, af := range filter.AccountToFilters {
-			singleAccountDBQuery, nargs, err := accountFilterToDBQuery(af, &args)
-			args = *nargs
-
-			if err != nil {
-				return [3]string{}, nil, fmt.Errorf("error parsing accountTo filter values: %w", err)
-			}
-
-			if singleAccountDBQuery != "" {
-				accountToFilters = append(accountToFilters, singleAccountDBQuery)
-			}
-		}
+	accountToDBQuery, nargs, err := accountFilterToDBQuery(filter.AccountToFilter, &args)
+	if err != nil {
+		return [3]string{}, nil, fmt.Errorf("error parsing accountFrom filter values: %w", err)
 	}
-
-	// Example:
-	// (asset_id=$7 AND party_id=ANY($8) AND market_id=ANY($9)) OR (asset_id=$10 AND market_id=ANY($11)) OR (asset_id=$12)
-	accountsFromDBQuery := ""
-	if len(accountFromFilters) > 0 {
-		for i, af := range accountFromFilters {
-			accountsFromDBQuery = fmt.Sprintf(`%s (%s)`, accountsFromDBQuery, af)
-			if i < len(accountFromFilters)-1 {
-				accountsFromDBQuery = fmt.Sprintf(`%s OR`, accountsFromDBQuery)
-			}
-		}
-	}
-
-	// Example:
-	// (asset_id=$7 AND party_id=ANY($8) AND market_id=ANY($9)) OR (asset_id=$10 AND market_id=ANY($11)) OR (asset_id=$12)
-	accountsToDBQuery := ""
-	if len(accountToFilters) > 0 {
-		for i, af := range accountToFilters {
-			accountsToDBQuery = fmt.Sprintf(`%s (%s)`, accountsToDBQuery, af)
-			if i < len(accountToFilters)-1 {
-				accountsToDBQuery = fmt.Sprintf(`%s OR`, accountsToDBQuery)
-			}
-		}
-	}
+	args = *nargs
 
 	// TransferTypeFilters
 	accountTransferTypeDBQuery := transferTypeFilterToDBQuery(filter.TransferTypes, &args)
 
-	filterQueries[0] = accountsFromDBQuery
-	filterQueries[1] = accountsToDBQuery
+	filterQueries[0] = accountFromDBQuery
+	filterQueries[1] = accountToDBQuery
 	filterQueries[2] = accountTransferTypeDBQuery
 
 	return filterQueries, args, nil
@@ -95,18 +58,15 @@ func accountFilterToDBQuery(af entities.AccountFilter, args *[]interface{}) (str
 	}
 
 	// Party filtering
-	if len(af.PartyIDs) > 0 {
-		partyIDs := make([][]byte, len(af.PartyIDs))
-		for i, party := range af.PartyIDs {
-			partyIDs[i], err = party.Bytes()
-			if err != nil {
-				return "", nil, fmt.Errorf("invalid party id: %w", err)
-			}
+	if len(af.PartyIDs) == 1 {
+		partyIDAsBytes, err := af.PartyIDs[0].Bytes()
+		if err != nil {
+			return "", nil, fmt.Errorf("invalid party id: %w", err)
 		}
 		if singleAccountFilter != "" {
-			singleAccountFilter = fmt.Sprintf(`%s AND party_id=ANY(%s)`, singleAccountFilter, nextBindVar(args, partyIDs))
+			singleAccountFilter = fmt.Sprintf(`%s AND party_id=%s`, singleAccountFilter, nextBindVar(args, partyIDAsBytes))
 		} else {
-			singleAccountFilter = fmt.Sprintf(`party_id=ANY(%s)`, nextBindVar(args, partyIDs))
+			singleAccountFilter = fmt.Sprintf(`party_id=%s`, nextBindVar(args, partyIDAsBytes))
 		}
 	}
 
@@ -179,4 +139,27 @@ func prepareGroupFields(groupByAccountField []entities.AccountField, groupByLedg
 	}
 
 	return fields
+}
+
+func handlePartiesFiltering(filter *entities.LedgerEntryFilter) error {
+	var partyIDFrom entities.PartyID
+	var partyIDTo entities.PartyID
+
+	if len(filter.AccountFromFilter.PartyIDs) > 1 || len(filter.AccountToFilter.PartyIDs) > 1 {
+		return ErrLedgerEntryFilterForParty
+	}
+
+	if len(filter.AccountFromFilter.PartyIDs) > 0 {
+		partyIDFrom = filter.AccountFromFilter.PartyIDs[0]
+	}
+
+	if len(filter.AccountToFilter.PartyIDs) > 0 {
+		partyIDTo = filter.AccountToFilter.PartyIDs[0]
+	}
+
+	if partyIDFrom == "" && partyIDTo == "" {
+		return ErrLedgerEntryFilterForParty
+	}
+
+	return nil
 }

@@ -47,7 +47,7 @@ func (e *Engine) CancelTransferFunds(
 
 	// send an event because we are nice with the data-node
 	transfer.Status = types.TransferStatusCancelled
-	e.broker.Send(events.NewRecurringTransferFundsEvent(ctx, transfer))
+	e.broker.Send(events.NewRecurringTransferFundsEventWithReason(ctx, transfer, "transfer cancelled"))
 
 	return nil
 }

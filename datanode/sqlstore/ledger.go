@@ -93,11 +93,12 @@ func (ls *Ledger) GetAll() ([]entities.LedgerEntry, error) {
 // This query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
 // It returns a timeseries (implemented as a list of AggregateLedgerEntry structs), with a row for every time
 // the summed ledger entries of the set of specified accounts changes.
+// Listed queries should be limited to a single party from each side only. If no or more than one parties are provided
+// for sending and receiving accounts - the query returns error.
 //
 // Entries can be queried by:
-//   - lising all ledger entries without filtering
-//   - listing ledger entries with filtering on the sending account (party_id, market_id, asset_id, account_type)
-//   - listing ledger entries with filtering on the receiving account (party_id, market_id, asset_id, account_type)
+//   - listing ledger entries with filtering on the sending account (market_id, asset_id, account_type)
+//   - listing ledger entries with filtering on the receiving account (market_id, asset_id, account_type)
 //   - listing ledger entries with filtering on the sending AND receiving account
 //   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 func (ls *Ledger) Query(
@@ -190,31 +191,32 @@ type ledgerEntriesScanned struct {
 	VegaTime time.Time
 
 	Quantity     decimal.Decimal
-	AccountType  *types.AccountType
+	AccountType  types.AccountType
 	TransferType entities.LedgerMovementType
 
-	PartyID  *entities.PartyID
-	AssetID  *entities.AssetID
-	MarketID *entities.MarketID
+	PartyID   entities.PartyID
+	AssetID   entities.AssetID
+	MarketID  entities.MarketID
+	AccountID entities.AccountID
 }
 
 func parseScanned(scanned []ledgerEntriesScanned) []entities.AggregatedLedgerEntries {
 	ledgerEntries := []entities.AggregatedLedgerEntries{}
 	if len(scanned) > 0 {
-		for i, s := range scanned {
+		for i := range scanned {
 			ledgerEntries = append(ledgerEntries, entities.AggregatedLedgerEntries{
-				VegaTime: s.VegaTime,
-				Quantity: s.Quantity,
-				PartyID:  s.PartyID,
-				AssetID:  s.AssetID,
-				MarketID: s.MarketID,
+				VegaTime: scanned[i].VegaTime,
+				Quantity: scanned[i].Quantity,
+				PartyID:  &scanned[i].PartyID,
+				AssetID:  &scanned[i].AssetID,
+				MarketID: &scanned[i].MarketID,
 			})
 
-			if s.AccountType != nil {
-				ledgerEntries[i].AccountType = s.AccountType
+			if scanned[i].AccountType != types.AccountTypeUnspecified {
+				ledgerEntries[i].AccountType = &scanned[i].AccountType
 			}
 
-			tt := s.TransferType
+			tt := scanned[i].TransferType
 			ledgerEntries[i].TransferType = &tt
 		}
 	}

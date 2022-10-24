@@ -618,7 +618,7 @@ type Market struct {
 	ID                            string
 	TradableInstrument            *TradableInstrument
 	DecimalPlaces                 uint64
-	PositionDecimalPlaces         uint64
+	PositionDecimalPlaces         int64
 	Fees                          *Fees
 	OpeningAuction                *AuctionDuration
 	PriceMonitoringSettings       *PriceMonitoringSettings

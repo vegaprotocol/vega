@@ -1387,6 +1387,7 @@ create table if not exists transfers (
          dispatch_metric INT,
          dispatch_metric_asset TEXT,
          dispatch_markets TEXT[],
+         reason TEXT,
          primary key (id, vega_time)
 );
 

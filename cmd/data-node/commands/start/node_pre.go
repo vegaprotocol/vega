@@ -19,13 +19,17 @@ import (
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/config"
-	"code.vegaprotocol.io/vega/datanode/snapshot"
+	"code.vegaprotocol.io/vega/datanode/dehistory"
+	"code.vegaprotocol.io/vega/datanode/dehistory/initialise"
+	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
+
+	"github.com/cenkalti/backoff"
 	"google.golang.org/grpc"
 )
 
@@ -62,12 +66,79 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		logging.String("version", l.Version),
 		logging.String("version-hash", l.VersionHash))
 
+	if l.conf.SQLStore.UseEmbedded {
+		l.embeddedPostgres, err = sqlstore.StartEmbeddedPostgres(l.Log, l.conf.SQLStore,
+			paths.DataNodeEmbeddedPostgresRuntimeDir.String(), EmbeddedPostgresLog{})
+
+		if err != nil {
+			return fmt.Errorf("failed to start embedded postgres: %w", err)
+		}
+
+		go func() {
+			for range l.ctx.Done() {
+				l.embeddedPostgres.Stop()
+			}
+		}()
+	}
+
+	if l.conf.DeHistory.Enabled {
+		l.Log.Info("Initializing Decentralized History")
+		err = l.initialiseDecentralizedHistory()
+		if err != nil {
+			return fmt.Errorf("failed to initialise decentralized history:%w", err)
+		}
+	}
+
+	dataNodeHasData, err := initialise.DataNodeHasData(l.ctx, l.conf.SQLStore.ConnectionConfig)
+	if err != nil {
+		return fmt.Errorf("failed to check if data node has scheme or is empty: %w", err)
+	}
+
+	if !dataNodeHasData && bool(l.conf.DeHistory.Enabled) && bool(l.conf.AutoInitialiseFromDeHistory) {
+		l.Log.Info("Auto Initialising Datanode From Decentralized History")
+		if err = initialise.DatanodeFromDeHistory(l.ctx, l.conf.DeHistory.Initialise,
+			l.Log, l.deHistoryService, l.conf.API.Port); err != nil {
+			return fmt.Errorf("failed to initialise datanode from decentralized history:%w", err)
+		}
+		l.Log.Info("Finished Auto Initialising Datanode From Decentralized History")
+	} else {
+		operation := func() (opErr error) {
+			l.Log.Info("Attempting to connect to SQL stores...")
+			opErr = l.initialiseDatabase()
+			if opErr != nil {
+				l.Log.Error("Failed to connect to SQL stores, retrying...", logging.Error(opErr))
+			}
+			return opErr
+		}
+
+		retryConfig := l.conf.SQLStore.ConnectionRetryConfig
+
+		expBackoff := backoff.NewExponentialBackOff()
+		expBackoff.InitialInterval = retryConfig.InitialInterval
+		expBackoff.MaxInterval = retryConfig.MaxInterval
+		expBackoff.MaxElapsedTime = retryConfig.MaxElapsedTime
+
+		err = backoff.Retry(operation, backoff.WithMaxRetries(expBackoff, retryConfig.MaxRetries))
+		if err != nil {
+			return fmt.Errorf("failed to connect to database: %w", err)
+		}
+	}
+
+	l.Log.Info("Applying Data Retention Policies")
+
+	err = sqlstore.ApplyDataRetentionPolicies(l.conf.SQLStore)
+	if err != nil {
+		return fmt.Errorf("failed to apply data retention policies:%w", err)
+	}
+
 	l.Log.Info("Enabling SQL stores")
 
-	transactionalConnectionSource, err := l.initialiseDatabase()
+	transactionalConnectionSource, err := sqlstore.NewTransactionalConnectionSource(l.Log, l.conf.SQLStore.ConnectionConfig)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create connection source:%w", err)
 	}
+
+	l.transactionalConnectionSource = transactionalConnectionSource
 
 	l.CreateAllStores(l.ctx, l.Log, transactionalConnectionSource, l.conf.CandlesV2.CandleStore)
 
@@ -77,13 +148,9 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		return err
 	}
 
-	l.snapshotService, err = snapshot.NewSnapshotService(l.Log, l.conf.Snapshot, l.conf.Broker, l.blockStore,
-		l.networkParameterService.GetByKey,
-		l.chainService, l.conf.SQLStore.ConnectionConfig,
-		l.vegaPaths.StatePathFor(paths.DataNodeSnapshotHome))
+	err = initialise.VerifyChainID(l.conf.ChainID, l.chainService)
 	if err != nil {
-		l.Log.Error("failed to create snapshot service", logging.Error(err))
-		return err
+		return fmt.Errorf("failed to verify chain id:%w", err)
 	}
 
 	l.SetupSQLSubscribers(l.ctx, l.Log)
@@ -91,51 +158,28 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 	return nil
 }
 
-func (l *NodeCommand) initialiseDatabase() (*sqlstore.ConnectionSource, error) {
+func (l *NodeCommand) initialiseDatabase() error {
 	var err error
-	if l.conf.SQLStore.UseEmbedded {
-		l.embeddedPostgres, _, _, err = sqlstore.StartEmbeddedPostgres(l.Log, l.conf.SQLStore,
-			l.vegaPaths.StatePathFor(paths.DataNodeStorageHome))
-		if err != nil {
-			return nil, fmt.Errorf("failed to start embedded postgres: %w", err)
-		}
-	}
 
-	hasVegaSchema, err := snapshot.HasVegaSchema(l.ctx, l.conf.SQLStore.ConnectionConfig)
+	hasVegaSchema, err := initialise.HasVegaSchema(l.ctx, l.conf.SQLStore.ConnectionConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check if database is empty: %w", err)
+		return fmt.Errorf("failed to check if database is empty: %w", err)
 	}
 
 	// If it's an empty database, recreate it with correct locale settings
 	if !hasVegaSchema {
 		err = sqlstore.RecreateVegaDatabase(l.ctx, l.Log, l.conf.SQLStore.ConnectionConfig)
 		if err != nil {
-			return nil, fmt.Errorf("failed to recreate vega schema: %w", err)
+			return fmt.Errorf("failed to recreate vega schema: %w", err)
 		}
 	}
 
 	err = sqlstore.MigrateToLatestSchema(l.Log, l.conf.SQLStore)
 	if err != nil {
-		return nil, fmt.Errorf("failed to migrate to latest schema:%w", err)
+		return fmt.Errorf("failed to migrate to latest schema:%w", err)
 	}
 
-	err = sqlstore.ApplyDataRetentionPolicies(l.conf.SQLStore)
-	if err != nil {
-		return nil, fmt.Errorf("failed to apply data retention policies:%w", err)
-	}
-
-	transactionalConnectionSource, err := sqlstore.NewTransactionalConnectionSource(l.Log, l.conf.SQLStore.ConnectionConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create connection source:%w", err)
-	}
-
-	l.transactionalConnectionSource = transactionalConnectionSource
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to create snapshot service: %w", err)
-	}
-
-	return transactionalConnectionSource, nil
+	return nil
 }
 
 // we've already set everything up WRT arguments etc... just bootstrap the node.
@@ -147,7 +191,7 @@ func (l *NodeCommand) preRun([]string) (err error) {
 		}
 	}()
 
-	eventSource, err := broker.NewEventSource(l.conf.Broker, l.Log)
+	eventSource, err := broker.NewEventSource(l.conf.Broker, l.Log, l.conf.ChainID)
 	if err != nil {
 		l.Log.Error("unable to initialise event source", logging.Error(err))
 		return err
@@ -155,21 +199,25 @@ func (l *NodeCommand) preRun([]string) (err error) {
 
 	eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SQLStore.FanOutBufferSize, 2)
 
-	l.snapshotPublisher, err = snapshot.NewPublisher(l.ctx, l.Log, l.conf.Snapshot, l.vegaPaths.StatePathFor(paths.DataNodeSnapshotHome))
-	if err != nil {
-		l.Log.Error("failed to create snapshot publisher", logging.Error(err))
-		return err
+	var onBlockCommittedFn func(ctx context.Context, chainId string, lastCommittedBlockHeight int64)
+
+	if l.snapshotService != nil {
+		blockCommitHandler := snapshot.NewBlockCommitHandler(l.Log, l.snapshotService.SnapshotData, l.networkParameterService.GetByKey,
+			l.conf.Broker)
+		onBlockCommittedFn = blockCommitHandler.OnBlockCommitted
+	} else {
+		onBlockCommittedFn = func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) {}
 	}
 
-	l.sqlBroker = broker.NewSQLStoreBroker(l.Log, l.conf.Broker, l.chainService, eventSource,
+	l.sqlBroker = broker.NewSQLStoreBroker(l.Log, l.conf.Broker, l.conf.ChainID, eventSource,
 		l.transactionalConnectionSource,
 		l.blockStore,
 		l.protocolUpgradeService,
-		l.snapshotService.OnBlockCommitted,
+		onBlockCommittedFn,
 		l.GetSQLSubscribers(),
 	)
 
-	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainService, eventSource)
+	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.conf.ChainID, eventSource)
 	if err != nil {
 		l.Log.Error("unable to initialise broker", logging.Error(err))
 		return err
@@ -187,4 +235,45 @@ func (l *NodeCommand) preRun([]string) (err error) {
 	coreClient := vegaprotoapi.NewCoreServiceClient(conn)
 	l.vegaCoreServiceClient = api.NewVegaCoreServiceClient(coreClient, conn.GetState)
 	return nil
+}
+
+func (l *NodeCommand) initialiseDecentralizedHistory() error {
+	useEmbedded := bool(l.conf.SQLStore.UseEmbedded)
+	snapshotsCopyFromDir, snapshotsCopyToDir := initialise.GetSnapshotPaths(useEmbedded, l.conf.DeHistory.Snapshot, l.vegaPaths)
+	if useEmbedded {
+		l.conf.DeHistory.Snapshot.DatabaseSnapshotsCopyFromPath = snapshotsCopyFromDir
+		l.conf.DeHistory.Snapshot.DatabaseSnapshotsCopyToPath = snapshotsCopyToDir
+	}
+
+	deHistoryLog := l.Log.Named("deHistory")
+	deHistoryLog.SetLevel(l.conf.DeHistory.Level.Get())
+
+	snapshotServiceLog := deHistoryLog.Named("snapshot")
+	deHistoryServiceLog := deHistoryLog.Named("service")
+
+	var err error
+	l.snapshotService, err = snapshot.NewSnapshotService(snapshotServiceLog, l.conf.DeHistory.Snapshot, l.conf.SQLStore.ConnectionConfig, snapshotsCopyToDir)
+	if err != nil {
+		return fmt.Errorf("failed to create snapshot service:%w", err)
+	}
+
+	l.deHistoryService, err = dehistory.New(l.ctx, deHistoryServiceLog, l.conf.DeHistory, l.vegaPaths.StatePathFor(paths.DataNodeDeHistoryHome),
+		l.conf.SQLStore.ConnectionConfig, l.conf.ChainID, l.snapshotService, l.conf.API.Port, snapshotsCopyFromDir, snapshotsCopyToDir)
+
+	if err != nil {
+		return fmt.Errorf("failed to create deHistory service:%w", err)
+	}
+
+	return nil
+}
+
+// Todo should be able to configure this to send to a file.
+type EmbeddedPostgresLog struct{}
+
+func (n2 EmbeddedPostgresLog) Write(p []byte) (n int, err error) {
+	return len(p), nil
+}
+
+func (n2 EmbeddedPostgresLog) String() string {
+	return ""
 }

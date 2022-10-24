@@ -21,10 +21,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/shopspring/decimal"
 	"google.golang.org/grpc"
 
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
+	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -700,8 +703,8 @@ func (r *myQueryResolver) Erc20SetAssetLimitsBundle(ctx context.Context, proposa
 }
 
 func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, submitter, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error) {
-	res, err := r.tradingDataClientV2.GetERC20MultiSigSignerAddedBundles(
-		ctx, &v2.GetERC20MultiSigSignerAddedBundlesRequest{
+	res, err := r.tradingDataClientV2.ListERC20MultiSigSignerAddedBundles(
+		ctx, &v2.ListERC20MultiSigSignerAddedBundlesRequest{
 			NodeId:     nodeID,
 			Submitter:  fromPtr(submitter),
 			EpochSeq:   fromPtr(epochSeq),
@@ -734,8 +737,8 @@ func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, n
 }
 
 func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context, nodeID string, submitter, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerRemovedConnection, error) {
-	res, err := r.tradingDataClientV2.GetERC20MultiSigSignerRemovedBundles(
-		ctx, &v2.GetERC20MultiSigSignerRemovedBundlesRequest{
+	res, err := r.tradingDataClientV2.ListERC20MultiSigSignerRemovedBundles(
+		ctx, &v2.ListERC20MultiSigSignerRemovedBundlesRequest{
 			NodeId:     nodeID,
 			Submitter:  fromPtr(submitter),
 			EpochSeq:   fromPtr(epochSeq),
@@ -882,7 +885,17 @@ func (r *myQueryResolver) EstimateOrder(
 	}
 
 	// calclate the fee total amount
-	ttf := resp.Fee.MakerFee + resp.Fee.InfrastructureFee + resp.Fee.LiquidityFee
+	var mfee, ifee, lfee num.Decimal
+	// errors doesn't matter here, they just give us zero values anyway for the decimals
+	if len(resp.Fee.MakerFee) > 0 {
+		mfee, _ = num.DecimalFromString(resp.Fee.MakerFee)
+	}
+	if len(resp.Fee.InfrastructureFee) > 0 {
+		ifee, _ = num.DecimalFromString(resp.Fee.InfrastructureFee)
+	}
+	if len(resp.Fee.LiquidityFee) > 0 {
+		lfee, _ = num.DecimalFromString(resp.Fee.LiquidityFee)
+	}
 
 	fee := TradeFee{
 		MakerFee:          resp.Fee.MakerFee,
@@ -909,7 +922,7 @@ func (r *myQueryResolver) EstimateOrder(
 
 	return &OrderEstimate{
 		Fee:            &fee,
-		TotalFeeAmount: ttf,
+		TotalFeeAmount: decimal.Sum(mfee, ifee, lfee).String(),
 		MarginLevels:   respm.MarginLevels,
 	}, nil
 }
@@ -1291,22 +1304,23 @@ func (r *myQueryResolver) Statistics(ctx context.Context) (*vegaprotoapi.Statist
 	return resp.GetStatistics(), nil
 }
 
-func (r *myQueryResolver) HistoricBalances(ctx context.Context, filter *v2.AccountFilter, groupBy []*v2.AccountField, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedBalanceConnection, error) {
-	gb := make([]v2.AccountField, len(groupBy))
-	for i, g := range groupBy {
-		if g == nil {
-			return nil, errors.New("nil group by")
-		}
-		gb[i] = *g
+func (r *myQueryResolver) BalanceChanges(
+	ctx context.Context,
+	filter *v2.AccountFilter,
+	sumParties, sumMarkets, sumTypes *bool,
+	dateRange *v2.DateRange,
+	pagination *v2.Pagination,
+) (*v2.AggregatedBalanceConnection, error) {
+	req := &v2.ListBalanceChangesRequest{
+		Filter:           filter,
+		SumAcrossParties: ptr.UnBox(sumParties),
+		SumAcrossMarkets: ptr.UnBox(sumMarkets),
+		SumAcrossTypes:   ptr.UnBox(sumTypes),
+		DateRange:        dateRange,
+		Pagination:       pagination,
 	}
 
-	req := &v2.GetBalanceHistoryRequest{}
-	req.GroupBy = gb
-	req.Filter = filter
-	req.DateRange = dateRange
-	req.Pagination = pagination
-
-	resp, err := r.tradingDataClientV2.GetBalanceHistory(ctx, req)
+	resp, err := r.tradingDataClientV2.ListBalanceChanges(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -1361,6 +1375,16 @@ func (r *myQueryResolver) NetworkLimits(ctx context.Context) (*types.NetworkLimi
 		return nil, err
 	}
 	return resp.GetLimits(), nil
+}
+
+func (r *myQueryResolver) MostRecentHistorySegment(ctx context.Context) (*v2.HistorySegment, error) {
+	req := &v2.GetMostRecentDeHistorySegmentRequest{}
+
+	resp, err := r.tradingDataClientV2.GetMostRecentDeHistorySegment(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetSegment(), nil
 }
 
 // END: Root Resolver

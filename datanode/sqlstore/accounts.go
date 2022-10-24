@@ -152,10 +152,10 @@ func (as *Accounts) Obtain(ctx context.Context, a *entities.Account) error {
 	return nil
 }
 
-func deterministicAccountID(a *entities.Account) string {
+func deterministicAccountID(a *entities.Account) entities.AccountID {
 	idAsBytes := sha256.Sum256([]byte(a.AssetID.String() + a.PartyID.String() + a.MarketID.String() + a.Type.String()))
 	accountID := hex.EncodeToString(idAsBytes[:])
-	return accountID
+	return entities.AccountID(accountID)
 }
 
 func (as *Accounts) Query(filter entities.AccountFilter) ([]entities.Account, error) {

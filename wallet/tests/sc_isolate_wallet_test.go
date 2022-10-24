@@ -49,7 +49,7 @@ func TestIsolateWallet(t *testing.T) {
 		"--home", home,
 		"--output", "json",
 		"--wallet", isolateKeyResp.Wallet,
-		"--passphrase-file", passphraseFilePath,
+		"--passphrase-file", isolatedWalletPassphraseFilePath,
 	})
 
 	// then

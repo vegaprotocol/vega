@@ -23,7 +23,6 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
@@ -148,8 +147,8 @@ func testCheckpointSuccess(t *testing.T) {
 
 func enactNewProposal(t *testing.T, eng *tstEngine) types.Proposal {
 	t.Helper()
-	proposer := eng.newValidParty("proposer", 1)
-	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
+	proposer := eng.newValidPartyTimes("proposer", 1, 0)
+	voter1 := eng.newValidPartyTimes("voter-1", 7, 0)
 	now := eng.tsvc.GetTimeNow()
 	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
 	filter, binding := produceTimeTriggeredOracleSpec(termTimeAfterEnact)
@@ -184,6 +183,7 @@ func TestCheckpointSavingAndLoadingWithDroppedMarkets(t *testing.T) {
 
 	// enact a proposal for market 1,2,3
 	proposals := make([]types.Proposal, 0, 3)
+	// balance itself shouldn't matter, just make sure it's a non-nil value
 	for i := 0; i < 3; i++ {
 		proposals = append(proposals, enactNewProposal(t, eng))
 	}
@@ -284,8 +284,8 @@ func marshalProposal(t *testing.T, proposal *vegapb.Proposal) []byte {
 
 func enactUpdateProposal(t *testing.T, eng *tstEngine, marketID string) string {
 	t.Helper()
-	proposer := eng.newValidParty("proposer", 1)
-	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
+	proposer := eng.newValidPartyTimes("proposer", 1, 0)
+	voter1 := eng.newValidPartyTimes("voter-1", 7, 0)
 	now := eng.tsvc.GetTimeNow()
 	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
 	filter, binding := produceTimeTriggeredOracleSpec(termTimeAfterEnact)
@@ -298,7 +298,6 @@ func enactUpdateProposal(t *testing.T, eng *tstEngine, marketID string) string {
 	eng.expectOpenProposalEvent(t, proposer.Id, proposal.ID)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer.Id, 0.1)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voter1.Id, 0.1)
-	eng.accounts.EXPECT().GetAvailableBalance(gomock.Any()).AnyTimes().Return(num.NewUint(200), nil)
 
 	// when
 	_, err := eng.submitProposal(t, proposal)

@@ -94,12 +94,12 @@ type Broker struct {
 
 	eventSource eventSource
 	quit        chan struct{}
-	chainInfo   ChainInfoI
+	chainID     string
 	vegaTime    time.Time
 }
 
 // New creates a new base broker.
-func New(ctx context.Context, log *logging.Logger, config Config, chainInfo ChainInfoI,
+func New(ctx context.Context, log *logging.Logger, config Config, chainID string,
 	eventsource eventSource,
 ) (*Broker, error) {
 	log = log.Named(namedLogger)
@@ -113,7 +113,7 @@ func New(ctx context.Context, log *logging.Logger, config Config, chainInfo Chai
 		eChans:      map[events.Type]chan []events.Event{},
 		eventSource: eventsource,
 		quit:        make(chan struct{}),
-		chainInfo:   chainInfo,
+		chainID:     chainID,
 	}
 
 	return b, nil
@@ -388,7 +388,7 @@ func (b *Broker) Receive(ctx context.Context) error {
 	receiveCh, errCh := b.eventSource.Receive(ctx)
 
 	for e := range receiveCh {
-		if err := checkChainID(b.chainInfo, e.ChainID()); err != nil {
+		if err := checkChainID(b.chainID, e.ChainID()); err != nil {
 			return err
 		}
 		b.Send(e)
@@ -402,21 +402,9 @@ func (b *Broker) Receive(ctx context.Context) error {
 	}
 }
 
-func checkChainID(expectedChainInfo ChainInfoI, chainID string) error {
-	ourChainID, err := expectedChainInfo.GetChainID()
-	if err != nil {
-		return fmt.Errorf("Unable to get expected chain ID %w", err)
+func checkChainID(expectedChainID string, chainID string) error {
+	if chainID != expectedChainID {
+		return fmt.Errorf("mismatched chain id received: %s, want %s", chainID, expectedChainID)
 	}
-
-	// An empty chain ID indicates this is our first run
-	if ourChainID == "" {
-		expectedChainInfo.SetChainID(chainID)
-		return nil
-	}
-
-	if chainID != ourChainID {
-		return fmt.Errorf("mismatched chain id received: %s, want %s", chainID, ourChainID)
-	}
-
 	return nil
 }

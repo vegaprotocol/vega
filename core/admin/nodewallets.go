@@ -32,11 +32,7 @@ type wallet interface {
 
 type Wallet struct {
 	Name      string `json:"name"`
-	PublicKey string `json:"public_key"`
-}
-
-func (w *Wallet) String() string {
-	return fmt.Sprintf("Name: %s, PublicKey: %s", w.Name, w.PublicKey)
+	PublicKey string `json:"publicKey"`
 }
 
 func newWallet(w wallet) Wallet {
@@ -51,8 +47,8 @@ type NodeWalletArgs struct {
 }
 
 type NodeWalletReloadReply struct {
-	OldWallet Wallet
-	NewWallet Wallet
+	OldWallet Wallet `json:"oldWallet"`
+	NewWallet Wallet `json:"newWallet"`
 }
 
 type NodeWallet struct {

@@ -167,8 +167,6 @@ func (b *BrokerStub) GetLedgerMovements() []events.LedgerMovements {
 		switch et := e.(type) {
 		case *events.LedgerMovements:
 			ret = append(ret, *et)
-		case events.LedgerMovements:
-			ret = append(ret, et)
 		}
 	}
 	b.mu.Unlock()

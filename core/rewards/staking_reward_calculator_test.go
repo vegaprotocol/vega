@@ -63,6 +63,27 @@ func testCalcRewardsZeroScores(t *testing.T) {
 	require.Equal(t, 0, len(res.partyToAmount))
 }
 
+func TestFilterZeros(t *testing.T) {
+	delegatorShare, _ := num.DecimalFromString("0.3")
+	scores := map[string]num.Decimal{}
+	scores["node1"] = num.NewDecimalFromFloat(1)
+	scores["node2"] = num.DecimalZero()
+	scores["node3"] = num.DecimalZero()
+	scores["node4"] = num.DecimalZero()
+
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{{NodeID: "node1", PubKey: "node1", StakeByDelegators: num.NewUint(500), SelfStake: num.NewUint(1000), Delegators: map[string]*num.Uint{"zohar": num.UintZero(), "jeremy": num.NewUint(500)}}}, delegatorShare, num.UintZero(), rng, logging.NewTestLogger())
+	require.Equal(t, num.NewUint(100000), res.totalReward)
+	require.Equal(t, 2, len(res.partyToAmount))
+	_, ok := res.partyToAmount["zohar"]
+	require.False(t, ok)
+
+	_, ok = res.partyToAmount["jeremy"]
+	require.True(t, ok)
+
+	_, ok = res.partyToAmount["node1"]
+	require.True(t, ok)
+}
+
 // nolint
 func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 	delegatorShare, _ := num.DecimalFromString("0.3")
