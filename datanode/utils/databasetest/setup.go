@@ -4,15 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io/fs"
 	"math/rand"
 	"net"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
-
-	uuid "github.com/satori/go.uuid"
 
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
@@ -84,32 +81,27 @@ var (
 	postgresServerTimeout = time.Second * 10
 )
 
-func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.ConnectionSource, string, *bytes.Buffer)) int {
-	testDBPort = getNextPort()
+func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.ConnectionSource, *bytes.Buffer),
+	postgresRuntimePath string,
+) int {
+	testDBPort = GetNextFreePort()
 	sqlConfig := NewTestConfig(testDBPort)
 
 	if sqlTestsEnabled {
 		log := logging.NewTestLogger()
 
-		testID := uuid.NewV4().String()
-		tempDir, err := ioutil.TempDir("", testID)
+		err := os.Mkdir(postgresRuntimePath, fs.ModePerm)
 		if err != nil {
 			panic(err)
 		}
+		defer os.RemoveAll(postgresRuntimePath)
 
-		var postgresRuntimePath string
 		postgresLog := &bytes.Buffer{}
-		embeddedPostgres, postgresRuntimePath, err = sqlstore.StartEmbeddedPostgres(log, sqlConfig, tempDir, postgresLog)
+		embeddedPostgres, err = sqlstore.StartEmbeddedPostgres(log, sqlConfig, postgresRuntimePath, postgresLog)
 		if err != nil {
+			log.Errorf("failed to start postgres: %s", postgresLog.String())
 			panic(err)
 		}
-
-		snapshotsDir := filepath.Join(postgresRuntimePath, "snapshots")
-		err = os.Mkdir(snapshotsDir, os.ModePerm)
-		if err != nil {
-			panic(fmt.Errorf("failed to create snapshots directory: %w", err))
-		}
-		defer os.RemoveAll(snapshotsDir)
 
 		log.Infof("Test DB Port: %d", testDBPort)
 
@@ -146,7 +138,7 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 			panic(err)
 		}
 
-		onSetupComplete(sqlConfig, connectionSource, snapshotsDir, postgresLog)
+		onSetupComplete(sqlConfig, connectionSource, postgresLog)
 
 		return m.Run()
 	}
@@ -196,7 +188,7 @@ func NewTestConfig(port int) sqlstore.Config {
 	return sqlConfig
 }
 
-func getNextPort() int {
+func GetNextFreePort() int {
 	rand.Seed(time.Now().UnixNano())
 	for {
 		port := rand.Intn(maxPort-minPort+1) + minPort

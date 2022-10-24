@@ -329,7 +329,7 @@ func (s *coreService) Statistics(ctx context.Context, _ *protoapi.StatisticsRequ
 		TotalTrades:           s.stats.Blockchain.TotalTrades(),
 		BlockDuration:         s.stats.Blockchain.BlockDuration(),
 		EpochSeq:              s.stats.GetEpochSeq(),
-		EpochStartTime:        vegatime.Format(s.stats.GetEpochExpireTime()),
+		EpochStartTime:        vegatime.Format(s.stats.GetEpochStartTime()),
 		EpochExpiryTime:       vegatime.Format(s.stats.GetEpochExpireTime()),
 		ChainId:               chainID,
 	}

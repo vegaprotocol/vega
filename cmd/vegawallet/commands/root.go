@@ -81,12 +81,14 @@ func BuildCmdRoot(w io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdService(w, f))
 	cmd.AddCommand(NewCmdTx(w, f))
 	cmd.AddCommand(NewCmdMessage(w, f))
+	cmd.AddCommand(NewCmdPassphrase(w, f))
 	cmd.AddCommand(NewCmdPermissions(w, f))
 
 	// Wallet commands
 	// We don't have a wrapper sub-command for wallet commands.
 	cmd.AddCommand(NewCmdCreateWallet(w, f))
 	cmd.AddCommand(NewCmdDeleteWallet(w, f))
+	cmd.AddCommand(NewCmdRenameWallet(w, f))
 	cmd.AddCommand(NewCmdGetInfoWallet(w, f))
 	cmd.AddCommand(NewCmdImportWallet(w, f))
 	cmd.AddCommand(NewCmdListWallets(w, f))

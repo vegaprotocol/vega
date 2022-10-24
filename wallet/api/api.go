@@ -24,6 +24,7 @@ type WalletStore interface {
 	ListWallets(ctx context.Context) ([]string, error)
 	SaveWallet(ctx context.Context, w wallet.Wallet, passphrase string) error
 	DeleteWallet(ctx context.Context, name string) error
+	RenameWallet(ctx context.Context, currentName, newName string) error
 	GetWalletPath(name string) string
 }
 

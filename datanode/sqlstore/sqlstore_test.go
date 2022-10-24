@@ -18,7 +18,10 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -26,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
+	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -34,12 +38,20 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	databasetest.TestMain(m, func(cfg sqlstore.Config, source *sqlstore.ConnectionSource, snapshotPath string,
+	testID := uuid.NewV4().String()
+	tempDir, err := ioutil.TempDir("", testID)
+	if err != nil {
+		panic(err)
+	}
+	postgresRuntimePath := filepath.Join(tempDir, "sqlstore")
+	defer os.RemoveAll(postgresRuntimePath)
+
+	databasetest.TestMain(m, func(cfg sqlstore.Config, source *sqlstore.ConnectionSource,
 		postgresLog *bytes.Buffer,
 	) {
 		testDBPort = cfg.ConnectionConfig.Port
 		connectionSource = source
-	})
+	}, postgresRuntimePath)
 }
 
 func DeleteEverything() {

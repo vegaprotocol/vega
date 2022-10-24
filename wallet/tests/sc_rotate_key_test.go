@@ -168,7 +168,7 @@ func TestRotateKeyFailsInIsolatedWallet(t *testing.T) {
 		"--output", "json",
 		"--wallet", isolateKeyResp.Wallet,
 		"--chain-id", "testnet",
-		"--passphrase-file", passphraseFilePath,
+		"--passphrase-file", isolatedWalletPassphraseFilePath,
 		"--new-pubkey", createWalletResp.Key.PublicKey,
 		"--current-pubkey", "current-public-key",
 		"--tx-height", "20",

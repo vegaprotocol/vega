@@ -19,7 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-func NewEventSource(config Config, log *logging.Logger) (eventSource, error) {
+func NewEventSource(config Config, log *logging.Logger, chainID string) (eventSource, error) {
 	var eventsource eventSource
 	var err error
 	if config.UseEventFile {
@@ -30,7 +30,7 @@ func NewEventSource(config Config, log *logging.Logger) (eventSource, error) {
 
 		log.Infof("using file event source, event file: %s", absPath)
 		eventsource, err = NewFileEventSource(absPath, config.FileEventSourceConfig.TimeBetweenBlocks.Duration,
-			config.FileEventSourceConfig.SendChannelBufferSize)
+			config.FileEventSourceConfig.SendChannelBufferSize, chainID)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to create file event source:%w", err)
