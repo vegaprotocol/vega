@@ -148,10 +148,10 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         # target stake = 10*10*10*3.5569036=3556
 
         And the parties should have the following account balances:
-            | party  | asset | market id | margin | general   | bond  |
-            | party0 | USD   | USD/DEC22 | 303902 | 5000000   | 35569 |
-            | party1 | USD   | USD/DEC22 | 1273   | 100000000 | 0     |
-            | party2 | USD   | USD/DEC22 | 5122   | 100000000 | 0     |
+            | party  | asset | market id | margin | general  | bond  |
+            | party0 | ETH   | USD/DEC22 | 303902 | 4660529  | 35569 |
+            | party1 | ETH   | USD/DEC22 | 1273   | 99998727 | 0     |
+            | party2 | ETH   | USD/DEC22 | 5122   | 99994878 | 0     |
 
         And the parties should have the following margin levels:
             | party  | market id | maintenance | search | initial | release |
