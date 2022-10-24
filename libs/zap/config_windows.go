@@ -1,4 +1,6 @@
-package cmd
+//go:build windows
+
+package zap
 
 import (
 	"fmt"
@@ -9,13 +11,12 @@ import (
 )
 
 func init() {
-	err := zap.RegisterSink("winfile", newWinFileSink)
-	if err != nil {
+	if err := zap.RegisterSink("winfile", newWinFileSink); err != nil {
 		panic(fmt.Errorf("couldn't register the windows file sink: %w", err))
 	}
 }
 
-func toZapLogPath(logPath string) string {
+func toOSFilePath(logPath string) string {
 	return "winfile:///" + logPath
 }
 
