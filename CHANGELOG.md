@@ -1,12 +1,24 @@
 # Changelog
 
-## Unreleased 0.60.0
+## Unreleased 0.61.0
 
 ### 🚨 Breaking changes
-- [6227](https://github.com/vegaprotocol/vega/issues/6227) - Datanode Decentralized History - datanode init command now requires the chain id as a parameter
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.60.0
+
+### 🚨 Breaking changes
+- [6227](https://github.com/vegaprotocol/vega/issues/6227) - Datanode Decentralized History - datanode init command now requires the chain id as a parameter
 
 ### 🛠 Improvements
 - [6530](https://github.com/vegaprotocol/vega/issues/6530) - Add command to rename a wallet
