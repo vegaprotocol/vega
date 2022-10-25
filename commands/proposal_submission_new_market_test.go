@@ -2406,7 +2406,6 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 	}
 	err = checkProposalSubmission(cJustAboutRight2)
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau"), errors.New("must be between (0, 1]"))
-
 }
 
 func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
