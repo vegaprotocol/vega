@@ -22,6 +22,7 @@ type Decimal = decimal.Decimal
 
 var (
 	dzero      = decimal.Zero
+	d1         = decimal.NewFromFloat(1)
 	maxDecimal = decimal.NewFromBigInt(maxU256, 0)
 )
 
@@ -31,6 +32,10 @@ func MustDecimalFromString(f string) Decimal {
 		panic(err)
 	}
 	return d
+}
+
+func DecimalOne() Decimal {
+	return d1
 }
 
 func DecimalZero() Decimal {
