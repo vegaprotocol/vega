@@ -71,7 +71,7 @@ func (cmd *loadCmd) Execute(_ []string) error {
 		return fmt.Errorf("failed new dehistory service:%w", err)
 	}
 
-	from, to, err := getSpanOfAllAvailableHistory(context.Background(), deHistoryService)
+	from, to, err := getSpanOfAllAvailableHistory(deHistoryService)
 	if err != nil {
 		return fmt.Errorf("failed to get span of all available history:%w", err)
 	}
@@ -86,18 +86,8 @@ func (cmd *loadCmd) Execute(_ []string) error {
 		return nil
 	}
 
-	datanodeIsEmpty, err := initialise.DataNodeIsEmpty(ctx, cmd.SQLStore.ConnectionConfig)
-	if err != nil {
-		return fmt.Errorf("failed to check if datanode is empty:%w", err)
-	}
-
-	if datanodeIsEmpty {
-		fmt.Printf("Datanode has no data, history from block height %d to %d is available to load\n",
-			from, to)
-	} else {
-		fmt.Printf("History from block height %d to %d is available to load, current datanode block span is %d to %d\n",
-			from, to, datanodeFromHeight, datanodeToHeight)
-	}
+	fmt.Printf("Decentralized history from block height %d to %d is available to load, current datanode block span is %d to %d\n",
+		from, to, datanodeFromHeight, datanodeToHeight)
 
 	yes := flags.YesOrNo("Do you want to load this history?")
 
@@ -115,8 +105,8 @@ func (cmd *loadCmd) Execute(_ []string) error {
 	return nil
 }
 
-func getSpanOfAllAvailableHistory(ctx context.Context, dehistoryService *dehistory.Service) (from int64, to int64, err error) {
-	contiguousHistory, err := dehistoryService.GetContiguousHistory(ctx)
+func getSpanOfAllAvailableHistory(dehistoryService *dehistory.Service) (from int64, to int64, err error) {
+	contiguousHistory, err := dehistoryService.GetContiguousHistory()
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to get contiguous history data")
 	}

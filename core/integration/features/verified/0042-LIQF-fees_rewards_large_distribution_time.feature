@@ -21,7 +21,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
       | market.stake.target.timeWindow                      | 24h    |
       | market.stake.target.scalingFactor                   | 1      |
       | market.liquidity.targetstake.triggering.ratio       | 0      |
-      | market.liquidity.providers.fee.distributionTimeStep | 24000h |
+      | market.liquidity.providers.fee.distributionTimeStep | 720h   |
 
     Given the average block duration is "2"
 

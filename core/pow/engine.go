@@ -395,11 +395,7 @@ func (e *Engine) updateParam(netParamName, netParamValue string, p *params) {
 		spamPoWNumberOfTxPerBlock, _ := num.UintFromString(netParamValue, 10)
 		p.spamPoWNumberOfTxPerBlock = spamPoWNumberOfTxPerBlock.Uint64()
 	case "spamPoWIncreasingDifficulty":
-		if netParamValue == "0" {
-			p.spamPoWIncreasingDifficulty = false
-		} else {
-			p.spamPoWIncreasingDifficulty = true
-		}
+		p.spamPoWIncreasingDifficulty = netParamValue != "0"
 	}
 }
 

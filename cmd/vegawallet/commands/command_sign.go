@@ -107,7 +107,7 @@ func BuildCmdCommandSign(w io.Writer, handler SignCommandHandler, rf *RootFlags)
 				return err
 			}
 
-			log, err := BuildLogger(rf.Output, "info")
+			log, err := buildCmdLogger(rf.Output, "info")
 			if err != nil {
 				return fmt.Errorf("failed to build a logger: %w", err)
 			}

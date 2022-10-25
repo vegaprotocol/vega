@@ -1,6 +1,7 @@
 package cmd_test
 
 import (
+	"fmt"
 	"testing"
 
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
@@ -73,7 +74,7 @@ func testSendTxFlagsUnsupportedLogLevelFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, cmd.NewUnsupportedFlagValueError(f.LogLevel))
+	assert.EqualError(t, err, fmt.Sprintf("unsupported log level %q, supported levels: debug, info, warn, error", f.LogLevel))
 	assert.Empty(t, req)
 }
 

@@ -88,8 +88,8 @@ jobs:
           git rev-parse --verify HEAD
           git status
 
-      - name: Get dependencies
-        run: go get -v -t -d ./...
+      # - name: Get dependencies
+      #   run: go get -v -t -d ./...
 
       # - name: Run tests
       #   if: ${{ env.GOARCH == 'amd64' && inputs.disableTests != true }}
@@ -155,8 +155,8 @@ jobs:
           git rev-parse --verify HEAD
           git status
 
-      - name: Get dependencies
-        run: go get -v -t -d ./...
+      # - name: Get dependencies
+      #   run: go get -v -t -d ./...
 
       # - name: Run tests
       #   if: ${{ env.GOARCH == 'amd64' && inputs.disableTests != true }}
@@ -277,8 +277,8 @@ jobs:
           git rev-parse --verify HEAD
           git status
 
-      - name: Get dependencies
-        run: go get -v -t -d ./...
+      # - name: Get dependencies
+      #   run: go get -v -t -d ./...
 
       # - name: Run tests
       #   if: ${{ env.GOARCH == 'amd64' && inputs.disableTests != true }}
