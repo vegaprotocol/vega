@@ -111,8 +111,6 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         #risk factor short: 3.5569036
         #risk factor long: 0.801225765
         # Margin_maintenance_party0 = 1481*10*3.5569036*10+1206*10*0.801225765*10 = 623405
-
-        #margin for party0 = 712*10*10*3.5569036+791*10*10*0.801225765=316629
         And the following trades should be executed:
             | buyer  | price | size | seller |
             | party1 | 10    | 10   | party2 |
