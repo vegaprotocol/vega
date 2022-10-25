@@ -110,7 +110,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
 
         #risk factor short: 3.5569036
         #risk factor long: 0.801225765
-        # Margin_maintenance_party0 = 1481*10*3.5569036*10+1206*10*0.801225765*10 = 623405
+        # Margin_maintenance_party0 = max(1481*10*3.5569036*10,1206*10*0.801225765*10)=526778
         And the following trades should be executed:
             | buyer  | price | size | seller |
             | party1 | 10    | 10   | party2 |
@@ -136,6 +136,17 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | seller | price | size | buyer  |
             | party3 | 9     | 1    | party1 |
 
+        # trade_value_for_fee_purposes for party3: size_of_trade * price_of_trade = 1*10 * 9 = 90
+        # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.001 * 90 = 0.09 =1 (rounded up to nearest whole value)
+        # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.004 * 90 = 0.36 =1 (rounded up to nearest whole value)
+        # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 90= 0.09 =1 (rounded up to nearest whole value)
+
+        And the following transfers should happen:
+            | from   | to     | from account            | to account                       | market id | amount | asset |
+            | party3 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | USD/DEC22 | 1      | ETH   |
+            | party3 |        | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 1      | ETH   |
+            | market | party1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | USD/DEC22 | 1      | ETH   |
+
         Then the parties should have the following profit and loss:
             | party  | volume | unrealised pnl | realised pnl |
             | party1 | 11     | -100           | 0            |
@@ -149,7 +160,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party0 | ETH   | USD/DEC22 | 568920 | 4395511  | 35569 |
             | party1 | ETH   | USD/DEC22 | 1678   | 99998223 | 0     |
             | party2 | ETH   | USD/DEC22 | 6930   | 99993170 | 0     |
-        # Margin_maintenance_party0 = 1481*10*3.5569036*9+1206*10*0.801225765*9 = 561064
+        # Margin_maintenance_party0 = max(1481*10*3.5569036*9,1206*10*0.801225765*9)=474100
         And the parties should have the following margin levels:
             | party  | market id | maintenance | search | initial | release |
             | party0 | USD/DEC22 | 474100      | 521510 | 568920  | 663740  |
