@@ -296,6 +296,21 @@ func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals u
 	}
 }
 
+func validateLogNormalRiskParams(lnm *types.LogNormalRiskModel) (types.ProposalError, error) {
+	if lnm.Params == nil {
+		return types.ProposalErrorInvalidRiskParameter, ErrInvalidRiskParameter
+	}
+
+	if lnm.RiskAversionParameter.LessThan(num.DecimalFromFloat(1e-8)) || lnm.RiskAversionParameter.GreaterThanOrEqual(num.DecimalOne()) || // 1e-8 <= lambda < 1
+		lnm.Tau.LessThanOrEqual(num.DecimalZero()) || lnm.Tau.GreaterThan(num.DecimalOne()) || // 0 < tau <=1
+		lnm.Params.Mu.LessThan(num.DecimalFromInt64(-20)) || lnm.Params.Mu.GreaterThan(num.DecimalFromInt64(20)) || // -20 <= mu <= 20
+		lnm.Params.R.LessThan(num.DecimalFromInt64(-20)) || lnm.Params.R.GreaterThan(num.DecimalFromInt64(20)) || // -20 <= r <= 20
+		lnm.Params.Sigma.LessThan(num.DecimalFromFloat(1e-4)) || lnm.Params.Sigma.GreaterThan(num.DecimalFromInt64(100)) { // 1e-4 <= sigma <= 100
+		return types.ProposalErrorInvalidRiskParameter, ErrInvalidRiskParameter
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
 func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
 	switch r := rp.(type) {
 	case *types.NewMarketConfigurationSimple:
@@ -303,15 +318,9 @@ func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
 	case *types.UpdateMarketConfigurationSimple:
 		return types.ProposalErrorUnspecified, nil
 	case *types.NewMarketConfigurationLogNormal:
-		if r.LogNormal.Params == nil {
-			return types.ProposalErrorInvalidRiskParameter, ErrInvalidRiskParameter
-		}
-		return types.ProposalErrorUnspecified, nil
+		return validateLogNormalRiskParams(r.LogNormal)
 	case *types.UpdateMarketConfigurationLogNormal:
-		if r.LogNormal.Params == nil {
-			return types.ProposalErrorInvalidRiskParameter, ErrInvalidRiskParameter
-		}
-		return types.ProposalErrorUnspecified, nil
+		return validateLogNormalRiskParams(r.LogNormal)
 	case nil:
 		return types.ProposalErrorNoRiskParameters, ErrMissingRiskParameters
 	default:
