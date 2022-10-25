@@ -35,7 +35,8 @@ service TradingDataService {
 
     // Info
     //
-    // Retrieve informations about this dataa
+    // Retrieves information about the data-node.
+    // Response contains a semver formatted version of the data node and the commit hash, from which the data-node was built,
     rpc Info(InfoRequest) returns (InfoResponse);
 
     // Order
