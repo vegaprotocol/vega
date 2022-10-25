@@ -31,7 +31,8 @@ type TradingDataServiceClient interface {
 	ObserveAccounts(ctx context.Context, in *ObserveAccountsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveAccountsClient, error)
 	// Info
 	//
-	// Retrieve informations about this dataa
+	// Retrieves information about the data-node.
+	// Response contains a semver formatted version of the data node and the commit hash, from which the data-node was built,
 	Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*InfoResponse, error)
 	// Order
 	//
@@ -1454,7 +1455,8 @@ type TradingDataServiceServer interface {
 	ObserveAccounts(*ObserveAccountsRequest, TradingDataService_ObserveAccountsServer) error
 	// Info
 	//
-	// Retrieve informations about this dataa
+	// Retrieves information about the data-node.
+	// Response contains a semver formatted version of the data node and the commit hash, from which the data-node was built,
 	Info(context.Context, *InfoRequest) (*InfoResponse, error)
 	// Order
 	//
