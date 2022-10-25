@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
@@ -30,7 +30,7 @@ func FetchStructuredFile(url string, v interface{}) error {
 		return errors.New(http.StatusText(resp.StatusCode))
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("couldn't read HTTP response body: %w", err)
 	}

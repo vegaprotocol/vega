@@ -21,11 +21,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/shopspring/decimal"
 	"google.golang.org/grpc"
 
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
-	"code.vegaprotocol.io/vega/libs/ptr"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -883,7 +884,17 @@ func (r *myQueryResolver) EstimateOrder(
 	}
 
 	// calclate the fee total amount
-	ttf := resp.Fee.MakerFee + resp.Fee.InfrastructureFee + resp.Fee.LiquidityFee
+	var mfee, ifee, lfee num.Decimal
+	// errors doesn't matter here, they just give us zero values anyway for the decimals
+	if len(resp.Fee.MakerFee) > 0 {
+		mfee, _ = num.DecimalFromString(resp.Fee.MakerFee)
+	}
+	if len(resp.Fee.InfrastructureFee) > 0 {
+		ifee, _ = num.DecimalFromString(resp.Fee.InfrastructureFee)
+	}
+	if len(resp.Fee.LiquidityFee) > 0 {
+		lfee, _ = num.DecimalFromString(resp.Fee.LiquidityFee)
+	}
 
 	fee := TradeFee{
 		MakerFee:          resp.Fee.MakerFee,
@@ -910,7 +921,7 @@ func (r *myQueryResolver) EstimateOrder(
 
 	return &OrderEstimate{
 		Fee:            &fee,
-		TotalFeeAmount: ttf,
+		TotalFeeAmount: decimal.Sum(mfee, ifee, lfee).String(),
 		MarginLevels:   respm.MarginLevels,
 	}, nil
 }
@@ -1295,17 +1306,13 @@ func (r *myQueryResolver) Statistics(ctx context.Context) (*vegaprotoapi.Statist
 func (r *myQueryResolver) BalanceChanges(
 	ctx context.Context,
 	filter *v2.AccountFilter,
-	sumParties, sumMarkets, sumTypes *bool,
 	dateRange *v2.DateRange,
 	pagination *v2.Pagination,
 ) (*v2.AggregatedBalanceConnection, error) {
 	req := &v2.ListBalanceChangesRequest{
-		Filter:           filter,
-		SumAcrossParties: ptr.UnBox(sumParties),
-		SumAcrossMarkets: ptr.UnBox(sumMarkets),
-		SumAcrossTypes:   ptr.UnBox(sumTypes),
-		DateRange:        dateRange,
-		Pagination:       pagination,
+		Filter:     filter,
+		DateRange:  dateRange,
+		Pagination: pagination,
 	}
 
 	resp, err := r.tradingDataClientV2.ListBalanceChanges(ctx, req)
@@ -1363,6 +1370,16 @@ func (r *myQueryResolver) NetworkLimits(ctx context.Context) (*types.NetworkLimi
 		return nil, err
 	}
 	return resp.GetLimits(), nil
+}
+
+func (r *myQueryResolver) MostRecentHistorySegment(ctx context.Context) (*v2.HistorySegment, error) {
+	req := &v2.GetMostRecentDeHistorySegmentRequest{}
+
+	resp, err := r.tradingDataClientV2.GetMostRecentDeHistorySegment(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetSegment(), nil
 }
 
 // END: Root Resolver

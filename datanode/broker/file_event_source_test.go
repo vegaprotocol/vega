@@ -44,7 +44,7 @@ func TestReceiveEvents(t *testing.T) {
 		t.Fatalf("failed to write events to %s: %s", path, err)
 	}
 
-	source, err := broker.NewFileEventSource(path, 0, 0)
+	source, err := broker.NewFileEventSource(path, 0, 0, "")
 	if err != nil {
 		t.Errorf("failed to create file event source:%s", err)
 	}

@@ -14,6 +14,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/datanode/config"
@@ -31,9 +32,15 @@ type InitCmd struct {
 
 var initCmd InitCmd
 
-func (opts *InitCmd) Execute(_ []string) error {
+func (opts *InitCmd) Execute(args []string) error {
 	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer logger.AtExit()
+
+	if len(args) != 1 {
+		return errors.New("expected <chain ID>")
+	}
+
+	chainID := args[0]
 
 	vegaPaths := paths.New(opts.VegaHome)
 
@@ -56,6 +63,7 @@ func (opts *InitCmd) Execute(_ []string) error {
 	}
 
 	cfg := config.NewDefaultConfig()
+	cfg.ChainID = chainID
 
 	if err := cfgLoader.Save(&cfg); err != nil {
 		return fmt.Errorf("couldn't save configuration file: %w", err)
@@ -69,7 +77,7 @@ func (opts *InitCmd) Execute(_ []string) error {
 func Init(ctx context.Context, parser *flags.Parser) error {
 	initCmd = InitCmd{}
 
-	short := "Initializes a vega node"
+	short := "init <chain ID>"
 	long := "Generate the minimal configuration required for a vega data-node to start"
 
 	_, err := parser.AddCommand("init", short, long, &initCmd)

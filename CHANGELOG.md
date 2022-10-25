@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.60.0
+## Unreleased 0.61.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -13,6 +13,24 @@
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.60.0
+
+### 🚨 Breaking changes
+- [6227](https://github.com/vegaprotocol/vega/issues/6227) - Datanode Decentralized History - datanode init command now requires the chain id as a parameter
+
+### 🛠 Improvements
+- [6530](https://github.com/vegaprotocol/vega/issues/6530) - Add command to rename a wallet
+- [6531](https://github.com/vegaprotocol/vega/issues/6531) - Add command to update the passphrase of a wallet
+- [6546](https://github.com/vegaprotocol/vega/issues/6546) - Add a separate README for datanode/api gRPC handling principles
+- [6582](https://github.com/vegaprotocol/vega/issues/6582) - Match validation to the required ranges
+
+### 🐛 Fixes
+- [6556](https://github.com/vegaprotocol/vega/issues/6556) - Limit ledger entries filtering complexity and potential number of items.
+- [6539](https://github.com/vegaprotocol/vega/issues/6539) - Fix total fee calculation in estimate order
+- [6584](https://github.com/vegaprotocol/vega/issues/6584) - Simplify `ListBalanceChanges`, removing aggregation and forward filling for now
+- [6583](https://github.com/vegaprotocol/vega/issues/6583) - Cancel wallet connection request if no wallet
 
 
 ## 0.59.0
@@ -46,6 +64,7 @@
 - [6234](https://github.com/vegaprotocol/vega/issues/6234) - Fix response in query for oracle data spec by id
 - [6294](https://github.com/vegaprotocol/vega/issues/6294) - Fix response for query for non-existing market
 - [6508](https://github.com/vegaprotocol/vega/issues/6508) - Fix data node starts slowly when the database is not empty
+- [6532](https://github.com/vegaprotocol/vega/issues/6532) - Add current totals to the vote events
 
 ## 0.58.0
 

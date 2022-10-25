@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	vglog "code.vegaprotocol.io/vega/libs/zap"
+	vgzap "code.vegaprotocol.io/vega/libs/zap"
 	"code.vegaprotocol.io/vega/paths"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/wallet/api"
@@ -93,11 +93,11 @@ func BuildCmdTxSend(w io.Writer, handler SendTxHandler, rf *RootFlags) *cobra.Co
 				return err
 			}
 
-			log, err := BuildLogger(rf.Output, f.LogLevel)
+			log, err := buildCmdLogger(rf.Output, f.LogLevel)
 			if err != nil {
 				return fmt.Errorf("couldn't initialise logger: %w", err)
 			}
-			defer vglog.Sync(log)
+			defer vgzap.Sync(log)
 
 			resp, err := handler(req, log)
 			if err != nil {
@@ -128,7 +128,7 @@ func BuildCmdTxSend(w io.Writer, handler SendTxHandler, rf *RootFlags) *cobra.Co
 	cmd.Flags().StringVar(&f.LogLevel,
 		"level",
 		zapcore.InfoLevel.String(),
-		fmt.Sprintf("Set the log level: %v", SupportedLogLevels),
+		fmt.Sprintf("Set the log level: %v", vgzap.SupportedLogLevels),
 	)
 	cmd.Flags().Uint64Var(&f.Retries,
 		"retries",
@@ -163,7 +163,7 @@ func (f *SendTxFlags) Validate() (api.AdminSendTransactionParams, error) {
 	if len(f.LogLevel) == 0 {
 		return api.AdminSendTransactionParams{}, flags.MustBeSpecifiedError("level")
 	}
-	if err := ValidateLogLevel(f.LogLevel); err != nil {
+	if err := vgzap.EnsureIsSupportedLogLevel(f.LogLevel); err != nil {
 		return api.AdminSendTransactionParams{}, err
 	}
 

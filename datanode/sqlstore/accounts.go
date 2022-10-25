@@ -159,7 +159,7 @@ func deterministicAccountID(a *entities.Account) entities.AccountID {
 }
 
 func (as *Accounts) Query(filter entities.AccountFilter) ([]entities.Account, error) {
-	query, args, err := filterAccountsQuery(filter)
+	query, args, err := filterAccountsQuery(filter, true)
 	if err != nil {
 		return nil, err
 	}

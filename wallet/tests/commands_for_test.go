@@ -749,6 +749,22 @@ func (a *CreateWalletAssertion) LocatedUnder(home string) *CreateWalletAssertion
 	return a
 }
 
+func WalletRename(t *testing.T, args []string) error {
+	t.Helper()
+	argsWithCmd := []string{"rename"}
+	argsWithCmd = append(argsWithCmd, args...)
+	_, err := ExecuteCmd(t, argsWithCmd)
+	return err
+}
+
+func PassphraseUpdate(t *testing.T, args []string) error {
+	t.Helper()
+	argsWithCmd := []string{"passphrase", "update"}
+	argsWithCmd = append(argsWithCmd, args...)
+	_, err := ExecuteCmd(t, argsWithCmd)
+	return err
+}
+
 type ImportWalletResponse struct {
 	Wallet struct {
 		Name     string `json:"name"`
