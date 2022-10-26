@@ -10,6 +10,9 @@
 
 ### 🛠 Improvements
 - [6613](https://github.com/vegaprotocol/vega/issues/6613) - Add file buffering to datanode
+- [6602](https://github.com/vegaprotocol/vega/issues/6602) - Panic if data node receives events in unexpected order
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
