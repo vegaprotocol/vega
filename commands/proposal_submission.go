@@ -791,28 +791,36 @@ func checkNewLogNormalRiskParameters(params *types.NewMarketConfiguration_LogNor
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params", ErrIsRequired)
 	}
 
-	if params.LogNormal.RiskAversionParameter <= 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter", ErrMustBePositive)
+	if params.LogNormal.RiskAversionParameter < 1e-8 || params.LogNormal.RiskAversionParameter >= 1 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter", errors.New("must be between [1e-8, 1)"))
 	}
 
-	if params.LogNormal.Tau <= 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau", ErrMustBePositive)
+	if params.LogNormal.Tau <= 0 || params.LogNormal.Tau > 1 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau", errors.New("must be between (0, 1]"))
 	}
 
 	if math.IsNaN(params.LogNormal.Params.Mu) {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu", ErrIsNotValidNumber)
 	}
 
+	if params.LogNormal.Params.Mu < -20 || params.LogNormal.Params.Mu > 20 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu", errors.New("must be between [-20,20]"))
+	}
+
 	if math.IsNaN(params.LogNormal.Params.Sigma) {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma", ErrIsNotValidNumber)
 	}
 
-	if params.LogNormal.Params.Sigma <= 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma", ErrMustBePositive)
+	if params.LogNormal.Params.Sigma < 1e-4 || params.LogNormal.Params.Sigma > 100 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma", errors.New("must be between [1e-4,100]"))
 	}
 
 	if math.IsNaN(params.LogNormal.Params.R) {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r", ErrIsNotValidNumber)
+	}
+
+	if params.LogNormal.Params.R < -20 || params.LogNormal.Params.R > 20 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r", errors.New("must be between [-20,20]"))
 	}
 
 	return errs

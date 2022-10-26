@@ -17,7 +17,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.60.0+dev";
+    version: "v0.60.0";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz/datanode/rest"
@@ -35,7 +35,8 @@ service TradingDataService {
 
     // Info
     //
-    // Retrieve informations about this dataa
+    // Retrieves information about the data-node.
+    // Response contains a semver formatted version of the data node and the commit hash, from which the data-node was built,
     rpc Info(InfoRequest) returns (InfoResponse);
 
     // Order
