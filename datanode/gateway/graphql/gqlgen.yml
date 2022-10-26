@@ -74,6 +74,9 @@ models:
   TransferStatus:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.TransferStatus
+  TransferType:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.TransferType
   DispatchMetric:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.DispatchMetric
