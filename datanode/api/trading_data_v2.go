@@ -2842,6 +2842,10 @@ func (t *tradingDataServiceV2) GetVegaTime(ctx context.Context, req *v2.GetVegaT
 
 func (t *tradingDataServiceV2) GetMostRecentDeHistorySegment(context.Context, *v2.GetMostRecentDeHistorySegmentRequest) (*v2.GetMostRecentDeHistorySegmentResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentDeHistorySegment")()
+	if t.deHistoryService == nil {
+		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
+	}
+
 	segment, err := t.deHistoryService.GetHighestBlockHeightHistorySegment()
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrGetMostRecentHistorySegment, err)
@@ -2854,6 +2858,9 @@ func (t *tradingDataServiceV2) GetMostRecentDeHistorySegment(context.Context, *v
 
 func (t *tradingDataServiceV2) ListAllDeHistorySegments(context.Context, *v2.ListAllDeHistorySegmentsRequest) (*v2.ListAllDeHistorySegmentsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListAllDeHistorySegments")()
+	if t.deHistoryService == nil {
+		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
+	}
 	segments, err := t.deHistoryService.ListAllHistorySegments()
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrListAllDeHistorySegment, err)
@@ -2870,7 +2877,10 @@ func (t *tradingDataServiceV2) ListAllDeHistorySegments(context.Context, *v2.Lis
 }
 
 func (t *tradingDataServiceV2) FetchDeHistorySegment(ctx context.Context, req *v2.FetchDeHistorySegmentRequest) (*v2.FetchDeHistorySegmentResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("FetchDeHistorySegment0'")()
+	defer metrics.StartAPIRequestAndTimeGRPC("FetchDeHistorySegment'")()
+	if t.deHistoryService == nil {
+		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
+	}
 	segment, err := t.deHistoryService.FetchHistorySegment(ctx, req.HistorySegmentId)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrFetchDeHistorySegment, err)
