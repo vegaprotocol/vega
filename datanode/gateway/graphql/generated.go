@@ -115,7 +115,6 @@ type ResolverRoot interface {
 	Vote() VoteResolver
 	Withdrawal() WithdrawalResolver
 	DateRange() DateRangeResolver
-	LedgerEntryFilter() LedgerEntryFilterResolver
 }
 
 type DirectiveRoot struct {
@@ -2281,9 +2280,6 @@ type WithdrawalResolver interface {
 type DateRangeResolver interface {
 	Start(ctx context.Context, obj *v2.DateRange, data *int64) error
 	End(ctx context.Context, obj *v2.DateRange, data *int64) error
-}
-type LedgerEntryFilterResolver interface {
-	TransferTypes(ctx context.Context, obj *v2.LedgerEntryFilter, data []*TransferType) error
 }
 
 type executableSchema struct {
@@ -51856,11 +51852,8 @@ func (ec *executionContext) unmarshalInputLedgerEntryFilter(ctx context.Context,
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("TransferTypes"))
-			data, err := ec.unmarshalOTransferType2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferType(ctx, v)
+			it.TransferTypes, err = ec.unmarshalOTransferType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTransferType(ctx, v)
 			if err != nil {
-				return it, err
-			}
-			if err = ec.resolvers.LedgerEntryFilter().TransferTypes(ctx, &it, data); err != nil {
 				return it, err
 			}
 		}
@@ -76628,7 +76621,17 @@ func (ec *executionContext) marshalOTransferResponse2ᚕᚖcodeᚗvegaprotocol�
 	return ret
 }
 
-func (ec *executionContext) unmarshalOTransferType2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferType(ctx context.Context, v interface{}) ([]*TransferType, error) {
+func (ec *executionContext) unmarshalOTransferType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTransferType(ctx context.Context, v interface{}) (vega.TransferType, error) {
+	res, err := marshallers.UnmarshalTransferType(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOTransferType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTransferType(ctx context.Context, sel ast.SelectionSet, v vega.TransferType) graphql.Marshaler {
+	res := marshallers.MarshalTransferType(v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOTransferType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTransferType(ctx context.Context, v interface{}) ([]vega.TransferType, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -76637,10 +76640,10 @@ func (ec *executionContext) unmarshalOTransferType2ᚕᚖcodeᚗvegaprotocolᚗi
 		vSlice = graphql.CoerceList(v)
 	}
 	var err error
-	res := make([]*TransferType, len(vSlice))
+	res := make([]vega.TransferType, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOTransferType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferType(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOTransferType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTransferType(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -76648,7 +76651,7 @@ func (ec *executionContext) unmarshalOTransferType2ᚕᚖcodeᚗvegaprotocolᚗi
 	return res, nil
 }
 
-func (ec *executionContext) marshalOTransferType2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferType(ctx context.Context, sel ast.SelectionSet, v []*TransferType) graphql.Marshaler {
+func (ec *executionContext) marshalOTransferType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTransferType(ctx context.Context, sel ast.SelectionSet, v []vega.TransferType) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -76675,7 +76678,7 @@ func (ec *executionContext) marshalOTransferType2ᚕᚖcodeᚗvegaprotocolᚗio�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOTransferType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferType(ctx, sel, v[i])
+			ret[i] = ec.marshalOTransferType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTransferType(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -76687,22 +76690,6 @@ func (ec *executionContext) marshalOTransferType2ᚕᚖcodeᚗvegaprotocolᚗio�
 	wg.Wait()
 
 	return ret
-}
-
-func (ec *executionContext) unmarshalOTransferType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferType(ctx context.Context, v interface{}) (*TransferType, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var res = new(TransferType)
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOTransferType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferType(ctx context.Context, sel ast.SelectionSet, v *TransferType) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
 }
 
 func (ec *executionContext) marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVoteᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Vote) graphql.Marshaler {
