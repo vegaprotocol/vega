@@ -275,6 +275,9 @@ var (
 	// DataNodeDeHistoryHome is the folder containing the decentralised history data.
 	DataNodeDeHistoryHome = StatePath(filepath.Join(DataNodeStateHome.String(), "dehistory"))
 
+	// DataNodeEventBufferHome is the folder containing event buffer files.
+	DataNodeEventBufferHome = StatePath(filepath.Join(DataNodeStateHome.String(), "eventsbuffer"))
+
 	// NodeStateHome is the folder containing the state of the node.
 	NodeStateHome = StatePath("node")
 
