@@ -537,11 +537,9 @@ func setupSnapshotService(testDbConfig sqlstore.Config, snapshotCopyFromPath str
 
 func setupSnapshotServiceWithNetworkParamFunc(testDbConfig sqlstore.Config, snapshotCopyFromPath string, snapshotCopyToPath string) *snapshot.Service {
 	snapshotServiceCfg := snapshot.NewDefaultConfig()
-	snapshotServiceCfg.DatabaseSnapshotsCopyToPath = snapshotCopyToPath
-	snapshotServiceCfg.DatabaseSnapshotsCopyFromPath = snapshotCopyFromPath
 
 	snapshotService, err := snapshot.NewSnapshotService(logging.NewTestLogger(), snapshotServiceCfg,
-		testDbConfig.ConnectionConfig, snapshotCopyToPath)
+		testDbConfig.ConnectionConfig, snapshotCopyFromPath, snapshotCopyToPath)
 	if err != nil {
 		panic(err)
 	}

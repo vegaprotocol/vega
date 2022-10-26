@@ -17,19 +17,22 @@ type Service struct {
 
 	connConfig sqlstore.ConnectionConfig
 
-	createSnapshotLock  mutex.CtxMutex
-	snapshotsCopyToPath string
+	createSnapshotLock    mutex.CtxMutex
+	snapshotsCopyFromPath string
+	snapshotsCopyToPath   string
 }
 
 func NewSnapshotService(log *logging.Logger, config Config, connConfig sqlstore.ConnectionConfig,
+	snapshotsCopyFromPath string,
 	snapshotsCopyToPath string,
 ) (*Service, error) {
 	s := &Service{
-		log:                 log,
-		config:              config,
-		connConfig:          connConfig,
-		createSnapshotLock:  mutex.New(),
-		snapshotsCopyToPath: snapshotsCopyToPath,
+		log:                   log,
+		config:                config,
+		connConfig:            connConfig,
+		createSnapshotLock:    mutex.New(),
+		snapshotsCopyFromPath: snapshotsCopyFromPath,
+		snapshotsCopyToPath:   snapshotsCopyToPath,
 	}
 
 	err := os.MkdirAll(s.snapshotsCopyToPath, fs.ModePerm)
