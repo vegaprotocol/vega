@@ -9,6 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [6608](https://github.com/vegaprotocol/vega/issues/6608) - Put embedded `postgres` files in proper state directory
 - [6613](https://github.com/vegaprotocol/vega/issues/6613) - Add file buffering to datanode
 
 ### 🐛 Fixes
