@@ -404,17 +404,6 @@ func (r *aggregatedLedgerEntriesResolver) TransferType(ctx context.Context, obj 
 	return &tt, nil
 }
 
-// LedgerEntryFilterResolver resolver.
-type ledgerEntryFilterResolver VegaResolverRoot
-
-func (r *VegaResolverRoot) LedgerEntryFilter() LedgerEntryFilterResolver {
-	return (*ledgerEntryFilterResolver)(r)
-}
-
-func (r *ledgerEntryFilterResolver) TransferTypes(ctx context.Context, obj *v2.LedgerEntryFilter, data []*TransferType) error {
-	return nil
-}
-
 // LiquidityOrderReference resolver.
 
 type myLiquidityOrderReferenceResolver VegaResolverRoot
