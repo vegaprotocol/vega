@@ -132,6 +132,7 @@ var (
 	ErrGetMostRecentHistorySegment = errors.New("failed to get most recent history segment")
 	ErrListAllDeHistorySegment     = errors.New("failed to list all history segments")
 	ErrFetchDeHistorySegment       = errors.New("failed to fetch segment")
+	ErrDeHistoryNotEnabled         = errors.New("dehistory not enabled")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

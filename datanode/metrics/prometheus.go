@@ -70,6 +70,9 @@ var (
 	lastSnapshotCurrentStateBytes prometheus.Gauge
 	lastSnapshotHistoryBytes      prometheus.Gauge
 	lastSnapshotSeconds           prometheus.Gauge
+
+	eventBufferWrittenCount prometheus.Counter
+	eventBufferReadCount    prometheus.Counter
 )
 
 // abstract prometheus types.
@@ -508,6 +511,38 @@ func setupMetrics() error {
 	blockCounter = bt
 
 	h, err = addInstrument(
+		Counter,
+		"event_buffer_written_count",
+		Namespace("datanode"),
+		Vectors(),
+		Help("Total number of event written to the event buffer"),
+	)
+	if err != nil {
+		return err
+	}
+	ebwc, err := h.Counter()
+	if err != nil {
+		return err
+	}
+	eventBufferWrittenCount = ebwc
+
+	h, err = addInstrument(
+		Counter,
+		"event_buffer_read_count",
+		Namespace("datanode"),
+		Vectors(),
+		Help("Total number of events read from the event buffer"),
+	)
+	if err != nil {
+		return err
+	}
+	ebrc, err := h.Counter()
+	if err != nil {
+		return err
+	}
+	eventBufferReadCount = ebrc
+
+	h, err = addInstrument(
 		Gauge,
 		"block_height",
 		Namespace("datanode"),
@@ -674,6 +709,20 @@ func AddBlockHandlingTime(duration time.Duration) {
 	if blockHandlingTime != nil {
 		blockHandlingTime.Add(duration.Seconds())
 	}
+}
+
+func EventBufferWrittenCountInc() {
+	if eventBufferWrittenCount == nil {
+		return
+	}
+	eventBufferWrittenCount.Inc()
+}
+
+func EventBufferReadCountInc() {
+	if eventBufferReadCount == nil {
+		return
+	}
+	eventBufferReadCount.Inc()
 }
 
 func BlockCounterInc(labelValues ...string) {

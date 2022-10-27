@@ -197,6 +197,19 @@ func (l *NodeCommand) preRun([]string) (err error) {
 		return err
 	}
 
+	if l.conf.Broker.UseBufferedEventSource {
+		bufferFilePath, err := l.vegaPaths.CreateStatePathFor(paths.DataNodeEventBufferHome)
+		if err != nil {
+			l.Log.Error("failed to create path for buffered event source", logging.Error(err))
+			return err
+		}
+		eventSource, err = broker.NewBufferedEventSource(l.Log, l.conf.Broker.BufferedEventSourceConfig, eventSource, bufferFilePath)
+		if err != nil {
+			l.Log.Error("unable to initialise file buffered event source", logging.Error(err))
+			return err
+		}
+	}
+
 	eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SQLStore.FanOutBufferSize, 2)
 
 	var onBlockCommittedFn func(ctx context.Context, chainId string, lastCommittedBlockHeight int64)
