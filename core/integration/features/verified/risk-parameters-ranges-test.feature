@@ -40,29 +40,34 @@ Feature: test risk model parameter ranges
     Given the log normal risk model named "log-normal-risk-model-31":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | -2 | 0 | 1.0   |
-    #risk factor short:3.5569036
-    #risk factor long:0.801225765
+    #risk factor short:2.7308771
+    #risk factor long:0.803203602
+    # actual mu = -2*0.1=-0.2
     Given the log normal risk model named "log-normal-risk-model-32":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 1  | 0 | 1.0   |
-    #risk factor short:3.5569036
-    #risk factor long:0.801225765
+    #risk factor short:4.0361573
+    #risk factor long:0.800229405
+    # actual mu = 1*0.1=0.1
     Given the log normal risk model named "log-normal-risk-model-33":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 2  | 0 | 1.0   |
-    #risk factor short:3.5569036
-    #risk factor long:0.801225765
+    #risk factor short:4.5658146
+    #risk factor long:0.799228051
+    # actual mu = 2*0.1=0.2
     Given the log normal risk model named "log-normal-risk-model-34":
-      | risk aversion | tau | mu | r | sigma |
-      | 0.000001      | 0.1 | -2 | 0 | 1.0   |
-    #risk factor short:3.5569036
-    #risk factor long:0.801225765
+      | risk aversion | tau | mu  | r | sigma |
+      | 0.000001      | 0.1 | -20 | 0 | 1.0   |
+    #risk factor short:-0.3832902
+    #risk factor long:0.820141635
+    # actual mu = -20*0.1=-2
     # mu=-20 will make the prob_of_trading for any price over mid price (1000) very small (kept at 1.00E-08), hence LP vol extremely large, it can not end the auction so this is tested separately in scenario 002
     Given the log normal risk model named "log-normal-risk-model-35":
-      | risk aversion | tau | mu | r | sigma |
-      | 0.000001      | 0.1 | -2 | 0 | 1.0   |
-    #risk factor short:3.5569036
-    #risk factor long:0.801225765
+      | risk aversion | tau | mu  | r | sigma |
+      | 0.000001      | 0.1 | -20 | 0 | 1.0   |
+    #risk factor short:32.6712163
+    #risk factor long:0.780320497
+    # actual mu = 20*0.1=2
     # mu=-20 will make the prob_of_trading for any price over mid price (1000) very small (kept at 1.00E-08), hence LP vol extremely large, it can not end the auction so this is tested separately in scenario 002
 
     # test r
@@ -110,9 +115,12 @@ Feature: test risk model parameter ranges
       | ETH/MAR12 | ETH        | USD   | log-normal-risk-model-12 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/MAR21 | ETH        | USD   | log-normal-risk-model-21 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-22 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+      | ETH/MAR23 | ETH        | USD   | log-normal-risk-model-23 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/MAR31 | ETH        | USD   | log-normal-risk-model-31 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/MAR32 | ETH        | USD   | log-normal-risk-model-32 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/MAR33 | ETH        | USD   | log-normal-risk-model-33 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+      | ETH/MAR34 | ETH        | USD   | log-normal-risk-model-34 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+      | ETH/MAR35 | ETH        | USD   | log-normal-risk-model-35 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/MAR41 | ETH        | USD   | log-normal-risk-model-41 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/MAR42 | ETH        | USD   | log-normal-risk-model-42 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/MAR43 | ETH        | USD   | log-normal-risk-model-43 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
@@ -125,32 +133,6 @@ Feature: test risk model parameter ranges
       | party1 | USD   | 50000000000000 |
       | party2 | USD   | 50000000000000 |
       | party3 | USD   | 50000000000000 |
-  #   | party0_1 | USD   | 1000000000 |
-  #   | party0_2 | USD   | 1000000000 |
-  #   | party11_1 | USD   | 1000000000 |
-  #   | party11_2 | USD   | 1000000000 |
-  #   | party12_1 | USD   | 1000000000 |
-  #   | party12_2 | USD   | 1000000000 |
-  #   | party21_1 | USD   | 1000000000 |
-  #   | party21_2 | USD   | 1000000000 |
-  #   | party22_1 | USD   | 1000000000 |
-  #   |party22_2 | USD   | 1000000000 |
-  #   | party31_1 | USD   | 1000000000 |
-  #   | party31_2 | USD   | 1000000000 |
-  #   | party32_1 | USD   | 1000000000 |
-  #   | party32_2 | USD   | 1000000000 |
-  #   | party33_1 | USD   | 1000000000 |
-  #   | party33_2 | USD   | 1000000000 |
-  #   | party41_1 | USD   | 1000000000 |
-  #   | party41_2 | USD   | 1000000000 |
-  #   | party42_1 | USD   | 1000000000 |
-  #   | party42_2 | USD   | 1000000000 |
-  #   | party43_1 | USD   | 1000000000 |
-  #   | party43_2 | USD   | 1000000000 |
-  #   | party51_1 | USD   | 1000000000 |
-  #  | party51_2 | USD   | 1000000000 |
-  #   | party52_1 | USD   | 1000000000 |
-  #   | party52_2 | USD   | 1000000000 |
 
   Scenario: 001, test different value of risk parameters within defined ranges
 
@@ -309,15 +291,15 @@ Feature: test risk model parameter ranges
     And the market data for the market "ETH/MAR31" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 906       | 1096      | 27308        | 50000          | 10            |
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 1000 x 10 x 1 x 0.36483236867768200 = 3648
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 1000 x 10 x 1 x 2.7308771 = 27308
     And the market data for the market "ETH/MAR32" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 910       | 1100      | 40361        | 50000          | 10            |
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 1000 x 10 x 1 x 0.13281340025639400 = 1328
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 1000 x 10 x 1 x 4.0361573 = 40361
     And the market data for the market "ETH/MAR33" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 911       | 1102      | 45658        | 50000          | 10            |
-    #target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 1000 x 10 x 1 x 0.13281340025639400 = 1328
+    #target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 1000 x 10 x 1 x 4.5658146 = 45658
 
     And the market data for the market "ETH/MAR41" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -408,57 +390,34 @@ Feature: test risk model parameter ranges
       | party1 | USD   | ETH/MAR21 | 1207   | 49999999890451 | 0     |
       | party2 | USD   | ETH/MAR21 | 1207   | 49999999536766 | 0     |
 
-# #party1 margin level is: margin_position+margin_order = vol * (MarkPrice-ExitPrice)+ vol * rf * MarkPrice + order * rf * MarkPrice = 10 * (1000-900)+10*0.145263949*1000 + 1*0.145263949*1000=2598
-# Then the parties should have the following margin levels:
-#   | party  | market id | maintenance | search | initial | release |
-#   | party0 | ETH/MAR21 | 16270       | 17897  | 19524   | 22778   |
-#   | party1 | ETH/MAR21 | 2598        | 2857   | 3117    | 3637    |
-#   | party2 | ETH/MAR21 | 2858        | 3143   | 3429    | 4001    |
+  Scenario: 002, test mu=-20, and few other odd situations
 
-# # risk model 002: check the required balances
-# And the parties should have the following account balances:
-#   | party  | asset | market id | margin | general  | bond  |
-#   | party0 | USD   | ETH/MAR22 | 39840  | 197849   | 50000 |
-#   | party1 | USD   | ETH/MAR22 | 4766   | 99985185 | 0     |
-#   | party2 | USD   | ETH/MAR22 | 6016   | 99983148 | 0     |
+    And the following network parameters are set:
+      | name                                          | value |
+      | market.stake.target.timeWindow                | 24h   |
+      | market.stake.target.scalingFactor             | 1     |
+      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | market.liquidity.targetstake.triggering.ratio | 0.1   |
 
-# #party1 margin level is: margin_position+margin_order = vol * (MarkPrice-ExitPrice)+ vol * rf * MarkPrice + order * rf * MarkPrice = 10 * (1000-900)+10*0.270133394*1000 + 1*0.270133394*1000=3972
-# Then the parties should have the following margin levels:
-#   | party  | market id | maintenance | search | initial | release |
-#   | party0 | ETH/MAR22 | 33200       | 36520  | 39840   | 46480   |
-#   | party1 | ETH/MAR22 | 3972        | 4369   | 4766    | 5560    |
-#   | party2 | ETH/MAR22 | 5014        | 5515   | 6016    | 7019    |
+    And the average block duration is "1"
 
-# #risk model 003: check the required balances
-# And the parties should have the following account balances:
-#   | party  | asset | market id | margin | general  | bond  |
-#   | party0 | USD   | ETH/MAR23 | 26917  | 197849   | 50000 |
-#   | party1 | USD   | ETH/MAR23 | 3831   | 99985185 | 0     |
-#   | party2 | USD   | ETH/MAR23 | 4454   | 99983148 | 0     |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party0 | ETH/MAR34 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
+      | lp1 | party0 | ETH/MAR34 | 50000             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
 
-# #party1 margin level is: margin_position+margin_order = vol * (MarkPrice-ExitPrice)+ vol * rf * MarkPrice + order * rf * MarkPrice = 10 * (1000-900)+10*0.24649034405344100*1000 + 1*0.24649034405344100*1000=3712
-# Then the parties should have the following margin levels:
-#   | party  | market id | maintenance | search | initial | release |
-#   | party0 | ETH/MAR23 | 22431       | 24674  | 26917   | 31403   |
-#   | party1 | ETH/MAR23 | 3193        | 3512   | 3831    | 4470    |
-#   | party2 | ETH/MAR23 | 3712        | 4083   | 4454    | 5196    |
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+      | party1 | ETH/MAR34 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-11  |
+      | party1 | ETH/MAR34 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-12  |
+      | party2 | ETH/MAR34 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-13 |
+      | party2 | ETH/MAR34 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-14 |
 
-# # risk model 004: check the required balances
-# And the parties should have the following account balances:
-#   | party  | asset | market id | margin | general  | bond  |
-#   | party0 | USD   | ETH/MAR24 | 15870  | 197849   | 50000 |
-#   | party1 | USD   | ETH/MAR24 | 3101   | 99985185 | 0     |
-#   | party2 | USD   | ETH/MAR24 | 2953   | 99983148 | 0     |
+    When the opening auction period ends for market "ETH/MAR34"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR34"
 
-# #party1 margin level is: margin_position+margin_order = vol * (MarkPrice-ExitPrice)+ vol * rf * MarkPrice + order * rf * MarkPrice = 10 * (1000-900)+10*0.118078679*1000 + 1*0.118078679*1000=2299
-# Then the parties should have the following margin levels:
-#   | party  | market id | maintenance | search | initial | release |
-#   | party0 | ETH/MAR24 | 13225       | 14547  | 15870   | 18515   |
-#   | party1 | ETH/MAR24 | 2299        | 2528   | 2758    | 3218    |
-#   | party2 | ETH/MAR24 | 2461        | 2707   | 2953    | 3445    |
-
-
-
-
-
-
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release |
+      | party0 | ETH/MAR34 | 16270       | 17897  | 19524   | 22778   |
+      | party1 | ETH/MAR34 | 2598        | 2857   | 3117    | 3637    |
+      | party2 | ETH/MAR34 | 2858        | 3143   | 3429    | 4001    |
