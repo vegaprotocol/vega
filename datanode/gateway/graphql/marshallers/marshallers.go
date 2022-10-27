@@ -77,6 +77,26 @@ func UnmarshalProposalState(v interface{}) (vega.Proposal_State, error) {
 	return vega.Proposal_State(side), nil
 }
 
+func MarshalTransferType(t vega.TransferType) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(t.String())))
+	})
+}
+
+func UnmarshalTransferType(v interface{}) (vega.TransferType, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.TransferType_TRANSFER_TYPE_UNSPECIFIED, fmt.Errorf("expected transfer type to be a string")
+	}
+
+	t, ok := vega.TransferType_value[s]
+	if !ok {
+		return vega.TransferType_TRANSFER_TYPE_UNSPECIFIED, fmt.Errorf("failed to convert TransferType from GraphQL to Proto: %v", s)
+	}
+
+	return vega.TransferType(t), nil
+}
+
 func MarshalTransferStatus(s eventspb.Transfer_Status) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		w.Write([]byte(strconv.Quote(s.String())))

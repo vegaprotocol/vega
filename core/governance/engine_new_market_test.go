@@ -19,6 +19,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -128,6 +129,79 @@ func testSubmittingProposalForNewMarketWithBadRiskParameterFails(t *testing.T) {
 	// then
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid risk parameter")
+}
+
+func testOutOfRangeRiskParamFail(t *testing.T, lnm *types.LogNormalRiskModel) {
+	t.Helper()
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 1)
+	eng.ensureAllAssetEnabled(t)
+
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal.Terms.GetNewMarket().Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{LogNormal: lnm}
+
+	// setup
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+
+	// when
+	_, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid risk parameter")
+}
+
+func TestSubmittingProposalForNewMarketWithOutOfRangeRiskParameterFails(t *testing.T) {
+	lnm := &types.LogNormalRiskModel{}
+	lnm.RiskAversionParameter = num.DecimalFromFloat(1e-8 - 1e-12)
+	testOutOfRangeRiskParamFail(t, lnm)
+	lnm.RiskAversionParameter = num.DecimalOne()
+	testOutOfRangeRiskParamFail(t, lnm)
+	lnm.RiskAversionParameter = num.DecimalFromFloat(1e-8)
+	lnm.Tau = num.DecimalZero()
+	testOutOfRangeRiskParamFail(t, lnm)
+	lnm.Tau = num.DecimalFromFloat(1 + 1e-12)
+	testOutOfRangeRiskParamFail(t, lnm)
+	lnm.Tau = num.DecimalOne()
+	lnm.Params = &types.LogNormalModelParams{}
+	lnm.Params.Mu = num.DecimalFromFloat(-20 - 1e-12)
+	testOutOfRangeRiskParamFail(t, lnm)
+	lnm.Params.Mu = num.DecimalFromFloat(20 + 1e-12)
+	testOutOfRangeRiskParamFail(t, lnm)
+	lnm.Params.Mu = num.DecimalFromFloat(20)
+	lnm.Params.R = num.DecimalFromFloat(-20 - 1e-12)
+	testOutOfRangeRiskParamFail(t, lnm)
+	lnm.Params.R = num.DecimalFromFloat(20 + 1e-12)
+	testOutOfRangeRiskParamFail(t, lnm)
+	lnm.Params.R = num.DecimalFromFloat(20)
+	lnm.Params.Sigma = num.DecimalFromFloat(1e-4 - 1e-12)
+	testOutOfRangeRiskParamFail(t, lnm)
+	lnm.Params.Sigma = num.DecimalFromFloat(100 + 1e-12)
+	testOutOfRangeRiskParamFail(t, lnm)
+	lnm.Params.Sigma = num.DecimalFromFloat(100)
+
+	// now all risk params are valid
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 1)
+	eng.ensureAllAssetEnabled(t)
+
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal.Terms.GetNewMarket().Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{LogNormal: lnm}
+
+	// setup
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+
+	// when
+	_, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.NoError(t, err)
 }
 
 func testRejectingProposalForNewMarketSucceeds(t *testing.T) {

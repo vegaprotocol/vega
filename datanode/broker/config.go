@@ -23,13 +23,15 @@ const namedLogger = "broker"
 
 // Config represents the configuration of the broker.
 type Config struct {
-	Level                          encoding.LogLevel     `long:"log-level"`
-	SocketConfig                   SocketConfig          `group:"Socket" namespace:"socket"`
-	SocketServerInboundBufferSize  int                   `long:"socket-server-inbound-buffer-size"`
-	SocketServerOutboundBufferSize int                   `long:"socket-server-outbound-buffer-size"`
-	FileEventSourceConfig          FileEventSourceConfig `group:"FileEventSourceConfig" namespace:"fileeventsource"`
-	UseEventFile                   encoding.Bool         `long:"use-event-file" description:"set to true to source events from a file"`
-	PanicOnError                   encoding.Bool         `long:"panic-on-error" description:"if an error occurs on event push the broker will panic, else log the error"`
+	Level                          encoding.LogLevel         `long:"log-level"`
+	SocketConfig                   SocketConfig              `group:"Socket" namespace:"socket"`
+	SocketServerInboundBufferSize  int                       `long:"socket-server-inbound-buffer-size"`
+	SocketServerOutboundBufferSize int                       `long:"socket-server-outbound-buffer-size"`
+	FileEventSourceConfig          FileEventSourceConfig     `group:"FileEventSourceConfig" namespace:"fileeventsource"`
+	UseEventFile                   encoding.Bool             `long:"use-event-file" description:"set to true to source events from a file"`
+	PanicOnError                   encoding.Bool             `long:"panic-on-error" description:"if an error occurs on event push the broker will panic, else log the error"`
+	UseBufferedEventSource         encoding.Bool             `long:"use-buffered-event-source" description:"if true datanode will buffer events"`
+	BufferedEventSourceConfig      BufferedEventSourceConfig `group:"BufferedEventSource" namespace:"bufferedeventsource"`
 }
 
 // NewDefaultConfig creates an instance of config with default values.
@@ -49,8 +51,14 @@ func NewDefaultConfig() Config {
 			TimeBetweenBlocks:     encoding.Duration{Duration: 1 * time.Second},
 			SendChannelBufferSize: 1000,
 		},
-		UseEventFile: false,
-		PanicOnError: false,
+		UseEventFile:           false,
+		PanicOnError:           false,
+		UseBufferedEventSource: true,
+		BufferedEventSourceConfig: BufferedEventSourceConfig{
+			EventsPerFile:         10_000_000,
+			SendChannelBufferSize: 10_000,
+			MaxBufferedEvents:     100_000_000,
+		},
 	}
 }
 
@@ -65,4 +73,10 @@ type SocketConfig struct {
 	Port               int    `long:"port" description:" "`
 	MaxReceiveTimeouts int    `long:"max-receive-timeouts"`
 	TransportType      string `long:"transport-type"`
+}
+
+type BufferedEventSourceConfig struct {
+	EventsPerFile         int `long:"events-per-file" description:"the number of events to store in a file buffer, set to 0 to disable the buffer"`
+	SendChannelBufferSize int `long:"send-buffer-size" description:"sink event channel buffer size"`
+	MaxBufferedEvents     int `long:"max-buffered-events" description:"max number of events that can be buffered, after this point events will no longer be buffered"`
 }

@@ -2326,9 +2326,21 @@ func (t *tradingDataServiceV2) GetEpoch(ctx context.Context, req *v2.GetEpochReq
 func (t *tradingDataServiceV2) EstimateFee(ctx context.Context, req *v2.EstimateFeeRequest) (*v2.EstimateFeeResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("EstimateFee SQL")()
 
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("nil request"))
+	}
+
+	if len(req.MarketId) <= 0 {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing market id"))
+	}
+
+	if len(req.Price) <= 0 {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing price"))
+	}
+
 	fee, err := t.estimateFee(ctx, req.MarketId, req.Price, req.Size)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, err
 	}
 
 	return &v2.EstimateFeeResponse{
@@ -2343,26 +2355,25 @@ func (t *tradingDataServiceV2) estimateFee(
 ) (*vega.Fee, error) {
 	mkt, err := t.marketService.GetByID(ctx, market)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.NotFound, err)
 	}
+
 	price, overflowed := num.UintFromString(priceS, 10)
 	if overflowed {
-		return nil, errors.New("invalid order price")
+		return nil, apiError(codes.InvalidArgument, errors.New("invalid order price"))
 	}
 
 	base := num.DecimalFromUint(price.Mul(price, num.NewUint(size)))
 	maker, infra, liquidity, err := t.feeFactors(mkt)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, err)
 	}
 
-	fee := &vega.Fee{
+	return &vega.Fee{
 		MakerFee:          base.Mul(num.NewDecimalFromFloat(maker)).String(),
 		InfrastructureFee: base.Mul(num.NewDecimalFromFloat(infra)).String(),
 		LiquidityFee:      base.Mul(num.NewDecimalFromFloat(liquidity)).String(),
-	}
-
-	return fee, nil
+	}, nil
 }
 
 func (t *tradingDataServiceV2) feeFactors(mkt entities.Market) (maker, infra, liquidity float64, err error) {
@@ -2831,6 +2842,10 @@ func (t *tradingDataServiceV2) GetVegaTime(ctx context.Context, req *v2.GetVegaT
 
 func (t *tradingDataServiceV2) GetMostRecentDeHistorySegment(context.Context, *v2.GetMostRecentDeHistorySegmentRequest) (*v2.GetMostRecentDeHistorySegmentResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentDeHistorySegment")()
+	if t.deHistoryService == nil {
+		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
+	}
+
 	segment, err := t.deHistoryService.GetHighestBlockHeightHistorySegment()
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrGetMostRecentHistorySegment, err)
@@ -2843,6 +2858,9 @@ func (t *tradingDataServiceV2) GetMostRecentDeHistorySegment(context.Context, *v
 
 func (t *tradingDataServiceV2) ListAllDeHistorySegments(context.Context, *v2.ListAllDeHistorySegmentsRequest) (*v2.ListAllDeHistorySegmentsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListAllDeHistorySegments")()
+	if t.deHistoryService == nil {
+		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
+	}
 	segments, err := t.deHistoryService.ListAllHistorySegments()
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrListAllDeHistorySegment, err)
@@ -2859,7 +2877,10 @@ func (t *tradingDataServiceV2) ListAllDeHistorySegments(context.Context, *v2.Lis
 }
 
 func (t *tradingDataServiceV2) FetchDeHistorySegment(ctx context.Context, req *v2.FetchDeHistorySegmentRequest) (*v2.FetchDeHistorySegmentResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("FetchDeHistorySegment0'")()
+	defer metrics.StartAPIRequestAndTimeGRPC("FetchDeHistorySegment'")()
+	if t.deHistoryService == nil {
+		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
+	}
 	segment, err := t.deHistoryService.FetchHistorySegment(ctx, req.HistorySegmentId)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrFetchDeHistorySegment, err)

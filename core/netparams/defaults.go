@@ -29,111 +29,142 @@ const (
 	week = "168h0m0s"
 )
 
+var (
+	// Decimals.
+	gtD0     = DecimalGT(num.DecimalZero())
+	gteD0    = DecimalGTE(num.DecimalZero())
+	gteD1    = DecimalGTE(num.DecimalOne())
+	lteD1    = DecimalLTE(num.DecimalOne())
+	lteD100  = DecimalLTE(num.DecimalFromInt64(100))
+	lteD1000 = DecimalLTE(num.DecimalFromInt64(1000))
+
+	// Uints.
+	gteU0  = UintGTE(num.UintZero())
+	gteU1  = UintGTE(num.NewUint(1))
+	ltMaxU = UintLT(num.MaxUint())
+
+	// Ints.
+	gteI0    = IntGTE(0)
+	gteI1    = IntGTE(1)
+	lteI500  = IntLTE(500)
+	lteI1000 = IntLTE(1000)
+
+	// Durations.
+	gte0s   = DurationGTE(0 * time.Second)
+	gte1s   = DurationGTE(1 * time.Second)
+	gte1m   = DurationGTE(1 * time.Minute)
+	lte1d   = DurationLTE(24 * time.Hour)
+	lte255h = DurationLTE(255 * time.Hour)
+	lte1mo  = DurationLTE(30 * 24 * time.Hour)
+	lte1y   = DurationLTE(365 * 24 * time.Hour)
+)
+
 func defaultNetParams() map[string]value {
 	return map[string]value{
 		// markets
-		MarketMarginScalingFactors:                      NewJSON(&proto.ScalingFactors{}, checks.MarginScalingFactor()).Mutable(true).MustUpdate(`{"search_level": 1.1, "initial_margin": 1.2, "collateral_release": 1.4}`),
-		MarketFeeFactorsMakerFee:                        NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.00025"),
-		MarketFeeFactorsInfrastructureFee:               NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.0005"),
-		MarketAuctionMinimumDuration:                    NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("30m0s"),
-		MarketAuctionMaximumDuration:                    NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate(week),
-		MarketLiquidityBondPenaltyParameter:             NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("1"),
-		MarketLiquidityMaximumLiquidityFeeFactorLevel:   NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("1"),
-		MarketLiquidityStakeToCCYSiskas:                 NewDecimal(DecimalGT(num.DecimalZero())).Mutable(true).MustUpdate("1"),
-		MarketLiquidityProvidersFeeDistribitionTimeStep: NewDuration(DurationGTE(0 * time.Second)).Mutable(true).MustUpdate("0s"),
-		MarketLiquidityTargetStakeTriggeringRatio:       NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0"),
-		MarketProbabilityOfTradingTauScaling:            NewDecimal(DecimalGTE(num.MustDecimalFromString("1."))).Mutable(true).MustUpdate("1"),
-		MarketMinProbabilityOfTradingForLPOrders:        NewDecimal(DecimalGTE(num.MustDecimalFromString("1e-15")), DecimalLTE(num.MustDecimalFromString("0.1"))).Mutable(true).MustUpdate("1e-8"),
-		MarketTargetStakeTimeWindow:                     NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1h0m0s"),
-		MarketTargetStakeScalingFactor:                  NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("10"),
-		MarketValueWindowLength:                         NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate(week),
-		MarketPriceMonitoringDefaultParameters:          NewJSON(&proto.PriceMonitoringParameters{}).Mutable(true).MustUpdate(`{"triggers": []}`),
-		MarketLiquidityProvisionShapesMaxSize:           NewInt(IntGT(0)).Mutable(true).MustUpdate("100"),
-		MarketMinLpStakeQuantumMultiple:                 NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("1"),
-		RewardMarketCreationQuantumMultiple:             NewDecimal(DecimalGT(num.DecimalZero())).Mutable(true).MustUpdate("10000000"),
+		MarketMarginScalingFactors:                      NewJSON(&proto.ScalingFactors{}, checks.MarginScalingFactor(), checks.MarginScalingFactorRange(num.DecimalOne(), num.DecimalFromInt64(100))).Mutable(true).MustUpdate(`{"search_level": 1.1, "initial_margin": 1.2, "collateral_release": 1.4}`),
+		MarketFeeFactorsMakerFee:                        NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00025"),
+		MarketFeeFactorsInfrastructureFee:               NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.0005"),
+		MarketAuctionMinimumDuration:                    NewDuration(gte1s, lte1d).Mutable(true).MustUpdate("30m0s"),
+		MarketAuctionMaximumDuration:                    NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate(week),
+		MarketLiquidityBondPenaltyParameter:             NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1"),
+		MarketLiquidityMaximumLiquidityFeeFactorLevel:   NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("1"),
+		MarketLiquidityStakeToCCYSiskas:                 NewDecimal(gteD0, lteD100).Mutable(true).MustUpdate("1"),
+		MarketLiquidityProvidersFeeDistribitionTimeStep: NewDuration(gte0s, lte1mo).Mutable(true).MustUpdate("0s"),
+		MarketLiquidityTargetStakeTriggeringRatio:       NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
+		MarketProbabilityOfTradingTauScaling:            NewDecimal(gteD1, lteD1000).Mutable(true).MustUpdate("1"),
+		MarketMinProbabilityOfTradingForLPOrders:        NewDecimal(DecimalGTE(num.MustDecimalFromString("1e-12")), DecimalLTE(num.MustDecimalFromString("0.1"))).Mutable(true).MustUpdate("1e-8"),
+		MarketTargetStakeTimeWindow:                     NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate("1h0m0s"),
+		MarketTargetStakeScalingFactor:                  NewDecimal(gtD0, lteD100).Mutable(true).MustUpdate("10"),
+		MarketValueWindowLength:                         NewDuration(gte1m, lte1mo).Mutable(true).MustUpdate(week),
+		MarketPriceMonitoringDefaultParameters:          NewJSON(&proto.PriceMonitoringParameters{}, checks.PriceMonitoringParametersAuctionExtension(5*time.Second, 30*24*time.Hour), checks.PriceMonitoringParametersHorizon(5*time.Second, 30*24*time.Hour), checks.PriceMonitoringParametersProbability(num.DecimalFromFloat(0.9), num.DecimalOne())).Mutable(true).MustUpdate(`{"triggers": []}`),
+		MarketLiquidityProvisionShapesMaxSize:           NewInt(gteI1, lteI1000).Mutable(true).MustUpdate("100"),
+		MarketMinLpStakeQuantumMultiple:                 NewDecimal(gtD0, DecimalLT(num.MustDecimalFromString("1e10"))).Mutable(true).MustUpdate("1"),
+		RewardMarketCreationQuantumMultiple:             NewDecimal(gteD1, DecimalLT(num.MustDecimalFromString("1e20"))).Mutable(true).MustUpdate("10000000"),
 
 		// governance market proposal
-		GovernanceProposalMarketMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
-		GovernanceProposalMarketMaxClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
-		GovernanceProposalMarketMinEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
-		GovernanceProposalMarketMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
-		GovernanceProposalMarketRequiredParticipation: NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.00001"),
-		GovernanceProposalMarketRequiredMajority:      NewDecimal(DecimalGTE(num.MustDecimalFromString("0.5")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalMarketMinProposerBalance:    NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
-		GovernanceProposalMarketMinVoterBalance:       NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalMarketMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalMarketMaxClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalMarketMinEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalMarketMaxEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalMarketRequiredParticipation: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalMarketRequiredMajority:      NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
+		GovernanceProposalMarketMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
+		GovernanceProposalMarketMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
 
 		// governance asset proposal
-		GovernanceProposalAssetMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
-		GovernanceProposalAssetMaxClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
-		GovernanceProposalAssetMinEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
-		GovernanceProposalAssetMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
-		GovernanceProposalAssetRequiredParticipation: NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.00001"),
-		GovernanceProposalAssetRequiredMajority:      NewDecimal(DecimalGTE(num.MustDecimalFromString("0.5")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalAssetMinProposerBalance:    NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
-		GovernanceProposalAssetMinVoterBalance:       NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalAssetMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalAssetMaxClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalAssetMinEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalAssetMaxEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalAssetRequiredParticipation: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalAssetRequiredMajority:      NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
+		GovernanceProposalAssetMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
+		GovernanceProposalAssetMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
 
 		// governance update asset proposal
-		GovernanceProposalUpdateAssetMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
-		GovernanceProposalUpdateAssetMaxClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
-		GovernanceProposalUpdateAssetMinEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
-		GovernanceProposalUpdateAssetMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
-		GovernanceProposalUpdateAssetRequiredParticipation: NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.00001"),
-		GovernanceProposalUpdateAssetRequiredMajority:      NewDecimal(DecimalGTE(num.MustDecimalFromString("0.5")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalUpdateAssetMinProposerBalance:    NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
-		GovernanceProposalUpdateAssetMinVoterBalance:       NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalUpdateAssetMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalUpdateAssetMaxClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalUpdateAssetMinEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalUpdateAssetMaxEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalUpdateAssetRequiredParticipation: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalUpdateAssetRequiredMajority:      NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
+		GovernanceProposalUpdateAssetMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
+		GovernanceProposalUpdateAssetMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
 
 		// governance update market proposal
-		GovernanceProposalUpdateMarketMinClose:                   NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
-		GovernanceProposalUpdateMarketMaxClose:                   NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
-		GovernanceProposalUpdateMarketMinEnact:                   NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
-		GovernanceProposalUpdateMarketMaxEnact:                   NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
-		GovernanceProposalUpdateMarketRequiredParticipation:      NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.00001"),
-		GovernanceProposalUpdateMarketRequiredMajority:           NewDecimal(DecimalGTE(num.MustDecimalFromString("0.5")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalUpdateMarketMinProposerBalance:         NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
-		GovernanceProposalUpdateMarketMinVoterBalance:            NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
-		GovernanceProposalUpdateMarketRequiredParticipationLP:    NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.00001"),
-		GovernanceProposalUpdateMarketRequiredMajorityLP:         NewDecimal(DecimalGTE(num.MustDecimalFromString("0.5")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalUpdateMarketMinProposerEquityLikeShare: NewDecimal(DecimalGTE(num.MustDecimalFromString("0")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
+		GovernanceProposalUpdateMarketMinClose:                   NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalUpdateMarketMaxClose:                   NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalUpdateMarketMinEnact:                   NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalUpdateMarketMaxEnact:                   NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalUpdateMarketRequiredParticipation:      NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalUpdateMarketRequiredMajority:           NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
+		GovernanceProposalUpdateMarketMinProposerBalance:         NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
+		GovernanceProposalUpdateMarketMinVoterBalance:            NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
+		GovernanceProposalUpdateMarketRequiredParticipationLP:    NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalUpdateMarketRequiredMajorityLP:         NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
+		GovernanceProposalUpdateMarketMinProposerEquityLikeShare: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
 
 		// governance UpdateNetParam proposal
-		GovernanceProposalUpdateNetParamMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
-		GovernanceProposalUpdateNetParamMaxClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
-		GovernanceProposalUpdateNetParamMinEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
-		GovernanceProposalUpdateNetParamMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
-		GovernanceProposalUpdateNetParamRequiredParticipation: NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.00001"),
-		GovernanceProposalUpdateNetParamRequiredMajority:      NewDecimal(DecimalGTE(num.MustDecimalFromString("0.5")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalUpdateNetParamMinProposerBalance:    NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
-		GovernanceProposalUpdateNetParamMinVoterBalance:       NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalUpdateNetParamMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalUpdateNetParamMaxClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalUpdateNetParamMinEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalUpdateNetParamMaxEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalUpdateNetParamRequiredParticipation: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalUpdateNetParamRequiredMajority:      NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
+		GovernanceProposalUpdateNetParamMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
+		GovernanceProposalUpdateNetParamMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
 
 		// governance Freeform proposal
-		GovernanceProposalFreeformMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
-		GovernanceProposalFreeformMaxClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
-		GovernanceProposalFreeformRequiredParticipation: NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.00001"),
-		GovernanceProposalFreeformRequiredMajority:      NewDecimal(DecimalGTE(num.MustDecimalFromString("0.5")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalFreeformMinProposerBalance:    NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
-		GovernanceProposalFreeformMinVoterBalance:       NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalFreeformMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalFreeformMaxClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalFreeformRequiredParticipation: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalFreeformRequiredMajority:      NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
+		GovernanceProposalFreeformMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
+		GovernanceProposalFreeformMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
 
 		// Delegation default params
-		DelegationMinAmount: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("1"),
+		DelegationMinAmount: NewDecimal(gtD0).Mutable(true).MustUpdate("1"),
 
 		// staking and delegation
-		StakingAndDelegationRewardPayoutFraction:          NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("1.0"),
-		StakingAndDelegationRewardMaxPayoutPerParticipant: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0"),
-		StakingAndDelegationRewardPayoutDelay:             NewDuration(DurationGTE(0 * time.Second)).Mutable(true).MustUpdate("24h0m0s"),
-		StakingAndDelegationRewardDelegatorShare:          NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.883"),
-		StakingAndDelegationRewardMinimumValidatorStake:   NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0"),
-		StakingAndDelegationRewardCompetitionLevel:        NewDecimal(DecimalGTE(num.MustDecimalFromString("1")), DecimalLTE(num.MustDecimalFromString("1000"))).Mutable(true).MustUpdate("1.1"),
-		StakingAndDelegationRewardMaxPayoutPerEpoch:       NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("7000000000000000000000"),
-		StakingAndDelegationRewardsMinValidators:          NewInt(IntGTE(1)).Mutable(true).MustUpdate("5"),
-		StakingAndDelegationRewardOptimalStakeMultiplier:  NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("3.0"),
+		StakingAndDelegationRewardPayoutFraction: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1.0"),
+		StakingAndDelegationRewardPayoutDelay:    NewDuration(DurationGTE(0 * time.Second)).Mutable(true).MustUpdate("24h0m0s"),
+
+		StakingAndDelegationRewardMaxPayoutPerParticipant: NewDecimal(gteD0).Mutable(true).MustUpdate("0"),
+		StakingAndDelegationRewardDelegatorShare:          NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.883"),
+		StakingAndDelegationRewardMinimumValidatorStake:   NewDecimal(gteD0).Mutable(true).MustUpdate("0"),
+		StakingAndDelegationRewardCompetitionLevel:        NewDecimal(gteD1).Mutable(true).MustUpdate("1.1"),
+		StakingAndDelegationRewardMaxPayoutPerEpoch:       NewDecimal(gteD0).Mutable(true).MustUpdate("7000000000000000000000"),
+		StakingAndDelegationRewardsMinValidators:          NewInt(gteI1, lteI500).Mutable(true).MustUpdate("5"),
+		StakingAndDelegationRewardOptimalStakeMultiplier:  NewDecimal(gteD1).Mutable(true).MustUpdate("3.0"),
 
 		// spam protection policies
-		SpamProtectionMaxVotes:               NewInt(IntGTE(0)).Mutable(true).MustUpdate("3"),
-		SpamProtectionMinTokensForVoting:     NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("100000000000000000000"),
-		SpamProtectionMaxProposals:           NewInt(IntGTE(0)).Mutable(true).MustUpdate("3"),
-		SpamProtectionMinTokensForProposal:   NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("100000000000000000000000"),
-		SpamProtectionMaxDelegations:         NewInt(IntGTE(0)).Mutable(true).MustUpdate("390"),
-		SpamProtectionMinTokensForDelegation: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("1000000000000000000"),
+		SpamProtectionMaxVotes:               NewInt(gteI1).Mutable(true).MustUpdate("3"),
+		SpamProtectionMinTokensForVoting:     NewDecimal(gteD1).Mutable(true).MustUpdate("100000000000000000000"),
+		SpamProtectionMaxProposals:           NewInt(gteI1).Mutable(true).MustUpdate("3"),
+		SpamProtectionMinTokensForProposal:   NewDecimal(gteD1).Mutable(true).MustUpdate("100000000000000000000000"),
+		SpamProtectionMaxDelegations:         NewInt(gteI1).Mutable(true).MustUpdate("390"),
+		SpamProtectionMinTokensForDelegation: NewDecimal(gteD1).Mutable(true).MustUpdate("1000000000000000000"),
 
 		// no validation for this initially as we configure the
 		// the bootstrapping asset.
@@ -144,42 +175,42 @@ func defaultNetParams() map[string]value {
 		BlockchainsEthereumConfig: NewJSON(&proto.EthereumConfig{}, types.CheckUntypedEthereumConfig).Mutable(true).
 			MustUpdate("{\"network_id\": \"XXX\", \"chain_id\": \"XXX\", \"collateral_bridge_contract\": { \"address\": \"0xXXX\" }, \"confirmations\": 3, \"staking_bridge_contract\": { \"address\": \"0xXXX\", \"deployment_block_height\": 0}, \"token_vesting_contract\": { \"address\": \"0xXXX\", \"deployment_block_height\": 0 }, \"multisig_control_contract\": { \"address\": \"0xXXX\", \"deployment_block_height\": 0 }}"),
 
-		ValidatorsEpochLength: NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("24h0m0s"),
+		ValidatorsEpochLength: NewDuration(gte1s, lte255h).Mutable(true).MustUpdate("24h0m0s"),
 
-		ValidatorsVoteRequired: NewDecimal(DecimalGTE(num.MustDecimalFromString("0.67")), DecimalLTE(num.MustDecimalFromString("1.0"))).Mutable(true).MustUpdate("0.67"),
+		ValidatorsVoteRequired: NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("0.67"),
 
 		// network checkpoint parameters
 		NetworkCheckpointTimeElapsedBetweenCheckpoints: NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1m"),
 		// take a snapshot every 1000 blocks, ~20 minutes
 		// if we assume a block time of anything between 1 to 2 seconds
-		SnapshotIntervalLength: NewInt(IntGTE(0)).Mutable(true).MustUpdate("1000"),
+		SnapshotIntervalLength: NewInt(gteI0).Mutable(true).MustUpdate("1000"),
 
 		FloatingPointUpdatesDuration: NewDuration().Mutable(true).MustUpdate("5m"),
 
 		// validators by stake
-		NumberOfTendermintValidators:               NewUint(UintGTE(num.NewUint(1))).Mutable(true).MustUpdate("30"),
-		ValidatorIncumbentBonus:                    NewDecimal(DecimalGTE(num.MustDecimalFromString("0"))).Mutable(true).MustUpdate("1"),
-		NumberEthMultisigSigners:                   NewUint(UintGTE(num.NewUint(1))).Mutable(true).MustUpdate("13"),
-		ErsatzvalidatorsRewardFactor:               NewDecimal(DecimalGTE(num.MustDecimalFromString("0")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.5"),
-		MultipleOfTendermintValidatorsForEtsatzSet: NewDecimal(DecimalGTE(num.MustDecimalFromString("0"))).Mutable(true).MustUpdate("0.5"),
-		MinimumEthereumEventsForNewValidator:       NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("3"),
+		NumberOfTendermintValidators:               NewUint(gteU1, UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("30"),
+		ValidatorIncumbentBonus:                    NewDecimal(gteD0).Mutable(true).MustUpdate("1"),
+		NumberEthMultisigSigners:                   NewUint(gteU1, UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("13"),
+		ErsatzvalidatorsRewardFactor:               NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.5"),
+		MultipleOfTendermintValidatorsForEtsatzSet: NewDecimal(gteD0).Mutable(true).MustUpdate("0.5"),
+		MinimumEthereumEventsForNewValidator:       NewUint(gteU0).Mutable(true).MustUpdate("3"),
 
 		// transfers
-		TransferFeeFactor:                  NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0.001"),
-		TransferMinTransferQuantumMultiple: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0.1"),
-		TransferMaxCommandsPerEpoch:        NewInt(IntGTE(0)).Mutable(true).MustUpdate("20"),
+		TransferFeeFactor:                  NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.001"),
+		TransferMinTransferQuantumMultiple: NewDecimal(gteD0).Mutable(true).MustUpdate("0.1"),
+		TransferMaxCommandsPerEpoch:        NewInt(gteI0).Mutable(true).MustUpdate("20"),
 
 		// pow
-		SpamPoWNumberOfPastBlocks:   NewUint(UintGTE(num.NewUint(50)), UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("100"),
-		SpamPoWDifficulty:           NewUint(UintGT(num.UintZero()), UintLTE(num.NewUint(256))).Mutable(true).MustUpdate("15"),
-		SpamPoWHashFunction:         NewString().Mutable(true).MustUpdate(crypto.Sha3),
-		SpamPoWNumberOfTxPerBlock:   NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(1000))).Mutable(true).MustUpdate("2"),
-		SpamPoWIncreasingDifficulty: NewUint(UintGTE(num.UintZero()), UintLTE(num.NewUint(1))).Mutable(true).MustUpdate("0"),
+		SpamPoWNumberOfPastBlocks:   NewUint(gteU1, UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("100"),
+		SpamPoWDifficulty:           NewUint(gteU0, UintLTE(num.NewUint(256))).Mutable(true).MustUpdate("15"),
+		SpamPoWHashFunction:         NewString(checks.SpamPoWHashFunction([]string{crypto.Sha3})).Mutable(true).MustUpdate(crypto.Sha3),
+		SpamPoWNumberOfTxPerBlock:   NewUint(gteU1).Mutable(true).MustUpdate("2"),
+		SpamPoWIncreasingDifficulty: NewUint(gteU0).Mutable(true).MustUpdate("0"),
 
 		LimitsProposeMarketEnabledFrom: NewString(checkOptionalRFC3339Date).Mutable(true).MustUpdate(""), // none by default
 		LimitsProposeAssetEnabledFrom:  NewString(checkOptionalRFC3339Date).Mutable(true).MustUpdate(""), // none by default
 
-		SpamProtectionMaxBatchSize: NewUint(UintGT(num.NewUint(2)), UintLTE(num.NewUint(200))).Mutable(true).MustUpdate("15"),
+		SpamProtectionMaxBatchSize: NewUint(UintGTE(num.NewUint(2)), UintLTE(num.NewUint(200))).Mutable(true).MustUpdate("15"),
 	}
 }
 
