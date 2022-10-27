@@ -2379,9 +2379,9 @@ func (t *tradingDataServiceV2) estimateFee(
 	}
 
 	return &vega.Fee{
-		MakerFee:          base.Mul(num.NewDecimalFromFloat(maker)).String(),
-		InfrastructureFee: base.Mul(num.NewDecimalFromFloat(infra)).String(),
-		LiquidityFee:      base.Mul(num.NewDecimalFromFloat(liquidity)).String(),
+		MakerFee:          base.Mul(num.NewDecimalFromFloat(maker)).Round(0).String(),
+		InfrastructureFee: base.Mul(num.NewDecimalFromFloat(infra)).Round(0).String(),
+		LiquidityFee:      base.Mul(num.NewDecimalFromFloat(liquidity)).Round(0).String(),
 	}, nil
 }
 
@@ -2476,10 +2476,10 @@ func (t *tradingDataServiceV2) estimateMargin(
 		MarketId:               mktProto.GetId(),
 		Asset:                  asset,
 		Timestamp:              0,
-		MaintenanceMargin:      maintenanceMargin.String(),
-		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel)).String(),
-		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)).String(),
-		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease)).String(),
+		MaintenanceMargin:      maintenanceMargin.Round(0).String(),
+		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel)).Round(0).String(),
+		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)).Round(0).String(),
+		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease)).Round(0).String(),
 	}, nil
 }
 
