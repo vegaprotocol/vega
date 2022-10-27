@@ -13,7 +13,7 @@
 - [6613](https://github.com/vegaprotocol/vega/issues/6613) - Add file buffering to datanode
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6601](https://github.com/vegaprotocol/vega/issues/6601) - Removed resend event when the socket client fails
 
 
 ## 0.60.0
