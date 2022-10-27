@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/commands"
-	types "code.vegaprotocol.io/vega/protos/vega"
+	"code.vegaprotocol.io/vega/core/types"
+	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -77,8 +78,8 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a future market change with filter with condition operator succeeds", testNewFutureMarketChangeSubmissionWithFilterWithConditionOperatorSucceeds)
 	t.Run("Submitting a future market change with filter without condition value fails", testNewFutureMarketChangeSubmissionWithFilterWithoutConditionValueFails)
 	t.Run("Submitting a future market change with filter with condition value succeeds", testNewFutureMarketChangeSubmissionWithFilterWithConditionValueSucceeds)
-	t.Run("Submitting a future market change without oracle spec bindings fails", testNewFutureMarketChangeSubmissionWithoutOracleSpecBindingFails)
-	t.Run("Submitting a future market change with oracle spec binding succeeds", testNewFutureMarketChangeSubmissionWithOracleSpecBindingSucceeds)
+	t.Run("Submitting a future market change without oracle spec bindings fails", testNewFutureMarketChangeSubmissionWithoutDataSourceSpecBindingFails)
+	t.Run("Submitting a future market change with oracle spec binding succeeds", testNewFutureMarketChangeSubmissionWithDataSourceSpecBindingSucceeds)
 	t.Run("Submitting a future market change without settlement data property fails", testNewFutureMarketChangeSubmissionWithoutSettlementDataPropertyFails)
 	t.Run("Submitting a future market change without trading termination property fails", testNewFutureMarketChangeSubmissionWithoutTradingTerminationPropertyFails)
 	t.Run("Submitting a future market change with a mismatch between binding property name and filter fails", testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingFails)
@@ -107,8 +108,8 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithoutNewMarketFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{},
 		},
 	})
 
@@ -117,9 +118,9 @@ func testNewMarketChangeSubmissionWithoutNewMarketFails(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithoutChangesFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{},
 			},
 		},
 	})
@@ -129,10 +130,10 @@ func testNewMarketChangeSubmissionWithoutChangesFails(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithoutDecimalPlacesSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{},
 				},
 			},
 		},
@@ -143,10 +144,10 @@ func testNewMarketChangeSubmissionWithoutDecimalPlacesSucceeds(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithDecimalPlacesEqualTo0Succeeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
 						DecimalPlaces: 0,
 					},
 				},
@@ -173,10 +174,10 @@ func testNewMarketChangeSubmissionWithDecimalPlacesAboveOrEqualTo150Fails(t *tes
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{
-						NewMarket: &types.NewMarket{
-							Changes: &types.NewMarketConfiguration{
+				Terms: &protoTypes.ProposalTerms{
+					Change: &protoTypes.ProposalTerms_NewMarket{
+						NewMarket: &protoTypes.NewMarket{
+							Changes: &protoTypes.NewMarketConfiguration{
 								DecimalPlaces: tc.value,
 							},
 						},
@@ -191,10 +192,10 @@ func testNewMarketChangeSubmissionWithDecimalPlacesAboveOrEqualTo150Fails(t *tes
 
 func testNewMarketChangeSubmissionWithDecimalPlacesBelow150Succeeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
 						DecimalPlaces: RandomPositiveU64Before(150),
 					},
 				},
@@ -208,10 +209,10 @@ func testNewMarketChangeSubmissionWithDecimalPlacesBelow150Succeeds(t *testing.T
 
 func testNewMarketChangeSubmissionWithPositionDecimalPlacesEqualTo0Succeeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
 						PositionDecimalPlaces: 0,
 					},
 				},
@@ -247,10 +248,10 @@ func testNewMarketChangeSubmissionWithPositionDecimalPlacesAboveOrEqualTo7Fails(
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{
-						NewMarket: &types.NewMarket{
-							Changes: &types.NewMarketConfiguration{
+				Terms: &protoTypes.ProposalTerms{
+					Change: &protoTypes.ProposalTerms_NewMarket{
+						NewMarket: &protoTypes.NewMarket{
+							Changes: &protoTypes.NewMarketConfiguration{
 								PositionDecimalPlaces: tc.value,
 							},
 						},
@@ -265,10 +266,10 @@ func testNewMarketChangeSubmissionWithPositionDecimalPlacesAboveOrEqualTo7Fails(
 
 func testNewMarketChangeSubmissionWithPositionDecimalPlacesBelow7Succeeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
 						PositionDecimalPlaces: RandomPositiveI64Before(7),
 					},
 				},
@@ -281,10 +282,10 @@ func testNewMarketChangeSubmissionWithPositionDecimalPlacesBelow7Succeeds(t *tes
 
 func testNewMarketChangeSubmissionWithoutLiquidityMonitoringSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{},
 				},
 			},
 		},
@@ -295,11 +296,11 @@ func testNewMarketChangeSubmissionWithoutLiquidityMonitoringSucceeds(t *testing.
 
 func testNewMarketChangeSubmissionWithLiquidityMonitoringSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{},
 					},
 				},
 			},
@@ -325,11 +326,11 @@ func testLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails(t *tes
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{
-						NewMarket: &types.NewMarket{
-							Changes: &types.NewMarketConfiguration{
-								LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
+				Terms: &protoTypes.ProposalTerms{
+					Change: &protoTypes.ProposalTerms_NewMarket{
+						NewMarket: &protoTypes.NewMarket{
+							Changes: &protoTypes.NewMarketConfiguration{
+								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
 									TriggeringRatio: tc.value,
 								},
 							},
@@ -363,11 +364,11 @@ func testLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds(t *
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{
-						NewMarket: &types.NewMarket{
-							Changes: &types.NewMarketConfiguration{
-								LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
+				Terms: &protoTypes.ProposalTerms{
+					Change: &protoTypes.ProposalTerms_NewMarket{
+						NewMarket: &protoTypes.NewMarket{
+							Changes: &protoTypes.NewMarketConfiguration{
+								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
 									TriggeringRatio: tc.value,
 								},
 							},
@@ -384,11 +385,11 @@ func testLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds(t *
 
 func testLiquidityMonitoringChangeSubmissionWithoutTargetStakeParametersFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{},
 					},
 				},
 			},
@@ -400,12 +401,12 @@ func testLiquidityMonitoringChangeSubmissionWithoutTargetStakeParametersFails(t 
 
 func testLiquidityMonitoringChangeSubmissionWithTargetStakeParametersSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
-							TargetStakeParameters: &types.TargetStakeParameters{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
+							TargetStakeParameters: &protoTypes.TargetStakeParameters{},
 						},
 					},
 				},
@@ -432,12 +433,12 @@ func testLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindowFails(t *te
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{
-						NewMarket: &types.NewMarket{
-							Changes: &types.NewMarketConfiguration{
-								LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
-									TargetStakeParameters: &types.TargetStakeParameters{
+				Terms: &protoTypes.ProposalTerms{
+					Change: &protoTypes.ProposalTerms_NewMarket{
+						NewMarket: &protoTypes.NewMarket{
+							Changes: &protoTypes.NewMarketConfiguration{
+								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
+									TargetStakeParameters: &protoTypes.TargetStakeParameters{
 										TimeWindow: tc.value,
 									},
 								},
@@ -454,12 +455,12 @@ func testLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindowFails(t *te
 
 func testLiquidityMonitoringChangeSubmissionWithPositiveTimeWindowSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
-							TargetStakeParameters: &types.TargetStakeParameters{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
+							TargetStakeParameters: &protoTypes.TargetStakeParameters{
 								TimeWindow: RandomPositiveI64(),
 							},
 						},
@@ -488,12 +489,12 @@ func testLiquidityMonitoringChangeSubmissionWithNonPositiveScalingFactorFails(t 
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{
-						NewMarket: &types.NewMarket{
-							Changes: &types.NewMarketConfiguration{
-								LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
-									TargetStakeParameters: &types.TargetStakeParameters{
+				Terms: &protoTypes.ProposalTerms{
+					Change: &protoTypes.ProposalTerms_NewMarket{
+						NewMarket: &protoTypes.NewMarket{
+							Changes: &protoTypes.NewMarketConfiguration{
+								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
+									TargetStakeParameters: &protoTypes.TargetStakeParameters{
 										ScalingFactor: tc.value,
 									},
 								},
@@ -510,12 +511,12 @@ func testLiquidityMonitoringChangeSubmissionWithNonPositiveScalingFactorFails(t 
 
 func testLiquidityMonitoringChangeSubmissionWithPositiveScalingFactorSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
-							TargetStakeParameters: &types.TargetStakeParameters{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
+							TargetStakeParameters: &protoTypes.TargetStakeParameters{
 								ScalingFactor: 1.5,
 							},
 						},
@@ -530,12 +531,12 @@ func testLiquidityMonitoringChangeSubmissionWithPositiveScalingFactorSucceeds(t 
 
 func testPriceMonitoringChangeSubmissionWithoutTriggersSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						PriceMonitoringParameters: &types.PriceMonitoringParameters{
-							Triggers: []*types.PriceMonitoringTrigger{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
+							Triggers: []*protoTypes.PriceMonitoringTrigger{},
 						},
 					},
 				},
@@ -548,12 +549,12 @@ func testPriceMonitoringChangeSubmissionWithoutTriggersSucceeds(t *testing.T) {
 
 func testPriceMonitoringChangeSubmissionWithTriggersSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						PriceMonitoringParameters: &types.PriceMonitoringParameters{
-							Triggers: []*types.PriceMonitoringTrigger{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
+							Triggers: []*protoTypes.PriceMonitoringTrigger{
 								{},
 								{},
 							},
@@ -569,12 +570,12 @@ func testPriceMonitoringChangeSubmissionWithTriggersSucceeds(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithTooManyPMTriggersFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						PriceMonitoringParameters: &types.PriceMonitoringParameters{
-							Triggers: []*types.PriceMonitoringTrigger{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
+							Triggers: []*protoTypes.PriceMonitoringTrigger{
 								{},
 								{},
 								{},
@@ -594,12 +595,12 @@ func testNewMarketChangeSubmissionWithTooManyPMTriggersFails(t *testing.T) {
 
 func testPriceMonitoringChangeSubmissionWithoutTriggerHorizonFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						PriceMonitoringParameters: &types.PriceMonitoringParameters{
-							Triggers: []*types.PriceMonitoringTrigger{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
+							Triggers: []*protoTypes.PriceMonitoringTrigger{
 								{},
 								{},
 							},
@@ -616,12 +617,12 @@ func testPriceMonitoringChangeSubmissionWithoutTriggerHorizonFails(t *testing.T)
 
 func testPriceMonitoringChangeSubmissionWithTriggerHorizonSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						PriceMonitoringParameters: &types.PriceMonitoringParameters{
-							Triggers: []*types.PriceMonitoringTrigger{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
+							Triggers: []*protoTypes.PriceMonitoringTrigger{
 								{
 									Horizon: RandomPositiveI64(),
 								},
@@ -662,12 +663,12 @@ func testPriceMonitoringChangeSubmissionWithWrongTriggerProbabilityFails(t *test
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{
-						NewMarket: &types.NewMarket{
-							Changes: &types.NewMarketConfiguration{
-								PriceMonitoringParameters: &types.PriceMonitoringParameters{
-									Triggers: []*types.PriceMonitoringTrigger{
+				Terms: &protoTypes.ProposalTerms{
+					Change: &protoTypes.ProposalTerms_NewMarket{
+						NewMarket: &protoTypes.NewMarket{
+							Changes: &protoTypes.NewMarketConfiguration{
+								PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
+									Triggers: []*protoTypes.PriceMonitoringTrigger{
 										{
 											Probability: fmt.Sprintf("%f", tc.value),
 										},
@@ -692,12 +693,12 @@ func testPriceMonitoringChangeSubmissionWithWrongTriggerProbabilityFails(t *test
 
 func testPriceMonitoringChangeSubmissionWithRightTriggerProbabilitySucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						PriceMonitoringParameters: &types.PriceMonitoringParameters{
-							Triggers: []*types.PriceMonitoringTrigger{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
+							Triggers: []*protoTypes.PriceMonitoringTrigger{
 								{
 									Probability: "0.01",
 								},
@@ -720,12 +721,12 @@ func testPriceMonitoringChangeSubmissionWithRightTriggerProbabilitySucceeds(t *t
 
 func testPriceMonitoringChangeSubmissionWithoutTriggerAuctionExtensionFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						PriceMonitoringParameters: &types.PriceMonitoringParameters{
-							Triggers: []*types.PriceMonitoringTrigger{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
+							Triggers: []*protoTypes.PriceMonitoringTrigger{
 								{},
 								{},
 							},
@@ -742,12 +743,12 @@ func testPriceMonitoringChangeSubmissionWithoutTriggerAuctionExtensionFails(t *t
 
 func testPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						PriceMonitoringParameters: &types.PriceMonitoringParameters{
-							Triggers: []*types.PriceMonitoringTrigger{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
+							Triggers: []*protoTypes.PriceMonitoringTrigger{
 								{
 									AuctionExtension: RandomPositiveI64(),
 								},
@@ -768,10 +769,10 @@ func testPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds(t *t
 
 func testNewMarketChangeSubmissionWithoutPriceMonitoringSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{},
 				},
 			},
 		},
@@ -782,11 +783,11 @@ func testNewMarketChangeSubmissionWithoutPriceMonitoringSucceeds(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithPriceMonitoringSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						PriceMonitoringParameters: &types.PriceMonitoringParameters{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{},
 					},
 				},
 			},
@@ -798,11 +799,11 @@ func testNewMarketChangeSubmissionWithPriceMonitoringSucceeds(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithoutInstrumentNameFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
 							Name: "",
 						},
 					},
@@ -816,11 +817,11 @@ func testNewMarketChangeSubmissionWithoutInstrumentNameFails(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithInstrumentNameSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
 							Name: "My name",
 						},
 					},
@@ -834,11 +835,11 @@ func testNewMarketChangeSubmissionWithInstrumentNameSucceeds(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithoutInstrumentCodeFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
 							Code: "",
 						},
 					},
@@ -852,11 +853,11 @@ func testNewMarketChangeSubmissionWithoutInstrumentCodeFails(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithInstrumentCodeSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
 							Code: "My code",
 						},
 					},
@@ -870,11 +871,11 @@ func testNewMarketChangeSubmissionWithInstrumentCodeSucceeds(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithoutProductFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{},
 					},
 				},
 			},
@@ -886,12 +887,12 @@ func testNewMarketChangeSubmissionWithoutProductFails(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithProductSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{},
 						},
 					},
 				},
@@ -904,12 +905,12 @@ func testNewMarketChangeSubmissionWithProductSucceeds(t *testing.T) {
 
 func testNewFutureMarketChangeSubmissionWithoutFutureFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{},
 						},
 					},
 				},
@@ -922,13 +923,13 @@ func testNewFutureMarketChangeSubmissionWithoutFutureFails(t *testing.T) {
 
 func testNewFutureMarketChangeSubmissionWithFutureSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{},
 							},
 						},
 					},
@@ -942,13 +943,13 @@ func testNewFutureMarketChangeSubmissionWithFutureSucceeds(t *testing.T) {
 
 func testNewFutureMarketChangeSubmissionWithoutSettlementAssetFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
 									SettlementAsset: "",
 								},
 							},
@@ -964,13 +965,13 @@ func testNewFutureMarketChangeSubmissionWithoutSettlementAssetFails(t *testing.T
 
 func testNewFutureMarketChangeSubmissionWithSettlementAssetSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
 									SettlementAsset: "BTC",
 								},
 							},
@@ -986,13 +987,13 @@ func testNewFutureMarketChangeSubmissionWithSettlementAssetSucceeds(t *testing.T
 
 func testNewFutureMarketChangeSubmissionWithoutQuoteNameFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
 									QuoteName: "",
 								},
 							},
@@ -1008,13 +1009,13 @@ func testNewFutureMarketChangeSubmissionWithoutQuoteNameFails(t *testing.T) {
 
 func testNewFutureMarketChangeSubmissionWithQuoteNameSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
 									QuoteName: "BTC",
 								},
 							},
@@ -1030,13 +1031,13 @@ func testNewFutureMarketChangeSubmissionWithQuoteNameSucceeds(t *testing.T) {
 
 func testNewFutureMarketChangeSubmissionWithoutOracleSpecFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{},
 							},
 						},
 					},
@@ -1045,33 +1046,32 @@ func testNewFutureMarketChangeSubmissionWithoutOracleSpecFails(t *testing.T) {
 		},
 	})
 
-	fmt.Println(err)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_trading_termination"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionMissingSingleOracleSpecFails(t *testing.T) {
-	testNewFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t, "oracle_spec_for_settlement_data")
-	testNewFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t, "oracle_spec_for_trading_termination")
+	testNewFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t, "data_source_spec_for_settlement_data")
+	testNewFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t, "data_source_spec_for_trading_termination")
 }
 
 func testNewFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t *testing.T, oracleSpecName string) {
 	t.Helper()
-	future := &types.FutureProduct{}
-	if oracleSpecName == "oracle_spec_for_settlement_data" {
-		future.OracleSpecForTradingTermination = &oraclespb.OracleSpecConfiguration{}
+	future := &protoTypes.FutureProduct{}
+	if oracleSpecName == "data_source_spec_for_settlement_data" {
+		future.DataSourceSpecForTradingTermination = &datapb.DataSourceSpecConfiguration{}
 	} else {
-		future.OracleSpecForSettlementData = &oraclespb.OracleSpecConfiguration{}
+		future.DataSourceSpecForSettlementData = &datapb.DataSourceSpecConfiguration{}
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{},
 							},
 						},
 					},
@@ -1085,15 +1085,15 @@ func testNewFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t *testing.
 
 func testNewFutureMarketChangeSubmissionWithOracleSpecSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForSettlementData:     &oraclespb.OracleSpecConfiguration{},
-									OracleSpecForTradingTermination: &oraclespb.OracleSpecConfiguration{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData:     &datapb.DataSourceSpecConfiguration{},
+									DataSourceSpecForTradingTermination: &datapb.DataSourceSpecConfiguration{},
 								},
 							},
 						},
@@ -1103,20 +1103,20 @@ func testNewFutureMarketChangeSubmissionWithOracleSpecSucceeds(t *testing.T) {
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithoutPubKeysFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-										PubKeys: []string{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+										Signers: []*datapb.Signer{},
 									},
 								},
 							},
@@ -1127,34 +1127,39 @@ func testNewFutureMarketChangeSubmissionWithoutPubKeysFails(t *testing.T) {
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.pub_keys"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.signers"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithWrongPubKeysFails(t *testing.T) {
+	pubKeys := []*types.Signer{
+		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+		types.CreateSignerFromString("", types.DataSignerTypePubKey),
+	}
+
 	testCases := []struct {
 		msg   string
-		value []string
+		value []*datapb.Signer
 	}{
 		{
-			msg:   "with empty pub-keys",
-			value: []string{"0xDEADBEEF", ""},
+			msg:   "with empty signers",
+			value: types.SignersIntoProto(pubKeys),
 		}, {
-			msg:   "with blank pub-keys",
-			value: []string{"0xDEADBEEF", " "},
+			msg:   "with blank signers",
+			value: types.SignersIntoProto(pubKeys),
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{
-						NewMarket: &types.NewMarket{
-							Changes: &types.NewMarketConfiguration{
-								Instrument: &types.InstrumentConfiguration{
-									Product: &types.InstrumentConfiguration_Future{
-										Future: &types.FutureProduct{
-											OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-												PubKeys: tc.value,
+				Terms: &protoTypes.ProposalTerms{
+					Change: &protoTypes.ProposalTerms_NewMarket{
+						NewMarket: &protoTypes.NewMarket{
+							Changes: &protoTypes.NewMarketConfiguration{
+								Instrument: &protoTypes.InstrumentConfiguration{
+									Product: &protoTypes.InstrumentConfiguration_Future{
+										Future: &protoTypes.FutureProduct{
+											DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+												Signers: tc.value,
 											},
 										},
 									},
@@ -1165,25 +1170,30 @@ func testNewFutureMarketChangeSubmissionWithWrongPubKeysFails(t *testing.T) {
 				},
 			})
 
-			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.pub_keys.1"), commands.ErrIsNotValid)
+			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.signers.1"), commands.ErrIsNotValid)
 		})
 	}
 }
 
 func testNewFutureMarketChangeSubmissionWithPubKeysSucceeds(t *testing.T) {
+	pubKeys := []*types.Signer{
+		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+		types.CreateSignerFromString("0xCAFEDUDE", types.DataSignerTypePubKey),
+	}
+
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-										PubKeys: []string{"0xDEADBEEF", "0xCAFEDUDE"},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+										Signers: types.SignersIntoProto(pubKeys),
 									},
-									OracleSpecForTradingTermination: &oraclespb.OracleSpecConfiguration{
-										PubKeys: []string{"0xDEADBEEF", "0xCAFEDUDE"},
+									DataSourceSpecForTradingTermination: &datapb.DataSourceSpecConfiguration{
+										Signers: types.SignersIntoProto(pubKeys),
 									},
 								},
 							},
@@ -1194,22 +1204,22 @@ func testNewFutureMarketChangeSubmissionWithPubKeysSucceeds(t *testing.T) {
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.pub_keys"), commands.ErrIsRequired)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.pub_keys.0"), commands.ErrIsNotValid)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.pub_keys.1"), commands.ErrIsNotValid)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.signers"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.signers.0"), commands.ErrIsNotValid)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.signers.1"), commands.ErrIsNotValid)
 }
 
 func testNewFutureMarketChangeSubmissionWithoutFiltersFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-										Filters: []*oraclespb.Filter{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+										Filters: []*datapb.Filter{},
 									},
 								},
 							},
@@ -1220,25 +1230,25 @@ func testNewFutureMarketChangeSubmissionWithoutFiltersFails(t *testing.T) {
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithFiltersSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-										Filters: []*oraclespb.Filter{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+										Filters: []*datapb.Filter{
 											{},
 										},
 									},
-									OracleSpecForTradingTermination: &oraclespb.OracleSpecConfiguration{
-										Filters: []*oraclespb.Filter{
+									DataSourceSpecForTradingTermination: &datapb.DataSourceSpecConfiguration{
+										Filters: []*datapb.Filter{
 											{},
 										},
 									},
@@ -1251,20 +1261,20 @@ func testNewFutureMarketChangeSubmissionWithFiltersSucceeds(t *testing.T) {
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-										Filters: []*oraclespb.Filter{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+										Filters: []*datapb.Filter{
 											{}, {},
 										},
 									},
@@ -1277,34 +1287,34 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyFails(t *testing.T) 
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.key"), commands.ErrIsNotValid)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.1.key"), commands.ErrIsNotValid)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.0.key"), commands.ErrIsNotValid)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.1.key"), commands.ErrIsNotValid)
 }
 
 func testNewFutureMarketChangeSubmissionWithFilterWithKeySucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-										Filters: []*oraclespb.Filter{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+										Filters: []*datapb.Filter{
 											{
-												Key: &oraclespb.PropertyKey{},
+												Key: &datapb.PropertyKey{},
 											}, {
-												Key: &oraclespb.PropertyKey{},
+												Key: &datapb.PropertyKey{},
 											},
 										},
 									},
-									OracleSpecForTradingTermination: &oraclespb.OracleSpecConfiguration{
-										Filters: []*oraclespb.Filter{
+									DataSourceSpecForTradingTermination: &datapb.DataSourceSpecConfiguration{
+										Filters: []*datapb.Filter{
 											{
-												Key: &oraclespb.PropertyKey{},
+												Key: &datapb.PropertyKey{},
 											}, {
-												Key: &oraclespb.PropertyKey{},
+												Key: &datapb.PropertyKey{},
 											},
 										},
 									},
@@ -1317,27 +1327,27 @@ func testNewFutureMarketChangeSubmissionWithFilterWithKeySucceeds(t *testing.T) 
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.key"), commands.ErrIsNotValid)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.1.key"), commands.ErrIsNotValid)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.0.key"), commands.ErrIsNotValid)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.1.key"), commands.ErrIsNotValid)
 }
 
 func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyNameFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-										Filters: []*oraclespb.Filter{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+										Filters: []*datapb.Filter{
 											{
-												Key: &oraclespb.PropertyKey{
+												Key: &datapb.PropertyKey{
 													Name: "",
 												},
 											}, {
-												Key: &oraclespb.PropertyKey{
+												Key: &datapb.PropertyKey{
 													Name: "",
 												},
 											},
@@ -1352,40 +1362,40 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyNameFails(t *testing
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.key.name"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.1.key.name"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.0.key.name"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.1.key.name"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithFilterWithKeyNameSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-										Filters: []*oraclespb.Filter{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+										Filters: []*datapb.Filter{
 											{
-												Key: &oraclespb.PropertyKey{
+												Key: &datapb.PropertyKey{
 													Name: "key1",
 												},
 											}, {
-												Key: &oraclespb.PropertyKey{
+												Key: &datapb.PropertyKey{
 													Name: "key2",
 												},
 											},
 										},
 									},
-									OracleSpecForTradingTermination: &oraclespb.OracleSpecConfiguration{
-										Filters: []*oraclespb.Filter{
+									DataSourceSpecForTradingTermination: &datapb.DataSourceSpecConfiguration{
+										Filters: []*datapb.Filter{
 											{
-												Key: &oraclespb.PropertyKey{
+												Key: &datapb.PropertyKey{
 													Name: "key1",
 												},
 											}, {
-												Key: &oraclespb.PropertyKey{
+												Key: &datapb.PropertyKey{
 													Name: "key2",
 												},
 											},
@@ -1400,38 +1410,38 @@ func testNewFutureMarketChangeSubmissionWithFilterWithKeyNameSucceeds(t *testing
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.key.name"), commands.ErrIsRequired)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.1.key.name"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.0.key.name"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.1.key.name"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyTypeFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-										Filters: []*oraclespb.Filter{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+										Filters: []*datapb.Filter{
 											{
-												Key: &oraclespb.PropertyKey{
-													Type: oraclespb.PropertyKey_TYPE_UNSPECIFIED,
+												Key: &datapb.PropertyKey{
+													Type: datapb.PropertyKey_TYPE_UNSPECIFIED,
 												},
 											}, {
-												Key: &oraclespb.PropertyKey{},
+												Key: &datapb.PropertyKey{},
 											},
 										},
 									},
-									OracleSpecForTradingTermination: &oraclespb.OracleSpecConfiguration{
-										Filters: []*oraclespb.Filter{
+									DataSourceSpecForTradingTermination: &datapb.DataSourceSpecConfiguration{
+										Filters: []*datapb.Filter{
 											{
-												Key: &oraclespb.PropertyKey{
-													Type: oraclespb.PropertyKey_TYPE_UNSPECIFIED,
+												Key: &datapb.PropertyKey{
+													Type: datapb.PropertyKey_TYPE_UNSPECIFIED,
 												},
 											}, {
-												Key: &oraclespb.PropertyKey{},
+												Key: &datapb.PropertyKey{},
 											},
 										},
 									},
@@ -1444,53 +1454,53 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyTypeFails(t *testing
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.key.type"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.1.key.type"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.0.key.type"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.1.key.type"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithFilterWithKeyTypeSucceeds(t *testing.T) {
 	testCases := []struct {
 		msg   string
-		value oraclespb.PropertyKey_Type
+		value datapb.PropertyKey_Type
 	}{
 		{
 			msg:   "with EMPTY",
-			value: oraclespb.PropertyKey_TYPE_EMPTY,
+			value: datapb.PropertyKey_TYPE_EMPTY,
 		}, {
 			msg:   "with INTEGER",
-			value: oraclespb.PropertyKey_TYPE_INTEGER,
+			value: datapb.PropertyKey_TYPE_INTEGER,
 		}, {
 			msg:   "with STRING",
-			value: oraclespb.PropertyKey_TYPE_STRING,
+			value: datapb.PropertyKey_TYPE_STRING,
 		}, {
 			msg:   "with BOOLEAN",
-			value: oraclespb.PropertyKey_TYPE_BOOLEAN,
+			value: datapb.PropertyKey_TYPE_BOOLEAN,
 		}, {
 			msg:   "with DECIMAL",
-			value: oraclespb.PropertyKey_TYPE_DECIMAL,
+			value: datapb.PropertyKey_TYPE_DECIMAL,
 		}, {
 			msg:   "with TIMESTAMP",
-			value: oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			value: datapb.PropertyKey_TYPE_TIMESTAMP,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{
-						NewMarket: &types.NewMarket{
-							Changes: &types.NewMarketConfiguration{
-								Instrument: &types.InstrumentConfiguration{
-									Product: &types.InstrumentConfiguration_Future{
-										Future: &types.FutureProduct{
-											OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-												Filters: []*oraclespb.Filter{
+				Terms: &protoTypes.ProposalTerms{
+					Change: &protoTypes.ProposalTerms_NewMarket{
+						NewMarket: &protoTypes.NewMarket{
+							Changes: &protoTypes.NewMarketConfiguration{
+								Instrument: &protoTypes.InstrumentConfiguration{
+									Product: &protoTypes.InstrumentConfiguration_Future{
+										Future: &protoTypes.FutureProduct{
+											DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+												Filters: []*datapb.Filter{
 													{
-														Key: &oraclespb.PropertyKey{
+														Key: &datapb.PropertyKey{
 															Type: tc.value,
 														},
 													}, {
-														Key: &oraclespb.PropertyKey{
+														Key: &datapb.PropertyKey{
 															Type: tc.value,
 														},
 													},
@@ -1505,25 +1515,25 @@ func testNewFutureMarketChangeSubmissionWithFilterWithKeyTypeSucceeds(t *testing
 				},
 			})
 
-			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec.filters.0.key.type"), commands.ErrIsRequired)
-			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec.filters.1.key.type"), commands.ErrIsRequired)
+			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec.filters.0.key.type"), commands.ErrIsRequired)
+			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec.filters.1.key.type"), commands.ErrIsRequired)
 		})
 	}
 }
 
 func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionsSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-										Filters: []*oraclespb.Filter{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+										Filters: []*datapb.Filter{
 											{
-												Conditions: []*oraclespb.Condition{},
+												Conditions: []*datapb.Condition{},
 											},
 										},
 									},
@@ -1536,24 +1546,24 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionsSucceeds(t *t
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec.filters.0.conditions"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec.filters.0.conditions"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionOperatorFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-										Filters: []*oraclespb.Filter{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+										Filters: []*datapb.Filter{
 											{
-												Conditions: []*oraclespb.Condition{
+												Conditions: []*datapb.Condition{
 													{
-														Operator: oraclespb.Condition_OPERATOR_UNSPECIFIED,
+														Operator: datapb.Condition_OPERATOR_UNSPECIFIED,
 													},
 													{},
 												},
@@ -1569,46 +1579,46 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionOperatorFails(
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.conditions.0.operator"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.conditions.1.operator"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.0.conditions.0.operator"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.0.conditions.1.operator"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithFilterWithConditionOperatorSucceeds(t *testing.T) {
 	testCases := []struct {
 		msg   string
-		value oraclespb.Condition_Operator
+		value datapb.Condition_Operator
 	}{
 		{
 			msg:   "with EQUALS",
-			value: oraclespb.Condition_OPERATOR_EQUALS,
+			value: datapb.Condition_OPERATOR_EQUALS,
 		}, {
 			msg:   "with GREATER_THAN",
-			value: oraclespb.Condition_OPERATOR_GREATER_THAN,
+			value: datapb.Condition_OPERATOR_GREATER_THAN,
 		}, {
 			msg:   "with GREATER_THAN_OR_EQUAL",
-			value: oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+			value: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 		}, {
 			msg:   "with LESS_THAN",
-			value: oraclespb.Condition_OPERATOR_LESS_THAN,
+			value: datapb.Condition_OPERATOR_LESS_THAN,
 		}, {
 			msg:   "with LESS_THAN_OR_EQUAL",
-			value: oraclespb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
+			value: datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{
-						NewMarket: &types.NewMarket{
-							Changes: &types.NewMarketConfiguration{
-								Instrument: &types.InstrumentConfiguration{
-									Product: &types.InstrumentConfiguration_Future{
-										Future: &types.FutureProduct{
-											OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-												Filters: []*oraclespb.Filter{
+				Terms: &protoTypes.ProposalTerms{
+					Change: &protoTypes.ProposalTerms_NewMarket{
+						NewMarket: &protoTypes.NewMarket{
+							Changes: &protoTypes.NewMarketConfiguration{
+								Instrument: &protoTypes.InstrumentConfiguration{
+									Product: &protoTypes.InstrumentConfiguration_Future{
+										Future: &protoTypes.FutureProduct{
+											DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+												Filters: []*datapb.Filter{
 													{
-														Conditions: []*oraclespb.Condition{
+														Conditions: []*datapb.Condition{
 															{
 																Operator: tc.value,
 															},
@@ -1628,25 +1638,25 @@ func testNewFutureMarketChangeSubmissionWithFilterWithConditionOperatorSucceeds(
 				},
 			})
 
-			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec.filters.0.conditions.0.operator"), commands.ErrIsRequired)
-			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec.filters.1.conditions.0.operator"), commands.ErrIsRequired)
+			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec.filters.0.conditions.0.operator"), commands.ErrIsRequired)
+			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec.filters.1.conditions.0.operator"), commands.ErrIsRequired)
 		})
 	}
 }
 
 func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionValueFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-										Filters: []*oraclespb.Filter{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+										Filters: []*datapb.Filter{
 											{
-												Conditions: []*oraclespb.Condition{
+												Conditions: []*datapb.Condition{
 													{
 														Value: "",
 													},
@@ -1666,23 +1676,23 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionValueFails(t *
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.conditions.0.value"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.conditions.1.value"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.0.conditions.0.value"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.0.conditions.1.value"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithFilterWithConditionValueSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-										Filters: []*oraclespb.Filter{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+										Filters: []*datapb.Filter{
 											{
-												Conditions: []*oraclespb.Condition{
+												Conditions: []*datapb.Condition{
 													{
 														Value: "value 1",
 													},
@@ -1702,19 +1712,19 @@ func testNewFutureMarketChangeSubmissionWithFilterWithConditionValueSucceeds(t *
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec.filters.0.conditions.0.value"), commands.ErrIsRequired)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec.filters.0.conditions.1.value"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec.filters.0.conditions.0.value"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec.filters.0.conditions.1.value"), commands.ErrIsRequired)
 }
 
-func testNewFutureMarketChangeSubmissionWithoutOracleSpecBindingFails(t *testing.T) {
+func testNewFutureMarketChangeSubmissionWithoutDataSourceSpecBindingFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{},
 							},
 						},
 					},
@@ -1723,19 +1733,19 @@ func testNewFutureMarketChangeSubmissionWithoutOracleSpecBindingFails(t *testing
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding"), commands.ErrIsRequired)
 }
 
-func testNewFutureMarketChangeSubmissionWithOracleSpecBindingSucceeds(t *testing.T) {
+func testNewFutureMarketChangeSubmissionWithDataSourceSpecBindingSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecBinding: &types.OracleSpecToFutureBinding{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecBinding: &protoTypes.DataSourceSpecToFutureBinding{},
 								},
 							},
 						},
@@ -1745,31 +1755,31 @@ func testNewFutureMarketChangeSubmissionWithOracleSpecBindingSucceeds(t *testing
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionMissingOracleBindingPropertyFails(t *testing.T, property string) {
 	t.Helper()
-	var binding *types.OracleSpecToFutureBinding
+	var binding *protoTypes.DataSourceSpecToFutureBinding
 	if property == "settlement_data_property" {
-		binding = &types.OracleSpecToFutureBinding{
+		binding = &protoTypes.DataSourceSpecToFutureBinding{
 			SettlementDataProperty: "",
 		}
 	} else {
-		binding = &types.OracleSpecToFutureBinding{
+		binding = &protoTypes.DataSourceSpecToFutureBinding{
 			TradingTerminationProperty: "",
 		}
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecBinding: binding,
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecBinding: binding,
 								},
 							},
 						},
@@ -1779,7 +1789,7 @@ func testNewFutureMarketChangeSubmissionMissingOracleBindingPropertyFails(t *tes
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding."+property), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding."+property), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithoutTradingTerminationPropertyFails(t *testing.T) {
@@ -1791,32 +1801,32 @@ func testNewFutureMarketChangeSubmissionWithoutSettlementDataPropertyFails(t *te
 }
 
 func testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingSucceeds(t *testing.T) {
-	testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t, &types.OracleSpecToFutureBinding{SettlementDataProperty: "key1"}, "settlement_data_property", "key1")
-	testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t, &types.OracleSpecToFutureBinding{TradingTerminationProperty: "key2"}, "settlement_data_property", "key2")
+	testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t, &protoTypes.DataSourceSpecToFutureBinding{SettlementDataProperty: "key1"}, "settlement_data_property", "key1")
+	testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t, &protoTypes.DataSourceSpecToFutureBinding{TradingTerminationProperty: "key2"}, "settlement_data_property", "key2")
 }
 
-func testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t *testing.T, binding *types.OracleSpecToFutureBinding, bindingName string, bindingKey string) {
+func testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t *testing.T, binding *protoTypes.DataSourceSpecToFutureBinding, bindingName string, bindingKey string) {
 	t.Helper()
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
-										Filters: []*oraclespb.Filter{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
+										Filters: []*datapb.Filter{
 											{
-												Key: &oraclespb.PropertyKey{
+												Key: &datapb.PropertyKey{
 													Name: bindingKey,
 												},
 											}, {
-												Key: &oraclespb.PropertyKey{},
+												Key: &datapb.PropertyKey{},
 											},
 										},
 									},
-									OracleSpecBinding: binding,
+									DataSourceSpecBinding: binding,
 								},
 							},
 						},
@@ -1826,20 +1836,20 @@ func testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingFor
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding."+bindingName), commands.ErrIsMismatching)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding."+bindingName), commands.ErrIsMismatching)
 }
 
-func testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t *testing.T, binding *types.OracleSpecToFutureBinding, bindingName string) {
+func testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t *testing.T, binding *protoTypes.DataSourceSpecToFutureBinding, bindingName string) {
 	t.Helper()
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecBinding: binding,
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecBinding: binding,
 								},
 							},
 						},
@@ -1849,24 +1859,24 @@ func testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSp
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding."+bindingName), commands.ErrIsMismatching)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding."+bindingName), commands.ErrIsMismatching)
 }
 
 func testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingFails(t *testing.T) {
-	testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t, &types.OracleSpecToFutureBinding{SettlementDataProperty: "My property"}, "settlement_data_property")
-	testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t, &types.OracleSpecToFutureBinding{TradingTerminationProperty: "My property"}, "trading_termination_property")
+	testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t, &protoTypes.DataSourceSpecToFutureBinding{SettlementDataProperty: "My property"}, "settlement_data_property")
+	testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t, &protoTypes.DataSourceSpecToFutureBinding{TradingTerminationProperty: "My property"}, "trading_termination_property")
 }
 
 func testNewFutureMarketChangeSubmissionWithSettlementDataPropertySucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecBinding: &types.OracleSpecToFutureBinding{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecBinding: &protoTypes.DataSourceSpecToFutureBinding{
 										SettlementDataProperty: "My property",
 									},
 								},
@@ -1878,16 +1888,16 @@ func testNewFutureMarketChangeSubmissionWithSettlementDataPropertySucceeds(t *te
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.settlement_data_property"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding.settlement_data_property"), commands.ErrIsRequired)
 }
 
 func testNewSimpleRiskParametersChangeSubmissionWithoutSimpleRiskParametersFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_Simple{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_Simple{},
 					},
 				},
 			},
@@ -1899,12 +1909,12 @@ func testNewSimpleRiskParametersChangeSubmissionWithoutSimpleRiskParametersFails
 
 func testNewSimpleRiskParametersChangeSubmissionWithSimpleRiskParametersSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_Simple{
-							Simple: &types.SimpleModelParams{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_Simple{
+							Simple: &protoTypes.SimpleModelParams{},
 						},
 					},
 				},
@@ -1917,12 +1927,12 @@ func testNewSimpleRiskParametersChangeSubmissionWithSimpleRiskParametersSucceeds
 
 func testNewSimpleRiskParametersChangeSubmissionWithPositiveMinMoveDownFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_Simple{
-							Simple: &types.SimpleModelParams{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_Simple{
+							Simple: &protoTypes.SimpleModelParams{
 								MinMoveDown: 1,
 							},
 						},
@@ -1951,12 +1961,12 @@ func testNewSimpleRiskParametersChangeSubmissionWithNonPositiveMinMoveDownSuccee
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{
-						NewMarket: &types.NewMarket{
-							Changes: &types.NewMarketConfiguration{
-								RiskParameters: &types.NewMarketConfiguration_Simple{
-									Simple: &types.SimpleModelParams{
+				Terms: &protoTypes.ProposalTerms{
+					Change: &protoTypes.ProposalTerms_NewMarket{
+						NewMarket: &protoTypes.NewMarket{
+							Changes: &protoTypes.NewMarketConfiguration{
+								RiskParameters: &protoTypes.NewMarketConfiguration_Simple{
+									Simple: &protoTypes.SimpleModelParams{
 										MinMoveDown: tc.value,
 									},
 								},
@@ -1973,12 +1983,12 @@ func testNewSimpleRiskParametersChangeSubmissionWithNonPositiveMinMoveDownSuccee
 
 func testNewSimpleRiskParametersChangeSubmissionWithNegativeMaxMoveUpFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_Simple{
-							Simple: &types.SimpleModelParams{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_Simple{
+							Simple: &protoTypes.SimpleModelParams{
 								MaxMoveUp: -1,
 							},
 						},
@@ -2007,12 +2017,12 @@ func testNewSimpleRiskParametersChangeSubmissionWithNonNegativeMaxMoveUpSucceeds
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{
-						NewMarket: &types.NewMarket{
-							Changes: &types.NewMarketConfiguration{
-								RiskParameters: &types.NewMarketConfiguration_Simple{
-									Simple: &types.SimpleModelParams{
+				Terms: &protoTypes.ProposalTerms{
+					Change: &protoTypes.ProposalTerms_NewMarket{
+						NewMarket: &protoTypes.NewMarket{
+							Changes: &protoTypes.NewMarketConfiguration{
+								RiskParameters: &protoTypes.NewMarketConfiguration_Simple{
+									Simple: &protoTypes.SimpleModelParams{
 										MaxMoveUp: tc.value,
 									},
 								},
@@ -2043,12 +2053,12 @@ func testNewSimpleRiskParametersChangeSubmissionWithWrongProbabilityOfTradingFai
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{
-						NewMarket: &types.NewMarket{
-							Changes: &types.NewMarketConfiguration{
-								RiskParameters: &types.NewMarketConfiguration_Simple{
-									Simple: &types.SimpleModelParams{
+				Terms: &protoTypes.ProposalTerms{
+					Change: &protoTypes.ProposalTerms_NewMarket{
+						NewMarket: &protoTypes.NewMarket{
+							Changes: &protoTypes.NewMarketConfiguration{
+								RiskParameters: &protoTypes.NewMarketConfiguration_Simple{
+									Simple: &protoTypes.SimpleModelParams{
 										ProbabilityOfTrading: tc.value,
 									},
 								},
@@ -2083,12 +2093,12 @@ func testNewSimpleRiskParametersChangeSubmissionWithRightProbabilityOfTradingSuc
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{
-						NewMarket: &types.NewMarket{
-							Changes: &types.NewMarketConfiguration{
-								RiskParameters: &types.NewMarketConfiguration_Simple{
-									Simple: &types.SimpleModelParams{
+				Terms: &protoTypes.ProposalTerms{
+					Change: &protoTypes.ProposalTerms_NewMarket{
+						NewMarket: &protoTypes.NewMarket{
+							Changes: &protoTypes.NewMarketConfiguration{
+								RiskParameters: &protoTypes.NewMarketConfiguration_Simple{
+									Simple: &protoTypes.SimpleModelParams{
 										ProbabilityOfTrading: tc.value,
 									},
 								},
@@ -2106,11 +2116,11 @@ func testNewSimpleRiskParametersChangeSubmissionWithRightProbabilityOfTradingSuc
 
 func testNewLogNormalRiskParametersChangeSubmissionWithoutLogNormalRiskParametersFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{},
 					},
 				},
 			},
@@ -2122,15 +2132,15 @@ func testNewLogNormalRiskParametersChangeSubmissionWithoutLogNormalRiskParameter
 
 func testNewLogNormalRiskParametersChangeSubmissionWithLogNormalRiskParametersSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 1,
 								Tau:                   2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2148,12 +2158,12 @@ func testNewLogNormalRiskParametersChangeSubmissionWithLogNormalRiskParametersSu
 
 func testNewLogNormalRiskParametersChangeSubmissionWithoutParamsFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{},
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{},
 						},
 					},
 				},
@@ -2166,15 +2176,15 @@ func testNewLogNormalRiskParametersChangeSubmissionWithoutParamsFails(t *testing
 
 func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testing.T) {
 	cTooSmall := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 5e-9,
 								Tau:                   2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2190,15 +2200,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testin
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter"), errors.New("must be between [1e-8, 1)"))
 
 	cNeg := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: -0.1,
 								Tau:                   2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2214,15 +2224,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testin
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter"), errors.New("must be between [1e-8, 1)"))
 
 	cTooBig := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 1 + 1e-8,
 								Tau:                   2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2238,15 +2248,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testin
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter"), errors.New("must be between [1e-8, 1)"))
 
 	cJustAboutRight1 := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 1e-8,
 								Tau:                   2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2262,15 +2272,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testin
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter"), errors.New("must be between [1e-8, 1)"))
 
 	cJustAboutRight2 := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 1 - 1e-12,
 								Tau:                   2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2288,15 +2298,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testin
 
 func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 	cZero := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2312,15 +2322,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau"), errors.New("must be between (0, 1]"))
 
 	cNeg := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   -0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2336,15 +2346,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau"), errors.New("must be between (0, 1]"))
 
 	cTooLarge := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   1 + 1e-12,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2360,15 +2370,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau"), errors.New("must be between (0, 1]"))
 
 	cJustAboutRight1 := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   1e-12,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2384,15 +2394,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau"), errors.New("must be between (0, 1]"))
 
 	cJustAboutRight2 := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   1,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2410,15 +2420,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 
 func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 	cNaN := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    math.NaN(),
 									Sigma: 0.1,
 									R:     0,
@@ -2434,15 +2444,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu"), commands.ErrIsNotValidNumber)
 
 	cTooSmall := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    -20 - 1e-12,
 									Sigma: 0.1,
 									R:     0,
@@ -2458,15 +2468,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu"), errors.New("must be between [-20,20]"))
 
 	cTooLarge := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    20 + 1e-12,
 									Sigma: 0.1,
 									R:     0,
@@ -2482,15 +2492,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu"), errors.New("must be between [-20,20]"))
 
 	cJustAboutRight1 := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    -20,
 									Sigma: 0.1,
 									R:     0,
@@ -2506,15 +2516,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu"), errors.New("must be between [-20,20]"))
 
 	cJustAboutRight2 := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    20,
 									Sigma: 0.1,
 									R:     0,
@@ -2532,15 +2542,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 
 func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 	cNaN := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0.2,
 									Sigma: 0.1,
 									R:     math.NaN(),
@@ -2556,15 +2566,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r"), commands.ErrIsNotValidNumber)
 
 	cTooSmall := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0.2,
 									Sigma: 0.1,
 									R:     -20 - 1e-12,
@@ -2580,15 +2590,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r"), errors.New("must be between [-20,20]"))
 
 	cTooLarge := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0.2,
 									Sigma: 0.1,
 									R:     20 + 1e-12,
@@ -2604,15 +2614,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r"), errors.New("must be between [-20,20]"))
 
 	cJustAboutRight1 := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0.2,
 									Sigma: 0.1,
 									R:     -20,
@@ -2628,15 +2638,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r"), errors.New("must be between [-20,20]"))
 
 	cJustAboutRight2 := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0.2,
 									Sigma: 0.1,
 									R:     20,
@@ -2654,15 +2664,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 
 func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 	cNaN := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0.2,
 									Sigma: math.NaN(),
 									R:     0,
@@ -2678,15 +2688,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), commands.ErrIsNotValidNumber)
 
 	cNeg := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0.2,
 									Sigma: -0.1,
 									R:     0,
@@ -2702,15 +2712,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-4,100]"))
 
 	cTooSmall := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0.2,
 									Sigma: 1e-4 - 1e-12,
 									R:     0,
@@ -2726,15 +2736,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-4,100]"))
 
 	cTooLarge := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0.2,
 									Sigma: 100 + 1e-12,
 									R:     0,
@@ -2750,15 +2760,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-4,100]"))
 
 	cJustAboutRight1 := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0.2,
 									Sigma: 1e-4,
 									R:     0,
@@ -2774,15 +2784,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-4,100]"))
 
 	cJustAboutRight2 := &commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-							LogNormal: &types.LogNormalRiskModel{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
+							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &types.LogNormalModelParams{
+								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0.2,
 									Sigma: 100,
 									R:     0,
@@ -2808,24 +2818,24 @@ func testNewMarketSubmissionWithTooLongReferenceFails(t *testing.T) {
 
 func testFutureMarketSubmissionWithInternalTimestampForTradingTerminationSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForTradingTermination: &oraclespb.OracleSpecConfiguration{
-										PubKeys: []string{},
-										Filters: []*oraclespb.Filter{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForTradingTermination: &datapb.DataSourceSpecConfiguration{
+										Signers: []*datapb.Signer{},
+										Filters: []*datapb.Filter{
 											{
-												Key: &oraclespb.PropertyKey{
+												Key: &datapb.PropertyKey{
 													Name: "vegaprotocol.builtin.timestamp",
-													Type: oraclespb.PropertyKey_TYPE_TIMESTAMP,
+													Type: datapb.PropertyKey_TYPE_TIMESTAMP,
 												},
-												Conditions: []*oraclespb.Condition{
+												Conditions: []*datapb.Condition{
 													{
-														Operator: oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+														Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 														Value:    fmt.Sprintf("%d", time.Now().Add(time.Hour*24*365).UnixNano()),
 													},
 												},
@@ -2841,27 +2851,27 @@ func testFutureMarketSubmissionWithInternalTimestampForTradingTerminationSucceed
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_trading_termination.pub_keys"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination.signers"), commands.ErrIsRequired)
 }
 
 func testFutureMarketSubmissionWithExternalTradingTerminationNoPublicKeyFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{
-				NewMarket: &types.NewMarket{
-					Changes: &types.NewMarketConfiguration{
-						Instrument: &types.InstrumentConfiguration{
-							Product: &types.InstrumentConfiguration_Future{
-								Future: &types.FutureProduct{
-									OracleSpecForTradingTermination: &oraclespb.OracleSpecConfiguration{
-										PubKeys: []string{},
-										Filters: []*oraclespb.Filter{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForTradingTermination: &datapb.DataSourceSpecConfiguration{
+										Signers: []*datapb.Signer{},
+										Filters: []*datapb.Filter{
 											{
-												Key: &oraclespb.PropertyKey{
+												Key: &datapb.PropertyKey{
 													Name: "trading.terminated",
-													Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
+													Type: datapb.PropertyKey_TYPE_BOOLEAN,
 												},
-												Conditions: []*oraclespb.Condition{},
+												Conditions: []*datapb.Condition{},
 											},
 										},
 									},
@@ -2874,5 +2884,5 @@ func testFutureMarketSubmissionWithExternalTradingTerminationNoPublicKeyFails(t 
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_trading_termination.pub_keys"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination.signers"), commands.ErrIsRequired)
 }

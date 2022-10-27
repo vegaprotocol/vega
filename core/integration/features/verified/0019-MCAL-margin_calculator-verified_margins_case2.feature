@@ -4,7 +4,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
   Background:
 
     And the markets:
-      | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | oracle config          |
+      | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party      | asset | amount     |

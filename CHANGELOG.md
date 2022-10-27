@@ -3,7 +3,7 @@
 ## Unreleased 0.61.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5714](https://github.com/vegaprotocol/vega/issues/5714) - Update data sourcing types
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -

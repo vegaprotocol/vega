@@ -3,7 +3,7 @@ Feature: Regression test for issue 596
   Background:
 
     And the markets:
-      | id        | quote name | asset | auction duration | risk model                    | margin calculator         | fees         | price monitoring | oracle config          |
+      | id        | quote name | asset | auction duration | risk model                    | margin calculator         | fees         | price monitoring | data source config          |
       | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-none     | default-eth-for-future |
 
   Scenario: Traded out position but monies left in margin account

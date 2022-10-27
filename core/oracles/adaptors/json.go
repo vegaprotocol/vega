@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/oracles"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 )
 
@@ -38,7 +39,9 @@ func (a *JSONAdaptor) Normalise(txPubKey crypto.PublicKey, data []byte) (*oracle
 	}
 
 	return &oracles.OracleData{
-		PubKeys: []string{txPubKey.Hex()},
-		Data:    kvs,
+		Signers: []*types.Signer{
+			types.CreateSignerFromString(txPubKey.Hex(), types.DataSignerTypePubKey),
+		},
+		Data: kvs,
 	}, nil
 }

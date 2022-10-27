@@ -41,7 +41,7 @@ func NewBuiltinOracle(engine *Engine, ts TimeService) *Builtin {
 
 func (b *Builtin) OnTick(ctx context.Context, _ time.Time) {
 	data := OracleData{
-		PubKeys: nil,
+		Signers: nil,
 		Data: map[string]string{
 			BuiltinOracleTimestamp: fmt.Sprintf("%d", b.engine.timeService.GetTimeNow().Unix()),
 		},

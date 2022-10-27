@@ -22,7 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -45,31 +45,39 @@ func getValidInstrumentProto() *types.Instrument {
 			Future: &types.Future{
 				QuoteName:       "USD",
 				SettlementAsset: SettlementAssetStr,
-				OracleSpecForSettlementData: &types.OracleSpec{
-					PubKeys: []string{"0xDEADBEEF"},
-					Filters: []*types.OracleSpecFilter{
-						{
-							Key: &types.OracleSpecPropertyKey{
-								Name: "prices.ETH.value",
-								Type: oraclespb.PropertyKey_TYPE_INTEGER,
+				DataSourceSpecForSettlementData: &types.DataSourceSpec{
+					Config: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{
+							types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+						},
+						Filters: []*types.DataSourceSpecFilter{
+							{
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.ETH.value",
+									Type: datapb.PropertyKey_TYPE_INTEGER,
+								},
+								Conditions: []*types.DataSourceSpecCondition{},
 							},
-							Conditions: []*types.OracleSpecCondition{},
 						},
 					},
 				},
-				OracleSpecForTradingTermination: &types.OracleSpec{
-					PubKeys: []string{"0xDEADBEEF"},
-					Filters: []*types.OracleSpecFilter{
-						{
-							Key: &types.OracleSpecPropertyKey{
-								Name: "trading.terminated",
-								Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
+				DataSourceSpecForTradingTermination: &types.DataSourceSpec{
+					Config: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{
+							types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+						},
+						Filters: []*types.DataSourceSpecFilter{
+							{
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "trading.terminated",
+									Type: datapb.PropertyKey_TYPE_BOOLEAN,
+								},
+								Conditions: []*types.DataSourceSpecCondition{},
 							},
-							Conditions: []*types.OracleSpecCondition{},
 						},
 					},
 				},
-				OracleSpecBinding: &types.OracleSpecBindingForFuture{
+				DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
 					SettlementDataProperty:     "prices.ETH.value",
 					TradingTerminationProperty: "trading.terminated",
 				},

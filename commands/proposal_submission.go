@@ -8,10 +8,11 @@ import (
 	"strconv"
 	"strings"
 
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
-	types "code.vegaprotocol.io/vega/protos/vega"
+	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 const ReferenceMaxLen int = 100
@@ -68,7 +69,7 @@ func checkProposalSubmission(cmd *commandspb.ProposalSubmission) Errors {
 
 	// check for enactment timestamp
 	switch cmd.Terms.Change.(type) {
-	case *types.ProposalTerms_NewFreeform:
+	case *protoTypes.ProposalTerms_NewFreeform:
 		if cmd.Terms.EnactmentTimestamp != 0 {
 			errs.AddForProperty("proposal_submission.terms.enactment_timestamp", ErrIsNotSupported)
 		}
@@ -86,7 +87,7 @@ func checkProposalSubmission(cmd *commandspb.ProposalSubmission) Errors {
 
 	// check for validation timestamp
 	switch cmd.Terms.Change.(type) {
-	case *types.ProposalTerms_NewAsset:
+	case *protoTypes.ProposalTerms_NewAsset:
 		if cmd.Terms.ValidationTimestamp == 0 {
 			errs.AddForProperty("proposal_submission.terms.validation_timestamp", ErrMustBePositive)
 		}
@@ -106,7 +107,7 @@ func checkProposalSubmission(cmd *commandspb.ProposalSubmission) Errors {
 	return errs
 }
 
-func checkProposalChanges(terms *types.ProposalTerms) Errors {
+func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 	errs := NewErrors()
 
 	if terms.Change == nil {
@@ -114,17 +115,17 @@ func checkProposalChanges(terms *types.ProposalTerms) Errors {
 	}
 
 	switch c := terms.Change.(type) {
-	case *types.ProposalTerms_NewMarket:
+	case *protoTypes.ProposalTerms_NewMarket:
 		errs.Merge(checkNewMarketChanges(c))
-	case *types.ProposalTerms_UpdateMarket:
+	case *protoTypes.ProposalTerms_UpdateMarket:
 		errs.Merge(checkUpdateMarketChanges(c))
-	case *types.ProposalTerms_UpdateNetworkParameter:
+	case *protoTypes.ProposalTerms_UpdateNetworkParameter:
 		errs.Merge(checkNetworkParameterUpdateChanges(c))
-	case *types.ProposalTerms_NewAsset:
+	case *protoTypes.ProposalTerms_NewAsset:
 		errs.Merge(checkNewAssetChanges(c))
-	case *types.ProposalTerms_UpdateAsset:
+	case *protoTypes.ProposalTerms_UpdateAsset:
 		errs.Merge(checkUpdateAssetChanges(c))
-	case *types.ProposalTerms_NewFreeform:
+	case *protoTypes.ProposalTerms_NewFreeform:
 		errs.Merge(CheckNewFreeformChanges(c))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change", ErrIsNotValid)
@@ -133,7 +134,7 @@ func checkProposalChanges(terms *types.ProposalTerms) Errors {
 	return errs
 }
 
-func checkNetworkParameterUpdateChanges(change *types.ProposalTerms_UpdateNetworkParameter) Errors {
+func checkNetworkParameterUpdateChanges(change *protoTypes.ProposalTerms_UpdateNetworkParameter) Errors {
 	errs := NewErrors()
 
 	if change.UpdateNetworkParameter == nil {
@@ -157,7 +158,7 @@ func checkNetworkParameterUpdateChanges(change *types.ProposalTerms_UpdateNetwor
 	return errs
 }
 
-func checkNewAssetChanges(change *types.ProposalTerms_NewAsset) Errors {
+func checkNewAssetChanges(change *protoTypes.ProposalTerms_NewAsset) Errors {
 	errs := NewErrors()
 
 	if change.NewAsset == nil {
@@ -191,9 +192,9 @@ func checkNewAssetChanges(change *types.ProposalTerms_NewAsset) Errors {
 	}
 
 	switch s := change.NewAsset.Changes.Source.(type) {
-	case *types.AssetDetails_BuiltinAsset:
+	case *protoTypes.AssetDetails_BuiltinAsset:
 		errs.Merge(checkBuiltinAssetSource(s))
-	case *types.AssetDetails_Erc20:
+	case *protoTypes.AssetDetails_Erc20:
 		errs.Merge(checkERC20AssetSource(s))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset.changes.source", ErrIsNotValid)
@@ -202,7 +203,7 @@ func checkNewAssetChanges(change *types.ProposalTerms_NewAsset) Errors {
 	return errs
 }
 
-func CheckNewFreeformChanges(change *types.ProposalTerms_NewFreeform) Errors {
+func CheckNewFreeformChanges(change *protoTypes.ProposalTerms_NewFreeform) Errors {
 	errs := NewErrors()
 
 	if change.NewFreeform == nil {
@@ -211,7 +212,7 @@ func CheckNewFreeformChanges(change *types.ProposalTerms_NewFreeform) Errors {
 	return errs
 }
 
-func checkBuiltinAssetSource(s *types.AssetDetails_BuiltinAsset) Errors {
+func checkBuiltinAssetSource(s *protoTypes.AssetDetails_BuiltinAsset) Errors {
 	errs := NewErrors()
 
 	if s.BuiltinAsset == nil {
@@ -233,7 +234,7 @@ func checkBuiltinAssetSource(s *types.AssetDetails_BuiltinAsset) Errors {
 	return errs
 }
 
-func checkERC20AssetSource(s *types.AssetDetails_Erc20) Errors {
+func checkERC20AssetSource(s *protoTypes.AssetDetails_Erc20) Errors {
 	errs := NewErrors()
 
 	if s.Erc20 == nil {
@@ -271,7 +272,7 @@ func checkERC20AssetSource(s *types.AssetDetails_Erc20) Errors {
 	return errs
 }
 
-func checkUpdateAssetChanges(change *types.ProposalTerms_UpdateAsset) Errors {
+func checkUpdateAssetChanges(change *protoTypes.ProposalTerms_UpdateAsset) Errors {
 	errs := NewErrors()
 
 	if change.UpdateAsset == nil {
@@ -301,7 +302,7 @@ func checkUpdateAssetChanges(change *types.ProposalTerms_UpdateAsset) Errors {
 	}
 
 	switch s := change.UpdateAsset.Changes.Source.(type) {
-	case *types.AssetDetailsUpdate_Erc20:
+	case *protoTypes.AssetDetailsUpdate_Erc20:
 		errs.Merge(checkERC20UpdateAssetSource(s))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_asset.changes.source", ErrIsNotValid)
@@ -310,7 +311,7 @@ func checkUpdateAssetChanges(change *types.ProposalTerms_UpdateAsset) Errors {
 	return errs
 }
 
-func checkERC20UpdateAssetSource(s *types.AssetDetailsUpdate_Erc20) Errors {
+func checkERC20UpdateAssetSource(s *protoTypes.AssetDetailsUpdate_Erc20) Errors {
 	errs := NewErrors()
 
 	if s.Erc20 == nil {
@@ -346,7 +347,7 @@ func checkERC20UpdateAssetSource(s *types.AssetDetailsUpdate_Erc20) Errors {
 	return errs
 }
 
-func checkNewMarketChanges(change *types.ProposalTerms_NewMarket) Errors {
+func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 	errs := NewErrors()
 
 	if change.NewMarket == nil {
@@ -375,7 +376,7 @@ func checkNewMarketChanges(change *types.ProposalTerms_NewMarket) Errors {
 	return errs
 }
 
-func checkUpdateMarketChanges(change *types.ProposalTerms_UpdateMarket) Errors {
+func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Errors {
 	errs := NewErrors()
 
 	if change.UpdateMarket == nil {
@@ -402,7 +403,7 @@ func checkUpdateMarketChanges(change *types.ProposalTerms_UpdateMarket) Errors {
 	return errs
 }
 
-func checkPriceMonitoring(parameters *types.PriceMonitoringParameters, parentProperty string) Errors {
+func checkPriceMonitoring(parameters *protoTypes.PriceMonitoringParameters, parentProperty string) Errors {
 	errs := NewErrors()
 
 	if parameters == nil || len(parameters.Triggers) == 0 {
@@ -438,7 +439,7 @@ func checkPriceMonitoring(parameters *types.PriceMonitoringParameters, parentPro
 	return errs
 }
 
-func checkLiquidityMonitoring(parameters *types.LiquidityMonitoringParameters, parentProperty string) Errors {
+func checkLiquidityMonitoring(parameters *protoTypes.LiquidityMonitoringParameters, parentProperty string) Errors {
 	errs := NewErrors()
 
 	if parameters == nil {
@@ -466,7 +467,7 @@ func checkLiquidityMonitoring(parameters *types.LiquidityMonitoringParameters, p
 	return errs
 }
 
-func checkNewInstrument(instrument *types.InstrumentConfiguration) Errors {
+func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration) Errors {
 	errs := NewErrors()
 
 	if instrument == nil {
@@ -485,7 +486,7 @@ func checkNewInstrument(instrument *types.InstrumentConfiguration) Errors {
 	}
 
 	switch product := instrument.Product.(type) {
-	case *types.InstrumentConfiguration_Future:
+	case *protoTypes.InstrumentConfiguration_Future:
 		errs.Merge(checkNewFuture(product.Future))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product", ErrIsNotValid)
@@ -494,7 +495,7 @@ func checkNewInstrument(instrument *types.InstrumentConfiguration) Errors {
 	return errs
 }
 
-func checkUpdateInstrument(instrument *types.UpdateInstrumentConfiguration) Errors {
+func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration) Errors {
 	errs := NewErrors()
 
 	if instrument == nil {
@@ -510,7 +511,7 @@ func checkUpdateInstrument(instrument *types.UpdateInstrumentConfiguration) Erro
 	}
 
 	switch product := instrument.Product.(type) {
-	case *types.UpdateInstrumentConfiguration_Future:
+	case *protoTypes.UpdateInstrumentConfiguration_Future:
 		errs.Merge(checkUpdateFuture(product.Future))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product", ErrIsNotValid)
@@ -519,7 +520,7 @@ func checkUpdateInstrument(instrument *types.UpdateInstrumentConfiguration) Erro
 	return errs
 }
 
-func checkNewFuture(future *types.FutureProduct) Errors {
+func checkNewFuture(future *protoTypes.FutureProduct) Errors {
 	errs := NewErrors()
 
 	if future == nil {
@@ -533,14 +534,14 @@ func checkNewFuture(future *types.FutureProduct) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkOracleSpec(future.OracleSpecForSettlementData, "oracle_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
-	errs.Merge(checkOracleSpec(future.OracleSpecForTradingTermination, "oracle_spec_for_trading_termination", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
 	errs.Merge(checkNewOracleBinding(future))
 
 	return errs
 }
 
-func checkUpdateFuture(future *types.UpdateFutureProduct) Errors {
+func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
 	errs := NewErrors()
 
 	if future == nil {
@@ -551,38 +552,39 @@ func checkUpdateFuture(future *types.UpdateFutureProduct) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkOracleSpec(future.OracleSpecForSettlementData, "oracle_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future"))
-	errs.Merge(checkOracleSpec(future.OracleSpecForTradingTermination, "oracle_spec_for_trading_termination", "proposal_submission.terms.change.update_market.changes.instrument.product.future"))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future"))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.update_market.changes.instrument.product.future"))
 	errs.Merge(checkUpdateOracleBinding(future))
 
 	return errs
 }
 
-func checkOracleSpec(spec *oraclespb.OracleSpecConfiguration, name string, parentProperty string) Errors {
+func checkDataSourceSpec(spec *datapb.DataSourceSpecConfiguration, name string, parentProperty string) Errors {
 	errs := NewErrors()
 	if spec == nil {
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), ErrIsRequired)
 	}
 
 	if isBuiltInSpec(spec.Filters) {
-		return checkOracleSpecFilters(spec, name, parentProperty)
+		return checkDataSourceSpecFilters(spec, name, parentProperty)
 	}
 
-	if len(spec.PubKeys) == 0 {
-		errs.AddForProperty(fmt.Sprintf("%s.%s.pub_keys", parentProperty, name), ErrIsRequired)
+	if len(spec.Signers) == 0 {
+		errs.AddForProperty(fmt.Sprintf("%s.%s.signers", parentProperty, name), ErrIsRequired)
 	}
-	for i, key := range spec.PubKeys {
-		if len(strings.TrimSpace(key)) == 0 {
-			errs.AddForProperty(fmt.Sprintf("%s.%s.pub_keys.%d", parentProperty, name, i), ErrIsNotValid)
+	for i, key := range spec.Signers {
+		signer := types.SignerFromProto(key)
+		if signer.IsEmpty() {
+			errs.AddForProperty(fmt.Sprintf("%s.%s.signers.%d", parentProperty, name, i), ErrIsNotValid)
 		}
 	}
 
-	errs.Merge(checkOracleSpecFilters(spec, name, parentProperty))
+	errs.Merge(checkDataSourceSpecFilters(spec, name, parentProperty))
 
 	return errs
 }
 
-func isBuiltInSpec(filters []*oraclespb.Filter) bool {
+func isBuiltInSpec(filters []*datapb.Filter) bool {
 	if len(filters) != 1 {
 		return false
 	}
@@ -591,14 +593,14 @@ func isBuiltInSpec(filters []*oraclespb.Filter) bool {
 		return false
 	}
 
-	if strings.HasPrefix(filters[0].Key.Name, "vegaprotocol.builtin") && filters[0].Key.Type == oraclespb.PropertyKey_TYPE_TIMESTAMP {
+	if strings.HasPrefix(filters[0].Key.Name, "vegaprotocol.builtin") && filters[0].Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
 		return true
 	}
 
 	return false
 }
 
-func checkOracleSpecFilters(spec *oraclespb.OracleSpecConfiguration, name string, parentProperty string) Errors {
+func checkDataSourceSpecFilters(spec *datapb.DataSourceSpecConfiguration, name string, parentProperty string) Errors {
 	errs := NewErrors()
 
 	if len(spec.Filters) == 0 {
@@ -612,7 +614,7 @@ func checkOracleSpecFilters(spec *oraclespb.OracleSpecConfiguration, name string
 			if len(filter.Key.Name) == 0 {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.filters.%d.key.name", parentProperty, name, i), ErrIsRequired)
 			}
-			if filter.Key.Type == oraclespb.PropertyKey_TYPE_UNSPECIFIED {
+			if filter.Key.Type == datapb.PropertyKey_TYPE_UNSPECIFIED {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.filters.%d.key.type", parentProperty, name, i), ErrIsRequired)
 			}
 		}
@@ -622,7 +624,7 @@ func checkOracleSpecFilters(spec *oraclespb.OracleSpecConfiguration, name string
 				if len(condition.Value) == 0 {
 					errs.AddForProperty(fmt.Sprintf("%s.%s.filters.%d.conditions.%d.value", parentProperty, name, i, j), ErrIsRequired)
 				}
-				if condition.Operator == oraclespb.Condition_OPERATOR_UNSPECIFIED {
+				if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
 					errs.AddForProperty(fmt.Sprintf("%s.%s.filters.%d.conditions.%d.operator", parentProperty, name, i, j), ErrIsRequired)
 				}
 			}
@@ -632,7 +634,7 @@ func checkOracleSpecFilters(spec *oraclespb.OracleSpecConfiguration, name string
 	return errs
 }
 
-func isBindingMatchingSpec(spec *oraclespb.OracleSpecConfiguration, bindingProperty string) bool {
+func isBindingMatchingSpec(spec *datapb.DataSourceSpecConfiguration, bindingProperty string) bool {
 	bindingPropertyFound := false
 	if spec != nil && spec.Filters != nil {
 		for _, filter := range spec.Filters {
@@ -644,57 +646,57 @@ func isBindingMatchingSpec(spec *oraclespb.OracleSpecConfiguration, bindingPrope
 	return bindingPropertyFound
 }
 
-func checkNewOracleBinding(future *types.FutureProduct) Errors {
+func checkNewOracleBinding(future *protoTypes.FutureProduct) Errors {
 	errs := NewErrors()
-	if future.OracleSpecBinding != nil {
-		if len(future.OracleSpecBinding.SettlementDataProperty) == 0 {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.settlement_data_property", ErrIsRequired)
+	if future.DataSourceSpecBinding != nil {
+		if len(future.DataSourceSpecBinding.SettlementDataProperty) == 0 {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding.settlement_data_property", ErrIsRequired)
 		} else {
-			if !isBindingMatchingSpec(future.OracleSpecForSettlementData, future.OracleSpecBinding.SettlementDataProperty) {
-				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.settlement_data_property", ErrIsMismatching)
+			if !isBindingMatchingSpec(future.DataSourceSpecForSettlementData, future.DataSourceSpecBinding.SettlementDataProperty) {
+				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding.settlement_data_property", ErrIsMismatching)
 			}
 		}
 
-		if len(future.OracleSpecBinding.TradingTerminationProperty) == 0 {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.trading_termination_property", ErrIsRequired)
+		if len(future.DataSourceSpecBinding.TradingTerminationProperty) == 0 {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding.trading_termination_property", ErrIsRequired)
 		} else {
-			if !isBindingMatchingSpec(future.OracleSpecForTradingTermination, future.OracleSpecBinding.TradingTerminationProperty) {
-				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.trading_termination_property", ErrIsMismatching)
+			if !isBindingMatchingSpec(future.DataSourceSpecForTradingTermination, future.DataSourceSpecBinding.TradingTerminationProperty) {
+				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding.trading_termination_property", ErrIsMismatching)
 			}
 		}
 	} else {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding", ErrIsRequired)
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding", ErrIsRequired)
 	}
 
 	return errs
 }
 
-func checkUpdateOracleBinding(future *types.UpdateFutureProduct) Errors {
+func checkUpdateOracleBinding(future *protoTypes.UpdateFutureProduct) Errors {
 	errs := NewErrors()
-	if future.OracleSpecBinding != nil {
-		if len(future.OracleSpecBinding.SettlementDataProperty) == 0 {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_binding.settlement_data_property", ErrIsRequired)
+	if future.DataSourceSpecBinding != nil {
+		if len(future.DataSourceSpecBinding.SettlementDataProperty) == 0 {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_binding.settlement_data_property", ErrIsRequired)
 		} else {
-			if !isBindingMatchingSpec(future.OracleSpecForSettlementData, future.OracleSpecBinding.SettlementDataProperty) {
-				errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_binding.settlement_data_property", ErrIsMismatching)
+			if !isBindingMatchingSpec(future.DataSourceSpecForSettlementData, future.DataSourceSpecBinding.SettlementDataProperty) {
+				errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_binding.settlement_data_property", ErrIsMismatching)
 			}
 		}
 
-		if len(future.OracleSpecBinding.TradingTerminationProperty) == 0 {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_binding.trading_termination_property", ErrIsRequired)
+		if len(future.DataSourceSpecBinding.TradingTerminationProperty) == 0 {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_binding.trading_termination_property", ErrIsRequired)
 		} else {
-			if !isBindingMatchingSpec(future.OracleSpecForTradingTermination, future.OracleSpecBinding.TradingTerminationProperty) {
-				errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_binding.trading_termination_property", ErrIsMismatching)
+			if !isBindingMatchingSpec(future.DataSourceSpecForTradingTermination, future.DataSourceSpecBinding.TradingTerminationProperty) {
+				errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_binding.trading_termination_property", ErrIsMismatching)
 			}
 		}
 	} else {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_binding", ErrIsRequired)
+		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_binding", ErrIsRequired)
 	}
 
 	return errs
 }
 
-func checkNewRiskParameters(config *types.NewMarketConfiguration) Errors {
+func checkNewRiskParameters(config *protoTypes.NewMarketConfiguration) Errors {
 	errs := NewErrors()
 
 	if config.RiskParameters == nil {
@@ -702,9 +704,9 @@ func checkNewRiskParameters(config *types.NewMarketConfiguration) Errors {
 	}
 
 	switch parameters := config.RiskParameters.(type) {
-	case *types.NewMarketConfiguration_Simple:
+	case *protoTypes.NewMarketConfiguration_Simple:
 		errs.Merge(checkNewSimpleParameters(parameters))
-	case *types.NewMarketConfiguration_LogNormal:
+	case *protoTypes.NewMarketConfiguration_LogNormal:
 		errs.Merge(checkNewLogNormalRiskParameters(parameters))
 	default:
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters", ErrIsNotValid)
@@ -713,7 +715,7 @@ func checkNewRiskParameters(config *types.NewMarketConfiguration) Errors {
 	return errs
 }
 
-func checkUpdateRiskParameters(config *types.UpdateMarketConfiguration) Errors {
+func checkUpdateRiskParameters(config *protoTypes.UpdateMarketConfiguration) Errors {
 	errs := NewErrors()
 
 	if config.RiskParameters == nil {
@@ -721,9 +723,9 @@ func checkUpdateRiskParameters(config *types.UpdateMarketConfiguration) Errors {
 	}
 
 	switch parameters := config.RiskParameters.(type) {
-	case *types.UpdateMarketConfiguration_Simple:
+	case *protoTypes.UpdateMarketConfiguration_Simple:
 		errs.Merge(checkUpdateSimpleParameters(parameters))
-	case *types.UpdateMarketConfiguration_LogNormal:
+	case *protoTypes.UpdateMarketConfiguration_LogNormal:
 		errs.Merge(checkUpdateLogNormalRiskParameters(parameters))
 	default:
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters", ErrIsNotValid)
@@ -732,7 +734,7 @@ func checkUpdateRiskParameters(config *types.UpdateMarketConfiguration) Errors {
 	return errs
 }
 
-func checkNewSimpleParameters(params *types.NewMarketConfiguration_Simple) Errors {
+func checkNewSimpleParameters(params *protoTypes.NewMarketConfiguration_Simple) Errors {
 	errs := NewErrors()
 
 	if params.Simple == nil {
@@ -756,7 +758,7 @@ func checkNewSimpleParameters(params *types.NewMarketConfiguration_Simple) Error
 	return errs
 }
 
-func checkUpdateSimpleParameters(params *types.UpdateMarketConfiguration_Simple) Errors {
+func checkUpdateSimpleParameters(params *protoTypes.UpdateMarketConfiguration_Simple) Errors {
 	errs := NewErrors()
 
 	if params.Simple == nil {
@@ -780,7 +782,7 @@ func checkUpdateSimpleParameters(params *types.UpdateMarketConfiguration_Simple)
 	return errs
 }
 
-func checkNewLogNormalRiskParameters(params *types.NewMarketConfiguration_LogNormal) Errors {
+func checkNewLogNormalRiskParameters(params *protoTypes.NewMarketConfiguration_LogNormal) Errors {
 	errs := NewErrors()
 
 	if params.LogNormal == nil {
@@ -826,7 +828,7 @@ func checkNewLogNormalRiskParameters(params *types.NewMarketConfiguration_LogNor
 	return errs
 }
 
-func checkUpdateLogNormalRiskParameters(params *types.UpdateMarketConfiguration_LogNormal) Errors {
+func checkUpdateLogNormalRiskParameters(params *protoTypes.UpdateMarketConfiguration_LogNormal) Errors {
 	errs := NewErrors()
 
 	if params.LogNormal == nil {

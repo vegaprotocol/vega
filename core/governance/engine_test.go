@@ -32,7 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -340,7 +340,7 @@ func testSumittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails(
 	// Enactment time for new market is now + 96 hours
 	termTimeBeforeEnact := now.Add(1 * 48 * time.Hour).Add(47 * time.Hour).Add(15 * time.Minute)
 
-	filter, binding := produceTimeTriggeredOracleSpec(termTimeBeforeEnact)
+	filter, binding := produceTimeTriggeredDataSourceSpec(termTimeBeforeEnact)
 	proposal1 := eng.newProposalForNewMarket(proposer, now, filter, binding)
 
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
@@ -349,12 +349,12 @@ func testSumittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails(
 	eng.expectRejectedProposalEvent(t, proposer, proposal1.ID, types.ProposalErrorInvalidFutureProduct)
 	_, err := eng.submitProposal(t, proposal1)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "oracle spec termination time before enactment")
+	assert.Contains(t, err.Error(), "data source spec termination time before enactment")
 
 	// Make another proposal with termination time same as enactment time
 	// Enactment time for new market is now + 96 hours
 	termTimeEqualEnact := now.Add(2 * 48 * time.Hour)
-	filter, binding = produceTimeTriggeredOracleSpec(termTimeEqualEnact)
+	filter, binding = produceTimeTriggeredDataSourceSpec(termTimeEqualEnact)
 	proposal2 := eng.newProposalForNewMarket(proposer, now, filter, binding)
 
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
@@ -363,7 +363,7 @@ func testSumittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails(
 
 	_, err = eng.submitProposal(t, proposal2)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "oracle spec termination time before enactment")
+	assert.Contains(t, err.Error(), "data source spec termination time before enactment")
 }
 
 func testSubmittingProposalWithEnactmentTimeTooSoonFails(t *testing.T) {
@@ -876,42 +876,42 @@ func newAssetTerms() *types.ProposalTermsNewAsset {
 	}
 }
 
-func produceNonTimeTriggeredOracleSpec() (*types.OracleSpecFilter, *types.OracleSpecBindingForFuture) {
-	return &types.OracleSpecFilter{
-			Key: &types.OracleSpecPropertyKey{
+func produceNonTimeTriggeredDataSourceSpec() (*types.DataSourceSpecFilter, *types.DataSourceSpecBindingForFuture) {
+	return &types.DataSourceSpecFilter{
+			Key: &types.DataSourceSpecPropertyKey{
 				Name: "trading.terminated",
-				Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
+				Type: datapb.PropertyKey_TYPE_BOOLEAN,
 			},
-			Conditions: []*types.OracleSpecCondition{},
+			Conditions: []*types.DataSourceSpecCondition{},
 		},
-		&types.OracleSpecBindingForFuture{
+		&types.DataSourceSpecBindingForFuture{
 			SettlementDataProperty:     "prices.ETH.value",
 			TradingTerminationProperty: "trading.terminated",
 		}
 }
 
-func produceTimeTriggeredOracleSpec(termTimestamp time.Time) (*types.OracleSpecFilter, *types.OracleSpecBindingForFuture) {
-	return &types.OracleSpecFilter{
-			Key: &types.OracleSpecPropertyKey{
+func produceTimeTriggeredDataSourceSpec(termTimestamp time.Time) (*types.DataSourceSpecFilter, *types.DataSourceSpecBindingForFuture) {
+	return &types.DataSourceSpecFilter{
+			Key: &types.DataSourceSpecPropertyKey{
 				Name: "vegaprotocol.builtin.timestamp",
-				Type: oraclespb.PropertyKey_TYPE_TIMESTAMP,
+				Type: datapb.PropertyKey_TYPE_TIMESTAMP,
 			},
-			Conditions: []*types.OracleSpecCondition{
+			Conditions: []*types.DataSourceSpecCondition{
 				{
-					Operator: oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 					Value:    strconv.FormatInt(termTimestamp.Unix(), 10),
 				},
 			},
 		},
-		&types.OracleSpecBindingForFuture{
+		&types.DataSourceSpecBindingForFuture{
 			SettlementDataProperty:     "prices.ETH.value",
 			TradingTerminationProperty: "vegaprotocol.builtin.timestamp",
 		}
 }
 
-func newMarketTerms(termFilter *types.OracleSpecFilter, termBinding *types.OracleSpecBindingForFuture) *types.ProposalTermsNewMarket {
+func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture) *types.ProposalTermsNewMarket {
 	if termFilter == nil {
-		termFilter, termBinding = produceNonTimeTriggeredOracleSpec()
+		termFilter, termBinding = produceNonTimeTriggeredDataSourceSpec()
 	}
 
 	return &types.ProposalTermsNewMarket{
@@ -924,30 +924,30 @@ func newMarketTerms(termFilter *types.OracleSpecFilter, termBinding *types.Oracl
 						Future: &types.FutureProduct{
 							SettlementAsset: "VUSD",
 							QuoteName:       "VUSD",
-							OracleSpecForSettlementData: &types.OracleSpecConfiguration{
-								PubKeys: []string{"0xDEADBEEF"},
-								Filters: []*types.OracleSpecFilter{
+							DataSourceSpecForSettlementData: &types.DataSourceSpecConfiguration{
+								Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+								Filters: []*types.DataSourceSpecFilter{
 									{
-										Key: &types.OracleSpecPropertyKey{
+										Key: &types.DataSourceSpecPropertyKey{
 											Name: "prices.ETH.value",
-											Type: oraclespb.PropertyKey_TYPE_INTEGER,
+											Type: datapb.PropertyKey_TYPE_INTEGER,
 										},
-										Conditions: []*types.OracleSpecCondition{
+										Conditions: []*types.DataSourceSpecCondition{
 											{
-												Operator: oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+												Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 												Value:    "0",
 											},
 										},
 									},
 								},
 							},
-							OracleSpecForTradingTermination: &types.OracleSpecConfiguration{
-								PubKeys: []string{"0xDEADBEEF"},
-								Filters: []*types.OracleSpecFilter{
+							DataSourceSpecForTradingTermination: &types.DataSourceSpecConfiguration{
+								Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+								Filters: []*types.DataSourceSpecFilter{
 									termFilter,
 								},
 							},
-							OracleSpecBinding: termBinding,
+							DataSourceSpecBinding: termBinding,
 						},
 					},
 				},
@@ -969,17 +969,17 @@ func newMarketTerms(termFilter *types.OracleSpecFilter, termBinding *types.Oracl
 	}
 }
 
-func updateMarketTerms(termFilter *types.OracleSpecFilter, termBinding *types.OracleSpecBindingForFuture) *types.ProposalTermsUpdateMarket {
+func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture) *types.ProposalTermsUpdateMarket {
 	if termFilter == nil {
-		termFilter = &types.OracleSpecFilter{
-			Key: &types.OracleSpecPropertyKey{
+		termFilter = &types.DataSourceSpecFilter{
+			Key: &types.DataSourceSpecPropertyKey{
 				Name: "trading.terminated",
-				Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
+				Type: datapb.PropertyKey_TYPE_BOOLEAN,
 			},
-			Conditions: []*types.OracleSpecCondition{},
+			Conditions: []*types.DataSourceSpecCondition{},
 		}
 
-		termBinding = &types.OracleSpecBindingForFuture{
+		termBinding = &types.DataSourceSpecBindingForFuture{
 			SettlementDataProperty:     "prices.ETH.value",
 			TradingTerminationProperty: "trading.terminated",
 		}
@@ -994,25 +994,25 @@ func updateMarketTerms(termFilter *types.OracleSpecFilter, termBinding *types.Or
 					Product: &types.UpdateInstrumentConfigurationFuture{
 						Future: &types.UpdateFutureProduct{
 							QuoteName: "VUSD",
-							OracleSpecForSettlementData: &types.OracleSpecConfiguration{
-								PubKeys: []string{"0xDEADBEEF"},
-								Filters: []*types.OracleSpecFilter{
+							DataSourceSpecForSettlementData: &types.DataSourceSpecConfiguration{
+								Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+								Filters: []*types.DataSourceSpecFilter{
 									{
-										Key: &types.OracleSpecPropertyKey{
+										Key: &types.DataSourceSpecPropertyKey{
 											Name: "prices.ETH.value",
-											Type: oraclespb.PropertyKey_TYPE_INTEGER,
+											Type: datapb.PropertyKey_TYPE_INTEGER,
 										},
-										Conditions: []*types.OracleSpecCondition{},
+										Conditions: []*types.DataSourceSpecCondition{},
 									},
 								},
 							},
-							OracleSpecForTradingTermination: &types.OracleSpecConfiguration{
-								PubKeys: []string{"0xDEADBEEF"},
-								Filters: []*types.OracleSpecFilter{
+							DataSourceSpecForTradingTermination: &types.DataSourceSpecConfiguration{
+								Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+								Filters: []*types.DataSourceSpecFilter{
 									termFilter,
 								},
 							},
-							OracleSpecBinding: termBinding,
+							DataSourceSpecBinding: termBinding,
 						},
 					},
 				},
@@ -1074,7 +1074,7 @@ func (e *tstEngine) newProposalID() string {
 	return fmt.Sprintf("proposal-id-%d", e.proposalCounter)
 }
 
-func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termFilter *types.OracleSpecFilter, termBinding *types.OracleSpecBindingForFuture) types.Proposal {
+func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture) types.Proposal {
 	id := e.newProposalID()
 	return types.Proposal{
 		ID:        id,
@@ -1093,7 +1093,7 @@ func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termF
 	}
 }
 
-func (e *tstEngine) newProposalForMarketUpdate(marketID, partyID string, now time.Time, termFilter *types.OracleSpecFilter, termBinding *types.OracleSpecBindingForFuture) types.Proposal {
+func (e *tstEngine) newProposalForMarketUpdate(marketID, partyID string, now time.Time, termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture) types.Proposal {
 	id := e.newProposalID()
 	prop := types.Proposal{
 		ID:        id,

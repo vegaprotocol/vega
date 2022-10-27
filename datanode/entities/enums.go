@@ -17,8 +17,8 @@ import (
 
 	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	v1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	"github.com/jackc/pgtype"
 )
 
@@ -578,28 +578,31 @@ func (s *NodeSignatureKind) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 	return nil
 }
 
-type OracleSpecStatus v1.OracleSpec_Status
-
-const (
-	OracleSpecUnspecified = OracleSpecStatus(v1.OracleSpec_STATUS_UNSPECIFIED)
-	OracleSpecActive      = OracleSpecStatus(v1.OracleSpec_STATUS_ACTIVE)
-	OracleSpecDeactivated = OracleSpecStatus(v1.OracleSpec_STATUS_DEACTIVATED)
+type (
+	DataSourceSpecStatus v1.DataSourceSpec_Status
+	OracleSpecStatus     = DataSourceSpecStatus
 )
 
-func (s OracleSpecStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
-	status, ok := v1.OracleSpec_Status_name[int32(s)]
+const (
+	OracleSpecUnspecified = DataSourceSpecStatus(v1.DataSourceSpec_STATUS_UNSPECIFIED)
+	OracleSpecActive      = DataSourceSpecStatus(v1.DataSourceSpec_STATUS_ACTIVE)
+	OracleSpecDeactivated = DataSourceSpecStatus(v1.DataSourceSpec_STATUS_DEACTIVATED)
+)
+
+func (s DataSourceSpecStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	status, ok := v1.DataSourceSpec_Status_name[int32(s)]
 	if !ok {
 		return buf, fmt.Errorf("unknown oracle spec value: %v", s)
 	}
 	return append(buf, []byte(status)...), nil
 }
 
-func (s *OracleSpecStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
-	val, ok := v1.OracleSpec_Status_value[string(src)]
+func (s *DataSourceSpecStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := v1.DataSourceSpec_Status_value[string(src)]
 	if !ok {
 		return fmt.Errorf("unknown oracle spec status: %s", src)
 	}
-	*s = OracleSpecStatus(val)
+	*s = DataSourceSpecStatus(val)
 	return nil
 }
 
