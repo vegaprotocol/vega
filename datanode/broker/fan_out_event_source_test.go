@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/service"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -30,20 +31,25 @@ func TestEventFanOut(t *testing.T) {
 		eventsCh: make(chan events.Event),
 		errorsCh: make(chan error),
 	}
-
+	ctx := vgcontext.WithBlockHeight(context.Background(), 1)
 	fos := broker.NewFanOutEventSource(tes, 20, 2)
 
-	evtCh1, _ := fos.Receive(context.Background())
-	evtCh2, _ := fos.Receive(context.Background())
+	evtCh1, _ := fos.Receive(ctx)
+	evtCh2, _ := fos.Receive(ctx)
 
-	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"})
-	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a2"})
+	e1 := events.NewAssetEvent(ctx, types.Asset{ID: "a1"})
+	e2 := events.NewAssetEvent(ctx, types.Asset{ID: "a2"})
+	e1.SetSequenceID(1)
+	e2.SetSequenceID(2)
 
-	assert.Equal(t, events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"}), <-evtCh1)
-	assert.Equal(t, events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"}), <-evtCh2)
+	tes.eventsCh <- e1
+	tes.eventsCh <- e2
 
-	assert.Equal(t, events.NewAssetEvent(context.Background(), types.Asset{ID: "a2"}), <-evtCh1)
-	assert.Equal(t, events.NewAssetEvent(context.Background(), types.Asset{ID: "a2"}), <-evtCh2)
+	assert.Equal(t, e1, <-evtCh1)
+	assert.Equal(t, e1, <-evtCh2)
+
+	assert.Equal(t, e2, <-evtCh1)
+	assert.Equal(t, e2, <-evtCh2)
 }
 
 func TestCloseChannelsAndExitWithError(t *testing.T) {
@@ -52,14 +58,17 @@ func TestCloseChannelsAndExitWithError(t *testing.T) {
 		errorsCh: make(chan error, 1),
 	}
 
+	ctx := vgcontext.WithBlockHeight(context.Background(), 1)
 	fos := broker.NewFanOutEventSource(tes, 20, 2)
 
-	evtCh1, errCh1 := fos.Receive(context.Background())
-	evtCh2, errCh2 := fos.Receive(context.Background())
+	evtCh1, errCh1 := fos.Receive(ctx)
+	evtCh2, errCh2 := fos.Receive(ctx)
 
-	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"})
-	assert.Equal(t, events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"}), <-evtCh1)
-	assert.Equal(t, events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"}), <-evtCh2)
+	e := events.NewAssetEvent(ctx, types.Asset{ID: "a1"})
+	e.SetSequenceID(1)
+	tes.eventsCh <- e
+	assert.Equal(t, e, <-evtCh1)
+	assert.Equal(t, e, <-evtCh2)
 
 	tes.errorsCh <- fmt.Errorf("e1")
 	close(tes.eventsCh)
