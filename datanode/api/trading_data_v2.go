@@ -2369,7 +2369,10 @@ func (t *tradingDataServiceV2) estimateFee(
 		return nil, apiError(codes.InvalidArgument, errors.New("invalid order price"))
 	}
 
-	base := num.DecimalFromUint(price.Mul(price, num.NewUint(size)))
+	mdpd := num.DecimalFromFloat(10).
+		Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
+
+	base := num.DecimalFromUint(price.Mul(price, num.NewUint(size))).Div(mdpd)
 	maker, infra, liquidity, err := t.feeFactors(mkt)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
@@ -2462,7 +2465,11 @@ func (t *tradingDataServiceV2) estimateMargin(
 		markPrice, _ = num.DecimalFromString(rPrice)
 	}
 
-	maintenanceMargin := num.DecimalFromFloat(float64(rSize)).Mul(f).Mul(markPrice)
+	mdpd := num.DecimalFromFloat(10).
+		Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
+
+	maintenanceMargin := num.DecimalFromFloat(float64(rSize)).
+		Mul(f).Mul(markPrice).Div(mdpd)
 	// now we use the risk factors
 	return &vega.MarginLevels{
 		PartyId:                rParty,
