@@ -67,8 +67,9 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		logging.String("version-hash", l.VersionHash))
 
 	if l.conf.SQLStore.UseEmbedded {
+		runtimeDir := l.vegaPaths.StatePathFor(paths.DataNodeEmbeddedPostgresRuntimeDir)
 		l.embeddedPostgres, err = sqlstore.StartEmbeddedPostgres(l.Log, l.conf.SQLStore,
-			paths.DataNodeEmbeddedPostgresRuntimeDir.String(), EmbeddedPostgresLog{})
+			runtimeDir, EmbeddedPostgresLog{})
 
 		if err != nil {
 			return fmt.Errorf("failed to start embedded postgres: %w", err)
