@@ -377,6 +377,16 @@ func (r *VegaResolverRoot) TransactionResult() TransactionResultResolver {
 	return (*transactionResultResolver)(r)
 }
 
+func (r *VegaResolverRoot) ProtocolUpgradeProposal() ProtocolUpgradeProposalResolver {
+	return (*protocolUpgradeProposalResolver)(r)
+}
+
+type protocolUpgradeProposalResolver VegaResolverRoot
+
+func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(ctx context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
+	return fmt.Sprintf("%d", obj.UpgradeBlockHeight), nil
+}
+
 type transactionResultResolver VegaResolverRoot
 
 func (r *transactionResultResolver) Error(ctx context.Context, tr *eventspb.TransactionResult) (*string, error) {
@@ -1115,6 +1125,23 @@ func (r *myQueryResolver) ProtocolUpgradeStatus(ctx context.Context) (*ProtocolU
 	return &ProtocolUpgradeStatus{
 		Ready: status.Ready,
 	}, nil
+}
+
+func (r *myQueryResolver) ProtocolUpgradeProposals(
+	ctx context.Context,
+	inState *eventspb.ProtocolUpgradeProposalStatus,
+	approvedBy *string,
+	pagination *v2.Pagination,
+) (
+	*v2.ProtocolUpgradeProposalConnection, error,
+) {
+	req := v2.ListProtocolUpgradeProposalsRequest{Status: inState, ApprovedBy: approvedBy, Pagination: pagination}
+	resp, err := r.tradingDataClientV2.ListProtocolUpgradeProposals(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.ProtocolUpgradeProposals, nil
 }
 
 // Deprecated: Use ProposalsConnection instead.
