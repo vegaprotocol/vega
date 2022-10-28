@@ -249,11 +249,11 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmdcCuXsFAbbAHY7tiwERASvWDqr95LSrR3sn4YiPmc4Uo", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmdkfhVLtLbE7AAgMPJ6WFuF9fx9qNyFqcG4khyX8NQfT3", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmPcjG67sTbPYo9GdqkfDRiuf5dsH7BLRPT7rxoC7T9288", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "Qmcj9Q8m3ggLwXMwpPzT56Di7zmoPUZtzNFNbL3uzzkZ2P", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmQ5B7Es6ac79d3kxRDwjrjrAXbVkQDXQK56vxS8DLfZDr", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmYYmDfM32z1fDSmd9P8YyZRoaShkZ7hrm9d5vVKgVegTN", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmaFMVLu72ri79eCdgQ35AuzGauwbdaRDbRwJiqzBRhbTL", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmfRCqqJ7LsbTpP48pFxohvQ8nhwE9fox7Y9icWcKkPWKo", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmXm286qSz7fi6ixMgX73Z93mZFPZsaP8Ykk4oxDUTeKbz", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmUS3C6Z8RZXAWucK2UohrbbpCuEn3GwJobtfEzCyXdGHY", snapshots)
 	}, postgresRuntimePath)
 
 	if exitCode != 0 {
@@ -505,7 +505,7 @@ func emptyDatabase() {
 	}
 }
 
-func panicIfHistorySegmentIdsNotEqual(expected string, actual string, snapshots []snapshot.CreateSnapshotResult) {
+func panicIfHistorySegmentIdsNotEqual(actual string, expected string, snapshots []snapshot.CreateSnapshotResult) {
 	if expected != actual {
 		snapshotPaths := ""
 		for _, sn := range snapshots {
@@ -582,7 +582,7 @@ func setupSQLBroker(ctx context.Context, eventsFile string, testDbConfig sqlstor
 
 	config := broker.NewDefaultConfig()
 
-	protocolUpgradeService := service.NewProtocolUpgrade()
+	protocolUpgradeService := service.NewProtocolUpgrade(nil, nil)
 
 	sqlBroker := broker.NewSQLStoreBroker(logging.NewTestLogger(), config, chainID, evtSource,
 		transactionalConnectionSource, blockStore, protocolUpgradeService, func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) {

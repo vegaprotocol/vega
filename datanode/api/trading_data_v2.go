@@ -2705,6 +2705,47 @@ func (t *tradingDataServiceV2) GetProtocolUpgradeStatus(context.Context, *v2.Get
 	}, nil
 }
 
+func (t *tradingDataServiceV2) ListProtocolUpgradeProposals(ctx context.Context, req *v2.ListProtocolUpgradeProposalsRequest) (*v2.ListProtocolUpgradeProposalsResponse, error) {
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("empty request"))
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	var status *entities.ProtocolUpgradeProposalStatus
+	if req.Status != nil {
+		s := entities.ProtocolUpgradeProposalStatus(*req.Status)
+		status = &s
+	}
+
+	pups, pageInfo, err := t.protocolUpgradeService.ListProposals(
+		ctx,
+		status,
+		req.ApprovedBy,
+		pagination,
+	)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	edges, err := makeEdges[*v2.ProtocolUpgradeProposalEdge](pups)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	connection := v2.ProtocolUpgradeProposalConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListProtocolUpgradeProposalsResponse{
+		ProtocolUpgradeProposals: &connection,
+	}, nil
+}
+
 type tradingDataEventBusServerV2 struct {
 	stream v2.TradingDataService_ObserveEventBusServer
 }

@@ -748,3 +748,24 @@ func (ns *ValidatorNodeStatus) UnmarshalJSON(src []byte) error {
 	*ns = ValidatorNodeStatus(val)
 	return nil
 }
+
+/************************* Protocol Upgrade *****************************/
+
+type ProtocolUpgradeProposalStatus eventspb.ProtocolUpgradeProposalStatus
+
+func (ps ProtocolUpgradeProposalStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := eventspb.ProtocolUpgradeProposalStatus_name[int32(ps)]
+	if !ok {
+		return buf, fmt.Errorf("unknown protocol upgrade proposal status: %v", ps)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (ps *ProtocolUpgradeProposalStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := eventspb.ProtocolUpgradeProposalStatus_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown protocol upgrade proposal status: %s", src)
+	}
+	*ps = ProtocolUpgradeProposalStatus(val)
+	return nil
+}
