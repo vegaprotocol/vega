@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/liquidity/supplied"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 var ErrPartyHaveNoLiquidityProvision = errors.New("party have no liquidity provision")
@@ -139,9 +140,12 @@ func (e *Engine) GetPotentialShapeOrders(
 	// Update this once we have updated the commitment value to use Uint TODO UINT
 	obligation, _ := num.UintFromDecimal(lps.CommitmentAmount.ToDecimal().Mul(e.stakeToObligationFactor).Round(0))
 	// Create a slice shaped copy of the orders
-	orders := make([]*types.Order, 0, len(e.orders.m[party]))
-	for _, order := range e.orders.m[party] {
-		orders = append(orders, order)
+	partyOrders := e.orderBook.GetOrdersPerParty(party)
+	orders := make([]*types.Order, 0, len(partyOrders))
+	for _, order := range partyOrders {
+		if !order.IsLiquidityOrder() && order.Status == vega.Order_STATUS_ACTIVE {
+			orders = append(orders, order)
+		}
 	}
 
 	// now try to calculate the implied volume for our shape,

@@ -352,7 +352,7 @@ func NewMarket(
 
 	now := timeService.GetTimeNow()
 	liqEngine := liquidity.NewSnapshotEngine(
-		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
+		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, book, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
 
 	// The market is initially created in a proposed state
 	mkt.State = types.MarketStateProposed
@@ -2434,9 +2434,6 @@ func (m *Market) AmendOrderWithIDGenerator(
 
 	if !m.as.InAuction() {
 		m.checkForReferenceMoves(ctx, allUpdatedOrders, false)
-	} else {
-		// make sure that the amended orders are updated in the liquidity engine too
-		m.liquidity.SynchronisePartyOrders(party, allUpdatedOrders)
 	}
 	return conf, nil
 }

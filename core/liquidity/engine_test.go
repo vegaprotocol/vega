@@ -88,7 +88,7 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 	risk.EXPECT().GetProjectionHorizon().AnyTimes()
 
 	engine := liquidity.NewSnapshotEngine(liquidityConfig,
-		log, tsvc, broker, risk, monitor, asset, market, stateVarEngine, num.NewUint(100000), num.NewUint(100000), num.DecimalFromInt64(1),
+		log, tsvc, broker, risk, monitor, orderbook, asset, market, stateVarEngine, num.NewUint(100000), num.NewUint(100000), num.DecimalFromInt64(1),
 	)
 
 	return &testEngine{
@@ -213,6 +213,7 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	// We don't care about the following calls
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tng.orderbook.EXPECT().GetOrdersPerParty(party).Times(1)
 
 	// Send a submission to create the shape
 	lpspb := &commandspb.LiquidityProvisionSubmission{
@@ -450,8 +451,8 @@ func TestUpdate(t *testing.T) {
 		{ID: "1", Party: party, Price: num.NewUint(10), Size: 1, Side: types.SideBuy, Status: types.OrderStatusActive},
 		{ID: "2", Party: party, Price: num.NewUint(11), Size: 1, Side: types.SideSell, Status: types.OrderStatusActive},
 	}
-
-	creates, err := tng.engine.CreateInitialOrders(ctx, markPriceD, markPriceD, party, orders, fn)
+	tng.orderbook.EXPECT().GetOrdersPerParty(party).Times(3).Return(orders)
+	creates, err := tng.engine.CreateInitialOrders(ctx, markPriceD, markPriceD, party, fn)
 	require.NoError(t, err)
 	require.Len(t, creates, 3)
 

@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types/statevar"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 var (
@@ -84,15 +85,12 @@ type Engine struct {
 	timeService    TimeService
 	broker         Broker
 	suppliedEngine *supplied.Engine
+	orderBook      OrderBook
 
 	stakeToObligationFactor num.Decimal
 
 	// state
 	provisions *SnapshotableProvisionsPerParty
-
-	// orders stores all the market orders (except the liquidity orders) explicitly submitted by a given party.
-	// indexed as: map of PartyID -> OrderId -> order to easy access
-	orders *SnapshotablePartiesOrders
 
 	// liquidityOrder stores the orders generated to satisfy the liquidity commitment of a given party.
 	// indexed as: map of PartyID -> OrdersID -> order
@@ -120,6 +118,7 @@ func NewEngine(config Config,
 	broker Broker,
 	riskModel RiskModel,
 	priceMonitor PriceMonitor,
+	orderBook OrderBook,
 	asset string,
 	marketID string,
 	stateVarEngine StateVarEngine,
@@ -136,6 +135,7 @@ func NewEngine(config Config,
 		broker:      broker,
 		// tick size to be used by the supplied engine should actually be in asset decimal
 		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, log, positionFactor),
+		orderBook:      orderBook,
 
 		// parameters
 		stakeToObligationFactor: num.DecimalFromInt64(1),
@@ -146,7 +146,6 @@ func NewEngine(config Config,
 		provisions: newSnapshotableProvisionsPerParty(),
 		pendings:   newSnapshotablePendingProvisions(),
 		// orders related state
-		orders:          newSnapshotablePartiesOrders(),
 		liquidityOrders: newSnapshotablePartiesOrders(),
 	}
 
@@ -268,7 +267,6 @@ func (e *Engine) stopLiquidityProvision(
 
 	// now delete all stuff
 	e.liquidityOrders.DeleteParty(party)
-	e.orders.DeleteParty(party)
 	e.provisions.Delete(party)
 	e.pendings.Delete(party)
 	return orders, nil
@@ -429,7 +427,6 @@ func (e *Engine) SubmitLiquidityProvision(
 	}()
 
 	e.provisions.Set(party, lp)
-	e.orders.ResetForParty(party)
 	e.liquidityOrders.ResetForParty(party)
 	e.pendings.Add(party)
 	lp.UpdatedAt = now
@@ -476,37 +473,6 @@ func (e *Engine) LiquidityProvisionByPartyID(partyID string) *types.LiquidityPro
 	return lp
 }
 
-func (e *Engine) updatePartyOrders(partyID string, orders []*types.Order) {
-	// These maps are created by SubmitLiquidityProvision
-	_, ok := e.orders.GetForParty(partyID)
-	if !ok {
-		return
-	}
-	lm, ok := e.liquidityOrders.GetForParty(partyID)
-	if !ok {
-		return
-	}
-
-	for _, order := range orders {
-		// skip if it's a liquidity order
-		if len(order.LiquidityProvisionID) > 0 {
-			continue
-		}
-		if _, ok := lm[order.ID]; ok {
-			continue
-		}
-
-		// Remove
-		if order.Status != types.OrderStatusActive {
-			e.orders.Delete(order.Party, order.ID)
-			continue
-		}
-
-		// Create or Modify
-		e.orders.Add(order.Party, order)
-	}
-}
-
 // IsLiquidityOrder checks to see if a given order is part of the LP orders for a given party.
 func (e *Engine) IsLiquidityOrder(party, order string) bool {
 	_, ok := e.liquidityOrders.Get(party, order)
@@ -519,12 +485,8 @@ func (e *Engine) CreateInitialOrders(
 	ctx context.Context,
 	bestBidPrice, bestAskPrice num.Decimal,
 	party string,
-	orders []*types.Order,
 	repriceFn RepricePeggedOrder,
 ) ([]*types.Order, error) {
-	// update our internal orders
-	e.updatePartyOrders(party, orders)
-
 	// ignoring amends as there won't be any since we kill all the orders first
 	creates, _, err := e.createOrUpdateForParty(ctx,
 		bestBidPrice, bestAskPrice, party, repriceFn)
@@ -534,14 +496,6 @@ func (e *Engine) CreateInitialOrders(
 // UndeployLPs is called when a reference price is no longer available. LP orders should all be parked/set to pending
 // and should be redeployed once possible. Pass in updated orders and update internal records first...
 func (e *Engine) UndeployLPs(ctx context.Context, orders []*types.Order) []*ToCancel {
-	// make sure internal data matches the latest version of all orders on the book
-	for _, po := range Orders(orders).ByParty() {
-		if !e.IsLiquidityProvider(po.Party) {
-			continue
-		}
-		e.updatePartyOrders(po.Party, po.Orders)
-	}
-
 	provisions := e.provisions.Slice()
 	cancels := make([]*ToCancel, 0, len(provisions)*2) // one for each side
 	for _, lp := range provisions {
@@ -586,17 +540,6 @@ func (e *Engine) Update(
 		newOrders []*types.Order
 		toCancel  []*ToCancel
 	)
-
-	// first update internal state of LP orders
-	for _, po := range Orders(orders).ByParty() {
-		if !e.IsLiquidityProvider(po.Party) {
-			continue
-		}
-
-		// update our internal orders
-		e.updatePartyOrders(po.Party, po.Orders)
-	}
-
 	for _, lp := range e.provisions.Slice() {
 		creates, cancels, err := e.createOrUpdateForParty(ctx, bestBidPrice, bestAskPrice, lp.Party, repriceFn)
 		if err != nil {
@@ -608,28 +551,6 @@ func (e *Engine) Update(
 		}
 	}
 	return newOrders, toCancel, nil
-}
-
-// SynchronisePartyOrders updates the orders against the given changes to orders made during order amendment
-func (e *Engine) SynchronisePartyOrders(partyID string, orders []*types.Order) {
-	partyOrders, ok := e.orders.GetForParty(partyID)
-	if !ok {
-		return
-	}
-
-	for _, order := range orders {
-
-		if _, ok := partyOrders[order.ID]; !ok {
-			continue
-		}
-
-		// if it exists either delete it if its cancelled, or update it so that it shares the values
-		if order.Status != types.OrderStatusActive {
-			e.orders.Delete(order.Party, order.ID)
-			continue
-		}
-		e.orders.Add(order.Party, order)
-	}
 }
 
 // CalculateSuppliedStake returns the sum of commitment amounts from all the liquidity providers.
@@ -717,9 +638,12 @@ func (e *Engine) createOrUpdateForParty(
 		}
 	} else {
 		// Create a slice shaped copy of the orders
-		orders := make([]*types.Order, 0, len(e.orders.m[party]))
-		for _, order := range e.orders.m[party] {
-			orders = append(orders, order)
+		partyOrders := e.orderBook.GetOrdersPerParty(party)
+		orders := make([]*types.Order, 0, len(partyOrders))
+		for _, order := range partyOrders {
+			if !order.IsLiquidityOrder() && order.Status == vega.Order_STATUS_ACTIVE {
+				orders = append(orders, order)
+			}
 		}
 
 		if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
@@ -773,9 +697,6 @@ func (e *Engine) undeployOrdersFromShape(
 	lm, ok := e.liquidityOrders.GetForParty(party)
 	if !ok {
 		e.liquidityOrders.ResetForParty(party)
-		if _, ok := e.orders.GetForParty(party); !ok {
-			e.orders.ResetForParty(party)
-		}
 	}
 
 	var (
@@ -819,9 +740,6 @@ func (e *Engine) createOrdersFromShape(
 	lm, ok := e.liquidityOrders.GetForParty(party)
 	if !ok {
 		e.liquidityOrders.ResetForParty(party)
-		if _, ok := e.orders.GetForParty(party); !ok {
-			e.orders.ResetForParty(party)
-		}
 	}
 	lp := e.LiquidityProvisionByPartyID(party)
 

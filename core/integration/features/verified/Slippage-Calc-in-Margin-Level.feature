@@ -78,9 +78,9 @@ Feature: Test closeout type 1: margin >= cost of closeout
        #original vol
       | sell | 150   | 1000   |
       #LP pegged vol
-      | sell | 123   | 2086   |
+      | sell | 123   | 2082   |
         #LP pegged vol
-      | sell | 110   | 441    |
+      | sell | 110   | 440    |
       #original vol
       | sell | 105   | 1      | 
 
@@ -96,9 +96,9 @@ Feature: Test closeout type 1: margin >= cost of closeout
        #original vol
       | sell | 150   | 1000   |
       #LP pegged vol
-      | sell | 126   | 1323   |
+      | sell | 126   | 1320   |
         #LP pegged vol
-      | sell | 115   | 401    |
+      | sell | 115   | 400    |
       #original vol
       | sell | 105   | 1      | 
 
