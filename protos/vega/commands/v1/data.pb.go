@@ -26,9 +26,9 @@ type OracleDataSubmission_OracleSource int32
 const (
 	// The default value
 	OracleDataSubmission_ORACLE_SOURCE_UNSPECIFIED OracleDataSubmission_OracleSource = 0
-	// Support for Open Oracle standard
+	// Specifies that the payload will be base64 encoded JSON conforming to the Open Oracle standard
 	OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE OracleDataSubmission_OracleSource = 1
-	// Support for custom JSON data
+	// Specifies that the payload will be base64 encoded JSON, but does not specify the shape of the data
 	OracleDataSubmission_ORACLE_SOURCE_JSON OracleDataSubmission_OracleSource = 2
 )
 
@@ -79,9 +79,11 @@ type OracleDataSubmission struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The source from which the data is coming from
+	// The source from which the data is coming from. Must be base64 encoded.
+	// Oracle data a type of external data source data.
 	Source OracleDataSubmission_OracleSource `protobuf:"varint,1,opt,name=source,proto3,enum=vega.commands.v1.OracleDataSubmission_OracleSource" json:"source,omitempty"`
-	// The data provided by the third party provider
+	// The data provided by the data source
+	// In the case of Open Oracle - it will be the entire object - it will contain messages, signatures and price data
 	Payload []byte `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
 }
 
