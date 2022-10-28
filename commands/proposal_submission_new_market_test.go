@@ -2183,9 +2183,9 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testin
 						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
 							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 5e-9,
-								Tau:                   2,
+								Tau:                   1.0,
 								Params: &protoTypes.LogNormalModelParams{
-									Mu:    0,
+									Mu:    0.0,
 									Sigma: 0.1,
 									R:     0,
 								},
@@ -2197,7 +2197,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testin
 		},
 	}
 	err := checkProposalSubmission(cTooSmall)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter"), errors.New("must be between [1e-8, 1)"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter"), errors.New("must be between [1e-8, 0.1]"))
 
 	cNeg := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -2206,7 +2206,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testin
 					Changes: &protoTypes.NewMarketConfiguration{
 						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
 							LogNormal: &protoTypes.LogNormalRiskModel{
-								RiskAversionParameter: -0.1,
+								RiskAversionParameter: 1e-9,
 								Tau:                   2,
 								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0,
@@ -2221,7 +2221,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testin
 		},
 	}
 	err = checkProposalSubmission(cNeg)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter"), errors.New("must be between [1e-8, 1)"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter"), errors.New("must be between [1e-8, 0.1]"))
 
 	cTooBig := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -2230,7 +2230,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testin
 					Changes: &protoTypes.NewMarketConfiguration{
 						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
 							LogNormal: &protoTypes.LogNormalRiskModel{
-								RiskAversionParameter: 1 + 1e-8,
+								RiskAversionParameter: 0.1 + 1e-8,
 								Tau:                   2,
 								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0,
@@ -2245,7 +2245,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testin
 		},
 	}
 	err = checkProposalSubmission(cTooBig)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter"), errors.New("must be between [1e-8, 1)"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter"), errors.New("must be between [1e-8, 0.1]"))
 
 	cJustAboutRight1 := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -2319,7 +2319,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 		},
 	}
 	err := checkProposalSubmission(cZero)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau"), errors.New("must be between (0, 1]"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau"), errors.New("must be between [1e-8, 1]"))
 
 	cNeg := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -2329,7 +2329,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
 							LogNormal: &protoTypes.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
-								Tau:                   -0.2,
+								Tau:                   1e-9,
 								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
@@ -2343,7 +2343,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 		},
 	}
 	err = checkProposalSubmission(cNeg)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau"), errors.New("must be between (0, 1]"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau"), errors.New("must be between [1e-8, 1]"))
 
 	cTooLarge := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -2367,7 +2367,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 		},
 	}
 	err = checkProposalSubmission(cTooLarge)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau"), errors.New("must be between (0, 1]"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau"), errors.New("must be between [1e-8, 1]"))
 
 	cJustAboutRight1 := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -2453,7 +2453,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
-									Mu:    -20 - 1e-12,
+									Mu:    -1e-6 - 1e-12,
 									Sigma: 0.1,
 									R:     0,
 								},
@@ -2465,7 +2465,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 		},
 	}
 	err = checkProposalSubmission(cTooSmall)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu"), errors.New("must be between [-20,20]"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu"), errors.New("must be between [-1e-6,1e-6]"))
 
 	cTooLarge := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -2477,7 +2477,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
-									Mu:    20 + 1e-12,
+									Mu:    1e-6 + 1e-12,
 									Sigma: 0.1,
 									R:     0,
 								},
@@ -2489,7 +2489,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 		},
 	}
 	err = checkProposalSubmission(cTooLarge)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu"), errors.New("must be between [-20,20]"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu"), errors.New("must be between [-1e-6,1e-6]"))
 
 	cJustAboutRight1 := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -2551,7 +2551,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
-									Mu:    0.2,
+									Mu:    0.0,
 									Sigma: 0.1,
 									R:     math.NaN(),
 								},
@@ -2575,9 +2575,9 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
-									Mu:    0.2,
+									Mu:    0.0,
 									Sigma: 0.1,
-									R:     -20 - 1e-12,
+									R:     -1 - 1e-12,
 								},
 							},
 						},
@@ -2587,7 +2587,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 		},
 	}
 	err = checkProposalSubmission(cTooSmall)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r"), errors.New("must be between [-20,20]"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r"), errors.New("must be between [-1,1]"))
 
 	cTooLarge := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -2599,9 +2599,9 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
-									Mu:    0.2,
+									Mu:    0.0,
 									Sigma: 0.1,
-									R:     20 + 1e-12,
+									R:     1 + 1e-12,
 								},
 							},
 						},
@@ -2611,7 +2611,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 		},
 	}
 	err = checkProposalSubmission(cTooLarge)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r"), errors.New("must be between [-20,20]"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r"), errors.New("must be between [-1,1]"))
 
 	cJustAboutRight1 := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -2623,7 +2623,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
-									Mu:    0.2,
+									Mu:    0.0,
 									Sigma: 0.1,
 									R:     -20,
 								},
@@ -2647,7 +2647,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
-									Mu:    0.2,
+									Mu:    0.0,
 									Sigma: 0.1,
 									R:     20,
 								},
@@ -2673,7 +2673,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
-									Mu:    0.2,
+									Mu:    0.0,
 									Sigma: math.NaN(),
 									R:     0,
 								},
@@ -2697,8 +2697,8 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
-									Mu:    0.2,
-									Sigma: -0.1,
+									Mu:    0.0,
+									Sigma: 1e-4,
 									R:     0,
 								},
 							},
@@ -2709,7 +2709,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 		},
 	}
 	err = checkProposalSubmission(cNeg)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-4,100]"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-3,100]"))
 
 	cTooSmall := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -2721,8 +2721,8 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
-									Mu:    0.2,
-									Sigma: 1e-4 - 1e-12,
+									Mu:    0.0,
+									Sigma: 1e-3 - 1e-12,
 									R:     0,
 								},
 							},
@@ -2733,7 +2733,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 		},
 	}
 	err = checkProposalSubmission(cTooSmall)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-4,100]"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-3,100]"))
 
 	cTooLarge := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -2745,7 +2745,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
-									Mu:    0.2,
+									Mu:    0.0,
 									Sigma: 100 + 1e-12,
 									R:     0,
 								},
@@ -2757,7 +2757,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 		},
 	}
 	err = checkProposalSubmission(cTooLarge)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-4,100]"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-3,100]"))
 
 	cJustAboutRight1 := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -2769,7 +2769,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
-									Mu:    0.2,
+									Mu:    0.0,
 									Sigma: 1e-4,
 									R:     0,
 								},
@@ -2793,7 +2793,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
-									Mu:    0.2,
+									Mu:    0.0,
 									Sigma: 100,
 									R:     0,
 								},
