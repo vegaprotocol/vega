@@ -13,21 +13,43 @@
 package governance_test
 
 import (
+	"context"
 	_ "embed"
+	"encoding/base64"
+	"encoding/json"
+	"testing"
+	"time"
+
+	"code.vegaprotocol.io/vega/core/assets"
+	amocks "code.vegaprotocol.io/vega/core/assets/mocks"
+	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
+	"code.vegaprotocol.io/vega/core/checkpoint"
+	"code.vegaprotocol.io/vega/core/collateral"
+	"code.vegaprotocol.io/vega/core/execution"
+	emocks "code.vegaprotocol.io/vega/core/execution/mocks"
+	"code.vegaprotocol.io/vega/core/governance"
+	"code.vegaprotocol.io/vega/core/governance/mocks"
+	"code.vegaprotocol.io/vega/core/netparams"
+	"code.vegaprotocol.io/vega/core/nodewallets"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/proto"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	vgtesting "code.vegaprotocol.io/vega/libs/testing"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
+	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
 )
 
-/*
 //go:embed testcp/checkpoint.cp
 var cpFile []byte
-
-// Disable 'TestMarketRestoreFromCheckpoint' for now. 'testcp/checkpoint.cp' needs to be regenerated for the new data sourcing types.
-// Rest of functions disabled because linter complains.
 
 func TestMarketRestoreFromCheckpoint(t *testing.T) {
 	now := time.Now()
 	ex, gov, cpEng := createExecutionEngine(t, now)
 	genesis := &checkpoint.GenesisState{
-		CheckpointHash:  "01e2c449a66f2a7a0d6c7ee9ed03c552f15923d46f1e41d4fd375f39974d86fd",
+		CheckpointHash:  "36fe3e8a6dea4a89c983ae9467ad05e656fa7754857f6a917d588d157b9b064f",
 		CheckpointState: base64.StdEncoding.EncodeToString(cpFile),
 	}
 	gd := &struct {
@@ -121,4 +143,3 @@ func createExecutionEngine(t *testing.T, tm time.Time) (*execution.Engine, *gove
 
 	return exec, gov, cpEngine
 }
-*/
