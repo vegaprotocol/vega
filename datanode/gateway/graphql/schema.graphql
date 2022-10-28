@@ -727,6 +727,9 @@ type Query {
   "Flag indicating whether the data-node is ready to begin the protocol upgrade"
   protocolUpgradeStatus: ProtocolUpgradeStatus
 
+  "List protocol upgrade proposals, optionally filtering on status or approver"
+  protocolUpgradeProposals(inState: ProtocolUpgradeProposalStatus, approvedBy: String, pagination: Pagination): ProtocolUpgradeProposalConnection
+
   "Governance proposals that aim to update existing markets"
   updateMarketProposals(
     "Optionally, select proposals for a specific market. Leave out for all"
@@ -4590,4 +4593,44 @@ input DateRange {
 "Indicator showing whether the data-node is ready for the protocol upgrade to begin."
 type ProtocolUpgradeStatus {
   ready: Boolean!
+}
+
+"The set of valid statuses for a protocol upgrade proposal"
+enum ProtocolUpgradeProposalStatus {
+  "Invalid proposal state"
+  PROTOCOL_UPGRADE_PROPOSAL_STATUS_UNSPECIFIED
+  "Proposal to upgrade protocol version is awaiting sufficient validator approval"
+  PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING
+  "Proposal to upgrade protocol version accepted"
+  PROTOCOL_UPGRADE_PROPOSAL_STATUS_APPROVED
+  "Proposal to upgrade protocol version has been rejected"
+  PROTOCOL_UPGRADE_PROPOSAL_STATUS_REJECTED
+}
+
+"Connection type for retrieving cursor-based paginated protocol upgrade proposals"
+type ProtocolUpgradeProposalConnection {
+  "The positions in this connection"
+  edges: [ProtocolUpgradeProposalEdge!]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+"Edge type containing the protocol upgrade protocol cursor information"
+type ProtocolUpgradeProposalEdge {
+  "The protocol upgrade proposal"
+  node: ProtocolUpgradeProposal!
+  "Cursor identifying the protocol upgrade proposal"
+  cursor: String!
+}
+
+"A proposal to upgrade the vega protocol (i.e. which version of the vega software nodes will run)"
+type ProtocolUpgradeProposal {
+  "At which block the upgrade is proposed"
+  upgradeBlockHeight: String!
+  "To which vega release tag the upgrade is proposed"
+  vegaReleaseTag: String!
+  "Tendermint validators that have agreed to the upgrade"
+  approvers: [String!]!
+  "the status of the proposal"
+  status: ProtocolUpgradeProposalStatus!
 }

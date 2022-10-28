@@ -480,3 +480,12 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.TransactionResult
   HistorySegment:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.HistorySegment
+  ProtocolUpgradeProposalConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ProtocolUpgradeProposalConnection
+  ProtocolUpgradeProposalEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ProtocolUpgradeProposalEdge
+  ProtocolUpgradeProposal:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.ProtocolUpgradeEvent
+  ProtocolUpgradeProposalStatus:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.ProtocolUpgradeProposalStatus

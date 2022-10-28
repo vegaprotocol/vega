@@ -388,6 +388,9 @@ service TradingDataService {
     // Protocol Upgrade status
     rpc GetProtocolUpgradeStatus(GetProtocolUpgradeStatusRequest) returns (GetProtocolUpgradeStatusResponse);
 
+    // List protocol upgrades proposals, optionally filtering on status or approver.
+    rpc ListProtocolUpgradeProposals(ListProtocolUpgradeProposalsRequest) returns (ListProtocolUpgradeProposalsResponse);
+
     // Decentralized History
     //
     // Decentralised History allows the data-node to reach out to peer nodes to fetch the most recent history, as well as
@@ -2059,8 +2062,29 @@ message GetProtocolUpgradeStatusResponse {
     bool ready = 1;
 }
 
+// Request type for ListProtocolUpgradeProposals; fetches a paginated list of protocol upgrade proposals
+message ListProtocolUpgradeProposalsRequest {
+    optional vega.events.v1.ProtocolUpgradeProposalStatus status = 1;
+    optional string approved_by = 2;
+    optional Pagination pagination = 3;
+}
 
+// Reponse type from a ListProtocolUpgradeProposals RPC call; a paginated list of protocol upgrade proposals
+message ListProtocolUpgradeProposalsResponse {
+    ProtocolUpgradeProposalConnection protocol_upgrade_proposals = 1;
+}
 
+// A page of protocol upgrade proposals, with page information.
+message ProtocolUpgradeProposalConnection {
+    repeated ProtocolUpgradeProposalEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// A protocol upgrade proposal, along with a cursor
+message ProtocolUpgradeProposalEdge {
+    vega.events.v1.ProtocolUpgradeEvent node = 1;
+    string cursor = 2;
+}
 
 // -- Decentralized History --
 // Decentralised History allows the data-node to reach out to peer nodes to fetch the most recent history, as well as
