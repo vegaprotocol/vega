@@ -16,13 +16,14 @@ import (
 	"context"
 	"time"
 
+	"google.golang.org/grpc/codes"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"google.golang.org/grpc/codes"
 )
 
 type eventBusServer interface {
@@ -75,8 +76,9 @@ func observeEventBus(log *logging.Logger, config Config, eventBusServer eventBus
 	// this will be blocking until the connection by the client is closed
 	// and we will not start processing any events until we receive the original request
 	// indicating filters and batch size.
-	req, err := recvEventRequest(eventBusServer)
+	req, err := recvEventRequest(ctx, defaultReqTimeout, eventBusServer)
 	if err != nil {
+		log.Error("Error receiving event request", logging.Error(err))
 		// client exited, nothing to do
 		return nil //nolint:nilerr
 	}
@@ -174,7 +176,7 @@ func observeEventsWithAck(
 		}
 
 		// now we try to read again the new size / ack
-		req, err := recvEventRequest(stream)
+		req, err := recvEventRequest(ctx, defaultReqTimeout, stream)
 		if err != nil {
 			return err
 		}
@@ -186,31 +188,33 @@ func observeEventsWithAck(
 	}
 }
 
-func recvEventRequest(
-	stream eventBusServer,
-) (*protoapi.ObserveEventBusRequest, error) {
-	readCtx, cfunc := context.WithTimeout(stream.Context(), 5*time.Second)
-	oebCh := make(chan protoapi.ObserveEventBusRequest)
-	var err error
+const defaultReqTimeout = time.Second * 5
+
+func recvEventRequest(ctx context.Context, timeout time.Duration, stream eventBusServer) (*protoapi.ObserveEventBusRequest, error) {
+	type resp struct {
+		nb  *protoapi.ObserveEventBusRequest
+		err error
+	}
+
+	oebCh := make(chan resp, 1)
+
 	go func() {
 		defer close(oebCh)
-		nb := protoapi.ObserveEventBusRequest{}
-		if err = stream.RecvMsg(&nb); err != nil {
-			cfunc()
-			return
-		}
-		oebCh <- nb
+
+		nb := &protoapi.ObserveEventBusRequest{}
+		err := stream.RecvMsg(nb)
+
+		oebCh <- resp{nb: nb, err: err}
 	}()
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	select {
-	case <-readCtx.Done():
-		if err != nil {
-			// this means the client disconnected
-			return nil, err
-		}
-		// this mean we timedout
-		return nil, readCtx.Err()
-	case nb := <-oebCh:
-		return &nb, nil
+	case rsp := <-oebCh:
+		return rsp.nb, rsp.err
+	case <-ctx.Done():
+		return nil, ctx.Err()
 	}
 }
 
