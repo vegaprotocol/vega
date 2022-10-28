@@ -51,6 +51,9 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	e2.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	e3.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	e3.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	e1.orderbook.EXPECT().GetOrdersPerParty(gomock.Any()).AnyTimes()
+	e2.orderbook.EXPECT().GetOrdersPerParty(gomock.Any()).AnyTimes()
+	e3.orderbook.EXPECT().GetOrdersPerParty(gomock.Any()).AnyTimes()
 
 	lp1 := &types.LiquidityProvisionSubmission{
 		MarketID:         market,
@@ -284,6 +287,7 @@ func TestSnapshotChangeOnUpdate(t *testing.T) {
 	)
 
 	e1.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	e1.orderbook.EXPECT().GetOrdersPerParty(gomock.Any()).AnyTimes()
 
 	lp1 := &types.LiquidityProvisionSubmission{
 		MarketID:         market,

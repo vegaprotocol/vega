@@ -48,3 +48,17 @@ func (mr *MockOrderBookMockRecorder) GetOrderByID(arg0 interface{}) *gomock.Call
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderByID", reflect.TypeOf((*MockOrderBook)(nil).GetOrderByID), arg0)
 }
+
+// GetOrdersPerParty mocks base method.
+func (m *MockOrderBook) GetOrdersPerParty(arg0 string) []*types.Order {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrdersPerParty", arg0)
+	ret0, _ := ret[0].([]*types.Order)
+	return ret0
+}
+
+// GetOrdersPerParty indicates an expected call of GetOrdersPerParty.
+func (mr *MockOrderBookMockRecorder) GetOrdersPerParty(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrdersPerParty", reflect.TypeOf((*MockOrderBook)(nil).GetOrdersPerParty), arg0)
+}

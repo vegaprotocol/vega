@@ -269,10 +269,6 @@ type PayloadLiquidityPartiesLiquidityOrders struct {
 	PartiesLiquidityOrders *snapshot.LiquidityPartiesLiquidityOrders
 }
 
-type PayloadLiquidityPartiesOrders struct {
-	PartiesOrders *snapshot.LiquidityPartiesOrders
-}
-
 type PayloadLiquidityProvisions struct {
 	Provisions *snapshot.LiquidityProvisions
 }
@@ -739,8 +735,6 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadLiquidityPendingProvisionsFromProto(dt)
 	case *snapshot.Payload_LiquidityPartiesLiquidityOrders:
 		ret.Data = PayloadLiquidityPartiesLiquidityOrdersFromProto(dt)
-	case *snapshot.Payload_LiquidityPartiesOrders:
-		ret.Data = PayloadLiquidityPartiesOrdersFromProto(dt)
 	case *snapshot.Payload_LiquidityProvisions:
 		ret.Data = PayloadLiquidityProvisionsFromProto(dt)
 	case *snapshot.Payload_LiquiditySupplied:
@@ -1020,28 +1014,6 @@ func (*PayloadLiquidityPartiesLiquidityOrders) Namespace() SnapshotNamespace {
 
 func (p *PayloadLiquidityPartiesLiquidityOrders) Key() string {
 	return fmt.Sprintf("partiesLiquidityOrders:%v", p.PartiesLiquidityOrders.MarketId)
-}
-
-func PayloadLiquidityPartiesOrdersFromProto(s *snapshot.Payload_LiquidityPartiesOrders) *PayloadLiquidityPartiesOrders {
-	return &PayloadLiquidityPartiesOrders{
-		PartiesOrders: s.LiquidityPartiesOrders,
-	}
-}
-
-func (*PayloadLiquidityPartiesOrders) isPayload() {}
-
-func (p *PayloadLiquidityPartiesOrders) plToProto() interface{} {
-	return &snapshot.Payload_LiquidityPartiesOrders{
-		LiquidityPartiesOrders: p.PartiesOrders,
-	}
-}
-
-func (*PayloadLiquidityPartiesOrders) Namespace() SnapshotNamespace {
-	return LiquiditySnapshot
-}
-
-func (p *PayloadLiquidityPartiesOrders) Key() string {
-	return fmt.Sprintf("partiesOrders:%v", p.PartiesOrders.MarketId)
 }
 
 func PayloadLiquidityProvisionsFromProto(s *snapshot.Payload_LiquidityProvisions) *PayloadLiquidityProvisions {

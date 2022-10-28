@@ -30,6 +30,7 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/core/liquidity OrderBook
 type OrderBook interface {
 	GetOrderByID(orderID string) (*types.Order, error)
+	GetOrdersPerParty(party string) []*types.Order
 }
 
 type SnapshotEngine struct {
@@ -51,7 +52,6 @@ type SnapshotEngine struct {
 	hashKeys                  []string
 	parametersKey             string
 	partiesLiquidityOrdersKey string
-	partiesOrdersKey          string
 	pendingProvisionsKey      string
 	provisionsKey             string
 	suppliedKey               string
@@ -63,6 +63,7 @@ func NewSnapshotEngine(config Config,
 	broker Broker,
 	riskModel RiskModel,
 	priceMonitor PriceMonitor,
+	orderBook OrderBook,
 	asset string,
 	market string,
 	stateVarEngine StateVarEngine,
@@ -74,7 +75,7 @@ func NewSnapshotEngine(config Config,
 		// tickSize = 10^{market_dp} - used for calculating probabilities at offsets from the best bid/ask
 		// priceFactor = 10^{asset_dp} / 10^{market_dp} - used for scaling a price to the market
 		// positionFactor = 10^{position_dp} - used to scale sizes to the market position decimals
-		Engine:  NewEngine(config, log, timeService, broker, riskModel, priceMonitor, asset, market, stateVarEngine, tickSize, priceFactor, positionFactor),
+		Engine:  NewEngine(config, log, timeService, broker, riskModel, priceMonitor, orderBook, asset, market, stateVarEngine, tickSize, priceFactor, positionFactor),
 		pl:      types.Payload{},
 		market:  market,
 		stopped: false,
@@ -120,7 +121,6 @@ func reconcileOrders(log *logging.Logger, orders *SnapshotablePartiesOrders, ord
 // ReconcileWithOrderBook ensures that when restoring state from a snapshot the orders in the matching engine and
 // liquidity engine are pointers to the same underlying order struct.
 func (e *SnapshotEngine) ReconcileWithOrderBook(orderbook OrderBook) {
-	e.orders = reconcileOrders(e.log, e.orders, orderbook)
 	e.liquidityOrders = reconcileOrders(e.log, e.liquidityOrders, orderbook)
 }
 
@@ -176,8 +176,6 @@ func (e *SnapshotEngine) LoadState(ctx context.Context, p *types.Payload) ([]typ
 			ctx, pl.Provisions.GetLiquidityProvisions(), p)
 	case *types.PayloadLiquidityParameters:
 		return nil, e.loadParameters(ctx, pl.Parameters, p)
-	case *types.PayloadLiquidityPartiesOrders:
-		return nil, e.loadPartiesOrders(ctx, pl.PartiesOrders.PartyOrders, p)
 	case *types.PayloadLiquidityPartiesLiquidityOrders:
 		return nil, e.loadPartiesLiquidityOrders(
 			ctx, pl.PartiesLiquidityOrders.PartyOrders, p)
@@ -194,25 +192,6 @@ func (e *SnapshotEngine) loadSupplied(ls *snapshotpb.LiquiditySupplied, p *types
 		return err
 	}
 	e.serialisedSupplied, err = proto.Marshal(p.IntoProto())
-	return err
-}
-
-func (e *SnapshotEngine) loadPartiesOrders(
-	_ context.Context, pOrders []*snapshotpb.PartyOrders, p *types.Payload,
-) error {
-	e.Engine.orders = newSnapshotablePartiesOrders()
-	for _, partyOrders := range pOrders {
-		e.Engine.orders.ResetForParty(partyOrders.Party)
-		for _, v := range partyOrders.Orders {
-			order, err := types.OrderFromProto(v)
-			if err != nil {
-				return err
-			}
-			e.Engine.orders.Add(order.Party, order)
-		}
-	}
-	var err error
-	e.serialisedPartiesOrders, err = proto.Marshal(p.IntoProto())
 	return err
 }
 
@@ -304,8 +283,6 @@ func (e *SnapshotEngine) serialise(k string) ([]byte, error) {
 		buf, changed, err = e.serialiseParameters()
 	case e.partiesLiquidityOrdersKey:
 		buf, changed, err = e.serialisePartiesLiquidityOrders()
-	case e.partiesOrdersKey:
-		buf, changed, err = e.serialisePartiesOrders()
 	case e.pendingProvisionsKey:
 		buf, changed, err = e.serialisePendingProvisions()
 	case e.provisionsKey:
@@ -333,8 +310,6 @@ func (e *SnapshotEngine) serialise(k string) ([]byte, error) {
 		e.serialisedParameters = buf
 	case e.partiesLiquidityOrdersKey:
 		e.serialisedPartiesLiquidityOrders = buf
-	case e.partiesOrdersKey:
-		e.serialisedPartiesOrders = buf
 	case e.pendingProvisionsKey:
 		e.serialisedPendingProvisions = buf
 	case e.provisionsKey:
@@ -388,19 +363,6 @@ func partyOrdersToProto(m map[string]map[string]*types.Order) []*snapshotpb.Part
 	}
 	sort.SliceStable(pOrders, func(i, j int) bool { return pOrders[i].Party < pOrders[j].Party })
 	return pOrders
-}
-
-func (e *SnapshotEngine) serialisePartiesOrders() ([]byte, bool, error) {
-	payload := &snapshotpb.Payload{
-		Data: &snapshotpb.Payload_LiquidityPartiesOrders{
-			LiquidityPartiesOrders: &snapshotpb.LiquidityPartiesOrders{
-				MarketId:    e.market,
-				PartyOrders: partyOrdersToProto(e.Engine.orders.m),
-			},
-		},
-	}
-
-	return e.marshalPayload(payload)
 }
 
 func (e *SnapshotEngine) serialisePendingProvisions() ([]byte, bool, error) {
@@ -467,11 +429,6 @@ func (e *SnapshotEngine) buildHashKeys(market string) {
 			MarketId: market,
 		},
 	}).Key()
-	e.partiesOrdersKey = (&types.PayloadLiquidityPartiesOrders{
-		PartiesOrders: &snapshotpb.LiquidityPartiesOrders{
-			MarketId: market,
-		},
-	}).Key()
 	e.pendingProvisionsKey = (&types.PayloadLiquidityPendingProvisions{
 		PendingProvisions: &snapshotpb.LiquidityPendingProvisions{
 			MarketId: market,
@@ -490,5 +447,5 @@ func (e *SnapshotEngine) buildHashKeys(market string) {
 	}).Key()
 
 	e.hashKeys = append([]string{}, e.parametersKey, e.partiesLiquidityOrdersKey,
-		e.partiesOrdersKey, e.pendingProvisionsKey, e.provisionsKey, e.suppliedKey)
+		e.pendingProvisionsKey, e.provisionsKey, e.suppliedKey)
 }

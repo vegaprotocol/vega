@@ -1128,7 +1128,6 @@ func TestSubmit(t *testing.T) {
 		// submit the auctions orders
 		tm.events = nil
 		tm.WithSubmittedOrders(t, auctionOrders...)
-
 		// update the time to get out of auction
 		ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 		tm.now = auctionEnd
@@ -1150,11 +1149,11 @@ func TestSubmit(t *testing.T) {
 				size  uint64
 				found bool
 			}{
-				{124, false},
+				{104, false},
 				{2, false},
 				{2, false},
 				{3, false},
-				{114, false},
+				{113, false},
 			}
 
 			for _, v := range found {
