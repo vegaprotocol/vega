@@ -15,7 +15,7 @@ Feature: Target stake
       | search factor | initial factor | release factor |
       | 1.1           | 1.2            | 1.4            |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | oracle config          |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
       | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future |
     And the average block duration is "1"
 

@@ -52,7 +52,7 @@ type TimeService interface {
 
 // OracleEngine ...
 type OracleEngine interface {
-	ListensToPubKeys(oracles.OracleData) bool
+	ListensToSigners(oracles.OracleData) bool
 	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber)
 	Unsubscribe(context.Context, oracles.SubscriptionID)
 }

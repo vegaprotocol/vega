@@ -22,7 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -82,34 +82,42 @@ func testFuture(t *testing.T) *tstFuture {
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)
 
+	pubKeys := []*types.Signer{
+		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	}
+
 	f := &types.Future{
 		SettlementAsset: "ETH",
 		QuoteName:       "ETH",
-		OracleSpecForSettlementData: &types.OracleSpec{
-			PubKeys: []string{"0xDEADBEEF"},
-			Filters: []*types.OracleSpecFilter{
-				{
-					Key: &types.OracleSpecPropertyKey{
-						Name: "price.ETH.value",
-						Type: oraclespb.PropertyKey_TYPE_INTEGER,
+		DataSourceSpecForSettlementData: &types.DataSourceSpec{
+			Config: &types.DataSourceSpecConfiguration{
+				Signers: pubKeys,
+				Filters: []*types.DataSourceSpecFilter{
+					{
+						Key: &types.DataSourceSpecPropertyKey{
+							Name: "price.ETH.value",
+							Type: datapb.PropertyKey_TYPE_INTEGER,
+						},
+						Conditions: nil,
 					},
-					Conditions: nil,
 				},
 			},
 		},
-		OracleSpecForTradingTermination: &types.OracleSpec{
-			PubKeys: []string{"0xDEADBEEF"},
-			Filters: []*types.OracleSpecFilter{
-				{
-					Key: &types.OracleSpecPropertyKey{
-						Name: "trading.termination",
-						Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
+		DataSourceSpecForTradingTermination: &types.DataSourceSpec{
+			Config: &types.DataSourceSpecConfiguration{
+				Signers: pubKeys,
+				Filters: []*types.DataSourceSpecFilter{
+					{
+						Key: &types.DataSourceSpecPropertyKey{
+							Name: "trading.termination",
+							Type: datapb.PropertyKey_TYPE_BOOLEAN,
+						},
+						Conditions: nil,
 					},
-					Conditions: nil,
 				},
 			},
 		},
-		OracleSpecBinding: &types.OracleSpecBindingForFuture{
+		DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
 			SettlementDataProperty:     "price.ETH.value",
 			TradingTerminationProperty: "trading.termination",
 		},

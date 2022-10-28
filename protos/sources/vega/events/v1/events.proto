@@ -7,10 +7,10 @@ import "vega/markets.proto";
 import "vega/assets.proto";
 import "vega/governance.proto";
 import "vega/vega.proto";
-import "vega/oracles/v1/spec.proto";
-import "vega/oracles/v1/data.proto";
+import "vega/data/v1/spec.proto";
+import "vega/data/v1/data.proto";
 import "vega/commands/v1/commands.proto";
-import "vega/commands/v1/oracles.proto";
+import "vega/commands/v1/data.proto";
 import "vega/commands/v1/validator_commands.proto";
 
 message ERC20MultiSigSignerAdded {
@@ -746,9 +746,9 @@ message BusEvent {
     // Market created events
     Market market_updated = 125;
     // OracleSpec events
-    oracles.v1.OracleSpec oracle_spec = 126;
+    vega.data.v1.OracleSpec oracle_spec = 126;
     // OracleData events
-    oracles.v1.OracleData oracle_data = 127;
+    vega.data.v1.OracleData oracle_data = 127;
     // Delegation balance events
     DelegationBalanceEvent delegation_balance = 129;
     // Validator score calculated

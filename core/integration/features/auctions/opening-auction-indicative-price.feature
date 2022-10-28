@@ -3,7 +3,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
   Background:
 
     Given the markets:
-      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
+      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | BTC        | BTC   | default-log-normal-risk-model | default-margin-calculator | 8                | default-none | default-basic    | default-eth-for-future |
     And the following network parameters are set:
       | name                               | value |

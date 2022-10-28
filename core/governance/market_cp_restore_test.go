@@ -49,7 +49,7 @@ func TestMarketRestoreFromCheckpoint(t *testing.T) {
 	now := time.Now()
 	ex, gov, cpEng := createExecutionEngine(t, now)
 	genesis := &checkpoint.GenesisState{
-		CheckpointHash:  "01e2c449a66f2a7a0d6c7ee9ed03c552f15923d46f1e41d4fd375f39974d86fd",
+		CheckpointHash:  "36fe3e8a6dea4a89c983ae9467ad05e656fa7754857f6a917d588d157b9b064f",
 		CheckpointState: base64.StdEncoding.EncodeToString(cpFile),
 	}
 	gd := &struct {

@@ -21,7 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -58,5 +58,5 @@ func TestNotary_PushWrongEvent(t *testing.T) {
 
 	store := mocks.NewMockNotaryStore(ctrl)
 	subscriber := sqlsubscribers.NewNotary(store, logging.NewTestLogger())
-	subscriber.Push(context.Background(), events.NewOracleDataEvent(context.Background(), oraclespb.OracleData{}))
+	subscriber.Push(context.Background(), events.NewOracleDataEvent(context.Background(), datapb.OracleData{}))
 }

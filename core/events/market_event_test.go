@@ -20,37 +20,41 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
 )
 
-func changeOracleSpec(spec *types.OracleSpec) {
+func changeOracleSpec(spec *types.DataSourceSpec) {
 	spec.ID = "Changed"
 	spec.CreatedAt = 999
 	spec.UpdatedAt = 999
-	spec.PubKeys[0] = "Changed"
-	spec.Filters[0].Key.Name = "Changed"
-	spec.Filters[0].Key.Type = oraclespb.PropertyKey_TYPE_UNSPECIFIED
-	spec.Filters[0].Conditions[0].Operator = oraclespb.Condition_OPERATOR_UNSPECIFIED
-	spec.Filters[0].Conditions[0].Value = "Changed"
-	spec.Status = oraclespb.OracleSpec_STATUS_UNSPECIFIED
+
+	spec.Config.Signers[0] = types.CreateSignerFromString("Changed", types.DataSignerTypePubKey)
+	spec.Config.Filters[0].Key.Name = "Changed"
+	spec.Config.Filters[0].Key.Type = datapb.PropertyKey_TYPE_UNSPECIFIED
+	spec.Config.Filters[0].Conditions[0].Operator = datapb.Condition_OPERATOR_UNSPECIFIED
+	spec.Config.Filters[0].Conditions[0].Value = "Changed"
+	spec.Status = datapb.DataSourceSpec_STATUS_UNSPECIFIED
 }
 
-func assertSpecsNotEqual(t *testing.T, spec1 *types.OracleSpec, spec2 *types.OracleSpec) {
+func assertSpecsNotEqual(t *testing.T, spec1 *types.DataSourceSpec, spec2 *types.DataSourceSpec) {
 	t.Helper()
 	assert.NotEqual(t, spec1.ID, spec2.ID)
 	assert.NotEqual(t, spec1.CreatedAt, spec2.CreatedAt)
 	assert.NotEqual(t, spec1.UpdatedAt, spec2.UpdatedAt)
-	assert.NotEqual(t, spec1.PubKeys[0], spec2.PubKeys[0])
-	assert.NotEqual(t, spec1.Filters[0].Key.Name, spec2.Filters[0].Key.Name)
-	assert.NotEqual(t, spec1.Filters[0].Key.Type, spec2.Filters[0].Key.Type)
-	assert.NotEqual(t, spec1.Filters[0].Conditions[0].Operator, spec2.Filters[0].Conditions[0].Operator)
-	assert.NotEqual(t, spec1.Filters[0].Conditions[0].Value, spec2.Filters[0].Conditions[0].Value)
+	assert.NotEqual(t, spec1.Config.Signers[0], spec2.Config.Signers[0])
+	assert.NotEqual(t, spec1.Config.Filters[0].Key.Name, spec2.Config.Filters[0].Key.Name)
+	assert.NotEqual(t, spec1.Config.Filters[0].Key.Type, spec2.Config.Filters[0].Key.Type)
+	assert.NotEqual(t, spec1.Config.Filters[0].Conditions[0].Operator, spec2.Config.Filters[0].Conditions[0].Operator)
+	assert.NotEqual(t, spec1.Config.Filters[0].Conditions[0].Value, spec2.Config.Filters[0].Conditions[0].Value)
 	assert.NotEqual(t, spec1.Status, spec2.Status)
 }
 
 func TestMarketDeepClone(t *testing.T) {
 	ctx := context.Background()
+	pubKeys := []*types.Signer{
+		types.CreateSignerFromString("PubKey", types.DataSignerTypePubKey),
+	}
 
 	pme := vegapb.Market{
 		Id: "Id",
@@ -66,50 +70,54 @@ func TestMarketDeepClone(t *testing.T) {
 					Future: &vegapb.Future{
 						SettlementAsset: "Asset",
 						QuoteName:       "QuoteName",
-						OracleSpecForSettlementData: &oraclespb.OracleSpec{
+						DataSourceSpecForSettlementData: &datapb.DataSourceSpec{
 							Id:        "Id",
 							CreatedAt: 1000,
 							UpdatedAt: 2000,
-							PubKeys:   []string{"PubKey "},
-							Filters: []*oraclespb.Filter{
-								{
-									Key: &oraclespb.PropertyKey{
-										Name: "Name",
-										Type: oraclespb.PropertyKey_TYPE_DECIMAL,
-									},
-									Conditions: []*oraclespb.Condition{
-										{
-											Operator: oraclespb.Condition_OPERATOR_EQUALS,
-											Value:    "Value",
+							Config: &datapb.DataSourceSpecConfiguration{
+								Signers: types.SignersIntoProto(pubKeys),
+								Filters: []*datapb.Filter{
+									{
+										Key: &datapb.PropertyKey{
+											Name: "Name",
+											Type: datapb.PropertyKey_TYPE_DECIMAL,
+										},
+										Conditions: []*datapb.Condition{
+											{
+												Operator: datapb.Condition_OPERATOR_EQUALS,
+												Value:    "Value",
+											},
 										},
 									},
 								},
 							},
-							Status: oraclespb.OracleSpec_STATUS_ACTIVE,
+							Status: datapb.DataSourceSpec_STATUS_ACTIVE,
 						},
-						OracleSpecForTradingTermination: &oraclespb.OracleSpec{
+						DataSourceSpecForTradingTermination: &datapb.DataSourceSpec{
 							Id:        "Id2",
 							CreatedAt: 1000,
 							UpdatedAt: 2000,
-							PubKeys:   []string{"PubKey "},
-							Filters: []*oraclespb.Filter{
-								{
-									Key: &oraclespb.PropertyKey{
-										Name: "Name",
-										Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
-									},
-									Conditions: []*oraclespb.Condition{
-										{
-											Operator: oraclespb.Condition_OPERATOR_EQUALS,
-											Value:    "Value",
+							Config: &datapb.DataSourceSpecConfiguration{
+								Signers: types.SignersIntoProto(pubKeys),
+								Filters: []*datapb.Filter{
+									{
+										Key: &datapb.PropertyKey{
+											Name: "Name",
+											Type: datapb.PropertyKey_TYPE_BOOLEAN,
+										},
+										Conditions: []*datapb.Condition{
+											{
+												Operator: datapb.Condition_OPERATOR_EQUALS,
+												Value:    "Value",
+											},
 										},
 									},
 								},
 							},
-							Status: oraclespb.OracleSpec_STATUS_ACTIVE,
+							Status: datapb.DataSourceSpec_STATUS_ACTIVE,
 						},
 
-						OracleSpecBinding: &vegapb.OracleSpecToFutureBinding{
+						DataSourceSpecBinding: &vegapb.DataSourceSpecToFutureBinding{
 							SettlementDataProperty:     "SettlementData",
 							TradingTerminationProperty: "trading.terminated",
 						},
@@ -191,10 +199,10 @@ func TestMarketDeepClone(t *testing.T) {
 	future := me.TradableInstrument.Instrument.Product.(*types.InstrumentFuture)
 	future.Future.SettlementAsset = "Changed"
 	future.Future.QuoteName = "Changed"
-	changeOracleSpec(future.Future.OracleSpecForSettlementData)
-	changeOracleSpec(future.Future.OracleSpecForTradingTermination)
-	future.Future.OracleSpecBinding.SettlementDataProperty = "Changed"
-	future.Future.OracleSpecBinding.TradingTerminationProperty = "Changed"
+	changeOracleSpec(future.Future.DataSourceSpecForSettlementData)
+	changeOracleSpec(future.Future.DataSourceSpecForTradingTermination)
+	future.Future.DataSourceSpecBinding.SettlementDataProperty = "Changed"
+	future.Future.DataSourceSpecBinding.TradingTerminationProperty = "Changed"
 
 	me.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel = num.DecimalFromFloat(99.9)
 	me.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin = num.DecimalFromFloat(99.9)
@@ -243,10 +251,10 @@ func TestMarketDeepClone(t *testing.T) {
 
 	assert.NotEqual(t, future.Future.SettlementAsset, future2.Future.SettlementAsset)
 	assert.NotEqual(t, future.Future.QuoteName, future2.Future.QuoteName)
-	assertSpecsNotEqual(t, future.Future.OracleSpecForSettlementData, future2.Future.OracleSpecForSettlementData)
-	assertSpecsNotEqual(t, future.Future.OracleSpecForTradingTermination, future2.Future.OracleSpecForTradingTermination)
-	assert.NotEqual(t, future.Future.OracleSpecBinding.TradingTerminationProperty, future2.Future.OracleSpecBinding.TradingTerminationProperty)
-	assert.NotEqual(t, future.Future.OracleSpecBinding.SettlementDataProperty, future2.Future.OracleSpecBinding.SettlementDataProperty)
+	assertSpecsNotEqual(t, future.Future.DataSourceSpecForSettlementData, future2.Future.DataSourceSpecForSettlementData)
+	assertSpecsNotEqual(t, future.Future.DataSourceSpecForTradingTermination, future2.Future.DataSourceSpecForTradingTermination)
+	assert.NotEqual(t, future.Future.DataSourceSpecBinding.TradingTerminationProperty, future2.Future.DataSourceSpecBinding.TradingTerminationProperty)
+	assert.NotEqual(t, future.Future.DataSourceSpecBinding.SettlementDataProperty, future2.Future.DataSourceSpecBinding.SettlementDataProperty)
 
 	assert.NotEqual(t, me.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel, me2.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel)
 	assert.NotEqual(t, me.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, me2.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)

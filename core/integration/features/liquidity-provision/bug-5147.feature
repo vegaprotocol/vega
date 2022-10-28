@@ -8,7 +8,7 @@ Feature: Test LP orders with different decimals for market and asset
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.001         | 0.00011407711613050422 | 0  | 0.016 | 1.5   |
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          | position decimal places | decimal places |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          | position decimal places | decimal places |
       | ETH/DEC19 | ETH        | ETH   | log-normal-risk-model-1     | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |            5            |     5          |
     And the following network parameters are set:
       | name                           | value |

@@ -23,7 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	proto "code.vegaprotocol.io/vega/protos/vega"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 var (
@@ -35,15 +35,15 @@ var (
 	ErrUnsupportedRiskParameters = errors.New("risk model parameters are not supported")
 	// ErrMissingRiskParameters ...
 	ErrMissingRiskParameters = errors.New("missing risk parameters")
-	// ErrMissingOracleSpecBinding is returned when the oracle spec binding is absent.
-	ErrMissingOracleSpecBinding = errors.New("missing oracle spec binding")
-	// ErrMissingOracleSpecForSettlementData is returned when the oracle spec for settlement data is absent.
-	ErrMissingOracleSpecForSettlementData = errors.New("missing oracle spec for settlement data")
-	// ErrMissingOracleSpecForTradingTermination is returned when the oracle spec for trading termination is absent.
-	ErrMissingOracleSpecForTradingTermination = errors.New("missing oracle spec for trading termination")
-	// ErrOracleSpecTerminationTimeBeforeEnactment is returned when termination time is before enactment
+	// ErrMissingDataSourceSpecBinding is returned when the data source spec binding is absent.
+	ErrMissingDataSourceSpecBinding = errors.New("missing data source spec binding")
+	// ErrMissingDataSourceSpecForSettlementData is returned when the data source spec for settlement data is absent.
+	ErrMissingDataSourceSpecForSettlementData = errors.New("missing data source spec for settlement data")
+	// ErrMissingDataSourceSpecForTradingTermination is returned when the data source spec for trading termination is absent.
+	ErrMissingDataSourceSpecForTradingTermination = errors.New("missing data source spec for trading termination")
+	// ErrDataSourceSpecTerminationTimeBeforeEnactment is returned when termination time is before enactment
 	// for time triggered termination condition.
-	ErrOracleSpecTerminationTimeBeforeEnactment = errors.New("oracle spec termination time before enactment")
+	ErrDataSourceSpecTerminationTimeBeforeEnactment = errors.New("data source spec termination time before enactment")
 	// ErrMissingFutureProduct is returned when future product is absent from the instrument.
 	ErrMissingFutureProduct = errors.New("missing future product")
 	// ErrInvalidRiskParameter ...
@@ -59,24 +59,24 @@ func assignProduct(
 		if product.Future == nil {
 			return types.ProposalErrorInvalidFutureProduct, ErrMissingFutureProduct
 		}
-		if product.Future.OracleSpecForSettlementData == nil {
-			return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForSettlementData
+		if product.Future.DataSourceSpecForSettlementData == nil {
+			return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
 		}
-		if product.Future.OracleSpecForTradingTermination == nil {
-			return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForTradingTermination
+		if product.Future.DataSourceSpecForTradingTermination == nil {
+			return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
 		}
-		if product.Future.OracleSpecBinding == nil {
-			return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecBinding
+		if product.Future.DataSourceSpecBinding == nil {
+			return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecBinding
 		}
 
 		target.Product = &types.InstrumentFuture{
 			Future: &types.Future{
-				SettlementAsset:                 product.Future.SettlementAsset,
-				QuoteName:                       product.Future.QuoteName,
-				OracleSpecForSettlementData:     product.Future.OracleSpecForSettlementData.ToOracleSpec(),
-				OracleSpecForTradingTermination: product.Future.OracleSpecForTradingTermination.ToOracleSpec(),
-				SettlementDataDecimals:          product.Future.SettlementDataDecimalPlaces,
-				OracleSpecBinding:               product.Future.OracleSpecBinding,
+				SettlementAsset:                     product.Future.SettlementAsset,
+				QuoteName:                           product.Future.QuoteName,
+				DataSourceSpecForSettlementData:     product.Future.DataSourceSpecForSettlementData.ToDataSourceSpec(),
+				DataSourceSpecForTradingTermination: product.Future.DataSourceSpecForTradingTermination.ToDataSourceSpec(),
+				SettlementDataDecimals:              product.Future.SettlementDataDecimalPlaces,
+				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
 			},
 		}
 	default:
@@ -227,57 +227,60 @@ func validateAsset(assetID string, decimals uint64, assets Assets, deepCheck boo
 }
 
 func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool) (types.ProposalError, error) {
-	if future.OracleSpecForSettlementData == nil {
-		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForSettlementData
+	if future.DataSourceSpecForSettlementData == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
 	}
 
-	if future.OracleSpecForTradingTermination == nil {
-		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForTradingTermination
+	if future.DataSourceSpecForTradingTermination == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
 	}
 
 	if !et.shouldNotVerify {
-		for i, f := range future.OracleSpecForTradingTermination.ToOracleSpec().Filters {
-			if f.Key.Type == oraclespb.PropertyKey_TYPE_TIMESTAMP {
-				for j, cond := range f.Conditions {
-					v, err := strconv.ParseInt(cond.Value, 10, 64)
-					if err != nil {
-						return types.ProposalErrorInvalidFutureProduct, err
-					}
+		dataSourceSpec := future.DataSourceSpecForTradingTermination.ToDataSourceSpec()
+		if dataSourceSpec.Config != nil {
+			for i, f := range dataSourceSpec.Config.Filters {
+				if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
+					for j, cond := range f.Conditions {
+						v, err := strconv.ParseInt(cond.Value, 10, 64)
+						if err != nil {
+							return types.ProposalErrorInvalidFutureProduct, err
+						}
 
-					future.OracleSpecForTradingTermination.Filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
-					if v <= et.current {
-						return types.ProposalErrorInvalidFutureProduct, ErrOracleSpecTerminationTimeBeforeEnactment
+						future.DataSourceSpecForTradingTermination.Filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
+						if v <= et.current {
+							return types.ProposalErrorInvalidFutureProduct, ErrDataSourceSpecTerminationTimeBeforeEnactment
+						}
 					}
 				}
 			}
 		}
 	}
 
-	if future.OracleSpecBinding == nil {
-		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecBinding
+	if future.DataSourceSpecBinding == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecBinding
 	}
 
 	// ensure the oracle spec for settlement data can be constructed
-	ospec, err := oracles.NewOracleSpec(*future.OracleSpecForSettlementData.ToOracleSpec())
+	ospec, err := oracles.NewOracleSpec(*future.DataSourceSpecForSettlementData.ToExternalDataSourceSpec())
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
-	if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.SettlementDataProperty, oraclespb.PropertyKey_TYPE_INTEGER); err != nil {
+	if err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_INTEGER); err != nil {
 		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
 	}
 
-	ospec, err = oracles.NewOracleSpec(*future.OracleSpecForTradingTermination.ToOracleSpec())
+	ospec, err = oracles.NewOracleSpec(*future.DataSourceSpecForTradingTermination.ToExternalDataSourceSpec())
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
 
-	switch future.OracleSpecBinding.TradingTerminationProperty {
+	switch future.DataSourceSpecBinding.TradingTerminationProperty {
 	case oracles.BuiltinOracleTimestamp:
-		if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_TIMESTAMP); err != nil {
+		if err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.TradingTerminationProperty, datapb.PropertyKey_TYPE_TIMESTAMP); err != nil {
 			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
 		}
 	default:
-		if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_BOOLEAN); err != nil {
+		if err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.TradingTerminationProperty, datapb.PropertyKey_TYPE_BOOLEAN); err != nil {
 			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
 		}
 	}
@@ -394,57 +397,60 @@ func validateUpdateInstrument(instrument *types.UpdateInstrumentConfiguration, e
 }
 
 func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) (types.ProposalError, error) {
-	if future.OracleSpecForSettlementData == nil {
-		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForSettlementData
+	if future.DataSourceSpecForSettlementData == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
 	}
 
-	if future.OracleSpecForTradingTermination == nil {
-		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForTradingTermination
+	if future.DataSourceSpecForTradingTermination == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
 	}
 
 	if !et.shouldNotVerify {
-		for i, f := range future.OracleSpecForTradingTermination.ToOracleSpec().Filters {
-			if f.Key.Type == oraclespb.PropertyKey_TYPE_TIMESTAMP {
-				for j, cond := range f.Conditions {
-					v, err := strconv.ParseInt(cond.Value, 10, 64)
-					if err != nil {
-						return types.ProposalErrorInvalidFutureProduct, err
-					}
+		dataSourcespec := future.DataSourceSpecForTradingTermination.ToDataSourceSpec()
+		if dataSourcespec.Config != nil {
+			for i, f := range dataSourcespec.Config.Filters {
+				if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
+					for j, cond := range f.Conditions {
+						v, err := strconv.ParseInt(cond.Value, 10, 64)
+						if err != nil {
+							return types.ProposalErrorInvalidFutureProduct, err
+						}
 
-					future.OracleSpecForTradingTermination.Filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
-					if v <= et.current {
-						return types.ProposalErrorInvalidFutureProduct, ErrOracleSpecTerminationTimeBeforeEnactment
+						future.DataSourceSpecForTradingTermination.Filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
+						if v <= et.current {
+							return types.ProposalErrorInvalidFutureProduct, ErrDataSourceSpecTerminationTimeBeforeEnactment
+						}
 					}
 				}
 			}
 		}
 	}
 
-	if future.OracleSpecBinding == nil {
-		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecBinding
+	if future.DataSourceSpecBinding == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecBinding
 	}
 
 	// ensure the oracle spec for settlement data can be constructed
-	ospec, err := oracles.NewOracleSpec(*future.OracleSpecForSettlementData.ToOracleSpec())
+	ospec, err := oracles.NewOracleSpec(*future.DataSourceSpecForSettlementData.ToExternalDataSourceSpec())
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
-	if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.SettlementDataProperty, oraclespb.PropertyKey_TYPE_INTEGER); err != nil {
+	if err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_INTEGER); err != nil {
 		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
 	}
 
-	ospec, err = oracles.NewOracleSpec(*future.OracleSpecForTradingTermination.ToOracleSpec())
+	ospec, err = oracles.NewOracleSpec(*future.DataSourceSpecForTradingTermination.ToExternalDataSourceSpec())
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
 
-	switch future.OracleSpecBinding.TradingTerminationProperty {
+	switch future.DataSourceSpecBinding.TradingTerminationProperty {
 	case oracles.BuiltinOracleTimestamp:
-		if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_TIMESTAMP); err != nil {
+		if err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.TradingTerminationProperty, datapb.PropertyKey_TYPE_TIMESTAMP); err != nil {
 			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
 		}
 	default:
-		if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_BOOLEAN); err != nil {
+		if err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.TradingTerminationProperty, datapb.PropertyKey_TYPE_BOOLEAN); err != nil {
 			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
 		}
 	}

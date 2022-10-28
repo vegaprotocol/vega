@@ -15,10 +15,12 @@ package adaptors_test
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/oracles/adaptors"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -49,10 +51,14 @@ func testJSONAdaptorNormalisingIncompatibleDataFails(t *testing.T) {
 }
 
 func testJSONAdaptorNormalisingCompatibleAndValidDataSucceeds(t *testing.T) {
-	// given
-	pubKeyB := []byte("0xdeadbeef")
-	hexPubKey := hex.EncodeToString(pubKeyB)
-	pubKey := crypto.NewPublicKey(hexPubKey, pubKeyB)
+	pubKeyB := &datapb.Signer_PubKey{
+		PubKey: &datapb.PubKey{
+			Key: "0xdeadbeef",
+		},
+	}
+
+	hexPubKey := hex.EncodeToString([]byte(pubKeyB.PubKey.Key))
+	pubKey := crypto.NewPublicKey(hexPubKey, []byte(pubKeyB.PubKey.Key))
 	oracleData := map[string]string{
 		"BTC": "37371.725",
 		"ETH": "1412.67",
@@ -65,7 +71,7 @@ func testJSONAdaptorNormalisingCompatibleAndValidDataSucceeds(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.NotNil(t, normalisedData)
-	assert.Equal(t, []string{hexPubKey}, normalisedData.PubKeys)
+	assert.Equal(t, fmt.Sprintf("signerPubKey(pubKey(%s))", hexPubKey), normalisedData.Signers[0].Signer.String())
 	assert.Equal(t, oracleData["BTC"], normalisedData.Data["BTC"])
 	assert.Equal(t, oracleData["ETH"], normalisedData.Data["ETH"])
 }
