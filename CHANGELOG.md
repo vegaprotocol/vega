@@ -16,7 +16,9 @@
 
 
 ### 🐛 Fixes
+- [6623](https://github.com/vegaprotocol/vega/issues/6623) - Fix `nil` pointer panic in `datanode` for race condition in `recvEventRequest`
 - [6601](https://github.com/vegaprotocol/vega/issues/6601) - Removed resend event when the socket client fails
+- [5715](https://github.com/vegaprotocol/vega/issues/5715) - Fix documentation for Oracle Submission elements
 
 
 ## 0.60.0

@@ -1729,7 +1729,7 @@ func (t *tradingDataServiceV2) ListOracleData(ctx context.Context, req *v2.ListO
 	}
 
 	if err != nil {
-		apiError(codes.Internal, ErrOracleServiceGetSpec, fmt.Errorf("could not retrieve data for OracleSpecID: %s %w", *req.OracleSpecId, err))
+		return nil, apiError(codes.Internal, ErrOracleServiceGetSpec, fmt.Errorf("could not retrieve data for OracleSpecID: %s %w", *req.OracleSpecId, err))
 	}
 
 	edges, err := makeEdges[*v2.OracleDataEdge](data)
