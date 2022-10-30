@@ -284,6 +284,12 @@ func NodeFromProto(node *vega.Node, txHash TxHash, vegaTime time.Time) (Node, er
 	if err != nil {
 		return Node{}, err
 	}
+	epochData := EpochData{}
+	if node.EpochData != nil {
+		// copy values
+		cpy := *node.EpochData
+		epochData.EpochData = &cpy
+	}
 
 	delegations := make([]Delegation, len(node.Delegations))
 	for i, delegation := range node.Delegations {
@@ -305,7 +311,7 @@ func NodeFromProto(node *vega.Node, txHash TxHash, vegaTime time.Time) (Node, er
 		StakedTotal:       stakedTotal,
 		MaxIntendedStake:  maxIntendedStake,
 		PendingStake:      pendingStake,
-		EpochData:         EpochData{node.EpochData},
+		EpochData:         epochData,
 		Status:            NodeStatus(node.Status),
 		Delegations:       delegations,
 		// RewardScore:       RewardScore{node.RewardScore},
@@ -322,6 +328,11 @@ func (node *Node) ToProto() *vega.Node {
 	for i, delegation := range node.Delegations {
 		protoDelegations[i] = delegation.ToProto()
 	}
+	var edCpy *vega.EpochData
+	if node.EpochData.EpochData != nil {
+		cpy := *node.EpochData.EpochData
+		edCpy = &cpy
+	}
 
 	res := &vega.Node{
 		Id:                node.ID.String(),
@@ -335,7 +346,7 @@ func (node *Node) ToProto() *vega.Node {
 		StakedTotal:       node.StakedTotal.String(),
 		MaxIntendedStake:  node.MaxIntendedStake.String(),
 		PendingStake:      node.PendingStake.String(),
-		EpochData:         node.EpochData.EpochData,
+		EpochData:         edCpy,
 		Status:            vega.NodeStatus(node.Status),
 		Delegations:       protoDelegations,
 		Name:              node.Name,

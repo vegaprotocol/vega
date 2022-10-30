@@ -36,6 +36,7 @@
 - [6601](https://github.com/vegaprotocol/vega/issues/6601) - Removed resend event when the socket client fails
 - [5715](https://github.com/vegaprotocol/vega/issues/5715) - Fix documentation for Oracle Submission elements
 - [5770](https://github.com/vegaprotocol/vega/issues/5770) - Fix Nodes data query returns incorrect results
+- [6637](https://github.com/vegaprotocol/vega/issues/6637) - Replace raw pointers with copies in entity mapping
 
 
 ## 0.60.0

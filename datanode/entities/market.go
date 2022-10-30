@@ -107,11 +107,13 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 	positionDps := int(market.PositionDecimalPlaces)
 
 	return &Market{
-		ID:                            MarketID(market.Id),
-		TxHash:                        txHash,
-		VegaTime:                      vegaTime,
-		InstrumentID:                  market.TradableInstrument.Instrument.Id,
-		TradableInstrument:            TradableInstrument{market.TradableInstrument},
+		ID:           MarketID(market.Id),
+		TxHash:       txHash,
+		VegaTime:     vegaTime,
+		InstrumentID: market.TradableInstrument.Instrument.Id,
+		TradableInstrument: TradableInstrument{
+			TradableInstrument: market.TradableInstrument.DeepClone(),
+		},
 		DecimalPlaces:                 dps,
 		Fees:                          fees,
 		OpeningAuction:                openingAuction,

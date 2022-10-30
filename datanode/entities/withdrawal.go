@@ -50,6 +50,15 @@ func WithdrawalFromProto(withdrawal *vega.Withdrawal, txHash TxHash, vegaTime ti
 	if amount, err = decimal.NewFromString(withdrawal.Amount); err != nil {
 		return nil, fmt.Errorf("invalid amount: %w", err)
 	}
+	ext := WithdrawExt{}
+	if withdrawal.Ext != nil {
+		cpy := *withdrawal.Ext
+		// if erc20 := withdrawal.Ext.GetErc20(); erc20 != nil {
+		// cpy20 := *erc20
+		// cpy.Ext = &cpy20
+		// }
+		ext.WithdrawExt = &cpy
+	}
 
 	return &Withdrawal{
 		ID:      WithdrawalID(withdrawal.Id),
@@ -63,13 +72,22 @@ func WithdrawalFromProto(withdrawal *vega.Withdrawal, txHash TxHash, vegaTime ti
 		ForeignTxHash:      withdrawal.TxHash,
 		CreatedTimestamp:   NanosToPostgresTimestamp(withdrawal.CreatedTimestamp),
 		WithdrawnTimestamp: NanosToPostgresTimestamp(withdrawal.WithdrawnTimestamp),
-		Ext:                WithdrawExt{withdrawal.Ext},
+		Ext:                ext,
 		TxHash:             txHash,
 		VegaTime:           vegaTime,
 	}, nil
 }
 
 func (w Withdrawal) ToProto() *vega.Withdrawal {
+	var pbExt *vega.WithdrawExt
+	if w.Ext.WithdrawExt != nil {
+		cpy := *w.Ext.WithdrawExt
+		// if erc20 := w.Ext.WithdrawExt.GetErc20(); erc20 != nil {
+		// cpy20 := *erc20
+		// cpy.Ext = &cpy20
+		// }
+		pbExt = &cpy
+	}
 	return &vega.Withdrawal{
 		Id:                 w.ID.String(),
 		PartyId:            w.PartyID.String(),
@@ -81,7 +99,7 @@ func (w Withdrawal) ToProto() *vega.Withdrawal {
 		TxHash:             w.ForeignTxHash,
 		CreatedTimestamp:   w.CreatedTimestamp.UnixNano(),
 		WithdrawnTimestamp: w.WithdrawnTimestamp.UnixNano(),
-		Ext:                w.Ext.WithdrawExt,
+		Ext:                pbExt,
 	}
 }
 

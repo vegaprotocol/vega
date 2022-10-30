@@ -173,9 +173,11 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		transfer.TransferType = Recurring
 		transfer.StartEpoch = &v.Recurring.StartEpoch
 		if v.Recurring.DispatchStrategy != nil {
-			transfer.DispatchMetric = &v.Recurring.DispatchStrategy.Metric
-			transfer.DispatchMetricAsset = &v.Recurring.DispatchStrategy.AssetForMetric
-			transfer.DispatchMarkets = v.Recurring.DispatchStrategy.Markets
+			// copy the dispatch strategy
+			cpy := *v.Recurring.DispatchStrategy
+			transfer.DispatchMetric = &cpy.Metric
+			transfer.DispatchMetricAsset = &cpy.AssetForMetric
+			transfer.DispatchMarkets = cpy.Markets[:]
 		}
 
 		if v.Recurring.EndEpoch != nil {
