@@ -31,7 +31,8 @@ type TradingDataServiceClient interface {
 	ObserveAccounts(ctx context.Context, in *ObserveAccountsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveAccountsClient, error)
 	// Info
 	//
-	// Retrieve informations about this dataa
+	// Retrieves information about the data-node.
+	// Response contains a semver formatted version of the data node and the commit hash, from which the data-node was built,
 	Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*InfoResponse, error)
 	// Order
 	//
@@ -315,6 +316,8 @@ type TradingDataServiceClient interface {
 	GetVegaTime(ctx context.Context, in *GetVegaTimeRequest, opts ...grpc.CallOption) (*GetVegaTimeResponse, error)
 	// Protocol Upgrade status
 	GetProtocolUpgradeStatus(ctx context.Context, in *GetProtocolUpgradeStatusRequest, opts ...grpc.CallOption) (*GetProtocolUpgradeStatusResponse, error)
+	// List protocol upgrades proposals, optionally filtering on status or approver.
+	ListProtocolUpgradeProposals(ctx context.Context, in *ListProtocolUpgradeProposalsRequest, opts ...grpc.CallOption) (*ListProtocolUpgradeProposalsResponse, error)
 	// Get most recent decentralized history segment
 	//
 	// Get the networks most recently history segment
@@ -1396,6 +1399,15 @@ func (c *tradingDataServiceClient) GetProtocolUpgradeStatus(ctx context.Context,
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListProtocolUpgradeProposals(ctx context.Context, in *ListProtocolUpgradeProposalsRequest, opts ...grpc.CallOption) (*ListProtocolUpgradeProposalsResponse, error) {
+	out := new(ListProtocolUpgradeProposalsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListProtocolUpgradeProposals", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) GetMostRecentDeHistorySegment(ctx context.Context, in *GetMostRecentDeHistorySegmentRequest, opts ...grpc.CallOption) (*GetMostRecentDeHistorySegmentResponse, error) {
 	out := new(GetMostRecentDeHistorySegmentResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetMostRecentDeHistorySegment", in, out, opts...)
@@ -1454,7 +1466,8 @@ type TradingDataServiceServer interface {
 	ObserveAccounts(*ObserveAccountsRequest, TradingDataService_ObserveAccountsServer) error
 	// Info
 	//
-	// Retrieve informations about this dataa
+	// Retrieves information about the data-node.
+	// Response contains a semver formatted version of the data node and the commit hash, from which the data-node was built,
 	Info(context.Context, *InfoRequest) (*InfoResponse, error)
 	// Order
 	//
@@ -1738,6 +1751,8 @@ type TradingDataServiceServer interface {
 	GetVegaTime(context.Context, *GetVegaTimeRequest) (*GetVegaTimeResponse, error)
 	// Protocol Upgrade status
 	GetProtocolUpgradeStatus(context.Context, *GetProtocolUpgradeStatusRequest) (*GetProtocolUpgradeStatusResponse, error)
+	// List protocol upgrades proposals, optionally filtering on status or approver.
+	ListProtocolUpgradeProposals(context.Context, *ListProtocolUpgradeProposalsRequest) (*ListProtocolUpgradeProposalsResponse, error)
 	// Get most recent decentralized history segment
 	//
 	// Get the networks most recently history segment
@@ -1992,6 +2007,9 @@ func (UnimplementedTradingDataServiceServer) GetVegaTime(context.Context, *GetVe
 }
 func (UnimplementedTradingDataServiceServer) GetProtocolUpgradeStatus(context.Context, *GetProtocolUpgradeStatusRequest) (*GetProtocolUpgradeStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProtocolUpgradeStatus not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListProtocolUpgradeProposals(context.Context, *ListProtocolUpgradeProposalsRequest) (*ListProtocolUpgradeProposalsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListProtocolUpgradeProposals not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetMostRecentDeHistorySegment(context.Context, *GetMostRecentDeHistorySegmentRequest) (*GetMostRecentDeHistorySegmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMostRecentDeHistorySegment not implemented")
@@ -3442,6 +3460,24 @@ func _TradingDataService_GetProtocolUpgradeStatus_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListProtocolUpgradeProposals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListProtocolUpgradeProposalsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListProtocolUpgradeProposals(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListProtocolUpgradeProposals",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListProtocolUpgradeProposals(ctx, req.(*ListProtocolUpgradeProposalsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_GetMostRecentDeHistorySegment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetMostRecentDeHistorySegmentRequest)
 	if err := dec(in); err != nil {
@@ -3778,6 +3814,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProtocolUpgradeStatus",
 			Handler:    _TradingDataService_GetProtocolUpgradeStatus_Handler,
+		},
+		{
+			MethodName: "ListProtocolUpgradeProposals",
+			Handler:    _TradingDataService_ListProtocolUpgradeProposals_Handler,
 		},
 		{
 			MethodName: "GetMostRecentDeHistorySegment",

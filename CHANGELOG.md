@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.61.0
+## Unreleased 0.62.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -15,6 +15,27 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.61.0
+
+### 🚨 Breaking changes
+- [5714](https://github.com/vegaprotocol/vega/issues/5714) - Update data sourcing types
+
+### 🛠 Improvements
+- [6608](https://github.com/vegaprotocol/vega/issues/6608) - Put embedded `postgres` files in proper state directory
+- [6552](https://github.com/vegaprotocol/vega/issues/6552) - Add `datanode` `API` for querying protocol upgrade proposals
+- [6613](https://github.com/vegaprotocol/vega/issues/6613) - Add file buffering to datanode
+- [6602](https://github.com/vegaprotocol/vega/issues/6602) - Panic if data node receives events in unexpected order
+- [6595](https://github.com/vegaprotocol/vega/issues/6595) - Support for cross network parameter dependency and validation
+- [6627](https://github.com/vegaprotocol/vega/issues/6627) - Fix order estimates
+- [6604](https://github.com/vegaprotocol/vega/issues/6604) - Fix transfer funds documentations in `protos`
+
+### 🐛 Fixes
+- [6623](https://github.com/vegaprotocol/vega/issues/6623) - Fix `nil` pointer panic in `datanode` for race condition in `recvEventRequest`
+- [6601](https://github.com/vegaprotocol/vega/issues/6601) - Removed resend event when the socket client fails
+- [5715](https://github.com/vegaprotocol/vega/issues/5715) - Fix documentation for Oracle Submission elements
+- [5770](https://github.com/vegaprotocol/vega/issues/5770) - Fix Nodes data query returns incorrect results
+
+
 ## 0.60.0
 
 ### 🚨 Breaking changes
@@ -23,10 +44,13 @@
 ### 🛠 Improvements
 - [6530](https://github.com/vegaprotocol/vega/issues/6530) - Add command to rename a wallet
 - [6531](https://github.com/vegaprotocol/vega/issues/6531) - Add command to update the passphrase of a wallet
+- [6482](https://github.com/vegaprotocol/vega/issues/6482) - Improve `TransferType` mapping usage
 - [6546](https://github.com/vegaprotocol/vega/issues/6546) - Add a separate README for datanode/api gRPC handling principles
 - [6582](https://github.com/vegaprotocol/vega/issues/6582) - Match validation to the required ranges
+- [6596](https://github.com/vegaprotocol/vega/issues/6596) - Add market risk parameter validation
 
 ### 🐛 Fixes
+- [6410](https://github.com/vegaprotocol/vega/issues/6410) - Add input validation for the `EstimateFee` endpoint.
 - [6556](https://github.com/vegaprotocol/vega/issues/6556) - Limit ledger entries filtering complexity and potential number of items.
 - [6539](https://github.com/vegaprotocol/vega/issues/6539) - Fix total fee calculation in estimate order
 - [6584](https://github.com/vegaprotocol/vega/issues/6584) - Simplify `ListBalanceChanges`, removing aggregation and forward filling for now

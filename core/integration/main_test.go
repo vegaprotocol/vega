@@ -121,11 +121,11 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`the fees configuration named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.TheFeesConfiguration(marketConfig, name, table)
 	})
-	s.Step(`^the oracle spec for settlement data filtering data from "([^"]*)" named "([^"]*)":$`, func(pubKeys string, name string, table *godog.Table) error {
-		return steps.TheOracleSpec(marketConfig, name, "settlement data", pubKeys, table)
+	s.Step(`^the oracle spec for settlement data filtering data from "([^"]*)" named "([^"]*)":$`, func(signers string, name string, table *godog.Table) error {
+		return steps.TheOracleSpec(marketConfig, name, "settlement data", signers, table)
 	})
-	s.Step(`^the oracle spec for trading termination filtering data from "([^"]*)" named "([^"]*)":$`, func(pubKeys string, name string, table *godog.Table) error {
-		return steps.TheOracleSpec(marketConfig, name, "trading termination", pubKeys, table)
+	s.Step(`^the oracle spec for trading termination filtering data from "([^"]*)" named "([^"]*)":$`, func(signers string, name string, table *godog.Table) error {
+		return steps.TheOracleSpec(marketConfig, name, "trading termination", signers, table)
 	})
 	s.Step(`^the settlement data decimals for the oracle named "([^"]*)" is given in "([^"]*)" decimal places$`, func(name, decimals string) error {
 		return steps.OracleSpecSettlementDataDecimals(marketConfig, name, decimals)

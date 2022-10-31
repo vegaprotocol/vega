@@ -2,6 +2,7 @@ package dehistory
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/datanode/dehistory/initialise"
@@ -41,18 +42,27 @@ func (cmd *loadCmd) Execute(_ []string) error {
 		return fmt.Errorf("failed to read configuration:%w", err)
 	}
 
-	err = verifyChainID(log, cmd.SQLStore.ConnectionConfig, cmd.ChainID)
+	hasSchema, err := initialise.HasVegaSchema(context.Background(), cmd.SQLStore.ConnectionConfig)
 	if err != nil {
-		return fmt.Errorf("failed to verify chain id:%w", err)
+		return fmt.Errorf("failed to check for existing schema:%w", err)
+	}
+
+	if hasSchema {
+		err = verifyChainID(log, cmd.SQLStore.ConnectionConfig, cmd.ChainID)
+		if err != nil {
+			if !errors.Is(err, initialise.ErrChainNotFound) {
+				return fmt.Errorf("failed to verify chain id:%w", err)
+			}
+		}
 	}
 
 	if datanodeLive(cmd.Config) {
 		return fmt.Errorf("datanode must be shutdown before data can be loaded")
 	}
 
-	snapshotsCopyFrom, snapshotsCopyTo := initialise.GetSnapshotPaths(bool(cmd.Config.SQLStore.UseEmbedded), cmd.Config.DeHistory.Snapshot, vegaPaths)
-
-	snapshotService, err := snapshot.NewSnapshotService(log, cmd.Config.DeHistory.Snapshot, cmd.Config.SQLStore.ConnectionConfig, snapshotsCopyTo)
+	snapshotService, err := snapshot.NewSnapshotService(log, cmd.Config.DeHistory.Snapshot, cmd.Config.SQLStore.ConnectionConfig,
+		vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyFrom),
+		vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyTo))
 	if err != nil {
 		return fmt.Errorf("failed to create snapshot service: %w", err)
 	}
@@ -66,7 +76,9 @@ func (cmd *loadCmd) Execute(_ []string) error {
 	}
 
 	deHistoryService, err := dehistory.NewWithStore(ctx, log, cmd.Config.ChainID, cmd.Config.DeHistory,
-		cmd.Config.SQLStore.ConnectionConfig, snapshotService, deHistoryStore, cmd.Config.API.Port, snapshotsCopyFrom, snapshotsCopyTo)
+		cmd.Config.SQLStore.ConnectionConfig, snapshotService, deHistoryStore, cmd.Config.API.Port,
+		vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyFrom),
+		vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyTo))
 	if err != nil {
 		return fmt.Errorf("failed new dehistory service:%w", err)
 	}

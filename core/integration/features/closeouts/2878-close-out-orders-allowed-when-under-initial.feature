@@ -3,7 +3,7 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
   Background:
     Given time is updated to "2020-10-16T00:00:00Z"
     And the markets:
-      | id        | quote name | asset | auction duration | risk model                  | margin calculator         | fees         | price monitoring | oracle config          |
+      | id        | quote name | asset | auction duration | risk model                  | margin calculator         | fees         | price monitoring | data source config          |
       | ETH/DEC20 | ETH        | ETH   | 1                | default-simple-risk-model-3 | default-margin-calculator | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
       | name                           | value |

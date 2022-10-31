@@ -34,6 +34,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/version"
 
@@ -1671,7 +1673,11 @@ func (t *tradingDataServiceV2) GetOracleSpec(ctx context.Context, req *v2.GetOra
 	}
 
 	return &v2.GetOracleSpecResponse{
-		OracleSpec: spec.ToProto(),
+		OracleSpec: &datapb.OracleSpec{
+			ExternalDataSourceSpec: &v1.ExternalDataSourceSpec{
+				Spec: spec.ToProto().ExternalDataSourceSpec.Spec,
+			},
+		},
 	}, nil
 }
 
@@ -1723,7 +1729,7 @@ func (t *tradingDataServiceV2) ListOracleData(ctx context.Context, req *v2.ListO
 	}
 
 	if err != nil {
-		apiError(codes.Internal, ErrOracleServiceGetSpec, fmt.Errorf("could not retrieve data for OracleSpecID: %s %w", *req.OracleSpecId, err))
+		return nil, apiError(codes.Internal, ErrOracleServiceGetSpec, fmt.Errorf("could not retrieve data for OracleSpecID: %s %w", *req.OracleSpecId, err))
 	}
 
 	edges, err := makeEdges[*v2.OracleDataEdge](data)
@@ -2326,9 +2332,21 @@ func (t *tradingDataServiceV2) GetEpoch(ctx context.Context, req *v2.GetEpochReq
 func (t *tradingDataServiceV2) EstimateFee(ctx context.Context, req *v2.EstimateFeeRequest) (*v2.EstimateFeeResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("EstimateFee SQL")()
 
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("nil request"))
+	}
+
+	if len(req.MarketId) <= 0 {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing market id"))
+	}
+
+	if len(req.Price) <= 0 {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing price"))
+	}
+
 	fee, err := t.estimateFee(ctx, req.MarketId, req.Price, req.Size)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, err
 	}
 
 	return &v2.EstimateFeeResponse{
@@ -2343,26 +2361,28 @@ func (t *tradingDataServiceV2) estimateFee(
 ) (*vega.Fee, error) {
 	mkt, err := t.marketService.GetByID(ctx, market)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.NotFound, err)
 	}
+
 	price, overflowed := num.UintFromString(priceS, 10)
 	if overflowed {
-		return nil, errors.New("invalid order price")
+		return nil, apiError(codes.InvalidArgument, errors.New("invalid order price"))
 	}
 
-	base := num.DecimalFromUint(price.Mul(price, num.NewUint(size)))
+	mdpd := num.DecimalFromFloat(10).
+		Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
+
+	base := num.DecimalFromUint(price.Mul(price, num.NewUint(size))).Div(mdpd)
 	maker, infra, liquidity, err := t.feeFactors(mkt)
 	if err != nil {
-		return nil, err
+		return nil, apiError(codes.Internal, err)
 	}
 
-	fee := &vega.Fee{
-		MakerFee:          base.Mul(num.NewDecimalFromFloat(maker)).String(),
-		InfrastructureFee: base.Mul(num.NewDecimalFromFloat(infra)).String(),
-		LiquidityFee:      base.Mul(num.NewDecimalFromFloat(liquidity)).String(),
-	}
-
-	return fee, nil
+	return &vega.Fee{
+		MakerFee:          base.Mul(num.NewDecimalFromFloat(maker)).Round(0).String(),
+		InfrastructureFee: base.Mul(num.NewDecimalFromFloat(infra)).Round(0).String(),
+		LiquidityFee:      base.Mul(num.NewDecimalFromFloat(liquidity)).Round(0).String(),
+	}, nil
 }
 
 func (t *tradingDataServiceV2) feeFactors(mkt entities.Market) (maker, infra, liquidity float64, err error) {
@@ -2445,17 +2465,21 @@ func (t *tradingDataServiceV2) estimateMargin(
 		markPrice, _ = num.DecimalFromString(rPrice)
 	}
 
-	maintenanceMargin := num.DecimalFromFloat(float64(rSize)).Mul(f).Mul(markPrice)
+	mdpd := num.DecimalFromFloat(10).
+		Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
+
+	maintenanceMargin := num.DecimalFromFloat(float64(rSize)).
+		Mul(f).Mul(markPrice).Div(mdpd)
 	// now we use the risk factors
 	return &vega.MarginLevels{
 		PartyId:                rParty,
 		MarketId:               mktProto.GetId(),
 		Asset:                  asset,
 		Timestamp:              0,
-		MaintenanceMargin:      maintenanceMargin.String(),
-		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel)).String(),
-		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)).String(),
-		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease)).String(),
+		MaintenanceMargin:      maintenanceMargin.Round(0).String(),
+		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel)).Round(0).String(),
+		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)).Round(0).String(),
+		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease)).Round(0).String(),
 	}, nil
 }
 
@@ -2688,6 +2712,47 @@ func (t *tradingDataServiceV2) GetProtocolUpgradeStatus(context.Context, *v2.Get
 	}, nil
 }
 
+func (t *tradingDataServiceV2) ListProtocolUpgradeProposals(ctx context.Context, req *v2.ListProtocolUpgradeProposalsRequest) (*v2.ListProtocolUpgradeProposalsResponse, error) {
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("empty request"))
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	var status *entities.ProtocolUpgradeProposalStatus
+	if req.Status != nil {
+		s := entities.ProtocolUpgradeProposalStatus(*req.Status)
+		status = &s
+	}
+
+	pups, pageInfo, err := t.protocolUpgradeService.ListProposals(
+		ctx,
+		status,
+		req.ApprovedBy,
+		pagination,
+	)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	edges, err := makeEdges[*v2.ProtocolUpgradeProposalEdge](pups)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	connection := v2.ProtocolUpgradeProposalConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListProtocolUpgradeProposalsResponse{
+		ProtocolUpgradeProposals: &connection,
+	}, nil
+}
+
 type tradingDataEventBusServerV2 struct {
 	stream v2.TradingDataService_ObserveEventBusServer
 }
@@ -2831,6 +2896,10 @@ func (t *tradingDataServiceV2) GetVegaTime(ctx context.Context, req *v2.GetVegaT
 
 func (t *tradingDataServiceV2) GetMostRecentDeHistorySegment(context.Context, *v2.GetMostRecentDeHistorySegmentRequest) (*v2.GetMostRecentDeHistorySegmentResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentDeHistorySegment")()
+	if t.deHistoryService == nil {
+		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
+	}
+
 	segment, err := t.deHistoryService.GetHighestBlockHeightHistorySegment()
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrGetMostRecentHistorySegment, err)
@@ -2843,6 +2912,9 @@ func (t *tradingDataServiceV2) GetMostRecentDeHistorySegment(context.Context, *v
 
 func (t *tradingDataServiceV2) ListAllDeHistorySegments(context.Context, *v2.ListAllDeHistorySegmentsRequest) (*v2.ListAllDeHistorySegmentsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListAllDeHistorySegments")()
+	if t.deHistoryService == nil {
+		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
+	}
 	segments, err := t.deHistoryService.ListAllHistorySegments()
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrListAllDeHistorySegment, err)
@@ -2859,7 +2931,10 @@ func (t *tradingDataServiceV2) ListAllDeHistorySegments(context.Context, *v2.Lis
 }
 
 func (t *tradingDataServiceV2) FetchDeHistorySegment(ctx context.Context, req *v2.FetchDeHistorySegmentRequest) (*v2.FetchDeHistorySegmentResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("FetchDeHistorySegment0'")()
+	defer metrics.StartAPIRequestAndTimeGRPC("FetchDeHistorySegment'")()
+	if t.deHistoryService == nil {
+		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
+	}
 	segment, err := t.deHistoryService.FetchHistorySegment(ctx, req.HistorySegmentId)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrFetchDeHistorySegment, err)

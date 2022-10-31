@@ -719,9 +719,9 @@ const (
 	TransferType_TRANSFER_TYPE_BOND_SLASHING TransferType = 20
 	// Stake reward
 	TransferType_TRANSFER_TYPE_STAKE_REWARD TransferType = 21
-	// Transfer funds
+	// A network internal instruction for the collateral engine to move funds from a user account onto the pending transfers pool
 	TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_SEND TransferType = 22
-	// Transfer funds
+	// A network internal instruction for the collateral engine to move funds from the pending transfers pool account onto the destination account
 	TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE TransferType = 23
 	// Market is closed, accounts are cleared
 	TransferType_TRANSFER_TYPE_CLEAR_ACCOUNT TransferType = 24

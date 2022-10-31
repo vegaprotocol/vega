@@ -60,7 +60,7 @@ var (
 )
 
 func defaultNetParams() map[string]value {
-	return map[string]value{
+	m := map[string]value{
 		// markets
 		MarketMarginScalingFactors:                      NewJSON(&proto.ScalingFactors{}, checks.MarginScalingFactor(), checks.MarginScalingFactorRange(num.DecimalOne(), num.DecimalFromInt64(100))).Mutable(true).MustUpdate(`{"search_level": 1.1, "initial_margin": 1.2, "collateral_release": 1.4}`),
 		MarketFeeFactorsMakerFee:                        NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00025"),
@@ -212,6 +212,11 @@ func defaultNetParams() map[string]value {
 
 		SpamProtectionMaxBatchSize: NewUint(UintGTE(num.NewUint(2)), UintLTE(num.NewUint(200))).Mutable(true).MustUpdate("15"),
 	}
+
+	// add additional cross net param rules
+	m[MarketAuctionMinimumDuration].AddRules(DurationDependentLT(MarketAuctionMaximumDuration, m[MarketAuctionMaximumDuration].(*Duration)))
+	m[MarketAuctionMaximumDuration].AddRules(DurationDependentGT(MarketAuctionMinimumDuration, m[MarketAuctionMinimumDuration].(*Duration)))
+	return m
 }
 
 func checkOptionalRFC3339Date(d string) error {

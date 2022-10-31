@@ -1641,18 +1641,18 @@ func (mr *MockOraclesEngineMockRecorder) HasMatch(arg0 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasMatch", reflect.TypeOf((*MockOraclesEngine)(nil).HasMatch), arg0)
 }
 
-// ListensToPubKeys mocks base method.
-func (m *MockOraclesEngine) ListensToPubKeys(arg0 oracles.OracleData) bool {
+// ListensToSigners mocks base method.
+func (m *MockOraclesEngine) ListensToSigners(arg0 oracles.OracleData) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListensToPubKeys", arg0)
+	ret := m.ctrl.Call(m, "ListensToSigners", arg0)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// ListensToPubKeys indicates an expected call of ListensToPubKeys.
-func (mr *MockOraclesEngineMockRecorder) ListensToPubKeys(arg0 interface{}) *gomock.Call {
+// ListensToSigners indicates an expected call of ListensToSigners.
+func (mr *MockOraclesEngineMockRecorder) ListensToSigners(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListensToPubKeys", reflect.TypeOf((*MockOraclesEngine)(nil).ListensToPubKeys), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListensToSigners", reflect.TypeOf((*MockOraclesEngine)(nil).ListensToSigners), arg0)
 }
 
 // MockOracleAdaptors is a mock of OracleAdaptors interface.

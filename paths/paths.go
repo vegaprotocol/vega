@@ -275,6 +275,15 @@ var (
 	// DataNodeDeHistoryHome is the folder containing the decentralised history data.
 	DataNodeDeHistoryHome = StatePath(filepath.Join(DataNodeStateHome.String(), "dehistory"))
 
+	// DataNodeDeHistorySnapshotCopyTo is the folder in which the datanode creates snapshots.
+	DataNodeDeHistorySnapshotCopyTo = StatePath(filepath.Join(DataNodeDeHistoryHome.String(), "snapshotscopyto"))
+
+	// DataNodeDeHistorySnapshotCopyFrom is the folder from which the datanode reads snapshot data.
+	DataNodeDeHistorySnapshotCopyFrom = StatePath(filepath.Join(DataNodeDeHistoryHome.String(), "snapshotscopyfrom"))
+
+	// DataNodeEventBufferHome is the folder containing event buffer files.
+	DataNodeEventBufferHome = StatePath(filepath.Join(DataNodeStateHome.String(), "eventsbuffer"))
+
 	// NodeStateHome is the folder containing the state of the node.
 	NodeStateHome = StatePath("node")
 

@@ -56,23 +56,27 @@ func getTestMarket() types.Market {
 					Future: &types.Future{
 						SettlementAsset: "",
 						QuoteName:       "",
-						OracleSpecForSettlementData: &types.OracleSpec{
+						DataSourceSpecForSettlementData: &types.DataSourceSpec{
 							ID:        "",
 							CreatedAt: 0,
 							UpdatedAt: 0,
-							PubKeys:   nil,
-							Filters:   nil,
-							Status:    0,
+							Config: &types.DataSourceSpecConfiguration{
+								Signers: nil,
+								Filters: nil,
+							},
+							Status: 0,
 						},
-						OracleSpecForTradingTermination: &types.OracleSpec{
+						DataSourceSpecForTradingTermination: &types.DataSourceSpec{
 							ID:        "",
 							CreatedAt: 0,
 							UpdatedAt: 0,
-							PubKeys:   nil,
-							Filters:   nil,
-							Status:    0,
+							Config: &types.DataSourceSpecConfiguration{
+								Signers: nil,
+								Filters: nil,
+							},
+							Status: 0,
 						},
-						OracleSpecBinding: &types.OracleSpecBindingForFuture{
+						DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
 							SettlementDataProperty:     "",
 							TradingTerminationProperty: "",
 						},

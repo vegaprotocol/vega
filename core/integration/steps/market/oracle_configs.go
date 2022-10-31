@@ -21,7 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
 	types "code.vegaprotocol.io/vega/protos/vega"
-	oraclesv1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 var (
@@ -41,8 +41,8 @@ type oracleConfigs struct {
 }
 
 type OracleConfig struct {
-	Spec    *oraclesv1.OracleSpec
-	Binding *types.OracleSpecToFutureBinding
+	Spec    *datav1.OracleSpec
+	Binding *types.DataSourceSpecToFutureBinding
 }
 
 func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
@@ -54,15 +54,15 @@ func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 
 	contentReaders := defaults.ReadAll(defaultOracleConfigs, defaultOracleConfigFileNames)
 	for name, contentReader := range contentReaders {
-		future, err := unmarshaler.UnmarshalOracleConfig(contentReader)
+		future, err := unmarshaler.UnmarshalDataSourceConfig(contentReader)
 		if err != nil {
-			panic(fmt.Errorf("couldn't unmarshal default oracle config %s: %v", name, err))
+			panic(fmt.Errorf("couldn't unmarshal default data source config %s: %v", name, err))
 		}
-		if err := specs.Add(name, "settlement data", future.OracleSpecForSettlementData, future.OracleSpecBinding); err != nil {
-			panic(fmt.Errorf("failed to add default oracle config %s: %v", name, err))
+		if err := specs.Add(name, "settlement data", future.DataSourceSpecForSettlementData, future.DataSourceSpecBinding); err != nil {
+			panic(fmt.Errorf("failed to add default data source config %s: %v", name, err))
 		}
-		if err := specs.Add(name, "trading termination", future.OracleSpecForTradingTermination, future.OracleSpecBinding); err != nil {
-			panic(fmt.Errorf("failed to add default oracle config %s: %v", name, err))
+		if err := specs.Add(name, "trading termination", future.DataSourceSpecForTradingTermination, future.DataSourceSpecBinding); err != nil {
+			panic(fmt.Errorf("failed to add default data source config %s: %v", name, err))
 		}
 	}
 
@@ -84,17 +84,25 @@ func (f *oracleConfigs) GetSettlementDataDP(name string) uint32 {
 func (f *oracleConfigs) Add(
 	name string,
 	specType string,
-	spec *oraclesv1.OracleSpec,
-	binding *types.OracleSpecToFutureBinding,
+	spec *datav1.DataSourceSpec,
+	binding *types.DataSourceSpecToFutureBinding,
 ) error {
 	if specType == "settlement data" {
 		f.configForSettlementData[name] = &OracleConfig{
-			Spec:    spec,
+			Spec: &datav1.OracleSpec{
+				ExternalDataSourceSpec: &datav1.ExternalDataSourceSpec{
+					Spec: spec,
+				},
+			},
 			Binding: binding,
 		}
 	} else if specType == "trading termination" {
 		f.configFoTradingTermination[name] = &OracleConfig{
-			Spec:    spec,
+			Spec: &datav1.OracleSpec{
+				ExternalDataSourceSpec: &datav1.ExternalDataSourceSpec{
+					Spec: spec,
+				},
+			},
 			Binding: binding,
 		}
 	} else {
