@@ -304,11 +304,11 @@ func validateLogNormalRiskParams(lnm *types.LogNormalRiskModel) (types.ProposalE
 		return types.ProposalErrorInvalidRiskParameter, ErrInvalidRiskParameter
 	}
 
-	if lnm.RiskAversionParameter.LessThan(num.DecimalFromFloat(1e-8)) || lnm.RiskAversionParameter.GreaterThanOrEqual(num.DecimalOne()) || // 1e-8 <= lambda < 1
-		lnm.Tau.LessThanOrEqual(num.DecimalZero()) || lnm.Tau.GreaterThan(num.DecimalOne()) || // 0 < tau <=1
-		lnm.Params.Mu.LessThan(num.DecimalFromInt64(-20)) || lnm.Params.Mu.GreaterThan(num.DecimalFromInt64(20)) || // -20 <= mu <= 20
-		lnm.Params.R.LessThan(num.DecimalFromInt64(-20)) || lnm.Params.R.GreaterThan(num.DecimalFromInt64(20)) || // -20 <= r <= 20
-		lnm.Params.Sigma.LessThan(num.DecimalFromFloat(1e-4)) || lnm.Params.Sigma.GreaterThan(num.DecimalFromInt64(100)) { // 1e-4 <= sigma <= 100
+	if lnm.RiskAversionParameter.LessThan(num.DecimalFromFloat(1e-8)) || lnm.RiskAversionParameter.GreaterThan(num.DecimalFromFloat(0.1)) || // 1e-8 <= lambda <= 0.1
+		lnm.Tau.LessThan(num.DecimalFromFloat(1e-8)) || lnm.Tau.GreaterThan(num.DecimalOne()) || // 1e-8 <= tau <=1
+		lnm.Params.Mu.LessThan(num.DecimalFromFloat(-1e-6)) || lnm.Params.Mu.GreaterThan(num.DecimalFromFloat(1e-6)) || // -1e-6 <= mu <= 1e-6
+		lnm.Params.R.LessThan(num.DecimalFromInt64(-1)) || lnm.Params.R.GreaterThan(num.DecimalFromInt64(1)) || // -1 <= r <= 1
+		lnm.Params.Sigma.LessThan(num.DecimalFromFloat(1e-3)) || lnm.Params.Sigma.GreaterThan(num.DecimalFromInt64(100)) { // 1e-3 <= sigma <= 100
 		return types.ProposalErrorInvalidRiskParameter, ErrInvalidRiskParameter
 	}
 	return types.ProposalErrorUnspecified, nil
