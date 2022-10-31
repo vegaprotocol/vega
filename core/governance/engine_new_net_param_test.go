@@ -188,7 +188,6 @@ func TestProposalForNetParamCrossingAtEnactment(t *testing.T) {
 	require.NoError(t, err)
 
 	eng.OnTick(context.Background(), afterEnactment1.Add(1*time.Second))
-
 }
 
 func (e *tstEngine) newProposalForNetParam(partyID, key, value string, now time.Time) types.Proposal {
