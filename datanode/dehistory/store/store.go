@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ipfs/kubo/core/corerepo"
+
 	"github.com/ipfs/kubo/core/node/libp2p"
 	"github.com/ipfs/kubo/repo/fsrepo"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -34,7 +36,6 @@ import (
 	files "github.com/ipfs/go-ipfs-files"
 	icore "github.com/ipfs/interface-go-ipfs-core"
 	"github.com/ipfs/interface-go-ipfs-core/path"
-	ipfs "github.com/ipfs/kubo"
 	"github.com/ipfs/kubo/commands"
 	"github.com/ipfs/kubo/config"
 	serialize "github.com/ipfs/kubo/config/serialize"
@@ -44,7 +45,6 @@ import (
 	"github.com/ipfs/kubo/plugin/loader"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 const segmentMetaDataFile = "metadata.json"
@@ -54,6 +54,7 @@ var ErrSegmentNotFound = errors.New("segment not found")
 type index interface {
 	Get(height int64) (SegmentIndexEntry, error)
 	Add(metaData SegmentIndexEntry) error
+	Remove(indexEntry SegmentIndexEntry) error
 	ListAllEntriesOldestFirst() ([]SegmentIndexEntry, error)
 	GetHighestBlockHeightEntry() (SegmentIndexEntry, error)
 	Close() error
@@ -83,6 +84,11 @@ type Store struct {
 	stagingDir string
 	ipfsPath   string
 }
+
+// This global var is to prevent IPFS plugins being loaded twice because IPFS uses a dependency injection framework that
+// has global state which results in an error if ipfs plugins are loaded twice.  In practice this is currently only an
+// issue when running tests as we only have one IPFS node instance when running datanode.
+var plugins *loader.PluginLoader
 
 func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, deHistoryHome string, wipeOnStartup bool) (*Store, error) {
 	deHistoryStorePath := filepath.Join(deHistoryHome, "store")
@@ -122,9 +128,11 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, d
 
 	log.Infof("starting decentralized history store with ipfs Peer Id:%s", p.identity.PeerID)
 
-	plugins, err := loadPlugins(p.ipfsPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load ipfs plugins:%w", err)
+	if plugins == nil {
+		plugins, err = loadPlugins(p.ipfsPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load ipfs plugins:%w", err)
+		}
 	}
 
 	log.Debugf("ipfs swarm port:%d", cfg.SwarmPort)
@@ -160,7 +168,9 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, d
 		return nil, fmt.Errorf("failed to create ipfs api:%w", err)
 	}
 
-	setupMetrics(p.ipfsNode)
+	if err = setupMetrics(p.ipfsNode); err != nil {
+		return nil, fmt.Errorf("failed to setup metrics:%w", err)
+	}
 
 	if cfg.StartWebUI {
 		err = p.startWebUI(plugins, cfg.WebUIPort)
@@ -311,6 +321,12 @@ func (p *Store) AddSnapshotData(ctx context.Context, historySnapshot snapshot.Hi
 		logging.String("previous history segment id", historySegment.PreviousHistorySegmentID),
 	)
 
+	segments, err := p.removeOldHistorySegments(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to remove old history segments:%s", err)
+	}
+	p.log.Infof("removed %d old history segments", len(segments))
+
 	return nil
 }
 
@@ -318,7 +334,7 @@ func (p *Store) GetHighestBlockHeightEntry() (SegmentIndexEntry, error) {
 	return p.index.GetHighestBlockHeightEntry()
 }
 
-func (p *Store) ListAllHistorySegments() ([]SegmentIndexEntry, error) {
+func (p *Store) ListAllHistorySegmentsOldestFirst() ([]SegmentIndexEntry, error) {
 	return p.index.ListAllEntriesOldestFirst()
 }
 
@@ -354,20 +370,15 @@ func (p *Store) CopySnapshotDataIntoDir(ctx context.Context, toHeight int64, tar
 	return currentStateSnapshot, historySnapshot, nil
 }
 
-func setupMetrics(ipfsNode *core.IpfsNode) {
-	ipfsInfoMetric := promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "ipfs_info",
-		Help: "IPFS version information.",
-	}, []string{"version", "commit"})
+func setupMetrics(ipfsNode *core.IpfsNode) error {
+	err := prometheus.Register(&corehttp.IpfsNodeCollector{Node: ipfsNode})
+	if err != nil {
+		if _, ok := err.(prometheus.AlreadyRegisteredError); !ok {
+			return fmt.Errorf("failed to initialise IPFS metrics:%w", err)
+		}
+	}
 
-	// Setting to 1 lets us multiply it with other stats to add the version labels
-	ipfsInfoMetric.With(prometheus.Labels{
-		"version": ipfs.CurrentVersionNumber,
-		"commit":  ipfs.CurrentCommit,
-	}).Set(1)
-
-	// initialize metrics collector
-	prometheus.MustRegister(&corehttp.IpfsNodeCollector{Node: ipfsNode})
+	return nil
 }
 
 func (p *Store) startWebUI(plugins *loader.PluginLoader, port int) error {
@@ -522,6 +533,49 @@ func (p *Store) getHistorySegmentForHeight(ctx context.Context, toHeight int64, 
 		return "", fmt.Errorf("failed to write to staging file:%w", err)
 	}
 	return pathToSegment, nil
+}
+
+func (p *Store) removeOldHistorySegments(ctx context.Context) ([]SegmentIndexEntry, error) {
+	latestSegment, err := p.index.GetHighestBlockHeightEntry()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get latest segment:%w", err)
+	}
+
+	entries, err := p.index.ListAllEntriesOldestFirst()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list all entries:%w", err)
+	}
+
+	var removedSegments []SegmentIndexEntry
+	for _, segment := range entries {
+		if segment.HeightTo < (latestSegment.HeightTo - p.cfg.HistoryRetentionBlockSpan) {
+			err = p.unpinSegment(ctx, segment)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unpin segment:%w", err)
+			}
+
+			p.index.Remove(segment)
+
+			removedSegments = append(removedSegments, segment)
+		} else {
+			break
+		}
+	}
+
+	if len(removedSegments) > 0 {
+		// The GarbageCollect method is async
+		err = corerepo.GarbageCollect(p.ipfsNode, ctx)
+
+		// Do not want to return before the GC is done as adding new data to the node whilst GC is running is not permitted
+		unlocker := p.ipfsNode.GCLocker.GCLock(ctx)
+		defer unlocker.Unlock(ctx)
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to garbage collect ipfs repo")
+		}
+	}
+
+	return removedSegments, nil
 }
 
 func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string) (SegmentIndexEntry, error) {
@@ -858,8 +912,22 @@ func (p *Store) addFileToIpfs(ctx context.Context, path string) (cid.Cid, error)
 	if err != nil {
 		return cid.Cid{}, fmt.Errorf("failed to pin file: %s", err)
 	}
-
 	return fileCid.Cid(), nil
+}
+
+func (p *Store) unpinSegment(ctx context.Context, segment SegmentIndexEntry) error {
+	contentID, err := cid.Decode(segment.HistorySegmentID)
+	if err != nil {
+		return fmt.Errorf("failed to decode history segment id:%w", err)
+	}
+
+	path := path.IpfsPath(contentID)
+
+	if err = p.ipfsAPI.Pin().Rm(ctx, path); err != nil {
+		return fmt.Errorf("failed to unpin segment:%w", err)
+	}
+
+	return nil
 }
 
 func createIdentityFromSeed(seed []byte) (config.Identity, error) {

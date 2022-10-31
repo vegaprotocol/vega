@@ -216,7 +216,7 @@ func TestMain(t *testing.M) {
 
 			time.Sleep(10 * time.Millisecond)
 
-			storedSegments, err := deHistoryStore.ListAllHistorySegments()
+			storedSegments, err := deHistoryStore.ListAllHistorySegmentsOldestFirst()
 			if err != nil {
 				panic(err)
 			}
