@@ -15,6 +15,7 @@
 - [6602](https://github.com/vegaprotocol/vega/issues/6602) - Panic if data node receives events in unexpected order
 - [6595](https://github.com/vegaprotocol/vega/issues/6595) - Support for cross network parameter dependency and validation
 - [6627](https://github.com/vegaprotocol/vega/issues/6627) - Fix order estimates
+- [6604](https://github.com/vegaprotocol/vega/issues/6604) - Fix transfer funds documentations in `protos`
 
 
 ### 🐛 Fixes
