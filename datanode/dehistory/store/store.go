@@ -317,7 +317,7 @@ func (p *Store) AddSnapshotData(ctx context.Context, historySnapshot snapshot.Hi
 		logging.String("history segment id", contentID.String()),
 		logging.String("chain id", historySegment.ChainID),
 		logging.Int64("from height", historySegment.HeightFrom),
-		logging.Int64("from to", historySegment.HeightTo),
+		logging.Int64("to height", historySegment.HeightTo),
 		logging.String("previous history segment id", historySegment.PreviousHistorySegmentID),
 	)
 

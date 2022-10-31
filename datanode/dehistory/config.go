@@ -29,7 +29,7 @@ type Config struct {
 func NewDefaultConfig() Config {
 	return Config{
 		Level:                encoding.LogLevel{Level: logging.InfoLevel},
-		Enabled:              false,
+		Enabled:              true,
 		WipeOnStartup:        true,
 		AddSnapshotsToStore:  true,
 		AddSnapshotsInterval: encoding.Duration{Duration: 5 * time.Second},
