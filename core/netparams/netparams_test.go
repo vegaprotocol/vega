@@ -392,3 +392,32 @@ func testNonEmptyCheckpointWithOverWrite(t *testing.T) {
 	_, err = netp2.Checkpoint()
 	require.NoError(t, err)
 }
+
+func TestCrossNetParamUpdates(t *testing.T) {
+	netp := getTestNetParams(t)
+	defer netp.ctrl.Finish()
+
+	// min and max durations are defined such that min must be less than max, so lets first verify that the constraint holds
+	min, err := netp.GetDuration(netparams.MarketAuctionMinimumDuration)
+	require.NoError(t, err)
+	require.Equal(t, time.Minute*30, min)
+
+	max, err := netp.GetDuration(netparams.MarketAuctionMaximumDuration)
+	require.NoError(t, err)
+	require.Equal(t, time.Hour*168, max)
+
+	// now lets try to update max to a valid value (1s) with respect to its own validation rules but would invalidate the invariant of max > min
+	err = netp.Validate(netparams.MarketAuctionMaximumDuration, "1s")
+	require.Equal(t, "unable to validate market.auction.maximumDuration: expect > 30m0s (market.auction.minimumDuration) got 1s", err.Error())
+
+	// now lets change the maximum to be 12h so that we can cross it with the minimum
+	err = netp.Validate(netparams.MarketAuctionMaximumDuration, "12h")
+	require.NoError(t, err)
+
+	netp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	netp.Update(context.Background(), netparams.MarketAuctionMaximumDuration, "12h")
+
+	// now lets try to update min to a valid value (13h) with respect to its own validation rules but would invalidate the invariant of max > min
+	err = netp.Validate(netparams.MarketAuctionMinimumDuration, "13h")
+	require.Equal(t, "unable to validate market.auction.minimumDuration: expect < 12h0m0s (market.auction.maximumDuration) got 13h0m0s", err.Error())
+}

@@ -238,6 +238,9 @@ func (e *Engine) preEnactProposal(ctx context.Context, p *proposal) (te *ToEnact
 		if unp != nil {
 			te.n = unp.Changes
 		}
+		if err := e.netp.Validate(unp.Changes.Key, unp.Changes.Value); err != nil {
+			return nil, types.ProposalErrorNetworkParameterInvalidValue, err
+		}
 	case types.ProposalTermsTypeNewAsset:
 		asset, err := e.assets.Get(p.ID)
 		if err != nil {
@@ -322,6 +325,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 			enact, perr, err := e.preEnactProposal(ctx, proposal)
 			if err != nil {
 				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
+				toBeRemoved = append(toBeRemoved, proposal.ID)
 				e.log.Error("proposal enactment has failed",
 					logging.String("proposal-id", proposal.ID),
 					logging.String("proposal-error", perr.String()),

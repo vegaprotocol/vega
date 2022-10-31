@@ -909,6 +909,17 @@ func produceTimeTriggeredDataSourceSpec(termTimestamp time.Time) (*types.DataSou
 		}
 }
 
+func newNetParamTerms(key, value string) *types.ProposalTermsUpdateNetworkParameter {
+	return &types.ProposalTermsUpdateNetworkParameter{
+		UpdateNetworkParameter: &types.UpdateNetworkParameter{
+			Changes: &types.NetworkParameter{
+				Key:   key,
+				Value: value,
+			},
+		},
+	}
+}
+
 func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture) *types.ProposalTermsNewMarket {
 	if termFilter == nil {
 		termFilter, termBinding = produceNonTimeTriggeredDataSourceSpec()
