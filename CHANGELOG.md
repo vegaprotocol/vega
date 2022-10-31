@@ -28,6 +28,7 @@
 - [6595](https://github.com/vegaprotocol/vega/issues/6595) - Support for cross network parameter dependency and validation
 - [6627](https://github.com/vegaprotocol/vega/issues/6627) - Fix order estimates
 - [6604](https://github.com/vegaprotocol/vega/issues/6604) - Fix transfer funds documentations in `protos`
+- [6652](https://github.com/vegaprotocol/vega/issues/6652) - Change protocol upgrade consensus do be based on voting power
 
 ### 🐛 Fixes
 - [6623](https://github.com/vegaprotocol/vega/issues/6623) - Fix `nil` pointer panic in `datanode` for race condition in `recvEventRequest`
