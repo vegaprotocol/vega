@@ -2369,16 +2369,19 @@ func (t *tradingDataServiceV2) estimateFee(
 		return nil, apiError(codes.InvalidArgument, errors.New("invalid order price"))
 	}
 
-	base := num.DecimalFromUint(price.Mul(price, num.NewUint(size)))
+	mdpd := num.DecimalFromFloat(10).
+		Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
+
+	base := num.DecimalFromUint(price.Mul(price, num.NewUint(size))).Div(mdpd)
 	maker, infra, liquidity, err := t.feeFactors(mkt)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
 
 	return &vega.Fee{
-		MakerFee:          base.Mul(num.NewDecimalFromFloat(maker)).String(),
-		InfrastructureFee: base.Mul(num.NewDecimalFromFloat(infra)).String(),
-		LiquidityFee:      base.Mul(num.NewDecimalFromFloat(liquidity)).String(),
+		MakerFee:          base.Mul(num.NewDecimalFromFloat(maker)).Round(0).String(),
+		InfrastructureFee: base.Mul(num.NewDecimalFromFloat(infra)).Round(0).String(),
+		LiquidityFee:      base.Mul(num.NewDecimalFromFloat(liquidity)).Round(0).String(),
 	}, nil
 }
 
@@ -2462,17 +2465,21 @@ func (t *tradingDataServiceV2) estimateMargin(
 		markPrice, _ = num.DecimalFromString(rPrice)
 	}
 
-	maintenanceMargin := num.DecimalFromFloat(float64(rSize)).Mul(f).Mul(markPrice)
+	mdpd := num.DecimalFromFloat(10).
+		Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
+
+	maintenanceMargin := num.DecimalFromFloat(float64(rSize)).
+		Mul(f).Mul(markPrice).Div(mdpd)
 	// now we use the risk factors
 	return &vega.MarginLevels{
 		PartyId:                rParty,
 		MarketId:               mktProto.GetId(),
 		Asset:                  asset,
 		Timestamp:              0,
-		MaintenanceMargin:      maintenanceMargin.String(),
-		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel)).String(),
-		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)).String(),
-		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease)).String(),
+		MaintenanceMargin:      maintenanceMargin.Round(0).String(),
+		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel)).Round(0).String(),
+		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)).Round(0).String(),
+		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease)).Round(0).String(),
 	}, nil
 }
 
