@@ -103,7 +103,7 @@ func (d *Service) GetHighestBlockHeightHistorySegment() (store.SegmentIndexEntry
 }
 
 func (d *Service) ListAllHistorySegments() ([]store.SegmentIndexEntry, error) {
-	return d.store.ListAllHistorySegments()
+	return d.store.ListAllHistorySegmentsOldestFirst()
 }
 
 func (d *Service) FetchHistorySegment(ctx context.Context, historySegmentID string) (store.SegmentIndexEntry, error) {
@@ -255,7 +255,7 @@ func (d *Service) copyAllAvailableHistoryIntoDir(ctx context.Context, targetDir 
 // GetContiguousHistory returns all available contiguous (no gaps) history from the current datanode height, or if
 // the datanode has no data it will return the contiguous history from the highest decentralized history segment.
 func (d *Service) GetContiguousHistory() ([]aggregation.AggregatedHistorySegment, error) {
-	allHistorySegments, err := d.store.ListAllHistorySegments()
+	allHistorySegments, err := d.store.ListAllHistorySegmentsOldestFirst()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all history segments:%w", err)
 	}
