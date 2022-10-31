@@ -6,14 +6,11 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/service"
-
-	"code.vegaprotocol.io/vega/paths"
 
 	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/dehistory/store"
@@ -26,7 +23,10 @@ import (
 	"google.golang.org/grpc"
 )
 
-var ErrFailedToGetSegment = errors.New("no history segment found")
+var (
+	ErrFailedToGetSegment = errors.New("no history segment found")
+	ErrChainNotFound      = errors.New("no chain found")
+)
 
 type deHistoryService interface {
 	GetActivePeerAddresses() []string
@@ -304,19 +304,6 @@ func FetchHistoryBlocks(ctx context.Context, logInfo func(s string, args ...inte
 	return blocksFetched, nil
 }
 
-func GetSnapshotPaths(useEmbedded bool, conf snapshot.Config, vegaPaths paths.Paths) (snapshotsCopyFrom string, snapshotsCopyTo string) {
-	if useEmbedded {
-		embeddedPostgresRuntimeDir := vegaPaths.StatePathFor(paths.DataNodeEmbeddedPostgresRuntimeDir)
-		snapshotsCopyFrom = filepath.Join(embeddedPostgresRuntimeDir, conf.DatabaseSnapshotsCopyFromPath)
-		snapshotsCopyTo = filepath.Join(embeddedPostgresRuntimeDir, conf.DatabaseSnapshotsCopyToPath)
-	} else {
-		deHistoryHome := vegaPaths.StatePathFor(paths.DataNodeDeHistoryHome)
-		snapshotsCopyFrom = filepath.Join(deHistoryHome, conf.DatabaseSnapshotsCopyFromPath)
-		snapshotsCopyTo = filepath.Join(deHistoryHome, conf.DatabaseSnapshotsCopyToPath)
-	}
-	return snapshotsCopyFrom, snapshotsCopyTo
-}
-
 func VerifyChainID(chainID string, chainService *service.Chain) error {
 	if len(chainID) == 0 {
 		return errors.New("chain id must be set")
@@ -324,6 +311,10 @@ func VerifyChainID(chainID string, chainService *service.Chain) error {
 
 	currentChainID, err := chainService.GetChainID()
 	if err != nil {
+		if errors.Is(err, entities.ErrChainNotFound) {
+			return ErrChainNotFound
+		}
+
 		return fmt.Errorf("failed to get chain id:%w", err)
 	}
 
