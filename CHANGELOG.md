@@ -1,12 +1,24 @@
 # Changelog
 
-## Unreleased 0.61.0
+## Unreleased 0.62.0
 
 ### 🚨 Breaking changes
-- [5714](https://github.com/vegaprotocol/vega/issues/5714) - Update data sourcing types
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.61.0
+
+### 🚨 Breaking changes
+- [5714](https://github.com/vegaprotocol/vega/issues/5714) - Update data sourcing types
 
 ### 🛠 Improvements
 - [6608](https://github.com/vegaprotocol/vega/issues/6608) - Put embedded `postgres` files in proper state directory
@@ -16,7 +28,6 @@
 - [6595](https://github.com/vegaprotocol/vega/issues/6595) - Support for cross network parameter dependency and validation
 - [6627](https://github.com/vegaprotocol/vega/issues/6627) - Fix order estimates
 - [6604](https://github.com/vegaprotocol/vega/issues/6604) - Fix transfer funds documentations in `protos`
-
 
 ### 🐛 Fixes
 - [6623](https://github.com/vegaprotocol/vega/issues/6623) - Fix `nil` pointer panic in `datanode` for race condition in `recvEventRequest`
