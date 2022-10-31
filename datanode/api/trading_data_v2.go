@@ -34,6 +34,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/version"
 
@@ -1671,7 +1673,11 @@ func (t *tradingDataServiceV2) GetOracleSpec(ctx context.Context, req *v2.GetOra
 	}
 
 	return &v2.GetOracleSpecResponse{
-		OracleSpec: spec.ToProto(),
+		OracleSpec: &datapb.OracleSpec{
+			ExternalDataSourceSpec: &v1.ExternalDataSourceSpec{
+				Spec: spec.ToProto().ExternalDataSourceSpec.Spec,
+			},
+		},
 	}, nil
 }
 
@@ -1723,7 +1729,7 @@ func (t *tradingDataServiceV2) ListOracleData(ctx context.Context, req *v2.ListO
 	}
 
 	if err != nil {
-		apiError(codes.Internal, ErrOracleServiceGetSpec, fmt.Errorf("could not retrieve data for OracleSpecID: %s %w", *req.OracleSpecId, err))
+		return nil, apiError(codes.Internal, ErrOracleServiceGetSpec, fmt.Errorf("could not retrieve data for OracleSpecID: %s %w", *req.OracleSpecId, err))
 	}
 
 	edges, err := makeEdges[*v2.OracleDataEdge](data)
@@ -2696,6 +2702,47 @@ func (t *tradingDataServiceV2) GetProtocolUpgradeStatus(context.Context, *v2.Get
 	ready := t.protocolUpgradeService.GetProtocolUpgradeStarted()
 	return &v2.GetProtocolUpgradeStatusResponse{
 		Ready: ready,
+	}, nil
+}
+
+func (t *tradingDataServiceV2) ListProtocolUpgradeProposals(ctx context.Context, req *v2.ListProtocolUpgradeProposalsRequest) (*v2.ListProtocolUpgradeProposalsResponse, error) {
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("empty request"))
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	var status *entities.ProtocolUpgradeProposalStatus
+	if req.Status != nil {
+		s := entities.ProtocolUpgradeProposalStatus(*req.Status)
+		status = &s
+	}
+
+	pups, pageInfo, err := t.protocolUpgradeService.ListProposals(
+		ctx,
+		status,
+		req.ApprovedBy,
+		pagination,
+	)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	edges, err := makeEdges[*v2.ProtocolUpgradeProposalEdge](pups)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	connection := v2.ProtocolUpgradeProposalConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListProtocolUpgradeProposalsResponse{
+		ProtocolUpgradeProposals: &connection,
 	}, nil
 }
 

@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/oracles"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 
 	"code.vegaprotocol.io/oracles-relay/openoracle"
@@ -45,8 +46,12 @@ func (a *OpenOracleAdaptor) Normalise(_ crypto.PublicKey, data []byte) (*oracles
 		return nil, fmt.Errorf("invalid Open Oracle response: %w", err)
 	}
 
+	pubKeysSigners := make([]*types.Signer, len(pubKeys))
+	for i, pk := range pubKeys {
+		pubKeysSigners[i] = types.CreateSignerFromString(pk, types.DataSignerTypePubKey)
+	}
 	return &oracles.OracleData{
-		PubKeys: pubKeys,
+		Signers: pubKeysSigners,
 		Data:    kvs,
 	}, nil
 }

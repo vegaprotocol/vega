@@ -6,8 +6,8 @@ import "vega/vega.proto";
 import "vega/governance.proto";
 import "vega/markets.proto";
 import "vega/assets.proto";
-import "vega/oracles/v1/data.proto";
-import "vega/oracles/v1/spec.proto";
+import "vega/data/v1/data.proto";
+import "vega/data/v1/spec.proto";
 import "vega/events/v1/events.proto";
 import "vega/commands/v1/validator_commands.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
@@ -387,6 +387,9 @@ service TradingDataService {
 
     // Protocol Upgrade status
     rpc GetProtocolUpgradeStatus(GetProtocolUpgradeStatusRequest) returns (GetProtocolUpgradeStatusResponse);
+
+    // List protocol upgrades proposals, optionally filtering on status or approver.
+    rpc ListProtocolUpgradeProposals(ListProtocolUpgradeProposalsRequest) returns (ListProtocolUpgradeProposalsResponse);
 
     // Decentralized History
     //
@@ -1350,8 +1353,8 @@ message GetOracleSpecRequest {
 
 // The response for a oracle spec
 message GetOracleSpecResponse {
-    // The oracle spec matching the ID.
-    oracles.v1.OracleSpec oracle_spec = 1 ;
+    // The external data spec matching the ID.
+    vega.data.v1.OracleSpec oracle_spec = 1 ;
 }
 
 // The request to get all active oracle specs
@@ -1380,7 +1383,7 @@ message ListOracleDataResponse {
 }
 
 message OracleSpecEdge {
-    oracles.v1.OracleSpec node = 1;
+    vega.data.v1.OracleSpec node = 1;
     string cursor = 2;
 }
 
@@ -1390,7 +1393,7 @@ message OracleSpecsConnection {
 }
 
 message OracleDataEdge {
-    oracles.v1.OracleData node = 1;
+    vega.data.v1.OracleData node = 1;
     string cursor = 2;
 }
 
@@ -2059,8 +2062,29 @@ message GetProtocolUpgradeStatusResponse {
     bool ready = 1;
 }
 
+// Request type for ListProtocolUpgradeProposals; fetches a paginated list of protocol upgrade proposals
+message ListProtocolUpgradeProposalsRequest {
+    optional vega.events.v1.ProtocolUpgradeProposalStatus status = 1;
+    optional string approved_by = 2;
+    optional Pagination pagination = 3;
+}
 
+// Reponse type from a ListProtocolUpgradeProposals RPC call; a paginated list of protocol upgrade proposals
+message ListProtocolUpgradeProposalsResponse {
+    ProtocolUpgradeProposalConnection protocol_upgrade_proposals = 1;
+}
 
+// A page of protocol upgrade proposals, with page information.
+message ProtocolUpgradeProposalConnection {
+    repeated ProtocolUpgradeProposalEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// A protocol upgrade proposal, along with a cursor
+message ProtocolUpgradeProposalEdge {
+    vega.events.v1.ProtocolUpgradeEvent node = 1;
+    string cursor = 2;
+}
 
 // -- Decentralized History --
 // Decentralised History allows the data-node to reach out to peer nodes to fetch the most recent history, as well as

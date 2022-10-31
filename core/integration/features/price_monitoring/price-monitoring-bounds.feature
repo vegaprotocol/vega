@@ -15,7 +15,7 @@ Feature: Price monitoring triggers test on or around monitoring bounds with deci
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.000001      | 0.00011407711613050422 | 0  | 0.016 | 2.0   |
     And the markets:
-      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring      | oracle config          | decimal places |
+      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring      | data source config          | decimal places |
       | ETH/DEC20 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring   | default-eth-for-future | 5              |
     And the following network parameters are set:
       | name                           | value |

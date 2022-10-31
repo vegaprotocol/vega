@@ -19,8 +19,9 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 // Broker interface. Do not need to mock (use package broker/mock).
@@ -65,11 +66,11 @@ func NewEngine(
 	return e
 }
 
-// ListensToPubKeys checks if the public keys from provided OracleData are among the keys
+// ListensToSigners checks if the signatures (pubkeys, ETH addresses) from provided OracleData are among the keys
 // current OracleSpecs listen to.
-func (e *Engine) ListensToPubKeys(data OracleData) bool {
+func (e *Engine) ListensToSigners(data OracleData) bool {
 	return e.subscriptions.hasAnySubscribers(func(spec OracleSpec) bool {
-		return spec.MatchPubKeys(data)
+		return spec.MatchSigners(data)
 	})
 }
 
@@ -104,7 +105,7 @@ func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
 			}
 			e.log.Debug(
 				"no subscriber matches the oracle data",
-				logging.Strings("pub-keys", data.PubKeys),
+				logging.Strings("signers", types.SignersToStringList(data.Signers)),
 				logging.String("data", strings.Join(strs, ", ")),
 			)
 		}
@@ -151,28 +152,38 @@ func (e *Engine) Unsubscribe(ctx context.Context, id SubscriptionID) {
 // subscription (and thus activation) to an oracle spec.
 // This may be a subscription to a brand-new oracle spec, or an additional one.
 func (e *Engine) sendNewOracleSpecSubscription(ctx context.Context, update updatedSubscription) {
-	proto := update.spec.IntoProto()
-	proto.CreatedAt = update.specActivatedAt.UnixNano()
-	proto.Status = oraclespb.OracleSpec_STATUS_ACTIVE
-	e.broker.Send(events.NewOracleSpecEvent(ctx, *proto))
+	proto := &datapb.ExternalDataSourceSpec{
+		Spec: &datapb.DataSourceSpec{},
+	}
+	if update.spec.ExternalDataSourceSpec != nil {
+		proto = update.spec.ExternalDataSourceSpec.IntoProto()
+	}
+	proto.Spec.CreatedAt = update.specActivatedAt.UnixNano()
+	proto.Spec.Status = datapb.DataSourceSpec_STATUS_ACTIVE
+	e.broker.Send(events.NewOracleSpecEvent(ctx, datapb.OracleSpec{ExternalDataSourceSpec: proto}))
 }
 
 // sendOracleSpecDeactivation send an event to the broker to inform of
 // the deactivation (and thus activation) to an oracle spec.
 // This may be a subscription to a brand-new oracle spec, or an additional one.
 func (e *Engine) sendOracleSpecDeactivation(ctx context.Context, update updatedSubscription) {
-	proto := update.spec.IntoProto()
-	proto.CreatedAt = update.specActivatedAt.UnixNano()
-	proto.Status = oraclespb.OracleSpec_STATUS_DEACTIVATED
-	e.broker.Send(events.NewOracleSpecEvent(ctx, *proto))
+	proto := &datapb.ExternalDataSourceSpec{
+		Spec: &datapb.DataSourceSpec{},
+	}
+	if update.spec.ExternalDataSourceSpec != nil {
+		proto = update.spec.ExternalDataSourceSpec.IntoProto()
+	}
+	proto.Spec.CreatedAt = update.specActivatedAt.UnixNano()
+	proto.Spec.Status = datapb.DataSourceSpec_STATUS_DEACTIVATED
+	e.broker.Send(events.NewOracleSpecEvent(ctx, datapb.OracleSpec{ExternalDataSourceSpec: proto}))
 }
 
 // sendMatchedOracleData send an event to the broker to inform of
 // a match between an oracle data and one or several oracle specs.
 func (e *Engine) sendMatchedOracleData(ctx context.Context, data OracleData, specIDs []OracleSpecID) {
-	payload := make([]*oraclespb.Property, 0, len(data.Data))
+	payload := make([]*datapb.Property, 0, len(data.Data))
 	for name, value := range data.Data {
-		payload = append(payload, &oraclespb.Property{
+		payload = append(payload, &datapb.Property{
 			Name:  name,
 			Value: value,
 		})
@@ -183,11 +194,20 @@ func (e *Engine) sendMatchedOracleData(ctx context.Context, data OracleData, spe
 		ids = append(ids, string(specID))
 	}
 
-	dataProto := oraclespb.OracleData{
-		PubKeys:        data.PubKeys,
-		Data:           payload,
-		MatchedSpecIds: ids,
-		BroadcastAt:    e.timeService.GetTimeNow().UnixNano(),
+	sigs := make([]*datapb.Signer, len(data.Signers))
+	for i, s := range data.Signers {
+		sigs[i] = s.IntoProto()
 	}
-	e.broker.Send(events.NewOracleDataEvent(ctx, dataProto))
+
+	dataProto := datapb.OracleData{
+		ExternalData: &datapb.ExternalData{
+			Data: &datapb.Data{
+				Signers:        sigs,
+				Data:           payload,
+				MatchedSpecIds: ids,
+				BroadcastAt:    e.timeService.GetTimeNow().UnixNano(),
+			},
+		},
+	}
+	e.broker.Send(events.NewOracleDataEvent(ctx, datapb.OracleData{ExternalData: dataProto.ExternalData}))
 }

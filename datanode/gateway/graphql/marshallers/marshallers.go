@@ -9,8 +9,8 @@ import (
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 
 	"github.com/99designs/gqlgen/graphql"
 )
@@ -147,34 +147,34 @@ func UnmarshalNodeSignatureKind(v interface{}) (commandspb.NodeSignatureKind, er
 	return commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED, ErrUnimplemented
 }
 
-func MarshalOracleSpecStatus(s oraclespb.OracleSpec_Status) graphql.Marshaler {
+func MarshalOracleSpecStatus(s datapb.DataSourceSpec_Status) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		w.Write([]byte(strconv.Quote(s.String())))
 	})
 }
 
-func UnmarshalOracleSpecStatus(v interface{}) (oraclespb.OracleSpec_Status, error) {
-	return oraclespb.OracleSpec_STATUS_UNSPECIFIED, ErrUnimplemented
+func UnmarshalOracleSpecStatus(v interface{}) (datapb.DataSourceSpec_Status, error) {
+	return datapb.DataSourceSpec_STATUS_UNSPECIFIED, ErrUnimplemented
 }
 
-func MarshalPropertyKeyType(s oraclespb.PropertyKey_Type) graphql.Marshaler {
+func MarshalPropertyKeyType(s datapb.PropertyKey_Type) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		w.Write([]byte(strconv.Quote(s.String())))
 	})
 }
 
-func UnmarshalPropertyKeyType(v interface{}) (oraclespb.PropertyKey_Type, error) {
-	return oraclespb.PropertyKey_TYPE_UNSPECIFIED, ErrUnimplemented
+func UnmarshalPropertyKeyType(v interface{}) (datapb.PropertyKey_Type, error) {
+	return datapb.PropertyKey_TYPE_UNSPECIFIED, ErrUnimplemented
 }
 
-func MarshalConditionOperator(s oraclespb.Condition_Operator) graphql.Marshaler {
+func MarshalConditionOperator(s datapb.Condition_Operator) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		w.Write([]byte(strconv.Quote(s.String())))
 	})
 }
 
-func UnmarshalConditionOperator(v interface{}) (oraclespb.Condition_Operator, error) {
-	return oraclespb.Condition_OPERATOR_UNSPECIFIED, ErrUnimplemented
+func UnmarshalConditionOperator(v interface{}) (datapb.Condition_Operator, error) {
+	return datapb.Condition_OPERATOR_UNSPECIFIED, ErrUnimplemented
 }
 
 func MarshalVoteValue(s vega.Vote_Value) graphql.Marshaler {
@@ -405,4 +405,24 @@ func MarshalValidatorStatus(s vega.ValidatorNodeStatus) graphql.Marshaler {
 
 func UnmarshalValidatorStatus(v interface{}) (vega.ValidatorNodeStatus, error) {
 	return vega.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_UNSPECIFIED, ErrUnimplemented
+}
+
+func MarshalProtocolUpgradeProposalStatus(s eventspb.ProtocolUpgradeProposalStatus) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalProtocolUpgradeProposalStatus(v interface{}) (eventspb.ProtocolUpgradeProposalStatus, error) {
+	s, ok := v.(string)
+	if !ok {
+		return eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_UNSPECIFIED, fmt.Errorf("expected proposal type in force to be a string")
+	}
+
+	t, ok := eventspb.ProtocolUpgradeProposalStatus_value[s] // v2.ListGovernanceDataRequest_Type_value[s]
+	if !ok {
+		return eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_UNSPECIFIED, fmt.Errorf("failed to convert proposal type from GraphQL to Proto: %v", s)
+	}
+
+	return eventspb.ProtocolUpgradeProposalStatus(t), nil
 }

@@ -17,13 +17,14 @@ import (
 	"errors"
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	gql "code.vegaprotocol.io/vega/datanode/gateway/graphql"
 	"code.vegaprotocol.io/vega/datanode/gateway/graphql/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	types "code.vegaprotocol.io/vega/protos/vega"
-	oraclesv1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	protoTypes "code.vegaprotocol.io/vega/protos/vega"
+	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"google.golang.org/grpc"
 
 	"github.com/golang/mock/gomock"
@@ -76,66 +77,72 @@ func TestNewResolverRoot_QueryResolver(t *testing.T) {
 	assert.NotNil(t, queryResolver)
 }
 
-func getTestMarket() *types.Market {
-	return &types.Market{
+func getTestMarket() *protoTypes.Market {
+	pk := types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)
+
+	return &protoTypes.Market{
 		Id: "BTC/DEC19",
-		TradableInstrument: &types.TradableInstrument{
-			Instrument: &types.Instrument{
+		TradableInstrument: &protoTypes.TradableInstrument{
+			Instrument: &protoTypes.Instrument{
 				Id:   "Crypto/BTCUSD/Futures/Dec19",
 				Code: "FX:BTCUSD/DEC19",
 				Name: "December 2019 BTC vs USD future",
-				Metadata: &types.InstrumentMetadata{
+				Metadata: &protoTypes.InstrumentMetadata{
 					Tags: []string{
 						"asset_class:fx/crypto",
 						"product:futures",
 					},
 				},
-				Product: &types.Instrument_Future{
-					Future: &types.Future{
+				Product: &protoTypes.Instrument_Future{
+					Future: &protoTypes.Future{
 						SettlementAsset: "Ethereum/Ether",
-						OracleSpecForSettlementData: &oraclesv1.OracleSpec{
-							PubKeys: []string{"0xDEADBEEF"},
-							Filters: []*oraclesv1.Filter{
-								{
-									Key: &oraclesv1.PropertyKey{
-										Name: "prices.ETH.value",
-										Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+						DataSourceSpecForSettlementData: &datav1.DataSourceSpec{
+							Config: &datav1.DataSourceSpecConfiguration{
+								Signers: []*datav1.Signer{pk.IntoProto()},
+								Filters: []*datav1.Filter{
+									{
+										Key: &datav1.PropertyKey{
+											Name: "prices.ETH.value",
+											Type: datav1.PropertyKey_TYPE_INTEGER,
+										},
+										Conditions: []*datav1.Condition{},
 									},
-									Conditions: []*oraclesv1.Condition{},
 								},
 							},
 						},
-						OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
-							PubKeys: []string{"0xDEADBEEF"},
-							Filters: []*oraclesv1.Filter{
-								{
-									Key: &oraclesv1.PropertyKey{
-										Name: "trading.terminated",
-										Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+						DataSourceSpecForTradingTermination: &datav1.DataSourceSpec{
+							Config: &datav1.DataSourceSpecConfiguration{
+								Signers: []*datav1.Signer{pk.IntoProto()},
+								Filters: []*datav1.Filter{
+									{
+										Key: &datav1.PropertyKey{
+											Name: "trading.terminated",
+											Type: datav1.PropertyKey_TYPE_BOOLEAN,
+										},
+										Conditions: []*datav1.Condition{},
 									},
-									Conditions: []*oraclesv1.Condition{},
 								},
 							},
 						},
-						OracleSpecBinding: &types.OracleSpecToFutureBinding{
+						DataSourceSpecBinding: &protoTypes.DataSourceSpecToFutureBinding{
 							SettlementDataProperty:     "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},
 					},
 				},
 			},
-			MarginCalculator: &types.MarginCalculator{
-				ScalingFactors: &types.ScalingFactors{
+			MarginCalculator: &protoTypes.MarginCalculator{
+				ScalingFactors: &protoTypes.ScalingFactors{
 					SearchLevel:       1.1,
 					InitialMargin:     1.2,
 					CollateralRelease: 1.4,
 				},
 			},
-			RiskModel: &types.TradableInstrument_LogNormalRiskModel{
-				LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskModel: &protoTypes.TradableInstrument_LogNormalRiskModel{
+				LogNormalRiskModel: &protoTypes.LogNormalRiskModel{
 					RiskAversionParameter: 0.01,
 					Tau:                   1.0 / 365.25 / 24,
-					Params: &types.LogNormalModelParams{
+					Params: &protoTypes.LogNormalModelParams{
 						Mu:    0,
 						R:     0.016,
 						Sigma: 0.09,
@@ -152,12 +159,12 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 	ctx := context.Background()
 
 	marketNotExistsErr := errors.New("market does not exist")
-	markets := map[string]*types.Market{
+	markets := map[string]*protoTypes.Market{
 		"BTC/DEC19": getTestMarket(),
 		"ETH/USD18": nil,
 	}
 
-	root.tradingDataClient.EXPECT().GetAsset(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&v2.GetAssetResponse{Asset: &types.Asset{}}, nil)
+	root.tradingDataClient.EXPECT().GetAsset(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&v2.GetAssetResponse{Asset: &protoTypes.Asset{}}, nil)
 
 	root.tradingDataClient.EXPECT().GetMarket(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, req *v2.GetMarketRequest, _ ...grpc.CallOption) (*v2.GetMarketResponse, error) {
 		m, ok := markets[req.MarketId]
@@ -184,7 +191,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 		Parties: &v2.PartyConnection{
 			Edges: []*v2.PartyEdge{
 				{
-					Node:   &types.Party{Id: name},
+					Node:   &protoTypes.Party{Id: name},
 					Cursor: name,
 				},
 			},
@@ -211,14 +218,14 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	ctx := context.Background()
 
 	marketID := "BTC/DEC19"
-	market := &types.Market{
+	market := &protoTypes.Market{
 		Id: marketID,
 	}
 
 	root.tradingDataClient.EXPECT().ListOrders(gomock.Any(), gomock.Any()).Times(1).Return(&v2.ListOrdersResponse{Orders: &v2.OrderConnection{
 		Edges: []*v2.OrderEdge{
 			{
-				Node: &types.Order{
+				Node: &protoTypes.Order{
 					Id:        "order-id-1",
 					Price:     "1000",
 					CreatedAt: 1,
@@ -226,7 +233,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 				Cursor: "1",
 			},
 			{
-				Node: &types.Order{
+				Node: &protoTypes.Order{
 					Id:        "order-id-2",
 					Price:     "2000",
 					CreatedAt: 2,
@@ -252,7 +259,7 @@ func TestRewardsRresolver(t *testing.T) {
 	partyResolver := root.Party()
 	root.tradingDataClient.EXPECT().ListRewardSummaries(gomock.Any(), gomock.Any()).Times(1).Return(nil, errors.New("some error"))
 	assetID := "asset"
-	r, e := partyResolver.RewardSummaries(ctx, &types.Party{Id: "some"}, &assetID)
+	r, e := partyResolver.RewardSummaries(ctx, &protoTypes.Party{Id: "some"}, &assetID)
 	require.Nil(t, r)
 	require.NotNil(t, e)
 }

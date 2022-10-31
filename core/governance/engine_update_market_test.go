@@ -21,7 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -76,19 +76,21 @@ func TestSubmittingProposalForMarketUpdateWithEarlyTerminationSucceeds(t *testin
 	proposal := eng.newProposalForMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
-	proposal.Terms.Change.(*types.ProposalTermsUpdateMarket).UpdateMarket.Changes.Instrument.Product.(*types.UpdateInstrumentConfigurationFuture).Future.OracleSpecForTradingTermination.Filters = []*types.OracleSpecFilter{{
-		Key: &types.OracleSpecPropertyKey{
-			Name: "vegaprotocol.builtin.timestamp",
-			Type: oraclespb.PropertyKey_TYPE_TIMESTAMP,
-		},
-		Conditions: []*types.OracleSpecCondition{
-			{
-				Operator: oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-				Value:    "0",
+	proposal.Terms.Change.(*types.ProposalTermsUpdateMarket).UpdateMarket.Changes.Instrument.Product.(*types.UpdateInstrumentConfigurationFuture).Future.DataSourceSpecForTradingTermination.Filters = []*types.DataSourceSpecFilter{
+		{
+			Key: &types.DataSourceSpecPropertyKey{
+				Name: "vegaprotocol.builtin.timestamp",
+				Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+			},
+			Conditions: []*types.DataSourceSpecCondition{
+				{
+					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+					Value:    "0",
+				},
 			},
 		},
-	}}
-	proposal.Terms.Change.(*types.ProposalTermsUpdateMarket).UpdateMarket.Changes.Instrument.Product.(*types.UpdateInstrumentConfigurationFuture).Future.OracleSpecBinding.TradingTerminationProperty = "vegaprotocol.builtin.timestamp"
+	}
+	proposal.Terms.Change.(*types.ProposalTermsUpdateMarket).UpdateMarket.Changes.Instrument.Product.(*types.UpdateInstrumentConfigurationFuture).Future.DataSourceSpecBinding.TradingTerminationProperty = "vegaprotocol.builtin.timestamp"
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, proposer, 1000)

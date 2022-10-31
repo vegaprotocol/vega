@@ -3,16 +3,24 @@
 ## Unreleased 0.61.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5714](https://github.com/vegaprotocol/vega/issues/5714) - Update data sourcing types
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [6608](https://github.com/vegaprotocol/vega/issues/6608) - Put embedded `postgres` files in proper state directory
+- [6552](https://github.com/vegaprotocol/vega/issues/6552) - Add `datanode` `API` for querying protocol upgrade proposals
 - [6613](https://github.com/vegaprotocol/vega/issues/6613) - Add file buffering to datanode
+- [6602](https://github.com/vegaprotocol/vega/issues/6602) - Panic if data node receives events in unexpected order
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
 
 ### 🐛 Fixes
+- [6623](https://github.com/vegaprotocol/vega/issues/6623) - Fix `nil` pointer panic in `datanode` for race condition in `recvEventRequest`
 - [6601](https://github.com/vegaprotocol/vega/issues/6601) - Removed resend event when the socket client fails
+- [5715](https://github.com/vegaprotocol/vega/issues/5715) - Fix documentation for Oracle Submission elements
+- [5770](https://github.com/vegaprotocol/vega/issues/5770) - Fix Nodes data query returns incorrect results
 
 
 ## 0.60.0

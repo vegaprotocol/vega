@@ -13,128 +13,44 @@
 package entities
 
 import (
-	"encoding/hex"
-	"encoding/json"
-	"fmt"
 	"time"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
-type Property struct {
-	Name  string
-	Value string
-}
-
 type OracleData struct {
-	PublicKeys     PublicKeys
-	Data           []Property
-	MatchedSpecIds [][]byte // pgx automatically handles [][]byte to Postgres ByteaArray mappings
-	BroadcastAt    time.Time
-	TxHash         TxHash
-	VegaTime       time.Time
-	SeqNum         uint64
+	ExternalData *ExternalData
 }
 
-func OracleDataFromProto(data *oraclespb.OracleData, txHash TxHash, vegaTime time.Time, seqNum uint64) (*OracleData, error) {
-	properties := make([]Property, 0, len(data.Data))
-	specIDs := make([][]byte, 0, len(data.MatchedSpecIds))
-
-	pubKeys, err := decodePublicKeys(data.PubKeys)
+func OracleDataFromProto(data *datapb.OracleData, txHash TxHash, vegaTime time.Time, seqNum uint64) (*OracleData, error) {
+	extData, err := ExternalDataFromProto(data.ExternalData, txHash, vegaTime, seqNum)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, property := range data.Data {
-		properties = append(properties, Property{
-			Name:  property.Name,
-			Value: property.Value,
-		})
-	}
-
-	for _, specID := range data.MatchedSpecIds {
-		id := SpecID(specID)
-		idBytes, err := id.Bytes()
-		if err != nil {
-			return nil, fmt.Errorf("cannot decode spec ID: %w", err)
-		}
-		specIDs = append(specIDs, idBytes)
-	}
-
 	return &OracleData{
-		PublicKeys:     pubKeys,
-		Data:           properties,
-		MatchedSpecIds: specIDs,
-		BroadcastAt:    NanosToPostgresTimestamp(data.BroadcastAt),
-		TxHash:         txHash,
-		VegaTime:       vegaTime,
-		SeqNum:         seqNum,
+		ExternalData: extData,
 	}, nil
 }
 
-func (od *OracleData) ToProto() *oraclespb.OracleData {
-	pubKeys := make([]string, 0, len(od.PublicKeys))
-	data := make([]*oraclespb.Property, 0, len(od.Data))
-	specIDs := make([]string, 0, len(od.MatchedSpecIds))
-
-	for _, pk := range od.PublicKeys {
-		pubKeys = append(pubKeys, hex.EncodeToString(pk))
-	}
-
-	for _, prop := range od.Data {
-		data = append(data, &oraclespb.Property{
-			Name:  prop.Name,
-			Value: prop.Value,
-		})
-	}
-
-	for _, id := range od.MatchedSpecIds {
-		hexID := hex.EncodeToString(id)
-		specIDs = append(specIDs, hexID)
-	}
-
-	return &oraclespb.OracleData{
-		PubKeys:        pubKeys,
-		Data:           data,
-		MatchedSpecIds: specIDs,
-		BroadcastAt:    od.BroadcastAt.UnixNano(),
+func (od *OracleData) ToProto() *datapb.OracleData {
+	return &datapb.OracleData{
+		ExternalData: od.ExternalData.ToProto(),
 	}
 }
 
 func (od OracleData) Cursor() *Cursor {
-	return NewCursor(OracleDataCursor{
-		VegaTime:   od.VegaTime,
-		PublicKeys: od.PublicKeys,
-	}.String())
+	return od.ExternalData.Cursor()
 }
 
 func (od OracleData) ToProtoEdge(_ ...any) (*v2.OracleDataEdge, error) {
-	return &v2.OracleDataEdge{
-		Node:   od.ToProto(),
-		Cursor: od.Cursor().Encode(),
-	}, nil
-}
-
-type OracleDataCursor struct {
-	VegaTime   time.Time  `json:"vegaTime"`
-	PublicKeys PublicKeys `json:"publicKeys"`
-}
-
-func (c OracleDataCursor) String() string {
-	bs, err := json.Marshal(c)
+	tp, err := od.ExternalData.ToOracleProtoEdge()
 	if err != nil {
-		// This really shouldn't happen.
-		panic(fmt.Errorf("couldn't marshal oracle data cursor: %w", err))
+		return nil, err
 	}
 
-	return string(bs)
+	return tp, nil
 }
 
-func (c *OracleDataCursor) Parse(cursorString string) error {
-	if cursorString == "" {
-		return nil
-	}
-
-	return json.Unmarshal([]byte(cursorString), c)
-}
+type OracleDataCursor = ExternalDataCursor

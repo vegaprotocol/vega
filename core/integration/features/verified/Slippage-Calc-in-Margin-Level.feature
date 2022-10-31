@@ -16,7 +16,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | 100000     | 0.9999999     | 3                 |
 
     And the markets:
-      | id        | quote name | asset | risk model             | margin calculator   | auction duration | fees         | price monitoring | oracle config          |
+      | id        | quote name | asset | risk model             | margin calculator   | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | USD        | USD   | lognormal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring | default-eth-for-future |
     And the following network parameters are set:
       | name                           | value |

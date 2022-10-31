@@ -449,7 +449,7 @@ func createTestBroker(transactionManager broker.TransactionManager, blockStore b
 	tes := &testEventSource{
 		eventsCh:           make(chan events.Event),
 		errorsCh:           make(chan error, 1),
-		protocolUpgradeSvc: service.NewProtocolUpgrade(),
+		protocolUpgradeSvc: service.NewProtocolUpgrade(nil, nil),
 	}
 
 	blockCommitedFunc := func(context.Context, string, int64) {}

@@ -60,19 +60,19 @@ func (u UpdateMarket) DeepClone() *UpdateMarket {
 	return &u
 }
 
-func (o OracleSpecToFutureBinding) DeepClone() *OracleSpecToFutureBinding {
+func (o DataSourceSpecToFutureBinding) DeepClone() *DataSourceSpecToFutureBinding {
 	return &o
 }
 
 func (f FutureProduct) DeepClone() *FutureProduct {
-	if f.OracleSpecForSettlementData != nil {
-		f.OracleSpecForSettlementData = f.OracleSpecForSettlementData.DeepClone()
+	if f.DataSourceSpecForSettlementData != nil {
+		f.DataSourceSpecForSettlementData = f.DataSourceSpecForSettlementData.DeepClone()
 	}
-	if f.OracleSpecForTradingTermination != nil {
-		f.OracleSpecForTradingTermination = f.OracleSpecForTradingTermination.DeepClone()
+	if f.DataSourceSpecForTradingTermination != nil {
+		f.DataSourceSpecForTradingTermination = f.DataSourceSpecForTradingTermination.DeepClone()
 	}
-	if f.OracleSpecBinding != nil {
-		f.OracleSpecBinding = f.OracleSpecBinding.DeepClone()
+	if f.DataSourceSpecBinding != nil {
+		f.DataSourceSpecBinding = f.DataSourceSpecBinding.DeepClone()
 	}
 	return &f
 }
@@ -298,14 +298,14 @@ func (m MarketData) DeepClone() *MarketData {
 }
 
 func (f Future) DeepClone() *Future {
-	if f.OracleSpecForSettlementData != nil {
-		f.OracleSpecForSettlementData = f.OracleSpecForSettlementData.DeepClone()
+	if f.DataSourceSpecForSettlementData != nil {
+		f.DataSourceSpecForSettlementData = f.DataSourceSpecForSettlementData.DeepClone()
 	}
-	if f.OracleSpecForTradingTermination != nil {
-		f.OracleSpecForTradingTermination = f.OracleSpecForTradingTermination.DeepClone()
+	if f.DataSourceSpecForTradingTermination != nil {
+		f.DataSourceSpecForTradingTermination = f.DataSourceSpecForTradingTermination.DeepClone()
 	}
-	if f.OracleSpecBinding != nil {
-		f.OracleSpecBinding = f.OracleSpecBinding.DeepClone()
+	if f.DataSourceSpecBinding != nil {
+		f.DataSourceSpecBinding = f.DataSourceSpecBinding.DeepClone()
 	}
 	return &f
 }
