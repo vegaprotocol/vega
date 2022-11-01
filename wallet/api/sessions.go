@@ -175,5 +175,5 @@ func NewConnectedWallet(hostname string, w wallet.Wallet) (*ConnectedWallet, err
 }
 
 func toFingerprint(hostname string, w wallet.Wallet) string {
-	return vgcrypto.HashStr(hostname + "::" + w.Name())
+	return vgcrypto.HashStrToHex(hostname + "::" + w.Name())
 }
