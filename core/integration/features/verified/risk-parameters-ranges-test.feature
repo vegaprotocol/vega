@@ -455,8 +455,8 @@ Feature: test risk model parameter ranges
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR52 | 5000000000000     | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp1 | party0 | ETH/MAR52 | 5000000000000     | 0.001 | buy  | BID              | 500        | 20     | amendment  |
+      | lp1 | party0 | ETH/MAR52 | 600000000         | 0.001 | sell | ASK              | 500        | 20     | submission |
+      | lp1 | party0 | ETH/MAR52 | 600000000         | 0.001 | buy  | BID              | 500        | 20     | amendment  |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
