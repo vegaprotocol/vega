@@ -50,10 +50,10 @@ Feature: test risk model parameter ranges
     #risk factor long:0.80072822791
     # actual mu = 0.0000001
 
-    # test r
+    # test r:-1<=x<=1
     Given the log normal risk model named "log-normal-risk-model-41":
-      | risk aversion | tau | mu | r   | sigma |
-      | 0.000001      | 0.1 | 0  | -20 | 1.0   |
+      | risk aversion | tau | mu | r  | sigma |
+      | 0.000001      | 0.1 | 0  | -1 | 1.0   |
     #risk factor short:3.5569036
     #risk factor long:0.801225765
     Given the log normal risk model named "log-normal-risk-model-42":
@@ -62,8 +62,8 @@ Feature: test risk model parameter ranges
     #risk factor short:3.5569036
     #risk factor long:0.801225765
     Given the log normal risk model named "log-normal-risk-model-43":
-      | risk aversion | tau | mu | r  | sigma |
-      | 0.000001      | 0.1 | 0  | 20 | 1.0   |
+      | risk aversion | tau | mu | r | sigma |
+      | 0.000001      | 0.1 | 0  | 1 | 1.0   |
     #risk factor short:3.5569036
     #risk factor long:0.801225765
 
@@ -71,15 +71,15 @@ Feature: test risk model parameter ranges
     Given the log normal risk model named "log-normal-risk-model-51":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 0.001 |
-    #risk factor short:3.5569036
-    #risk factor long:0.801225765
-    # tested in scenario 002
+    #risk factor short:0.00156597682
+    #risk factor long:0.00156362469
+
     Given the log normal risk model named "log-normal-risk-model-52":
-      | risk aversion | tau | mu | r  | sigma |
-      | 0.000001      | 0.1 | 0  | 20 | 100   |
-    #risk factor short:3.5569036
-    #risk factor long:0.801225765
-    # tested in scenario 002
+      | risk aversion | tau | mu | r | sigma |
+      | 0.000001      | 0.1 | 0  | 0 | 10    |
+    #risk factor short:55787.28815617000
+    #risk factor long:0.99999999877
+    # tested in scenario 003
 
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -101,7 +101,7 @@ Feature: test risk model parameter ranges
       | ETH/MAR41 | ETH        | USD   | log-normal-risk-model-41 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/MAR42 | ETH        | USD   | log-normal-risk-model-42 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/MAR43 | ETH        | USD   | log-normal-risk-model-43 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR51 | ETH        | USD   | log-normal-risk-model-52 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+      | ETH/MAR51 | ETH        | USD   | log-normal-risk-model-51 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/MAR52 | ETH        | USD   | log-normal-risk-model-52 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
 
     And the parties deposit on asset's general account the following amount:
@@ -111,7 +111,7 @@ Feature: test risk model parameter ranges
       | party2 | USD   | 50000000000000 |
       | party3 | USD   | 50000000000000 |
 
-  Scenario: 001, test different value of risk parameters within defined ranges
+  Scenario: 001, test different value of risk parameters within defined ranges in different market, AC: 0018-RSKM-001
 
     And the following network parameters are set:
       | name                                          | value |
@@ -146,9 +146,6 @@ Feature: test risk model parameter ranges
       | lp11 | party0 | ETH/MAR43 | 50000             | 0.001 | sell | ASK              | 500        | 20     | amendment  |
       | lp12 | party0 | ETH/MAR51 | 50000             | 0.001 | buy  | BID              | 500        | 20     | submission |
       | lp12 | party0 | ETH/MAR51 | 50000             | 0.001 | sell | ASK              | 500        | 20     | amendment  |
-      | lp13 | party0 | ETH/MAR52 | 50000             | 0.001 | buy  | BID              | 500        | 20     | submission |
-      | lp13 | party0 | ETH/MAR52 | 50000             | 0.001 | sell | ASK              | 500        | 20     | amendment  |
-
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -198,17 +195,10 @@ Feature: test risk model parameter ranges
       | party1 | ETH/MAR43 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-32  |
       | party2 | ETH/MAR43 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-33 |
       | party2 | ETH/MAR43 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-34 |
-    # | party1 | ETH/MAR51 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-41  |
-    # | party1 | ETH/MAR51 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-42  |
-    # | party2 | ETH/MAR51 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-43 |
-    # | party2 | ETH/MAR51 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-44 |
-
-    # And the parties place the following orders:
-    #   | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-    #   | party1 | ETH/MAR52 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-11  |
-    #   | party1 | ETH/MAR52 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-12  |
-    #   | party2 | ETH/MAR52 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-13 |
-    #   | party2 | ETH/MAR52 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-14 |
+      | party1 | ETH/MAR51 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-41  |
+      | party1 | ETH/MAR51 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-42  |
+      | party2 | ETH/MAR51 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-43 |
+      | party2 | ETH/MAR51 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-44 |
 
     When the opening auction period ends for market "ETH/MAR0"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR0"
@@ -232,10 +222,8 @@ Feature: test risk model parameter ranges
     When the opening auction period ends for market "ETH/MAR43"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR43"
 
-    # When the opening auction period ends for market "ETH/MAR51"
-    # And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR51"
-    # When the opening auction period ends for market "ETH/MAR52"
-    # And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR52"
+    When the opening auction period ends for market "ETH/MAR51"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR51"
 
     And the market data for the market "ETH/MAR0" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -278,15 +266,10 @@ Feature: test risk model parameter ranges
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 909       | 1099      | 35569        | 50000          | 10            |
     # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 1000 x 10 x 1 x 0.13281340025639400 = 1328
-    # And the market data for the market "ETH/MAR51" should be:
-    #   | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-    #   | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 909       | 1099      | 35569        | 50000          | 10            |
-    # #   #target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 1000 x 10 x 1 x 0.13281340025639400 = 1328
-
-    #   # And the market data for the market "ETH/MAR52" should be:
-    #   #   | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-    #   #   | 1000       | TRADING_MODE_CONTINUOUS | 43200    | 909       | 1099      | 1328         | 50000          | 10            |
-    #   # # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 1000 x 10 x 1 x 0.13281340025639400 = 1328
+    And the market data for the market "ETH/MAR51" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 1000      | 1000      | 15           | 50000          | 10            |
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 1000 x 10 x 1 x 0.00156597682 = 15
 
     Then the order book should have the following volumes for market "ETH/MAR0":
       | side | price | volume |
@@ -337,6 +320,7 @@ Feature: test risk model parameter ranges
       | sell | 1120  | 0      |
       | buy  | 900   | 113    |
       | buy  | 880   | 0      |
+
     Then the order book should have the following volumes for market "ETH/MAR42":
       | side | price | volume |
       | sell | 1100  | 92     |
@@ -350,52 +334,139 @@ Feature: test risk model parameter ranges
       | buy  | 900   | 113    |
       | buy  | 880   | 0      |
 
-    And the parties should have the following account balances:
-      | party  | asset | market id | margin | general        | bond  |
-      | party0 | USD   | ETH/MAR0  | 388414 | 49999996069776 | 50000 |
-      | party1 | USD   | ETH/MAR0  | 11770  | 49999999896890 | 0     |
-      | party2 | USD   | ETH/MAR0  | 48151  | 49999999585447 | 0     |
+    Then the order book should have the following volumes for market "ETH/MAR51":
+      | side | price | volume |
+      | sell | 1100  | 92     |
+      | sell | 1120  | 0      |
+      | buy  | 900   | 113    |
+      | buy  | 880   | 0      |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
-      | party0 | USD   | ETH/MAR11 | 537885 | 49999996069776 | 50000 |
-      | party1 | USD   | ETH/MAR11 | 12379  | 49999999896890 | 0     |
-      | party2 | USD   | ETH/MAR11 | 66219  | 49999999585447 | 0     |
+      | party0 | USD   | ETH/MAR0  | 388414 | 49999996119565 | 50000 |
+      | party1 | USD   | ETH/MAR0  | 11770  | 49999999895669 | 0     |
+      | party2 | USD   | ETH/MAR0  | 48151  | 49999999584226 | 0     |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
-      | party0 | USD   | ETH/MAR12 | 73374  | 49999996069776 | 50000 |
-      | party1 | USD   | ETH/MAR12 | 7134   | 49999999896890 | 0     |
-      | party2 | USD   | ETH/MAR12 | 10070  | 49999999585447 | 0     |
+      | party0 | USD   | ETH/MAR11 | 537885 | 49999996119565 | 50000 |
+      | party1 | USD   | ETH/MAR11 | 12379  | 49999999895669 | 0     |
+      | party2 | USD   | ETH/MAR11 | 66219  | 49999999584226 | 0     |
 
-# Scenario: 002, test mu=-20, and few other odd situations
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general        | bond  |
+      | party0 | USD   | ETH/MAR12 | 73374  | 49999996119565 | 50000 |
+      | party1 | USD   | ETH/MAR12 | 7134   | 49999999895669 | 0     |
+      | party2 | USD   | ETH/MAR12 | 10070  | 49999999584226 | 0     |
 
-#   And the following network parameters are set:
-#     | name                                          | value |
-#     | market.stake.target.timeWindow                | 24h   |
-#     | market.stake.target.scalingFactor             | 1     |
-#     | market.liquidity.bondPenaltyParameter         | 0.2   |
-#     | market.liquidity.targetstake.triggering.ratio | 0.1   |
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general        | bond  |
+      | party0 | USD   | ETH/MAR21 | 67     | 49999996119565 | 50000 |
+      | party1 | USD   | ETH/MAR21 | 1207   | 49999999895669 | 0     |
+      | party2 | USD   | ETH/MAR21 | 1207   | 49999999584226 | 0     |
 
-#   And the average block duration is "1"
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general        | bond  |
+      | party0 | USD   | ETH/MAR22 | 388414 | 49999996119565 | 50000 |
+      | party1 | USD   | ETH/MAR22 | 11770  | 49999999895669 | 0     |
+      | party2 | USD   | ETH/MAR22 | 48151  | 49999999584226 | 0     |
 
-#   And the parties submit the following liquidity provision:
-#     | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-#     | lp1 | party0 | ETH/MAR34 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
-#     | lp1 | party0 | ETH/MAR34 | 50000             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general        | bond  |
+      | party0 | USD   | ETH/MAR31 | 388414 | 49999996119565 | 50000 |
+      | party1 | USD   | ETH/MAR31 | 11770  | 49999999895669 | 0     |
+      | party2 | USD   | ETH/MAR31 | 48151  | 49999999584226 | 0     |
 
-#   And the parties place the following orders:
-#     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-#     | party1 | ETH/MAR34 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-11  |
-#     | party1 | ETH/MAR34 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-12  |
-#     | party2 | ETH/MAR34 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-13 |
-#     | party2 | ETH/MAR34 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-14 |
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general        | bond  |
+      | party0 | USD   | ETH/MAR32 | 388414 | 49999996119565 | 50000 |
+      | party1 | USD   | ETH/MAR32 | 11770  | 49999999895669 | 0     |
+      | party2 | USD   | ETH/MAR32 | 48151  | 49999999584226 | 0     |
 
-#   When the opening auction period ends for market "ETH/MAR34"
-#   And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR34"
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general        | bond  |
+      | party0 | USD   | ETH/MAR41 | 388414 | 49999996119565 | 50000 |
+      | party1 | USD   | ETH/MAR41 | 11770  | 49999999895669 | 0     |
+      | party2 | USD   | ETH/MAR41 | 48151  | 49999999584226 | 0     |
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general        | bond  |
+      | party0 | USD   | ETH/MAR42 | 388414 | 49999996119565 | 50000 |
+      | party1 | USD   | ETH/MAR42 | 11770  | 49999999895669 | 0     |
+      | party2 | USD   | ETH/MAR42 | 48151  | 49999999584226 | 0     |
 
-#   Then the parties should have the following margin levels:
-#     | party  | market id | maintenance | search | initial | release |
-#     | party0 | ETH/MAR34 | 16270       | 17897  | 19524   | 22778   |
-#     | party1 | ETH/MAR34 | 2598        | 2857   | 3117    | 3637    |
-#     | party2 | ETH/MAR34 | 2858        | 3143   | 3429    | 4001    |
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general        | bond  |
+      | party0 | USD   | ETH/MAR43 | 388414 | 49999996119565 | 50000 |
+      | party1 | USD   | ETH/MAR43 | 11770  | 49999999895669 | 0     |
+      | party2 | USD   | ETH/MAR43 | 48151  | 49999999584226 | 0     |
+
+  Scenario: 002, test market ETH/MAR23 (tau=1)
+
+    And the following network parameters are set:
+      | name                                          | value |
+      | market.stake.target.timeWindow                | 24h   |
+      | market.stake.target.scalingFactor             | 1     |
+      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | market.liquidity.targetstake.triggering.ratio | 0.1   |
+
+    And the average block duration is "1"
+
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party0 | ETH/MAR23 | 5000000           | 0.001 | sell | ASK              | 500        | 20     | submission |
+      | lp1 | party0 | ETH/MAR23 | 5000000           | 0.001 | buy  | BID              | 500        | 20     | amendment  |
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+      | party1 | ETH/MAR23 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-11  |
+      | party1 | ETH/MAR23 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-12  |
+      | party2 | ETH/MAR23 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-13 |
+      | party2 | ETH/MAR23 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-14 |
+
+    When the opening auction period ends for market "ETH/MAR23"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR23"
+
+    And the market data for the market "ETH/MAR23" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 909       | 1099      | 862176       | 5000000        | 10            |
+    #target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 1000 x 10 x 1 x 86.2176101 =862176
+
+    Then the order book should have the following volumes for market "ETH/MAR23":
+      | side | price | volume |
+      | sell | 1100  | 9092   |
+      | sell | 1120  | 0      |
+      | buy  | 900   | 11113  |
+      | buy  | 880   | 0      |
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin    | general        | bond    |
+      | party0 | USD   | ETH/MAR23 | 940565152 | 49999054434848 | 5000000 |
+      | party1 | USD   | ETH/MAR23 | 14342     | 49999999985658 | 0       |
+      | party2 | USD   | ETH/MAR23 | 1139272   | 49999998860728 | 0       |
+
+  Scenario: 003, test market ETH/MAR52(sigma=10),
+    And the following network parameters are set:
+      | name                                          | value |
+      | market.stake.target.timeWindow                | 24h   |
+      | market.stake.target.scalingFactor             | 1     |
+      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | market.liquidity.targetstake.triggering.ratio | 0.1   |
+
+    And the average block duration is "1"
+
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party0 | ETH/MAR52 | 5000000000000     | 0.001 | sell | ASK              | 500        | 20     | submission |
+      | lp1 | party0 | ETH/MAR52 | 5000000000000     | 0.001 | buy  | BID              | 500        | 20     | amendment  |
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+      | party1 | ETH/MAR52 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-11  |
+      | party1 | ETH/MAR52 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-12  |
+      | party2 | ETH/MAR52 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-13 |
+      | party2 | ETH/MAR52 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-14 |
+    When the opening auction period ends for market "ETH/MAR52"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/MAR52"
+
+# since the risk factor is 999999.00000000000, target stake would be 1000*10*55787.28815617000 = 557872881
+
+
