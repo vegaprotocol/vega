@@ -891,7 +891,9 @@ func (m *Market) cancelLiquidityProvision(
 	ctx context.Context, party string, isDistressed bool,
 ) error {
 	// cancel the liquidity provision
-	cancelOrders, err := m.liquidity.CancelLiquidityProvision(ctx, party)
+	err := m.liquidity.CancelLiquidityProvision(ctx, party)
+
+	cancelOrders := m.matching.GetLiquidityOrders(party)
 	if err != nil {
 		m.log.Debug("unable to cancel liquidity provision",
 			logging.String("party-id", party),
@@ -900,6 +902,14 @@ func (m *Market) cancelLiquidityProvision(
 		)
 		return err
 	}
+
+	// FIXME(JEREMY): if sorting them is the actual solution
+	// review the implementation to write some eventually more efficient
+	// way to sort this here and make sure that all orders are always
+	// cancelled in the same order
+	sort.Slice(cancelOrders, func(i, j int) bool {
+		return cancelOrders[i].ID < cancelOrders[j].ID
+	})
 
 	// is our party distressed?
 	// if yes, the orders have been cancelled by the resolve
@@ -1157,7 +1167,7 @@ func (m *Market) amendLiquidityProvisionContinuous(
 	}
 
 	// first remove all existing orders from the potential positions
-	lorders := m.liquidity.GetLiquidityOrders(party)
+	lorders := m.matching.GetLiquidityOrders(party)
 	for _, v := range lorders {
 		// ensure the order is on the actual potential position first
 		if order, foundOnBook, _ := m.getOrderByID(v.ID); foundOnBook {

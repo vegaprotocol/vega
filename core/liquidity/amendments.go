@@ -62,19 +62,12 @@ func (e *Engine) AmendLiquidityProvision(
 	// get the liquidity order to be cancelled
 	// NOTE: safe to iterate over the map straight away here  as
 	// no operation is done on orders
-	cancels := make([]*types.Order, 0, len(e.liquidityOrders.m[party]))
-	for _, o := range e.liquidityOrders.m[party] {
-		cancels = append(cancels, o)
-	}
-
+	cancels := e.orderBook.GetLiquidityOrders(party)
 	sort.Slice(cancels, func(i, j int) bool {
 		return cancels[i].ID < cancels[j].ID
 	})
 
-	// now let's apply all changes
-	// first reset the lp orders map
-	e.liquidityOrders.ResetForParty(party)
-	// then update the LP
+	// update the LP
 	lp.UpdatedAt = e.timeService.GetTimeNow().UnixNano()
 	lp.CommitmentAmount = lpa.CommitmentAmount.Clone()
 	lp.Fee = lpa.Fee

@@ -195,7 +195,7 @@ func testSubmissionCRUD(t *testing.T) {
 		events.NewLiquidityProvisionEvent(ctx, expected),
 	).Times(1)
 
-	_, err = tng.engine.CancelLiquidityProvision(ctx, party)
+	err = tng.engine.CancelLiquidityProvision(ctx, party)
 	require.NoError(t, err)
 	require.Nil(t, tng.engine.LiquidityProvisionByPartyID(party),
 		"Party '%s' should not be a LiquidityProvider after Committing 0 amount", party)
@@ -214,6 +214,7 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	tng.orderbook.EXPECT().GetOrdersPerParty(party).Times(1)
+	tng.orderbook.EXPECT().GetLiquidityOrders(gomock.Any()).AnyTimes()
 
 	// Send a submission to create the shape
 	lpspb := &commandspb.LiquidityProvisionSubmission{
@@ -269,7 +270,7 @@ func testCancelNonExistingSubmission(t *testing.T) {
 	)
 	defer tng.ctrl.Finish()
 
-	_, err := tng.engine.CancelLiquidityProvision(ctx, party)
+	err := tng.engine.CancelLiquidityProvision(ctx, party)
 	require.Error(t, err)
 }
 
@@ -407,6 +408,7 @@ func TestUpdate(t *testing.T) {
 	// We don't care about the following calls
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tng.orderbook.EXPECT().GetLiquidityOrders(gomock.Any()).Times(2)
 
 	// Send a submission to create the shape
 	lpspb := &commandspb.LiquidityProvisionSubmission{
@@ -456,6 +458,8 @@ func TestUpdate(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, creates, 3)
 
+	tng.orderbook.EXPECT().GetLiquidityOrders(gomock.Any()).Times(2).Return(creates)
+
 	// Manual order satisfies the commitment, LiqOrders should be removed
 	orders[0].Remaining, orders[0].Size = 1000, 1000
 	orders[1].Remaining, orders[1].Size = 1000, 1000
@@ -465,6 +469,7 @@ func TestUpdate(t *testing.T) {
 	require.Len(t, toCancels[0].OrderIDs, 3)
 	require.Equal(t, toCancels[0].Party, party)
 
+	tng.orderbook.EXPECT().GetLiquidityOrders(gomock.Any()).Times(2)
 	newOrders, toCancels, err = tng.engine.Update(ctx, markPriceD, markPriceD, fn, orders)
 	require.NoError(t, err)
 	require.Len(t, newOrders, 0)
@@ -545,7 +550,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, num.Sum(lp1.CommitmentAmount, lp2.CommitmentAmount, lp3.CommitmentAmount), suppliedStake)
 
-	_, err = tng.engine.CancelLiquidityProvision(ctx, party1)
+	err = tng.engine.CancelLiquidityProvision(ctx, party1)
 	require.NoError(t, err)
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, num.Sum(lp2.CommitmentAmount, lp3.CommitmentAmount), suppliedStake)

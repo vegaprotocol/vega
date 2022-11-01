@@ -158,18 +158,7 @@ func (m *Market) repriceAllSpecialOrders(
 	needsPeggedUpdates := len(parked) > 0 || len(toSubmit) > 0
 
 	// now we get the list of all LP orders, and get them out of the book
-	lpOrders := m.liquidity.GetAllLiquidityOrders()
-	// now we remove them all from the book
-	for _, order := range lpOrders {
-		// Remove order if any volume remains,
-		// otherwise it's already been popped by the matching engine.
-		cancellation, err := m.cancelOrder(ctx, order.Party, order.ID)
-		if cancellation == nil || err != nil {
-			m.log.Panic("could not remove liquidity order from the book",
-				logging.Order(*order),
-				logging.Error(err))
-		}
-	}
+	lpOrders := m.matching.GetAllLiquidityOrders()
 
 	// now no lp orders are in the book anymore,
 	// we can then just re-submit all pegged orders
@@ -205,6 +194,18 @@ func (m *Market) repriceAllSpecialOrders(
 		// TODO: figure out if error are really possible there,
 		// But I'd think not.
 		m.log.Error("could not update liquidity", logging.Error(err))
+	}
+
+	// now we remove them all from the book now we have calculated the new values
+	for _, order := range lpOrders {
+		// Remove order if any volume remains,
+		// otherwise it's already been popped by the matching engine.
+		cancellation, err := m.cancelOrder(ctx, order.Party, order.ID)
+		if cancellation == nil || err != nil {
+			m.log.Panic("could not remove liquidity order from the book",
+				logging.Order(*order),
+				logging.Error(err))
+		}
 	}
 
 	return m.updateLPOrders(ctx, lpOrders, newOrders, cancels)
