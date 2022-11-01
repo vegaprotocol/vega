@@ -19,6 +19,8 @@ type Config struct {
 
 	StartWebUI encoding.Bool `long:"start-web-ui" description:"if true the store will expose the ipfs web UI"`
 	WebUIPort  int           `long:"webui-port" description:"webui port"`
+
+	HistoryRetentionBlockSpan int64 `long:"history-retention-block-span" description:"the block span of history, from the most recent history segment, that should be retained"`
 }
 
 func NewDefaultConfig() Config {
@@ -31,5 +33,7 @@ func NewDefaultConfig() Config {
 
 		StartWebUI: false,
 		WebUIPort:  5001,
+
+		HistoryRetentionBlockSpan: 604800, // One week of history at 1s per block
 	}
 }

@@ -19,6 +19,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/oracles/adaptors"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 
 	"code.vegaprotocol.io/oracles-relay/openoracle"
@@ -191,7 +192,9 @@ func testOpenOracleAdaptorNormalisingCompatibleAndValidDataSucceeds(t *testing.T
 			"prices.GRT.value":      "550350",
 			"prices.GRT.timestamp":  "1611924180",
 		},
-		PubKeys: []string{"0xfCEAdAFab14d46e20144F48824d0C09B1a03F2BC"},
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xfCEAdAFab14d46e20144F48824d0C09B1a03F2BC", types.DataSignerTypePubKey),
+		},
 	}
 
 	require.NoError(t, err)

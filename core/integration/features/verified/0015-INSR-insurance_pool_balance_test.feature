@@ -12,7 +12,7 @@ Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsh
       | 2             | 3              | 5              |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator   | auction duration | fees         | price monitoring | oracle config          |
+      | id        | quote name | asset | risk model          | margin calculator   | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | USD        | USD   | simple-risk-model-1 | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
       | name                           | value |
@@ -290,7 +290,7 @@ Scenario: case 2 using lognomal risk model (0015-INSR-003, 0010-MARG-009, 0010-M
       | 1.2           | 1.5            | 2              |
 
     And the markets:
-      | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring  | oracle config          |
+      | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring  | data source config          |
       | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none | default-eth-for-future |
 
     And the following network parameters are set:

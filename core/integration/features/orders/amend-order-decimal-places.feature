@@ -6,7 +6,7 @@ Feature: Amend orders
       | id  | decimal places |
       | BTC | 5              |
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | oracle config          | decimal places |
+      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | data source config          | decimal places |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2              |
     And the following network parameters are set:
       | name                           | value |

@@ -180,6 +180,24 @@ func DecimalGTE(f num.Decimal) func(num.Decimal) error {
 	}
 }
 
+func DecimalDependentLT(otherName string, other *Decimal) func(num.Decimal) error {
+	return func(val num.Decimal) error {
+		if val.LessThan(other.value) {
+			return nil
+		}
+		return fmt.Errorf("expect < %v (%s) got %v", other.value, otherName, val)
+	}
+}
+
+func DecimalDependentLTE(otherName string, other *Decimal) func(num.Decimal) error {
+	return func(val num.Decimal) error {
+		if val.LessThanOrEqual(other.value) {
+			return nil
+		}
+		return fmt.Errorf("expect <= %v (%s) got %v", other.value, otherName, val)
+	}
+}
+
 func DecimalGT(f num.Decimal) func(num.Decimal) error {
 	return func(val num.Decimal) error {
 		if val.GreaterThan(f) {
@@ -615,6 +633,42 @@ func (d *Duration) MustUpdate(value string) *Duration {
 
 func (d *Duration) String() string {
 	return d.rawval
+}
+
+func DurationDependentGT(otherName string, other *Duration) DurationRule {
+	return func(val time.Duration) error {
+		if val > other.value {
+			return nil
+		}
+		return fmt.Errorf("expect > %v (%s) got %v", other.value, otherName, val)
+	}
+}
+
+func DurationDependentGTE(otherName string, other *Duration) DurationRule {
+	return func(val time.Duration) error {
+		if val >= other.value {
+			return nil
+		}
+		return fmt.Errorf("expect >= %v (%s) got %v", other.value, otherName, val)
+	}
+}
+
+func DurationDependentLT(otherName string, other *Duration) DurationRule {
+	return func(val time.Duration) error {
+		if val < other.value {
+			return nil
+		}
+		return fmt.Errorf("expect < %v (%s) got %v", other.value, otherName, val)
+	}
+}
+
+func DurationDependentLTE(otherName string, other *Duration) DurationRule {
+	return func(val time.Duration) error {
+		if val <= other.value {
+			return nil
+		}
+		return fmt.Errorf("expect <= %v (%s) got %v", other.value, otherName, val)
+	}
 }
 
 func DurationGTE(i time.Duration) func(time.Duration) error {

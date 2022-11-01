@@ -24,7 +24,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/types"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -52,10 +52,10 @@ func TestInstrument(t *testing.T) {
 		pinst := getValidInstrumentProto()
 		pinst.Product = &types.InstrumentFuture{
 			Future: &types.Future{
-				SettlementAsset:                 "Ethereum/Ether",
-				OracleSpecForSettlementData:     nil,
-				OracleSpecForTradingTermination: nil,
-				OracleSpecBinding: &types.OracleSpecBindingForFuture{
+				SettlementAsset:                     "Ethereum/Ether",
+				DataSourceSpecForSettlementData:     nil,
+				DataSourceSpecForTradingTermination: nil,
+				DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
 					SettlementDataProperty:     "prices.ETH.value",
 					TradingTerminationProperty: "trading.terminated",
 				},
@@ -64,7 +64,7 @@ func TestInstrument(t *testing.T) {
 		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
 		require.NotNil(t, err)
 		assert.Nil(t, inst)
-		assert.Equal(t, "unable to instantiate product from instrument configuration: an oracle spec and an oracle spec binding are required", err.Error())
+		assert.Equal(t, "unable to instantiate product from instrument configuration: a data source spec and spec binding are required", err.Error())
 	})
 
 	t.Run("nil oracle spec binding", func(t *testing.T) {
@@ -72,37 +72,41 @@ func TestInstrument(t *testing.T) {
 		pinst.Product = &types.InstrumentFuture{
 			Future: &types.Future{
 				SettlementAsset: "Ethereum/Ether",
-				OracleSpecForSettlementData: &types.OracleSpec{
-					PubKeys: []string{"0xDEADBEEF"},
-					Filters: []*types.OracleSpecFilter{
-						{
-							Key: &types.OracleSpecPropertyKey{
-								Name: "prices.ETH.value",
-								Type: oraclespb.PropertyKey_TYPE_INTEGER,
+				DataSourceSpecForSettlementData: &types.DataSourceSpec{
+					Config: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+						Filters: []*types.DataSourceSpecFilter{
+							{
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.ETH.value",
+									Type: datapb.PropertyKey_TYPE_INTEGER,
+								},
+								Conditions: []*types.DataSourceSpecCondition{},
 							},
-							Conditions: []*types.OracleSpecCondition{},
 						},
 					},
 				},
-				OracleSpecForTradingTermination: &types.OracleSpec{
-					PubKeys: []string{"0xDEADBEEF"},
-					Filters: []*types.OracleSpecFilter{
-						{
-							Key: &types.OracleSpecPropertyKey{
-								Name: "trading.terminated",
-								Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
+				DataSourceSpecForTradingTermination: &types.DataSourceSpec{
+					Config: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+						Filters: []*types.DataSourceSpecFilter{
+							{
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "trading.terminated",
+									Type: datapb.PropertyKey_TYPE_BOOLEAN,
+								},
+								Conditions: []*types.DataSourceSpecCondition{},
 							},
-							Conditions: []*types.OracleSpecCondition{},
 						},
 					},
 				},
-				OracleSpecBinding: nil,
+				DataSourceSpecBinding: nil,
 			},
 		}
 		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
 		require.NotNil(t, err)
 		assert.Nil(t, inst)
-		assert.Equal(t, "unable to instantiate product from instrument configuration: an oracle spec and an oracle spec binding are required", err.Error())
+		assert.Equal(t, "unable to instantiate product from instrument configuration: a data source spec and spec binding are required", err.Error())
 	})
 }
 
@@ -138,31 +142,35 @@ func getValidInstrumentProto() *types.Instrument {
 			Future: &types.Future{
 				QuoteName:       "USD",
 				SettlementAsset: "Ethereum/Ether",
-				OracleSpecForSettlementData: &types.OracleSpec{
-					PubKeys: []string{"0xDEADBEEF"},
-					Filters: []*types.OracleSpecFilter{
-						{
-							Key: &types.OracleSpecPropertyKey{
-								Name: "prices.ETH.value",
-								Type: oraclespb.PropertyKey_TYPE_INTEGER,
+				DataSourceSpecForSettlementData: &types.DataSourceSpec{
+					Config: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+						Filters: []*types.DataSourceSpecFilter{
+							{
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.ETH.value",
+									Type: datapb.PropertyKey_TYPE_INTEGER,
+								},
+								Conditions: []*types.DataSourceSpecCondition{},
 							},
-							Conditions: []*types.OracleSpecCondition{},
 						},
 					},
 				},
-				OracleSpecForTradingTermination: &types.OracleSpec{
-					PubKeys: []string{"0xDEADBEEF"},
-					Filters: []*types.OracleSpecFilter{
-						{
-							Key: &types.OracleSpecPropertyKey{
-								Name: "trading.terminated",
-								Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
+				DataSourceSpecForTradingTermination: &types.DataSourceSpec{
+					Config: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+						Filters: []*types.DataSourceSpecFilter{
+							{
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "trading.terminated",
+									Type: datapb.PropertyKey_TYPE_BOOLEAN,
+								},
+								Conditions: []*types.DataSourceSpecCondition{},
 							},
-							Conditions: []*types.OracleSpecCondition{},
 						},
 					},
 				},
-				OracleSpecBinding: &types.OracleSpecBindingForFuture{
+				DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
 					SettlementDataProperty:     "prices.ETH.value",
 					TradingTerminationProperty: "trading.terminated",
 				},

@@ -4,7 +4,7 @@ Feature: Test LP orders
   Background:
 
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
       | name                           | value |
@@ -75,7 +75,7 @@ Feature: Test LP orders
       | id  | decimal places |
       | ETH | 3              |
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |decimal places | position decimal places |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |decimal places | position decimal places |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |   1           |  2                      |
     And the following network parameters are set:
       | name                           | value |

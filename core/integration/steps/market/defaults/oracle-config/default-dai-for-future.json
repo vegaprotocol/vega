@@ -1,34 +1,50 @@
 {
-  "oracleSpecForSettlementData": {
+  "dataSourceSpecForSettlementData": {
     "id": "100",
-    "pubKeys": ["0x0000"],
-    "filters": [
-      {
-        "key": {
-          "name": "price.DAI.value",
-          "type": "TYPE_INTEGER"
-        },
-        "conditions": [
-        ]
-      }
-    ],
+    "config": {
+      "signers": [
+        {
+          "pubKey": {
+            "key": "0x0000"
+          }
+        }
+      ],
+      "filters": [
+        {
+          "key": {
+            "name": "price.DAI.value",
+            "type": "TYPE_INTEGER"
+          },
+          "conditions": [
+          ]
+        }
+      ]
+    },
     "status": "STATUS_UNSPECIFIED"
   },
-  "oracleSpecForTradingTermination": {
-    "pubKeys": ["0x0000"],
-    "filters": [
-      {
-        "key": {
-          "name": "price.DAI.value",
-          "type": "TYPE_INTEGER"
-        },
-        "conditions": [
-        ]
-      }
-    ],
+  "dataSourceSpecForTradingTermination": {
+    "config": {
+      "signers": [
+        {
+          "pubKey": {
+            "key": "0x0000"
+          }
+        }
+      ],
+      "filters": [
+        {
+          "key": {
+            "name": "price.DAI.value",
+            "type": "TYPE_INTEGER"
+          },
+          "conditions": [
+          ]
+        }
+      ]
+    },
     "status": "STATUS_UNSPECIFIED"
-  },
-  "oracleSpecBinding": {
+},
+  "dataSourceSpecBinding": {
     "settlementDataProperty": "price.DAI.value",
     "tradingTerminationProperty": "price.DAI.value"
   },

@@ -34,6 +34,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/version"
 
@@ -1671,7 +1673,11 @@ func (t *tradingDataServiceV2) GetOracleSpec(ctx context.Context, req *v2.GetOra
 	}
 
 	return &v2.GetOracleSpecResponse{
-		OracleSpec: spec.ToProto(),
+		OracleSpec: &datapb.OracleSpec{
+			ExternalDataSourceSpec: &v1.ExternalDataSourceSpec{
+				Spec: spec.ToProto().ExternalDataSourceSpec.Spec,
+			},
+		},
 	}, nil
 }
 
@@ -1723,7 +1729,7 @@ func (t *tradingDataServiceV2) ListOracleData(ctx context.Context, req *v2.ListO
 	}
 
 	if err != nil {
-		apiError(codes.Internal, ErrOracleServiceGetSpec, fmt.Errorf("could not retrieve data for OracleSpecID: %s %w", *req.OracleSpecId, err))
+		return nil, apiError(codes.Internal, ErrOracleServiceGetSpec, fmt.Errorf("could not retrieve data for OracleSpecID: %s %w", *req.OracleSpecId, err))
 	}
 
 	edges, err := makeEdges[*v2.OracleDataEdge](data)
@@ -1839,6 +1845,8 @@ func (t *tradingDataServiceV2) GetGovernanceData(ctx context.Context, req *v2.Ge
 }
 
 func (t *tradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.ListGovernanceDataRequest) (*v2.ListGovernanceDataResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListGovernanceDataV2")()
+
 	var state *entities.ProposalState
 
 	if req.ProposalState != nil {
@@ -1866,12 +1874,37 @@ func (t *tradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.L
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
+
+	for i := range edges {
+		edges[i].Node.Yes, edges[i].Node.No, err = t.getVotesByProposal(ctx, edges[i].Node.Proposal.Id)
+		if err != nil {
+			return nil, apiError(codes.Internal, err)
+		}
+	}
+
 	proposalsConnection := &v2.GovernanceDataConnection{
 		Edges:    edges,
 		PageInfo: pageInfo.ToProto(),
 	}
 
 	return &v2.ListGovernanceDataResponse{Connection: proposalsConnection}, nil
+}
+
+func (t *tradingDataServiceV2) getVotesByProposal(ctx context.Context, proposalID string) (yesVotes, noVotes []*vega.Vote, err error) {
+	votes, err := t.governanceService.GetVotes(ctx, &proposalID, nil, nil)
+	if err != nil {
+		return nil, nil, apiError(codes.Internal, err)
+	}
+
+	for _, vote := range votes {
+		switch vote.Value {
+		case entities.VoteValueYes:
+			yesVotes = append(yesVotes, vote.ToProto())
+		case entities.VoteValueNo:
+			noVotes = append(noVotes, vote.ToProto())
+		}
+	}
+	return
 }
 
 // Get all Votes using a cursor based pagination model.
@@ -2363,16 +2396,19 @@ func (t *tradingDataServiceV2) estimateFee(
 		return nil, apiError(codes.InvalidArgument, errors.New("invalid order price"))
 	}
 
-	base := num.DecimalFromUint(price.Mul(price, num.NewUint(size)))
+	mdpd := num.DecimalFromFloat(10).
+		Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
+
+	base := num.DecimalFromUint(price.Mul(price, num.NewUint(size))).Div(mdpd)
 	maker, infra, liquidity, err := t.feeFactors(mkt)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
 
 	return &vega.Fee{
-		MakerFee:          base.Mul(num.NewDecimalFromFloat(maker)).String(),
-		InfrastructureFee: base.Mul(num.NewDecimalFromFloat(infra)).String(),
-		LiquidityFee:      base.Mul(num.NewDecimalFromFloat(liquidity)).String(),
+		MakerFee:          base.Mul(num.NewDecimalFromFloat(maker)).Round(0).String(),
+		InfrastructureFee: base.Mul(num.NewDecimalFromFloat(infra)).Round(0).String(),
+		LiquidityFee:      base.Mul(num.NewDecimalFromFloat(liquidity)).Round(0).String(),
 	}, nil
 }
 
@@ -2456,17 +2492,21 @@ func (t *tradingDataServiceV2) estimateMargin(
 		markPrice, _ = num.DecimalFromString(rPrice)
 	}
 
-	maintenanceMargin := num.DecimalFromFloat(float64(rSize)).Mul(f).Mul(markPrice)
+	mdpd := num.DecimalFromFloat(10).
+		Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
+
+	maintenanceMargin := num.DecimalFromFloat(float64(rSize)).
+		Mul(f).Mul(markPrice).Div(mdpd)
 	// now we use the risk factors
 	return &vega.MarginLevels{
 		PartyId:                rParty,
 		MarketId:               mktProto.GetId(),
 		Asset:                  asset,
 		Timestamp:              0,
-		MaintenanceMargin:      maintenanceMargin.String(),
-		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel)).String(),
-		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)).String(),
-		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease)).String(),
+		MaintenanceMargin:      maintenanceMargin.Round(0).String(),
+		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel)).Round(0).String(),
+		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)).Round(0).String(),
+		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease)).Round(0).String(),
 	}, nil
 }
 
@@ -2696,6 +2736,47 @@ func (t *tradingDataServiceV2) GetProtocolUpgradeStatus(context.Context, *v2.Get
 	ready := t.protocolUpgradeService.GetProtocolUpgradeStarted()
 	return &v2.GetProtocolUpgradeStatusResponse{
 		Ready: ready,
+	}, nil
+}
+
+func (t *tradingDataServiceV2) ListProtocolUpgradeProposals(ctx context.Context, req *v2.ListProtocolUpgradeProposalsRequest) (*v2.ListProtocolUpgradeProposalsResponse, error) {
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("empty request"))
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	var status *entities.ProtocolUpgradeProposalStatus
+	if req.Status != nil {
+		s := entities.ProtocolUpgradeProposalStatus(*req.Status)
+		status = &s
+	}
+
+	pups, pageInfo, err := t.protocolUpgradeService.ListProposals(
+		ctx,
+		status,
+		req.ApprovedBy,
+		pagination,
+	)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	edges, err := makeEdges[*v2.ProtocolUpgradeProposalEdge](pups)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	connection := v2.ProtocolUpgradeProposalConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListProtocolUpgradeProposalsResponse{
+		ProtocolUpgradeProposals: &connection,
 	}, nil
 }
 

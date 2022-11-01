@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package vega.commands.v1;
+option go_package = "code.vegaprotocol.io/vega/protos/vega/commands/v1";
+
+// Command to submit new Oracle data from third party providers
+message OracleDataSubmission {
+  // The supported Oracle sources
+  enum OracleSource {
+    // The default value
+    ORACLE_SOURCE_UNSPECIFIED = 0;
+    // Specifies that the payload will be base64 encoded JSON conforming to the Open Oracle standard
+    ORACLE_SOURCE_OPEN_ORACLE = 1;
+    // Specifies that the payload will be base64 encoded JSON, but does not specify the shape of the data
+    ORACLE_SOURCE_JSON = 2;
+  }
+  // The source from which the data is coming from. Must be base64 encoded.
+  // Oracle data a type of external data source data.
+  OracleSource source = 1;
+  // The data provided by the data source
+  // In the case of Open Oracle - it will be the entire object - it will contain messages, signatures and price data
+  bytes payload = 2;
+}

@@ -1,22 +1,41 @@
 # Changelog
 
-## Unreleased 0.61.0
+## Unreleased 0.62.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6598](https://github.com/vegaprotocol/vega/issues/6598) - Rework `vega tools snapshot` command to be more consistent with other CLI options
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [6608](https://github.com/vegaprotocol/vega/issues/6608) - Put embedded `postgres` files in proper state directory
-- [6613](https://github.com/vegaprotocol/vega/issues/6613) - Add file buffering to datanode
-- [6602](https://github.com/vegaprotocol/vega/issues/6602) - Panic if data node receives events in unexpected order
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.61.0
+
+### 🚨 Breaking changes
+- [5714](https://github.com/vegaprotocol/vega/issues/5714) - Update data sourcing types
+
+### 🛠 Improvements
+- [6608](https://github.com/vegaprotocol/vega/issues/6608) - Put embedded `postgres` files in proper state directory
+- [6552](https://github.com/vegaprotocol/vega/issues/6552) - Add `datanode` `API` for querying protocol upgrade proposals
+- [6613](https://github.com/vegaprotocol/vega/issues/6613) - Add file buffering to datanode
+- [6602](https://github.com/vegaprotocol/vega/issues/6602) - Panic if data node receives events in unexpected order
+- [6595](https://github.com/vegaprotocol/vega/issues/6595) - Support for cross network parameter dependency and validation
+- [6627](https://github.com/vegaprotocol/vega/issues/6627) - Fix order estimates
+- [6604](https://github.com/vegaprotocol/vega/issues/6604) - Fix transfer funds documentations in `protos`
+- [6652](https://github.com/vegaprotocol/vega/issues/6652) - Change protocol upgrade consensus do be based on voting power
+
 ### 🐛 Fixes
+- [6356](https://github.com/vegaprotocol/vega/issues/6356) - When querying for proposals from `GQL` return votes.
+- [6623](https://github.com/vegaprotocol/vega/issues/6623) - Fix `nil` pointer panic in `datanode` for race condition in `recvEventRequest`
 - [6601](https://github.com/vegaprotocol/vega/issues/6601) - Removed resend event when the socket client fails
+- [5715](https://github.com/vegaprotocol/vega/issues/5715) - Fix documentation for Oracle Submission elements
+- [5770](https://github.com/vegaprotocol/vega/issues/5770) - Fix Nodes data query returns incorrect results
 
 
 ## 0.60.0
@@ -33,7 +52,7 @@
 - [6596](https://github.com/vegaprotocol/vega/issues/6596) - Add market risk parameter validation
 
 ### 🐛 Fixes
-- [6410](https://github.com/vegaprotocol/vega/issues/6410) - Add input validation for the `EstimateFee` endpoint. 
+- [6410](https://github.com/vegaprotocol/vega/issues/6410) - Add input validation for the `EstimateFee` endpoint.
 - [6556](https://github.com/vegaprotocol/vega/issues/6556) - Limit ledger entries filtering complexity and potential number of items.
 - [6539](https://github.com/vegaprotocol/vega/issues/6539) - Fix total fee calculation in estimate order
 - [6584](https://github.com/vegaprotocol/vega/issues/6584) - Simplify `ListBalanceChanges`, removing aggregation and forward filling for now

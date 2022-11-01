@@ -20,7 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
 )
 
@@ -33,10 +33,14 @@ func TestOracleData_Push(t *testing.T) {
 	store.EXPECT().Add(context.Background(), gomock.Any()).Times(1)
 	subscriber := sqlsubscribers.NewOracleData(store, logging.NewTestLogger())
 	subscriber.Flush(context.Background())
-	subscriber.Push(context.Background(), events.NewOracleDataEvent(context.Background(), oraclespb.OracleData{
-		PubKeys:        nil,
-		Data:           nil,
-		MatchedSpecIds: nil,
-		BroadcastAt:    0,
+	subscriber.Push(context.Background(), events.NewOracleDataEvent(context.Background(), datapb.OracleData{
+		ExternalData: &datapb.ExternalData{
+			Data: &datapb.Data{
+				Signers:        nil,
+				Data:           nil,
+				MatchedSpecIds: nil,
+				BroadcastAt:    0,
+			},
+		},
 	}))
 }

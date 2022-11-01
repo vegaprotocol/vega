@@ -17,7 +17,7 @@ import (
 	"context"
 	"testing"
 
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
@@ -82,6 +82,10 @@ func TestEmptyMarkets(t *testing.T) {
 }
 
 func getMarketConfig() *types.Market {
+	pubKeys := []*types.Signer{
+		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	}
+
 	return &types.Market{
 		ID: "MarketID", // ID will be generated
 		PriceMonitoringSettings: &types.PriceMonitoringSettings{
@@ -132,33 +136,37 @@ func getMarketConfig() *types.Market {
 				Product: &types.InstrumentFuture{
 					Future: &types.Future{
 						SettlementAsset: "Ethereum/Ether",
-						OracleSpecForSettlementData: &types.OracleSpec{
-							ID:      "1",
-							PubKeys: []string{"0xDEADBEEF"},
-							Filters: []*types.OracleSpecFilter{
-								{
-									Key: &types.OracleSpecPropertyKey{
-										Name: "prices.ETH.value",
-										Type: oraclespb.PropertyKey_TYPE_INTEGER,
+						DataSourceSpecForSettlementData: &types.DataSourceSpec{
+							ID: "1",
+							Config: &types.DataSourceSpecConfiguration{
+								Signers: pubKeys,
+								Filters: []*types.DataSourceSpecFilter{
+									{
+										Key: &types.DataSourceSpecPropertyKey{
+											Name: "prices.ETH.value",
+											Type: datapb.PropertyKey_TYPE_INTEGER,
+										},
+										Conditions: []*types.DataSourceSpecCondition{},
 									},
-									Conditions: []*types.OracleSpecCondition{},
 								},
 							},
 						},
-						OracleSpecForTradingTermination: &types.OracleSpec{
-							ID:      "2",
-							PubKeys: []string{"0xDEADBEEF"},
-							Filters: []*types.OracleSpecFilter{
-								{
-									Key: &types.OracleSpecPropertyKey{
-										Name: "trading.terminated",
-										Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
+						DataSourceSpecForTradingTermination: &types.DataSourceSpec{
+							ID: "2",
+							Config: &types.DataSourceSpecConfiguration{
+								Signers: pubKeys,
+								Filters: []*types.DataSourceSpecFilter{
+									{
+										Key: &types.DataSourceSpecPropertyKey{
+											Name: "trading.terminated",
+											Type: datapb.PropertyKey_TYPE_BOOLEAN,
+										},
+										Conditions: []*types.DataSourceSpecCondition{},
 									},
-									Conditions: []*types.OracleSpecCondition{},
 								},
 							},
 						},
-						OracleSpecBinding: &types.OracleSpecBindingForFuture{
+						DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
 							SettlementDataProperty:     "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},

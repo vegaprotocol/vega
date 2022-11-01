@@ -70,6 +70,14 @@ func (l LevelDbBackedIndex) Add(indexEntry SegmentIndexEntry) error {
 	return nil
 }
 
+func (l LevelDbBackedIndex) Remove(indexEntry SegmentIndexEntry) error {
+	if err := l.db.Delete(heightToKey(indexEntry.HeightTo), &opt.WriteOptions{}); err != nil {
+		return fmt.Errorf("failed to delete key:%w", err)
+	}
+
+	return nil
+}
+
 func (l LevelDbBackedIndex) ListAllEntriesOldestFirst() ([]SegmentIndexEntry, error) {
 	iter := l.db.NewIterator(&util.Range{
 		Start: nil,

@@ -31,8 +31,8 @@ import (
 	"code.vegaprotocol.io/vega/protos/vega"
 	pbtypes "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 
 	"google.golang.org/grpc/codes"
 )
@@ -2059,9 +2059,13 @@ func (t *tradingDataService) OracleSpecs(ctx context.Context, _ *protoapi.Oracle
 		return nil, apiError(codes.Internal, err)
 	}
 
-	out := make([]*oraclespb.OracleSpec, 0, len(specs))
+	out := make([]*datapb.OracleSpec, 0, len(specs))
 	for _, v := range specs {
-		out = append(out, v.ToProto())
+		out = append(out, &datapb.OracleSpec{
+			ExternalDataSourceSpec: &datapb.ExternalDataSourceSpec{
+				Spec: v.ToProto(),
+			},
+		})
 	}
 
 	return &protoapi.OracleSpecsResponse{
@@ -2078,7 +2082,7 @@ func (t *tradingDataService) OracleDataBySpec(ctx context.Context, req *protoapi
 	if err != nil {
 		return nil, apiError(codes.NotFound, err)
 	}
-	out := make([]*oraclespb.OracleData, 0, len(data))
+	out := make([]*datapb.OracleData, 0, len(data))
 	for _, v := range data {
 		out = append(out, v.ToProto())
 	}
@@ -2094,7 +2098,7 @@ func (t *tradingDataService) ListOracleData(ctx context.Context, _ *protoapi.Lis
 		return nil, apiError(codes.Internal, err)
 	}
 
-	out := make([]*oraclespb.OracleData, 0, len(specs))
+	out := make([]*datapb.OracleData, 0, len(specs))
 	for _, v := range specs {
 		out = append(out, v.ToProto())
 	}

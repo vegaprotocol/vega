@@ -48,6 +48,7 @@ type SQLSubscribers struct {
 	nodeStore                 *sqlstore.Node
 	candleStore               *sqlstore.Candles
 	chainStore                *sqlstore.Chain
+	pupStore                  *sqlstore.ProtocolUpgradeProposals
 
 	// Services
 	candleService               *candlesv2.Svc
@@ -120,6 +121,7 @@ type SQLSubscribers struct {
 	ethereumKeyRotationsSub *sqlsubscribers.EthereumKeyRotation
 	nodeSub                 *sqlsubscribers.Node
 	marketDepthSub          *sqlsubscribers.MarketDepth
+	pupSub                  *sqlsubscribers.ProtocolUpgrade
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -159,6 +161,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.nodeSub,
 		s.marketDepthSub,
 		s.ethereumKeyRotationsSub,
+		s.pupSub,
 	}
 }
 
@@ -201,6 +204,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.nodeStore = sqlstore.NewNode(transactionalConnectionSource)
 	s.candleStore = sqlstore.NewCandles(ctx, transactionalConnectionSource, candleV2Config)
 	s.chainStore = sqlstore.NewChain(transactionalConnectionSource)
+	s.pupStore = sqlstore.NewProtocolUpgradeProposals(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -238,7 +242,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.transferService = service.NewTransfer(s.transfersStore, log)
 	s.withdrawalService = service.NewWithdrawal(s.withdrawalsStore, log)
 	s.chainService = service.NewChain(s.chainStore, log)
-	s.protocolUpgradeService = service.NewProtocolUpgrade()
+	s.protocolUpgradeService = service.NewProtocolUpgrade(s.pupStore, log)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,
@@ -289,4 +293,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers(ctx context.Context, Log *logging.L
 	s.ethereumKeyRotationsSub = sqlsubscribers.NewEthereumKeyRotation(s.ethereumKeyRotationsService, Log)
 	s.nodeSub = sqlsubscribers.NewNode(s.nodeService, Log)
 	s.marketDepthSub = sqlsubscribers.NewMarketDepth(s.marketDepthService)
+	s.pupSub = sqlsubscribers.NewProtocolUpgrade(s.protocolUpgradeService, Log)
 }

@@ -39,6 +39,8 @@ protos/swagger/
 
 # Exclude other random
 data/
+!protos/sources/vega/data/
+!protos/vega/data/
 *.iws
 .mypy_cache
 *.log
