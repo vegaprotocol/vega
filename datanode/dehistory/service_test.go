@@ -38,7 +38,7 @@ import (
 
 const (
 	snapshotInterval     = int64(1000)
-	chainID              = "test-chain-clbOFm"
+	chainID              = "testnet"
 	compressedEventsFile = "testdata/smoketest_to_block_5000.evts.gz"
 	numSnapshots         = 5
 )
@@ -216,7 +216,7 @@ func TestMain(t *testing.M) {
 
 			time.Sleep(10 * time.Millisecond)
 
-			storedSegments, err := deHistoryStore.ListAllHistorySegments()
+			storedSegments, err := deHistoryStore.ListAllHistorySegmentsOldestFirst()
 			if err != nil {
 				panic(err)
 			}
@@ -249,11 +249,11 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmS5NFz33835wKDBP3yxDGpcj9vYH5eoTvuHBgCaS1JSPB", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmahUZNwr48764Qu8VLGuWfRJYjMHqFw7d4gEYWFssY83g", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmR6k9LbrXBjMx6x2Y3FGwWA3EAwN23CjijVceFaLuXPqk", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmQqo9hGUVCdEUhEGwDqACywjfn9iRdERBxW3WNuLJfAag", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmPp7Mfdnjt6xynxV7SQx4GUVNRPjyAzwhdrELx8g2awHU", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmYYmDfM32z1fDSmd9P8YyZRoaShkZ7hrm9d5vVKgVegTN", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmaFMVLu72ri79eCdgQ35AuzGauwbdaRDbRwJiqzBRhbTL", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmfRCqqJ7LsbTpP48pFxohvQ8nhwE9fox7Y9icWcKkPWKo", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmXm286qSz7fi6ixMgX73Z93mZFPZsaP8Ykk4oxDUTeKbz", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmUS3C6Z8RZXAWucK2UohrbbpCuEn3GwJobtfEzCyXdGHY", snapshots)
 	}, postgresRuntimePath)
 
 	if exitCode != 0 {
@@ -505,7 +505,7 @@ func emptyDatabase() {
 	}
 }
 
-func panicIfHistorySegmentIdsNotEqual(expected string, actual string, snapshots []snapshot.CreateSnapshotResult) {
+func panicIfHistorySegmentIdsNotEqual(actual string, expected string, snapshots []snapshot.CreateSnapshotResult) {
 	if expected != actual {
 		snapshotPaths := ""
 		for _, sn := range snapshots {
@@ -537,11 +537,9 @@ func setupSnapshotService(testDbConfig sqlstore.Config, snapshotCopyFromPath str
 
 func setupSnapshotServiceWithNetworkParamFunc(testDbConfig sqlstore.Config, snapshotCopyFromPath string, snapshotCopyToPath string) *snapshot.Service {
 	snapshotServiceCfg := snapshot.NewDefaultConfig()
-	snapshotServiceCfg.DatabaseSnapshotsCopyToPath = snapshotCopyToPath
-	snapshotServiceCfg.DatabaseSnapshotsCopyFromPath = snapshotCopyFromPath
 
 	snapshotService, err := snapshot.NewSnapshotService(logging.NewTestLogger(), snapshotServiceCfg,
-		testDbConfig.ConnectionConfig, snapshotCopyToPath)
+		testDbConfig.ConnectionConfig, snapshotCopyFromPath, snapshotCopyToPath)
 	if err != nil {
 		panic(err)
 	}
@@ -582,7 +580,7 @@ func setupSQLBroker(ctx context.Context, eventsFile string, testDbConfig sqlstor
 
 	config := broker.NewDefaultConfig()
 
-	protocolUpgradeService := service.NewProtocolUpgrade()
+	protocolUpgradeService := service.NewProtocolUpgrade(nil, nil)
 
 	sqlBroker := broker.NewSQLStoreBroker(logging.NewTestLogger(), config, chainID, evtSource,
 		transactionalConnectionSource, blockStore, protocolUpgradeService, func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) {

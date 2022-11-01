@@ -23,7 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	proto "code.vegaprotocol.io/vega/protos/vega"
-	oraclesv1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v16"
@@ -547,34 +547,34 @@ func peggedReference(rawValue string) types.PeggedReference {
 	return types.PeggedReferenceUnspecified
 }
 
-func (r RowWrapper) MustOracleSpecPropertyType(name string) oraclesv1.PropertyKey_Type {
+func (r RowWrapper) MustOracleSpecPropertyType(name string) datav1.PropertyKey_Type {
 	ty, err := OracleSpecPropertyType(r.MustStr(name))
 	panicW(name, err)
 	return ty
 }
 
-func OracleSpecPropertyType(name string) (oraclesv1.PropertyKey_Type, error) {
-	ty, ok := oraclesv1.PropertyKey_Type_value[name]
+func OracleSpecPropertyType(name string) (datav1.PropertyKey_Type, error) {
+	ty, ok := datav1.PropertyKey_Type_value[name]
 
 	if !ok {
-		return oraclesv1.PropertyKey_TYPE_UNSPECIFIED, fmt.Errorf("couldn't find %s as property type", name)
+		return datav1.PropertyKey_TYPE_UNSPECIFIED, fmt.Errorf("couldn't find %s as property type", name)
 	}
-	return oraclesv1.PropertyKey_Type(ty), nil
+	return datav1.PropertyKey_Type(ty), nil
 }
 
-func (r RowWrapper) MustOracleSpecConditionOperator(name string) oraclesv1.Condition_Operator {
+func (r RowWrapper) MustOracleSpecConditionOperator(name string) datav1.Condition_Operator {
 	ty, err := OracleSpecConditionOperator(r.MustStr(name))
 	panicW(name, err)
 	return ty
 }
 
-func OracleSpecConditionOperator(name string) (oraclesv1.Condition_Operator, error) {
-	ty, ok := oraclesv1.Condition_Operator_value[name]
+func OracleSpecConditionOperator(name string) (datav1.Condition_Operator, error) {
+	ty, ok := datav1.Condition_Operator_value[name]
 
 	if !ok {
-		return oraclesv1.Condition_OPERATOR_UNSPECIFIED, fmt.Errorf("couldn't find %s as operator condition", name)
+		return datav1.Condition_OPERATOR_UNSPECIFIED, fmt.Errorf("couldn't find %s as operator condition", name)
 	}
-	return oraclesv1.Condition_Operator(ty), nil
+	return datav1.Condition_Operator(ty), nil
 }
 
 func (r RowWrapper) MustAuctionTrigger(name string) types.AuctionTrigger {

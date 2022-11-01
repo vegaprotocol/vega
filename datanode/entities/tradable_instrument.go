@@ -14,7 +14,7 @@ package entities
 
 import (
 	"code.vegaprotocol.io/vega/protos/vega"
-	v1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -35,7 +35,7 @@ func (ti TradableInstrument) ToProto() *vega.TradableInstrument {
 	return ti.TradableInstrument
 }
 
-func filtersFromProto(filters []*v1.Filter) []Filter {
+func FiltersFromProto(filters []*v1.Filter) []Filter {
 	if len(filters) == 0 {
 		return nil
 	}

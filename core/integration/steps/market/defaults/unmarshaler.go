@@ -56,8 +56,8 @@ func (u *Unmarshaler) UnmarshalLiquidityMonitoring(r io.Reader) (*vegapb.Liquidi
 	return proto, nil
 }
 
-// UnmarshalOracleConfig unmarshal a future as this is a common parent.
-func (u *Unmarshaler) UnmarshalOracleConfig(r io.Reader) (*vegapb.Future, error) {
+// UnmarshalDataSourceConfig unmarshal a future as this is a common parent.
+func (u *Unmarshaler) UnmarshalDataSourceConfig(r io.Reader) (*vegapb.Future, error) {
 	proto := &vegapb.Future{}
 	err := u.unmarshaler.Unmarshal(r, proto)
 	if err != nil {

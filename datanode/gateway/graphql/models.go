@@ -9,6 +9,7 @@ import (
 
 	"code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
+	"code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 // One of the possible asset sources
@@ -35,6 +36,10 @@ type ProposalChange interface {
 
 type RiskModel interface {
 	IsRiskModel()
+}
+
+type SignerKind interface {
+	IsSignerKind()
 }
 
 type TransferKind interface {
@@ -91,6 +96,35 @@ type BusEvent struct {
 type ContinuousTrading struct {
 	// Size of an increment in price in terms of the quote currency
 	TickSize string `json:"tickSize"`
+}
+
+// A data source contains the data sent by a data source
+type Data struct {
+	// signers is the list of public keys/ETH addresses that signed the data
+	Signers []*Signer `json:"signers"`
+	// properties contains all the properties sent by a data source
+	Data []*v1.Property `json:"data"`
+	// List of all the data specs that matched this source data.
+	// When the array is empty, it means no data spec matched this source data.
+	MatchedSpecIds []string `json:"matchedSpecIds"`
+	// RFC3339Nano formatted date and time for when the data was broadcast to the markets
+	// with a matching data spec.
+	// It has no value when the source data does not match any data spec.
+	BroadcastAt string `json:"broadcastAt"`
+}
+
+// An data source specification describes the data source data that a product (or a risk model)
+// wants to get from the oracle engine.
+type DataSourceSpec struct {
+	// ID is a hash generated from the DataSourceSpec data.
+	ID string `json:"id"`
+	// RFC3339Nano creation date time
+	CreatedAt string `json:"createdAt"`
+	// RFC3339Nano last updated timestamp
+	UpdatedAt *string                         `json:"updatedAt"`
+	Config    *v1.DataSourceSpecConfiguration `json:"config"`
+	// Status describes the status of the data source spec
+	Status DataSourceSpecStatus `json:"status"`
 }
 
 // Frequent batch auctions trading mode
@@ -197,6 +231,12 @@ type ERC20SetAssetLimitsBundle struct {
 	Signatures string `json:"signatures"`
 }
 
+type ETHAddress struct {
+	Address *string `json:"address"`
+}
+
+func (ETHAddress) IsSignerKind() {}
+
 // Summary of a node's rewards for a given epoch
 type EpochParticipation struct {
 	Epoch *vega.Epoch `json:"epoch"`
@@ -248,7 +288,7 @@ type Erc20WithdrawalDetails struct {
 
 func (Erc20WithdrawalDetails) IsWithdrawalDetails() {}
 
-// An Ethereum oracle
+// An Ethereum data source
 type EthereumEvent struct {
 	// The ID of the ethereum contract to use (string)
 	ContractID string `json:"contractId"`
@@ -257,6 +297,16 @@ type EthereumEvent struct {
 }
 
 func (EthereumEvent) IsOracle() {}
+
+type ExternalData struct {
+	Data *Data `json:"data"`
+}
+
+// externalDataSourceSpec is the type that wraps the DataSourceSpec type in order to be further used/extended
+// by the OracleSpec
+type ExternalDataSourceSpec struct {
+	Spec *DataSourceSpec `json:"spec"`
+}
 
 type GroupOptions struct {
 	ByAccountField     []*v2.AccountField     `json:"ByAccountField"`
@@ -467,6 +517,12 @@ type ProtocolUpgradeStatus struct {
 	Ready bool `json:"ready"`
 }
 
+type PubKey struct {
+	Key *string `json:"key"`
+}
+
+func (PubKey) IsSignerKind() {}
+
 // Connection type for retrieving cursor-based paginated reward summary information
 type RewardSummaryConnection struct {
 	// List of reward summaries available for the connection
@@ -508,6 +564,11 @@ type SettlePosition struct {
 }
 
 func (SettlePosition) IsEvent() {}
+
+// Signer is the authorized signature used for the data.
+type Signer struct {
+	Signer SignerKind `json:"signer"`
+}
 
 // All staking information related to a Party.
 // Contains the current recognised balance by the network and
@@ -712,6 +773,51 @@ func (e BusEventType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Status describe the status of the data spec
+type DataSourceSpecStatus string
+
+const (
+	// describes an active data spec.
+	DataSourceSpecStatusStatusActive DataSourceSpecStatus = "STATUS_ACTIVE"
+	// describes a data spec that is not listening to data
+	// anymore.
+	DataSourceSpecStatusStatusDeactivated DataSourceSpecStatus = "STATUS_DEACTIVATED"
+)
+
+var AllDataSourceSpecStatus = []DataSourceSpecStatus{
+	DataSourceSpecStatusStatusActive,
+	DataSourceSpecStatusStatusDeactivated,
+}
+
+func (e DataSourceSpecStatus) IsValid() bool {
+	switch e {
+	case DataSourceSpecStatusStatusActive, DataSourceSpecStatusStatusDeactivated:
+		return true
+	}
+	return false
+}
+
+func (e DataSourceSpecStatus) String() string {
+	return string(e)
+}
+
+func (e *DataSourceSpecStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DataSourceSpecStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DataSourceSpecStatus", str)
+	}
+	return nil
+}
+
+func (e DataSourceSpecStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // Filter type for specifying the types of transfers to filter for
 type TransferDirection string
 
@@ -753,92 +859,5 @@ func (e *TransferDirection) UnmarshalGQL(v interface{}) error {
 }
 
 func (e TransferDirection) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type TransferType string
-
-const (
-	TransferTypeTransferTypeUnspecified                 TransferType = "TRANSFER_TYPE_UNSPECIFIED"
-	TransferTypeTransferTypeLoss                        TransferType = "TRANSFER_TYPE_LOSS"
-	TransferTypeTransferTypeWin                         TransferType = "TRANSFER_TYPE_WIN"
-	TransferTypeTransferTypeClose                       TransferType = "TRANSFER_TYPE_CLOSE"
-	TransferTypeTransferTypeMtmLoss                     TransferType = "TRANSFER_TYPE_MTM_LOSS"
-	TransferTypeTransferTypeMtmWin                      TransferType = "TRANSFER_TYPE_MTM_WIN"
-	TransferTypeTransferTypeMarginLow                   TransferType = "TRANSFER_TYPE_MARGIN_LOW"
-	TransferTypeTransferTypeMarginHigh                  TransferType = "TRANSFER_TYPE_MARGIN_HIGH"
-	TransferTypeTransferTypeMarginConfiscated           TransferType = "TRANSFER_TYPE_MARGIN_CONFISCATED"
-	TransferTypeTransferTypeMakerFeePay                 TransferType = "TRANSFER_TYPE_MAKER_FEE_PAY"
-	TransferTypeTransferTypeMakerFeeReceive             TransferType = "TRANSFER_TYPE_MAKER_FEE_RECEIVE"
-	TransferTypeTransferTypeInfrastructureFeePay        TransferType = "TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY"
-	TransferTypeTransferTypeInfrastructureFeeDistribute TransferType = "TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE"
-	TransferTypeTransferTypeLiquidityFeePay             TransferType = "TRANSFER_TYPE_LIQUIDITY_FEE_PAY"
-	TransferTypeTransferTypeLiquidityFeeDistribute      TransferType = "TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE"
-	TransferTypeTransferTypeBondLow                     TransferType = "TRANSFER_TYPE_BOND_LOW"
-	TransferTypeTransferTypeBondHigh                    TransferType = "TRANSFER_TYPE_BOND_HIGH"
-	TransferTypeTransferTypeWithdrawLock                TransferType = "TRANSFER_TYPE_WITHDRAW_LOCK"
-	TransferTypeTransferTypeWithdraw                    TransferType = "TRANSFER_TYPE_WITHDRAW"
-	TransferTypeTransferTypeDeposit                     TransferType = "TRANSFER_TYPE_DEPOSIT"
-	TransferTypeTransferTypeBondSLAShing                TransferType = "TRANSFER_TYPE_BOND_SLASHING"
-	TransferTypeTransferTypeStakeReward                 TransferType = "TRANSFER_TYPE_STAKE_REWARD"
-	TransferTypeTransferTypeTransferFundsSend           TransferType = "TRANSFER_TYPE_TRANSFER_FUNDS_SEND"
-	TransferTypeTransferTypeTransferFundsDistribute     TransferType = "TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE"
-	TransferTypeTransferTypeClearAccount                TransferType = "TRANSFER_TYPE_CLEAR_ACCOUNT"
-)
-
-var AllTransferType = []TransferType{
-	TransferTypeTransferTypeUnspecified,
-	TransferTypeTransferTypeLoss,
-	TransferTypeTransferTypeWin,
-	TransferTypeTransferTypeClose,
-	TransferTypeTransferTypeMtmLoss,
-	TransferTypeTransferTypeMtmWin,
-	TransferTypeTransferTypeMarginLow,
-	TransferTypeTransferTypeMarginHigh,
-	TransferTypeTransferTypeMarginConfiscated,
-	TransferTypeTransferTypeMakerFeePay,
-	TransferTypeTransferTypeMakerFeeReceive,
-	TransferTypeTransferTypeInfrastructureFeePay,
-	TransferTypeTransferTypeInfrastructureFeeDistribute,
-	TransferTypeTransferTypeLiquidityFeePay,
-	TransferTypeTransferTypeLiquidityFeeDistribute,
-	TransferTypeTransferTypeBondLow,
-	TransferTypeTransferTypeBondHigh,
-	TransferTypeTransferTypeWithdrawLock,
-	TransferTypeTransferTypeWithdraw,
-	TransferTypeTransferTypeDeposit,
-	TransferTypeTransferTypeBondSLAShing,
-	TransferTypeTransferTypeStakeReward,
-	TransferTypeTransferTypeTransferFundsSend,
-	TransferTypeTransferTypeTransferFundsDistribute,
-	TransferTypeTransferTypeClearAccount,
-}
-
-func (e TransferType) IsValid() bool {
-	switch e {
-	case TransferTypeTransferTypeUnspecified, TransferTypeTransferTypeLoss, TransferTypeTransferTypeWin, TransferTypeTransferTypeClose, TransferTypeTransferTypeMtmLoss, TransferTypeTransferTypeMtmWin, TransferTypeTransferTypeMarginLow, TransferTypeTransferTypeMarginHigh, TransferTypeTransferTypeMarginConfiscated, TransferTypeTransferTypeMakerFeePay, TransferTypeTransferTypeMakerFeeReceive, TransferTypeTransferTypeInfrastructureFeePay, TransferTypeTransferTypeInfrastructureFeeDistribute, TransferTypeTransferTypeLiquidityFeePay, TransferTypeTransferTypeLiquidityFeeDistribute, TransferTypeTransferTypeBondLow, TransferTypeTransferTypeBondHigh, TransferTypeTransferTypeWithdrawLock, TransferTypeTransferTypeWithdraw, TransferTypeTransferTypeDeposit, TransferTypeTransferTypeBondSLAShing, TransferTypeTransferTypeStakeReward, TransferTypeTransferTypeTransferFundsSend, TransferTypeTransferTypeTransferFundsDistribute, TransferTypeTransferTypeClearAccount:
-		return true
-	}
-	return false
-}
-
-func (e TransferType) String() string {
-	return string(e)
-}
-
-func (e *TransferType) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = TransferType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid TransferType", str)
-	}
-	return nil
-}
-
-func (e TransferType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

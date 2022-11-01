@@ -14,39 +14,45 @@ package gql
 
 import (
 	"context"
+	"strconv"
 
-	"code.vegaprotocol.io/vega/datanode/vegatime"
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	v1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	v11 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 type oracleSpecResolver VegaResolverRoot
 
-func (o *oracleSpecResolver) CreatedAt(_ context.Context, obj *v1.OracleSpec) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
-}
+func (o *oracleSpecResolver) DataSourceSpec(ctx context.Context, obj *v1.OracleSpec) (*ExternalDataSourceSpec, error) {
+	spec := obj.ExternalDataSourceSpec.Spec
+	updatedAt := strconv.FormatInt(spec.UpdatedAt, 10)
 
-func (o *oracleSpecResolver) UpdatedAt(_ context.Context, obj *v1.OracleSpec) (*string, error) {
-	if obj.UpdatedAt <= 0 {
-		return nil, nil
+	signers := []*v1.Signer{}
+	filters := []*v1.Filter{}
+	if spec.Config != nil {
+		signers = spec.Config.Signers
+		filters = spec.Config.Filters
 	}
-	formattedTime := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
-	return &formattedTime, nil
-}
 
-func (o oracleSpecResolver) Data(ctx context.Context, obj *v1.OracleSpec) ([]*v1.OracleData, error) {
-	resp, err := o.tradingDataClient.OracleDataBySpec(ctx, &protoapi.OracleDataBySpecRequest{Id: obj.Id})
-	if err != nil {
-		return nil, err
+	ds := &DataSourceSpec{
+		ID:        spec.Id,
+		CreatedAt: strconv.FormatInt(spec.CreatedAt, 10),
+		UpdatedAt: &updatedAt,
+		Config: &v1.DataSourceSpecConfiguration{
+			Signers: signers,
+			Filters: filters,
+		},
+		Status: DataSourceSpecStatus(spec.Status.String()),
 	}
-	return resp.OracleData, nil
+	return &ExternalDataSourceSpec{
+		Spec: ds,
+	}, nil
 }
 
-func (o oracleSpecResolver) DataConnection(ctx context.Context, spec *v1.OracleSpec, pagination *v2.Pagination) (*v2.OracleDataConnection, error) {
+func (o *oracleSpecResolver) DataConnection(ctx context.Context, obj *v11.OracleSpec, pagination *v2.Pagination) (*v2.OracleDataConnection, error) {
 	var specID *string
-	if spec != nil && spec.Id != "" {
-		specID = &spec.Id
+	if obj != nil && obj.ExternalDataSourceSpec.Spec.Id != "" {
+		specID = &obj.ExternalDataSourceSpec.Spec.Id
 	}
 	req := v2.ListOracleDataRequest{
 		OracleSpecId: specID,
@@ -63,9 +69,26 @@ func (o oracleSpecResolver) DataConnection(ctx context.Context, spec *v1.OracleS
 
 type oracleDataResolver VegaResolverRoot
 
-func (o *oracleDataResolver) BroadcastAt(_ context.Context, obj *v1.OracleData) (string, error) {
-	if obj.BroadcastAt == 0 {
-		return "", nil
+func (o *oracleDataResolver) ExternalData(ctx context.Context, obj *v1.OracleData) (*ExternalData, error) {
+	if obj != nil {
+		var signers []*Signer
+		if len(obj.ExternalData.Data.Signers) > 0 {
+			signers = make([]*Signer, len(obj.ExternalData.Data.Signers))
+			for i, signer := range obj.ExternalData.Data.Signers {
+				signers[i] = &Signer{
+					Signer: signer.GetSigner().(SignerKind),
+				}
+			}
+		}
+		ed := &ExternalData{
+			Data: &Data{
+				Signers:        signers,
+				Data:           obj.ExternalData.Data.Data,
+				MatchedSpecIds: obj.ExternalData.Data.MatchedSpecIds,
+				BroadcastAt:    strconv.FormatInt(obj.ExternalData.Data.BroadcastAt, 10),
+			},
+		}
+		return ed, nil
 	}
-	return vegatime.Format(vegatime.UnixNano(obj.BroadcastAt)), nil
+	return nil, nil
 }

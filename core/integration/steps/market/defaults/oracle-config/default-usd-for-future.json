@@ -1,45 +1,57 @@
 {
   "settlementAsset": "",
   "quoteName": "",
-  "oracleSpecForSettlementData": {
+  "dataSourceSpecForSettlementData": {
     "id": "1",
     "createdAt": "0",
     "updatedAt": "0",
-    "pubKeys": [
-      "0xBADCAFFE"
-    ],
-    "filters": [
-      {
-        "key": {
-          "name": "prices.USD.value",
-          "type": "TYPE_INTEGER"
-        },
-        "conditions": [
-        ]
-      }
-    ],
+    "config": {
+      "signers": [
+        {
+          "pubKey": {
+            "key": "0xBADCAFFE"
+          }
+        }
+      ],
+      "filters": [
+        {
+          "key": {
+            "name": "prices.USD.value",
+            "type": "TYPE_INTEGER"
+          },
+          "conditions": [
+          ]
+        }
+      ]
+    },
     "status": "STATUS_UNSPECIFIED"
   },
-  "oracleSpecForTradingTermination": {
+  "dataSourceSpecForTradingTermination": {
     "id": "2",
     "createdAt": "0",
     "updatedAt": "0",
-    "pubKeys": [
-      "0xBADCAFFE"
-    ],
-    "filters": [
-      {
-        "key": {
-          "name": "trading.terminated",
-          "type": "TYPE_BOOLEAN"
-        },
-        "conditions": [
-        ]
-      }
-    ],
+    "config": {
+      "signers": [
+        {
+          "pubKey": {
+            "key": "0xBADCAFFE"
+          }
+        }
+      ],
+      "filters": [
+        {
+          "key": {
+            "name": "trading.terminated",
+            "type": "TYPE_BOOLEAN"
+          },
+          "conditions": [
+          ]
+        }
+      ]
+    },
     "status": "STATUS_UNSPECIFIED"
   },
-  "oracleSpecBinding": {
+  "dataSourceSpecBinding": {
     "settlementDataProperty": "prices.USD.value",
     "tradingTerminationProperty": "trading.terminated"
   }

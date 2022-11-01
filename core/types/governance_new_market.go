@@ -398,12 +398,12 @@ func InstrumentConfigurationFromProto(
 	case *vegapb.InstrumentConfiguration_Future:
 		r.Product = &InstrumentConfigurationFuture{
 			Future: &FutureProduct{
-				SettlementAsset:                 pr.Future.SettlementAsset,
-				QuoteName:                       pr.Future.QuoteName,
-				OracleSpecForSettlementData:     OracleSpecConfigurationFromProto(pr.Future.OracleSpecForSettlementData),
-				OracleSpecForTradingTermination: OracleSpecConfigurationFromProto(pr.Future.OracleSpecForTradingTermination),
-				SettlementDataDecimalPlaces:     pr.Future.SettlementDataDecimals,
-				OracleSpecBinding:               OracleSpecBindingForFutureFromProto(pr.Future.OracleSpecBinding),
+				SettlementAsset:                     pr.Future.SettlementAsset,
+				QuoteName:                           pr.Future.QuoteName,
+				DataSourceSpecForSettlementData:     DataSourceSpecConfigurationFromProto(pr.Future.DataSourceSpecForSettlementData),
+				DataSourceSpecForTradingTermination: DataSourceSpecConfigurationFromProto(pr.Future.DataSourceSpecForTradingTermination),
+				SettlementDataDecimalPlaces:         pr.Future.SettlementDataDecimals,
+				DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
 			},
 		}
 	}
@@ -423,32 +423,32 @@ func (i InstrumentConfigurationFuture) icpIntoProto() interface{} {
 func (InstrumentConfigurationFuture) isInstrumentConfigurationProduct() {}
 
 type FutureProduct struct {
-	SettlementAsset                 string
-	QuoteName                       string
-	OracleSpecForSettlementData     *OracleSpecConfiguration
-	OracleSpecForTradingTermination *OracleSpecConfiguration
-	OracleSpecBinding               *OracleSpecBindingForFuture
-	SettlementDataDecimalPlaces     uint32
+	SettlementAsset                     string
+	QuoteName                           string
+	DataSourceSpecForSettlementData     *DataSourceSpecConfiguration
+	DataSourceSpecForTradingTermination *DataSourceSpecConfiguration
+	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
+	SettlementDataDecimalPlaces         uint32
 }
 
 func (f FutureProduct) IntoProto() *vegapb.FutureProduct {
 	return &vegapb.FutureProduct{
-		SettlementAsset:                 f.SettlementAsset,
-		QuoteName:                       f.QuoteName,
-		OracleSpecForSettlementData:     f.OracleSpecForSettlementData.IntoProto(),
-		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.IntoProto(),
-		SettlementDataDecimals:          f.SettlementDataDecimalPlaces,
-		OracleSpecBinding:               f.OracleSpecBinding.IntoProto(),
+		SettlementAsset:                     f.SettlementAsset,
+		QuoteName:                           f.QuoteName,
+		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
+		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(),
+		SettlementDataDecimals:              f.SettlementDataDecimalPlaces,
+		DataSourceSpecBinding:               f.DataSourceSpecBinding.IntoProto(),
 	}
 }
 
 func (f FutureProduct) DeepClone() *FutureProduct {
 	return &FutureProduct{
-		SettlementAsset:                 f.SettlementAsset,
-		QuoteName:                       f.QuoteName,
-		OracleSpecForSettlementData:     f.OracleSpecForSettlementData.DeepClone(),
-		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
-		OracleSpecBinding:               f.OracleSpecBinding.DeepClone(),
+		SettlementAsset:                     f.SettlementAsset,
+		QuoteName:                           f.QuoteName,
+		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.DeepClone(),
+		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.DeepClone(),
+		DataSourceSpecBinding:               f.DataSourceSpecBinding.DeepClone(),
 	}
 }
 
@@ -458,9 +458,9 @@ func (f FutureProduct) String() string {
 		f.QuoteName,
 		f.SettlementAsset,
 		f.SettlementDataDecimalPlaces,
-		reflectPointerToString(f.OracleSpecForSettlementData),
-		reflectPointerToString(f.OracleSpecForTradingTermination),
-		reflectPointerToString(f.OracleSpecBinding),
+		reflectPointerToString(f.DataSourceSpecForSettlementData),
+		reflectPointerToString(f.DataSourceSpecForTradingTermination),
+		reflectPointerToString(f.DataSourceSpecBinding),
 	)
 }
 

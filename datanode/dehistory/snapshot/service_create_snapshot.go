@@ -133,8 +133,8 @@ func (b *Service) snapshotData(ctx context.Context, copyDataTx pgx.Tx, dbMetaDat
 
 	start := time.Now()
 	b.log.Infof("copying all table data....")
-	allCopySQL := append(currentSnapshot.GetCopySQL(dbMetaData, b.config.DatabaseSnapshotsCopyToPath),
-		historySnapshot.GetCopySQL(dbMetaData, b.config.DatabaseSnapshotsCopyToPath)...)
+	allCopySQL := append(currentSnapshot.GetCopySQL(dbMetaData, b.snapshotsCopyToPath),
+		historySnapshot.GetCopySQL(dbMetaData, b.snapshotsCopyToPath)...)
 	rowsCopied, err := copyTableData(ctx, copyDataTx, allCopySQL)
 	if err != nil {
 		return fmt.Errorf("failed to copy table data:%w", err)

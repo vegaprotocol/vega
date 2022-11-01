@@ -8,7 +8,7 @@ Feature: Replicate unexpected margin issues.
       | risk aversion | tau         | mu | r | sigma |
       | 0.00001       | 0.000114077 | 0  | 0 | 0.41  |
     And the markets:
-      | id        | quote name | asset | risk model         | margin calculator         | auction duration | fees         | price monitoring | oracle config          | decimal places |
+      | id        | quote name | asset | risk model         | margin calculator         | auction duration | fees         | price monitoring | data source config          | decimal places |
       | DAI/DEC22 | DAI        | DAI   | dai-lognormal-risk | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 5              |
     And the following network parameters are set:
       | name                              | value |

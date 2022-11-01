@@ -67,8 +67,9 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		logging.String("version-hash", l.VersionHash))
 
 	if l.conf.SQLStore.UseEmbedded {
+		runtimeDir := l.vegaPaths.StatePathFor(paths.DataNodeEmbeddedPostgresRuntimeDir)
 		l.embeddedPostgres, err = sqlstore.StartEmbeddedPostgres(l.Log, l.conf.SQLStore,
-			paths.DataNodeEmbeddedPostgresRuntimeDir.String(), EmbeddedPostgresLog{})
+			runtimeDir, EmbeddedPostgresLog{})
 
 		if err != nil {
 			return fmt.Errorf("failed to start embedded postgres: %w", err)
@@ -197,6 +198,19 @@ func (l *NodeCommand) preRun([]string) (err error) {
 		return err
 	}
 
+	if l.conf.Broker.UseBufferedEventSource {
+		bufferFilePath, err := l.vegaPaths.CreateStatePathFor(paths.DataNodeEventBufferHome)
+		if err != nil {
+			l.Log.Error("failed to create path for buffered event source", logging.Error(err))
+			return err
+		}
+		eventSource, err = broker.NewBufferedEventSource(l.Log, l.conf.Broker.BufferedEventSourceConfig, eventSource, bufferFilePath)
+		if err != nil {
+			l.Log.Error("unable to initialise file buffered event source", logging.Error(err))
+			return err
+		}
+	}
+
 	eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SQLStore.FanOutBufferSize, 2)
 
 	var onBlockCommittedFn func(ctx context.Context, chainId string, lastCommittedBlockHeight int64)
@@ -238,13 +252,6 @@ func (l *NodeCommand) preRun([]string) (err error) {
 }
 
 func (l *NodeCommand) initialiseDecentralizedHistory() error {
-	useEmbedded := bool(l.conf.SQLStore.UseEmbedded)
-	snapshotsCopyFromDir, snapshotsCopyToDir := initialise.GetSnapshotPaths(useEmbedded, l.conf.DeHistory.Snapshot, l.vegaPaths)
-	if useEmbedded {
-		l.conf.DeHistory.Snapshot.DatabaseSnapshotsCopyFromPath = snapshotsCopyFromDir
-		l.conf.DeHistory.Snapshot.DatabaseSnapshotsCopyToPath = snapshotsCopyToDir
-	}
-
 	deHistoryLog := l.Log.Named("deHistory")
 	deHistoryLog.SetLevel(l.conf.DeHistory.Level.Get())
 
@@ -252,13 +259,16 @@ func (l *NodeCommand) initialiseDecentralizedHistory() error {
 	deHistoryServiceLog := deHistoryLog.Named("service")
 
 	var err error
-	l.snapshotService, err = snapshot.NewSnapshotService(snapshotServiceLog, l.conf.DeHistory.Snapshot, l.conf.SQLStore.ConnectionConfig, snapshotsCopyToDir)
+	l.snapshotService, err = snapshot.NewSnapshotService(snapshotServiceLog, l.conf.DeHistory.Snapshot,
+		l.conf.SQLStore.ConnectionConfig, l.vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyFrom),
+		l.vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyTo))
 	if err != nil {
 		return fmt.Errorf("failed to create snapshot service:%w", err)
 	}
 
 	l.deHistoryService, err = dehistory.New(l.ctx, deHistoryServiceLog, l.conf.DeHistory, l.vegaPaths.StatePathFor(paths.DataNodeDeHistoryHome),
-		l.conf.SQLStore.ConnectionConfig, l.conf.ChainID, l.snapshotService, l.conf.API.Port, snapshotsCopyFromDir, snapshotsCopyToDir)
+		l.conf.SQLStore.ConnectionConfig, l.conf.ChainID, l.snapshotService, l.conf.API.Port, l.vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyFrom),
+		l.vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyTo))
 
 	if err != nil {
 		return fmt.Errorf("failed to create deHistory service:%w", err)

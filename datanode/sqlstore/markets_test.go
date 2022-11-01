@@ -20,7 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/protos/vega"
-	v1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
@@ -313,23 +313,27 @@ func getTestMarket() *vega.Market {
 					Future: &vega.Future{
 						SettlementAsset: "Test Asset",
 						QuoteName:       "Test Quote",
-						OracleSpecForSettlementData: &v1.OracleSpec{
+						DataSourceSpecForSettlementData: &v1.DataSourceSpec{
 							Id:        "",
 							CreatedAt: 0,
 							UpdatedAt: 0,
-							PubKeys:   nil,
-							Filters:   nil,
-							Status:    0,
+							Config: &v1.DataSourceSpecConfiguration{
+								Signers: nil,
+								Filters: nil,
+							},
+							Status: 0,
 						},
-						OracleSpecForTradingTermination: &v1.OracleSpec{
+						DataSourceSpecForTradingTermination: &v1.DataSourceSpec{
 							Id:        "",
 							CreatedAt: 0,
 							UpdatedAt: 0,
-							PubKeys:   nil,
-							Filters:   nil,
-							Status:    0,
+							Config: &v1.DataSourceSpecConfiguration{
+								Signers: nil,
+								Filters: nil,
+							},
+							Status: 0,
 						},
-						OracleSpecBinding: &vega.OracleSpecToFutureBinding{
+						DataSourceSpecBinding: &vega.DataSourceSpecToFutureBinding{
 							SettlementDataProperty:     "",
 							TradingTerminationProperty: "",
 						},

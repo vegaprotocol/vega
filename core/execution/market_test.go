@@ -42,7 +42,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -462,6 +462,10 @@ func getMarket(pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDu
 }
 
 func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration, decimalPlaces uint64) types.Market {
+	pubKeys := []*types.Signer{
+		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	}
+
 	mkt := types.Market{
 		ID:            vgcrypto.RandomHash(),
 		DecimalPlaces: decimalPlaces,
@@ -486,33 +490,37 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 					Future: &types.Future{
 						SettlementAsset: "ETH",
 						QuoteName:       "USD",
-						OracleSpecForSettlementData: &types.OracleSpec{
-							ID:      "1",
-							PubKeys: []string{"0xDEADBEEF"},
-							Filters: []*types.OracleSpecFilter{
-								{
-									Key: &types.OracleSpecPropertyKey{
-										Name: "prices.ETH.value",
-										Type: oraclespb.PropertyKey_TYPE_INTEGER,
+						DataSourceSpecForSettlementData: &types.DataSourceSpec{
+							ID: "1",
+							Config: &types.DataSourceSpecConfiguration{
+								Signers: pubKeys,
+								Filters: []*types.DataSourceSpecFilter{
+									{
+										Key: &types.DataSourceSpecPropertyKey{
+											Name: "prices.ETH.value",
+											Type: datapb.PropertyKey_TYPE_INTEGER,
+										},
+										Conditions: []*types.DataSourceSpecCondition{},
 									},
-									Conditions: []*types.OracleSpecCondition{},
 								},
 							},
 						},
-						OracleSpecForTradingTermination: &types.OracleSpec{
-							ID:      "2",
-							PubKeys: []string{"0xDEADBEEF"},
-							Filters: []*types.OracleSpecFilter{
-								{
-									Key: &types.OracleSpecPropertyKey{
-										Name: "trading.terminated",
-										Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
+						DataSourceSpecForTradingTermination: &types.DataSourceSpec{
+							ID: "2",
+							Config: &types.DataSourceSpecConfiguration{
+								Signers: pubKeys,
+								Filters: []*types.DataSourceSpecFilter{
+									{
+										Key: &types.DataSourceSpecPropertyKey{
+											Name: "trading.terminated",
+											Type: datapb.PropertyKey_TYPE_BOOLEAN,
+										},
+										Conditions: []*types.DataSourceSpecCondition{},
 									},
-									Conditions: []*types.OracleSpecCondition{},
 								},
 							},
 						},
-						OracleSpecBinding: &types.OracleSpecBindingForFuture{
+						DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
 							SettlementDataProperty:     "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},
@@ -610,6 +618,10 @@ func (tm *testMarket) EventHasBeenEmitted(t *testing.T, e events.Event) {
 }
 
 func TestMarketClosing(t *testing.T) {
+	pubKeys := []*types.Signer{
+		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	}
+
 	party1 := "party1"
 	party2 := "party2"
 	now := time.Unix(10, 0)
@@ -622,7 +634,7 @@ func TestMarketClosing(t *testing.T) {
 	properties := map[string]string{}
 	properties["trading.terminated"] = "true"
 	err := tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
-		PubKeys: []string{"0xDEADBEEF"},
+		Signers: pubKeys,
 		Data:    properties,
 	})
 	require.NoError(t, err)
@@ -646,7 +658,7 @@ func TestMarketClosing(t *testing.T) {
 	delete(properties, "trading.terminated")
 	properties["prices.ETH.value"] = "100"
 	err = tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
-		PubKeys: []string{"0xDEADBEEF"},
+		Signers: pubKeys,
 		Data:    properties,
 	})
 	require.NoError(t, err)
@@ -666,6 +678,10 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 	tm := getTestMarket(t, now, nil, nil)
 	defer tm.ctrl.Finish()
 
+	pubKeys := []*types.Signer{
+		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	}
+
 	// setup
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
@@ -675,7 +691,7 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 
 	// when
 	err := tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
-		PubKeys: []string{"0xDEADBEEF"},
+		Signers: pubKeys,
 		Data: map[string]string{
 			"trading.terminated": "true",
 		},
@@ -699,8 +715,8 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 
 	// given
 	updatedMkt := tm.mktCfg.DeepClone()
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementData.Filters[0].Key.Name = "prices.ETHEREUM.value"
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecBinding.SettlementDataProperty = "prices.ETHEREUM.value"
+	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Config.Filters[0].Key.Name = "prices.ETHEREUM.value"
+	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecBinding.SettlementDataProperty = "prices.ETHEREUM.value"
 
 	// when
 	err = tm.market.Update(context.Background(), updatedMkt, tm.oracleEngine)
@@ -712,7 +728,7 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 
 	// when
 	err = tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
-		PubKeys: []string{"0xDEADBEEF"},
+		Signers: pubKeys,
 		Data: map[string]string{
 			"prices.ETH.value": "10",
 		},
@@ -740,7 +756,7 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 
 	// when
 	err = tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
-		PubKeys: []string{"0xDEADBEEF"},
+		Signers: pubKeys,
 		Data: map[string]string{
 			"prices.ETHEREUM.value": "100",
 		},
@@ -778,7 +794,9 @@ func TestUnsubscribeTradingTerminatedOracle(t *testing.T) {
 
 	// when
 	err := tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
-		PubKeys: []string{"0xDEADBEEF"},
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+		},
 		Data: map[string]string{
 			"trading.terminated": "true",
 		},
@@ -791,7 +809,9 @@ func TestUnsubscribeTradingTerminatedOracle(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		err := tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
-			PubKeys: []string{"0xDEADBEEF"},
+			Signers: []*types.Signer{
+				types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+			},
 			Data: map[string]string{
 				"trading.terminated": "true",
 			},
@@ -817,8 +837,8 @@ func TestMarketLiquidityFeeAfterUpdate(t *testing.T) {
 	// given
 	previousLiqFee := tm.market.GetLiquidityFee()
 	updatedMkt := tm.mktCfg.DeepClone()
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementData.Filters[0].Key.Name = "prices.ETHEREUM.value"
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecBinding.SettlementDataProperty = "prices.ETHEREUM.value"
+	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Config.Filters[0].Key.Name = "prices.ETHEREUM.value"
+	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecBinding.SettlementDataProperty = "prices.ETHEREUM.value"
 
 	// when
 	err := tm.market.Update(context.Background(), updatedMkt, tm.oracleEngine)
@@ -1025,6 +1045,9 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	// this will also output the closed accounts
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
+	pubKeys := []*types.Signer{
+		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	}
 
 	// submit orders
 	// party1 buys
@@ -1088,7 +1111,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	properties := map[string]string{}
 	properties["trading.terminated"] = "true"
 	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
-		PubKeys: []string{"0xDEADBEEF"},
+		Signers: pubKeys,
 		Data:    properties,
 	})
 	require.NoError(t, err)
@@ -1096,7 +1119,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	properties = map[string]string{}
 	properties["prices.ETH.value"] = "100"
 	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
-		PubKeys: []string{"0xDEADBEEF"},
+		Signers: pubKeys,
 		Data:    properties,
 	})
 	require.NoError(t, err)
@@ -1181,21 +1204,21 @@ func TestUpdateMarketWithOracleSpecEarlyTermination(t *testing.T) {
 	// now update the market
 	updatedMkt := tm.mktCfg.DeepClone()
 
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForTradingTermination.Filters = []*types.OracleSpecFilter{
+	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination.Config.Filters = []*types.DataSourceSpecFilter{
 		{
 			Key: &types.OracleSpecPropertyKey{
 				Name: oracles.BuiltinOracleTimestamp,
-				Type: oraclespb.PropertyKey_TYPE_TIMESTAMP,
+				Type: datapb.PropertyKey_TYPE_TIMESTAMP,
 			},
 			Conditions: []*types.OracleSpecCondition{
 				{
-					Operator: oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 					Value:    "0",
 				},
 			},
 		},
 	}
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecBinding.TradingTerminationProperty = oracles.BuiltinOracleTimestamp
+	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecBinding.TradingTerminationProperty = oracles.BuiltinOracleTimestamp
 
 	err = tm.market.Update(context.Background(), updatedMkt, tm.oracleEngine)
 	require.NoError(t, err)
@@ -1203,10 +1226,13 @@ func TestUpdateMarketWithOracleSpecEarlyTermination(t *testing.T) {
 	tm.market.OnTick(ctx, tm.now)
 	require.Equal(t, types.MarketStateTradingTerminated, tm.market.State())
 
+	pubKeys := []*types.Signer{
+		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	}
 	properties := map[string]string{}
 	properties["prices.ETH.value"] = "100"
 	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
-		PubKeys: []string{"0xDEADBEEF"},
+		Signers: pubKeys,
 		Data:    properties,
 	})
 	require.NoError(t, err)
@@ -1291,43 +1317,46 @@ func Test6056(t *testing.T) {
 	// now update the market
 	updatedMkt := tm.mktCfg.DeepClone()
 
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementData.Filters = []*types.OracleSpecFilter{
+	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Config.Filters = []*types.DataSourceSpecFilter{
 		{
 			Key: &types.OracleSpecPropertyKey{
 				Name: "prices.ETH.value",
-				Type: oraclespb.PropertyKey_TYPE_INTEGER,
+				Type: datapb.PropertyKey_TYPE_INTEGER,
 			},
 			Conditions: []*types.OracleSpecCondition{
 				{
-					Operator: oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 					Value:    "1",
 				},
 			},
 		},
 	}
 
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForTradingTermination.Filters = []*types.OracleSpecFilter{
+	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination.Config.Filters = []*types.DataSourceSpecFilter{
 		{
-			Key: &types.OracleSpecPropertyKey{
+			Key: &types.DataSourceSpecPropertyKey{
 				Name: "trading.terminated",
-				Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
+				Type: datapb.PropertyKey_TYPE_BOOLEAN,
 			},
-			Conditions: []*types.OracleSpecCondition{
+			Conditions: []*types.DataSourceSpecCondition{
 				{
-					Operator: oraclespb.Condition_OPERATOR_EQUALS,
+					Operator: datapb.Condition_OPERATOR_EQUALS,
 					Value:    "false",
 				},
 			},
 		},
 	}
 
+	pubKeys := []*types.Signer{
+		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	}
 	err = tm.market.Update(context.Background(), updatedMkt, tm.oracleEngine)
 	require.NoError(t, err)
 
 	properties := map[string]string{}
 	properties["trading.terminated"] = "false"
 	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
-		PubKeys: []string{"0xDEADBEEF"},
+		Signers: pubKeys,
 		Data:    properties,
 	})
 	require.NoError(t, err)
@@ -1337,7 +1366,7 @@ func Test6056(t *testing.T) {
 	properties = map[string]string{}
 	properties["prices.ETH.value"] = "100"
 	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
-		PubKeys: []string{"0xDEADBEEF"},
+		Signers: pubKeys,
 		Data:    properties,
 	})
 	require.NoError(t, err)

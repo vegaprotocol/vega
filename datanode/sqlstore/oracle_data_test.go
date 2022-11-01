@@ -17,9 +17,10 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -101,121 +102,169 @@ func testGetOracleDataBySpecID(t *testing.T) {
 	assert.Equal(t, 2, len(got))
 }
 
-func getTestOracleData() []*oraclespb.OracleData {
-	return []*oraclespb.OracleData{
+func getTestOracleData() []*datapb.OracleData {
+	pk1 := types.CreateSignerFromString("b105f00d", types.DataSignerTypePubKey)
+	pk2 := types.CreateSignerFromString("baddcafe", types.DataSignerTypePubKey)
+
+	return []*datapb.OracleData{
 		{ // 0
-			PubKeys: []string{"b105f00d", "baddcafe"},
-			Data: []*oraclespb.Property{
-				{
-					Name:  "Ticker",
-					Value: "USDBTC",
+			ExternalData: &datapb.ExternalData{
+				Data: &datapb.Data{
+					Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+					Data: []*datapb.Property{
+						{
+							Name:  "Ticker",
+							Value: "USDBTC",
+						},
+					},
+					MatchedSpecIds: []string{"deadbeef01"},
+					BroadcastAt:    0,
 				},
 			},
-			MatchedSpecIds: []string{"deadbeef01"},
-			BroadcastAt:    0,
 		},
+		//},
 		{ // 1
-			PubKeys: []string{"b105f00d", "baddcafe"},
-			Data: []*oraclespb.Property{
-				{
-					Name:  "Ticker",
-					Value: "USDETH",
+			ExternalData: &datapb.ExternalData{
+				Data: &datapb.Data{
+					Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+					Data: []*datapb.Property{
+						{
+							Name:  "Ticker",
+							Value: "USDETH",
+						},
+					},
+					MatchedSpecIds: []string{"deadbeef02"},
+					BroadcastAt:    0,
 				},
 			},
-			MatchedSpecIds: []string{"deadbeef02"},
-			BroadcastAt:    0,
 		},
 		{ // 2
-			PubKeys: []string{"b105f00d", "baddcafe"},
-			Data: []*oraclespb.Property{
-				{
-					Name:  "Ticker",
-					Value: "USDETH",
+			ExternalData: &datapb.ExternalData{
+				Data: &datapb.Data{
+					Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+					Data: []*datapb.Property{
+						{
+							Name:  "Ticker",
+							Value: "USDETH",
+						},
+					},
+					MatchedSpecIds: []string{"deadbeef02"},
+					BroadcastAt:    0,
 				},
 			},
-			MatchedSpecIds: []string{"deadbeef02"},
-			BroadcastAt:    0,
 		},
 		{ // 3
-			PubKeys: []string{"b105f00d", "baddcafe"},
-			Data: []*oraclespb.Property{
-				{
-					Name:  "Ticker",
-					Value: "USDSOL",
+			ExternalData: &datapb.ExternalData{
+				Data: &datapb.Data{
+					Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+					Data: []*datapb.Property{
+						{
+							Name:  "Ticker",
+							Value: "USDSOL",
+						},
+					},
+					MatchedSpecIds: []string{"deadbeef03"},
+					BroadcastAt:    0,
 				},
 			},
-			MatchedSpecIds: []string{"deadbeef03"},
-			BroadcastAt:    0,
 		},
 		{ // 4
-			PubKeys: []string{"b105f00d", "baddcafe"},
-			Data: []*oraclespb.Property{
-				{
-					Name:  "AAAA",
-					Value: "AAAA",
+			ExternalData: &datapb.ExternalData{
+				Data: &datapb.Data{
+					Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+					Data: []*datapb.Property{
+						{
+							Name:  "AAAA",
+							Value: "AAAA",
+						},
+					},
+					MatchedSpecIds: []string{"deadbeef04"},
 				},
 			},
-			MatchedSpecIds: []string{"deadbeef04"},
 		},
 		{ // 5
-			PubKeys: []string{"b105f00d", "baddcafe"},
-			Data: []*oraclespb.Property{
-				{
-					Name:  "BBBB",
-					Value: "BBBB",
+			ExternalData: &datapb.ExternalData{
+				Data: &datapb.Data{
+					Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+					Data: []*datapb.Property{
+						{
+							Name:  "BBBB",
+							Value: "BBBB",
+						},
+					},
+					MatchedSpecIds: []string{"deadbeef04"},
 				},
 			},
-			MatchedSpecIds: []string{"deadbeef04"},
 		},
 		{ // 6
-			PubKeys: []string{"b105f00d", "baddcafe"},
-			Data: []*oraclespb.Property{
-				{
-					Name:  "CCCC",
-					Value: "CCCC",
+			ExternalData: &datapb.ExternalData{
+				Data: &datapb.Data{
+					Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+					Data: []*datapb.Property{
+						{
+							Name:  "CCCC",
+							Value: "CCCC",
+						},
+					},
+					MatchedSpecIds: []string{"deadbeef04"},
 				},
 			},
-			MatchedSpecIds: []string{"deadbeef04"},
 		},
 		{ // 7
-			PubKeys: []string{"b105f00d", "baddcafe"},
-			Data: []*oraclespb.Property{
-				{
-					Name:  "DDDD",
-					Value: "DDDD",
+			ExternalData: &datapb.ExternalData{
+				Data: &datapb.Data{
+					Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+					Data: []*datapb.Property{
+						{
+							Name:  "DDDD",
+							Value: "DDDD",
+						},
+					},
+					MatchedSpecIds: []string{"deadbeef04"},
 				},
 			},
-			MatchedSpecIds: []string{"deadbeef04"},
 		},
 		{ // 8
-			PubKeys: []string{"b105f00d", "baddcafe"},
-			Data: []*oraclespb.Property{
-				{
-					Name:  "EEEE",
-					Value: "EEEE",
+			ExternalData: &datapb.ExternalData{
+				Data: &datapb.Data{
+					Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+					Data: []*datapb.Property{
+						{
+							Name:  "EEEE",
+							Value: "EEEE",
+						},
+					},
+					MatchedSpecIds: []string{"deadbeef04"},
 				},
 			},
-			MatchedSpecIds: []string{"deadbeef04"},
 		},
 		{ // 9
-			PubKeys: []string{"b105f00d", "baddcafe"},
-			Data: []*oraclespb.Property{
-				{
-					Name:  "FFFF",
-					Value: "FFFF",
+			ExternalData: &datapb.ExternalData{
+				Data: &datapb.Data{
+					Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+					Data: []*datapb.Property{
+						{
+							Name:  "FFFF",
+							Value: "FFFF",
+						},
+					},
+					MatchedSpecIds: []string{"deadbeef04"},
 				},
 			},
-			MatchedSpecIds: []string{"deadbeef04"},
 		},
 		{ // 10
-			PubKeys: []string{"b105f00d", "baddcafe"},
-			Data: []*oraclespb.Property{
-				{
-					Name:  "GGGG",
-					Value: "GGGG",
+			ExternalData: &datapb.ExternalData{
+				Data: &datapb.Data{
+					Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+					Data: []*datapb.Property{
+						{
+							Name:  "GGGG",
+							Value: "GGGG",
+						},
+					},
+					MatchedSpecIds: []string{"deadbeef04"},
 				},
 			},
-			MatchedSpecIds: []string{"deadbeef04"},
 		},
 	}
 }

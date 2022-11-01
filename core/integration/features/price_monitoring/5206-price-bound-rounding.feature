@@ -11,7 +11,7 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.001         | 0.00011407711613050422 | 0  | 0.016 | 1.5   |
     And the markets:
-      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | oracle config          | decimal places |
+      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | data source config          | decimal places |
       | ETH/DEC20 | ETH        | ETH   | st-log-normal-risk-model | default-margin-calculator | 1                | default-none | st-price-monitoring | default-eth-for-future | 6              |
     And the following network parameters are set:
       | name                           | value |
