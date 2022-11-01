@@ -464,7 +464,12 @@ Feature: test risk model parameter ranges
       | party1 | ETH/MAR52 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-12  |
       | party2 | ETH/MAR52 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-13 |
       | party2 | ETH/MAR52 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-14 |
+
     When the opening auction period ends for market "ETH/MAR52"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/MAR52"
+
+    And the network moves ahead "1" blocks
+
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/MAR52"
 
 # since the risk factor is 999999.00000000000, target stake would be 1000*10*55787.28815617000 = 557872881
