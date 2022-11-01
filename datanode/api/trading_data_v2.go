@@ -1845,6 +1845,8 @@ func (t *tradingDataServiceV2) GetGovernanceData(ctx context.Context, req *v2.Ge
 }
 
 func (t *tradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.ListGovernanceDataRequest) (*v2.ListGovernanceDataResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListGovernanceDataV2")()
+
 	var state *entities.ProposalState
 
 	if req.ProposalState != nil {
@@ -1872,12 +1874,37 @@ func (t *tradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.L
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
+
+	for i := range edges {
+		edges[i].Node.Yes, edges[i].Node.No, err = t.getVotesByProposal(ctx, edges[i].Node.Proposal.Id)
+		if err != nil {
+			return nil, apiError(codes.Internal, err)
+		}
+	}
+
 	proposalsConnection := &v2.GovernanceDataConnection{
 		Edges:    edges,
 		PageInfo: pageInfo.ToProto(),
 	}
 
 	return &v2.ListGovernanceDataResponse{Connection: proposalsConnection}, nil
+}
+
+func (t *tradingDataServiceV2) getVotesByProposal(ctx context.Context, proposalID string) (yesVotes, noVotes []*vega.Vote, err error) {
+	votes, err := t.governanceService.GetVotes(ctx, &proposalID, nil, nil)
+	if err != nil {
+		return nil, nil, apiError(codes.Internal, err)
+	}
+
+	for _, vote := range votes {
+		switch vote.Value {
+		case entities.VoteValueYes:
+			yesVotes = append(yesVotes, vote.ToProto())
+		case entities.VoteValueNo:
+			noVotes = append(noVotes, vote.ToProto())
+		}
+	}
+	return
 }
 
 // Get all Votes using a cursor based pagination model.
@@ -2354,6 +2381,32 @@ func (t *tradingDataServiceV2) EstimateFee(ctx context.Context, req *v2.Estimate
 	}, nil
 }
 
+func (t *tradingDataServiceV2) scaleFromMarketToAssetPrice(
+	ctx context.Context,
+	mkt entities.Market,
+	price *num.Uint,
+) (*num.Uint, error) {
+	assetID, err := mkt.ToProto().GetAsset()
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	asset, err := t.assetService.GetByID(ctx, assetID)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	// scale the price if needed
+	// price is expected in market decimal
+	if exp := asset.Decimals - mkt.DecimalPlaces; exp != 0 {
+		priceFactor := num.NewUint(1)
+		priceFactor.Exp(num.NewUint(10), num.NewUint(uint64(exp)))
+		price.Mul(price, priceFactor)
+	}
+
+	return price, nil
+}
+
 func (t *tradingDataServiceV2) estimateFee(
 	ctx context.Context,
 	market, priceS string,
@@ -2367,6 +2420,11 @@ func (t *tradingDataServiceV2) estimateFee(
 	price, overflowed := num.UintFromString(priceS, 10)
 	if overflowed {
 		return nil, apiError(codes.InvalidArgument, errors.New("invalid order price"))
+	}
+
+	price, err = t.scaleFromMarketToAssetPrice(ctx, mkt, price)
+	if err != nil {
+		return nil, err
 	}
 
 	mdpd := num.DecimalFromFloat(10).
@@ -2458,18 +2516,26 @@ func (t *tradingDataServiceV2) estimateMargin(
 	}
 
 	// now calculate margin maintenance
-	markPrice, _ := num.DecimalFromString(mktData.MarkPrice.String())
+	priceD, _ := num.DecimalFromString(mktData.MarkPrice.String())
 
 	// if the order is a limit order, use the limit price to calculate the margin maintenance
 	if rType == vega.Order_TYPE_LIMIT {
-		markPrice, _ = num.DecimalFromString(rPrice)
+		priceD, _ = num.DecimalFromString(rPrice)
 	}
+
+	price, _ := num.UintFromDecimal(priceD)
+	price, err = t.scaleFromMarketToAssetPrice(ctx, mkt, price)
+	if err != nil {
+		return nil, err
+	}
+
+	priceD = price.ToDecimal()
 
 	mdpd := num.DecimalFromFloat(10).
 		Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
 
 	maintenanceMargin := num.DecimalFromFloat(float64(rSize)).
-		Mul(f).Mul(markPrice).Div(mdpd)
+		Mul(f).Mul(priceD).Div(mdpd)
 	// now we use the risk factors
 	return &vega.MarginLevels{
 		PartyId:                rParty,
