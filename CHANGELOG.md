@@ -12,7 +12,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6661](https://github.com/vegaprotocol/vega/issues/6661) - Scale price to asset decimal in estimate orders
 
 
 ## 0.61.0
