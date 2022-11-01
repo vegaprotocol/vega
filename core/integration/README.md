@@ -83,7 +83,7 @@ Feature: A feature that reproduces some system test
   Background:
     Given the initial insurance pool balance is "0" for the markets :
     And the markets:
-      | id        | quote name | asset | risk model                | margin calculator         | auction duration | price monitoring | oracle config      |
+      | id        | quote name | asset | risk model                | margin calculator         | auction duration | price monitoring | data source config      |
       | ETH/DEC20 | ETH        | ETH   | default-simple-risk-model | default-margin-calculator | 1                | default-none     | default-for-future |
 ```
 

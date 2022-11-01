@@ -1,4 +1,5 @@
 *.md @edd @jeremyletang
 * @vegaprotocol/core
 core/integration/features/verified/ @vegaprotocol/research
+core/netparams/defaults.go @vegaprotocol/research
 datanode/gateway/graphql/schema.graphql @vegaprotocol/frontend

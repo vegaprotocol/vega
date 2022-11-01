@@ -336,45 +336,45 @@ func (i InstrumentFuture) String() string {
 }
 
 type Future struct {
-	SettlementAsset                 string
-	QuoteName                       string
-	OracleSpecForSettlementData     *OracleSpec
-	OracleSpecForTradingTermination *OracleSpec
-	OracleSpecBinding               *OracleSpecBindingForFuture
-	SettlementDataDecimals          uint32
+	SettlementAsset                     string
+	QuoteName                           string
+	DataSourceSpecForSettlementData     *DataSourceSpec
+	DataSourceSpecForTradingTermination *DataSourceSpec
+	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
+	SettlementDataDecimals              uint32
 }
 
 func FutureFromProto(f *proto.Future) *Future {
 	return &Future{
-		SettlementAsset:                 f.SettlementAsset,
-		QuoteName:                       f.QuoteName,
-		OracleSpecForSettlementData:     OracleSpecFromProto(f.OracleSpecForSettlementData),
-		OracleSpecForTradingTermination: OracleSpecFromProto(f.OracleSpecForTradingTermination),
-		OracleSpecBinding:               OracleSpecBindingForFutureFromProto(f.OracleSpecBinding),
-		SettlementDataDecimals:          f.SettlementDataDecimals,
+		SettlementAsset:                     f.SettlementAsset,
+		QuoteName:                           f.QuoteName,
+		DataSourceSpecForSettlementData:     DataSourceSpecFromProto(f.DataSourceSpecForSettlementData),
+		DataSourceSpecForTradingTermination: DataSourceSpecFromProto(f.DataSourceSpecForTradingTermination),
+		DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(f.DataSourceSpecBinding),
+		SettlementDataDecimals:              f.SettlementDataDecimals,
 	}
 }
 
 func (f Future) IntoProto() *proto.Future {
 	return &proto.Future{
-		SettlementAsset:                 f.SettlementAsset,
-		QuoteName:                       f.QuoteName,
-		OracleSpecForSettlementData:     f.OracleSpecForSettlementData.IntoProto(),
-		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.IntoProto(),
-		OracleSpecBinding:               f.OracleSpecBinding.IntoProto(),
-		SettlementDataDecimals:          f.SettlementDataDecimals,
+		SettlementAsset:                     f.SettlementAsset,
+		QuoteName:                           f.QuoteName,
+		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
+		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(),
+		DataSourceSpecBinding:               f.DataSourceSpecBinding.IntoProto(),
+		SettlementDataDecimals:              f.SettlementDataDecimals,
 	}
 }
 
 func (f Future) String() string {
 	return fmt.Sprintf(
-		"quoteName(%s) settlementAsset(%s) SettlementDataDecimals(%v) oracleSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
+		"quoteName(%s) settlementAsset(%s) SettlementDataDecimals(%v) dataSourceSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
 		f.QuoteName,
 		f.SettlementAsset,
 		f.SettlementDataDecimals,
-		reflectPointerToString(f.OracleSpecForSettlementData),
-		reflectPointerToString(f.OracleSpecForTradingTermination),
-		reflectPointerToString(f.OracleSpecBinding),
+		reflectPointerToString(f.DataSourceSpecForSettlementData),
+		reflectPointerToString(f.DataSourceSpecForTradingTermination),
+		reflectPointerToString(f.DataSourceSpecBinding),
 	)
 }
 

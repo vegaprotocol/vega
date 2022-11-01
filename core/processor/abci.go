@@ -1497,7 +1497,7 @@ func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 		return ErrOracleDataNormalization(err)
 	}
 
-	if !app.oracles.Engine.ListensToPubKeys(*oracleData) {
+	if !app.oracles.Engine.ListensToSigners(*oracleData) {
 		return ErrUnexpectedTxPubKey
 	}
 

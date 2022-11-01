@@ -15,28 +15,44 @@ package events
 import (
 	"context"
 
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 )
 
 type OracleData struct {
 	*Base
-	o oraclespb.OracleData
+	o datapb.OracleData
 }
 
-func NewOracleDataEvent(ctx context.Context, spec oraclespb.OracleData) *OracleData {
-	cpy := spec.DeepClone()
+func NewOracleDataEvent(ctx context.Context, spec datapb.OracleData) *OracleData {
+	cpy := &datapb.Data{}
+	if spec.ExternalData != nil {
+		if spec.ExternalData.Data != nil {
+			cpy = spec.ExternalData.Data.DeepClone()
+		}
+	}
+
 	return &OracleData{
 		Base: newBase(ctx, OracleDataEvent),
-		o:    *cpy,
+		o:    datapb.OracleData{ExternalData: &datapb.ExternalData{Data: cpy}},
 	}
 }
 
-func (o *OracleData) OracleData() oraclespb.OracleData {
-	return o.o
+func (o *OracleData) OracleData() datapb.OracleData {
+	data := datapb.OracleData{
+		ExternalData: &datapb.ExternalData{
+			Data: &datapb.Data{},
+		},
+	}
+	if o.o.ExternalData != nil {
+		if o.o.ExternalData.Data != nil {
+			data.ExternalData.Data = o.o.ExternalData.Data.DeepClone()
+		}
+	}
+	return data
 }
 
-func (o OracleData) Proto() oraclespb.OracleData {
+func (o OracleData) Proto() datapb.OracleData {
 	return o.o
 }
 

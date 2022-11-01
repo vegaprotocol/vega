@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/vega/core/oracles"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
@@ -46,8 +47,8 @@ func TestOracleData(t *testing.T) {
 func testOracleDataGetMissingUintFails(t *testing.T) {
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "42",
@@ -65,8 +66,8 @@ func testOracleDataGetMissingUintFails(t *testing.T) {
 func testOracleDataGetUintFails(t *testing.T) {
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "not an integer",
@@ -85,8 +86,8 @@ func testOracleDataGetUintSucceeds(t *testing.T) {
 	expect := num.NewUint(123)
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": expect.String(),
@@ -104,8 +105,8 @@ func testOracleDataGetUintSucceeds(t *testing.T) {
 func testOracleDataGetMissingIntegerFails(t *testing.T) {
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "42",
@@ -123,8 +124,8 @@ func testOracleDataGetMissingIntegerFails(t *testing.T) {
 func testOracleDataGetMissingDecimalFails(t *testing.T) {
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "12.34",
@@ -142,8 +143,8 @@ func testOracleDataGetMissingDecimalFails(t *testing.T) {
 func testOracleDataGetMissingBooleanFails(t *testing.T) {
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "true",
@@ -161,8 +162,8 @@ func testOracleDataGetMissingBooleanFails(t *testing.T) {
 func testOracleDataGetMissingTimestampFails(t *testing.T) {
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "10000000",
@@ -180,8 +181,8 @@ func testOracleDataGetMissingTimestampFails(t *testing.T) {
 func testOracleDataGetMissingStringFails(t *testing.T) {
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "hello",
@@ -199,8 +200,8 @@ func testOracleDataGetMissingStringFails(t *testing.T) {
 func testOracleDataGetIntegerFails(t *testing.T) {
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "not an integer",
@@ -217,8 +218,8 @@ func testOracleDataGetIntegerFails(t *testing.T) {
 func testOracleDataGetDecimalFails(t *testing.T) {
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "not a decimal",
@@ -235,8 +236,8 @@ func testOracleDataGetDecimalFails(t *testing.T) {
 func testOracleDataGetBooleanFails(t *testing.T) {
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "not a boolean",
@@ -253,8 +254,8 @@ func testOracleDataGetBooleanFails(t *testing.T) {
 func testOracleDataGetTimestampFails(t *testing.T) {
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "not an integer",
@@ -271,8 +272,8 @@ func testOracleDataGetTimestampFails(t *testing.T) {
 func testOracleDataGetIntegerSucceeds(t *testing.T) {
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "42",
@@ -290,8 +291,8 @@ func testOracleDataGetIntegerSucceeds(t *testing.T) {
 func testOracleDataGetDecimalSucceeds(t *testing.T) {
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "1.2",
@@ -309,8 +310,8 @@ func testOracleDataGetDecimalSucceeds(t *testing.T) {
 func testOracleDataGetBooleanSucceeds(t *testing.T) {
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "true",
@@ -328,8 +329,8 @@ func testOracleDataGetBooleanSucceeds(t *testing.T) {
 func testOracleDataGetTimestampSucceeds(t *testing.T) {
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "10000000",
@@ -347,8 +348,8 @@ func testOracleDataGetTimestampSucceeds(t *testing.T) {
 func testOracleDataGetStringSucceeds(t *testing.T) {
 	// given
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "hello",
@@ -366,16 +367,18 @@ func testOracleDataGetStringSucceeds(t *testing.T) {
 func testOracleDataDeterminingOriginSucceeds(t *testing.T) {
 	tcs := []struct {
 		name                 string
-		pubkeys              []string
+		pubkeys              []*types.Signer
 		isFromInternalOracle bool
 	}{
 		{
 			name:                 "considered from internal oracle without public keys",
-			pubkeys:              []string{},
+			pubkeys:              []*types.Signer{},
 			isFromInternalOracle: true,
 		}, {
-			name:                 "considered from external oracle with public keys",
-			pubkeys:              []string{"0xdeadbeef"},
+			name: "considered from external oracle with public keys",
+			pubkeys: []*types.Signer{
+				types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+			},
 			isFromInternalOracle: false,
 		},
 	}
@@ -384,7 +387,7 @@ func testOracleDataDeterminingOriginSucceeds(t *testing.T) {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
 			data := oracles.OracleData{
-				PubKeys: tc.pubkeys,
+				Signers: tc.pubkeys,
 				Data: map[string]string{
 					"my_key": "hello",
 				},

@@ -50,7 +50,7 @@ func testCheckpointSuccess(t *testing.T) {
 
 	now := eng.tsvc.GetTimeNow()
 	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
-	filter, binding := produceTimeTriggeredOracleSpec(termTimeAfterEnact)
+	filter, binding := produceTimeTriggeredDataSourceSpec(termTimeAfterEnact)
 	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), filter, binding)
 	ctx := context.Background()
 
@@ -151,7 +151,7 @@ func enactNewProposal(t *testing.T, eng *tstEngine) types.Proposal {
 	voter1 := eng.newValidPartyTimes("voter-1", 7, 0)
 	now := eng.tsvc.GetTimeNow()
 	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
-	filter, binding := produceTimeTriggeredOracleSpec(termTimeAfterEnact)
+	filter, binding := produceTimeTriggeredDataSourceSpec(termTimeAfterEnact)
 	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), filter, binding)
 
 	// setup
@@ -288,7 +288,7 @@ func enactUpdateProposal(t *testing.T, eng *tstEngine, marketID string) string {
 	voter1 := eng.newValidPartyTimes("voter-1", 7, 0)
 	now := eng.tsvc.GetTimeNow()
 	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
-	filter, binding := produceTimeTriggeredOracleSpec(termTimeAfterEnact)
+	filter, binding := produceTimeTriggeredDataSourceSpec(termTimeAfterEnact)
 	proposal := eng.newProposalForMarketUpdate(marketID, proposer.Id, eng.tsvc.GetTimeNow(), filter, binding)
 	ctx := context.Background()
 

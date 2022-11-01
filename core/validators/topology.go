@@ -392,6 +392,28 @@ func (t *Topology) IsSelfTendermintValidator() bool {
 	return t.IsTendermintValidator(t.SelfVegaPubKey())
 }
 
+func (t *Topology) GetTotalVotingPower() int64 {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	total := int64(0)
+	for _, data := range t.validators {
+		total += data.validatorPower
+	}
+	return total
+}
+
+func (t *Topology) GetVotingPower(pubkey string) int64 {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	for _, data := range t.validators {
+		if data.data.VegaPubKey == pubkey && data.status == ValidatorStatusTendermint {
+			return data.validatorPower
+		}
+	}
+
+	return int64(0)
+}
+
 // IsValidatorVegaPubKey returns true if the given key is a Vega validator public key and the validators is of status Tendermint.
 func (t *Topology) IsTendermintValidator(pubkey string) (ok bool) {
 	t.mu.RLock()

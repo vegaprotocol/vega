@@ -15,6 +15,7 @@ package oracles
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 
@@ -23,7 +24,7 @@ import (
 
 // OracleData holds normalized data coming from an oracle.
 type OracleData struct {
-	PubKeys []string
+	Signers []*types.Signer
 	Data    map[string]string
 }
 
@@ -87,17 +88,17 @@ func (d OracleData) GetTimestamp(propertyName string) (int64, error) {
 // FromInternalOracle returns true if the oracle data has been emitted by an
 // internal oracle.
 func (d OracleData) FromInternalOracle() bool {
-	return len(d.PubKeys) == 0
+	return len(d.Signers) == 0
 }
 
 func (d OracleData) Debug() []zap.Field {
 	keys := ""
-	for _, key := range d.PubKeys {
-		keys += key + " "
+	for _, key := range d.Signers {
+		keys += key.String() + " "
 	}
 
 	fields := []zap.Field{
-		logging.String("PubKeys", keys),
+		logging.String("Signers", keys),
 	}
 	for property, value := range d.Data {
 		fields = append(fields, logging.String(property, value))

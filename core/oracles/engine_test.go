@@ -24,15 +24,15 @@ import (
 	"code.vegaprotocol.io/vega/core/oracles/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestOracleEngine(t *testing.T) {
-	t.Run("Oracle listens to given public keys succeeds", testOracleEngineListensToPubKeysSucceeds)
-	t.Run("Oracle listens to given public keys fails", testOracleEngineListensToPubKeysFails)
+	t.Run("Oracle listens to given public keys succeeds", testOracleEngineListensToSignersSucceeds)
+	t.Run("Oracle listens to given public keys fails", testOracleEngineListensToSignersFails)
 	t.Run("Subscribing to oracle engine succeeds", testOracleEngineSubscribingSucceeds)
 	t.Run("Subscribing to oracle engine with without callback fails", testOracleEngineSubscribingWithoutCallbackFails)
 	t.Run("Broadcasting to matching data succeeds", testOracleEngineBroadcastingMatchingDataSucceeds)
@@ -41,87 +41,96 @@ func TestOracleEngine(t *testing.T) {
 	t.Run("Updating current time succeeds", testOracleEngineUpdatingCurrentTimeSucceeds)
 }
 
-func testOracleEngineListensToPubKeysSucceeds(t *testing.T) {
+func testOracleEngineListensToSignersSucceeds(t *testing.T) {
 	// test conditions
 	ctx := context.Background()
 	currentTime := time.Now()
 	engine := newEngine(ctx, t, currentTime)
 
 	// test oracle engine with 1 subscriber and 1 key provided
-	btcEquals42 := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	btcEquals42 := spec(t, "BTC", datapb.Condition_OPERATOR_EQUALS, "42")
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
 	_, _ = engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
 
 	// test oracle data with single PubKey
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xCAFED00D",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "not an integer",
 		},
 	}
 
-	result := engine.ListensToPubKeys(data)
+	result := engine.ListensToSigners(data)
 	assert.True(t, result)
 
 	// test oracle engine with 2 subscribers and multiple keys provided for one of them
-	ethEquals42 := spec(t, "ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84", "0xCAFED00X", "0xCAFED00D", "0xBEARISH7", "0xBULLISH5")
+	ethEquals42 := spec(t, "ETH", datapb.Condition_OPERATOR_LESS_THAN, "84", "0xCAFED00X", "0xCAFED00D", "0xBEARISH7", "0xBULLISH5")
 	engine.broker.expectNewOracleSpecSubscription(currentTime, ethEquals42.spec.OriginalSpec)
 	_, _ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
 
-	data.PubKeys = append(data.PubKeys, []string{"0xBEARISH7", "0xBULLISH5"}...)
-	result = engine.ListensToPubKeys(data)
+	signersAppend := []*types.Signer{
+		types.CreateSignerFromString("0xBEARISH7", types.DataSignerTypePubKey),
+		types.CreateSignerFromString("0xBULLISH5", types.DataSignerTypePubKey),
+	}
+
+	data.Signers = append(data.Signers, signersAppend...)
+	result = engine.ListensToSigners(data)
 	assert.True(t, result)
 
 	// test oracle data with 3 subscribers and multiple keys for some of them
-	btcGreater21 := spec(t, "BTC", oraclespb.Condition_OPERATOR_GREATER_THAN, "21", "0xCAFED00D", "0xBEARISH7", "0xBULLISH5", "0xMILK123", "OxMILK456")
+	btcGreater21 := spec(t, "BTC", datapb.Condition_OPERATOR_GREATER_THAN, "21", "0xCAFED00D", "0xBEARISH7", "0xBULLISH5", "0xMILK123", "OxMILK456")
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcGreater21.spec.OriginalSpec)
 	_, _ = engine.Subscribe(ctx, btcGreater21.spec, btcGreater21.subscriber.Cb)
 
-	data.PubKeys = append(data.PubKeys, "0xMILK123")
-	result = engine.ListensToPubKeys(data)
+	data.Signers = append(data.Signers, types.CreateSignerFromString("0xMILK123", types.DataSignerTypePubKey))
+	result = engine.ListensToSigners(data)
 	assert.True(t, result)
 }
 
-func testOracleEngineListensToPubKeysFails(t *testing.T) {
+func testOracleEngineListensToSignersFails(t *testing.T) {
 	// test conditions
 	ctx := context.Background()
 	currentTime := time.Now()
 	engine := newEngine(ctx, t, currentTime)
 
 	// test oracle engine with single subscriber and wrong key
-	btcEquals42 := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42", "0xWRONGKEY")
+	btcEquals42 := spec(t, "BTC", datapb.Condition_OPERATOR_EQUALS, "42", "0xWRONGKEY")
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
 	_, _ = engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
 
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xCAFED00D",
-			"0xBEARISH17",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+			types.CreateSignerFromString("0xBEARISH17", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"my_key": "not an integer",
 		},
 	}
 
-	result := engine.ListensToPubKeys(data)
+	result := engine.ListensToSigners(data)
 	assert.False(t, result)
 
 	// test oracle engine with 2 subscribers and multiple missing keys
-	ethEquals42 := spec(t, "ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84", "0xBEARISH7", "0xBULLISH5")
+	ethEquals42 := spec(t, "ETH", datapb.Condition_OPERATOR_LESS_THAN, "84", "0xBEARISH7", "0xBULLISH5")
 	engine.broker.expectNewOracleSpecSubscription(currentTime, ethEquals42.spec.OriginalSpec)
 	_, _ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
 
-	data.PubKeys = append(data.PubKeys, []string{"0xMILK123", "OxMILK456"}...)
-	result = engine.ListensToPubKeys(data)
+	signersAppend := []*types.Signer{
+		types.CreateSignerFromString("0xMILK123", types.DataSignerTypePubKey),
+		types.CreateSignerFromString("OxMILK456", types.DataSignerTypePubKey),
+	}
+	data.Signers = append(data.Signers, signersAppend...)
+	result = engine.ListensToSigners(data)
 	assert.False(t, result)
 }
 
 func testOracleEngineSubscribingSucceeds(t *testing.T) {
 	// given
-	btcEquals42 := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
-	ethLess84 := spec(t, "ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84")
+	btcEquals42 := spec(t, "BTC", datapb.Condition_OPERATOR_EQUALS, "42")
+	ethLess84 := spec(t, "ETH", datapb.Condition_OPERATOR_LESS_THAN, "84")
 
 	// setup
 	ctx := context.Background()
@@ -142,7 +151,7 @@ func testOracleEngineSubscribingSucceeds(t *testing.T) {
 
 func testOracleEngineSubscribingWithoutCallbackFails(t *testing.T) {
 	// given
-	spec := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	spec := spec(t, "BTC", datapb.Condition_OPERATOR_EQUALS, "42")
 
 	// setup
 	ctx := context.Background()
@@ -160,11 +169,11 @@ func testOracleEngineSubscribingWithoutCallbackFails(t *testing.T) {
 
 func testOracleEngineBroadcastingMatchingDataSucceeds(t *testing.T) {
 	// given
-	btcEquals42 := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
-	btcGreater21 := spec(t, "BTC", oraclespb.Condition_OPERATOR_GREATER_THAN, "21")
-	ethEquals42 := spec(t, "ETH", oraclespb.Condition_OPERATOR_EQUALS, "42")
-	ethLess84 := spec(t, "ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84")
-	btcGreater100 := spec(t, "BTC", oraclespb.Condition_OPERATOR_GREATER_THAN, "100")
+	btcEquals42 := spec(t, "BTC", datapb.Condition_OPERATOR_EQUALS, "42")
+	btcGreater21 := spec(t, "BTC", datapb.Condition_OPERATOR_GREATER_THAN, "21")
+	ethEquals42 := spec(t, "ETH", datapb.Condition_OPERATOR_EQUALS, "42")
+	ethLess84 := spec(t, "ETH", datapb.Condition_OPERATOR_LESS_THAN, "84")
+	btcGreater100 := spec(t, "BTC", datapb.Condition_OPERATOR_GREATER_THAN, "100")
 	dataBTC42 := dataWithPrice("BTC", "42")
 
 	// setup
@@ -176,9 +185,9 @@ func testOracleEngineBroadcastingMatchingDataSucceeds(t *testing.T) {
 	engine.broker.expectNewOracleSpecSubscription(currentTime, ethEquals42.spec.OriginalSpec)
 	engine.broker.expectNewOracleSpecSubscription(currentTime, ethLess84.spec.OriginalSpec)
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcGreater100.spec.OriginalSpec)
-	engine.broker.expectMatchedOracleDataEvent(currentTime, dataBTC42.proto, []string{
-		btcEquals42.spec.OriginalSpec.ID,
-		btcGreater21.spec.OriginalSpec.ID,
+	engine.broker.expectMatchedOracleDataEvent(currentTime, &dataBTC42.proto, []string{
+		btcEquals42.spec.OriginalSpec.ExternalDataSourceSpec.Spec.ID,
+		btcGreater21.spec.OriginalSpec.ExternalDataSourceSpec.Spec.ID,
 	})
 
 	// when
@@ -215,8 +224,8 @@ func testOracleEngineUnsubscribingUnknownIDPanics(t *testing.T) {
 
 func testOracleEngineUnsubscribingKnownIDSucceeds(t *testing.T) {
 	// given
-	btcEquals42 := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
-	ethEquals42 := spec(t, "ETH", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	btcEquals42 := spec(t, "BTC", datapb.Condition_OPERATOR_EQUALS, "42")
+	ethEquals42 := spec(t, "ETH", datapb.Condition_OPERATOR_EQUALS, "42")
 	ctx := context.Background()
 	currentTime := time.Now()
 	engine := newEngine(ctx, t, currentTime)
@@ -243,8 +252,8 @@ func testOracleEngineUnsubscribingKnownIDSucceeds(t *testing.T) {
 	dataETH42 := dataWithPrice("ETH", "42")
 
 	// expect
-	engine.broker.expectMatchedOracleDataEvent(currentTime, dataETH42.proto, []string{
-		ethEquals42.spec.OriginalSpec.ID,
+	engine.broker.expectMatchedOracleDataEvent(currentTime, &dataETH42.proto, []string{
+		ethEquals42.spec.OriginalSpec.ExternalDataSourceSpec.Spec.ID,
 	})
 
 	// when
@@ -300,29 +309,33 @@ func newEngine(ctx context.Context, t *testing.T, tm time.Time) *testEngine {
 
 type dataBundle struct {
 	data  oracles.OracleData
-	proto oraclespb.OracleData
+	proto datapb.OracleData
 }
 
 func dataWithPrice(currency, price string) dataBundle {
 	priceName := fmt.Sprintf("prices.%s.value", currency)
+	signers := []*types.Signer{
+		types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+	}
+
 	return dataBundle{
 		data: oracles.OracleData{
 			Data: map[string]string{
 				priceName: price,
 			},
-			PubKeys: []string{
-				"0xCAFED00D",
-			},
+			Signers: signers,
 		},
-		proto: oraclespb.OracleData{
-			Data: []*oraclespb.Property{
-				{
-					Name:  priceName,
-					Value: price,
+		proto: datapb.OracleData{
+			ExternalData: &datapb.ExternalData{
+				Data: &datapb.Data{
+					Data: []*datapb.Property{
+						{
+							Name:  priceName,
+							Value: price,
+						},
+					},
+					Signers: types.SignersIntoProto(signers),
 				},
-			},
-			PubKeys: []string{
-				"0xCAFED00D",
 			},
 		},
 	}
@@ -333,30 +346,44 @@ type specBundle struct {
 	subscriber dummySubscriber
 }
 
-func spec(t *testing.T, currency string, op oraclespb.Condition_Operator, price string, keys ...string) specBundle {
+func spec(t *testing.T, currency string, op datapb.Condition_Operator, price string, keys ...string) specBundle {
 	t.Helper()
-	if len(keys) == 0 {
-		keys = []string{
-			"0xCAFED00D",
+	var signers []*types.Signer
+	if len(keys) > 0 {
+		signers = make([]*types.Signer, len(keys))
+		for i, k := range keys {
+			signers[i] = types.CreateSignerFromString(k, types.DataSignerTypePubKey)
 		}
 	}
-	typedOracleSpec := types.OracleSpecFromProto(oraclespb.NewOracleSpec(
-		keys,
-		[]*oraclespb.Filter{
-			{
-				Key: &oraclespb.PropertyKey{
-					Name: fmt.Sprintf("prices.%s.value", currency),
-					Type: oraclespb.PropertyKey_TYPE_INTEGER,
-				},
-				Conditions: []*oraclespb.Condition{
-					{
-						Value:    price,
-						Operator: op,
+	if len(keys) == 0 {
+		signers = []*types.Signer{types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey)}
+	}
+
+	typedOracleSpec := types.OracleSpecFromProto(
+		&datapb.OracleSpec{
+			ExternalDataSourceSpec: &datapb.ExternalDataSourceSpec{
+				Spec: datapb.NewDataSourceSpec(
+					&datapb.DataSourceSpecConfiguration{
+						Signers: types.SignersIntoProto(signers),
+						Filters: []*datapb.Filter{
+							{
+								Key: &datapb.PropertyKey{
+									Name: fmt.Sprintf("prices.%s.value", currency),
+									Type: datapb.PropertyKey_TYPE_INTEGER,
+								},
+								Conditions: []*datapb.Condition{
+									{
+										Value:    price,
+										Operator: op,
+									},
+								},
+							},
+						},
 					},
-				},
+				),
 			},
-		}))
-	spec, err := oracles.NewOracleSpec(*typedOracleSpec)
+		})
+	spec, err := oracles.NewOracleSpec(*typedOracleSpec.ExternalDataSourceSpec)
 	if err != nil {
 		t.Fatalf("Couldn't create oracle spec: %v", err)
 	}
@@ -404,21 +431,21 @@ func newTimeService(ctx context.Context, t *testing.T) *testTimeService {
 }
 
 func (b *testBroker) expectNewOracleSpecSubscription(currentTime time.Time, spec *types.OracleSpec) {
-	proto := spec.IntoProto()
-	proto.CreatedAt = currentTime.UnixNano()
-	proto.Status = oraclespb.OracleSpec_STATUS_ACTIVE
-	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, *proto)).Times(1)
+	proto := spec.ExternalDataSourceSpec.IntoProto()
+	proto.Spec.CreatedAt = currentTime.UnixNano()
+	proto.Spec.Status = datapb.DataSourceSpec_STATUS_ACTIVE
+	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, datapb.OracleSpec{ExternalDataSourceSpec: proto})).Times(1)
 }
 
 func (b *testBroker) expectOracleSpecSubscriptionDeactivation(currentTime time.Time, spec *types.OracleSpec) {
-	proto := spec.IntoProto()
-	proto.CreatedAt = currentTime.UnixNano()
-	proto.Status = oraclespb.OracleSpec_STATUS_DEACTIVATED
-	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, *proto)).Times(1)
+	proto := spec.ExternalDataSourceSpec.IntoProto()
+	proto.Spec.CreatedAt = currentTime.UnixNano()
+	proto.Spec.Status = datapb.DataSourceSpec_STATUS_DEACTIVATED
+	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, datapb.OracleSpec{ExternalDataSourceSpec: proto})).Times(1)
 }
 
-func (b *testBroker) expectMatchedOracleDataEvent(currentTime time.Time, data oraclespb.OracleData, specIDs []string) {
-	data.MatchedSpecIds = specIDs
-	data.BroadcastAt = currentTime.UnixNano()
-	b.EXPECT().Send(events.NewOracleDataEvent(b.ctx, data)).Times(1)
+func (b *testBroker) expectMatchedOracleDataEvent(currentTime time.Time, data *datapb.OracleData, specIDs []string) {
+	data.ExternalData.Data.MatchedSpecIds = specIDs
+	data.ExternalData.Data.BroadcastAt = currentTime.UnixNano()
+	b.EXPECT().Send(events.NewOracleDataEvent(b.ctx, *data)).Times(1)
 }

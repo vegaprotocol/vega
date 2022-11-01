@@ -21,17 +21,17 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/pkg/errors"
 )
 
 var (
-	// ErrOracleSpecAndBindingAreRequired is returned when the definition of the
-	// oracle spec or its binding is missing from the future definition.
-	ErrOracleSpecAndBindingAreRequired = errors.New("an oracle spec and an oracle spec binding are required")
+	// ErrDataSourceSpecAndBindingAreRequired is returned when the definition of the
+	// data source spec or its binding is missing from the future definition.
+	ErrDataSourceSpecAndBindingAreRequired = errors.New("a data source spec and spec binding are required")
 
-	// ErrOracleSettlementDataeNotSet is returned when the oracle has not set the settlement data.
-	ErrOracleSettlementDataNotSet = errors.New("settlement data is not set")
+	// ErrDataSourceSettlementDataNotSet is returned when the data source has not set the settlement data.
+	ErrDataSourceSettlementDataNotSet = errors.New("settlement data is not set")
 )
 
 // Future represent a Future as describe by the market framework.
@@ -75,7 +75,7 @@ type oracleData struct {
 
 func (d *oracleData) SettlementData() (*num.Uint, error) {
 	if d.settlementData == nil {
-		return nil, ErrOracleSettlementDataNotSet
+		return nil, ErrDataSourceSettlementDataNotSet
 	}
 	return d.settlementData.Clone(), nil
 }
@@ -234,8 +234,8 @@ func (f *Future) updateSettlementData(ctx context.Context, data oracles.OracleDa
 }
 
 func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, error) {
-	if f.OracleSpecForSettlementData == nil || f.OracleSpecForTradingTermination == nil || f.OracleSpecBinding == nil {
-		return nil, ErrOracleSpecAndBindingAreRequired
+	if f.DataSourceSpecForSettlementData == nil || f.DataSourceSpecForTradingTermination == nil || f.DataSourceSpecBinding == nil {
+		return nil, ErrDataSourceSpecAndBindingAreRequired
 	}
 
 	oracleBinding, err := newOracleBinding(f)
@@ -254,19 +254,19 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 	}
 
 	// Oracle spec for settlement data.
-	OracleSpecForSettlementData, err := oracles.NewOracleSpec(*f.OracleSpecForSettlementData)
+	oracleSpecForSettlementData, err := oracles.NewOracleSpec(*f.DataSourceSpecForSettlementData.ToExternalDataSourceSpec())
 	if err != nil {
 		return nil, err
 	}
 
-	if err := OracleSpecForSettlementData.EnsureBoundableProperty(
+	if err := oracleSpecForSettlementData.EnsureBoundableProperty(
 		oracleBinding.settlementDataProperty,
-		oraclespb.PropertyKey_TYPE_INTEGER,
+		datapb.PropertyKey_TYPE_INTEGER,
 	); err != nil {
 		return nil, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
 	}
 
-	future.oracle.settlementDataSubscriptionID, future.oracle.unsubscribe = oe.Subscribe(ctx, *OracleSpecForSettlementData, future.updateSettlementData)
+	future.oracle.settlementDataSubscriptionID, future.oracle.unsubscribe = oe.Subscribe(ctx, *oracleSpecForSettlementData, future.updateSettlementData)
 
 	if log.IsDebug() {
 		log.Debug("future subscribed to oracle engine for settlement data",
@@ -275,18 +275,21 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 	}
 
 	// Oracle spec for trading termination.
-	oracleSpecForTerminatedMarket, err := oracles.NewOracleSpec(*f.OracleSpecForTradingTermination)
+	oracleSpecForTerminatedMarket, err := oracles.NewOracleSpec(
+		types.ExternalDataSourceSpec{
+			Spec: f.DataSourceSpecForTradingTermination,
+		})
 	if err != nil {
 		return nil, err
 	}
 
-	var tradingTerminationPropType oraclespb.PropertyKey_Type
+	var tradingTerminationPropType datapb.PropertyKey_Type
 	var tradingTerminationCb oracles.OnMatchedOracleData
 	if oracleBinding.tradingTerminationProperty == oracles.BuiltinOracleTimestamp {
-		tradingTerminationPropType = oraclespb.PropertyKey_TYPE_TIMESTAMP
+		tradingTerminationPropType = datapb.PropertyKey_TYPE_TIMESTAMP
 		tradingTerminationCb = future.updateTradingTerminatedByTimestamp
 	} else {
-		tradingTerminationPropType = oraclespb.PropertyKey_TYPE_BOOLEAN
+		tradingTerminationPropType = datapb.PropertyKey_TYPE_BOOLEAN
 		tradingTerminationCb = future.updateTradingTerminated
 	}
 
@@ -309,11 +312,11 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 }
 
 func newOracleBinding(f *types.Future) (oracleBinding, error) {
-	settlementDataProperty := strings.TrimSpace(f.OracleSpecBinding.SettlementDataProperty)
+	settlementDataProperty := strings.TrimSpace(f.DataSourceSpecBinding.SettlementDataProperty)
 	if len(settlementDataProperty) == 0 {
 		return oracleBinding{}, errors.New("binding for settlement data cannot be blank")
 	}
-	tradingTerminationProperty := strings.TrimSpace(f.OracleSpecBinding.TradingTerminationProperty)
+	tradingTerminationProperty := strings.TrimSpace(f.DataSourceSpecBinding.TradingTerminationProperty)
 	if len(tradingTerminationProperty) == 0 {
 		return oracleBinding{}, errors.New("binding for trading termination market cannot be blank")
 	}
