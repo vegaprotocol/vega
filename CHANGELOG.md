@@ -3,7 +3,7 @@
 ## Unreleased 0.62.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6598](https://github.com/vegaprotocol/vega/issues/6598) - Rework `vega tools snapshot` command to be more consistent with other CLI options
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -

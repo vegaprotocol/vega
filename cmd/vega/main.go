@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vega/genesis"
 	"code.vegaprotocol.io/vega/cmd/vega/nodewallet"
 	"code.vegaprotocol.io/vega/cmd/vega/paths"
+	tools "code.vegaprotocol.io/vega/cmd/vegatools"
 	"code.vegaprotocol.io/vega/core/config"
 )
 
@@ -58,8 +59,6 @@ func Main(ctx context.Context) error {
 			return (&datanodeCmd{}).Execute(nil)
 		case "blockexplorer":
 			return (&blockExplorerCmd{}).Execute(nil)
-		case "tools":
-			return (&toolsCmd{}).Execute(nil)
 		}
 	}
 
@@ -74,7 +73,7 @@ func Main(ctx context.Context) error {
 		Version,
 		Wallet,
 		Datanode,
-		VegaTools,
+		tools.VegaTools,
 		Watch,
 		Tm,
 		Tendermint,
