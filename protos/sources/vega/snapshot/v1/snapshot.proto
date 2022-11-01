@@ -10,6 +10,7 @@ import "vega/chain_events.proto";
 import "vega/governance.proto";
 import "vega/events/v1/events.proto";
 import "vega/checkpoint/v1/checkpoint.proto";
+import "vega/data/v1/data.proto";
 
 enum Format {
   // Default value, always invalid
@@ -146,7 +147,7 @@ message OracleDataBatch {
 }
 
 message OracleData {
-  repeated string pub_keys = 1;
+  repeated vega.data.v1.Signer signers = 1;
   repeated OracleDataPair data = 2;
 }
 

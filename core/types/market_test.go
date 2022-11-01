@@ -17,7 +17,8 @@ import (
 
 	"code.vegaprotocol.io/vega/core/types"
 	proto "code.vegaprotocol.io/vega/protos/vega"
-	v1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,6 +36,8 @@ var testFilter1 = &v1.Filter{
 }
 
 func TestMarketFromIntoProto(t *testing.T) {
+	pk := types.CreateSignerFromString("pubkey", types.DataSignerTypePubKey)
+
 	pMarket := &proto.Market{
 		Id: "foo",
 		TradableInstrument: &proto.TradableInstrument{
@@ -49,23 +52,27 @@ func TestMarketFromIntoProto(t *testing.T) {
 					Future: &proto.Future{
 						SettlementAsset: "GBP",
 						QuoteName:       "USD",
-						OracleSpecForSettlementData: &v1.OracleSpec{
+						DataSourceSpecForSettlementData: &v1.DataSourceSpec{
 							Id:        "os1",
 							CreatedAt: 0,
 							UpdatedAt: 1,
-							PubKeys:   []string{"pubkey"},
-							Filters:   []*v1.Filter{testFilter1},
-							Status:    v1.OracleSpec_STATUS_ACTIVE,
+							Config: &v1.DataSourceSpecConfiguration{
+								Signers: []*datapb.Signer{pk.IntoProto()},
+								Filters: []*v1.Filter{testFilter1},
+							},
+							Status: v1.DataSourceSpec_STATUS_ACTIVE,
 						},
-						OracleSpecForTradingTermination: &v1.OracleSpec{
+						DataSourceSpecForTradingTermination: &v1.DataSourceSpec{
 							Id:        "os1",
 							CreatedAt: 0,
 							UpdatedAt: 1,
-							PubKeys:   []string{"pubkey"},
-							Filters:   []*v1.Filter{},
-							Status:    v1.OracleSpec_STATUS_ACTIVE,
+							Config: &v1.DataSourceSpecConfiguration{
+								Signers: []*datapb.Signer{pk.IntoProto()},
+								Filters: []*v1.Filter{},
+							},
+							Status: v1.DataSourceSpec_STATUS_ACTIVE,
 						},
-						OracleSpecBinding: &proto.OracleSpecToFutureBinding{
+						DataSourceSpecBinding: &proto.DataSourceSpecToFutureBinding{
 							SettlementDataProperty: "something",
 						},
 					},

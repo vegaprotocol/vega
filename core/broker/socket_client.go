@@ -191,8 +191,6 @@ func (s *socketClient) stream(ctx context.Context) error {
 
 	defer s.close()
 
-	var sendTimeouts int
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -211,29 +209,13 @@ func (s *socketClient) stream(ctx context.Context) error {
 				case protocol.ErrClosed:
 					return fmt.Errorf("socket is closed: %w", err)
 				case protocol.ErrSendTimeout:
-					sendTimeouts++
-					s.log.Error("Failed to queue message on socket", logging.Error(err))
-
-					if sendTimeouts > s.config.MaxSendTimeouts {
-						return fmt.Errorf(
-							"maximum number of '%d' send timeouts exceeded: %w",
-							s.config.MaxSendTimeouts,
-							err,
-						)
-					}
-
-					// Try to put the timed out message back on internal events queue
-					if err := s.Send(evt); err != nil {
-						return err
-					}
+					return fmt.Errorf("failed to queue message on socket: %w", err)
 				default:
 					s.log.Error("Failed to send to socket", logging.Error(err))
 				}
 
 				continue
 			}
-
-			sendTimeouts = 0
 		}
 	}
 }

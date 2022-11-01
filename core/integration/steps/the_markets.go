@@ -179,23 +179,23 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 			futureUp := &types.UpdateFutureProduct{
 				QuoteName:              ti.Future.QuoteName,
 				SettlementDataDecimals: settlementDecimals,
-				OracleSpecForSettlementData: &types.OracleSpecConfiguration{
-					PubKeys: settleSpec.PubKeys,
-					Filters: settleSpec.Filters,
+				DataSourceSpecForSettlementData: &types.DataSourceSpecConfiguration{
+					Signers: settleSpec.ExternalDataSourceSpec.Spec.Config.Signers,
+					Filters: settleSpec.ExternalDataSourceSpec.Spec.Config.Filters,
 				},
-				OracleSpecForTradingTermination: &types.OracleSpecConfiguration{
-					PubKeys: termSpec.PubKeys,
-					Filters: termSpec.Filters,
+				DataSourceSpecForTradingTermination: &types.DataSourceSpecConfiguration{
+					Signers: termSpec.ExternalDataSourceSpec.Spec.Config.Signers,
+					Filters: termSpec.ExternalDataSourceSpec.Spec.Config.Filters,
 				},
-				OracleSpecBinding: types.OracleSpecBindingForFutureFromProto(&proto.OracleSpecToFutureBinding{
+				DataSourceSpecBinding: types.DataSourceSpecBindingForFutureFromProto(&proto.DataSourceSpecToFutureBinding{
 					SettlementDataProperty:     oracleSettlement.Binding.SettlementDataProperty,
 					TradingTerminationProperty: oracleTermination.Binding.TradingTerminationProperty,
 				}),
 			}
 			ti.Future.SettlementDataDecimals = settlementDecimals
-			ti.Future.OracleSpecForSettlementData = settleSpec
-			ti.Future.OracleSpecBinding = futureUp.OracleSpecBinding
-			ti.Future.OracleSpecForTradingTermination = termSpec
+			ti.Future.DataSourceSpecForSettlementData = settleSpec.ExternalDataSourceSpec.Spec
+			ti.Future.DataSourceSpecBinding = futureUp.DataSourceSpecBinding
+			ti.Future.DataSourceSpecForTradingTermination = termSpec.ExternalDataSourceSpec.Spec
 			// ensure we update the existing market
 			existing.TradableInstrument.Instrument.Product = ti
 			update.Changes.Instrument = &types.UpdateInstrumentConfiguration{
@@ -271,7 +271,7 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	}
 
 	settlementDataDecimals := config.OracleConfigs.GetSettlementDataDP(row.oracleConfig())
-	var binding proto.OracleSpecToFutureBinding
+	var binding proto.DataSourceSpecToFutureBinding
 	binding.SettlementDataProperty = oracleConfigForSettlement.Binding.SettlementDataProperty
 	binding.TradingTerminationProperty = oracleConfigForTradingTermination.Binding.TradingTerminationProperty
 
@@ -324,12 +324,12 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 				},
 				Product: &types.InstrumentFuture{
 					Future: &types.Future{
-						SettlementAsset:                 row.asset(),
-						QuoteName:                       row.quoteName(),
-						OracleSpecForSettlementData:     types.OracleSpecFromProto(oracleConfigForSettlement.Spec),
-						OracleSpecForTradingTermination: types.OracleSpecFromProto(oracleConfigForTradingTermination.Spec),
-						OracleSpecBinding:               types.OracleSpecBindingForFutureFromProto(&binding),
-						SettlementDataDecimals:          settlementDataDecimals,
+						SettlementAsset:                     row.asset(),
+						QuoteName:                           row.quoteName(),
+						DataSourceSpecForSettlementData:     types.DataSourceSpecFromProto(oracleConfigForSettlement.Spec.GetExternalDataSourceSpec().Spec),
+						DataSourceSpecForTradingTermination: types.DataSourceSpecFromProto(oracleConfigForTradingTermination.Spec.ExternalDataSourceSpec.Spec),
+						DataSourceSpecBinding:               types.DataSourceSpecBindingForFutureFromProto(&binding),
+						SettlementDataDecimals:              settlementDataDecimals,
 					},
 				},
 			},
@@ -368,7 +368,7 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"asset",
 		"risk model",
 		"fees",
-		"oracle config",
+		"data source config",
 		"price monitoring",
 		"margin calculator",
 		"auction duration",
@@ -383,7 +383,7 @@ func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id",
 	}, []string{
-		"oracle config",         // product update
+		"data source config",    // product update
 		"price monitoring",      // price monitoring update
 		"risk model",            // risk model update
 		"liquidity monitoring ", // liquidity monitoring update
@@ -403,8 +403,8 @@ func (r marketUpdateRow) id() string {
 }
 
 func (r marketUpdateRow) oracleConfig() (string, bool) {
-	if r.row.HasColumn("oracle config") {
-		oc := r.row.MustStr("oracle config")
+	if r.row.HasColumn("data source config") {
+		oc := r.row.MustStr("data source config")
 		return oc, true
 	}
 	return "", false
@@ -469,7 +469,7 @@ func (r marketRow) fees() string {
 }
 
 func (r marketRow) oracleConfig() string {
-	return r.row.MustStr("oracle config")
+	return r.row.MustStr("data source config")
 }
 
 func (r marketRow) priceMonitoring() string {

@@ -727,6 +727,9 @@ type Query {
   "Flag indicating whether the data-node is ready to begin the protocol upgrade"
   protocolUpgradeStatus: ProtocolUpgradeStatus
 
+  "List protocol upgrade proposals, optionally filtering on status or approver"
+  protocolUpgradeProposals(inState: ProtocolUpgradeProposalStatus, approvedBy: String, pagination: Pagination): ProtocolUpgradeProposalConnection
+
   "Governance proposals that aim to update existing markets"
   updateMarketProposals(
     "Optionally, select proposals for a specific market. Leave out for all"
@@ -1400,7 +1403,7 @@ type InstrumentMetadata {
   tags: [String!]
 }
 
-"An Ethereum oracle"
+"An Ethereum data source"
 type EthereumEvent {
   "The ID of the ethereum contract to use (string)"
   contractId: ID!
@@ -1419,67 +1422,86 @@ type Future {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
 
-  "The oracle spec describing the oracle data of interest for settlement."
-  oracleSpecForSettlementData: OracleSpec!
+  "The data source specification that describes the data of interest for settlement."
+  dataSourceSpecForSettlementData: DataSourceSpec!
 
-  "The oracle spec describing the oracle data of interest for trading termination."
-  oracleSpecForTradingTermination: OracleSpec!
+  "The data source specification describing the data source data of interest for trading termination."
+  dataSourceSpecForTradingTermination: DataSourceSpec!
 
-  "The binding between the oracle spec and the settlement data"
-  oracleSpecBinding: OracleSpecToFutureBinding!
+  "The binding between the data source specification and the settlement data"
+  dataSourceSpecBinding: DataSourceSpecToFutureBinding!
 
-  "The number of decimal places implied by the settlement data (such as price) emitted by the settlement oracle"
+  "The number of decimal places implied by the settlement data (such as price) emitted by the settlement data source"
   settlementDataDecimals: Int!
 }
 
 """
-OracleSpecToFutureBinding tells on which property oracle data should be
+DataSourceSpecToFutureBinding tells on which property data source data should be
 used as settlement data and trading termination.
 """
-type OracleSpecToFutureBinding {
+type DataSourceSpecToFutureBinding {
   settlementDataProperty: String!
   tradingTerminationProperty: String!
 }
 
 """
-An oracle spec describe the oracle data that a product (or a risk model)
+An data source specification describes the data source data that a product (or a risk model)
 wants to get from the oracle engine.
 """
-type OracleSpec {
-  "ID is a hash generated from the OracleSpec data."
+type DataSourceSpec {
+  "ID is a hash generated from the DataSourceSpec data."
   id: ID!
   "RFC3339Nano creation date time"
   createdAt: String!
   "RFC3339Nano last updated timestamp"
   updatedAt: String
-  """
-  The list of authorized public keys that signed the data for this
-  oracle. All the public keys in the oracle data should be contained in these
-  public keys.
-  """
-  pubKeys: [String!]
-  """
-  Filters describes which oracle data are considered of interest or not for
-  the product (or the risk model).
-  """
-  filters: [Filter!]
-  "Status describes the status of the oracle spec"
-  status: OracleSpecStatus!
-  "Data list all the oracle data broadcast to this spec"
-  data: [OracleData!]! @deprecated(reason: "Use dataConnection instead")
+
+  config: DataSourceSpecConfiguration!
+
+  "Status describes the status of the data source spec"
+  status: DataSourceSpecStatus!
+}
+
+"""
+externalDataSourceSpec is the type that wraps the DataSourceSpec type in order to be further used/extended
+by the OracleSpec
+"""
+type ExternalDataSourceSpec {
+  spec: DataSourceSpec!
+}
+
+type OracleSpec {
+  dataSourceSpec: ExternalDataSourceSpec!
   "Data list all the oracle data broadcast to this spec"
   dataConnection(pagination: Pagination): OracleDataConnection!
 }
 
-"Status describe the status of the oracle spec"
-enum OracleSpecStatus {
-  "Describes an active oracle spec."
+"Status describe the status of the data spec"
+enum DataSourceSpecStatus {
+  "describes an active data spec."
   STATUS_ACTIVE
   """
-  Describes an oracle spec that is not listening to data
+  describes a data spec that is not listening to data
   anymore.
   """
   STATUS_DEACTIVATED
+}
+
+"""
+Signer is the authorized signature used for the data.
+"""
+type Signer {
+  signer: SignerKind!
+}
+
+union SignerKind = ETHAddress | PubKey
+
+type ETHAddress {
+  address: String
+}
+
+type PubKey {
+  key: String
 }
 
 """
@@ -1487,7 +1509,7 @@ Filter describes the conditions under which oracle data is considered of
 interest or not.
 """
 type Filter {
-  "The oracle data property key targeted by the filter."
+  "key is the data source data property key targeted by the filter."
   key: PropertyKey!
   """
   The conditions that should be matched by the data to be
@@ -1496,7 +1518,7 @@ type Filter {
   conditions: [Condition!]
 }
 
-"PropertyKey describes the property key contained in an oracle data."
+"PropertyKey describes the property key contained in a source data."
 type PropertyKey {
   "The name of the property."
   name: String
@@ -1505,7 +1527,7 @@ type PropertyKey {
 }
 
 """
-Type describes the type of properties that are supported by the oracle
+Type describes the type of properties that are supported by the data source
 engine.
 """
 enum PropertyKeyType {
@@ -1524,7 +1546,7 @@ enum PropertyKeyType {
 }
 
 """
-Condition describes the condition that must be validated by the oracle engine
+Condition describes the condition that must be validated by the data source engine
 """
 type Condition {
   "The type of comparison to make on the value."
@@ -1537,14 +1559,14 @@ type Condition {
 enum ConditionOperator {
   "Verify if the property values are strictly equal or not."
   OPERATOR_EQUALS
-  "Verify if the oracle data value is greater than the Condition value."
+  "Verify if the data source data value is greater than the Condition value."
   OPERATOR_GREATER_THAN
   """
-  Verify if the oracle data value is greater than or equal to the Condition
+  Verify if the data source data value is greater than or equal to the Condition
   value.
   """
   OPERATOR_GREATER_THAN_OR_EQUAL
-  " Verify if the oracle data value is less than the Condition value."
+  " Verify if the data source data value is less than the Condition value."
   OPERATOR_LESS_THAN
   """
   Verify if the oracle data value is less or equal to than the Condition
@@ -1553,24 +1575,33 @@ enum ConditionOperator {
   OPERATOR_LESS_THAN_OR_EQUAL
 }
 
-"An oracle data contains the data sent by an oracle"
-type OracleData {
-  "The list of public keys that signed the data"
-  pubKeys: [String!]
-  "All the properties sent by an oracle"
+"A data source contains the data sent by a data source"
+type Data {
+  "signers is the list of public keys/ETH addresses that signed the data"
+  signers: [Signer!]
+  "properties contains all the properties sent by a data source"
   data: [Property!]
 
   """
-  Lists of all the oracle specs that matched this oracle data.
-  When the array is empty, it means no oracle spec matched this oracle data.
+  List of all the data specs that matched this source data.
+  When the array is empty, it means no data spec matched this source data.
   """
   matchedSpecIds: [ID!]
   """
   RFC3339Nano formatted date and time for when the data was broadcast to the markets
-  with a matching oracle spec.
-  It has no value when the oracle date does not match any oracle spec.
+  with a matching data spec.
+  It has no value when the source data does not match any data spec.
   """
   broadcastAt:  String!
+}
+
+type ExternalData {
+  data: Data!
+}
+
+"An oracle data contains the data sent by an oracle"
+type OracleData {
+  externalData: ExternalData!
 }
 
 "A property associates a name to a value"
@@ -3282,36 +3313,37 @@ type FutureProduct {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
   """
-  Describes the oracle data that an instrument wants to get from the oracle engine for settlement data.
+  Describes the data source data that an instrument wants to get from the data source engine for settlement data.
   """
-  oracleSpecForSettlementData: OracleSpecConfiguration!
+  dataSourceSpecForSettlementData: DataSourceSpecConfiguration!
   """
-  Describes the oracle data that an instrument wants to get from the oracle engine for trading termination.
+  Describes the source data that an instrument wants to get from the data source engine for trading termination.
   """
-  oracleSpecForTradingTermination: OracleSpecConfiguration!
+  dataSourceSpecForTradingTermination: DataSourceSpecConfiguration!
   """
-  OracleSpecToFutureBinding tells on which property oracle data should be
+  DataSourceSpecToFutureBinding tells on which property source data should be
   used as settlement data.
   """
-  oracleSpecBinding: OracleSpecToFutureBinding!
+  dataSourceSpecBinding: DataSourceSpecToFutureBinding!
 
   "The number of decimal places implied by the settlement data (such as price) emitted by the settlement oracle"
   settlementDataDecimals: Int!
 }
 
 """
-An oracle spec describe the oracle data that an instrument wants to get from the
-oracle engine.
+A data spec describes the source data that an instrument wants to get from the
+sourcing engine.
 """
-type OracleSpecConfiguration {
+type DataSourceSpecConfiguration {
   """
-  The list of authorised public keys that signed the data for this
-  oracle. All the public keys in the oracle data should be contained in these
-  public keys.
+  signers is the list of authorized signatures that signed the data for this
+  data source. All the public keys in the data should be contained in this
+  list.
   """
-  pubKeys: [String!]
+  signers: [Signer!]
+ 
   """
-  Filters describes which oracle data are considered of interest or not for
+  filters describes which source data are considered of interest or not for
   the product (or the risk model).
   """
   filters: [Filter!]
@@ -3361,9 +3393,9 @@ type UpdateInstrumentConfiguration {
 
 type UpdateFutureProduct {
   quoteName: String!
-  oracleSpecForSettlementData: OracleSpecConfiguration!
-  oracleSpecForTradingTermination: OracleSpecConfiguration!
-  oracleSpecBinding: OracleSpecToFutureBinding!
+  dataSourceSpecForSettlementData: DataSourceSpecConfiguration!
+  dataSourceSpecForTradingTermination: DataSourceSpecConfiguration!
+  dataSourceSpecBinding: DataSourceSpecToFutureBinding!
 }
 
 union UpdateMarketRiskParameters = UpdateMarketSimpleRiskModel | UpdateMarketLogNormalRiskModel
@@ -4344,36 +4376,30 @@ type AssetsConnection {
     pageInfo: PageInfo
 }
 
-"Edge type containing the oracle spec and cursor information returned by a OracleSpecsConnection"
 type OracleSpecEdge {
-  "The oracle spec"
+  "The external data spec"
   node: OracleSpec!
-  "The cursor for the spec item"
+  "The cursor for the external data"
   cursor: String!
 }
 
-"Connection type for retrieving cursor-based paginated oracle specs information"
 type OracleSpecsConnection {
-    "The oracle specs"
-    edges: [OracleSpecEdge]
-    "The pagination information"
-    pageInfo: PageInfo!
+  edges: [OracleSpecEdge]
+  pageInfo: PageInfo!
 }
 
-"Edge type containing the oracle data and cursor information returned by a OracleDataConnection"
 type OracleDataEdge {
-  "The oracle data"
+  "The oracle data source"
   node: OracleData!
   "The cursor for the data item"
   cursor: String!
 }
 
-"Connection type for retrieving cursor-based paginated oracle data information"
 type OracleDataConnection {
-    "The oracle data"
-    edges: [OracleDataEdge]
-    "The pagination information"
-    pageInfo: PageInfo!
+  "The oracle data spec"
+  edges: [OracleDataEdge]
+  "The pagination information"
+  pageInfo: PageInfo!
 }
 
 "Edge type containing the liquidity provision and cursor information returned by a LiquidityProvisionsConnection"
@@ -4567,4 +4593,44 @@ input DateRange {
 "Indicator showing whether the data-node is ready for the protocol upgrade to begin."
 type ProtocolUpgradeStatus {
   ready: Boolean!
+}
+
+"The set of valid statuses for a protocol upgrade proposal"
+enum ProtocolUpgradeProposalStatus {
+  "Invalid proposal state"
+  PROTOCOL_UPGRADE_PROPOSAL_STATUS_UNSPECIFIED
+  "Proposal to upgrade protocol version is awaiting sufficient validator approval"
+  PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING
+  "Proposal to upgrade protocol version accepted"
+  PROTOCOL_UPGRADE_PROPOSAL_STATUS_APPROVED
+  "Proposal to upgrade protocol version has been rejected"
+  PROTOCOL_UPGRADE_PROPOSAL_STATUS_REJECTED
+}
+
+"Connection type for retrieving cursor-based paginated protocol upgrade proposals"
+type ProtocolUpgradeProposalConnection {
+  "The positions in this connection"
+  edges: [ProtocolUpgradeProposalEdge!]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+"Edge type containing the protocol upgrade protocol cursor information"
+type ProtocolUpgradeProposalEdge {
+  "The protocol upgrade proposal"
+  node: ProtocolUpgradeProposal!
+  "Cursor identifying the protocol upgrade proposal"
+  cursor: String!
+}
+
+"A proposal to upgrade the vega protocol (i.e. which version of the vega software nodes will run)"
+type ProtocolUpgradeProposal {
+  "At which block the upgrade is proposed"
+  upgradeBlockHeight: String!
+  "To which vega release tag the upgrade is proposed"
+  vegaReleaseTag: String!
+  "Tendermint validators that have agreed to the upgrade"
+  approvers: [String!]!
+  "the status of the proposal"
+  status: ProtocolUpgradeProposalStatus!
 }

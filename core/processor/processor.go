@@ -207,7 +207,7 @@ type Oracle struct {
 
 type OraclesEngine interface {
 	BroadcastData(context.Context, oracles.OracleData) error
-	ListensToPubKeys(oracles.OracleData) bool
+	ListensToSigners(oracles.OracleData) bool
 	HasMatch(data oracles.OracleData) (bool, error)
 }
 

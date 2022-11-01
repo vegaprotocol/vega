@@ -27,12 +27,12 @@ type OracleData struct {
 }
 
 const (
-	sqlOracleDataColumns = `public_keys, data, matched_spec_ids, broadcast_at, tx_hash, vega_time, seq_num`
+	sqlOracleDataColumns = `signers, data, matched_spec_ids, broadcast_at, tx_hash, vega_time, seq_num`
 )
 
 var oracleDataOrdering = TableOrdering{
 	ColumnOrdering{Name: "vega_time", Sorting: ASC},
-	ColumnOrdering{Name: "public_keys", Sorting: ASC},
+	ColumnOrdering{Name: "signers", Sorting: ASC},
 }
 
 func NewOracleData(connectionSource *ConnectionSource) *OracleData {
@@ -41,16 +41,15 @@ func NewOracleData(connectionSource *ConnectionSource) *OracleData {
 	}
 }
 
-func (od *OracleData) Add(ctx context.Context, data *entities.OracleData) error {
+func (od *OracleData) Add(ctx context.Context, oracleData *entities.OracleData) error {
 	defer metrics.StartSQLQuery("OracleData", "Add")()
 	query := fmt.Sprintf("insert into oracle_data(%s) values ($1, $2, $3, $4, $5, $6, $7)", sqlOracleDataColumns)
 
-	if _, err := od.Connection.Exec(ctx, query, data.PublicKeys, data.Data, data.MatchedSpecIds,
-		data.BroadcastAt, data.TxHash, data.VegaTime, data.SeqNum); err != nil {
+	if _, err := od.Connection.Exec(ctx, query, oracleData.ExternalData.Data.Signers, oracleData.ExternalData.Data.Data, oracleData.ExternalData.Data.MatchedSpecIds,
+		oracleData.ExternalData.Data.BroadcastAt, oracleData.ExternalData.Data.TxHash, oracleData.ExternalData.Data.VegaTime, oracleData.ExternalData.Data.SeqNum); err != nil {
 		err = fmt.Errorf("could not insert oracle data into database: %w", err)
 		return err
 	}
-
 	return nil
 }
 
@@ -65,6 +64,29 @@ func (od *OracleData) GetOracleDataBySpecID(ctx context.Context, id string, pagi
 	}
 }
 
+func parseScannedDataToOracleData(scanned []entities.Data) []entities.OracleData {
+	oracleData := []entities.OracleData{}
+	if len(scanned) > 0 {
+		for _, s := range scanned {
+			oracleData = append(oracleData, entities.OracleData{
+				ExternalData: &entities.ExternalData{
+					Data: &entities.Data{
+						Signers:        s.Signers,
+						Data:           s.Data,
+						MatchedSpecIds: s.MatchedSpecIds,
+						BroadcastAt:    s.BroadcastAt,
+						TxHash:         s.TxHash,
+						VegaTime:       s.VegaTime,
+						SeqNum:         s.SeqNum,
+					},
+				},
+			})
+		}
+	}
+
+	return oracleData
+}
+
 func getOracleDataBySpecIDOffsetPagination(ctx context.Context, conn Connection, id string, pagination entities.OffsetPagination) (
 	[]entities.OracleData, entities.PageInfo, error,
 ) {
@@ -76,11 +98,13 @@ func getOracleDataBySpecIDOffsetPagination(ctx context.Context, conn Connection,
 	from oracle_data where %s = ANY(matched_spec_ids)`, sqlOracleDataColumns, nextBindVar(&bindVars, specID))
 
 	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)
+	data := []entities.Data{}
 	var oracleData []entities.OracleData
 
 	defer metrics.StartSQLQuery("OracleData", "GetBySpecID")()
-	err := pgxscan.Select(ctx, conn, &oracleData, query, bindVars...)
+	err := pgxscan.Select(ctx, conn, &data, query, bindVars...)
 
+	oracleData = parseScannedDataToOracleData(data)
 	return oracleData, pageInfo, err
 }
 
@@ -89,9 +113,11 @@ func getOracleDataBySpecIDCursorPagination(ctx context.Context, conn Connection,
 ) {
 	var (
 		oracleData []entities.OracleData
-		pageInfo   entities.PageInfo
-		bindVars   []interface{}
-		err        error
+		data       = []entities.Data{}
+
+		pageInfo entities.PageInfo
+		bindVars []interface{}
+		err      error
 	)
 
 	specID := entities.SpecID(id)
@@ -104,9 +130,12 @@ func getOracleDataBySpecIDCursorPagination(ctx context.Context, conn Connection,
 	}
 
 	defer metrics.StartSQLQuery("OracleData", "ListOracleData")()
-	if err = pgxscan.Select(ctx, conn, &oracleData, query, bindVars...); err != nil {
+	// NOTE: If any error during the scan occurred, we return empty oracle data object.
+	if err = pgxscan.Select(ctx, conn, &data, query, bindVars...); err != nil {
 		return oracleData, pageInfo, err
 	}
+
+	oracleData = parseScannedDataToOracleData(data)
 
 	oracleData, pageInfo = entities.PageEntities[*v2.OracleDataEdge](oracleData, pagination)
 	return oracleData, pageInfo, nil
@@ -126,8 +155,11 @@ func (od *OracleData) ListOracleData(ctx context.Context, pagination entities.Pa
 func listOracleDataOffsetPagination(ctx context.Context, conn Connection, pagination entities.OffsetPagination) (
 	[]entities.OracleData, entities.PageInfo, error,
 ) {
-	var data []entities.OracleData
-	var pageInfo entities.PageInfo
+	var (
+		data       []entities.Data
+		oracleData []entities.OracleData
+		pageInfo   entities.PageInfo
+	)
 
 	query := fmt.Sprintf(`%s
 order by vega_time desc, matched_spec_id`, selectOracleData())
@@ -136,33 +168,38 @@ order by vega_time desc, matched_spec_id`, selectOracleData())
 	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)
 	defer metrics.StartSQLQuery("OracleData", "ListOracleData")()
 	err := pgxscan.Select(ctx, conn, &data, query, bindVars...)
-	return data, pageInfo, err
+
+	oracleData = parseScannedDataToOracleData(data)
+	return oracleData, pageInfo, err
 }
 
 func listOracleDataCursorPagination(ctx context.Context, conn Connection, pagination entities.CursorPagination) (
 	[]entities.OracleData, entities.PageInfo, error,
 ) {
 	var (
-		data     []entities.OracleData
-		pageInfo entities.PageInfo
-		bindVars []interface{}
-		err      error
+		data       []entities.Data
+		oracleData []entities.OracleData
+		pageInfo   entities.PageInfo
+		bindVars   []interface{}
+		err        error
 	)
 
 	query := selectOracleData()
 
 	query, bindVars, err = PaginateQuery[entities.OracleDataCursor](query, bindVars, oracleDataOrdering, pagination)
 	if err != nil {
-		return data, pageInfo, err
+		return oracleData, pageInfo, err
 	}
 
 	defer metrics.StartSQLQuery("OracleData", "ListOracleData")()
+	// NOTE: If any error during the scan occurred, we return empty oracle data object.
 	if err = pgxscan.Select(ctx, conn, &data, query, bindVars...); err != nil {
-		return data, pageInfo, err
+		return oracleData, pageInfo, err
 	}
 
-	data, pageInfo = entities.PageEntities[*v2.OracleDataEdge](data, pagination)
-	return data, pageInfo, nil
+	oracleData = parseScannedDataToOracleData(data)
+	oracleData, pageInfo = entities.PageEntities[*v2.OracleDataEdge](oracleData, pagination)
+	return oracleData, pageInfo, nil
 }
 
 func selectOracleData() string {

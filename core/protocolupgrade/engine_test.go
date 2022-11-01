@@ -13,6 +13,7 @@ import (
 	snp "code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -20,19 +21,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type TestValidatorToplogy struct{}
+type TestValidatorToplogy struct {
+	totalVotingPower int64
+}
 
 func (vt *TestValidatorToplogy) IsSelfTendermintValidator() bool          { return true }
 func (vt *TestValidatorToplogy) IsTendermintValidator(pubkey string) bool { return true }
-func (vt *TestValidatorToplogy) NumberOfTendermintValidators() uint       { return 4 }
+func (vt *TestValidatorToplogy) GetVotingPower(pubkey string) int64       { return 10 }
+func (vt *TestValidatorToplogy) GetTotalVotingPower() int64               { return vt.totalVotingPower }
 
-func testEngine(t *testing.T) (*protocolupgrade.Engine, *snp.Engine, *bmocks.MockBroker) {
+func testEngine(t *testing.T) (*protocolupgrade.Engine, *snp.Engine, *bmocks.MockBroker, *TestValidatorToplogy) {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	broker := bmocks.NewMockBroker(ctrl)
 	now := time.Now()
 	log := logging.NewTestLogger()
-	engine := protocolupgrade.New(log, protocolupgrade.NewDefaultConfig(), broker, &TestValidatorToplogy{}, "0.54.0")
+	testTopology := &TestValidatorToplogy{}
+	engine := protocolupgrade.New(log, protocolupgrade.NewDefaultConfig(), broker, testTopology, "0.54.0")
+	engine.OnRequiredMajorityChanged(context.Background(), num.DecimalFromFloat(0.66))
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
 	statsData := stats.New(log, stats.NewDefaultConfig())
@@ -41,7 +47,7 @@ func testEngine(t *testing.T) (*protocolupgrade.Engine, *snp.Engine, *bmocks.Moc
 	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
 	snapshotEngine.AddProviders(engine)
 	snapshotEngine.ClearAndInitialise()
-	return engine, snapshotEngine, broker
+	return engine, snapshotEngine, broker, testTopology
 }
 
 func Test(t *testing.T) {
@@ -54,7 +60,7 @@ func Test(t *testing.T) {
 }
 
 func testDowngradeVersionNotAllowed(t *testing.T) {
-	e, _, broker := testEngine(t)
+	e, _, broker, _ := testEngine(t)
 	var evts []events.Event
 	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(event events.Event) {
 		evts = append(evts, event)
@@ -64,7 +70,7 @@ func testDowngradeVersionNotAllowed(t *testing.T) {
 }
 
 func testRevertProposal(t *testing.T) {
-	e, _, broker := testEngine(t)
+	e, _, broker, _ := testEngine(t)
 	var evts []events.Event
 	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(event events.Event) {
 		evts = append(evts, event)
@@ -83,7 +89,7 @@ func testRevertProposal(t *testing.T) {
 }
 
 func testUpgradeProposalRejected(t *testing.T) {
-	e, _, broker := testEngine(t)
+	e, _, broker, testTopology := testEngine(t)
 	var evts []events.Event
 	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(event events.Event) {
 		evts = append(evts, event)
@@ -96,8 +102,9 @@ func testUpgradeProposalRejected(t *testing.T) {
 	// validator3 proposed an upgrade to v2 at block height 100
 	require.NoError(t, e.UpgradeProposal(context.Background(), "pk3", 100, "1.0.2"))
 
-	// we reached block 101 and only 50% of the validators agreed so the proposal is rejected
-	e.BeginBlock(context.Background(), 101)
+	// we reached block 100 and only 50% (<66%) of the voting power agreed so the proposal is rejected
+	testTopology.totalVotingPower = 40
+	e.BeginBlock(context.Background(), 100)
 	require.Equal(t, 5, len(evts))
 
 	require.Equal(t, eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING, evts[0].StreamMessage().GetProtocolUpgradeEvent().Status)
@@ -122,7 +129,7 @@ func testUpgradeProposalRejected(t *testing.T) {
 }
 
 func testProposalApproved(t *testing.T) {
-	e, _, broker := testEngine(t)
+	e, _, broker, testTopology := testEngine(t)
 	var evts []events.Event
 	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(event events.Event) {
 		evts = append(evts, event)
@@ -134,6 +141,9 @@ func testProposalApproved(t *testing.T) {
 	require.NoError(t, e.UpgradeProposal(context.Background(), "pk2", 100, "1.0.0"))
 	// validator3 agrees
 	require.NoError(t, e.UpgradeProposal(context.Background(), "pk3", 100, "1.0.0"))
+
+	// full house
+	testTopology.totalVotingPower = 30
 
 	e.BeginBlock(context.Background(), 50)
 	require.Equal(t, 3, len(evts))
@@ -161,11 +171,13 @@ func testProposalApproved(t *testing.T) {
 }
 
 func testMultiProposalApproved(t *testing.T) {
-	e, _, broker := testEngine(t)
+	e, _, broker, testTopology := testEngine(t)
 	var evts []events.Event
 	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(event events.Event) {
 		evts = append(evts, event)
 	}).AnyTimes()
+
+	testTopology.totalVotingPower = 20
 
 	// validator1 proposed an upgrade to v1 at block height 100
 	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 100, "1.0.0"))
@@ -212,7 +224,7 @@ func testMultiProposalApproved(t *testing.T) {
 func testSnapshotRoundtrip(t *testing.T) {
 	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 50), "0xDEADBEEF")
 	ctx = vgcontext.WithChainID(ctx, "chainid")
-	e, snapshotEngine, broker := testEngine(t)
+	e, snapshotEngine, broker, _ := testEngine(t)
 	var evts []events.Event
 	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(event events.Event) {
 		evts = append(evts, event)
@@ -241,7 +253,7 @@ func testSnapshotRoundtrip(t *testing.T) {
 	require.NoError(t, err)
 	snap1 := snaps[0]
 
-	eLoad, snapshotEngineLoad, brokerLoad := testEngine(t)
+	eLoad, snapshotEngineLoad, brokerLoad, _ := testEngine(t)
 	brokerLoad.EXPECT().Send(gomock.Any()).AnyTimes()
 	snapshotEngineLoad.ReceiveSnapshot(snap1)
 	snapshotEngineLoad.ApplySnapshot(ctx)

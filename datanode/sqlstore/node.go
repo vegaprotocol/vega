@@ -241,17 +241,18 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 		-- 		Currently there's no mechanism for changing the node status
 		-- 		and it's unclear what exactly an inactive node is
 				SELECT
-					COUNT(1) filter (where nodes.status = 'NODE_STATUS_VALIDATOR') 		AS validating_nodes,
-					0 																	AS inactive_nodes,
+					COUNT(1) filter (where nodes.status = 'NODE_STATUS_VALIDATOR' and ranking_scores.status = 'VALIDATOR_NODE_STATUS_TENDERMINT') AS validating_nodes,
+					COUNT(1) filter (where nodes.status = 'NODE_STATUS_VALIDATOR' and ranking_scores.status <> 'VALIDATOR_NODE_STATUS_TENDERMINT') AS inactive_nodes,
 					COUNT(1) filter (where nodes.status <> 'NODE_STATUS_UNSPECIFIED') 	AS total_nodes,
 					ROW_NUMBER() OVER () AS id
 				FROM
 					nodes
-					WHERE EXISTS (
-						SELECT *
-						FROM join_event WHERE node_id = nodes.id
-					)
-
+        LEFT JOIN ranking_scores ON ranking_scores.node_id = nodes.id AND
+                  ranking_scores.epoch_seq = (SELECT max(epoch_seq) FROM ranking_scores WHERE node_id = nodes.id)
+        WHERE EXISTS (
+					SELECT *
+					FROM join_event WHERE node_id = nodes.id
+				)
 			)
 		SELECT
 			staked.total AS staked_total,

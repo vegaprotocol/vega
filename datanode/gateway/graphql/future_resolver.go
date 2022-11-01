@@ -16,10 +16,26 @@ import (
 	"context"
 
 	types "code.vegaprotocol.io/vega/protos/vega"
+	vega "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type myFutureResolver VegaResolverRoot
 
 func (r *myFutureResolver) SettlementAsset(ctx context.Context, obj *types.Future) (*types.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.SettlementAsset)
+}
+
+func (r *myFutureResolver) DataSourceSpecForSettlementData(ctx context.Context, obj *vega.Future) (*DataSourceSpec, error) {
+	return nil, nil
+}
+
+func (r *myFutureResolver) DataSourceSpecForTradingTermination(ctx context.Context, obj *vega.Future) (*DataSourceSpec, error) {
+	if obj.DataSourceSpecForTradingTermination == nil {
+		return nil, nil
+	}
+
+	dataSourceSpec := obj.DataSourceSpecForTradingTermination
+	return &DataSourceSpec{
+		ID: dataSourceSpec.GetId(),
+	}, nil
 }

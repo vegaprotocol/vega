@@ -3,7 +3,7 @@ Feature: Regression test for issue 3885
   Background:
 
     And the markets:
-      | id        | quote name | asset | auction duration | risk model                    | margin calculator         | fees         | oracle config          | price monitoring |
+      | id        | quote name | asset | auction duration | risk model                    | margin calculator         | fees         | data source config          | price monitoring |
       | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-eth-for-future | default-none     |
 
   @Cancel

@@ -18,10 +18,11 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/examples/nullchain/config"
+	"code.vegaprotocol.io/vega/core/types"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	oraclesv1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 )
 
@@ -29,6 +30,7 @@ func MarketProposalTxn(now time.Time, oraclePubkey string) (*walletpb.SubmitTran
 	reference := "ref-" + vgrand.RandomStr(10)
 	asset := config.NormalAsset
 
+	pubKey := types.CreateSignerFromString(oraclePubkey, types.DataSignerTypePubKey)
 	cmd := &walletpb.SubmitTransactionRequest_ProposalSubmission{
 		ProposalSubmission: &v1.ProposalSubmission{
 			Reference: reference,
@@ -46,31 +48,31 @@ func MarketProposalTxn(now time.Time, oraclePubkey string) (*walletpb.SubmitTran
 									Future: &vega.FutureProduct{
 										SettlementAsset: asset,
 										QuoteName:       "BTCUSD",
-										OracleSpecForSettlementData: &oraclesv1.OracleSpecConfiguration{
-											PubKeys: []string{oraclePubkey},
-											Filters: []*oraclesv1.Filter{
+										DataSourceSpecForSettlementData: &datav1.DataSourceSpecConfiguration{
+											Signers: []*datav1.Signer{pubKey.IntoProto()},
+											Filters: []*datav1.Filter{
 												{
-													Key: &oraclesv1.PropertyKey{
+													Key: &datav1.PropertyKey{
 														Name: "prices." + asset + ".value",
-														Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+														Type: datav1.PropertyKey_TYPE_INTEGER,
 													},
-													Conditions: []*oraclesv1.Condition{},
+													Conditions: []*datav1.Condition{},
 												},
 											},
 										},
-										OracleSpecForTradingTermination: &oraclesv1.OracleSpecConfiguration{
-											PubKeys: []string{oraclePubkey},
-											Filters: []*oraclesv1.Filter{
+										DataSourceSpecForTradingTermination: &datav1.DataSourceSpecConfiguration{
+											Signers: []*datav1.Signer{pubKey.IntoProto()},
+											Filters: []*datav1.Filter{
 												{
-													Key: &oraclesv1.PropertyKey{
+													Key: &datav1.PropertyKey{
 														Name: "trading.termination",
-														Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+														Type: datav1.PropertyKey_TYPE_BOOLEAN,
 													},
-													Conditions: []*oraclesv1.Condition{},
+													Conditions: []*datav1.Condition{},
 												},
 											},
 										},
-										OracleSpecBinding: &vega.OracleSpecToFutureBinding{
+										DataSourceSpecBinding: &vega.DataSourceSpecToFutureBinding{
 											SettlementDataProperty:     "prices." + asset + ".value",
 											TradingTerminationProperty: "trading.termination",
 										},

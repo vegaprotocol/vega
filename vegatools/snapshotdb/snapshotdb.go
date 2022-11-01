@@ -2,12 +2,11 @@ package snapshotdb
 
 import (
 	"bufio"
-	"encoding/json"
+	"encoding/hex"
+	"errors"
 	"fmt"
-	"log"
 	"os"
 	"sort"
-	"strings"
 
 	"github.com/cosmos/iavl"
 	"github.com/gogo/protobuf/jsonpb"
@@ -17,99 +16,54 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/paths"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
-type Showing byte
-
-const (
-	ShowList = iota
-	ShowJSON
-	ShowVersions
-	UndefinedShowing
-)
-
-func ShowingFromString(s string) Showing {
-	s = strings.ToLower(s)
-	switch s {
-	case "json":
-		return ShowJSON
-	case "list", "":
-		return ShowList
-	case "versions":
-		return ShowVersions
-	default:
-		log.Fatalf("invalid show option: %s", s)
-		return UndefinedShowing
-	}
+// Data is a representation of the information we scrape from the avl tree.
+type Data struct {
+	Height  uint64 `json:"height,omitempty"`
+	Version int64  `json:"version"`
+	Size    int64  `json:"size"`
+	Hash    string `json:"hash"`
 }
 
-func ShowSnapshotData(dbPath, vegaHome string, show Showing, outputPath string, heightToOutput uint64) error {
-	if dbPath == "" {
-		vegaPaths := paths.New(vegaHome)
-		dbPath = vegaPaths.StatePathFor(paths.SnapshotStateHome)
-	} else {
-		dbPath = paths.StatePath(dbPath).String()
-	}
-
-	options := &opt.Options{
-		ErrorIfMissing: true,
-		ReadOnly:       true,
-	}
-
-	dbc, err := db.NewGoLevelDBWithOpts("snapshot", dbPath, options)
+func initialiseTree(dbPath string) (*db.GoLevelDB, *iavl.MutableTree, error) {
+	conn, err := db.NewGoLevelDBWithOpts(
+		"snapshot",
+		dbPath,
+		&opt.Options{
+			ErrorIfMissing: true,
+			ReadOnly:       true,
+		})
 	if err != nil {
-		return fmt.Errorf("failed to open database located at %s : %w", dbPath, err)
+		return nil, nil, fmt.Errorf("failed to open database located at %s : %w", dbPath, err)
 	}
 
-	tree, err := iavl.NewMutableTree(dbc, 0)
+	tree, err := iavl.NewMutableTree(conn, 0)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	if _, err = tree.Load(); err != nil {
-		return err
+		return nil, nil, err
 	}
-
-	if outputPath != "" {
-		log.Printf("Saving payloads to '%s' file...\n", outputPath)
-		return SavePayloadsToFile(tree, heightToOutput, outputPath)
-	}
-
-	if err = writeToStd(tree, heightToOutput, show); err != nil {
-		return err
-	}
-
-	return nil
+	return conn, tree, nil
 }
 
-func writeToStd(tree *iavl.MutableTree, heightToOutput uint64, show Showing) error {
-	found, invalidVersions, err := SnapshotsHDataFromTree(tree, heightToOutput)
+// SnapshotData returns an overview of each snapshot saved to disk, namely the height and its hash.
+func SnapshotData(dbPath string, outputPath string, heightToOutput uint64) ([]Data, []Data, error) {
+	conn, tree, err := initialiseTree(dbPath)
+	defer func() {
+		if conn != nil {
+			conn.Close()
+		}
+	}()
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-
-	printData := printFuncs[show]
-
-	if len(found) > 0 {
-		fmt.Println("Snapshots available:", len(found))
-		printData(found)
-	} else {
-		fmt.Println("No snapshots available")
-	}
-
-	if len(invalidVersions) > 0 {
-		fmt.Println("Invalid versions:", len(invalidVersions))
-		printData(invalidVersions)
-	}
-	return nil
-}
-
-func SnapshotsHDataFromTree(tree *iavl.MutableTree, heightToOutput uint64) ([]SnapshotData, []SnapshotData, error) {
-	trees := make([]SnapshotData, 0, 4)
-	invalidVersions := make([]SnapshotData, 0, 4)
 	versions := tree.AvailableVersions()
+	trees := make([]Data, 0, len(versions))
+	invalidVersions := make([]Data, 0)
 
 	for _, version := range versions {
 		v, err := tree.LazyLoadVersion(int64(version))
@@ -117,96 +71,73 @@ func SnapshotsHDataFromTree(tree *iavl.MutableTree, heightToOutput uint64) ([]Sn
 			return nil, nil, err
 		}
 
+		snapshotHash, _ := tree.Hash()
 		app, err := types.AppStateFromTree(tree.ImmutableTree)
 		if err != nil {
-			hash, _ := tree.Hash()
-			invalidVersions = append(invalidVersions, SnapshotData{
+			invalidVersions = append(invalidVersions, Data{
 				Version: v,
-				Hash:    fmt.Sprintf("%x", hash),
+				Hash:    hex.EncodeToString(snapshotHash),
 			})
 			continue
 		}
 
-		snap, err := types.SnapshotFromTree(tree.ImmutableTree)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		data := SnapshotData{
+		data := Data{
 			Version: v,
-			Height:  &app.AppState.Height,
-			Hash:    fmt.Sprintf("%x", snap.Hash),
+			Height:  app.AppState.Height,
+			Hash:    hex.EncodeToString(snapshotHash),
 			Size:    tree.Size(),
 		}
 
 		if heightToOutput > 0 {
 			if app.AppState.Height == heightToOutput {
-				return []SnapshotData{data}, nil, nil
+				return []Data{data}, nil, nil
 			}
-			continue
 		}
-
 		trees = append(trees, data)
 	}
 	sort.SliceStable(trees, func(i, j int) bool {
-		return *trees[i].Height > *trees[j].Height
+		return trees[i].Height > trees[j].Height
 	})
 
 	return trees, invalidVersions, nil
 }
 
-// SnapshotData is a representation of the information we scrape from the avl tree.
-type SnapshotData struct {
-	Height  *uint64 `json:"height,omitempty"`
-	Version int64   `json:"version"`
-	Size    int64   `json:"size"`
-	Hash    string  `json:"hash"`
-}
-
-var printFuncs = map[Showing]func([]SnapshotData){
-	ShowList:     printSnapshotDataAsList,
-	ShowVersions: printSnapshotVersions,
-	ShowJSON:     printSnapshotDataAsJSON,
-}
-
-func printSnapshotDataAsList(snapshots []SnapshotData) {
-	for _, snap := range snapshots {
-		if snap.Height != nil {
-			fmt.Printf("\tHeight %d, ", *snap.Height)
-		} else {
-			fmt.Print("\t")
+// SavePayloadsToFile given a block height and file path writes all the payloads for that snapshot height
+// to the file in json format.
+func SavePayloadsToFile(dbPath string, outputPath string, heightToOutput uint64) error {
+	conn, tree, err := initialiseTree(dbPath)
+	defer func() {
+		if conn != nil {
+			conn.Close()
 		}
-		fmt.Printf("Version: %d, Size %d, Hash: %s\n", snap.Version, snap.Size, snap.Hash)
-	}
-}
-
-func printSnapshotVersions(snapshots []SnapshotData) {
-	fmt.Printf("Block Heights: ")
-
-	for i, snap := range snapshots {
-		if snap.Height == nil {
-			continue
-		}
-		fmt.Printf("%d", *snap.Height)
-		if i < len(snapshots)-1 {
-			fmt.Printf(", ")
-		}
-	}
-	fmt.Println()
-}
-
-func printSnapshotDataAsJSON(snapshots []SnapshotData) {
-	b, _ := json.MarshalIndent(&snapshots, "", "	")
-	fmt.Println(string(b))
-}
-
-func SavePayloadsToFile(tree *iavl.MutableTree, heightToOutput uint64, outputPath string) error {
-	// traverse the tree and get the payloads
-	payloads, err := getAllPayloads(tree, heightToOutput)
+	}()
 	if err != nil {
 		return err
 	}
 
+	versions := tree.AvailableVersions()
+	for i := len(versions) - 1; i > -1; i-- {
+		_, err := tree.LazyLoadVersion(int64(versions[i]))
+		if err != nil {
+			return err
+		}
+
+		// looking up the appstate directly by its key first then unmarshalling all payloads
+		// is quicker
+		app, err := types.AppStateFromTree(tree.ImmutableTree)
+		if err != nil {
+			return err
+		}
+		if app.AppState.Height != heightToOutput {
+			continue
+		}
+		payloads, _, _ := getAllPayloads(tree)
+		return writePayloads(payloads, outputPath)
+	}
+	return errors.New("failed to find snapshot for block-height")
+}
+
+func writePayloads(payloads []*snapshot.Payload, outputPath string) error {
 	f, err := os.Create(outputPath)
 	if err != nil {
 		return err
@@ -239,19 +170,15 @@ func SavePayloadsToFile(tree *iavl.MutableTree, heightToOutput uint64, outputPat
 	return nil
 }
 
-func getAllPayloads(tree *iavl.MutableTree, heightToOutput uint64) (payloads []*snapshot.Payload, err error) {
+func getAllPayloads(tree *iavl.MutableTree) (payloads []*snapshot.Payload, blockHeight uint64, err error) {
 	_, err = tree.Iterate(func(key []byte, val []byte) bool {
 		p := new(snapshot.Payload)
 		if err = proto.Unmarshal(val, p); err != nil {
 			return true
 		}
 
-		if heightToOutput > 0 {
-			if appState := p.GetAppState(); appState != nil && appState.GetHeight() == heightToOutput {
-				payloads = []*snapshot.Payload{}
-				return true
-			}
-			return false
+		if appState := p.GetAppState(); appState != nil {
+			blockHeight = appState.GetHeight()
 		}
 
 		payloads = append(payloads, p)
@@ -261,5 +188,5 @@ func getAllPayloads(tree *iavl.MutableTree, heightToOutput uint64) (payloads []*
 		return
 	}
 
-	return payloads, err
+	return payloads, blockHeight, err
 }

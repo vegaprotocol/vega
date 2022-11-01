@@ -396,16 +396,20 @@ func getDummyData() *types.Chunk {
 										Future: &types.Future{
 											SettlementAsset: "AST",
 											QuoteName:       "AST",
-											OracleSpecForSettlementData: &types.OracleSpec{
-												ID:      "o1",
-												PubKeys: []string{},
-												Filters: []*types.OracleSpecFilter{},
+											DataSourceSpecForSettlementData: &types.DataSourceSpec{
+												ID: "o1",
+												Config: &types.DataSourceSpecConfiguration{
+													Signers: []*types.Signer{},
+													Filters: []*types.DataSourceSpecFilter{},
+												},
 											},
-											OracleSpecForTradingTermination: &types.OracleSpec{
-												ID:      "os1",
-												Filters: []*types.OracleSpecFilter{},
+											DataSourceSpecForTradingTermination: &types.DataSourceSpec{
+												ID: "os1",
+												Config: &types.DataSourceSpecConfiguration{
+													Filters: []*types.DataSourceSpecFilter{},
+												},
 											},
-											OracleSpecBinding: &types.OracleSpecBindingForFuture{},
+											DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{},
 										},
 									},
 								},
