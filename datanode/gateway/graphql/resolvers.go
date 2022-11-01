@@ -1158,27 +1158,6 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 	}
 }
 
-func makeAPIV2Pagination(skip, first, last *int) *v2.OffsetPagination {
-	var (
-		offset, limit uint64
-		descending    bool
-	)
-	if skip != nil {
-		offset = uint64(*skip)
-	}
-	if last != nil {
-		limit = uint64(*last)
-		descending = true
-	} else if first != nil {
-		limit = uint64(*first)
-	}
-	return &v2.OffsetPagination{
-		Skip:       offset,
-		Limit:      limit,
-		Descending: descending,
-	}
-}
-
 // TODO: RewardDetails have been depricated, remove once front end catches up.
 func (r *myPartyResolver) RewardDetails(
 	ctx context.Context,
@@ -2574,25 +2553,6 @@ func getParty(ctx context.Context, log *logging.Logger, client TradingDataServic
 }
 
 // Market Data Resolvers
-
-func (r *myQueryResolver) getMarketData(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) ([]*types.MarketData, error) {
-	resp, err := r.tradingDataClientV2.GetMarketDataHistoryByID(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.MarketData == nil {
-		return nil, errors.New("no market data not found")
-	}
-
-	results := make([]*types.MarketData, 0, len(resp.MarketData.Edges))
-
-	for _, edge := range resp.MarketData.Edges {
-		results = append(results, edge.Node)
-	}
-
-	return results, nil
-}
 
 func (r *myQueryResolver) GetMarketDataHistoryConnectionByID(ctx context.Context, marketID string, start *int, end *int, pagination *v2.Pagination) (*v2.MarketDataConnection, error) {
 	var startTime, endTime *int64

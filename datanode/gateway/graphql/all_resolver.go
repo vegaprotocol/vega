@@ -80,15 +80,6 @@ func (r *allResolver) getNodeByID(ctx context.Context, id string) (*types.Node, 
 	return resp.Node, nil
 }
 
-func (r allResolver) allAssets(ctx context.Context) ([]*types.Asset, error) {
-	req := &protoapi.AssetsRequest{}
-	res, err := r.clt.Assets(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return res.Assets, nil
-}
-
 func (r *allResolver) getMarketByID(ctx context.Context, id string) (*types.Market, error) {
 	req := v2.GetMarketRequest{MarketId: id}
 	res, err := r.clt2.GetMarket(ctx, &req)
@@ -101,25 +92,6 @@ func (r *allResolver) getMarketByID(ctx context.Context, id string) (*types.Mark
 		return nil, nil
 	}
 	return res.Market, nil
-}
-
-func (r *allResolver) allMarkets(ctx context.Context, id *string) ([]*types.Market, error) {
-	if id != nil {
-		mkt, err := r.getMarketByID(ctx, *id)
-		if err != nil {
-			return nil, err
-		}
-		if mkt == nil {
-			return []*types.Market{}, nil
-		}
-		return []*types.Market{mkt}, nil
-	}
-	res, err := r.clt.Markets(ctx, &protoapi.MarketsRequest{})
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-	return res.Markets, nil
 }
 
 func (r *allResolver) allRewards(ctx context.Context, partyID, assetID string, skip, first, last *int) ([]*types.Reward, error) {
