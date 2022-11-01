@@ -1845,6 +1845,8 @@ func (t *tradingDataServiceV2) GetGovernanceData(ctx context.Context, req *v2.Ge
 }
 
 func (t *tradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.ListGovernanceDataRequest) (*v2.ListGovernanceDataResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListGovernanceDataV2")()
+
 	var state *entities.ProposalState
 
 	if req.ProposalState != nil {
@@ -1872,12 +1874,37 @@ func (t *tradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.L
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
+
+	for i := range edges {
+		edges[i].Node.Yes, edges[i].Node.No, err = t.getVotesByProposal(ctx, edges[i].Node.Proposal.Id)
+		if err != nil {
+			return nil, apiError(codes.Internal, err)
+		}
+	}
+
 	proposalsConnection := &v2.GovernanceDataConnection{
 		Edges:    edges,
 		PageInfo: pageInfo.ToProto(),
 	}
 
 	return &v2.ListGovernanceDataResponse{Connection: proposalsConnection}, nil
+}
+
+func (t *tradingDataServiceV2) getVotesByProposal(ctx context.Context, proposalID string) (yesVotes, noVotes []*vega.Vote, err error) {
+	votes, err := t.governanceService.GetVotes(ctx, &proposalID, nil, nil)
+	if err != nil {
+		return nil, nil, apiError(codes.Internal, err)
+	}
+
+	for _, vote := range votes {
+		switch vote.Value {
+		case entities.VoteValueYes:
+			yesVotes = append(yesVotes, vote.ToProto())
+		case entities.VoteValueNo:
+			noVotes = append(noVotes, vote.ToProto())
+		}
+	}
+	return
 }
 
 // Get all Votes using a cursor based pagination model.
