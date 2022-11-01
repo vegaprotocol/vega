@@ -5,7 +5,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega/wallet/v1";
 
 import "vega/commands/v1/commands.proto";
 import "vega/commands/v1/validator_commands.proto";
-import "vega/commands/v1/oracles.proto";
+import "vega/commands/v1/data.proto";
 
 message SubmitTransactionRequest {
   reserved 2001;

@@ -15,16 +15,16 @@ package events
 import (
 	"context"
 
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 )
 
 type OracleSpec struct {
 	*Base
-	o oraclespb.OracleSpec
+	o datapb.OracleSpec
 }
 
-func NewOracleSpecEvent(ctx context.Context, spec oraclespb.OracleSpec) *OracleSpec {
+func NewOracleSpecEvent(ctx context.Context, spec datapb.OracleSpec) *OracleSpec {
 	cpy := spec.DeepClone()
 	return &OracleSpec{
 		Base: newBase(ctx, OracleSpecEvent),
@@ -32,11 +32,11 @@ func NewOracleSpecEvent(ctx context.Context, spec oraclespb.OracleSpec) *OracleS
 	}
 }
 
-func (o *OracleSpec) OracleSpec() oraclespb.OracleSpec {
+func (o *OracleSpec) OracleSpec() datapb.OracleSpec {
 	return o.o
 }
 
-func (o OracleSpec) Proto() oraclespb.OracleSpec {
+func (o OracleSpec) Proto() datapb.OracleSpec {
 	return o.o
 }
 

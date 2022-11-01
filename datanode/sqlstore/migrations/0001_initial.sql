@@ -1210,7 +1210,7 @@ create table if not exists oracle_specs (
     id bytea not null,
     created_at timestamp with time zone not null,
     updated_at timestamp with time zone not null,
-    public_keys bytea[],
+    signers bytea[],
     filters jsonb,
     status oracle_spec_status not null,
     tx_hash  bytea not null,
@@ -1219,7 +1219,7 @@ create table if not exists oracle_specs (
 );
 
 create table if not exists oracle_data (
-    public_keys bytea[],
+    signers bytea[],
     data jsonb not null,
     matched_spec_ids bytea[],
     broadcast_at timestamp with time zone not null,
@@ -1234,7 +1234,7 @@ create index if not exists idx_oracle_data_matched_spec_ids on oracle_data(match
 drop view if exists oracle_data_current;
 
 create table if not exists oracle_data_current (
-    public_keys bytea[],
+    signers bytea[],
     data jsonb not null,
     matched_spec_ids bytea[],
     broadcast_at timestamp with time zone not null,
@@ -1251,10 +1251,10 @@ CREATE OR REPLACE FUNCTION update_current_oracle_data()
     LANGUAGE PLPGSQL AS
 $$
 BEGIN
-    INSERT INTO oracle_data_current(public_keys,data,matched_spec_ids,broadcast_at,tx_hash,vega_time,seq_num)
-    VALUES(NEW.public_keys,NEW.data,NEW.matched_spec_ids,NEW.broadcast_at,NEW.tx_hash,NEW.vega_time,NEW.seq_num)
+    INSERT INTO oracle_data_current(signers,data,matched_spec_ids,broadcast_at,tx_hash,vega_time,seq_num)
+    VALUES(NEW.signers,NEW.data,NEW.matched_spec_ids,NEW.broadcast_at,NEW.tx_hash,NEW.vega_time,NEW.seq_num)
     ON CONFLICT(matched_spec_ids, data) DO UPDATE SET
-                                                   public_keys=EXCLUDED.public_keys,
+                                                   signers=EXCLUDED.signers,
                                                    broadcast_at=EXCLUDED.broadcast_at,
                                                    tx_hash=EXCLUDED.tx_hash,
                                                    vega_time=EXCLUDED.vega_time,
@@ -1529,12 +1529,36 @@ create table if not exists node_signatures(
     primary key (resource_id, sig)
 );
 
+CREATE TYPE protocol_upgrade_proposal_status AS enum(
+    'PROTOCOL_UPGRADE_PROPOSAL_STATUS_UNSPECIFIED',
+    'PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING',
+    'PROTOCOL_UPGRADE_PROPOSAL_STATUS_APPROVED',
+    'PROTOCOL_UPGRADE_PROPOSAL_STATUS_REJECTED');
+
+CREATE TABLE IF NOT EXISTS protocol_upgrade_proposals(
+    upgrade_block_height BIGINT NOT NULL,
+    vega_release_tag TEXT NOT NULL,
+    approvers TEXT[] NOT NULL,
+    status protocol_upgrade_proposal_status NOT NULL,
+    tx_hash bytea not null,
+    vega_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    PRIMARY KEY(vega_time, upgrade_block_height, vega_release_tag)
+);
+
+CREATE VIEW protocol_upgrade_proposals_current AS (
+    SELECT DISTINCT ON (upgrade_block_height, vega_release_tag) *
+      FROM protocol_upgrade_proposals
+  ORDER BY upgrade_block_height, vega_release_tag, vega_time DESC);
 
 -- +goose Down
 DROP AGGREGATE IF EXISTS public.first(anyelement);
 DROP AGGREGATE IF EXISTS public.last(anyelement);
 DROP FUNCTION IF EXISTS public.first_agg(anyelement, anyelement);
 DROP FUNCTION IF EXISTS public.last_agg(anyelement, anyelement);
+
+DROP VIEW IF EXISTS protocol_upgrade_proposals_current;
+DROP TABLE IF EXISTS protocol_upgrade_proposals;
+DROP TYPE IF EXISTS protocol_upgrade_proposal_status;
 
 DROP TABLE IF EXISTS ethereum_key_rotations;
 

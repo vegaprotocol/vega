@@ -303,11 +303,11 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 	case *vegapb.UpdateInstrumentConfiguration_Future:
 		r.Product = &UpdateInstrumentConfigurationFuture{
 			Future: &UpdateFutureProduct{
-				QuoteName:                       pr.Future.QuoteName,
-				OracleSpecForSettlementData:     OracleSpecConfigurationFromProto(pr.Future.OracleSpecForSettlementData),
-				OracleSpecForTradingTermination: OracleSpecConfigurationFromProto(pr.Future.OracleSpecForTradingTermination),
-				SettlementDataDecimals:          pr.Future.SettlementDataDecimals,
-				OracleSpecBinding:               OracleSpecBindingForFutureFromProto(pr.Future.OracleSpecBinding),
+				QuoteName:                           pr.Future.QuoteName,
+				DataSourceSpecForSettlementData:     DataSourceSpecConfigurationFromProto(pr.Future.DataSourceSpecForSettlementData),
+				DataSourceSpecForTradingTermination: DataSourceSpecConfigurationFromProto(pr.Future.DataSourceSpecForTradingTermination),
+				SettlementDataDecimals:              pr.Future.SettlementDataDecimals,
+				DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
 			},
 		}
 	}
@@ -315,30 +315,30 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 }
 
 type UpdateFutureProduct struct {
-	QuoteName                       string
-	OracleSpecForSettlementData     *OracleSpecConfiguration
-	OracleSpecForTradingTermination *OracleSpecConfiguration
-	OracleSpecBinding               *OracleSpecBindingForFuture
-	SettlementDataDecimals          uint32
+	QuoteName                           string
+	DataSourceSpecForSettlementData     *DataSourceSpecConfiguration
+	DataSourceSpecForTradingTermination *DataSourceSpecConfiguration
+	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
+	SettlementDataDecimals              uint32
 }
 
 func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
 	return &vegapb.UpdateFutureProduct{
-		QuoteName:                       f.QuoteName,
-		OracleSpecForSettlementData:     f.OracleSpecForSettlementData.IntoProto(),
-		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.IntoProto(),
-		OracleSpecBinding:               f.OracleSpecBinding.IntoProto(),
-		SettlementDataDecimals:          f.SettlementDataDecimals,
+		QuoteName:                           f.QuoteName,
+		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
+		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(),
+		DataSourceSpecBinding:               f.DataSourceSpecBinding.IntoProto(),
+		SettlementDataDecimals:              f.SettlementDataDecimals,
 	}
 }
 
 func (f UpdateFutureProduct) DeepClone() *UpdateFutureProduct {
 	return &UpdateFutureProduct{
-		QuoteName:                       f.QuoteName,
-		OracleSpecForSettlementData:     f.OracleSpecForSettlementData.DeepClone(),
-		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
-		OracleSpecBinding:               f.OracleSpecBinding.DeepClone(),
-		SettlementDataDecimals:          f.SettlementDataDecimals,
+		QuoteName:                           f.QuoteName,
+		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.DeepClone(),
+		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.DeepClone(),
+		DataSourceSpecBinding:               f.DataSourceSpecBinding.DeepClone(),
+		SettlementDataDecimals:              f.SettlementDataDecimals,
 	}
 }
 
@@ -346,9 +346,9 @@ func (f UpdateFutureProduct) String() string {
 	return fmt.Sprintf(
 		"quoteName(%s) oracleSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
 		f.QuoteName,
-		reflectPointerToString(f.OracleSpecForSettlementData),
-		reflectPointerToString(f.OracleSpecForTradingTermination),
-		reflectPointerToString(f.OracleSpecBinding),
+		reflectPointerToString(f.DataSourceSpecForSettlementData),
+		reflectPointerToString(f.DataSourceSpecForTradingTermination),
+		reflectPointerToString(f.DataSourceSpecBinding),
 	)
 }
 

@@ -113,7 +113,7 @@ func (b *Service) loadSnapshot(ctx context.Context, snapshotData compressedFileM
 	b.log.Infof("copying %s into database", snapshotData.UncompressedDataDir())
 
 	rowsCopied, err = b.copyDataIntoDatabase(ctx, vegaDbConn, decompressedFilesDestination,
-		filepath.Join(b.config.DatabaseSnapshotsCopyFromPath, snapshotData.UncompressedDataDir()))
+		filepath.Join(b.snapshotsCopyFromPath, snapshotData.UncompressedDataDir()))
 	if err != nil {
 		b.log.Errorf("failed to copy uncompressed data into the database %s : %w", snapshotData.UncompressedDataDir(), err)
 	}

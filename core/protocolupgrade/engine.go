@@ -67,7 +67,8 @@ func (p *protocolUpgradeProposal) approvers() []string {
 type ValidatorTopology interface {
 	IsTendermintValidator(pubkey string) bool
 	IsSelfTendermintValidator() bool
-	NumberOfTendermintValidators() uint
+	GetVotingPower(pubkey string) int64
+	GetTotalVotingPower() int64
 }
 
 type Commander interface {
@@ -242,17 +243,19 @@ func (e *Engine) TimeForUpgrade() bool {
 }
 
 func (e *Engine) isAccepted(p *protocolUpgradeProposal) bool {
-	count := 0
 	// if the block is already behind us or we've already accepted a proposal return false
 	if p.blockHeight < e.currentBlockHeight {
 		return false
 	}
-	for k := range p.accepted {
-		if e.topology.IsTendermintValidator(k) {
-			count++
-		}
+	totalVotingPower := e.topology.GetTotalVotingPower()
+	if totalVotingPower <= 0 {
+		return false
 	}
-	ratio := num.NewDecimalFromFloat(float64(count)).Div(num.DecimalFromInt64(int64(e.topology.NumberOfTendermintValidators())))
+	totalD := num.DecimalFromInt64(totalVotingPower)
+	ratio := num.DecimalZero()
+	for k := range p.accepted {
+		ratio = ratio.Add(num.DecimalFromInt64(e.topology.GetVotingPower(k)).Div(totalD))
+	}
 	return ratio.GreaterThan(e.requiredMajority)
 }
 
@@ -280,7 +283,7 @@ func (e *Engine) BeginBlock(ctx context.Context, blockHeight uint64) {
 				accepted = pup
 			}
 		} else {
-			if blockHeight > pup.blockHeight {
+			if blockHeight >= pup.blockHeight {
 				delete(e.activeProposals, ID)
 				delete(e.events, ID)
 				e.log.Info("protocol upgrade rejected", logging.String("vega-release-tag", pup.vegaReleaseTag), logging.Uint64("upgrade-block-height", pup.blockHeight))

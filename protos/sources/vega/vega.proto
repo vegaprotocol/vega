@@ -744,9 +744,9 @@ enum TransferType {
   TRANSFER_TYPE_BOND_SLASHING = 20;
   // Stake reward
   TRANSFER_TYPE_STAKE_REWARD = 21;
-  // Transfer funds
+  // A network internal instruction for the collateral engine to move funds from a user account onto the pending transfers pool
   TRANSFER_TYPE_TRANSFER_FUNDS_SEND = 22;
-  // Transfer funds
+  // A network internal instruction for the collateral engine to move funds from the pending transfers pool account onto the destination account
   TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE = 23;
   // Market is closed, accounts are cleared
   TRANSFER_TYPE_CLEAR_ACCOUNT = 24;

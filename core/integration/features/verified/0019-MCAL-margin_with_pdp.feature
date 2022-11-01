@@ -3,7 +3,7 @@ Feature: Test party accounts margins with fractional orders - the test is identi
   Background:
 
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          | position decimal places |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          | position decimal places |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |          2              |
 
   Scenario: a party place a new order in the system, margin are calculated

@@ -20,14 +20,14 @@ import (
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 var (
-	// ErrMissingPubKeys is returned when the oraclespb.OracleSpec is missing
-	// its public keys.
-	ErrMissingPubKeys = errors.New("public keys are required")
-	// ErrAtLeastOneFilterIsRequired is returned when the oraclespb.OracleSpec
+	// ErrMissingSigners is returned when the datapb.OracleSpec is missing
+	// its signers.
+	ErrMissingSigners = errors.New("signers are required")
+	// ErrAtLeastOneFilterIsRequired is returned when the datapb.OracleSpec
 	// has no expected properties nor filters. At least one of these should be
 	// defined.
 	ErrAtLeastOneFilterIsRequired = errors.New("at least one filter is required")
@@ -47,9 +47,11 @@ type OracleSpecID string
 type OracleSpec struct {
 	// id is a unique identifier for the OracleSpec
 	id OracleSpecID
-	// pubKeys list all the authorized public keys from where an OracleData can
+
+	// signers list all the authorized public keys from where an OracleData can
 	// come from.
-	pubKeys map[string]struct{}
+	signers map[string]struct{}
+
 	// filters holds all the expected property keys with the conditions they
 	// should match.
 	filters map[string]*filter
@@ -59,7 +61,7 @@ type OracleSpec struct {
 
 type filter struct {
 	propertyName string
-	propertyType oraclespb.PropertyKey_Type
+	propertyType datapb.PropertyKey_Type
 	conditions   []condition
 }
 
@@ -67,22 +69,22 @@ type condition func(string) (bool, error)
 
 // NewOracleSpec builds an OracleSpec from a types.OracleSpec in a form that
 // suits the processing of the filters.
-func NewOracleSpec(originalSpec types.OracleSpec) (*OracleSpec, error) {
-	if len(originalSpec.PubKeys) == 0 {
-		return nil, ErrMissingPubKeys
+func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, error) {
+	if originalSpec.Spec.Config == nil || len(originalSpec.Spec.Config.Signers) == 0 {
+		return nil, ErrMissingSigners
 	}
 
-	pubKeys := map[string]struct{}{}
-	for _, pk := range originalSpec.PubKeys {
-		pubKeys[pk] = struct{}{}
+	signers := map[string]struct{}{}
+	for _, pk := range originalSpec.Spec.Config.Signers {
+		signers[pk.String()] = struct{}{}
 	}
 
-	if len(originalSpec.Filters) == 0 {
+	if len(originalSpec.Spec.Config.Filters) == 0 {
 		return nil, ErrAtLeastOneFilterIsRequired
 	}
 
 	typedFilters := map[string]*filter{}
-	for _, f := range originalSpec.Filters {
+	for _, f := range originalSpec.Spec.Config.Filters {
 		if f.Key == nil {
 			return nil, ErrMissingPropertyKey
 		}
@@ -114,14 +116,16 @@ func NewOracleSpec(originalSpec types.OracleSpec) (*OracleSpec, error) {
 	}
 
 	return &OracleSpec{
-		id:           OracleSpecID(originalSpec.ID),
-		pubKeys:      pubKeys,
-		filters:      typedFilters,
-		OriginalSpec: &originalSpec,
+		id:      OracleSpecID(originalSpec.Spec.ID),
+		signers: signers,
+		filters: typedFilters,
+		OriginalSpec: &types.OracleSpec{
+			ExternalDataSourceSpec: &originalSpec,
+		},
 	}, nil
 }
 
-func (s OracleSpec) EnsureBoundableProperty(property string, propType oraclespb.PropertyKey_Type) error {
+func (s OracleSpec) EnsureBoundableProperty(property string, propType datapb.PropertyKey_Type) error {
 	filter, ok := s.filters[property]
 	if !ok {
 		return fmt.Errorf("bound property \"%s\" not filtered by oracle spec", property)
@@ -144,10 +148,10 @@ func isInternalOracleData(data OracleData) bool {
 	return true
 }
 
-// MatchPubKeys tries to match the public keys from the provided OracleData object with the ones
+// MatchSigners tries to match the public keys from the provided OracleData object with the ones
 // present in the Spec.
-func (s *OracleSpec) MatchPubKeys(data OracleData) bool {
-	return containsRequiredPubKeys(data.PubKeys, s.pubKeys)
+func (s *OracleSpec) MatchSigners(data OracleData) bool {
+	return containsRequiredSigners(data.Signers, s.signers)
 }
 
 // MatchData indicates if a given OracleData matches the spec or not.
@@ -155,7 +159,7 @@ func (s *OracleSpec) MatchData(data OracleData) (bool, error) {
 	// if the data contains the internal oracle timestamp key, and only that key,
 	// then we do not need to verify the public keys as there will not be one
 
-	if !isInternalOracleData(data) && !containsRequiredPubKeys(data.PubKeys, s.pubKeys) {
+	if !isInternalOracleData(data) && !containsRequiredSigners(data.Signers, s.signers) {
 		return false, nil
 	}
 
@@ -175,26 +179,26 @@ func (s *OracleSpec) MatchData(data OracleData) (bool, error) {
 	return true, nil
 }
 
-// containsRequiredPubKeys verifies if all the public keys in the OracleData
+// containsRequiredSigners verifies if all the public keys in the OracleData
 // are within the list of currently authorized by the OracleSpec.
-func containsRequiredPubKeys(dataPKs []string, authPks map[string]struct{}) bool {
-	for _, pk := range dataPKs {
-		if _, ok := authPks[pk]; !ok {
+func containsRequiredSigners(dataSigners []*types.Signer, authPks map[string]struct{}) bool {
+	for _, signer := range dataSigners {
+		if _, ok := authPks[signer.String()]; !ok {
 			return false
 		}
 	}
 	return true
 }
 
-var conditionConverters = map[oraclespb.PropertyKey_Type]func(*types.OracleSpecCondition) (condition, error){
-	oraclespb.PropertyKey_TYPE_INTEGER:   toIntegerCondition,
-	oraclespb.PropertyKey_TYPE_DECIMAL:   toDecimalCondition,
-	oraclespb.PropertyKey_TYPE_BOOLEAN:   toBooleanCondition,
-	oraclespb.PropertyKey_TYPE_TIMESTAMP: toTimestampCondition,
-	oraclespb.PropertyKey_TYPE_STRING:    toStringCondition,
+var conditionConverters = map[datapb.PropertyKey_Type]func(*types.OracleSpecCondition) (condition, error){
+	datapb.PropertyKey_TYPE_INTEGER:   toIntegerCondition,
+	datapb.PropertyKey_TYPE_DECIMAL:   toDecimalCondition,
+	datapb.PropertyKey_TYPE_BOOLEAN:   toBooleanCondition,
+	datapb.PropertyKey_TYPE_TIMESTAMP: toTimestampCondition,
+	datapb.PropertyKey_TYPE_STRING:    toStringCondition,
 }
 
-func toConditions(typ oraclespb.PropertyKey_Type, cs []*types.OracleSpecCondition) ([]condition, error) {
+func toConditions(typ datapb.PropertyKey_Type, cs []*types.OracleSpecCondition) ([]condition, error) {
 	converter, ok := conditionConverters[typ]
 	if !ok {
 		return nil, errUnsupportedPropertyType(typ)
@@ -240,12 +244,12 @@ func toInteger(value string) (*num.Int, error) {
 	return convertedValue, nil
 }
 
-var integerMatchers = map[oraclespb.Condition_Operator]func(*num.Int, *num.Int) bool{
-	oraclespb.Condition_OPERATOR_EQUALS:                equalsInteger,
-	oraclespb.Condition_OPERATOR_GREATER_THAN:          greaterThanInteger,
-	oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL: greaterThanOrEqualInteger,
-	oraclespb.Condition_OPERATOR_LESS_THAN:             lessThanInteger,
-	oraclespb.Condition_OPERATOR_LESS_THAN_OR_EQUAL:    lessThanOrEqualInteger,
+var integerMatchers = map[datapb.Condition_Operator]func(*num.Int, *num.Int) bool{
+	datapb.Condition_OPERATOR_EQUALS:                equalsInteger,
+	datapb.Condition_OPERATOR_GREATER_THAN:          greaterThanInteger,
+	datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL: greaterThanOrEqualInteger,
+	datapb.Condition_OPERATOR_LESS_THAN:             lessThanInteger,
+	datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL:    lessThanOrEqualInteger,
 }
 
 func equalsInteger(dataValue, condValue *num.Int) bool {
@@ -276,7 +280,7 @@ func toDecimalCondition(c *types.OracleSpecCondition) (condition, error) {
 
 	matcher, ok := decimalMatchers[c.Operator]
 	if !ok {
-		return nil, errUnsupportedOperatorForType(c.Operator, oraclespb.PropertyKey_TYPE_DECIMAL)
+		return nil, errUnsupportedOperatorForType(c.Operator, datapb.PropertyKey_TYPE_DECIMAL)
 	}
 
 	return func(dataValue string) (bool, error) {
@@ -292,12 +296,12 @@ func toDecimal(value string) (num.Decimal, error) {
 	return num.DecimalFromString(value)
 }
 
-var decimalMatchers = map[oraclespb.Condition_Operator]func(num.Decimal, num.Decimal) bool{
-	oraclespb.Condition_OPERATOR_EQUALS:                equalsDecimal,
-	oraclespb.Condition_OPERATOR_GREATER_THAN:          greaterThanDecimal,
-	oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL: greaterThanOrEqualDecimal,
-	oraclespb.Condition_OPERATOR_LESS_THAN:             lessThanDecimal,
-	oraclespb.Condition_OPERATOR_LESS_THAN_OR_EQUAL:    lessThanOrEqualDecimal,
+var decimalMatchers = map[datapb.Condition_Operator]func(num.Decimal, num.Decimal) bool{
+	datapb.Condition_OPERATOR_EQUALS:                equalsDecimal,
+	datapb.Condition_OPERATOR_GREATER_THAN:          greaterThanDecimal,
+	datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL: greaterThanOrEqualDecimal,
+	datapb.Condition_OPERATOR_LESS_THAN:             lessThanDecimal,
+	datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL:    lessThanOrEqualDecimal,
 }
 
 func equalsDecimal(dataValue, condValue num.Decimal) bool {
@@ -328,7 +332,7 @@ func toTimestampCondition(c *types.OracleSpecCondition) (condition, error) {
 
 	matcher, ok := timestampMatchers[c.Operator]
 	if !ok {
-		return nil, errUnsupportedOperatorForType(c.Operator, oraclespb.PropertyKey_TYPE_TIMESTAMP)
+		return nil, errUnsupportedOperatorForType(c.Operator, datapb.PropertyKey_TYPE_TIMESTAMP)
 	}
 
 	return func(dataValue string) (bool, error) {
@@ -352,12 +356,12 @@ func toTimestamp(value string) (int64, error) {
 	return parsedValue, nil
 }
 
-var timestampMatchers = map[oraclespb.Condition_Operator]func(int64, int64) bool{
-	oraclespb.Condition_OPERATOR_EQUALS:                equalsTimestamp,
-	oraclespb.Condition_OPERATOR_GREATER_THAN:          greaterThanTimestamp,
-	oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL: greaterThanOrEqualTimestamp,
-	oraclespb.Condition_OPERATOR_LESS_THAN:             lessThanTimestamp,
-	oraclespb.Condition_OPERATOR_LESS_THAN_OR_EQUAL:    lessThanOrEqualTimestamp,
+var timestampMatchers = map[datapb.Condition_Operator]func(int64, int64) bool{
+	datapb.Condition_OPERATOR_EQUALS:                equalsTimestamp,
+	datapb.Condition_OPERATOR_GREATER_THAN:          greaterThanTimestamp,
+	datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL: greaterThanOrEqualTimestamp,
+	datapb.Condition_OPERATOR_LESS_THAN:             lessThanTimestamp,
+	datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL:    lessThanOrEqualTimestamp,
 }
 
 func equalsTimestamp(dataValue, condValue int64) bool {
@@ -388,7 +392,7 @@ func toBooleanCondition(c *types.OracleSpecCondition) (condition, error) {
 
 	matcher, ok := booleanMatchers[c.Operator]
 	if !ok {
-		return nil, errUnsupportedOperatorForType(c.Operator, oraclespb.PropertyKey_TYPE_BOOLEAN)
+		return nil, errUnsupportedOperatorForType(c.Operator, datapb.PropertyKey_TYPE_BOOLEAN)
 	}
 
 	return func(dataValue string) (bool, error) {
@@ -404,8 +408,8 @@ func toBoolean(value string) (bool, error) {
 	return strconv.ParseBool(value)
 }
 
-var booleanMatchers = map[oraclespb.Condition_Operator]func(bool, bool) bool{
-	oraclespb.Condition_OPERATOR_EQUALS: equalsBoolean,
+var booleanMatchers = map[datapb.Condition_Operator]func(bool, bool) bool{
+	datapb.Condition_OPERATOR_EQUALS: equalsBoolean,
 }
 
 func equalsBoolean(dataValue, condValue bool) bool {
@@ -415,7 +419,7 @@ func equalsBoolean(dataValue, condValue bool) bool {
 func toStringCondition(c *types.OracleSpecCondition) (condition, error) {
 	matcher, ok := stringMatchers[c.Operator]
 	if !ok {
-		return nil, errUnsupportedOperatorForType(c.Operator, oraclespb.PropertyKey_TYPE_STRING)
+		return nil, errUnsupportedOperatorForType(c.Operator, datapb.PropertyKey_TYPE_STRING)
 	}
 
 	return func(dataValue string) (bool, error) {
@@ -423,8 +427,8 @@ func toStringCondition(c *types.OracleSpecCondition) (condition, error) {
 	}, nil
 }
 
-var stringMatchers = map[oraclespb.Condition_Operator]func(string, string) bool{
-	oraclespb.Condition_OPERATOR_EQUALS: equalsString,
+var stringMatchers = map[datapb.Condition_Operator]func(string, string) bool{
+	datapb.Condition_OPERATOR_EQUALS: equalsString,
 }
 
 func equalsString(dataValue, condValue string) bool {
@@ -433,7 +437,7 @@ func equalsString(dataValue, condValue string) bool {
 
 // errMismatchPropertyType is returned when a property is redeclared in
 // conditions but with a different type.
-func errMismatchPropertyType(prop string, first, newP oraclespb.PropertyKey_Type) error {
+func errMismatchPropertyType(prop string, first, newP datapb.PropertyKey_Type) error {
 	return fmt.Errorf(
 		"cannot redeclared property %s with different type, first %s then %s",
 		prop, first, newP,
@@ -442,12 +446,12 @@ func errMismatchPropertyType(prop string, first, newP oraclespb.PropertyKey_Type
 
 // errUnsupportedOperatorForType is returned when the property type does not
 // support the specified operator.
-func errUnsupportedOperatorForType(o oraclespb.Condition_Operator, t oraclespb.PropertyKey_Type) error {
+func errUnsupportedOperatorForType(o datapb.Condition_Operator, t datapb.PropertyKey_Type) error {
 	return fmt.Errorf("unsupported operator %s for type %s", o, t)
 }
 
 // errUnsupportedPropertyType is returned when the filter specifies an
 // unsupported property key type.
-func errUnsupportedPropertyType(typ oraclespb.PropertyKey_Type) error {
+func errUnsupportedPropertyType(typ datapb.PropertyKey_Type) error {
 	return fmt.Errorf("property type %s", typ)
 }

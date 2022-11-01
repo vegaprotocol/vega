@@ -35,10 +35,10 @@ func (r *updateMarketConfigurationResolver) Instrument(ctx context.Context,
 	switch p := protoInstrument.Product.(type) {
 	case *vega.UpdateInstrumentConfiguration_Future:
 		product = &vega.UpdateFutureProduct{
-			QuoteName:                       p.Future.QuoteName,
-			OracleSpecForSettlementData:     p.Future.OracleSpecForSettlementData,
-			OracleSpecForTradingTermination: p.Future.OracleSpecForTradingTermination,
-			OracleSpecBinding:               p.Future.OracleSpecBinding,
+			QuoteName:                           p.Future.QuoteName,
+			DataSourceSpecForSettlementData:     p.Future.DataSourceSpecForSettlementData,
+			DataSourceSpecForTradingTermination: p.Future.DataSourceSpecForTradingTermination,
+			DataSourceSpecBinding:               p.Future.DataSourceSpecBinding,
 		}
 	default:
 		return nil, ErrUnsupportedProduct

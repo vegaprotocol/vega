@@ -837,6 +837,14 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 
 	m.removeOrders(ctx)
 
+	for _, party := range m.liquidity.ProvisionsPerParty().Slice() {
+		// we don't care about the actual orders as they will be cancelled in the book as part of settlement anyways.
+		_, err := m.liquidity.StopLiquidityProvision(ctx, party.Party)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

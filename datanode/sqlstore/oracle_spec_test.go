@@ -14,15 +14,16 @@ package sqlstore_test
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -91,7 +92,7 @@ func testUpdateExistingInBlock(t *testing.T) {
 	require.NoError(t, err)
 	assert.NoError(t, os.Upsert(context.Background(), data))
 
-	data.Status = entities.OracleSpecDeactivated
+	data.ExternalDataSourceSpec.Spec.Status = entities.OracleSpecDeactivated
 	assert.NoError(t, os.Upsert(context.Background(), data))
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
@@ -124,12 +125,12 @@ func testGetSpecByID(t *testing.T) {
 	got, err := os.GetSpecByID(ctx, "DEADBEEF")
 	require.NoError(t, err)
 
-	want, err := entities.OracleSpecFromProto(specProtos[0], got.TxHash, block.VegaTime)
+	want, err := entities.DataSourceSpecFromProto(specProtos[0].ExternalDataSourceSpec.Spec, got.ExternalDataSourceSpec.Spec.TxHash, block.VegaTime)
 	assert.NoError(t, err)
 	// truncate the time to microseconds as postgres doesn't support nanosecond granularity.
 	want.UpdatedAt = want.UpdatedAt.Truncate(time.Microsecond)
 	want.CreatedAt = want.CreatedAt.Truncate(time.Microsecond)
-	assert.Equal(t, *want, got)
+	assert.Equal(t, want, got.ExternalDataSourceSpec.Spec)
 }
 
 func testGetSpecs(t *testing.T) {
@@ -154,8 +155,8 @@ func testGetSpecs(t *testing.T) {
 		assert.NoError(t, os.Upsert(context.Background(), data))
 
 		// truncate the time to microseconds as postgres doesn't support nanosecond granularity.
-		data.CreatedAt = data.CreatedAt.Truncate(time.Microsecond)
-		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
+		data.ExternalDataSourceSpec.Spec.CreatedAt = data.ExternalDataSourceSpec.Spec.CreatedAt.Truncate(time.Microsecond)
+		data.ExternalDataSourceSpec.Spec.UpdatedAt = data.ExternalDataSourceSpec.Spec.UpdatedAt.Truncate(time.Microsecond)
 		want = append(want, *data)
 	}
 
@@ -163,74 +164,99 @@ func testGetSpecs(t *testing.T) {
 	assert.Equal(t, 3, rowCount)
 
 	got, err := os.GetSpecs(ctx, entities.OffsetPagination{})
+	wantSpec := []entities.DataSourceSpec{}
+	for _, spec := range want {
+		wantSpec = append(wantSpec, *spec.ExternalDataSourceSpec.Spec)
+	}
 	require.NoError(t, err)
-	assert.ElementsMatch(t, want, got)
+	assert.ElementsMatch(t, wantSpec, got)
 }
 
-func getTestSpecs() []*oraclespb.OracleSpec {
-	return []*oraclespb.OracleSpec{
+func getTestSpecs() []*datapb.OracleSpec {
+	pk1 := types.CreateSignerFromString("b105f00d", types.DataSignerTypePubKey)
+	pk2 := types.CreateSignerFromString("baddcafe", types.DataSignerTypePubKey)
+
+	return []*datapb.OracleSpec{
 		{
-			Id:        "deadbeef",
-			CreatedAt: time.Now().UnixNano(),
-			UpdatedAt: time.Now().UnixNano(),
-			PubKeys:   []string{"b105f00d", "baddcafe"},
-			Filters: []*oraclespb.Filter{
-				{
-					Key: &oraclespb.PropertyKey{
-						Name: "Ticker",
-						Type: oraclespb.PropertyKey_TYPE_STRING,
-					},
-					Conditions: []*oraclespb.Condition{
-						{
-							Operator: oraclespb.Condition_OPERATOR_EQUALS,
-							Value:    "USDETH",
+			ExternalDataSourceSpec: &datapb.ExternalDataSourceSpec{
+				Spec: &datapb.DataSourceSpec{
+					Id:        "deadbeef",
+					CreatedAt: time.Now().UnixNano(),
+					UpdatedAt: time.Now().UnixNano(),
+					Config: &datapb.DataSourceSpecConfiguration{
+						Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+						Filters: []*datapb.Filter{
+							{
+								Key: &datapb.PropertyKey{
+									Name: "Ticker",
+									Type: datapb.PropertyKey_TYPE_STRING,
+								},
+								Conditions: []*datapb.Condition{
+									{
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+										Value:    "USDETH",
+									},
+								},
+							},
 						},
 					},
+					Status: datapb.DataSourceSpec_STATUS_ACTIVE,
 				},
 			},
-			Status: oraclespb.OracleSpec_STATUS_ACTIVE,
 		},
 		{
-			Id:        "cafed00d",
-			CreatedAt: time.Now().UnixNano(),
-			UpdatedAt: time.Now().UnixNano(),
-			PubKeys:   []string{"b105f00d", "baddcafe"},
-			Filters: []*oraclespb.Filter{
-				{
-					Key: &oraclespb.PropertyKey{
-						Name: "Ticker",
-						Type: oraclespb.PropertyKey_TYPE_STRING,
-					},
-					Conditions: []*oraclespb.Condition{
-						{
-							Operator: oraclespb.Condition_OPERATOR_EQUALS,
-							Value:    "USDBTC",
+			ExternalDataSourceSpec: &datapb.ExternalDataSourceSpec{
+				Spec: &datapb.DataSourceSpec{
+					Id:        "cafed00d",
+					CreatedAt: time.Now().UnixNano(),
+					UpdatedAt: time.Now().UnixNano(),
+					Config: &datapb.DataSourceSpecConfiguration{
+						Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+						Filters: []*datapb.Filter{
+							{
+								Key: &datapb.PropertyKey{
+									Name: "Ticker",
+									Type: datapb.PropertyKey_TYPE_STRING,
+								},
+								Conditions: []*datapb.Condition{
+									{
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+										Value:    "USDBTC",
+									},
+								},
+							},
 						},
 					},
+					Status: datapb.DataSourceSpec_STATUS_ACTIVE,
 				},
 			},
-			Status: oraclespb.OracleSpec_STATUS_ACTIVE,
 		},
 		{
-			Id:        "deadbaad",
-			CreatedAt: time.Now().UnixNano(),
-			UpdatedAt: time.Now().UnixNano(),
-			PubKeys:   []string{"b105f00d", "baddcafe"},
-			Filters: []*oraclespb.Filter{
-				{
-					Key: &oraclespb.PropertyKey{
-						Name: "Ticker",
-						Type: oraclespb.PropertyKey_TYPE_STRING,
-					},
-					Conditions: []*oraclespb.Condition{
-						{
-							Operator: oraclespb.Condition_OPERATOR_EQUALS,
-							Value:    "USDSOL",
+			ExternalDataSourceSpec: &datapb.ExternalDataSourceSpec{
+				Spec: &datapb.DataSourceSpec{
+					Id:        "deadbaad",
+					CreatedAt: time.Now().UnixNano(),
+					UpdatedAt: time.Now().UnixNano(),
+					Config: &datapb.DataSourceSpecConfiguration{
+						Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+						Filters: []*datapb.Filter{
+							{
+								Key: &datapb.PropertyKey{
+									Name: "Ticker",
+									Type: datapb.PropertyKey_TYPE_STRING,
+								},
+								Conditions: []*datapb.Condition{
+									{
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+										Value:    "USDSOL",
+									},
+								},
+							},
 						},
 					},
+					Status: datapb.DataSourceSpec_STATUS_ACTIVE,
 				},
 			},
-			Status: oraclespb.OracleSpec_STATUS_ACTIVE,
 		},
 	}
 }
@@ -257,16 +283,24 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 	block := addTestBlockForTime(t, bs, time.Now().Truncate(time.Second))
 
 	for i := 0; i < 10; i++ {
-		pubKey, err := hex.DecodeString(helpers.GenerateID())
+		pubKey := types.CreateSignerFromString(helpers.GenerateID(), types.DataSignerTypePubKey)
+		serializedKey, err := entities.SerializeSigners([]*types.Signer{pubKey})
 		require.NoError(t, err)
+
 		spec := entities.OracleSpec{
-			ID:         entities.SpecID(fmt.Sprintf("deadbeef%02d", i+1)),
-			CreatedAt:  time.Now().Truncate(time.Microsecond),
-			UpdatedAt:  time.Now().Truncate(time.Microsecond),
-			PublicKeys: entities.PublicKeys{pubKey},
-			Filters:    nil,
-			Status:     entities.OracleSpecActive,
-			VegaTime:   block.VegaTime,
+			ExternalDataSourceSpec: &entities.ExternalDataSourceSpec{
+				Spec: &entities.DataSourceSpec{
+					ID:        entities.SpecID(fmt.Sprintf("deadbeef%02d", i+1)),
+					CreatedAt: time.Now().Truncate(time.Microsecond),
+					UpdatedAt: time.Now().Truncate(time.Microsecond),
+					Config: &entities.DataSourceSpecConfiguration{
+						Signers: serializedKey,
+						Filters: nil,
+					},
+					Status:   entities.OracleSpecActive,
+					VegaTime: block.VegaTime,
+				},
+			},
 		}
 
 		err = os.Upsert(ctx, &spec)

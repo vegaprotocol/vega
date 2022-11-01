@@ -14,7 +14,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | oracle config          |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
       | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
 
     And the following network parameters are set:

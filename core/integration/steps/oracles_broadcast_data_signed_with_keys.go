@@ -19,6 +19,7 @@ import (
 	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/core/oracles"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 func OraclesBroadcastDataSignedWithKeys(
@@ -26,7 +27,11 @@ func OraclesBroadcastDataSignedWithKeys(
 	rawPubKeys string,
 	rawProperties *godog.Table,
 ) error {
-	pubKeys := parseOracleDataPubKeys(rawPubKeys)
+	pubKeys := parseOracleDataSigners(rawPubKeys)
+	pubKeysSigners := make([]*types.Signer, len(pubKeys))
+	for i, s := range pubKeys {
+		pubKeysSigners[i] = types.CreateSignerFromString(s, types.DataSignerTypePubKey)
+	}
 
 	properties, err := parseOracleDataProperties(rawProperties)
 	if err != nil {
@@ -34,12 +39,12 @@ func OraclesBroadcastDataSignedWithKeys(
 	}
 
 	return oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
-		PubKeys: pubKeys,
+		Signers: pubKeysSigners,
 		Data:    properties,
 	})
 }
 
-func parseOracleDataPubKeys(rawPubKeys string) []string {
+func parseOracleDataSigners(rawPubKeys string) []string {
 	return StrSlice(rawPubKeys, ",")
 }
 

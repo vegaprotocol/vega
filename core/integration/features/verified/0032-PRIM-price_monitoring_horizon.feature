@@ -27,7 +27,7 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | horizon | probability | auction extension |
       | 3600    | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | decimal places | position decimal places |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          | decimal places | position decimal places |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |5               |5                        |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount        |
@@ -105,7 +105,7 @@ Scenario: 002, horizon set to 360000 in price monitoring model.  0032-PRIM-001, 
       | horizon | probability | auction extension |
       | 360000    | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | decimal places | position decimal places |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          | decimal places | position decimal places |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |5               |5                        |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount        |
@@ -185,7 +185,7 @@ Scenario: 003, horizon set to 360000 in price monitoring model.  0032-PRIM-001, 
       | horizon | probability | auction extension |
       | 360000  | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | decimal places | position decimal places |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          | decimal places | position decimal places |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |2               |1                        |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount          |

@@ -238,6 +238,9 @@ func (e *Engine) preEnactProposal(ctx context.Context, p *proposal) (te *ToEnact
 		if unp != nil {
 			te.n = unp.Changes
 		}
+		if err := e.netp.Validate(unp.Changes.Key, unp.Changes.Value); err != nil {
+			return nil, types.ProposalErrorNetworkParameterInvalidValue, err
+		}
 	case types.ProposalTermsTypeNewAsset:
 		asset, err := e.assets.Get(p.ID)
 		if err != nil {
@@ -322,6 +325,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 			enact, perr, err := e.preEnactProposal(ctx, proposal)
 			if err != nil {
 				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
+				toBeRemoved = append(toBeRemoved, proposal.ID)
 				e.log.Error("proposal enactment has failed",
 					logging.String("proposal-id", proposal.ID),
 					logging.String("proposal-error", perr.String()),
@@ -982,12 +986,12 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 		asset, _ := existingMarket.GetAsset()
 		newMarket.Changes.Instrument.Product = &types.InstrumentConfigurationFuture{
 			Future: &types.FutureProduct{
-				SettlementAsset:                 asset,
-				QuoteName:                       product.Future.QuoteName,
-				OracleSpecForSettlementData:     product.Future.OracleSpecForSettlementData,
-				OracleSpecForTradingTermination: product.Future.OracleSpecForTradingTermination,
-				OracleSpecBinding:               product.Future.OracleSpecBinding,
-				SettlementDataDecimalPlaces:     product.Future.SettlementDataDecimals,
+				SettlementAsset:                     asset,
+				QuoteName:                           product.Future.QuoteName,
+				DataSourceSpecForSettlementData:     product.Future.DataSourceSpecForSettlementData,
+				DataSourceSpecForTradingTermination: product.Future.DataSourceSpecForTradingTermination,
+				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
+				SettlementDataDecimalPlaces:         product.Future.SettlementDataDecimals,
 			},
 		}
 	default:

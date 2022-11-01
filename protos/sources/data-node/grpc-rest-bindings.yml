@@ -280,6 +280,8 @@ http:
       get: '/api/v2/vega/keys/ethereum/rotations'
     - selector: datanode.api.v2.TradingDataService.GetProtocolUpgradeStatus
       get: '/api/v2/upgrade/status'
+    - selector: datanode.api.v2.TradingDataService.ListProtocolUpgradeProposals
+      get: '/api/v2/upgrade/proposals'
 
     # websockets
 
