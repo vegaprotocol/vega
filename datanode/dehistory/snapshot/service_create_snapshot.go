@@ -173,7 +173,8 @@ func (b *Service) snapshotData(ctx context.Context, copyDataTx pgx.Tx, dbMetaDat
 	metrics.SetLastSnapshotSeconds(time.Since(start).Seconds())
 
 	b.log.Info("finished creating snapshot for chain", logging.String("chain", currentSnapshot.ChainID),
-		logging.Int64("height", currentSnapshot.Height), logging.Duration("time taken", time.Since(start)),
+		logging.Int64("from height", historySnapshot.HeightFrom),
+		logging.Int64("to height", currentSnapshot.Height), logging.Duration("time taken", time.Since(start)),
 		logging.Int64("rows copied", rowsCopied),
 		logging.Int64("compressed current state data size", compressedCurrentStateByteCount),
 		logging.Int64("compressed history data size", compressedHistoryByteCount),
