@@ -1,3 +1,5 @@
+@witold
+
 Feature: Position resolution case 5 lognormal risk model
 
     Background:
@@ -65,7 +67,7 @@ Feature: Position resolution case 5 lognormal risk model
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | volume   | price  |
       | buy  | 10       | 1      |
-      | sell | 10       | 2000   | 
+      | sell | 10       | 2000   |
 
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
@@ -85,7 +87,7 @@ Feature: Position resolution case 5 lognormal risk model
       | party            | market id | maintenance | search  | initial | release |
       | designatedLooser | ETH/DEC19 | 54384       | 65260   | 81576   | 108768   |
 
-    Then the order book should have the following volumes for market "ETH/DEC19":   
+    Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price  | volume |
       | buy  | 1      | 10     |
       | buy  | 140    | 1      |
@@ -171,5 +173,3 @@ Feature: Position resolution case 5 lognormal risk model
       | buySideProvider  | USD   | ETH/DEC19 | 75439   | 999999953541       |
       | aux              | USD   | ETH/DEC19 | 1108    | 999999998862       |
       | aux2             | USD   | ETH/DEC19 | 0       | 1000000000030      |
-
-

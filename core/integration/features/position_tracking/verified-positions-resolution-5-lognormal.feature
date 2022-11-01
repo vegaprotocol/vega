@@ -1,3 +1,5 @@
+@witold
+
 Feature: Position resolution case 5 lognormal risk model
 
     Background:

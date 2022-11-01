@@ -65,18 +65,18 @@ Background:
       | lpprov | BTC   | 9000000000 |
 
     #complete the epoch to advance to a meaningful epoch (can't setup transfer to start at epoch 0)
-    Then the network moves ahead "7" blocks      
+    Then the network moves ahead "7" blocks
 
 Scenario: all sort of fees with multiple assets and multiple markets pay rewards on epoch end
 
     Given the parties submit the following recurring transfers:
     | id  |                             from                                 |  from_account_type    |                                to                                 |   to_account_type                       | asset  |  amount | start_epoch | end_epoch | factor |               metric                | metric_asset | markets   |
-    | 1   | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA   |  10000  |      1      |           |   1    | DISPATCH_METRIC_MAKER_FEES_RECEIVED |    ETH       |           |  
-    | 2   | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES     | USDT   |  20000  |      1      |           |   1    | DISPATCH_METRIC_MAKER_FEES_PAID     |    ETH       |           |  
-    | 3   | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | USDC   |  5000   |      1      |           |   1    | DISPATCH_METRIC_LP_FEES_RECEIVED    |    ETH       |           |  
-    | 7   | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA   |  1000   |      1      |           |   1    | DISPATCH_METRIC_MAKER_FEES_RECEIVED |    BTC       |           |  
-    | 8   | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES     | USDT   |  2000   |      1      |           |   1    | DISPATCH_METRIC_MAKER_FEES_PAID     |    BTC       |           |  
-    | 9   | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | USDC   |  500    |      1      |           |   1    | DISPATCH_METRIC_LP_FEES_RECEIVED    |    BTC       |           |  
+    | 1   | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA   |  10000  |      1      |           |   1    | DISPATCH_METRIC_MAKER_FEES_RECEIVED |    ETH       |           |
+    | 2   | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES     | USDT   |  20000  |      1      |           |   1    | DISPATCH_METRIC_MAKER_FEES_PAID     |    ETH       |           |
+    | 3   | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | USDC   |  5000   |      1      |           |   1    | DISPATCH_METRIC_LP_FEES_RECEIVED    |    ETH       |           |
+    | 7   | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA   |  1000   |      1      |           |   1    | DISPATCH_METRIC_MAKER_FEES_RECEIVED |    BTC       |           |
+    | 8   | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES     | USDT   |  2000   |      1      |           |   1    | DISPATCH_METRIC_MAKER_FEES_PAID     |    BTC       |           |
+    | 9   | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | USDC   |  500    |      1      |           |   1    | DISPATCH_METRIC_LP_FEES_RECEIVED    |    BTC       |           |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
@@ -197,12 +197,12 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
 
     Then "party1" should have general account balance of "599978284" for asset "ETH"
     Then "party2" should have general account balance of "599995595" for asset "ETH"
-    Then "lp1" should have general account balance of "5999973357" for asset "ETH"
+    Then "lp1" should have general account balance of "5999972359" for asset "ETH"
     Then "lp2" should have general account balance of "5999992769" for asset "ETH"
 
     Then "party1" should have general account balance of "299983699" for asset "BTC"
     Then "party2" should have general account balance of "299992320" for asset "BTC"
-    Then "lp1" should have general account balance of "2999978887" for asset "BTC"
+    Then "lp1" should have general account balance of "2999979127" for asset "BTC"
     Then "lp2" should have general account balance of "2999994255" for asset "BTC"
 
     #complete the epoch for rewards to take place
@@ -210,7 +210,7 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
 
     # calculation of maker fees received reward - given in VEGA
     # ETH - got 10k VEGA
-    # BTC - got 1000 VEGA              
+    # BTC - got 1000 VEGA
     # in ETH ETH/DEC21 contributed (80/206) 0.3883495146 of the maker fees received => 3,883.495146 => 3,883
     # in ETH ETH/DEC22 contributed (126/206) 0.6116504854 of the maker fees received => 6,116.504854 => 6,116
     # in BTC BTC/DEC21 contributed (85/188) 0.4521276596 of the maker fees received => 452.1276596 => 452
@@ -223,16 +223,16 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
 
     # ETH/DEC22 maker fees received:
     # party1 - 1 * 6,116 = 6,116
-    
+
     # BTC/DEC21 maker fees received:
     # party2 - 1 * 452 = 452
-    
+
     # BTC/DEC22 maker fees received:
     # party2 - 1 * 547 = 547
 
     # total party1 = 1553 + 6,116 = 7660
     # total party2 = 452 + 547 = 999
-    # total lp1 = 1553 
+    # total lp1 = 1553
     # total lp2 = 776
 
     Then "party1" should have general account balance of "599978284" for asset "ETH"
@@ -243,7 +243,7 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
 
     # calculation of taker fees paid reward - given in USDT
     # ETH - got 20k USDT
-    # BTC - got 2000 USDT              
+    # BTC - got 2000 USDT
     # in ETH ETH/DEC21 contributed (80/206) 0.3883495146 of the taker fees paid => 7,766.990292 => 7766
     # in ETH ETH/DEC22 contributed (126/206) 0.6116504854 of the taker fees paid => 12,233.009708 => 12233
     # in BTC BTC/DEC21 contributed (85/188) 0.4521276596 of the taker fees paid => 904.2553192 => 904
@@ -251,13 +251,13 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
 
     # ETH/DEC21 taker fees paid:
     # party2 - 1 * 7766 = 7766 => 7766
-    
+
     # ETH/DEC22 taker fees paid:
     # party2 - 1 * 12233 = 12233
-    
+
     # BTC/DEC21 taker fees paid:
     # party1 - 1 * 904 = 904
-    
+
     # BTC/DEC22 taker fees paid:
     # party1 - 1 * 1095 = 1095
 
@@ -266,7 +266,7 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
 
     Then "party1" should have general account balance of "1648" for asset "USDT"
     Then "party2" should have general account balance of "20349" for asset "USDT"
-    
+
     # calculation of LP fees received reward - given in USDC
     # ETH - got 5000 USDC
     # BTC - got 500 USDC

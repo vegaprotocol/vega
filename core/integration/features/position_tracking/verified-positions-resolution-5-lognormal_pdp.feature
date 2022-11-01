@@ -1,3 +1,4 @@
+@witold
 Feature: Position resolution case 5 lognormal risk model
 
     Background:
@@ -66,7 +67,7 @@ Feature: Position resolution case 5 lognormal risk model
       | party            | asset | market id | margin  | general |
       | designatedLooser | USD   | ETH/DEC19 | 21600   | 0       |
 
-    Then the order book should have the following volumes for market "ETH/DEC19":   
+    Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price  | volume |
       | buy  | 1      | 1000   |
       | buy  | 140    | 100    |

@@ -64,7 +64,7 @@ Feature: Fees calculations
     Then the following trades should be executed:
       | buyer   | price | size | seller  | aggressor side |
       | trader3 | 1002  | 3    | trader4 | sell           |
-        
+
     # trade_value_for_fee_purposes = size_of_trade * price_of_trade = 3 *1002 = 3006
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 3006 = 6.012 = 7 (rounded up to nearest whole value)
     # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 3006 = 15.030 = 16 (rounded up to nearest whole value)
@@ -75,8 +75,8 @@ Feature: Fees calculations
       | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 16     | ETH   |
       | trader4 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 7      | ETH   |
       | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 0      | ETH   |
-      | market  | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 16     | ETH   |  
-    
+      | market  | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 16     | ETH   |
+
     # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 7 + 16 + 0 = 23
     # Trader3 margin + general account balance = 10000 + 16 ( Maker fees) = 10016
     # Trader4 margin + general account balance = 10000 - 16 ( Maker fees) - 7 (Infra fee) = 99977
@@ -157,7 +157,7 @@ Feature: Fees calculations
       | buyer    | price | size | seller  | aggressor side |
       | trader3a | 1002  | 2    | trader4 | sell           |
       | trader3b | 1002  | 1    | trader4 | sell           |
-        
+
     # For trader3a-
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 2 * 1002 = 2004
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 2004 = 4.008 = 5 (rounded up to nearest whole value)
@@ -177,7 +177,7 @@ Feature: Fees calculations
       | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 8      | ETH   |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 0      | ETH   |
       | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 11     | ETH   |
-      | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |  
+      | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |
 
     # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 8 + 11 + 6 + 0 = 25 ??
     # Trader3a margin + general account balance = 10000 + 11 ( Maker fees) = 10011
@@ -340,7 +340,7 @@ Feature: Fees calculations
 
     And the accumulated liquidity fees should be "2" for the market "ETH/DEC21"
     When the network moves ahead "11" blocks
-    
+
     And the following transfers should happen:
       | from   | to   | from account                | to account           | market id | amount | asset |
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 2      | ETH   |
@@ -406,7 +406,7 @@ Feature: Fees calculations
       | buyer    | price | size | seller  |
       | trader3a | 1002  | 2    | trader4 |
       | trader3b | 1002  | 1    | trader4 |
-        
+
     # For trader3a-
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 2 * 1002 = 2004
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 2004 = 4.008 = 5 (rounded up to nearest whole value)
@@ -426,7 +426,7 @@ Feature: Fees calculations
       | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 8      | ETH   |
       | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 11     | ETH   |
       | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |
-     
+
     # total_fee = maker_fee + infrastructure_fee + liquidity_fee =  11 + 6 + 8 = 25
     # Trader3a margin + general account balance = 10000 + 11 ( Maker fees) = 10011
     # Trader3b margin + general account balance = 10000 + 6 ( Maker fees) = 10006
@@ -437,7 +437,7 @@ Feature: Fees calculations
       | trader3a | ETH   | ETH/DEC21 | 678    | 9333    |
       | trader3b | ETH   | ETH/DEC21 | 339    | 9667    |
       | trader4  | ETH   | ETH/DEC21 | 621    | 604     |
-   
+
    # Placing second set of orders
     When the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference      |
@@ -461,7 +461,7 @@ Feature: Fees calculations
       # TODO to be implemented by Core Team
       | buyer    | price | size | seller  |
       | trader3a | 1000  | 2    | trader4 |
-      
+
       # checking if continuous mode still exists
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
@@ -628,7 +628,7 @@ Feature: Fees calculations
         | trader4 | ETH   | ETH/DEC21 | 205    | 0       |
 
   Scenario: S008, Testing fees in continuous trading when insufficient balance in their general and margin account with LP, then the trade does not execute (0029-FEES-007，0029-FEES-008)
- 
+
     Given the following network parameters are set:
       | name                                                | value |
       | market.liquidity.providers.fee.distributionTimeStep | 10s   |
@@ -781,7 +781,7 @@ Feature: Fees calculations
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 843    | 9157    |
       | trader4  | ETH   | ETH/DEC21 | 1318   | 8682    |
-      
+
     #Scenario:S010, Triggering Liquidity auction (0029-FEES-006)
 
     When the parties place the following orders:
@@ -1300,7 +1300,7 @@ Feature: Fees calculations
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
-      
+
   Scenario:S017, Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade does not go ahead (0029-FEES-008)
 
     Given the following network parameters are set:
@@ -1475,7 +1475,7 @@ Feature: Fees calculations
       | trader3b | 0      | 0              | -29622       |
 
     # trade_value_for_fee_purposes for party 3a = size_of_trade * price_of_trade = 50 *190 = 9500 And 50 * 180 = 9000
-    # maker_fee for party 3a = fee_factor[maker] * trade_value_for_fee_purposes = 0.005 * 9500 = 47.5 = 48 (rounded up to nearest whole value) And 0.005 * 9000 = 45 
+    # maker_fee for party 3a = fee_factor[maker] * trade_value_for_fee_purposes = 0.005 * 9500 = 47.5 = 48 (rounded up to nearest whole value) And 0.005 * 9000 = 45
     # infrastructure_fee for party 3a = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 9500 = 19 And 0.002 * 9000 = 18 + 19 = 37
     # trade_value_for_fee_purposes for party 3b = size_of_trade * price_of_trade = 300 *180 = 54000
     # maker_fee for party 3b =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 54000 = 270
@@ -1571,7 +1571,7 @@ Feature: Fees calculations
       | trader3b | 0      | 0              | -29568       |
 
     # trade_value_for_fee_purposes for party 3a = size_of_trade * price_of_trade = 50 *190 = 9500 And 50 * 180 = 9000
-    # maker_fee for party 3a = fee_factor[maker] * trade_value_for_fee_purposes = 0.005 * 9500 = 47.5 = 48 (rounded up to nearest whole value) And 0.005 * 9000 = 45 
+    # maker_fee for party 3a = fee_factor[maker] * trade_value_for_fee_purposes = 0.005 * 9500 = 47.5 = 48 (rounded up to nearest whole value) And 0.005 * 9000 = 45
     # infrastructure_fee for party 3a = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 9500 = 19 And 0.002 * 9000 = 18 + 19 = 37
     # trade_value_for_fee_purposes for party 3b = size_of_trade * price_of_trade = 300 *180 = 54000
     # maker_fee for party 3b =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 54000 = 270
@@ -1597,7 +1597,7 @@ Feature: Fees calculations
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
   Scenario: S020, Testing fees in continuous trading with two pegged trades and one liquidity providers (0029-FEES-002)
-   
+
     When the following network parameters are set:
       | name                                                | value |
       | market.liquidity.providers.fee.distributionTimeStep | 10s   |
@@ -1656,8 +1656,8 @@ Feature: Fees calculations
       # | trader4  | ETH/DEC21 | sell | 30     | 990   | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | 
-      | 1000       | TRADING_MODE_CONTINUOUS |  
+      | mark price | trading mode            |
+      | 1000       | TRADING_MODE_CONTINUOUS |
 
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
@@ -1673,7 +1673,7 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general    |  bond    |
-      | aux1     | ETH   | ETH/DEC21 | 11743  | 99977650   |  10000   |
+      | aux1     | ETH   | ETH/DEC21 | 10080  | 99979313   |  10000   |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
@@ -1691,7 +1691,7 @@ Feature: Fees calculations
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
       | 990        | TRADING_MODE_CONTINUOUS |
-     
+
     # For trader4 -
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 10 * 990 = 9900
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 9900 = 19.8 = 20 (rounded up to nearest whole value)
@@ -1777,7 +1777,7 @@ Feature: Fees calculations
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
     And the accumulated infrastructure fees should be "0" for the asset "ETH"
-  
+
     #  Changing net params fees factors
     And the following network parameters are set:
       | name                                 | value |
@@ -1798,7 +1798,7 @@ Feature: Fees calculations
       # TODO to be implemented by Core Team
       | buyer   | price | size | seller  |
       | trader3 | 1002  | 3    | trader4 |
-      
+
     # trade_value_for_fee_purposes = size_of_trade * price_of_trade = 3 *1002 = 3006
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.02 * 3006 = 60.12 = 61 (rounded up to nearest whole value)
     # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.05 * 3006 = 150.30 = 151 (rounded up to nearest whole value)
@@ -1810,7 +1810,7 @@ Feature: Fees calculations
       | trader4 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 61     | ETH   |
       | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 0      | ETH   |
       | market  | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 151    | ETH   |
-    
+
     # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 61 + 151 + 0 = 212
     # Trader3 margin + general account balance = 10000 + 151 ( Maker fees) = 10151
     # Trader4 margin + general account balance = 10000 - 151 ( Maker fees) - 61 (Infra fee) = 9788
