@@ -53,10 +53,6 @@ func WithdrawalFromProto(withdrawal *vega.Withdrawal, txHash TxHash, vegaTime ti
 	ext := WithdrawExt{}
 	if withdrawal.Ext != nil {
 		cpy := *withdrawal.Ext
-		// if erc20 := withdrawal.Ext.GetErc20(); erc20 != nil {
-		// cpy20 := *erc20
-		// cpy.Ext = &cpy20
-		// }
 		ext.WithdrawExt = &cpy
 	}
 
@@ -82,10 +78,6 @@ func (w Withdrawal) ToProto() *vega.Withdrawal {
 	var pbExt *vega.WithdrawExt
 	if w.Ext.WithdrawExt != nil {
 		cpy := *w.Ext.WithdrawExt
-		// if erc20 := w.Ext.WithdrawExt.GetErc20(); erc20 != nil {
-		// cpy20 := *erc20
-		// cpy.Ext = &cpy20
-		// }
 		pbExt = &cpy
 	}
 	return &vega.Withdrawal{
