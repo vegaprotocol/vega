@@ -355,14 +355,14 @@ Feature: test risk model parameter ranges
       | party0 | USD   | ETH/MAR0  | 388414 | 49999996119565 | 50000 |
       | party1 | USD   | ETH/MAR0  | 11770  | 49999999895669 | 0     |
       | party2 | USD   | ETH/MAR0  | 48151  | 49999999584226 | 0     |
-    # intial margin level for LP = 92*1000*1.5*3.5569036=490852
+    # intial margin level for LP = 92*1000*1.2*3.5569036=392682
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR11 | 537885 | 49999996119565 | 50000 |
       | party1 | USD   | ETH/MAR11 | 12379  | 49999999895669 | 0     |
       | party2 | USD   | ETH/MAR11 | 66219  | 49999999584226 | 0     |
-    # intial margin level for LP = 92*1000*1.5*4.9256840 =670744
+    # intial margin level for LP = 92*1000*1.2*4.9256840 =543796
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
@@ -454,7 +454,7 @@ Feature: test risk model parameter ranges
       | party1 | USD   | ETH/MAR23 | 14342     | 49999999985658 | 0       |
       | party2 | USD   | ETH/MAR23 | 1139272   | 49999998860728 | 0       |
 
-  # initial margin level for LP = 1000*9092*86.2176101*1.5=1.176e9
+  # initial margin level for LP = 1000*9092*86.2176101*1.2=9.4e8
 
   Scenario: 003, test market ETH/MAR52(sigma=10),
     And the following network parameters are set:
@@ -499,5 +499,5 @@ Feature: test risk model parameter ranges
       | party1 | USD   | ETH/MAR52 | 133         | 49999999999867 | 0      |
       | party2 | USD   | ETH/MAR52 | 7363923     | 49999992636077 | 0      |
 
-# initial margin level for LP = 10*114559*55787.2881561700*1.5=9.586e10
+# initial margin level for LP = 10*114559*55787.2881561700*1.2=7.66e10
 
