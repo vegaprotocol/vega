@@ -80,6 +80,12 @@ Feature: test risk model parameter ranges
     #risk factor short:55787.28815617000
     #risk factor long:0.99999999877
     # tested in scenario 003
+    Given the log normal risk model named "log-normal-risk-model-53":
+      | risk aversion | tau | mu | r | sigma |
+      | 0.000001      | 0.1 | 0  | 0 | 100   |
+    #risk factor short:999999.00000000000
+    #risk factor long:1.00000000000
+    # tested in scenario 004
 
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -89,7 +95,7 @@ Feature: test risk model parameter ranges
       | 43200   | 0.99        | 300               |
 
     And the markets:
-      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees          | price monitoring   | oracle config          |
+      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
       | ETH/MAR0  | ETH        | USD   | log-normal-risk-model-0  | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/MAR11 | ETH        | USD   | log-normal-risk-model-11 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/MAR12 | ETH        | USD   | log-normal-risk-model-12 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
@@ -103,7 +109,7 @@ Feature: test risk model parameter ranges
       | ETH/MAR43 | ETH        | USD   | log-normal-risk-model-43 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/MAR51 | ETH        | USD   | log-normal-risk-model-51 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/MAR52 | ETH        | USD   | log-normal-risk-model-52 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-
+      | ETH/MAR53 | ETH        | USD   | log-normal-risk-model-53 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount         |
       | party0 | USD   | 50000000000000 |
@@ -455,23 +461,34 @@ Feature: test risk model parameter ranges
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR52 | 600000000         | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp1 | party0 | ETH/MAR52 | 600000000         | 0.001 | buy  | BID              | 500        | 20     | amendment  |
+      | lp1 | party0 | ETH/MAR52 | 600000            | 0.001 | sell | ASK              | 500        | 20     | submission |
+      | lp1 | party0 | ETH/MAR52 | 600000            | 0.001 | buy  | BID              | 500        | 20     | amendment  |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | party1 | ETH/MAR52 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-11  |
-      | party1 | ETH/MAR52 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-12  |
-      | party2 | ETH/MAR52 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-13 |
-      | party2 | ETH/MAR52 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-14 |
+      | party1 | ETH/MAR52 | buy  | 10     | 9     | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-11  |
+      | party1 | ETH/MAR52 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-12  |
+      | party2 | ETH/MAR52 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-13 |
+      | party2 | ETH/MAR52 | sell | 10     | 11    | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-14 |
 
     When the opening auction period ends for market "ETH/MAR52"
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/MAR52"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR52"
+    # And the network moves ahead "1" blocks
 
-    And the network moves ahead "1" blocks
+    And the market data for the market "ETH/MAR52" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 10         | TRADING_MODE_CONTINUOUS | 43200   | 4         | 24        | 557872       | 600000         | 1             |
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 1 x 10 x 1 x 55787.28815617000 =557872
 
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/MAR52"
-
-# since the risk factor is 999999.00000000000, target stake would be 1000*10*55787.28815617000 = 557872881
-
+    Then the order book should have the following volumes for market "ETH/MAR52":
+      | side | price | volume |
+      | sell | 24    | 114559 |
+      | sell | 11    | 10     |
+      | buy  | 9     | 10     |
+      | buy  | 4     | 311808 |
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin      | general        | bond   |
+      | party0 | USD   | ETH/MAR52 | 76691231326 | 49923308168674 | 600000 |
+      | party1 | USD   | ETH/MAR52 | 133         | 49999999999867 | 0      |
+      | party2 | USD   | ETH/MAR52 | 7363923     | 49999992636077 | 0      |
 
