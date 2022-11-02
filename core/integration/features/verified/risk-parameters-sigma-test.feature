@@ -6,6 +6,11 @@ Feature: test risk model parameter sigma
       | 0.000001      | 0.1 | 0  | 0 | 50    |
     #risk factor short:999999.0000000
     #risk factor long:1
+    Given the log normal risk model named "log-normal-risk-model-54":
+      | risk aversion | tau | mu | r | sigma |
+      | 0.000001      | 0.1 | 0  | 0 | 53    |
+    #risk factor short:999999.0000000
+    #risk factor long:1
     And the margin calculator named "margin-calculator-1":
       | search factor | initial factor | release factor |
       | 1.2           | 1.5            | 1.7            |
@@ -18,6 +23,7 @@ Feature: test risk model parameter sigma
     And the markets:
       | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
       | ETH/MAR53 | ETH        | USD   | log-normal-risk-model-53 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+      | ETH/MAR54 | ETH        | USD   | log-normal-risk-model-54 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
 
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount                      |
@@ -76,3 +82,28 @@ Feature: test risk model parameter sigma
     And the parties should have the following margin levels:
       | party  | market id | maintenance     | search          | initial         | release         |
       | party0 | ETH/MAR53 | 225806234193540 | 248386857612894 | 270967481032248 | 316128727870956 |
+
+  Scenario: 002, test market ETH/MAR54(sigma=100),
+    And the following network parameters are set:
+      | name                                          | value |
+      | market.stake.target.timeWindow                | 24h   |
+      | market.stake.target.scalingFactor             | 1     |
+      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | market.liquidity.targetstake.triggering.ratio | 0.1   |
+
+    And the average block duration is "1"
+
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party0 | ETH/MAR54 | 10000000          | 0.001 | sell | ASK              | 500        | 20     | submission |
+      | lp1 | party0 | ETH/MAR54 | 10000000          | 0.001 | buy  | BID              | 500        | 20     | amendment  |
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+      | party1 | ETH/MAR54 | buy  | 10     | 9     | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-11  |
+      | party1 | ETH/MAR54 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-12  |
+      | party2 | ETH/MAR54 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-13 |
+      | party2 | ETH/MAR54 | sell | 10     | 11    | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-14 |
+
+    When the opening auction period ends for market "ETH/MAR54"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR54"
