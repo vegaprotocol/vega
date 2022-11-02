@@ -64,7 +64,10 @@ func (b *BlockCommitHandler) OnBlockCommitted(ctx context.Context, chainID strin
 
 	if b.snapshotRequiredAtBlockHeight(blockHeight) {
 		fromHeight := GetFromHeight(blockHeight, b.blockInterval)
-		b.snapshotData(ctx, chainID, blockHeight, fromHeight)
+		err = b.snapshotData(ctx, chainID, blockHeight, fromHeight)
+		if err != nil {
+			b.log.Errorf("failed to snapshot data:%w", err)
+		}
 	}
 }
 
