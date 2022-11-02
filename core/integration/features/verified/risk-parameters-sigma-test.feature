@@ -44,8 +44,8 @@ Feature: test risk model parameter sigma
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR53 | buy  | 10     | 9     | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-11  |
-      | party1 | ETH/MAR53 | buy  | 1      | 5     | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-12  |
-      | party2 | ETH/MAR53 | sell | 1      | 5     | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-13 |
+      | party1 | ETH/MAR53 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-12  |
+      | party2 | ETH/MAR53 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-13 |
       | party2 | ETH/MAR53 | sell | 10     | 11    | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-14 |
 
     When the opening auction period ends for market "ETH/MAR53"
@@ -54,21 +54,21 @@ Feature: test risk model parameter sigma
 
     And the market data for the market "ETH/MAR53" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 7          | TRADING_MODE_CONTINUOUS | 43200   | 1         | 148       | 6999993      | 100000000      | 1             |
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 1 x 5 x 1 x 999999.00000000000 =557872
+      | 10         | TRADING_MODE_CONTINUOUS | 43200   | 1         | 211       | 9999990      | 100000000      | 1             |
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 1 x 10 x 1 x 999999.00000000000 =557872
 
     Then the order book should have the following volumes for market "ETH/MAR53":
       | side | price | volume    |
       | sell | 31    | 22580646  |
       | sell | 11    | 10        |
-      | buy  | 9     | 9         |
+      | buy  | 9     | 10        |
       | buy  | 1     | 200000001 |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin          | general                     | bond      |
-      | party0 | USD   | ETH/MAR53 | 189677236722573 | 499999999999810322663277427 | 100000000 |
-      | party1 | USD   | ETH/MAR53 | 92              | 4999999908                  | 0         |
-      | party2 | USD   | ETH/MAR53 | 92399912        | 4907600088                  | 0         |
+      | party0 | USD   | ETH/MAR53 | 270967481032248 | 499999999999729032418967752 | 100000000 |
+      | party1 | USD   | ETH/MAR53 | 133             | 4999999867                  | 0         |
+      | party2 | USD   | ETH/MAR53 | 131999869       | 4868000131                  | 0         |
 
 # mentainance margin level for LP: 31*22580646*999999=6.999e14
 # initial  margin level for LP: 31*22580646*999999 *1.5=1.05e15
