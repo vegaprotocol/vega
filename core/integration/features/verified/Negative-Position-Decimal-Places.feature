@@ -25,8 +25,8 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | horizon | probability | auction extension |
             | 360000  | 0.99        | 300               |
         And the markets:
-            | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | decimal places | position decimal places |
-            | USD/DEC22 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-usd-for-future | 5              | -1                      |
+            | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places |
+            | USD/DEC22 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | -1                      |
         And the parties deposit on asset's general account the following amount:
             | party  | asset | amount    |
             | party0 | ETH   | 5000000   |
