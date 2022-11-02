@@ -1,6 +1,9 @@
 Feature: test risk model parameter ranges
   Background:
 
+    Given the margin calculator named "margin-calculator-1":
+      | search factor | initial factor | release factor |
+      | 1.2           | 1.5            | 1.7            |
     Given the log normal risk model named "log-normal-risk-model-0":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
