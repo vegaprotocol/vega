@@ -2746,7 +2746,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0.0,
-									Sigma: 100 + 1e-12,
+									Sigma: 50 + 1e-12,
 									R:     0,
 								},
 							},
@@ -2794,7 +2794,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0.0,
-									Sigma: 100,
+									Sigma: 50,
 									R:     0,
 								},
 							},
