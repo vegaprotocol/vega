@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+
 	"code.vegaprotocol.io/vega/datanode/dehistory/fsutil"
 
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -77,6 +79,9 @@ func (b *Service) CreateSnapshot(ctx context.Context, chainID string, fromHeight
 		return CreateSnapshotResult{}, fmt.Errorf("failed to create write lock file:%w", err)
 	}
 	cleanUp = append(cleanUp, func() { _ = os.Remove(snapshotInProgressFile) })
+
+	// To ensure reads are isolated from this point forward execute a read on last block
+	sqlstore.GetLastBlockUsingConnection(ctx, copyDataTx)
 
 	go func() {
 		defer func() { runAllInReverseOrder(cleanUp) }()
