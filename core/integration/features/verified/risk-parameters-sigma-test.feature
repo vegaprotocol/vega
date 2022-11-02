@@ -76,8 +76,8 @@ Feature: test risk model parameter sigma
       | party1 | USD   | ETH/MAR53 | 133             | 4999999867                  | 0         |
       | party2 | USD   | ETH/MAR53 | 131999869       | 4868000131                  | 0         |
 
-    # mentainance margin level for LP: 31*22580646*999999=6.999e14
-    # initial  margin level for LP: 31*22580646*999999 *1.5=1.05e15
+    # mentainance margin level for LP: 10*22580646*999999=2.258e14
+    # initial  margin level for LP: 31*22580646*999999 *1.5=3.387e14
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance     | search          | initial         | release         |

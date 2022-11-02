@@ -449,6 +449,8 @@ Feature: test risk model parameter ranges
       | party1 | USD   | ETH/MAR23 | 14342     | 49999999985658 | 0       |
       | party2 | USD   | ETH/MAR23 | 1139272   | 49999998860728 | 0       |
 
+  # initial margin level for LP = 1000*9092*86.2176101*1.5=1.176e9
+
   Scenario: 003, test market ETH/MAR52(sigma=10),
     And the following network parameters are set:
       | name                                          | value |
@@ -491,4 +493,6 @@ Feature: test risk model parameter ranges
       | party0 | USD   | ETH/MAR52 | 76691231326 | 49923308168674 | 600000 |
       | party1 | USD   | ETH/MAR52 | 133         | 49999999999867 | 0      |
       | party2 | USD   | ETH/MAR52 | 7363923     | 49999992636077 | 0      |
+
+# initial margin level for LP = 10*114559*55787.2881561700*1.5=9.586e10
 
