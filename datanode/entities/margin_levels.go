@@ -88,7 +88,7 @@ func GetAccountFromMarginLevel(ctx context.Context, margin *vega.MarginLevels, a
 	return marginAccount, err
 }
 
-// ToProto this function apparently gets an account by ID. Don't really like this
+// ToProto this function apparently gets an account by ID. Don't really like this.
 func (ml *MarginLevels) ToProto(accountSource AccountSource) (*vega.MarginLevels, error) {
 	marginAccount, err := accountSource.GetByID(ml.AccountID)
 	if err != nil {

@@ -31,7 +31,7 @@ func (ti *TradableInstrument) UnmarshalJSON(data []byte) error {
 	return protojson.Unmarshal(data, ti)
 }
 
-// ToProto clones the tradable instrument, instead of returning the underlying pointer
+// ToProto clones the tradable instrument, instead of returning the underlying pointer.
 func (ti TradableInstrument) ToProto() *vega.TradableInstrument {
 	return ti.TradableInstrument.DeepClone()
 }

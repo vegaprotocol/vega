@@ -34,7 +34,7 @@ func (s *ExternalDataSourceSpec) ToProto() *datapb.ExternalDataSourceSpec {
 
 func ExternalDataSourceSpecFromProto(spec *datapb.ExternalDataSourceSpec, txHash TxHash, vegaTime time.Time) (*ExternalDataSourceSpec, error) {
 	if spec.Spec != nil {
-		ds, err := DataSourceSpecFromProto(spec.Spec.DeepClone(), txHash, vegaTime)
+		ds, err := DataSourceSpecFromProto(spec.Spec, txHash, vegaTime)
 		if err != nil {
 			return nil, err
 		}
