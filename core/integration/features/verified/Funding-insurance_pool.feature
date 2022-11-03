@@ -119,7 +119,7 @@ Feature: Position resolution case 5 lognormal risk model
       | buySideProvider  | sell           | 290    |
       | designatedLooser | buy            | 290    |
 
-# check positions
+    # check positions
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
       | designatedLooser | 0      | 0              | -21600       |
@@ -129,13 +129,13 @@ Feature: Position resolution case 5 lognormal risk model
       | aux2             | -1     | 10             | 0            |
       | lpprov           | 0      | 0              | 0            |
 
-    # Then the parties should have the following account balances:
-    #   | party            | asset | market id | margin  | general            |
-    #   | designatedLooser | USD   | ETH/DEC19 | 0       | 0                  |
-    #   | sellSideProvider | USD   | ETH/DEC19 | 839594  | 999999163306       |
-    #   | buySideProvider  | USD   | ETH/DEC19 | 81259   | 999999937441       |
-    #   | aux              | USD   | ETH/DEC19 | 1088    | 999999998902       |
-    #   | aux2             | USD   | ETH/DEC19 | 2896    | 999999997114       |
+    Then the parties should have the following account balances:
+      | party            | asset | market id | margin  | general            |
+      | designatedLooser | USD   | ETH/DEC19 | 0       | 0                  |
+      | sellSideProvider | USD   | ETH/DEC19 | 839594  | 999999163306       |
+      | buySideProvider  | USD   | ETH/DEC19 | 81259   | 999999924541       |
+      | aux              | USD   | ETH/DEC19 | 1088    | 999999998902       |
+      | aux2             | USD   | ETH/DEC19 | 2896    | 999999997114       |
 
 # check margin levels
     Then the parties should have the following margin levels:
