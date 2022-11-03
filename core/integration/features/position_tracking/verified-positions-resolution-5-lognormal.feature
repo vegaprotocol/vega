@@ -122,6 +122,7 @@ Feature: Position resolution case 5 lognormal risk model
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
       | designatedLooser | 0      | 0              | -21600       |
+      | buySideProvider  | 291    | 34800          | -16100       |
 
     # check margin levels
     Then the parties should have the following margin levels:
