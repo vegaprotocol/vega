@@ -75,12 +75,12 @@ func (cmd *PostgresRunCmd) Execute(_ []string) error {
 
 	stateDir := vegaPaths.StatePathFor(paths.DataNodeStorageHome)
 
-	lj := &lumberjack.Logger{
-		Filename:   "/your/log/path/app.log",
-		MaxSize:    10,   // 10 megabytes, defaults to 100 megabytes
-		MaxAge:     10,   // 10 days, default is not to remove old log files
-		MaxBackups: 10,   // 10 files, default is to retain all old log files
-		Compress:   true, // compress to gzio, default is not to perform compression
+	lumberjackLog := &lumberjack.Logger{
+		Filename:   cmd.Config.SQLStore.LogRotationConfig.Filename,
+		MaxSize:    cmd.Config.SQLStore.LogRotationConfig.MaxSize,
+		MaxAge:     cmd.Config.SQLStore.LogRotationConfig.MaxAge,
+		MaxBackups: cmd.Config.SQLStore.LogRotationConfig.MaxBackups,
+		Compress:   cmd.Config.SQLStore.LogRotationConfig.Compress,
 	}
 
 	dbConfig := embeddedpostgres.DefaultConfig().
@@ -88,7 +88,7 @@ func (cmd *PostgresRunCmd) Execute(_ []string) error {
 		Password(cmd.Config.SQLStore.ConnectionConfig.Password).
 		Database(cmd.Config.SQLStore.ConnectionConfig.Database).
 		Port(uint32(cmd.Config.SQLStore.ConnectionConfig.Port)).
-		Logger(lj).
+		Logger(lumberjackLog).
 		RuntimePath(paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore").String()).
 		DataPath(paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore", "node-data").String())
 

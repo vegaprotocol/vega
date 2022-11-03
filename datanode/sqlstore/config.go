@@ -16,9 +16,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v4/pgxpool"
+
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type Config struct {
@@ -29,6 +30,7 @@ type Config struct {
 	FanOutBufferSize      int                   `long:"fan-out-buffer-size" description:"buffer size used by the fan out event source"`
 	RetentionPolicies     []RetentionPolicy     `group:"RetentionPolicies" namespace:"RetentionPolicies"`
 	ConnectionRetryConfig ConnectionRetryConfig `group:"ConnectionRetryConfig" namespace:"ConnectionRetryConfig"`
+	LogRotationConfig     LogRotationConfig     `group:"LogRotationConfig" namespace:"LogRotationConfig"`
 }
 
 type ConnectionConfig struct {
@@ -51,6 +53,14 @@ type ConnectionRetryConfig struct {
 	InitialInterval time.Duration `long:"initial-interval" description:"the initial interval to wait before retrying"`
 	MaxInterval     time.Duration `long:"max-interval" description:"the maximum interval to wait before retrying"`
 	MaxElapsedTime  time.Duration `long:"max-elapsed-time" description:"the maximum elapsed time to wait before giving up"`
+}
+
+type LogRotationConfig struct {
+	Filename   string `string:"filename" description:"the name of the log file"`
+	MaxSize    int    `long:"max-size" description:"the maximum size of the log file in bytes"`
+	MaxAge     int    `long:"max-age" description:"the maximum age of the log file"`
+	MaxBackups int    `long:"max-backups" description:"the maximum number of log files to keep"`
+	Compress   bool   `long:"compress" description:"whether to compress the log files"`
 }
 
 func (conf ConnectionConfig) GetConnectionString() string {
