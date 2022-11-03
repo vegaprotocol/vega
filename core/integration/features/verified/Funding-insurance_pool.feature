@@ -65,7 +65,7 @@ Feature: Position resolution case 5 lognormal risk model
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | volume   | price  |
       | buy  | 10       | 1      |
-      | sell | 10       | 2000   | 
+      | sell | 10       | 2000   |
 
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
@@ -85,7 +85,7 @@ Feature: Position resolution case 5 lognormal risk model
       | party            | market id | maintenance | search  | initial | release |
       | designatedLooser | ETH/DEC19 | 54384       | 65260   | 81576   | 108768   |
 
-    Then the order book should have the following volumes for market "ETH/DEC19":   
+    Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price  | volume |
       | buy  | 1      | 10     |
       | buy  | 140    | 1      |
@@ -100,7 +100,7 @@ Feature: Position resolution case 5 lognormal risk model
       | buySideProvider | buy-provider-1 |
     When the parties place the following orders:
       | party           | market id | side | volume   | price | resulting trades | type       | tif     | reference      |
-      | buySideProvider | ETH/DEC19 | buy  | 290      | 20    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
+      | buySideProvider | ETH/DEC19 | buy  | 290      | 120    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
 # insurance pool generation - set new mark price (and trigger closeout)
     When the parties place the following orders:
@@ -108,12 +108,23 @@ Feature: Position resolution case 5 lognormal risk model
       | sellSideProvider | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-# check positions
+    Then the following trades should be executed:
+      | buyer           | price | size | seller           |
+      | buySideProvider |   140 | 1    | sellSideProvider |
+      | buySideProvider |   120 | 290  | network          |
+      | network         |   120 | 290  | designatedLooser |
+
+    Then the following network trades should be executed:
+      | party            | aggressor side | volume |
+      | buySideProvider  | sell           | 290    |
+      | designatedLooser | buy            | 290    |
+
+    # check positions
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
       | designatedLooser | 0      | 0              | -21600       |
       | sellSideProvider | -291   | 2900           | 0            |
-      | buySideProvider  | 291    | 34800          | 0            |
+      | buySideProvider  |  291   | 5800           | 0            |
       | aux              | 1      | -10            | 0            |
       | aux2             | -1     | 10             | 0            |
       | lpprov           | 0      | 0              | 0            |
@@ -122,7 +133,7 @@ Feature: Position resolution case 5 lognormal risk model
       | party            | asset | market id | margin  | general            |
       | designatedLooser | USD   | ETH/DEC19 | 0       | 0                  |
       | sellSideProvider | USD   | ETH/DEC19 | 839594  | 999999163306       |
-      | buySideProvider  | USD   | ETH/DEC19 | 81259   | 999999953541       |
+      | buySideProvider  | USD   | ETH/DEC19 | 81259   | 999999924541       |
       | aux              | USD   | ETH/DEC19 | 1088    | 999999998902       |
       | aux2             | USD   | ETH/DEC19 | 2896    | 999999997114       |
 
@@ -135,8 +146,18 @@ Feature: Position resolution case 5 lognormal risk model
       | party            | asset | market id | margin | general |
       | designatedLooser | USD   | ETH/DEC19 | 0      | 0       |
 
-# then we make sure the insurance pool collected the funds
-    And the insurance pool balance should be "73900" for the market "ETH/DEC19"
+    # then we make sure the insurance pool collected the funds (however they get later spent on MTM payment to closeout-facilitating party)
+    Then the following transfers should happen:
+      | from             | to              | from account            | to account                       | market id | amount | asset |
+      | designatedLooser | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 |      0 |   USD |
+      | designatedLooser | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC19 |      0 |   USD |
+      | designatedLooser |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 |      0 |   USD |
+      | market           | buySideProvider | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC19 |      0 |   USD |
+      | designatedLooser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 |  18700 |   USD |
+      | market           | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 |   5800 |   USD |
+      | market           | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 |   5800 |   USD |
+
+    And the insurance pool balance should be "12900" for the market "ETH/DEC19"
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -149,14 +170,13 @@ Feature: Position resolution case 5 lognormal risk model
 
     Then the following transfers should happen:
       | from            | to              | from account            | to account              | market id | amount | asset |
-      | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 34800  | USD   |
       | buySideProvider | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 5820   | USD   |
 
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
       | designatedLooser | 0      | 0              | -21600       |
       | sellSideProvider | -291   | 8720           | 0            |
-      | buySideProvider  | 291    | 28980          | 0            |
+      | buySideProvider  | 291    | -20            | 0            |
       | aux              | 0      | 0              | -30          |
       | aux2             | 0      | 0              | 30           |
       | lpprov           | 0      | 0              | 0            |
@@ -168,8 +188,6 @@ Feature: Position resolution case 5 lognormal risk model
       | party            | asset | market id | margin  | general            |
       | designatedLooser | USD   | ETH/DEC19 | 0       | 0                  |
       | sellSideProvider | USD   | ETH/DEC19 | 845414  | 999999163306       |
-      | buySideProvider  | USD   | ETH/DEC19 | 75439   | 999999953541       |
+      | buySideProvider  | USD   | ETH/DEC19 | 75439   | 999999924541       |
       | aux              | USD   | ETH/DEC19 | 1108    | 999999998862       |
       | aux2             | USD   | ETH/DEC19 | 0       | 1000000000030      |
-
-

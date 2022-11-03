@@ -78,8 +78,9 @@ func (m *Market) checkForReferenceMoves(
 	if err == nil {
 		orderUpdates = m.repriceAllSpecialOrders(ctx, changes, orderUpdates)
 	} else {
-		cancels := m.liquidity.UndeployLPs(ctx, orderUpdates)
-		orderUpdates = m.updateAndCreateLPOrders(ctx, nil, cancels, nil)
+		// we won't be able to reprice here
+		m.stopAllSpecialOrders(ctx, orderUpdates)
+		orderUpdates = nil
 	}
 
 	// Update the last price values

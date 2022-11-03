@@ -101,7 +101,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
-      | lp1    | USD   | ETH/MAR22 | 11640  | 999977631 | 10000 |
+      | lp1    | USD   | ETH/MAR22 | 12522  | 999976749 | 10000 |
       | party1 | USD   | ETH/MAR22 | 1800   | 99998202  | 0     |
       | party2 | USD   | ETH/MAR22 | 1812   | 99998875  | 0     |
 
@@ -117,7 +117,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general   |
-      | lp1   | USD   | ETH/MAR22 | 11640  | 999977631 |
+      | lp1   | USD   | ETH/MAR22 | 12522  | 999976749 |
 
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
@@ -147,7 +147,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general   |
-      | lp1   | USD   | ETH/MAR22 | 14634  | 999975378 |
+      | lp1   | USD   | ETH/MAR22 | 13257  | 999976755 |
 
     # lp fee got cumulated since the distribution period is large
     And the accumulated liquidity fees should be "35" for the market "ETH/MAR22"
@@ -163,5 +163,4 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general   |
-      | lp1   | USD   | ETH/MAR22 | 14634  | 999975413 |
-
+      | lp1   | USD   | ETH/MAR22 | 13257  | 999976790 |
