@@ -56,10 +56,11 @@ type AutoInstallConfig struct {
 }
 
 type VisorConfigFile struct {
-	UpgradeFolders           map[string]string `toml:"upgradeFolders"`
-	MaxNumberOfRestarts      int               `toml:"maxNumberOfRestarts"`
-	RestartsDelaySeconds     int               `toml:"restartsDelaySeconds"`
-	StopSignalTimeoutSeconds int               `toml:"stopSignalTimeoutSeconds"`
+	UpgradeFolders                    map[string]string `toml:"upgradeFolders"`
+	MaxNumberOfRestarts               int               `toml:"maxNumberOfRestarts"`
+	RestartsDelaySeconds              int               `toml:"restartsDelaySeconds"`
+	StopSignalTimeoutSeconds          int               `toml:"stopSignalTimeoutSeconds"`
+	MaxNumberOfFirstConnectionRetries int               `toml:"maxNumberOfFirstConnectionRetries"`
 
 	AutoInstall AutoInstallConfig `toml:"autoInstall"`
 }
@@ -87,10 +88,11 @@ func DefaultVisorConfig(log *logging.Logger, homePath string) *VisorConfig {
 		homePath:   homePath,
 		configPath: path.Join(homePath, configFileName),
 		data: &VisorConfigFile{
-			UpgradeFolders:           map[string]string{"vX.X.X": "vX.X.X"},
-			MaxNumberOfRestarts:      3,
-			RestartsDelaySeconds:     5,
-			StopSignalTimeoutSeconds: 15,
+			UpgradeFolders:                    map[string]string{"vX.X.X": "vX.X.X"},
+			MaxNumberOfRestarts:               3,
+			MaxNumberOfFirstConnectionRetries: 10,
+			RestartsDelaySeconds:              5,
+			StopSignalTimeoutSeconds:          15,
 			AutoInstall: AutoInstallConfig{
 				Enabled:               true,
 				GithubRepositoryOwner: "vegaprotocol",
@@ -130,6 +132,7 @@ func (pc *VisorConfig) reload() error {
 	pc.data.UpgradeFolders = dataFile.UpgradeFolders
 	pc.data.MaxNumberOfRestarts = dataFile.MaxNumberOfRestarts
 	pc.data.RestartsDelaySeconds = dataFile.RestartsDelaySeconds
+	pc.data.MaxNumberOfFirstConnectionRetries = dataFile.MaxNumberOfFirstConnectionRetries
 	pc.mut.Unlock()
 
 	pc.log.Info("Reloading config success")
@@ -218,6 +221,13 @@ func (pc *VisorConfig) MaxNumberOfRestarts() int {
 	defer pc.mut.RUnlock()
 
 	return pc.data.MaxNumberOfRestarts
+}
+
+func (pc *VisorConfig) MaxNumberOfFirstConnectionRetries() int {
+	pc.mut.RLock()
+	defer pc.mut.RUnlock()
+
+	return pc.data.MaxNumberOfFirstConnectionRetries
 }
 
 func (pc *VisorConfig) RestartsDelaySeconds() int {

@@ -266,6 +266,7 @@
 - [5961](https://github.com/vegaprotocol/vega/issues/5961) - Add batch market instructions command
 - [5974](https://github.com/vegaprotocol/vega/issues/5974) - Flatten subscription in `Graphql`
 - [6146](https://github.com/vegaprotocol/vega/issues/6146) - Add version command to Vega Visor
+- [6671](https://github.com/vegaprotocol/vega/issues/6671) - Vega Visor allows to postpone first failure when Core node is slow to startup
 
 ### 🐛 Fixes
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
