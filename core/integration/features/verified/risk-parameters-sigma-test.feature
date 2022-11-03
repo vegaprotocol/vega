@@ -66,7 +66,7 @@ Feature: test risk model parameter sigma
     And the market data for the market "ETH/MAR53" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 10         | TRADING_MODE_CONTINUOUS | 43200   | 1         | 211       | 9999990      | 100000000      | 1             |
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 1 x 10 x 1 x 999999.00000000000 =557872
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 10 x 1 x 1 x 999999.00000000000 =9999990
 
     Then the order book should have the following volumes for market "ETH/MAR53":
       | side | price | volume    |
