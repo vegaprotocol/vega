@@ -23,7 +23,7 @@ Feature: Position resolution case 5 lognormal risk model
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-    Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book
+    Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book (0007-POSN-013)
 
 # setup accounts
      Given the parties deposit on asset's general account the following amount:
@@ -118,7 +118,7 @@ Feature: Position resolution case 5 lognormal risk model
       | buySideProvider  | sell           | 290    |
       | designatedLooser | buy            | 290    |
 
-    # check positions
+    # check positions and verify loss socialisation is reflected in realised P&L (0007-POSN-013)
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
       | designatedLooser | 0      | 0              | -21600       |
