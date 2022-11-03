@@ -14,7 +14,6 @@ package execution_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -258,7 +257,6 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		require.Len(t, found, len(expectedStatus))
 
 		for i, expect := range expectedStatus {
-			fmt.Printf("FOUND: %s\n\n", found[i].String())
 			got := found[i].Status
 			remaining := int(found[i].Remaining)
 			assert.Equal(t, expect.status.String(), got.String())
@@ -483,8 +481,6 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 	tm.now = auctionEnd
 	tm.market.OnTick(ctx, auctionEnd)
 
-	// md := tm.market.GetMarketData()
-	// fmt.Printf("TS: %s\nSS: %s\n", md.TargetStake, md.SuppliedStake)
 	assert.Equal(t,
 		tm.market.GetMarketData().MarketTradingMode,
 		types.MarketTradingModeContinuous,

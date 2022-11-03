@@ -295,7 +295,13 @@ func (m *Market) updateLPOrders(
 	// now we can check parties positions
 	for party, pos := range partiesPos {
 		positions = append(positions, pos)
-		mar, _ := m.collateral.GetPartyMarginAccount(id, party, assetID)
+		mar, err := m.collateral.GetPartyMarginAccount(id, party, assetID)
+		if err != nil {
+			m.log.Panic("party have position without a margin",
+				logging.MarketID(id),
+				logging.PartyID(party),
+			)
+		}
 		marginsBefore[party] = mar.Balance
 	}
 
