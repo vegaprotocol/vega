@@ -98,6 +98,10 @@ func NewWithStore(ctx context.Context, log *logging.Logger, chainID string, cfg 
 	return s, nil
 }
 
+func (d *Service) CopyHistorySegmentToFile(ctx context.Context, historySegmentID string, outFile string) error {
+	return d.store.CopyHistorySegmentToFile(ctx, historySegmentID, outFile)
+}
+
 func (d *Service) GetHighestBlockHeightHistorySegment() (store.SegmentIndexEntry, error) {
 	return d.store.GetHighestBlockHeightEntry()
 }
