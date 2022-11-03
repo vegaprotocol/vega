@@ -1,5 +1,3 @@
-@witold
-
 Feature: Position resolution case 5 lognormal risk model
 
     Background:
@@ -93,9 +91,9 @@ Feature: Position resolution case 5 lognormal risk model
 
     Then the parties should have the following margin levels:
       | party            | market id | maintenance | search  | initial  | release |
-      | designatedLooser | ETH/DEC19 | 54384       | 65260  | 81576   | 108768   |
+      | designatedLooser | ETH/DEC19 | 54384       | 65260   | 81576    | 108768  |
 
-# insurance pool generation - modify order book
+    # insurance pool generation - modify order book
     Then the parties cancel the following orders:
       | party           | reference      |
       | buySideProvider | buy-provider-1 |
@@ -103,26 +101,47 @@ Feature: Position resolution case 5 lognormal risk model
       | party           | market id | side | volume   | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC19 | buy  | 290      | 20    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
-# insurance pool generation - set new mark price (and trigger closeout)
+    # insurance pool generation - set new mark price (and trigger closeout)
     When the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-# check positions
+    Then the following trades should be executed:
+      | buyer           | price | size | seller           |
+      | buySideProvider |   140 | 1    | sellSideProvider |
+      | buySideProvider |    20 | 290  | network          |
+      | network         |    20 | 290  | designatedLooser |
+
+    Then the following network trades should be executed:
+      | party            | aggressor side | volume |
+      | buySideProvider  | sell           | 290    |
+      | designatedLooser | buy            | 290    |
+
+    # check positions
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
       | designatedLooser | 0      | 0              | -21600       |
 
-# check margin levels
+    # check margin levels
     Then the parties should have the following margin levels:
       | party            | market id | maintenance | search  | initial  | release |
       | designatedLooser | ETH/DEC19 | 0           | 0       | 0        | 0       |
-# checking margins
+    # checking margins
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
       | designatedLooser | USD   | ETH/DEC19 | 0      | 0       |
-    And debug transfers
+ 
+     # then we make sure the insurance pool collected the funds (however they get later spent on MTM payment to closeout-facilitating party)
+    Then the following transfers should happen:
+      | from             | to              | from account            | to account                       | market id | amount | asset |
+      | designatedLooser | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 |      0 |   USD |
+      | designatedLooser | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC19 |      0 |   USD |
+      | designatedLooser |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 |      0 |   USD |
+      | market           | buySideProvider | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC19 |      0 |   USD |
+      | designatedLooser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 |  18700 |   USD |
+      | market           | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 |  18700 |   USD |
+      | market           | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 |  18700 |   USD |
+      | buySideProvider  | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 |  40503 |   USD |
 
-# then we make sure the insurance pool collected the funds
-    And the insurance pool balance should be "73900" for the market "ETH/DEC19"
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
