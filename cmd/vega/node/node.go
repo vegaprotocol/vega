@@ -20,6 +20,13 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/syndtr/goleveldb/leveldb"
+
+	"github.com/blang/semver"
+	"github.com/tendermint/tendermint/abci/types"
+	tmtypes "github.com/tendermint/tendermint/types"
+	"google.golang.org/grpc"
+
 	"code.vegaprotocol.io/vega/core/admin"
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/api/rest"
@@ -39,11 +46,6 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/version"
-
-	"github.com/blang/semver"
-	"github.com/tendermint/tendermint/abci/types"
-	tmtypes "github.com/tendermint/tendermint/types"
-	"google.golang.org/grpc"
 )
 
 var ErrUnknownChainProvider = errors.New("unknown chain provider")
@@ -137,7 +139,16 @@ func (n *Command) Run(
 			// if a consensus failure happens during replay tendermint panics
 			// we need to catch it so we can call shutdown and then re-panic
 			if r := recover(); r != nil {
-				n.Stop()
+				// don't panic if node was stopped for checkpoint restart
+				if errec, ok := r.(error); ok {
+					if errec.Error() == leveldb.ErrClosed.Error() {
+						n.Log.Warn("leveldb closed, shutting down")
+						return
+					}
+				}
+				if err := n.Stop(); err != nil {
+					n.Log.Error("error shutting down", logging.Error(err))
+				}
 				panic(r)
 			}
 		}()
@@ -147,7 +158,9 @@ func (n *Command) Run(
 		// start the nullblockchain if we are in that mode, it *needs* to be after we've started the gRPC server
 		// otherwise it'll start calling init-chain and all the way before we're ready.
 		if n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
-			n.nullBlockchain.StartServer()
+			if err := n.nullBlockchain.StartServer(); err != nil {
+				errCh <- err
+			}
 		}
 	}()
 
@@ -163,9 +176,7 @@ func (n *Command) Run(
 	}
 
 	// cleanup
-	n.Stop()
-
-	return nil
+	return n.Stop()
 }
 
 func (n *Command) wait(errCh <-chan error) error {

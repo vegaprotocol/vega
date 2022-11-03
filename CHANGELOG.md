@@ -14,6 +14,7 @@
 - [6668](https://github.com/vegaprotocol/vega/issues/6668) - Add indexes to trades by buyer/seller
 
 ### 🐛 Fixes
+- [6680](https://github.com/vegaprotocol/vega/issues/6680) - Prevent panic when node is stopped for checkpoint restart
 - [6661](https://github.com/vegaprotocol/vega/issues/6661) - Scale price to asset decimal in estimate orders
 
 
