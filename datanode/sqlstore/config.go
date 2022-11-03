@@ -56,11 +56,8 @@ type ConnectionRetryConfig struct {
 }
 
 type LogRotationConfig struct {
-	Filename   string `string:"filename" description:"the name of the log file"`
-	MaxSize    int    `long:"max-size" description:"the maximum size of the log file in bytes"`
-	MaxAge     int    `long:"max-age" description:"the maximum age of the log file"`
-	MaxBackups int    `long:"max-backups" description:"the maximum number of log files to keep"`
-	Compress   bool   `long:"compress" description:"whether to compress the log files"`
+	MaxSize int `long:"max-size" description:"the maximum size of the log file in bytes"`
+	MaxAge  int `long:"max-age" description:"the maximum number of days to keep the log file"`
 }
 
 func (conf ConnectionConfig) GetConnectionString() string {
@@ -132,6 +129,10 @@ func NewDefaultConfig() Config {
 			InitialInterval: time.Second,
 			MaxInterval:     time.Second * 10,
 			MaxElapsedTime:  time.Minute,
+		},
+		LogRotationConfig: LogRotationConfig{
+			MaxSize: 100,
+			MaxAge:  2,
 		},
 	}
 }
