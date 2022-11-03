@@ -157,21 +157,21 @@ func (h *AdminSignTransaction) getLastBlockDataFromNetwork(ctx context.Context, 
 		return nil, networkError(ErrNoHealthyNodeAvailable)
 	}
 
-	lastBlockData, err := node.LastBlock(ctx)
+	lastBlock, err := node.LastBlock(ctx)
 	if err != nil {
 		return nil, networkError(ErrCouldNotGetLastBlockInformation)
 	}
 
-	if lastBlockData.ChainId == "" {
+	if lastBlock.ChainID == "" {
 		return nil, networkError(ErrCouldNotGetChainIDFromNode)
 	}
 
 	return &AdminLastBlockData{
-		BlockHash:               lastBlockData.Hash,
-		ChainID:                 lastBlockData.ChainId,
-		BlockHeight:             lastBlockData.Height,
-		ProofOfWorkHashFunction: lastBlockData.SpamPowHashFunction,
-		ProofOfWorkDifficulty:   lastBlockData.SpamPowDifficulty,
+		BlockHash:               lastBlock.BlockHash,
+		ChainID:                 lastBlock.ChainID,
+		BlockHeight:             lastBlock.BlockHeight,
+		ProofOfWorkHashFunction: lastBlock.ProofOfWorkHashFunction,
+		ProofOfWorkDifficulty:   lastBlock.ProofOfWorkDifficulty,
 	}, nil
 }
 

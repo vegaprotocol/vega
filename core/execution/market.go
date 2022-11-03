@@ -672,7 +672,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	_, blockHash := vegacontext.TraceIDFromContext(ctx)
 	// make deterministics ID for this market, concatenate
 	// the block hash and the market ID
-	m.idgen = idgeneration.New(blockHash + crypto.HashStr(m.GetID()))
+	m.idgen = idgeneration.New(blockHash + crypto.HashStrToHex(m.GetID()))
 	// and we call next ID on this directly just so we don't have an ID which have
 	// a different from others, we basically burn the first ID.
 	_ = m.idgen.NextID()
