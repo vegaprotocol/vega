@@ -17,7 +17,10 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
+
+	"gopkg.in/natefinch/lumberjack.v2"
 
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/logging"
@@ -73,11 +76,19 @@ func (cmd *PostgresRunCmd) Execute(_ []string) error {
 
 	stateDir := vegaPaths.StatePathFor(paths.DataNodeStorageHome)
 
+	lumberjackLog := &lumberjack.Logger{
+		Filename: paths.StatePath(filepath.Join(paths.DataNodeLogsHome.String(), "embedded-postgres.log")).String(),
+		MaxSize:  cmd.Config.SQLStore.LogRotationConfig.MaxSize,
+		MaxAge:   cmd.Config.SQLStore.LogRotationConfig.MaxAge,
+		Compress: true,
+	}
+
 	dbConfig := embeddedpostgres.DefaultConfig().
 		Username(cmd.Config.SQLStore.ConnectionConfig.Username).
 		Password(cmd.Config.SQLStore.ConnectionConfig.Password).
 		Database(cmd.Config.SQLStore.ConnectionConfig.Database).
 		Port(uint32(cmd.Config.SQLStore.ConnectionConfig.Port)).
+		Logger(lumberjackLog).
 		RuntimePath(paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore").String()).
 		DataPath(paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore", "node-data").String())
 
