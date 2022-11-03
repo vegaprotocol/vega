@@ -1,5 +1,4 @@
-Feature: Allow markets to be specified with a smaller number of decimal places than the underlying settlement asset
-
+Feature: test negative PDP (position decimal places)
     Background:
         Given the following network parameters are set:
             | name                                          | value |
@@ -72,7 +71,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party2 | USD/DEC22 | 71140       | 78254  | 85368   | 184964  |
 
 
-    Scenario: 002, test negative PDP when trading mode is continous (0003-MTMK-013, 0019-MCAL-010, 0029-FEES-014)
+    Scenario: 002, test negative PDP when trading mode is continuous (0003-MTMK-013, 0019-MCAL-010, 0029-FEES-014)
         Given the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
             | lp2 | party0 | USD/DEC22 | 35569             | 0.001 | sell | ASK              | 500        | 20     | submission |
