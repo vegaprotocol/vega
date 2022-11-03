@@ -9,7 +9,9 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6681](https://github.com/vegaprotocol/vega/issues/6681) - Add indexes to improve balance history query
+- [6682](https://github.com/vegaprotocol/vega/issues/6682) - Add indexes to orders by reference query
+- [6668](https://github.com/vegaprotocol/vega/issues/6668) - Add indexes to trades by buyer/seller
 
 ### 🐛 Fixes
 - [6661](https://github.com/vegaprotocol/vega/issues/6661) - Scale price to asset decimal in estimate orders
