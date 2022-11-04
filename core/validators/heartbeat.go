@@ -212,7 +212,7 @@ func (t *Topology) sendHeartbeat(ctx context.Context, hb *commandspb.ValidatorHe
 	bo.InitialInterval = 1 * time.Second
 
 	t.log.Debug("sending heartbeat", logging.String("nodeID", hb.NodeId))
-	t.cmd.CommandSync(ctx, txn.ValidatorHeartbeatCommand, hb, func(err error) {
+	t.cmd.CommandSync(ctx, txn.ValidatorHeartbeatCommand, hb, func(_ string, err error) {
 		if err != nil {
 			t.log.Error("couldn't send validator heartbeat", logging.Error(err))
 			return

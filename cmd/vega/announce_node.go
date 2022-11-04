@@ -56,6 +56,11 @@ func (opts *AnnounceNodeCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
+	output, err := opts.GetOutput()
+	if err != nil {
+		return err
+	}
+
 	registryPass, err := opts.Get("node wallet", false)
 	if err != nil {
 		return err
@@ -125,35 +130,35 @@ func (opts *AnnounceNodeCmd) Execute(_ []string) error {
 		Nonce: powNonce,
 	}
 
-	ch := make(chan error)
+	var txHash string
+	ch := make(chan struct{})
 	commander.CommandWithPoW(
 		context.Background(),
 		txn.AnnounceNodeCommand,
 		&cmd,
-		func(err error) {
-			if err != nil {
-				ch <- fmt.Errorf("failed to send restore command: %v", err)
-			}
+		func(h string, e error) {
+			txHash, err = h, e
 			close(ch)
 		}, nil, pow)
 
-	err = <-ch
-	if err != nil {
-		return err
-	}
-
-	output, err := opts.GetOutput()
+	<-ch
 	if err != nil {
 		return err
 	}
 
 	if output.IsHuman() {
-		fmt.Printf("node successfully registered.\nvega signature: %v\nethereum signature: %v\n", cmd.VegaSignature.Value, cmd.EthereumSignature.Value)
+		fmt.Printf("node successfully announced.\ntxHash: %s\nvega signature: %v\nethereum signature: %v\n",
+			txHash,
+			cmd.VegaSignature.Value,
+			cmd.EthereumSignature.Value,
+		)
 	} else if output.IsJSON() {
 		return vgjson.Print(struct {
+			TxHash            string `json:"txHash"`
 			EthereumSignature string `json:"ethereumSignature"`
 			VegaSignature     string `json:"vegaSignature"`
 		}{
+			TxHash:            txHash,
 			EthereumSignature: cmd.EthereumSignature.Value,
 			VegaSignature:     cmd.VegaSignature.Value,
 		})
