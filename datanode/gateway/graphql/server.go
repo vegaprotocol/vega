@@ -167,20 +167,19 @@ func (g *GraphServer) Start() error {
 	})
 
 	headersMiddleware := handler.ResolverMiddleware(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
-		md, ok := ctx.Value(metadataKey{}).(*metadata.MD)
-		if ok {
+		if ctx.Value(metadataKey{}) != nil {
 			res, err = next(ctx)
 			return
 		}
 
-		md = &metadata.MD{}
-		ctx = context.WithValue(ctx, metadataKey{}, md)
+		md := metadata.MD{}
+		ctx = context.WithValue(ctx, metadataKey{}, &md)
 		res, err = next(ctx)
 		rw, ok := gateway.InjectableWriterFromContext(ctx)
 		if !ok {
 			return
 		}
-		rw.SetHeaders(http.Header(*md))
+		rw.SetHeaders(http.Header(md))
 		return
 	})
 
