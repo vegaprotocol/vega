@@ -25,14 +25,14 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 100000  | 0.99        | 3                 |
-    
+
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          | decimal places | position decimal places |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       |
       | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       |
       | USD/DEC20 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       |
       | USD/DEC21 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 3                       |
-      
+
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount          |
       | lp1    | USD   | 100000000000    |
@@ -43,7 +43,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | party2 | ETH   | 10000000000000  |
       | lpprov | ETH   | 100000000000000 |
       | lpprov | USD   | 100000000000000 |
-      
+
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | buy  | BID              | 1          | 2000   | submission |
@@ -126,7 +126,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | sell | 110200000  | 6082     |
       | sell | 110000000  | 1000     |
       | sell | 100100000  | 113222   |
-    
+
     And the liquidity provider fee shares for the market "USD/DEC19" should be:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.1666666666666667 | 1000000000              |
@@ -153,7 +153,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | party2 | USD   | USD/DEC19 | 4815112741   | 10000000000    |            |
 
   Scenario: 002: 0070-MKTD-007, 0042-LIQF-001, 0038-OLIQ-002; 0038-OLIQ-006; 0019-MCAL-008, check updated version of dpd feature in 0038-OLIQ-liquidity_provision_order_type.md
- 
+
   Background:
 
     Given the following network parameters are set:
@@ -179,14 +179,14 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 100000  | 0.99        | 3                 |
-    
+
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          | decimal places | position decimal places |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       |
       | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       |
       | USD/DEC20 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       |
       | USD/DEC21 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 3                       |
-      
+
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount          |
       | lp1    | USD   | 100000000000    |
@@ -281,7 +281,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | sell | 110200000  | 7        |
       | sell | 110000000  | 1000     |
       | sell | 100100000  | 99915    |
-    
+
     And the liquidity provider fee shares for the market "USD/DEC19" should be:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.0001999600079984 | 1000000                 |
@@ -326,7 +326,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
     And the accumulated liquidity fees should be "101" for the market "USD/DEC21"
      # liquidity fee = 1 * 100100000 * 0.001 which means actual number without decimal is 0.001*1001*0.001 = 0.001001, and translate back into asset decimal 100.1 (given fee is rounded up in vega, so it should be 101) given asset decimal 5, market decimal 5, position decimal 3
 
-      #check MTM settlement with correct PDP 
+      #check MTM settlement with correct PDP
     And the market data for the market "USD/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 100100000  | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3560812945   | 5001000000     | 10001         |
@@ -334,8 +334,8 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin       | general        | bond    |
-      | lp1    | ETH   | USD/DEC21 | 9399616      | 99999968173087 | 1000000 |
-      | lp1    | USD   | USD/DEC21 | 9399616      | 100000000000   |         |
+      | lp1    | ETH   | USD/DEC21 | 8963397      | 99999968638958 | 1000000 |
+      | lp1    | USD   | USD/DEC21 | 8963397      | 100000000000   |         |
 
     # amend LP commintment amount
     And the parties submit the following liquidity provision:
@@ -358,7 +358,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1001000    | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 5000000000     | 10005         |
 
-    #reduce LP commitment amount 
+    #reduce LP commitment amount
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lp1   | USD/DEC19 | 3600000000        | 0.001 | buy  | MID              | 2          | 100000 | amendment  |
@@ -367,14 +367,14 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
     And the market data for the market "USD/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1001000    | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 4600000000     | 10005         |
-                                                                                 
+
     # 0038-OLIQ-006 assure that submission bringing supplied stake < target stake gets rejected
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   | reference        | error                                            |
       | lp1 | lp1   | USD/DEC19 | 2562237127        | 0.001 | buy  | MID              | 2          | 100000 | amendment | failing_amedment | commitment submission rejected, not enough stake |
       | lp1 | lp1   | USD/DEC19 | 2562237127        | 0.001 | sell | ASK              | 1          | 200000 | amendment |                  |                                                  |
 
-    And the parties submit the following liquidity provision: 
+    And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type      | reference            | error                                            |
       | lp1 | lp1   | USD/DEC19 | 2562237127        | 0.001 | buy  | MID              | 2          | 100000 | cancellation | failing_cancellation | commitment submission rejected, not enough stake |
       | lp1 | lp1   | USD/DEC19 | 2562237127        | 0.001 | sell | ASK              | 1          | 200000 | cancellation |                      |                                                  |
@@ -383,7 +383,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
 
   Background:
 
-    Given the log normal risk model named "log-normal-risk-model-1": 
+    Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
     And the fees configuration named "fees-config-1":
@@ -447,7 +447,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | sell | 1102  | 25     |
       | sell | 1100  | 1      |
       | sell | 1001  | 54     |
-  
+
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
       | lp1   | 1                 | 40000                   |

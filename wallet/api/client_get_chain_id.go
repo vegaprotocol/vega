@@ -27,7 +27,7 @@ func (h *ClientGetChainID) Handle(ctx context.Context, _ jsonrpc.Params) (jsonrp
 	}
 
 	return ClientGetChainIDResult{
-		ChainID: lastBlockData.ChainId,
+		ChainID: lastBlockData.ChainID,
 	}, nil
 }
 

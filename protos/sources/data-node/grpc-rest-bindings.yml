@@ -247,6 +247,8 @@ http:
     - selector: datanode.api.v2.TradingDataService.ListLiquidityProvisions
       get: "/api/v2/liquidity/provisions"
     - selector: datanode.api.v2.TradingDataService.ListGovernanceData
+      get: "/api/v2/governances"
+    - selector: datanode.api.v2.TradingDataService.GetGovernanceData
       get: "/api/v2/governance"
     - selector: datanode.api.v2.TradingDataService.ListDelegations
       get: "/api/v2/delegations"

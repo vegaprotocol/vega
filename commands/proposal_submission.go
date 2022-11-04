@@ -813,8 +813,8 @@ func checkNewLogNormalRiskParameters(params *protoTypes.NewMarketConfiguration_L
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma", ErrIsNotValidNumber)
 	}
 
-	if params.LogNormal.Params.Sigma < 1e-3 || params.LogNormal.Params.Sigma > 100 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma", errors.New("must be between [1e-3,100]"))
+	if params.LogNormal.Params.Sigma < 1e-3 || params.LogNormal.Params.Sigma > 50 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma", errors.New("must be between [1e-3,50]"))
 	}
 
 	if math.IsNaN(params.LogNormal.Params.R) {

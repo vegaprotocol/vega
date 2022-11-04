@@ -6,8 +6,8 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/wallet/api"
+	"code.vegaprotocol.io/vega/wallet/api/node/adapters"
 	nodemocks "code.vegaprotocol.io/vega/wallet/api/node/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -28,8 +28,8 @@ func testGettingChainIDSucceeds(t *testing.T) {
 	// setup
 	handler := newGetChainIDHandler(t)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
-	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(&apipb.LastBlockHeightResponse{
-		ChainId: expectedChainID,
+	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(adapters.LastBlock{
+		ChainID: expectedChainID,
 	}, nil)
 
 	// when
@@ -67,7 +67,7 @@ func testFailingToGetLastBlockDoesNotReturnChainID(t *testing.T) {
 	// setup
 	handler := newGetChainIDHandler(t)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
-	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(nil, assert.AnError)
+	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(adapters.LastBlock{}, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx)
