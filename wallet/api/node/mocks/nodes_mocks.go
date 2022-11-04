@@ -11,6 +11,7 @@ import (
 	v1 "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	v10 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	node "code.vegaprotocol.io/vega/wallet/api/node"
+	adapters "code.vegaprotocol.io/vega/wallet/api/node/adapters"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -37,35 +38,6 @@ func (m *MockNode) EXPECT() *MockNodeMockRecorder {
 	return m.recorder
 }
 
-// CheckTransaction mocks base method.
-func (m *MockNode) CheckTransaction(arg0 context.Context, arg1 *v10.Transaction) (*v1.CheckTransactionResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckTransaction", arg0, arg1)
-	ret0, _ := ret[0].(*v1.CheckTransactionResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CheckTransaction indicates an expected call of CheckTransaction.
-func (mr *MockNodeMockRecorder) CheckTransaction(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckTransaction", reflect.TypeOf((*MockNode)(nil).CheckTransaction), arg0, arg1)
-}
-
-// HealthCheck mocks base method.
-func (m *MockNode) HealthCheck(arg0 context.Context) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HealthCheck", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// HealthCheck indicates an expected call of HealthCheck.
-func (mr *MockNodeMockRecorder) HealthCheck(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HealthCheck", reflect.TypeOf((*MockNode)(nil).HealthCheck), arg0)
-}
-
 // Host mocks base method.
 func (m *MockNode) Host() string {
 	m.ctrl.T.Helper()
@@ -81,10 +53,10 @@ func (mr *MockNodeMockRecorder) Host() *gomock.Call {
 }
 
 // LastBlock mocks base method.
-func (m *MockNode) LastBlock(arg0 context.Context) (*v1.LastBlockHeightResponse, error) {
+func (m *MockNode) LastBlock(arg0 context.Context) (adapters.LastBlock, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LastBlock", arg0)
-	ret0, _ := ret[0].(*v1.LastBlockHeightResponse)
+	ret0, _ := ret[0].(adapters.LastBlock)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -108,6 +80,21 @@ func (m *MockNode) SendTransaction(arg0 context.Context, arg1 *v10.Transaction, 
 func (mr *MockNodeMockRecorder) SendTransaction(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendTransaction", reflect.TypeOf((*MockNode)(nil).SendTransaction), arg0, arg1, arg2)
+}
+
+// Statistics mocks base method.
+func (m *MockNode) Statistics(arg0 context.Context) (adapters.Statistics, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Statistics", arg0)
+	ret0, _ := ret[0].(adapters.Statistics)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Statistics indicates an expected call of Statistics.
+func (mr *MockNodeMockRecorder) Statistics(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Statistics", reflect.TypeOf((*MockNode)(nil).Statistics), arg0)
 }
 
 // Stop mocks base method.

@@ -201,6 +201,7 @@ func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore, n
 	walletAPI.RegisterMethod("admin.purge_permissions", NewAdminPurgePermissions(walletStore))
 	walletAPI.RegisterMethod("admin.remove_network", NewAdminRemoveNetwork(netStore))
 	walletAPI.RegisterMethod("admin.remove_wallet", NewAdminRemoveWallet(walletStore))
+	walletAPI.RegisterMethod("admin.rename_wallet", NewAdminRenameWallet(walletStore))
 	walletAPI.RegisterMethod("admin.revoke_permissions", NewAdminRevokePermissions(walletStore))
 	walletAPI.RegisterMethod("admin.rotate_key", NewAdminRotateKey(walletStore))
 	walletAPI.RegisterMethod("admin.send_command", NewAdminSendTransaction(netStore, nodeSelectorBuilder))
@@ -209,8 +210,9 @@ func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore, n
 	walletAPI.RegisterMethod("admin.sign_transaction", NewAdminSignTransaction(walletStore, netStore, nodeSelectorBuilder))
 	walletAPI.RegisterMethod("admin.taint_key", NewAdminTaintKey(walletStore))
 	walletAPI.RegisterMethod("admin.untaint_key", NewAdminUntaintKey(walletStore))
-	walletAPI.RegisterMethod("admin.update_permissions", NewAdminUpdatePermissions(walletStore))
 	walletAPI.RegisterMethod("admin.update_network", NewAdminUpdateNetwork(netStore))
+	walletAPI.RegisterMethod("admin.update_passphrase", NewAdminUpdatePassphrase(walletStore))
+	walletAPI.RegisterMethod("admin.update_permissions", NewAdminUpdatePermissions(walletStore))
 	walletAPI.RegisterMethod("admin.verify_message", NewAdminVerifyMessage())
 
 	log.Info("the admin JSON-RPC API has been initialised")

@@ -96,11 +96,11 @@ create table balances
     vega_time  TIMESTAMP WITH TIME ZONE NOT NULL,
     tx_hash    BYTEA NOT NULL,
     balance    HUGEINT           NOT NULL,
-    PRIMARY KEY(vega_time, account_id)
+    PRIMARY KEY(vega_time, account_id) INCLUDE (balance)
 );
 
 select create_hypertable('balances', 'vega_time', chunk_time_interval => INTERVAL '1 day');
-create index on balances (vega_time, account_id);
+create index on balances (account_id, vega_time) INCLUDE(balance);
 
 create table current_balances
 (
@@ -204,17 +204,17 @@ CREATE TABLE orders_history (
 );
 
 SELECT create_hypertable('orders_history', 'vega_time', chunk_time_interval => INTERVAL '1 day');
-CREATE INDEX ON orders_history (market_id, vega_time DESC);
-CREATE INDEX ON orders_history (party_id, vega_time DESC);
+CREATE INDEX ON orders_history (market_id, vega_time DESC) where vega_time_to='infinity';
+CREATE INDEX ON orders_history (party_id, vega_time DESC) where vega_time_to='infinity';
+CREATE INDEX ON orders_history (reference, vega_time DESC) where vega_time_to='infinity';
 CREATE INDEX ON orders_history (id, vega_time_to);
--- todo: index on vega_time_to?
 
 CREATE TABLE orders_live (
     id                BYTEA                     NOT NULL,
     market_id         BYTEA                     NOT NULL,
     party_id          BYTEA                     NOT NULL, -- at some point add REFERENCES parties(id),
     side              SMALLINT                  NOT NULL,
-    price             HUGEINT                    NOT NULL,
+    price             HUGEINT                   NOT NULL,
     size              BIGINT                    NOT NULL,
     remaining         BIGINT                    NOT NULL,
     time_in_force     SMALLINT                  NOT NULL,
@@ -239,6 +239,7 @@ CREATE TABLE orders_live (
 
 CREATE INDEX ON orders_live (market_id, vega_time DESC);
 CREATE INDEX ON orders_live (party_id, vega_time DESC);
+CREATE INDEX ON orders_live (reference, vega_time DESC);
 CREATE INDEX ON orders_live USING HASH (id);
 
 -- Orders is an updatable view (via the trigger below) which handles moving rows between orders_history and orders_live
@@ -341,6 +342,8 @@ create table trades
 
 SELECT create_hypertable('trades', 'synthetic_time', chunk_time_interval => INTERVAL '1 day');
 CREATE INDEX ON trades (market_id, synthetic_time DESC);
+CREATE INDEX ON trades(buyer, synthetic_time desc);
+CREATE INDEX ON trades(seller, synthetic_time desc);
 
 CREATE MATERIALIZED VIEW trades_candle_1_minute
             WITH (timescaledb.continuous) AS

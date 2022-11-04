@@ -15,6 +15,11 @@ package start
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+
+	"github.com/cenkalti/backoff"
+	"google.golang.org/grpc"
+	"gopkg.in/natefinch/lumberjack.v2"
 
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
@@ -28,9 +33,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
-
-	"github.com/cenkalti/backoff"
-	"google.golang.org/grpc"
 )
 
 func (l *NodeCommand) persistentPre([]string) (err error) {
@@ -67,9 +69,16 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		logging.String("version-hash", l.VersionHash))
 
 	if l.conf.SQLStore.UseEmbedded {
+		postgresLogger := &lumberjack.Logger{
+			Filename: paths.StatePath(filepath.Join(paths.DataNodeLogsHome.String(), "embedded-postgres.log")).String(),
+			MaxSize:  l.conf.SQLStore.LogRotationConfig.MaxSize,
+			MaxAge:   l.conf.SQLStore.LogRotationConfig.MaxAge,
+			Compress: true,
+		}
+
 		runtimeDir := l.vegaPaths.StatePathFor(paths.DataNodeEmbeddedPostgresRuntimeDir)
 		l.embeddedPostgres, err = sqlstore.StartEmbeddedPostgres(l.Log, l.conf.SQLStore,
-			runtimeDir, EmbeddedPostgresLog{})
+			runtimeDir, postgresLogger)
 
 		if err != nil {
 			return fmt.Errorf("failed to start embedded postgres: %w", err)
@@ -275,15 +284,4 @@ func (l *NodeCommand) initialiseDecentralizedHistory() error {
 	}
 
 	return nil
-}
-
-// Todo should be able to configure this to send to a file.
-type EmbeddedPostgresLog struct{}
-
-func (n2 EmbeddedPostgresLog) Write(p []byte) (n int, err error) {
-	return len(p), nil
-}
-
-func (n2 EmbeddedPostgresLog) String() string {
-	return ""
 }
