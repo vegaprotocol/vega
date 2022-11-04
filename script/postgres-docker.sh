@@ -21,7 +21,7 @@ docker run --rm \
            -e POSTGRES_USER=vega \
            -e POSTGRES_PASSWORD=vega \
            -e POSTGRES_DB=vega \
-           -p 15432:5432 \
+           -p 5432:5432 \
            -v "$SNAPSHOTS_COPY_TO_PATH":"$SNAPSHOTS_COPY_TO_PATH":z \
            -v "$SNAPSHOTS_COPY_FROM_PATH":"$SNAPSHOTS_COPY_FROM_PATH":z \
            timescale/timescaledb:2.8.0-pg14
