@@ -114,9 +114,9 @@ func (m *Market) updateMargin(ctx context.Context, pos []events.MarketPosition) 
 		// add the required margin event
 		margins = append(margins, e)
 	}
+
 	// we should get any and all risk events we need here
-	risk := m.risk.UpdateMarginsOnSettlement(ctx, margins, price)
-	return risk
+	return m.risk.UpdateMarginsOnSettlement(ctx, margins, price)
 }
 
 func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {

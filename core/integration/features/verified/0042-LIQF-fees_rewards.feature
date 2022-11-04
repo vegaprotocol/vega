@@ -105,7 +105,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
-      | lp1    | USD   | ETH/MAR22 | 11640  | 999977631 | 10000 |
+      | lp1    | USD   | ETH/MAR22 | 12522  | 999976749 | 10000 |
       | party1 | USD   | ETH/MAR22 | 1800   | 99998202  | 0     |
       | party2 | USD   | ETH/MAR22 | 1812   | 99998875  | 0     |
 
@@ -606,7 +606,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the accumulated liquidity fees should be "20" for the market "ETH/MAR22"
 
-    # settle the market 
+    # settle the market
     When the oracles broadcast data signed with "0xDEADBEEF":
     | name               | value |
     | trading.terminated | true  |

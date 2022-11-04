@@ -16,6 +16,7 @@ package execution
 
 import (
 	"context"
+	"sort"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/liquidity"
@@ -82,7 +83,8 @@ func (m *Market) repricePeggedOrders(
 				order.Price = price.Clone()
 				order.OriginalPrice = price.Clone()
 				order.OriginalPrice.Div(order.OriginalPrice, m.priceFactor)
-				order.Status = types.OrderStatusParked
+				order.Status = types.OrderStatusActive
+				order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
 				toSubmit = append(toSubmit, order)
 			}
 		}
@@ -96,38 +98,25 @@ func (m *Market) repricePeggedOrders(
 func (m *Market) reSubmitPeggedOrders(
 	ctx context.Context,
 	toSubmitOrders []*types.Order,
-) (_ []*types.Order, enteredAuction bool) {
-	updatedOrders := []*types.Order{}
+) ([]*types.Order, map[string]events.MarketPosition) {
+	var (
+		partiesPos    = map[string]events.MarketPosition{}
+		updatedOrders = []*types.Order{}
+		evts          = []events.Event{}
+	)
 
 	// Reinsert all the orders
 	for _, order := range toSubmitOrders {
-		conf, updts, err := m.submitValidatedOrder(ctx, order)
-		if err != nil {
-			m.log.Debug("could not re-submit a pegged order after repricing",
-				logging.MarketID(m.GetID()),
-				logging.PartyID(order.Party),
-				logging.OrderID(order.ID),
-				logging.Error(err))
-			// order could not be submitted, it's then been rejected
-			// we just completely remove it.
-			m.removePeggedOrder(order)
-		} else if len(conf.Trades) > 0 {
-			m.log.Panic("submitting pegged orders after a reprice should never trade",
-				logging.Order(*order))
-		}
-
-		if m.as.InAuction() {
-			enteredAuction = true
-			return
-		}
-
-		if err == nil {
-			updatedOrders = append(updatedOrders, conf.Order)
-		}
-		updatedOrders = append(updatedOrders, updts...)
+		m.matching.ReSubmitSpecialOrders(order)
+		partiesPos[order.Party] = m.position.RegisterOrder(ctx, order)
+		updatedOrders = append(updatedOrders, order)
+		evts = append(evts, events.NewOrderEvent(ctx, order))
 	}
 
-	return updatedOrders, false
+	// send new order events
+	m.broker.SendBatch(evts)
+
+	return updatedOrders, partiesPos
 }
 
 func (m *Market) repriceAllSpecialOrders(
@@ -159,30 +148,18 @@ func (m *Market) repriceAllSpecialOrders(
 
 	// now we get the list of all LP orders, and get them out of the book
 	lpOrders := m.liquidity.GetAllLiquidityOrders()
-	// now we remove them all from the book
-	for _, order := range lpOrders {
-		// Remove order if any volume remains,
-		// otherwise it's already been popped by the matching engine.
-		cancellation, err := m.cancelOrder(ctx, order.Party, order.ID)
-		if cancellation == nil || err != nil {
-			m.log.Panic("could not remove liquidity order from the book",
-				logging.Order(*order),
-				logging.Error(err))
-		}
-	}
+	m.removeLPOrdersFromBook(ctx, lpOrders)
 
 	// now no lp orders are in the book anymore,
 	// we can then just re-submit all pegged orders
 	// if we needed to re-submit peggted orders,
 	// let's do it now
-	var updatedPegged []*types.Order
+	var (
+		updatedPegged []*types.Order
+		partiesPos    = map[string]events.MarketPosition{}
+	)
 	if needsPeggedUpdates {
-		var enteredAuction bool
-		updatedPegged, enteredAuction = m.reSubmitPeggedOrders(ctx, toSubmit)
-		if enteredAuction {
-			// returning nil will stop reference price moves updates
-			return nil
-		}
+		updatedPegged, partiesPos = m.reSubmitPeggedOrders(ctx, toSubmit)
 	}
 
 	orderUpdates = append(orderUpdates, parked...)
@@ -207,48 +184,45 @@ func (m *Market) repriceAllSpecialOrders(
 		m.log.Error("could not update liquidity", logging.Error(err))
 	}
 
-	return m.updateLPOrders(ctx, lpOrders, newOrders, cancels)
+	return m.updateLPOrders(ctx, lpOrders, newOrders, cancels, partiesPos)
 }
 
 func (m *Market) enterAuctionSpecialOrders(
 	ctx context.Context,
 	updatedOrders []*types.Order,
-) []*types.Order {
+) {
+	m.stopAllSpecialOrders(ctx, updatedOrders)
+}
+
+func (m *Market) stopAllSpecialOrders(
+	ctx context.Context,
+	updatedOrders []*types.Order,
+) {
 	// Park all pegged orders
 	updatedOrders = append(
 		updatedOrders,
 		m.parkAllPeggedOrders(ctx)...,
 	)
 
-	// we know we enter an auction here,
-	// so let's just get the list of all orders, and cancel them
-	bestBidPrice, bestAskPrice, err := m.getBestStaticPricesDecimal()
-	if err != nil {
-		m.log.Debug("could not get one of the static mid prices",
-			logging.Error(err))
-		// we do not return here, we could not get one of the prices eventually
-	}
-	newOrders, cancels, err := m.liquidity.Update(
-		ctx, bestBidPrice, bestAskPrice, m.repriceLiquidityOrder, updatedOrders)
-	if err != nil {
-		// TODO: figure out if error are really possible there,
-		// But I'd think not.
-		m.log.Error("could not update liquidity", logging.Error(err))
-	}
+	// now we just get the list of all LPs to be cancelled
+	cancels := m.liquidity.UndeployLPs(ctx, updatedOrders)
+	market := m.GetID()
 
-	// we are entering an auction, the liquidity engine should always instruct
-	// to cancel all orders, and recreating none
-	if len(newOrders) > 0 {
-		m.log.Panic("liquidity engine instructed to create orders when entering auction",
-			logging.MarketID(m.GetID()),
-			logging.Int("new-order-count", len(newOrders)))
+	for _, cancel := range cancels {
+		for _, orderID := range cancel.OrderIDs {
+			if _, err := m.cancelOrder(ctx, cancel.Party, orderID); err != nil {
+				// here we panic, an order which should be in a the market
+				// appears not to be. there's either an issue in the liquidity
+				// engine and we are trying to remove a non-existing order
+				// or the market lost track of the order
+				m.log.Panic("unable to amend a liquidity order",
+					logging.OrderID(orderID),
+					logging.PartyID(cancel.Party),
+					logging.MarketID(market),
+					logging.Error(err))
+			}
+		}
 	}
-
-	// method always return nil anyway
-	// TODO: API to be changed someday as we don't need to cancel anything
-	// now, we assume that all that were required to be cancelled already are.
-	orderUpdates := m.updateAndCreateLPOrders(ctx, []*types.Order{}, cancels, []*types.Order{})
-	return orderUpdates
 }
 
 func (m *Market) updateLPOrders(
@@ -256,8 +230,14 @@ func (m *Market) updateLPOrders(
 	allOrders []*types.Order,
 	submits []*types.Order,
 	cancels []*liquidity.ToCancel,
+	partiesPos map[string]events.MarketPosition,
 ) []*types.Order {
-	cancelIDs := map[string]struct{}{}
+	// this is a list of order which a LP distressed
+	var (
+		orderEvts []events.Event
+		cancelIDs = map[string]struct{}{}
+		now       = m.timeService.GetTimeNow().UnixNano()
+	)
 
 	// now we gonna map all the all order which
 	// where to be cancelled, and just do nothing in
@@ -268,57 +248,189 @@ func (m *Market) updateLPOrders(
 		}
 	}
 
-	// this is a list of order which a LP distressed
-	var (
-		distressedOrders  []*types.Order
-		distressedParties = map[string]struct{}{}
-	)
+	subFn := func(order *types.Order) {
+		if order.OriginalPrice == nil {
+			order.OriginalPrice = order.Price.Clone()
+			order.Price.Mul(order.Price, m.priceFactor)
+		}
+		// set the status to active again
+		order.Status = types.OrderStatusActive
+		m.matching.ReSubmitSpecialOrders(order)
+		partiesPos[order.Party] = m.position.RegisterOrder(ctx, order)
+		orderEvts = append(orderEvts, events.NewOrderEvent(ctx, order))
+	}
 
 	// now we iterate over all the orders which
 	// were initially cancelled, and remove them
 	// from the list if the liquidity engine instructed to
-	// cancel them
-	var cancelEvts []events.Event
+	// cancel them, but also the list of all new orders to be created
 	for _, order := range allOrders {
-		if _, ok := distressedParties[order.Party]; ok {
-			// party is distressed, not processing
-			continue
-		}
+		order.UpdatedAt = now
 
 		// these order were actually cancelled, just send the event
 		if _, ok := cancelIDs[order.ID]; ok {
-			// cancelEvts = append(cancelEvts, events.NewOrderEvent(ctx, order))
-			// these orders were submitted exactly the same before,
-			// so there's no reason we would not be able to submit
-			// let's panic if an issue happen
-		} else {
-			// set the status to active again
-			order.Status = types.OrderStatusActive
-			conf, _, err := m.submitValidatedOrder(ctx, order)
-			if conf == nil || err != nil {
-				distressedOrders = append(distressedOrders, order)
-				distressedParties[order.Party] = struct{}{}
-			} else if len(conf.Trades) > 0 {
-				m.log.Panic("submitting liquidity orders after a reprice should never trade",
-					logging.Order(*order))
-			}
+			order.Status = types.OrderStatusCancelled
+			orderEvts = append(orderEvts, events.NewOrderEvent(ctx, order))
+			continue
 		}
 
-		// if an auction has been started, we just break now
-		if m.as.InAuction() {
-			// enteredAuction = true
-			// auctionFrom = i
-			// break
-			return nil
-		}
+		subFn(order)
+	}
+
+	for _, order := range submits {
+		order.UpdatedAt = now
+		subFn(order)
 	}
 
 	// send cancel events
-	m.broker.SendBatch(cancelEvts)
+	m.broker.SendBatch(orderEvts)
 
-	// method always return nil anyway
-	// TODO: API to be changed someday as we don't need to cancel anything
-	// now, we assume that all that were required to be cancelled already are.
-	orderUpdates := m.updateAndCreateLPOrders(ctx, submits, []*liquidity.ToCancel{}, distressedOrders)
-	return orderUpdates
+	// an ordered list of positions
+	var (
+		positions     = make([]events.MarketPosition, 0, len(partiesPos))
+		marginsBefore = map[string]*num.Uint{}
+		id            = m.GetID()
+		assetID, _    = m.mkt.GetAsset()
+	)
+	// now we can check parties positions
+	for party, pos := range partiesPos {
+		positions = append(positions, pos)
+		mar, err := m.collateral.GetPartyMarginAccount(id, party, assetID)
+		if err != nil {
+			m.log.Panic("party have position without a margin",
+				logging.MarketID(id),
+				logging.PartyID(party),
+			)
+		}
+		marginsBefore[party] = mar.Balance
+	}
+
+	sort.Slice(positions, func(i, j int) bool {
+		return positions[i].Party() < positions[j].Party()
+	})
+
+	// now we calculate all the new margins
+	risks := m.updateMargin(ctx, positions)
+	if len(risks) > 0 {
+		transfers, closed, bondPenalties, err := m.collateral.MarginUpdate(
+			ctx, m.GetID(), risks)
+		if err == nil && len(transfers) > 0 {
+			evt := events.NewLedgerMovements(ctx, transfers)
+			m.broker.Send(evt)
+		}
+
+		cancelled := m.applyBondPenaltiesAndLiquidationExcludingPending(
+			ctx, bondPenalties, closed, marginsBefore,
+		)
+
+		// now ensure we have all parties pending status updated
+		for _, v := range positions {
+			if m.liquidity.IsLiquidityProvider(v.Party()) {
+				if _, ok := cancelled[v.Party()]; !ok {
+					// this party LP wasn't cancelled, so it should be now
+					// not pending anymore,
+					m.liquidity.RemovePending(v.Party())
+				}
+			}
+		}
+
+		_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
+
+		m.updateLiquidityFee(ctx)
+	}
+
+	return []*types.Order{}
+}
+
+func (m *Market) applyBondPenaltiesAndLiquidationExcludingPending(
+	ctx context.Context,
+	bondPenalties []events.Margin,
+	closed []events.Margin,
+	initialMargins map[string]*num.Uint,
+) map[string]struct{} {
+	var (
+		cancelled    = map[string]struct{}{}
+		reallyClosed = []events.Margin{}
+	)
+
+	// alright, here we need to go weird over things because we want to find what
+	// parties have been considered distressed by the risk / collateral engine BUT
+	// for which the LP submission where still pending a first deployment.
+	// In which case no bond slashing is being taken, and they shall not be
+	// closed as well but the lp submission should only be cancelled.
+
+	// so first we will find all pending which would be closed
+	for _, v := range closed {
+		if m.liquidity.IsPending(v.Party()) {
+			_ = m.cancelPendingLiquidityProvision(
+				ctx, v.Party(), initialMargins[v.Party()])
+			// adding to the cancelled map to be returned later
+			cancelled[v.Party()] = struct{}{}
+			continue
+		}
+
+		reallyClosed = append(reallyClosed, v)
+	}
+
+	// now we can apply the bond slashing, avoiding parties which were
+	// pending previously
+	for _, bp := range bondPenalties {
+		// first short circuit if the node got cancelled
+		// party was already cancelled as pending, no penalty for this bois
+		if _, ok := cancelled[bp.Party()]; ok {
+			continue
+		}
+
+		// now we also short circuit if the party wasn't closed but still
+		// add bon penalty on first submission
+		if m.liquidity.IsPending(bp.Party()) {
+			_ = m.cancelPendingLiquidityProvision(
+				ctx, bp.Party(), initialMargins[bp.Party()])
+			// adding to the cancelled map to be returned later
+			cancelled[bp.Party()] = struct{}{}
+			continue
+		}
+
+		transfers, err := m.bondSlashing(ctx, bp)
+		if err != nil {
+			m.log.Error("Failed to perform bond slashing", logging.Error(err))
+		}
+		m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+	}
+
+	// now we can handle the liquidated parties
+	if len(reallyClosed) > 0 {
+		// now we can had them to the cancelled map
+		// as we don't need to use it anymore apart for returning
+		for _, v := range reallyClosed {
+			cancelled[v.Party()] = struct{}{}
+		}
+
+		_, err := m.resolveClosedOutParties(ctx, reallyClosed, nil) // no order ID here
+		if err != nil {
+			m.log.Error("unable to closed out parties",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
+	}
+
+	return cancelled
+}
+
+func (m *Market) removeLPOrdersFromBook(ctx context.Context, lpOrders []*types.Order) {
+	// now we remove them all from the book
+	for _, order := range lpOrders {
+		// Just call delete, not status will be set for now.
+		cancellation, err := m.matching.DeleteOrder(order)
+		if cancellation == nil || err != nil {
+			m.log.Panic("could not remove liquidity order from the book",
+				logging.Order(*order),
+				logging.Error(err))
+		}
+
+		order.Status = types.OrderStatusCancelled
+
+		// remove order from the position
+		_ = m.position.UnregisterOrder(ctx, order)
+	}
 }

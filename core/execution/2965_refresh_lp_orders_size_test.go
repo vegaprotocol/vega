@@ -233,24 +233,24 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		// not have enough funds
 		expectedStatus := []struct {
 			status    types.OrderStatus
-			remaining uint64
+			remaining int
 		}{
 			{
 				// this is the first update indicating the order
 				// was matched
 				types.OrderStatusActive,
-				0x32d, // size - 20
+				813, // size - 20
 			},
 			{
 				// this is the replacement order created
 				// by engine.
 				types.OrderStatusCancelled,
-				0x32d, // size
+				813, // size
 			},
 			{
 				// this is the cancellation
 				types.OrderStatusActive,
-				0x341, // cancelled
+				833, // cancelled
 			},
 		}
 
@@ -258,7 +258,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 
 		for i, expect := range expectedStatus {
 			got := found[i].Status
-			remaining := found[i].Remaining
+			remaining := int(found[i].Remaining)
 			assert.Equal(t, expect.status.String(), got.String())
 			assert.Equal(t, expect.remaining, remaining)
 		}
@@ -481,8 +481,6 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 	tm.now = auctionEnd
 	tm.market.OnTick(ctx, auctionEnd)
 
-	// md := tm.market.GetMarketData()
-	// fmt.Printf("TS: %s\nSS: %s\n", md.TargetStake, md.SuppliedStake)
 	assert.Equal(t,
 		tm.market.GetMarketData().MarketTradingMode,
 		types.MarketTradingModeContinuous,

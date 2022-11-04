@@ -9,10 +9,10 @@ import (
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
 	walletnode "code.vegaprotocol.io/vega/wallet/api/node"
+	"code.vegaprotocol.io/vega/wallet/api/node/adapters"
 	nodemocks "code.vegaprotocol.io/vega/wallet/api/node/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -247,12 +247,12 @@ func testAdminSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
 		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(node, nil)
-		node.EXPECT().LastBlock(ctx).Times(1).Return(&apipb.LastBlockHeightResponse{
-			Height:              150,
-			Hash:                vgrand.RandomStr(64),
-			SpamPowHashFunction: vgcrypto.Sha3,
-			SpamPowDifficulty:   1,
-			ChainId:             vgrand.RandomStr(5),
+		node.EXPECT().LastBlock(ctx).Times(1).Return(adapters.LastBlock{
+			BlockHeight:             150,
+			BlockHash:               vgrand.RandomStr(64),
+			ProofOfWorkHashFunction: vgcrypto.Sha3,
+			ProofOfWorkDifficulty:   1,
+			ChainID:                 vgrand.RandomStr(5),
 		}, nil)
 		return nodeSelector, nil
 	})
@@ -292,12 +292,12 @@ func testAdminSignTransactionGettingInternalErrorDuringWalletVerificationFails(t
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
 		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(node, nil)
-		node.EXPECT().LastBlock(ctx).Times(1).Return(&apipb.LastBlockHeightResponse{
-			Height:              150,
-			Hash:                vgrand.RandomStr(64),
-			SpamPowHashFunction: vgcrypto.Sha3,
-			SpamPowDifficulty:   1,
-			ChainId:             vgrand.RandomStr(5),
+		node.EXPECT().LastBlock(ctx).Times(1).Return(adapters.LastBlock{
+			BlockHeight:             150,
+			BlockHash:               vgrand.RandomStr(64),
+			ProofOfWorkHashFunction: vgcrypto.Sha3,
+			ProofOfWorkDifficulty:   1,
+			ChainID:                 vgrand.RandomStr(5),
 		}, nil)
 		return nodeSelector, nil
 	})
@@ -352,12 +352,12 @@ func testAdminSignTransactionGettingInternalErrorDuringWalletRetrievalFails(t *t
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
 		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(node, nil)
-		node.EXPECT().LastBlock(ctx).Times(1).Return(&apipb.LastBlockHeightResponse{
-			Height:              150,
-			Hash:                vgrand.RandomStr(64),
-			SpamPowHashFunction: vgcrypto.Sha3,
-			SpamPowDifficulty:   1,
-			ChainId:             vgrand.RandomStr(5),
+		node.EXPECT().LastBlock(ctx).Times(1).Return(adapters.LastBlock{
+			BlockHeight:             150,
+			BlockHash:               vgrand.RandomStr(64),
+			ProofOfWorkHashFunction: vgcrypto.Sha3,
+			ProofOfWorkDifficulty:   1,
+			ChainID:                 vgrand.RandomStr(5),
 		}, nil)
 		return nodeSelector, nil
 	})

@@ -85,8 +85,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party2 | ETH/DEC21 | sell | 5      | 1030  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell-2 |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 2816   | 0       | 0    |
-    And the insurance pool balance should be "3614" for the market "ETH/DEC21"
+      | party0 | ETH   | ETH/DEC21 | 1800   | 0       | 0    |
+    And the insurance pool balance should be "4630" for the market "ETH/DEC21"
 
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status           |
@@ -165,8 +165,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     # getting closer to distressed LP, still in continuous trading
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 2816   | 0       | 0    |
-    And the insurance pool balance should be "3614" for the market "ETH/DEC21"
+      | party0 | ETH   | ETH/DEC21 | 1800   | 0       | 0    |
+    And the insurance pool balance should be "4630" for the market "ETH/DEC21"
 
     # Move price out of bounds
     When the network moves ahead "2" blocks
@@ -178,7 +178,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 3481         | 5000           | 23            |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 2816   | 0       | 0    |
+      | party0 | ETH   | ETH/DEC21 | 1800   | 0       | 0    |
 
     # end price auction
     When the network moves ahead "301" blocks
@@ -187,6 +187,6 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | 1055       | TRADING_MODE_CONTINUOUS | 1       | 1045      | 1065      | 3481         | 5000           | 33            |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 928    | 1573    | 0    |
+      | party0 | ETH   | ETH/DEC21 | 928    | 557    | 0    |
 
-    And the insurance pool balance should be "3614" for the market "ETH/DEC21"
+    And the insurance pool balance should be "4630" for the market "ETH/DEC21"

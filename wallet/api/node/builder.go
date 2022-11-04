@@ -9,7 +9,7 @@ import (
 func BuildRoundRobinSelectorWithRetryingNodes(log *zap.Logger, hosts []string, retries uint64) (Selector, error) {
 	nodes := make([]Node, 0, len(hosts))
 	for _, host := range hosts {
-		n, err := NewRetryingGRPCNode(log.Named("grpc-node"), host, retries)
+		n, err := NewRetryingNode(log.Named("retrying-node"), host, retries)
 		if err != nil {
 			return nil, fmt.Errorf("could not initialize the node %q: %w", host, err)
 		}

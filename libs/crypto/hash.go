@@ -21,29 +21,29 @@ import (
 )
 
 func Hash(key []byte) []byte {
-	hasher := sha3.New256()
-	hasher.Write(key)
-	return hasher.Sum(nil)
+	hashFunc := sha3.New256()
+	hashFunc.Write(key)
+	return hashFunc.Sum(nil)
 }
 
-// HashHexStr hash a hex encoded string with sha3 256
+// HashToHex hash the input bytes and returns a hex encoded string of the result.
+func HashToHex(data []byte) string {
+	return hex.EncodeToString(Hash(data))
+}
+
+// HashStrToHex hash a string returns a hex encoded string of the result.
+func HashStrToHex(s string) string {
+	return hex.EncodeToString(Hash([]byte(s)))
+}
+
+// HashHexStrToHex hash a hex encoded string with sha3 256
 // returns a hex encoded string of the result.
-func HashHexStr(s string) string {
+func HashHexStrToHex(s string) string {
 	x, err := hex.DecodeString(s)
 	if err != nil {
-		panic(fmt.Sprintf("hex string required: %v", err))
+		panic(fmt.Sprintf("a hexadecimal string is required: %v", err))
 	}
-	hasher := sha3.New256()
-	hasher.Write(x)
-	return hex.EncodeToString(hasher.Sum(nil))
-}
-
-// HashStr hash a string (converts to bytes first)
-// returns a hex encoded string of the result.
-func HashStr(s string) string {
-	hasher := sha3.New256()
-	hasher.Write([]byte(s))
-	return hex.EncodeToString(hasher.Sum(nil))
+	return hex.EncodeToString(Hash(x))
 }
 
 func RandomHash() string {

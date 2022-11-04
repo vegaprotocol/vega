@@ -20,14 +20,15 @@ import (
 	"io"
 	"time"
 
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/paths"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/pkg/errors"
 	"github.com/pressly/goose/v3"
 	"github.com/shopspring/decimal"
+
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 )
 
 var ErrBadID = errors.New("Bad ID (must be hex string)")
@@ -183,7 +184,6 @@ func checkPolicyPeriodIsAtOrAboveMinimum(minimumInSeconds int64, policy Retentio
 
 type EmbeddedPostgresLog interface {
 	io.Writer
-	fmt.Stringer
 }
 
 func StartEmbeddedPostgres(log *logging.Logger, config Config, runtimeDir string, postgresLog EmbeddedPostgresLog) (*embeddedpostgres.EmbeddedPostgres, error) {
@@ -193,7 +193,7 @@ func StartEmbeddedPostgres(log *logging.Logger, config Config, runtimeDir string
 		postgresLog, config.ConnectionConfig)
 
 	if err := embeddedPostgres.Start(); err != nil {
-		log.Errorf("postgres log: \n%s", postgresLog.String())
+		log.Errorf("error starting embedded postgres: %v", err)
 		return nil, fmt.Errorf("use embedded database was true, but failed to start: %w", err)
 	}
 
@@ -205,9 +205,8 @@ func createEmbeddedPostgres(runtimePath string, dataPath *paths.StatePath, write
 		Username(conf.Username).
 		Password(conf.Password).
 		Database(conf.Database).
-		Port(uint32(conf.Port))
-
-	dbConfig = dbConfig.Logger(writer)
+		Port(uint32(conf.Port)).
+		Logger(writer)
 
 	if len(runtimePath) != 0 {
 		dbConfig = dbConfig.RuntimePath(runtimePath).BinariesPath(runtimePath)
