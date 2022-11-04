@@ -40,12 +40,6 @@ const (
 	chainID              = "testnet"
 	compressedEventsFile = "testdata/smoketest_to_block_5000.evts.gz"
 	numSnapshots         = 5
-
-	// schema changes can affect the test due to mismatching segment ids
-	// and we need to generate a new events file which may require an overnight
-	// run to generate a file sufficient for our purposes
-	// when this happens we can set this flag to true to temporarily skip the tests
-	schemaChanged = true
 )
 
 var (
@@ -111,11 +105,6 @@ func TestMain(t *testing.M) {
 	exitCode := databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource,
 		pgLog *bytes.Buffer,
 	) {
-		if schemaChanged {
-			// skip for now as database schema has changed
-			return
-		}
-
 		sqlConfig = config
 
 		postgresLog = pgLog
@@ -259,11 +248,11 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmYYmDfM32z1fDSmd9P8YyZRoaShkZ7hrm9d5vVKgVegTN", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmaFMVLu72ri79eCdgQ35AuzGauwbdaRDbRwJiqzBRhbTL", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmfRCqqJ7LsbTpP48pFxohvQ8nhwE9fox7Y9icWcKkPWKo", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmXm286qSz7fi6ixMgX73Z93mZFPZsaP8Ykk4oxDUTeKbz", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmUS3C6Z8RZXAWucK2UohrbbpCuEn3GwJobtfEzCyXdGHY", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmWi1n2ThUJH5xbfpFok8t7wmkuBXT2teF5JHe4v7w8rvA", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmfWeZhn61CASePPF8fxKK1Bw1DGSyp1ugrj1MYeMiKKd3", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmW38mGsdwQLn2hVwqX6dbcNUSC3A5kxnChnvAHA17uiU6", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmZukJauzCc11ojzPyZXG9uVHXwLvaWqZAigpt1XbmXmnv", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmS1S8Pi74g5mAVCLpFZG2KSr3Fd6RnU1LXAfa8VtcYM1x", snapshots)
 	}, postgresRuntimePath)
 
 	if exitCode != 0 {
@@ -272,10 +261,6 @@ func TestMain(t *testing.M) {
 }
 
 func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {
-	if schemaChanged {
-		t.Skip("Skipping test as the database schema has changed and we need a new events file")
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	deHistoryStore.ResetIndex()
@@ -312,10 +297,6 @@ func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {
 }
 
 func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
-	if schemaChanged {
-		t.Skip("Skipping test as the database schema has changed and we need a new events file")
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	deHistoryStore.ResetIndex()
@@ -392,10 +373,6 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 }
 
 func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
-	if schemaChanged {
-		t.Skip("Skipping test as the database schema has changed and we need a new events file")
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	deHistoryStore.ResetIndex()
