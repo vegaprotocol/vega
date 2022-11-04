@@ -228,7 +228,7 @@ jobs:
         run: |
           pr_item_id="$( gh api graphql -f query='
             mutation($user:String!, $project:ID!, $pr:ID!) {
-              addProjectV2ItemById(input: {clientMutationId: $user, projectId: $project, contentId: $issue}) {
+              addProjectV2ItemById(input: {clientMutationId: $user, projectId: $project, contentId: $pr}) {
                 item {
                   id
                 }
@@ -241,7 +241,7 @@ jobs:
         run: |
           pr_item_id="$( gh api graphql -f query='
             mutation($user:String!, $project:ID!, $pr:ID!) {
-              addProjectV2ItemById(input: {clientMutationId: $user, projectId: $project, contentId: $issue}) {
+              addProjectV2ItemById(input: {clientMutationId: $user, projectId: $project, contentId: $pr}) {
                 item {
                   id
                 }
