@@ -2709,7 +2709,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 		},
 	}
 	err = checkProposalSubmission(cNeg)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-3,100]"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-3,50]"))
 
 	cTooSmall := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
