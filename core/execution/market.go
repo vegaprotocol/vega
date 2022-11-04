@@ -1081,7 +1081,7 @@ func (m *Market) validatePeggedOrder(order *types.Order) types.OrderError {
 		return types.ErrPeggedOrderMustBeLimitOrder
 	}
 
-	if order.TimeInForce != types.OrderTimeInForceGTT && order.TimeInForce != types.OrderTimeInForceGTC {
+	if order.TimeInForce != types.OrderTimeInForceGTT && order.TimeInForce != types.OrderTimeInForceGTC && order.TimeInForce != types.OrderTimeInForceGFN {
 		// Pegged orders can only be GTC or GTT
 		return types.ErrPeggedOrderMustBeGTTOrGTC
 	}

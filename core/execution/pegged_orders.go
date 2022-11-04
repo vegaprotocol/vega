@@ -163,6 +163,32 @@ func (p *PeggedOrders) RemoveAllParkedForParty(
 	return
 }
 
+func (p *PeggedOrders) EnterAuction(ctx context.Context) []events.Event {
+	var (
+		n    = 0
+		now  = p.timeService.GetTimeNow().UnixNano()
+		evts = []events.Event{}
+	)
+
+	for _, o := range p.parked {
+		if o.TimeInForce == types.OrderTimeInForceGFN {
+			o.UpdatedAt = now
+			o.Status = types.OrderStatusCancelled
+			evts = append(evts, events.NewOrderEvent(ctx, o))
+			delete(p.isParked, o.ID)
+			continue
+		}
+
+		// here we insert back in the slice
+		p.parked[n] = o
+		n++
+	}
+
+	p.parked = p.parked[:n]
+
+	return evts
+}
+
 func (p *PeggedOrders) GetParkedIDs() []string {
 	ids := make([]string, 0, len(p.isParked))
 	for k := range p.isParked {
