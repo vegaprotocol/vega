@@ -167,6 +167,11 @@ func (g *GraphServer) Start() error {
 	})
 
 	headersMiddleware := handler.ResolverMiddleware(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
+		if ctx.Value(metadataKey{}) != nil {
+			res, err = next(ctx)
+			return
+		}
+
 		md := metadata.MD{}
 		ctx = context.WithValue(ctx, metadataKey{}, &md)
 		res, err = next(ctx)
