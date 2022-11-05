@@ -38,6 +38,7 @@
 - [6595](https://github.com/vegaprotocol/vega/issues/6595) - Support for cross network parameter dependency and validation
 - [6627](https://github.com/vegaprotocol/vega/issues/6627) - Fix order estimates
 - [6604](https://github.com/vegaprotocol/vega/issues/6604) - Fix transfer funds documentations in `protos`
+- [6463](https://github.com/vegaprotocol/vega/issues/6463) - Implement chain replay and snapshot restore for the `nullblockchain`
 - [6652](https://github.com/vegaprotocol/vega/issues/6652) - Change protocol upgrade consensus do be based on voting power
 
 ### 🐛 Fixes
