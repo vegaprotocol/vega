@@ -256,6 +256,7 @@ func (m *Market) updateLPOrders(
 		// set the status to active again
 		order.Status = types.OrderStatusActive
 		m.matching.ReSubmitSpecialOrders(order)
+		order.Version = 1 // order version never change, just set it explicitly here every time
 		partiesPos[order.Party] = m.position.RegisterOrder(ctx, order)
 		orderEvts = append(orderEvts, events.NewOrderEvent(ctx, order))
 	}
