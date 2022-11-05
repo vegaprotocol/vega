@@ -44,21 +44,21 @@ func testRoundRobinSelectorReturnsTheFirstHealthyNode(t *testing.T) {
 
 	latestStats := adapters.Statistics{
 		BlockHash:   vgrand.RandomStr(5),
-		BlockHeight: vgrand.NewNonce(),
+		BlockHeight: 987654321,
 		ChainID:     chainID,
 		VegaTime:    "123456789",
 	}
 
-	lateStats1 := adapters.Statistics{
+	lateStats := adapters.Statistics{
 		BlockHash:   vgrand.RandomStr(5),
-		BlockHeight: vgrand.NewNonce(),
+		BlockHeight: 987654310,
 		ChainID:     chainID,
 		VegaTime:    "123456780",
 	}
 
-	lateStats2 := adapters.Statistics{
+	veryLateStats := adapters.Statistics{
 		BlockHash:   vgrand.RandomStr(5),
-		BlockHeight: vgrand.NewNonce(),
+		BlockHeight: 987654300,
 		ChainID:     chainID,
 		VegaTime:    "123456750",
 	}
@@ -105,8 +105,8 @@ func testRoundRobinSelectorReturnsTheFirstHealthyNode(t *testing.T) {
 	// given `node-1` and `node-2` become unhealthy,
 	// and the latest node selected node is the `node-0`
 	node0.EXPECT().Statistics(ctx).Times(1).Return(latestStats, nil)
-	node1.EXPECT().Statistics(ctx).Times(1).Return(lateStats1, nil)
-	node2.EXPECT().Statistics(ctx).Times(1).Return(lateStats2, nil)
+	node1.EXPECT().Statistics(ctx).Times(1).Return(lateStats, nil)
+	node2.EXPECT().Statistics(ctx).Times(1).Return(veryLateStats, nil)
 	node3.EXPECT().Statistics(ctx).Times(1).Return(latestStats, nil)
 	node4.EXPECT().Statistics(ctx).Times(1).Return(latestStats, nil)
 
@@ -120,11 +120,11 @@ func testRoundRobinSelectorReturnsTheFirstHealthyNode(t *testing.T) {
 
 	// given `node-0` and `node-4` become unhealthy,
 	// and the latest node selected node is the `node-3`
-	node0.EXPECT().Statistics(ctx).Times(1).Return(lateStats1, nil)
+	node0.EXPECT().Statistics(ctx).Times(1).Return(lateStats, nil)
 	node1.EXPECT().Statistics(ctx).Times(1).Return(latestStats, nil)
 	node2.EXPECT().Statistics(ctx).Times(1).Return(latestStats, nil)
 	node3.EXPECT().Statistics(ctx).Times(1).Return(latestStats, nil)
-	node4.EXPECT().Statistics(ctx).Times(1).Return(lateStats1, nil)
+	node4.EXPECT().Statistics(ctx).Times(1).Return(lateStats, nil)
 
 	// when
 	selectedNode, err = selector.Node(ctx, noReporting)
@@ -136,9 +136,13 @@ func testRoundRobinSelectorReturnsTheFirstHealthyNode(t *testing.T) {
 
 	// given `node-0`, `node-1` and `node-2` become unhealthy,
 	// and the latest node selected node is the `node-4`
-	node0.EXPECT().Statistics(ctx).Times(1).Return(lateStats1, nil)
-	node1.EXPECT().Statistics(ctx).Times(1).Return(lateStats2, nil)
-	node2.EXPECT().Statistics(ctx).Times(1).Return(lateStats2, nil)
+	// This situation is special because we have as many veryLateStats as latestStats,
+	// so there is no clear source of truth. At that point, the selector has to
+	// pick a winner between the two, based on other properties, like the block
+	// height.
+	node0.EXPECT().Statistics(ctx).Times(1).Return(lateStats, nil)
+	node1.EXPECT().Statistics(ctx).Times(1).Return(veryLateStats, nil)
+	node2.EXPECT().Statistics(ctx).Times(1).Return(veryLateStats, nil)
 	node3.EXPECT().Statistics(ctx).Times(1).Return(latestStats, nil)
 	node4.EXPECT().Statistics(ctx).Times(1).Return(latestStats, nil)
 
@@ -156,11 +160,11 @@ func testRoundRobinSelectorReturnsTheFirstHealthyNode(t *testing.T) {
 
 	// given `node-0`, `node-2`, `node-4`, node-3 become unhealthy,
 	// and the latest node selected node is the `node-3`
-	node0.EXPECT().Statistics(ctx).Times(1).Return(lateStats2, nil)
+	node0.EXPECT().Statistics(ctx).Times(1).Return(veryLateStats, nil)
 	node1.EXPECT().Statistics(ctx).Times(1).Return(latestStats, nil)
-	node2.EXPECT().Statistics(ctx).Times(1).Return(lateStats2, nil)
+	node2.EXPECT().Statistics(ctx).Times(1).Return(veryLateStats, nil)
 	node3.EXPECT().Statistics(ctx).Times(1).Return(latestStats, nil)
-	node4.EXPECT().Statistics(ctx).Times(1).Return(lateStats2, nil)
+	node4.EXPECT().Statistics(ctx).Times(1).Return(veryLateStats, nil)
 
 	// when
 	selectedNode, err = selector.Node(ctx, noReporting)
