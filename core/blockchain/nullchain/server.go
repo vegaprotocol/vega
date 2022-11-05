@@ -18,20 +18,30 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"strconv"
 	"time"
+
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var ErrInvalidRequest = errors.New("invalid request")
 
 func (n *NullBlockchain) Stop() error {
+	if r, ok := n.app.(*Replayer); ok {
+		if err := r.Stop(); err != nil {
+			n.log.Error("failed to stop nullchain replayer")
+		}
+	}
+
 	if n.srv == nil {
 		return nil
 	}
 
 	n.log.Info("Stopping nullchain server")
 	if err := n.srv.Shutdown(context.Background()); err != nil {
-		n.log.Warn("failed to shutdown")
+		n.log.Error("failed to shutdown")
 	}
 
 	return nil
@@ -48,10 +58,10 @@ func (n *NullBlockchain) StartServer() error {
 		return err
 	}
 
-	n.srv = &http.Server{Addr: n.srvAddress}
+	n.srv = &http.Server{Addr: net.JoinHostPort(n.cfg.IP, strconv.Itoa(n.cfg.Port))}
 	http.HandleFunc("/api/v1/forwardtime", n.handleForwardTime)
 
-	n.log.Info("starting backdoor server")
+	n.log.Info("starting time-forwarding server", logging.String("addr", n.srv.Addr))
 	go n.srv.ListenAndServe()
 	return nil
 }

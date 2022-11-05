@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
 	"code.vegaprotocol.io/vega/core/txn"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -43,6 +44,11 @@ var proposeUpgradeCmd ProposeUpgradeCmd
 func (opts *ProposeUpgradeCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
+
+	output, err := opts.GetOutput()
+	if err != nil {
+		return err
+	}
 
 	registryPass, err := opts.Get("node wallet", false)
 	if err != nil {
@@ -92,19 +98,32 @@ func (opts *ProposeUpgradeCmd) Execute(_ []string) error {
 		Nonce: powNonce,
 	}
 
-	ch := make(chan error)
+	var txHash string
+	ch := make(chan struct{})
 	commander.CommandWithPoW(
 		context.Background(),
 		txn.ProtocolUpgradeCommand,
 		&cmd,
-		func(err error) {
-			if err != nil {
-				ch <- fmt.Errorf("failed to send protocol upgrade proposal command: %v", err)
-			}
+		func(h string, e error) {
+			txHash, err = h, e
 			close(ch)
 		}, nil, pow)
 
-	err = <-ch
+	<-ch
+
+	if err != nil {
+		return err
+	}
+
+	if output.IsHuman() {
+		fmt.Printf("Upgrade proposal sent.\ntxHash: %s", txHash)
+	} else if output.IsJSON() {
+		return vgjson.Print(struct {
+			TxHash string `json:"txHash"`
+		}{
+			TxHash: txHash,
+		})
+	}
 	return err
 }
 

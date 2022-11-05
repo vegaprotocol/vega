@@ -344,7 +344,11 @@ func (n *Command) startBlockchain(tmHome, network, networkURL string) error {
 		n.blockchainClient.Set(client)
 	case blockchain.ProviderNullChain:
 		// nullchain acts as both the client and the server because its does everything
-		n.nullBlockchain = nullchain.NewClient(n.Log, n.conf.Blockchain.Null)
+		n.nullBlockchain = nullchain.NewClient(
+			n.Log,
+			n.conf.Blockchain.Null,
+			n.protocol.GetTimeService(), // if we've loaded from a snapshot we need to be able to ask the protocol what time its at
+		)
 		n.nullBlockchain.SetABCIApp(n.abciApp)
 		n.blockchainServer = blockchain.NewServer(n.Log, n.nullBlockchain)
 		// n.blockchainClient = blockchain.NewClient(n.nullBlockchain)
