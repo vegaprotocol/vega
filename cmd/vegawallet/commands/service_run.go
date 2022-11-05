@@ -655,7 +655,7 @@ func buildNodeSelector(log *zap.Logger, nodesConfig network.GRPCConfig) (walletn
 
 	nodes := make([]walletnode.Node, 0, len(nodesConfig.Hosts))
 	for _, host := range nodesConfig.Hosts {
-		n, err := walletnode.NewRetryingGRPCNode(log.Named("grpc-node"), host, nodesConfig.Retries)
+		n, err := walletnode.NewRetryingNode(log.Named("grpc-node"), host, nodesConfig.Retries)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't initialize node for %q: %w", host, err)
 		}

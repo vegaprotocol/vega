@@ -747,6 +747,53 @@ func (b *OrderBook) ReplaceOrder(rm, rpl *types.Order) (*types.OrderConfirmation
 	return b.SubmitOrder(rpl)
 }
 
+func (b *OrderBook) ReSubmitSpecialOrders(order *types.Order) {
+	// not allowed to submit a normal order here
+	if len(order.LiquidityProvisionID) <= 0 && order.PeggedOrder == nil {
+		b.log.Panic("only pegged orders or liquidity orders allowed", logging.Order(order))
+	}
+
+	// check if order would trade, that should never happen as well.
+	switch order.Side {
+	case types.SideBuy:
+		price, err := b.GetBestAskPrice()
+		if err != nil {
+			b.log.Panic("tried to re submit special orders in an empty book", logging.Order(order))
+		}
+		if price.LTE(order.Price) {
+			b.log.Panic("re submit special order would cross", logging.Order(order), logging.BigUint("best-ask", price))
+		}
+	case types.SideSell:
+		price, err := b.GetBestBidPrice()
+		if err != nil {
+			b.log.Panic("tried to re submit special orders in an empty book", logging.Order(order))
+		}
+		if price.GTE(order.Price) {
+			b.log.Panic("re submit special order would cross", logging.Order(order), logging.BigUint("best-bid", price))
+		}
+	default:
+		b.log.Panic("invalid order side", logging.Order(order))
+	}
+
+	// now we can nicely add the order to the book, no uncrossing needed
+	b.getSide(order.Side).addOrder(order)
+
+	// only for pegged orders, liquidity orders do not get added in here
+	if order.PeggedOrder != nil {
+		b.peggedOrders[order.ID] = struct{}{}
+	}
+
+	// and the other mappings
+	b.ordersByID[order.ID] = order
+	if orders, ok := b.ordersPerParty[order.Party]; !ok {
+		b.ordersPerParty[order.Party] = map[string]struct{}{
+			order.ID: {},
+		}
+	} else {
+		orders[order.ID] = struct{}{}
+	}
+}
+
 // SubmitOrder Add an order and attempt to uncross the book, returns a TradeSet protobuf message object.
 func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	if err := b.validateOrder(order); err != nil {

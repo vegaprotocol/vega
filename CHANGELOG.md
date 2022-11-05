@@ -9,10 +9,19 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6681](https://github.com/vegaprotocol/vega/issues/6681) - Add indexes to improve balance history query
+- [6682](https://github.com/vegaprotocol/vega/issues/6682) - Add indexes to orders by reference query
+- [6668](https://github.com/vegaprotocol/vega/issues/6668) - Add indexes to trades by buyer/seller
+- [6628](https://github.com/vegaprotocol/vega/issues/6628) - Improve node health check in the wallet
 
 ### 🐛 Fixes
+- [6701](https://github.com/vegaprotocol/vega/issues/6701) - Fix `GraphQL` `API` not returning `x-vega-*` headers 
 - [6661](https://github.com/vegaprotocol/vega/issues/6661) - Scale price to asset decimal in estimate orders
+- [6685](https://github.com/vegaprotocol/vega/issues/6685) - `vega announce_node` now returns a `txHash` when successful or errors from `CheckTx`
+- [6687](https://github.com/vegaprotocol/vega/issues/6687) - Expose `admin.update_passphrase` in admin wallet API
+- [6686](https://github.com/vegaprotocol/vega/issues/6686) - Expose `admin.rename_wallet` in admin wallet API
+- [6496](https://github.com/vegaprotocol/vega/issues/6496) - Fix margin calculation for pegged and liquidity orders
+- [6670](https://github.com/vegaprotocol/vega/issues/6670) - Add governance by `ID` endpoint to `REST` bindings
 
 
 ## 0.61.0
@@ -21,7 +30,7 @@
 - [5714](https://github.com/vegaprotocol/vega/issues/5714) - Update data sourcing types
 
 ### 🛠 Improvements
-- [6608](https://github.com/vegaprotocol/vega/issues/6608) - Put embedded `postgres` files in proper state directory
+- [6603](https://github.com/vegaprotocol/vega/issues/6603) - Put embedded `postgres` files in proper state directory
 - [6552](https://github.com/vegaprotocol/vega/issues/6552) - Add `datanode` `API` for querying protocol upgrade proposals
 - [6613](https://github.com/vegaprotocol/vega/issues/6613) - Add file buffering to datanode
 - [6602](https://github.com/vegaprotocol/vega/issues/6602) - Panic if data node receives events in unexpected order
@@ -261,6 +270,7 @@
 - [5961](https://github.com/vegaprotocol/vega/issues/5961) - Add batch market instructions command
 - [5974](https://github.com/vegaprotocol/vega/issues/5974) - Flatten subscription in `Graphql`
 - [6146](https://github.com/vegaprotocol/vega/issues/6146) - Add version command to Vega Visor
+- [6671](https://github.com/vegaprotocol/vega/issues/6671) - Vega Visor allows to postpone first failure when Core node is slow to startup
 
 ### 🐛 Fixes
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read

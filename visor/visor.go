@@ -107,6 +107,8 @@ func (v *Visor) Run(ctx context.Context) error {
 			runConf.Vega.RCP.HTTPPath,
 		)
 
+		maxNumberOfFirstConnectionRetries := v.conf.MaxNumberOfFirstConnectionRetries()
+
 		numOfUpgradeStatusErrs := 0
 		maxNumRestarts := v.conf.MaxNumberOfRestarts()
 		restartsDelay := time.Second * time.Duration(v.conf.RestartsDelaySeconds())
@@ -143,8 +145,15 @@ func (v *Visor) Run(ctx context.Context) error {
 			case <-upgradeTicker.C:
 				upStatus, err := client.UpgradeStatus(ctx)
 				if err != nil {
-					if numOfUpgradeStatusErrs > maxUpgradeStatusErrs {
-						return fmt.Errorf("failed to upgrade status for maximum amount of %d times: %w", maxUpgradeStatusErrs, err)
+					// Binary has not started yet - waiting for first startup
+					if numOfRestarts == 0 {
+						if maxNumberOfFirstConnectionRetries > maxUpgradeStatusErrs {
+							return failedToGetStatusErr(maxNumberOfFirstConnectionRetries, err)
+						}
+					} else { // Binary has been started already. Somethig has failed after the startup
+						if numOfUpgradeStatusErrs > maxUpgradeStatusErrs {
+							return failedToGetStatusErr(maxUpgradeStatusErrs, err)
+						}
 					}
 
 					v.log.Debug("failed to get upgrade status from API", logging.Error(err))
@@ -175,9 +184,14 @@ func (v *Visor) Run(ctx context.Context) error {
 				}
 
 				numOfRestarts = 0
+				numOfUpgradeStatusErrs = 0
 
 				break CheckLoop
 			}
 		}
 	}
+}
+
+func failedToGetStatusErr(numberOfErrs int, err error) error {
+	return fmt.Errorf("failed to get upgrade status for maximum amount of %d times: %w", numberOfErrs, err)
 }

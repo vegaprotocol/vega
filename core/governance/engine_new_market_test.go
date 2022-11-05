@@ -179,7 +179,7 @@ func TestSubmittingProposalForNewMarketWithOutOfRangeRiskParameterFails(t *testi
 	lnm.Params.R = num.DecimalFromFloat(0.0)
 	lnm.Params.Sigma = num.DecimalFromFloat(1e-3 - 1e-12)
 	testOutOfRangeRiskParamFail(t, lnm)
-	lnm.Params.Sigma = num.DecimalFromFloat(100 + 1e-12)
+	lnm.Params.Sigma = num.DecimalFromFloat(50 + 1e-12)
 	testOutOfRangeRiskParamFail(t, lnm)
 	lnm.Params.Sigma = num.DecimalFromFloat(1.0)
 

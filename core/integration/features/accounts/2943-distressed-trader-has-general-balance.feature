@@ -101,4 +101,4 @@ Feature: Distressed parties should not have general balance left
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party3 | ETH   | ETH/DEC20 | 16388  | 0       |
+      | party3 | ETH   | ETH/DEC20 | 15027  | 0       |
