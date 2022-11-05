@@ -29,6 +29,7 @@
 - [6627](https://github.com/vegaprotocol/vega/issues/6627) - Fix order estimates
 - [6604](https://github.com/vegaprotocol/vega/issues/6604) - Fix transfer funds documentations in `protos`
 - [6652](https://github.com/vegaprotocol/vega/issues/6652) - Change protocol upgrade consensus do be based on voting power
+- [6711](https://github.com/vegaprotocol/vega/issues/6711) - Antiwhale ersatz validators reward stake scores
 
 ### 🐛 Fixes
 - [6356](https://github.com/vegaprotocol/vega/issues/6356) - When querying for proposals from `GQL` return votes.
