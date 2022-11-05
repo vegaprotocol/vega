@@ -17,6 +17,7 @@
 ### 🐛 Fixes
 - [6701](https://github.com/vegaprotocol/vega/issues/6701) - Fix `GraphQL` `API` not returning `x-vega-*` headers 
 - [6661](https://github.com/vegaprotocol/vega/issues/6661) - Scale price to asset decimal in estimate orders
+- [6685](https://github.com/vegaprotocol/vega/issues/6685) - `vega announce_node` now returns a `txHash` when successful or errors from `CheckTx`
 - [6687](https://github.com/vegaprotocol/vega/issues/6687) - Expose `admin.update_passphrase` in admin wallet API
 - [6686](https://github.com/vegaprotocol/vega/issues/6686) - Expose `admin.rename_wallet` in admin wallet API
 - [6496](https://github.com/vegaprotocol/vega/issues/6496) - Fix margin calculation for pegged and liquidity orders

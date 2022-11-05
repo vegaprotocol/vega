@@ -239,7 +239,7 @@ func (sv *StateVariable) CalculationFinished(eventID string, result statevar.Sta
 
 	// need to release the lock before we send the transaction command
 	sv.lock.Unlock()
-	sv.cmd.Command(context.Background(), txn.StateVariableProposalCommand, svp, func(err error) { sv.logAndRetry(err, svp) }, nil)
+	sv.cmd.Command(context.Background(), txn.StateVariableProposalCommand, svp, func(_ string, err error) { sv.logAndRetry(err, svp) }, nil)
 	if sv.log.GetLevel() <= logging.DebugLevel {
 		sv.log.Debug("result calculated and sent to vega", logging.String("validator", sv.top.SelfNodeID()), logging.String("state-var", sv.ID), logging.String("event-id", eventID))
 	}
@@ -257,7 +257,7 @@ func (sv *StateVariable) logAndRetry(err error, svp *commandspb.StateVariablePro
 		if sv.log.IsDebug() {
 			sv.log.Debug("retrying to send state variable proposal command", logging.String("id", sv.ID), logging.String("event-id", sv.eventID))
 		}
-		sv.cmd.Command(context.Background(), txn.StateVariableProposalCommand, svp, func(err error) { sv.logAndRetry(err, svp) }, nil)
+		sv.cmd.Command(context.Background(), txn.StateVariableProposalCommand, svp, func(_ string, err error) { sv.logAndRetry(err, svp) }, nil)
 		return
 	}
 	sv.lock.Unlock()

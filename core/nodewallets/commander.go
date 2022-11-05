@@ -69,19 +69,19 @@ func NewCommander(cfg Config, log *logging.Logger, bc Chain, w *vega.Wallet, bst
 
 // Command - send command to chain.
 // Note: beware when passing in an exponential back off since the done function may be called many times.
-func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error), bo *backoff.ExponentialBackOff) {
+func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(string, error), bo *backoff.ExponentialBackOff) {
 	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_SYNC, bo, nil)
 }
 
-func (c *Commander) CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error), bo *backoff.ExponentialBackOff) {
+func (c *Commander) CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, done func(string, error), bo *backoff.ExponentialBackOff) {
 	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_SYNC, bo, nil)
 }
 
-func (c *Commander) CommandWithPoW(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error), bo *backoff.ExponentialBackOff, pow *commandspb.ProofOfWork) {
+func (c *Commander) CommandWithPoW(ctx context.Context, cmd txn.Command, payload proto.Message, done func(string, error), bo *backoff.ExponentialBackOff, pow *commandspb.ProofOfWork) {
 	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_SYNC, bo, pow)
 }
 
-func (c *Commander) command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error), ty api.SubmitTransactionRequest_Type, bo *backoff.ExponentialBackOff, pow *commandspb.ProofOfWork) {
+func (c *Commander) command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(string, error), ty api.SubmitTransactionRequest_Type, bo *backoff.ExponentialBackOff, pow *commandspb.ProofOfWork) {
 	if c.bc == nil {
 		panic("commander was instantiated without a chain")
 	}
@@ -114,21 +114,29 @@ func (c *Commander) command(ctx context.Context, cmd txn.Command, payload proto.
 		tx := commands.NewTransaction(c.wallet.PubKey().Hex(), marshalInputData, signature)
 		tx.Pow = pow
 
+		var resp *tmctypes.ResultBroadcastTx
 		if ty == api.SubmitTransactionRequest_TYPE_SYNC {
-			_, err = c.bc.SubmitTransactionSync(innerCtx, tx)
+			resp, err = c.bc.SubmitTransactionSync(innerCtx, tx)
 		} else {
-			_, err = c.bc.SubmitTransactionAsync(innerCtx, tx)
+			resp, err = c.bc.SubmitTransactionAsync(innerCtx, tx)
 		}
 
-		if err != nil {
-			// this can happen as network dependent
+		var txHash string
+		switch {
+		case err != nil:
 			c.log.Error("could not send transaction to tendermint",
 				logging.Error(err),
 				logging.String("tx", payload.String()))
+		case resp.Code != 0:
+			err = fmt.Errorf("%s", string(resp.Data.Bytes()))
+			c.log.Error("transaction reached network but was rejected",
+				logging.Error(err))
+		default:
+			txHash = resp.Hash.String()
 		}
 
 		if done != nil {
-			done(err)
+			done(txHash, err)
 		}
 
 		return err
