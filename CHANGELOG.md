@@ -13,6 +13,7 @@
 - [6682](https://github.com/vegaprotocol/vega/issues/6682) - Add indexes to orders by reference query
 - [6668](https://github.com/vegaprotocol/vega/issues/6668) - Add indexes to trades by buyer/seller
 - [6628](https://github.com/vegaprotocol/vega/issues/6628) - Improve node health check in the wallet
+- [6711](https://github.com/vegaprotocol/vega/issues/6711) - `Anti-whale ersatz` validators reward stake scores
 
 ### 🐛 Fixes
 - [6701](https://github.com/vegaprotocol/vega/issues/6701) - Fix `GraphQL` `API` not returning `x-vega-*` headers 
@@ -38,7 +39,6 @@
 - [6627](https://github.com/vegaprotocol/vega/issues/6627) - Fix order estimates
 - [6604](https://github.com/vegaprotocol/vega/issues/6604) - Fix transfer funds documentations in `protos`
 - [6652](https://github.com/vegaprotocol/vega/issues/6652) - Change protocol upgrade consensus do be based on voting power
-- [6711](https://github.com/vegaprotocol/vega/issues/6711) - Antiwhale ersatz validators reward stake scores
 
 ### 🐛 Fixes
 - [6356](https://github.com/vegaprotocol/vega/issues/6356) - When querying for proposals from `GQL` return votes.
