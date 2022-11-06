@@ -753,6 +753,8 @@ func (b *OrderBook) ReSubmitSpecialOrders(order *types.Order) {
 		b.log.Panic("only pegged orders or liquidity orders allowed", logging.Order(order))
 	}
 
+	order.BatchID = b.batchID
+
 	// check if order would trade, that should never happen as well.
 	switch order.Side {
 	case types.SideBuy:
