@@ -140,29 +140,6 @@ func (p *PeggedOrders) RemoveAllForParty(
 	return
 }
 
-func (p *PeggedOrders) RemoveAllParkedForParty(
-	ctx context.Context, party string, status types.OrderStatus,
-) (orders []*types.Order, evts []events.Event) {
-	n := 0
-	now := p.timeService.GetTimeNow().UnixNano()
-
-	for _, o := range p.parked {
-		if o.Party == party {
-			o.UpdatedAt = now
-			o.Status = status
-			orders = append(orders, o)
-			evts = append(evts, events.NewOrderEvent(ctx, o))
-			delete(p.isParked, o.ID)
-			continue
-		}
-		// here we insert back in the slice
-		p.parked[n] = o
-		n++
-	}
-	p.parked = p.parked[:n]
-	return
-}
-
 func (p *PeggedOrders) EnterAuction(ctx context.Context) []events.Event {
 	var (
 		n    = 0

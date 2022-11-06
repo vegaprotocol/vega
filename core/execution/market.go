@@ -1774,7 +1774,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 
 	// now we also remove ALL parked order for the different parties
 	for _, v := range distressedPos {
-		orders, oevts := m.peggedOrders.RemoveAllParkedForParty(
+		orders, oevts := m.peggedOrders.RemoveAllForParty(
 			ctx, v.Party(), types.OrderStatusStopped)
 
 		for _, v := range orders {
