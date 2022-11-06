@@ -149,17 +149,18 @@ func normaliseScores(scores map[string]num.Decimal, rng *rand.Rand) map[string]n
 }
 
 // calcValidatorScore calculates the stake based raw validator score with anti whaling.
-func CalcValidatorScore(valStake, totalStake, numVal num.Decimal, stakeScoreParams types.StakeScoreParams) num.Decimal {
+func CalcValidatorScore(valStake, totalStake, optStake num.Decimal, stakeScoreParams types.StakeScoreParams) num.Decimal {
 	if totalStake.IsZero() {
 		return num.DecimalZero()
 	}
-	a := num.MaxD(stakeScoreParams.MinVal, numVal.Div(stakeScoreParams.CompLevel))
-	optStake := totalStake.Div(a)
+	return antiwhale(valStake, totalStake, optStake, stakeScoreParams)
+}
+
+func antiwhale(valStake, totalStake, optStake num.Decimal, stakeScoreParams types.StakeScoreParams) num.Decimal {
 	penaltyFlatAmt := num.MaxD(num.DecimalZero(), valStake.Sub(optStake))
 	penaltyDownAmt := num.MaxD(num.DecimalZero(), valStake.Sub(stakeScoreParams.OptimalStakeMultiplier.Mul(optStake)))
 	linearScore := valStake.Sub(penaltyFlatAmt).Sub(penaltyDownAmt).Div(totalStake) // totalStake guaranteed to be non zero at this point
-	decimal1, _ := num.DecimalFromString("1.0")
-	linearScore = num.MinD(decimal1, num.MaxD(num.DecimalZero(), linearScore))
+	linearScore = num.MinD(num.DecimalOne(), num.MaxD(num.DecimalZero(), linearScore))
 	return linearScore
 }
 
@@ -183,7 +184,15 @@ func getValScore(inScores ...map[string]num.Decimal) map[string]num.Decimal {
 // if the val_score = raw_score x performance_score  is in the top <numberEthMultisigSigners> and the validator is on the multisig contract => 1
 // else 0
 // that means a validator in tendermint set only gets a reward if it is in the top <numberEthMultisigSigners> and their registered with the multisig contract.
-func getMultisigScore(log *logging.Logger, rawScores map[string]num.Decimal, perfScore map[string]num.Decimal, multiSigTopology MultiSigTopology, numberEthMultisigSigners int, nodeIDToEthAddress map[string]string) map[string]num.Decimal {
+func getMultisigScore(log *logging.Logger, status ValidatorStatus, rawScores map[string]num.Decimal, perfScore map[string]num.Decimal, multiSigTopology MultiSigTopology, numberEthMultisigSigners int, nodeIDToEthAddress map[string]string) map[string]num.Decimal {
+	if status == ValidatorStatusErsatz {
+		scores := make(map[string]num.Decimal, len(rawScores))
+		for k := range rawScores {
+			scores[k] = decimalOne
+		}
+		return scores
+	}
+
 	ethAddresses := make([]string, 0, len(rawScores))
 	for k := range rawScores {
 		if eth, ok := nodeIDToEthAddress[k]; !ok {
@@ -242,8 +251,8 @@ func getMultisigScore(log *logging.Logger, rawScores map[string]num.Decimal, per
 func (t *Topology) GetRewardsScores(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) (*types.ScoreData, *types.ScoreData) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
-	tmScores := t.calculateTMScores(delegationState, stakeScoreParams)
-	ezScores := t.calculateErsatzScores(delegationState)
+	tmScores, optStake := t.calculateScores(delegationState, ValidatorStatusTendermint, stakeScoreParams, nil)
+	ezScores, _ := t.calculateScores(delegationState, ValidatorStatusErsatz, stakeScoreParams, &optStake)
 
 	evts := make([]events.Event, 0, len(tmScores.NodeIDSlice)+len(ezScores.NodeIDSlice))
 	for _, nodeID := range tmScores.NodeIDSlice {
@@ -256,59 +265,54 @@ func (t *Topology) GetRewardsScores(ctx context.Context, epochSeq string, delega
 	return tmScores, ezScores
 }
 
-// calculateErsatzScores returns the reward validator scores for the ersatz validatore.
-func (t *Topology) calculateErsatzScores(delegationState []*types.ValidatorData) *types.ScoreData {
-	ezScores := &types.ScoreData{}
-	ev := map[string]num.Decimal{}
-	evStake := map[string]*num.Uint{}
-	evTotal := num.UintZero()
-	evDelegation := []*types.ValidatorData{}
+func (t *Topology) calculateScores(delegationState []*types.ValidatorData, validatorStatus ValidatorStatus, stakeScoreParams types.StakeScoreParams, optStake *num.Decimal) (*types.ScoreData, num.Decimal) {
+	scores := &types.ScoreData{}
 
-	// split the delegation into tendermint and ersatz and count their respective totals
-	for _, ds := range delegationState {
-		if t.validators[ds.NodeID].status == ValidatorStatusErsatz {
-			ev[ds.NodeID] = num.DecimalZero()
-			stake := num.Sum(ds.SelfStake, ds.StakeByDelegators)
-			evStake[ds.NodeID] = stake
-			evTotal.AddSum(stake)
-			evDelegation = append(evDelegation, ds)
+	// identify validators for the status for the epoch
+	validatorsForStatus := map[string]struct{}{}
+	nodeIDToEthAddress := map[string]string{}
+	for k, d := range t.validators {
+		if d.status == validatorStatus {
+			validatorsForStatus[k] = struct{}{}
 		}
-	}
-	evTotalD := evTotal.ToDecimal()
-
-	// calculate a simple stake score (no anti-whaling)
-	for k, v := range evStake {
-		if evTotalD.IsPositive() {
-			ev[k] = v.ToDecimal().Div(evTotalD)
-		} else {
-			ev[k] = num.DecimalZero()
-		}
+		nodeIDToEthAddress[d.data.ID] = d.data.EthereumAddress
 	}
 
-	ezScores.RawValScores = ev
-
-	// calculate the performance score based on the number of times they signed vs the expected number of times in the last 10 rounds
-	ezScores.PerformanceScores = t.getPerformanceScore(evDelegation)
-
-	ezScores.MultisigScores = make(map[string]num.Decimal, len(ev))
-	for k := range ev {
-		ezScores.MultisigScores[k] = decimalOne
+	// calculate the delegation and anti-whaling score for the validators with the given status
+	delegationForStatus, totalDelegationForStatus := CalcDelegation(validatorsForStatus, delegationState)
+	if optStake == nil {
+		optimalkStake := GetOptimalStake(totalDelegationForStatus, len(delegationForStatus), stakeScoreParams)
+		optStake = &optimalkStake
 	}
 
-	// calculate the validator score as raw_score x performance_score
-	ezScores.ValScores = getValScore(ezScores.RawValScores, ezScores.PerformanceScores)
+	scores.RawValScores = CalcAntiWhalingScore(delegationForStatus, totalDelegationForStatus, *optStake, stakeScoreParams)
+
+	// calculate performance score based on performance of the validators with the given status
+	scores.PerformanceScores = t.getPerformanceScore(delegationForStatus)
+
+	// calculate multisig score for the validators
+	scores.MultisigScores = getMultisigScore(t.log, validatorStatus, scores.RawValScores, scores.PerformanceScores, t.multiSigTopology, t.numberEthMultisigSigners, nodeIDToEthAddress)
+
+	// calculate the final score
+	scores.ValScores = getValScore(scores.RawValScores, scores.PerformanceScores, scores.MultisigScores)
 
 	// normalise the scores
-	ezScores.NormalisedScores = normaliseScores(ezScores.ValScores, t.rng)
+	scores.NormalisedScores = normaliseScores(scores.ValScores, t.rng)
 
-	ezNodeIDs := make([]string, 0, len(ev))
-	for k := range ev {
-		ezNodeIDs = append(ezNodeIDs, k)
+	// sort the list of tm validators
+	tmNodeIDs := make([]string, 0, len(delegationForStatus))
+	for k := range scores.RawValScores {
+		tmNodeIDs = append(tmNodeIDs, k)
 	}
-	sort.Strings(ezNodeIDs)
-	ezScores.NodeIDSlice = ezNodeIDs
 
-	return ezScores
+	sort.Strings(tmNodeIDs)
+	scores.NodeIDSlice = tmNodeIDs
+
+	for _, k := range tmNodeIDs {
+		t.log.Info("reward scores for", logging.String("node-id", k), logging.String("stake-score", scores.RawValScores[k].String()), logging.String("performance-score", scores.PerformanceScores[k].String()), logging.String("multisig-score", scores.MultisigScores[k].String()), logging.String("validator-score", scores.ValScores[k].String()), logging.String("normalised-score", scores.NormalisedScores[k].String()))
+	}
+
+	return scores, *optStake
 }
 
 // CalcDelegation extracts the delegation of the validator set from the delegation state slice and returns the total delegation.
@@ -330,63 +334,23 @@ func CalcDelegation(validators map[string]struct{}, delegationState []*types.Val
 	return tvDelegation, tvTotalD
 }
 
+func GetOptimalStake(tmTotalDelegation num.Decimal, numValidators int, params types.StakeScoreParams) num.Decimal {
+	if tmTotalDelegation.IsPositive() {
+		numVal := num.DecimalFromInt64(int64(numValidators))
+		return tmTotalDelegation.Div(num.MaxD(params.MinVal, numVal.Div(params.CompLevel)))
+	}
+	return num.DecimalZero()
+}
+
 // CalcAntiWhalingScore calculates the anti-whaling stake score for the validators represented in the given delegation set.
-func CalcAntiWhalingScore(delegationState []*types.ValidatorData, totalStakeD num.Decimal, stakeScoreParams types.StakeScoreParams) map[string]num.Decimal {
+func CalcAntiWhalingScore(delegationState []*types.ValidatorData, totalStakeD, optStake num.Decimal, stakeScoreParams types.StakeScoreParams) map[string]num.Decimal {
 	stakeScore := make(map[string]num.Decimal, len(delegationState))
 	for _, ds := range delegationState {
 		if totalStakeD.IsPositive() {
-			stakeScore[ds.NodeID] = CalcValidatorScore(num.Sum(ds.SelfStake, ds.StakeByDelegators).ToDecimal(), totalStakeD, num.DecimalFromInt64(int64(len(delegationState))), stakeScoreParams)
+			stakeScore[ds.NodeID] = CalcValidatorScore(num.Sum(ds.SelfStake, ds.StakeByDelegators).ToDecimal(), totalStakeD, optStake, stakeScoreParams)
 		} else {
 			stakeScore[ds.NodeID] = num.DecimalZero()
 		}
 	}
 	return stakeScore
-}
-
-// calculateTMScores returns the reward validator scores for the tendermint validators.
-func (t *Topology) calculateTMScores(delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) *types.ScoreData {
-	tmScores := &types.ScoreData{}
-
-	// identify tendermint validators for epoch
-	tmValidators := map[string]struct{}{}
-	nodeIDToEthAddress := map[string]string{}
-	for k, d := range t.validators {
-		if d.status == ValidatorStatusTendermint {
-			tmValidators[k] = struct{}{}
-		}
-		nodeIDToEthAddress[d.data.ID] = d.data.EthereumAddress
-	}
-
-	// calculate the delegation and anti-whaling score for the tendermint validators
-	tmDelegation, tmTotalDelegation := CalcDelegation(tmValidators, delegationState)
-	tmStakeScore := CalcAntiWhalingScore(tmDelegation, tmTotalDelegation, stakeScoreParams)
-
-	tmScores.RawValScores = tmStakeScore
-
-	// calculate performance score based on tm performance
-	tmScores.PerformanceScores = t.getPerformanceScore(tmDelegation)
-
-	// calculate multisig score for the tm validators
-	tmScores.MultisigScores = getMultisigScore(t.log, tmScores.RawValScores, tmScores.PerformanceScores, t.multiSigTopology, t.numberEthMultisigSigners, nodeIDToEthAddress)
-
-	// calculate the final score
-	tmScores.ValScores = getValScore(tmScores.RawValScores, tmScores.PerformanceScores, tmScores.MultisigScores)
-
-	// normalise the scores
-	tmScores.NormalisedScores = normaliseScores(tmScores.ValScores, t.rng)
-
-	// sort the list of tm validators
-	tmNodeIDs := make([]string, 0, len(tmDelegation))
-	for k := range tmStakeScore {
-		tmNodeIDs = append(tmNodeIDs, k)
-	}
-
-	sort.Strings(tmNodeIDs)
-	tmScores.NodeIDSlice = tmNodeIDs
-
-	for _, k := range tmNodeIDs {
-		t.log.Info("reward scores for", logging.String("node-id", k), logging.String("stake-score", tmScores.RawValScores[k].String()), logging.String("performance-score", tmScores.PerformanceScores[k].String()), logging.String("multisig-score", tmScores.MultisigScores[k].String()), logging.String("validator-score", tmScores.ValScores[k].String()), logging.String("normalised-score", tmScores.NormalisedScores[k].String()))
-	}
-
-	return tmScores
 }

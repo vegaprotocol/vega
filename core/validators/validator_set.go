@@ -326,9 +326,11 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 
 	// extract the delegation and the total delegation of the new set of validators for tendermint
 	tmDelegation, tmTotalDelegation := CalcDelegation(nextValidatorSet, delegationState)
+	// optimal stake is calculated with respect to tendermint validators, i.e. total stake by tendermint validators
+	optimalStake := GetOptimalStake(tmTotalDelegation, len(tmDelegation), stakeScoreParams)
 
 	// calculate the anti-whaling stake score of the validators with respect to stake represented by the tm validators
-	nextValidatorsStakeScore := CalcAntiWhalingScore(tmDelegation, tmTotalDelegation, stakeScoreParams)
+	nextValidatorsStakeScore := CalcAntiWhalingScore(tmDelegation, tmTotalDelegation, optimalStake, stakeScoreParams)
 
 	// recored the performance score of the tm validators
 	nextValidatorsPerformanceScore := make(map[string]num.Decimal, len(nextValidatorSet))
