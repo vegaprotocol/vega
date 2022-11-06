@@ -1,26 +1,27 @@
 ---
 
-name: Add Issues To Project Board
+name: "Add Issues To Project Board"
 
 "on":
   issues:
     types: [opened]
+env:
+  GH_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
+  PROJECT_ID: ${{ secrets.CORE_PROJECT_ID }}
+  ISSUE_ID: ${{ github.event.issue.node_id }}
+  USER: ${{ github.actor }}
 
 jobs:
   add_issue:
     runs-on: ubuntu-latest
     steps:
-      - name: Add issue project board
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
-          PROJECT_ID: ${{ secrets.CORE_PROJECT_ID }}
-          ISSUE_ID: ${{ github.event.issue.node_id }}
+      - name: "Add issue to project board"
         run: |
           gh api graphql -f query='
-            mutation($project:ID!, $issue:ID!) {
-              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+            mutation($user:String!, $project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {clientMutationId: $user, projectId: $project, contentId: $issue}) {
                 item {
                   id
                 }
               }
-            }' -f project=$PROJECT_ID -f issue=$ISSUE_ID --jq '.data.addProjectV2ItemById.item.id'
+            }' -f project=$PROJECT_ID -f issue=$ISSUE_ID -f user=$USER
