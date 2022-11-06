@@ -196,9 +196,19 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, d
 
 func (p *Store) GetPeerAddrs() []ma.Multiaddr {
 	addrs := make([]ma.Multiaddr, 0, 10)
-	connections := p.ipfsNode.PeerHost.Network().Conns()
-	for _, conn := range connections {
-		addrs = append(addrs, conn.RemoteMultiaddr())
+
+	thisNode := p.ipfsNode.PeerHost.Network().LocalPeer()
+	peers := p.ipfsNode.PeerHost.Network().Peers()
+
+	for _, peer := range peers {
+		if peer == thisNode {
+			continue
+		}
+
+		connections := p.ipfsNode.PeerHost.Network().ConnsToPeer(peer)
+		for _, conn := range connections {
+			addrs = append(addrs, conn.RemoteMultiaddr())
+		}
 	}
 
 	return addrs
