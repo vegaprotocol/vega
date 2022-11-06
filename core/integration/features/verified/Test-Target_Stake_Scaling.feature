@@ -14,7 +14,7 @@ Feature: test the implementation of market.stake.target.scalingFactor
       | horizon | probability | auction extension |
       | 3600    | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
@@ -72,7 +72,7 @@ Feature: test the implementation of market.stake.target.scalingFactor
       | party3 | ETH/MAR22 | 0           | 0      | 0       | 0       |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   | bond  |
-      | party0 | USD   | ETH/MAR22 | 1656013 | 498288987 | 55000 |
+      | party0 | USD   | ETH/MAR22 | 94851   | 499850149 | 55000 |
       | party3 | USD   | ETH/MAR22 |       0 | 100000000 |     0 |
 
     And the parties place the following orders:
@@ -80,11 +80,10 @@ Feature: test the implementation of market.stake.target.scalingFactor
       | party1 | ETH/MAR22 | buy  | 1     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/MAR22 | sell | 1     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
-    # Excessive margin gets released now 
+    # Excessive margin gets released now
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party0 | ETH/MAR22 | 79043       | 86947  | 94851   | 110660  |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
       | party0 | USD   | ETH/MAR22 | 94851  | 499850149 | 55000 |
-
