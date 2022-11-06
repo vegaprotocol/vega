@@ -128,7 +128,7 @@ func (ns *RoundRobinSelector) retrieveHealthiestNodes(ctx context.Context, repor
 
 	reporterFn(InfoEvent, "Looking for healthiest nodes...")
 
-	rankedHashes := ns.rankHashesByOccurrence(hashCount, nodesGroupedByHash)
+	rankedHashes := ns.rankHashes(hashCount, nodesGroupedByHash)
 
 	// We return the nodes indexes that generate the same hash the most often.
 	// Since the slice is sorted for the lowest to the highest occurrences,
@@ -148,15 +148,29 @@ func (ns *RoundRobinSelector) retrieveHealthiestNodes(ctx context.Context, repor
 	return healthiestNodesIndexes, nil
 }
 
-func (ns *RoundRobinSelector) rankHashesByOccurrence(hashCount int, nodesGroupedByHash map[string]nodesByHash) []nodesByHash {
+func (ns *RoundRobinSelector) rankHashes(hashCount int, nodesGroupedByHash map[string]nodesByHash) []nodesByHash {
 	rankedHashes := make([]nodesByHash, 0, hashCount)
 	for _, groupedNodes := range nodesGroupedByHash {
 		rankedHashes = append(rankedHashes, groupedNodes)
 	}
 
-	sort.SliceStable(rankedHashes, func(i, j int) bool {
+	sort.Slice(rankedHashes, func(i, j int) bool {
+		if len(rankedHashes[i].nodesIndexes) == len(rankedHashes[j].nodesIndexes) {
+			// if we have the same number of nodes indexes, we select the ones that
+			// have the most recent block height, as we think it's the most
+			// sensible thing to do.
+			// However, if they also have the same block height, nothing can be
+			// done to really figure out which nodes are the healthiest one, so
+			// we just ensure a deterministic sorting.
+			// This can be wrong, but at least it's consistently wrong.
+			if rankedHashes[i].blockHeight == rankedHashes[j].blockHeight {
+				return rankedHashes[i].hash < rankedHashes[j].hash
+			}
+			return rankedHashes[i].blockHeight < rankedHashes[j].blockHeight
+		}
 		return len(rankedHashes[i].nodesIndexes) < len(rankedHashes[j].nodesIndexes)
 	})
+
 	return rankedHashes
 }
 
@@ -167,6 +181,7 @@ func (ns *RoundRobinSelector) groupNodeIndexesByHash(nodeStatsHashes []nodeHash)
 		if !hashAlreadyTracked {
 			nodesGroupedByHash[statsHash.hash] = nodesByHash{
 				hash:         statsHash.hash,
+				blockHeight:  statsHash.blockHeight,
 				nodesIndexes: []int{statsHash.index},
 			}
 			continue
@@ -193,14 +208,15 @@ func (ns *RoundRobinSelector) collectNodesInformation(ctx context.Context, repor
 		go func() {
 			defer wg.Done()
 
-			hash := ns.queryNodeInformation(ctx, _node, reporterFn)
+			hash, blockHeight := ns.queryNodeInformation(ctx, _node, reporterFn)
 			if hash == "" {
 				return
 			}
 
 			nodeHashes[_index] = &nodeHash{
-				hash:  hash,
-				index: _index,
+				hash:        hash,
+				blockHeight: blockHeight,
+				index:       _index,
 			}
 		}()
 	}
@@ -230,12 +246,12 @@ func (ns *RoundRobinSelector) collectNodesInformation(ctx context.Context, repor
 	return filteredNodeHashes, nil
 }
 
-func (ns *RoundRobinSelector) queryNodeInformation(ctx context.Context, node Node, reporterFn SelectionReporter) string {
+func (ns *RoundRobinSelector) queryNodeInformation(ctx context.Context, node Node, reporterFn SelectionReporter) (string, uint64) {
 	stats, err := node.Statistics(ctx)
 	if err != nil {
 		reporterFn(WarningEvent, fmt.Sprintf("Could not collect information from the node %q, skipping...", node.Host()))
 		ns.log.Warn("Could not collect statistics for the node, skipping", zap.Error(err), zap.String("host", node.Host()))
-		return ""
+		return "", 0
 	}
 
 	marshaledStats, err := json.Marshal(stats)
@@ -243,12 +259,12 @@ func (ns *RoundRobinSelector) queryNodeInformation(ctx context.Context, node Nod
 		// It's very unlikely to happen.
 		reporterFn(ErrorEvent, fmt.Sprintf("[internal error] Could not prepare the collected information from the node %q for the health check", node.Host()))
 		ns.log.Error("Could not marshal statistics to JSON, skipping", zap.Error(err), zap.String("host", node.Host()))
-		return ""
+		return "", 0
 	}
 
 	ns.log.Info("The node is responding and staged for the health check", zap.String("host", node.Host()))
 
-	return vgcrypto.HashToHex(marshaledStats)
+	return vgcrypto.HashToHex(marshaledStats), stats.BlockHeight
 }
 
 func NewRoundRobinSelector(log *zap.Logger, nodes ...Node) (*RoundRobinSelector, error) {
@@ -266,11 +282,13 @@ func NewRoundRobinSelector(log *zap.Logger, nodes ...Node) (*RoundRobinSelector,
 }
 
 type nodeHash struct {
-	hash  string
-	index int
+	hash        string
+	blockHeight uint64
+	index       int
 }
 
 type nodesByHash struct {
 	hash         string
+	blockHeight  uint64
 	nodesIndexes []int
 }

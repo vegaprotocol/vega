@@ -15,13 +15,12 @@ package nullchain
 import (
 	"context"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"net"
 	"net/http"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/blockchain"
@@ -42,10 +41,15 @@ const namedLogger = "nullchain"
 
 var (
 	ErrNotImplemented      = errors.New("not implemented for nullblockchain")
+	ErrChainReplaying      = errors.New("nullblockchain is replaying")
 	ErrGenesisFileRequired = errors.New("--blockchain.nullchain.genesis-file is required")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/application_service_mock.go -package mocks code.vegaprotocol.io/vega/core/blockchain/nullchain ApplicationService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/blockchain/nullchain TimeService,ApplicationService
+type TimeService interface {
+	GetTimeNow() time.Time
+}
+
 type ApplicationService interface {
 	InitChain(res abci.RequestInitChain) (resp abci.ResponseInitChain)
 	BeginBlock(req abci.RequestBeginBlock) (resp abci.ResponseBeginBlock)
@@ -55,13 +59,20 @@ type ApplicationService interface {
 	Info(req abci.RequestInfo) (resp abci.ResponseInfo)
 }
 
+// nullGenesis is a subset of a tendermint genesis file, just the bits we need to run the nullblockchain.
+type nullGenesis struct {
+	GenesisTime *time.Time      `json:"genesis_time"`
+	ChainID     string          `json:"chain_id"`
+	Appstate    json.RawMessage `json:"app_state"`
+}
+
 type NullBlockchain struct {
 	log                  *logging.Logger
+	cfg                  blockchain.NullChainConfig
 	app                  ApplicationService
-	srvAddress           string
-	chainID              string
-	genesisFile          string
-	genesisTime          time.Time
+	timeService          TimeService
+	srv                  *http.Server
+	genesis              nullGenesis
 	blockDuration        time.Duration
 	transactionsPerBlock uint64
 
@@ -69,29 +80,25 @@ type NullBlockchain struct {
 	blockHeight int64
 	pending     []*abci.RequestDeliverTx
 
-	srv *http.Server
-
-	mu sync.Mutex
+	mu        sync.Mutex
+	replaying atomic.Bool
 }
 
 func NewClient(
 	log *logging.Logger,
 	cfg blockchain.NullChainConfig,
+	timeService TimeService,
 ) *NullBlockchain {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
-	now := time.Now()
 	n := &NullBlockchain{
 		log:                  log,
-		srvAddress:           net.JoinHostPort(cfg.IP, strconv.Itoa(cfg.Port)),
-		chainID:              vgrand.RandomStr(12),
+		cfg:                  cfg,
+		timeService:          timeService,
 		transactionsPerBlock: cfg.TransactionsPerBlock,
 		blockDuration:        cfg.BlockDuration.Duration,
-		genesisFile:          cfg.GenesisFile,
-		genesisTime:          now,
-		now:                  now,
 		blockHeight:          1,
 		pending:              make([]*abci.RequestDeliverTx, 0),
 	}
@@ -122,21 +129,63 @@ func (n *NullBlockchain) ReloadConf(cfg blockchain.Config) {
 }
 
 func (n *NullBlockchain) StartChain() error {
-	// call info to keep the flow the same, and allow things like snapshots to initialise
-	n.app.Info(abci.RequestInfo{})
+	if err := n.parseGenesis(); err != nil {
+		return err
+	}
 
-	err := n.InitChain(n.genesisFile)
+	if r := n.app.Info(abci.RequestInfo{}); r.LastBlockHeight > 0 {
+		n.log.Info("protocol loaded from snapshot", logging.Int64("height", r.LastBlockHeight))
+		n.blockHeight = r.LastBlockHeight + 1
+		n.now = n.timeService.GetTimeNow().Add(n.blockDuration)
+	} else {
+		n.log.Info("initialising new chain", logging.String("chain-id", n.genesis.ChainID), logging.Time("chain-time", n.now))
+		err := n.InitChain()
+		if err != nil {
+			return err
+		}
+	}
+
+	// not replaying or recording, proceed as normal
+	if !n.cfg.Replay.Record && !n.cfg.Replay.Replay {
+		n.BeginBlock()
+		return nil
+	}
+
+	r, err := NewNullChainReplayer(n.app, n.cfg.Replay, n.log)
 	if err != nil {
 		return err
 	}
 
-	// Start the first block
+	if n.cfg.Replay.Replay {
+		n.log.Info("nullchain is replaying chain", logging.String("replay-file", n.cfg.Replay.ReplayFile))
+		n.replaying.Store(true)
+		defer n.replaying.Store(false)
+
+		blockHeight, blockTime, err := r.replayChain(n.blockHeight, n.genesis.ChainID)
+		if err != nil {
+			return err
+		}
+
+		if blockHeight != 0 {
+			// set the next height to where we replayed to
+			n.blockHeight = blockHeight + 1
+			n.now = blockTime.Add(n.blockDuration)
+		}
+	}
+
+	if n.cfg.Replay.Record {
+		n.log.Info("nullchain is recording chain data", logging.String("replay-file", n.cfg.Replay.ReplayFile))
+		n.app = r // sandwich our replayer between nullchain <-> protocol
+	}
+
 	n.BeginBlock()
 	return nil
 }
 
 func (n *NullBlockchain) processBlock() {
-	n.log.Debugf("processing block %d with %d transactions", n.blockHeight, len(n.pending))
+	if n.log.GetLevel() <= logging.DebugLevel {
+		n.log.Debugf("processing block %d with %d transactions", n.blockHeight, len(n.pending))
+	}
 	for _, tx := range n.pending {
 		n.app.DeliverTx(*tx)
 	}
@@ -156,11 +205,47 @@ func (n *NullBlockchain) handleTransaction(tx []byte) {
 	defer n.mu.Unlock()
 
 	n.pending = append(n.pending, &abci.RequestDeliverTx{Tx: tx})
-
-	n.log.Debugf("transaction added to block: %d of %d", len(n.pending), n.transactionsPerBlock)
+	if n.log.GetLevel() <= logging.DebugLevel {
+		n.log.Debugf("transaction added to block: %d of %d", len(n.pending), n.transactionsPerBlock)
+	}
 	if len(n.pending) == int(n.transactionsPerBlock) {
 		n.processBlock()
 	}
+}
+
+// parseGenesis reads the Tendermint genesis file defined in the cfg and saves values needed to run the chain.
+func (n *NullBlockchain) parseGenesis() error {
+	var ng nullGenesis
+	exists, err := vgfs.FileExists(n.cfg.GenesisFile)
+	if !exists || err != nil {
+		return ErrGenesisFileRequired
+	}
+
+	b, err := vgfs.ReadFile(n.cfg.GenesisFile)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(b, &ng)
+	if err != nil {
+		return err
+	}
+
+	n.now = time.Now()
+	if ng.GenesisTime != nil {
+		n.now = *ng.GenesisTime
+	} else {
+		// genesisTime not provided, just use now
+		ng.GenesisTime = &n.now
+	}
+
+	if len(ng.ChainID) == 0 {
+		// chainID not provided we'll just make one up
+		ng.ChainID = vgrand.RandomStr(12)
+	}
+
+	n.genesis = ng
+	return nil
 }
 
 // ForwardTime moves the chain time forward by the given duration, delivering any pending
@@ -171,7 +256,7 @@ func (n *NullBlockchain) ForwardTime(d time.Duration) {
 
 	nBlocks := d / n.blockDuration
 	if nBlocks == 0 {
-		n.log.Debugf("not a full block-duration, not moving time: %s < %s", d, n.blockDuration)
+		n.log.Errorf("not a full block-duration, not moving time: %s < %s", d, n.blockDuration)
 		return
 	}
 
@@ -184,50 +269,13 @@ func (n *NullBlockchain) ForwardTime(d time.Duration) {
 
 // InitChain processes the given genesis file setting the chain's time, and passing the
 // appstate through to the processors InitChain.
-func (n *NullBlockchain) InitChain(genesisFile string) error {
-	n.log.Debugf("creating chain",
-		logging.String("genesisFile", genesisFile),
-	)
-
-	exists, err := vgfs.FileExists(genesisFile)
-	if !exists || err != nil {
-		return ErrGenesisFileRequired
-	}
-
-	b, err := vgfs.ReadFile(genesisFile)
-	if err != nil {
-		return err
-	}
-
-	// Parse the appstate of the genesis file, same layout as a TM genesis-file
-	genesis := struct {
-		GenesisTime *time.Time      `json:"genesis_time"`
-		ChainID     string          `json:"chain_id"`
-		Appstate    json.RawMessage `json:"app_state"`
-	}{}
-
-	err = json.Unmarshal(b, &genesis)
-	if err != nil {
-		return err
-	}
-
-	// Set genesis-time and chain-id from genesis file
-	if genesis.GenesisTime != nil {
-		n.genesisTime = *genesis.GenesisTime
-		n.now = *genesis.GenesisTime
-	}
-
-	if len(genesis.ChainID) != 0 {
-		n.chainID = genesis.ChainID
-	}
-
+func (n *NullBlockchain) InitChain() error {
 	// read appstate so that we can set the validators
 	appstate := struct {
 		Validators map[string]struct{} `json:"validators"`
 	}{}
 
-	err = json.Unmarshal(genesis.Appstate, &appstate)
-	if err != nil {
+	if err := json.Unmarshal(n.genesis.Appstate, &appstate); err != nil {
 		return err
 	}
 
@@ -246,7 +294,7 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 	}
 
 	n.log.Debug("sending InitChain into core",
-		logging.String("chainID", n.chainID),
+		logging.String("chainID", n.genesis.ChainID),
 		logging.Int64("blockHeight", n.blockHeight),
 		logging.String("time", n.now.String()),
 		logging.Int("n_validators", len(validators)),
@@ -254,9 +302,9 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 	n.app.InitChain(
 		abci.RequestInitChain{
 			Time:          n.now,
-			ChainId:       n.chainID,
+			ChainId:       n.genesis.ChainID,
 			InitialHeight: n.blockHeight,
-			AppStateBytes: genesis.Appstate,
+			AppStateBytes: n.genesis.Appstate,
 			Validators:    validators,
 		},
 	)
@@ -264,41 +312,43 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 }
 
 func (n *NullBlockchain) BeginBlock() *NullBlockchain {
-	n.log.Debug("sending BeginBlock",
-		logging.String("time", n.now.String()),
-	)
-
-	hash, _ := hex.DecodeString(vgcrypto.RandomHash())
+	if n.log.GetLevel() <= logging.DebugLevel {
+		n.log.Debug("sending BeginBlock",
+			logging.Int64("height", n.blockHeight),
+			logging.String("time", n.now.String()),
+		)
+	}
 
 	r := abci.RequestBeginBlock{
 		Header: types.Header{
 			Time:    n.now,
 			Height:  n.blockHeight,
-			ChainID: n.chainID,
+			ChainID: n.genesis.ChainID,
 		},
-		Hash: hash,
+		Hash: vgcrypto.Hash([]byte(strconv.FormatInt(n.blockHeight+n.now.UnixNano(), 10))),
 	}
 	n.app.BeginBlock(r)
 	return n
 }
 
 func (n *NullBlockchain) EndBlock() *NullBlockchain {
-	n.log.Debug("sending EndBlock",
-		logging.Int64("blockHeight", n.blockHeight),
-	)
-	r := abci.RequestEndBlock{
-		Height: n.blockHeight,
+	if n.log.GetLevel() <= logging.DebugLevel {
+		n.log.Debug("sending EndBlock", logging.Int64("blockHeight", n.blockHeight))
 	}
-	n.app.EndBlock(r)
+	n.app.EndBlock(
+		abci.RequestEndBlock{
+			Height: n.blockHeight,
+		},
+	)
 	return n
 }
 
 func (n *NullBlockchain) GetGenesisTime(context.Context) (time.Time, error) {
-	return n.genesisTime, nil
+	return *n.genesis.GenesisTime, nil
 }
 
 func (n *NullBlockchain) GetChainID(context.Context) (string, error) {
-	return n.chainID, nil
+	return n.genesis.ChainID, nil
 }
 
 func (n *NullBlockchain) GetStatus(context.Context) (*tmctypes.ResultStatus, error) {
@@ -307,7 +357,7 @@ func (n *NullBlockchain) GetStatus(context.Context) (*tmctypes.ResultStatus, err
 			Version: "0.34.20",
 		},
 		SyncInfo: tmctypes.SyncInfo{
-			CatchingUp: false,
+			CatchingUp: n.replaying.Load(),
 		},
 	}, nil
 }
@@ -331,6 +381,9 @@ func (n *NullBlockchain) Health(_ context.Context) (*tmctypes.ResultHealth, erro
 }
 
 func (n *NullBlockchain) SendTransactionAsync(ctx context.Context, tx []byte) (*tmctypes.ResultBroadcastTx, error) {
+	if n.replaying.Load() {
+		return &tmctypes.ResultBroadcastTx{}, ErrChainReplaying
+	}
 	go func() {
 		n.handleTransaction(tx)
 	}()
@@ -339,10 +392,14 @@ func (n *NullBlockchain) SendTransactionAsync(ctx context.Context, tx []byte) (*
 }
 
 func (n *NullBlockchain) CheckTransaction(ctx context.Context, tx []byte) (*tmctypes.ResultCheckTx, error) {
-	return &tmctypes.ResultCheckTx{}, nil
+	n.log.Error("not implemented")
+	return &tmctypes.ResultCheckTx{}, ErrNotImplemented
 }
 
 func (n *NullBlockchain) SendTransactionSync(ctx context.Context, tx []byte) (*tmctypes.ResultBroadcastTx, error) {
+	if n.replaying.Load() {
+		return &tmctypes.ResultBroadcastTx{}, ErrChainReplaying
+	}
 	n.handleTransaction(tx)
 	randHash := []byte(vgrand.RandomStr(64))
 	return &tmctypes.ResultBroadcastTx{Hash: randHash}, nil

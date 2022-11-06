@@ -13,14 +13,18 @@
 - [6682](https://github.com/vegaprotocol/vega/issues/6682) - Add indexes to orders by reference query
 - [6668](https://github.com/vegaprotocol/vega/issues/6668) - Add indexes to trades by buyer/seller
 - [6628](https://github.com/vegaprotocol/vega/issues/6628) - Improve node health check in the wallet
+- [6711](https://github.com/vegaprotocol/vega/issues/6711) - `Anti-whale ersatz` validators reward stake scores
 
 ### 🐛 Fixes
+- [6701](https://github.com/vegaprotocol/vega/issues/6701) - Fix `GraphQL` `API` not returning `x-vega-*` headers
 - [6661](https://github.com/vegaprotocol/vega/issues/6661) - Scale price to asset decimal in estimate orders
+- [6685](https://github.com/vegaprotocol/vega/issues/6685) - `vega announce_node` now returns a `txHash` when successful or errors from `CheckTx`
 - [6687](https://github.com/vegaprotocol/vega/issues/6687) - Expose `admin.update_passphrase` in admin wallet API
 - [6686](https://github.com/vegaprotocol/vega/issues/6686) - Expose `admin.rename_wallet` in admin wallet API
 - [6496](https://github.com/vegaprotocol/vega/issues/6496) - Fix margin calculation for pegged and liquidity orders
 - [6670](https://github.com/vegaprotocol/vega/issues/6670) - Add governance by `ID` endpoint to `REST` bindings
 - [6679](https://github.com/vegaprotocol/vega/issues/6679) - Permit `GFN` pegged orders
+- [6707](https://github.com/vegaprotocol/vega/issues/6707) - Fix order event for liquidity provisions
 
 
 ## 0.61.0
@@ -36,6 +40,7 @@
 - [6595](https://github.com/vegaprotocol/vega/issues/6595) - Support for cross network parameter dependency and validation
 - [6627](https://github.com/vegaprotocol/vega/issues/6627) - Fix order estimates
 - [6604](https://github.com/vegaprotocol/vega/issues/6604) - Fix transfer funds documentations in `protos`
+- [6463](https://github.com/vegaprotocol/vega/issues/6463) - Implement chain replay and snapshot restore for the `nullblockchain`
 - [6652](https://github.com/vegaprotocol/vega/issues/6652) - Change protocol upgrade consensus do be based on voting power
 
 ### 🐛 Fixes
