@@ -1639,8 +1639,6 @@ DROP TYPE IF EXISTS withdrawal_status;
 
 DROP TRIGGER IF EXISTS archive_orders ON orders;
 DROP FUNCTION IF EXISTS archive_orders;
--- required because orders was created as a view and just in case the database is rebuilt on start
-DROP VIEW IF EXISTS orders;
 DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS orders_live;
 DROP TABLE IF EXISTS orders_history;
