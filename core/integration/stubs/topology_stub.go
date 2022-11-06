@@ -136,7 +136,8 @@ func (ts *TopologyStub) calculateTMScores(delegationState []*types.ValidatorData
 	}
 
 	tmDelegation, tmTotalDelegation := validators.CalcDelegation(validatorSet, delegationState)
-	tv := validators.CalcAntiWhalingScore(tmDelegation, tmTotalDelegation, stakeScoreParams)
+	optStake := validators.GetOptimalStake(tmTotalDelegation, len(tmDelegation), stakeScoreParams)
+	tv := validators.CalcAntiWhalingScore(tmDelegation, tmTotalDelegation, optStake, stakeScoreParams)
 
 	tmScores.RawValScores = tv
 	tmScores.ValScores = make(map[string]num.Decimal, len(tv))
