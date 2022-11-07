@@ -55,13 +55,13 @@ func (cmd *listActivePeers) Execute(_ []string) error {
 	peerAddresses := resp.IpAddresses
 
 	if len(peerAddresses) == 0 {
-		fmt.Printf("No active peers found:\n\n")
-	}
+		fmt.Printf("No active peers found\n")
+	} else {
+		fmt.Printf("Active Peers:\n\n")
 
-	fmt.Printf("Active Peers:\n\n")
-
-	for _, peer := range peerAddresses {
-		fmt.Printf("Active Peer:  %s\n", peer)
+		for _, peer := range peerAddresses {
+			fmt.Printf("Active Peer:  %s\n", peer)
+		}
 	}
 
 	return nil

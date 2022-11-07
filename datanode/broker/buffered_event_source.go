@@ -10,9 +10,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
@@ -59,11 +56,8 @@ func NewBufferedEventSource(log *logging.Logger, config BufferedEventSourceConfi
 		bufferFilePath:     bufferFilePath,
 	}
 
-	p := message.NewPrinter(language.English)
-	formattedMaxBufferedEvents := p.Sprintf("%f", config.MaxBufferedEvents)
-
-	fb.log.Infof("Starting buffered event source with a max buffered event count of %s, and events per buffer file size %d",
-		formattedMaxBufferedEvents, config.EventsPerFile)
+	fb.log.Infof("Starting buffered event source with a max buffered event count of %d, and events per buffer file size %d",
+		config.MaxBufferedEvents, config.EventsPerFile)
 
 	return fb, nil
 }

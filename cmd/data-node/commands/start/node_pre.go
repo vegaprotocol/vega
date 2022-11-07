@@ -106,8 +106,10 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 
 	if !dataNodeHasData && bool(l.conf.DeHistory.Enabled) && bool(l.conf.AutoInitialiseFromDeHistory) {
 		l.Log.Info("Auto Initialising Datanode From Decentralized History")
+		apiPorts := []int{l.conf.API.Port}
+		apiPorts = append(apiPorts, l.conf.DeHistory.Initialise.GrpcAPIPorts...)
 		if err = initialise.DatanodeFromDeHistory(l.ctx, l.conf.DeHistory.Initialise,
-			l.Log, l.deHistoryService, l.conf.API.Port); err != nil {
+			l.Log, l.deHistoryService, apiPorts); err != nil {
 			return fmt.Errorf("failed to initialise datanode from decentralized history:%w", err)
 		}
 		l.Log.Info("Finished Auto Initialising Datanode From Decentralized History")
