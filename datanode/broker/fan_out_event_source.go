@@ -99,49 +99,56 @@ func (e *fanOutEventSource) sendEvents(ctx context.Context) {
 	var prevSeq uint64
 	first := true
 
-	for event := range srcEventCh {
-		// Check that the sequence of events is sane:
-		//  - First event can be at any height; but event must have sequence number 1
-		//  - Subsequent events must either increase sequence number by 1 OR
-		//    Go back to 1 and increase block number by 1
-		//  Exception:
-		//   - We get two blocks with the first block number; presumably because we have genesis
-		//     or checkpoint; and then the first real block.
-		if first {
-			firstBlock = event.BlockNr()
-			first = false
-		}
-
-		firstBlockFirstEvent := event.BlockNr() == firstBlock && event.Sequence() == 1
-		sameBlockNextEvent := event.BlockNr() == prevBlock && event.Sequence() == prevSeq+1
-		nextBlockFirstEvent := event.BlockNr() == prevBlock+1 && event.Sequence() == 1
-		firstBlockAgain := event.BlockNr() == firstBlock && prevBlock == firstBlock && event.Sequence() == 1
-		ok := firstBlockFirstEvent || sameBlockNextEvent || nextBlockFirstEvent || firstBlockAgain
-
-		if !ok {
-			panic(fmt.Sprintf("non-contigouous event stream: last: %d-%d, received: %d-%d",
-				prevBlock, prevSeq, event.BlockNr(), event.Sequence()))
-		}
-
-		prevBlock, prevSeq = event.BlockNr(), event.Sequence()
-
-		// Now get on with sending event to listeners
-		for _, evtCh := range e.eventChannels {
-			// Listen for context cancels, even if we're blocked sending events
-			select {
-			case evtCh <- event:
-			case <-ctx.Done():
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case event, ok := <-srcEventCh:
+			if !ok {
 				return
 			}
-		}
-	}
+			// Check that the sequence of events is sane:
+			//  - First event can be at any height; but event must have sequence number 1
+			//  - Subsequent events must either increase sequence number by 1 OR
+			//    Go back to 1 and increase block number by 1
+			//  Exception:
+			//   - We get two blocks with the first block number; presumably because we have genesis
+			//     or checkpoint; and then the first real block.
+			if first {
+				firstBlock = event.BlockNr()
+				first = false
+			}
 
-	select {
-	case err := <-srcErrorCh:
-		for _, errorCh := range e.errorChannels {
-			errorCh <- err
+			firstBlockFirstEvent := event.BlockNr() == firstBlock && event.Sequence() == 1
+			sameBlockNextEvent := event.BlockNr() == prevBlock && event.Sequence() == prevSeq+1
+			nextBlockFirstEvent := event.BlockNr() == prevBlock+1 && event.Sequence() == 1
+			firstBlockAgain := event.BlockNr() == firstBlock && prevBlock == firstBlock && event.Sequence() == 1
+			ok = firstBlockFirstEvent || sameBlockNextEvent || nextBlockFirstEvent || firstBlockAgain
+
+			if !ok {
+				panic(fmt.Sprintf("non-contiguous event stream: last: %d-%d, received: %d-%d",
+					prevBlock, prevSeq, event.BlockNr(), event.Sequence()))
+			}
+
+			prevBlock, prevSeq = event.BlockNr(), event.Sequence()
+
+			// Now get on with sending event to listeners
+			for _, evtCh := range e.eventChannels {
+				// Listen for context cancels, even if we're blocked sending events
+				select {
+				case evtCh <- event:
+				case <-ctx.Done():
+					return
+				}
+			}
+
+		case err, ok := <-srcErrorCh:
+			if !ok {
+				return
+			}
+			for _, errorCh := range e.errorChannels {
+				errorCh <- err
+			}
 		}
-	default:
-		// Do nothing, continue
 	}
 }

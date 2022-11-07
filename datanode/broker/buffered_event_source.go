@@ -77,12 +77,14 @@ func (m *FileBufferedEventSource) Receive(ctx context.Context) (<-chan events.Ev
 	sinkEventCh := make(chan events.Event, m.sendChannelBufferSize)
 	sinkErrorCh := make(chan error, 1)
 
+	ctxWithCancel, cancel := context.WithCancel(ctx)
 	go func() {
 		m.writeEventsToBuffer(ctx, sourceEventCh, sourceErrCh, sinkErrorCh)
+		cancel()
 	}()
 
 	go func() {
-		m.readEventsFromBuffer(ctx, sinkEventCh, sinkErrorCh)
+		m.readEventsFromBuffer(ctxWithCancel, sinkEventCh, sinkErrorCh)
 	}()
 
 	return sinkEventCh, sinkErrorCh
@@ -106,7 +108,10 @@ func (m *FileBufferedEventSource) writeEventsToBuffer(ctx context.Context, sourc
 	var err error
 	for {
 		select {
-		case event := <-sourceEventCh:
+		case event, ok := <-sourceEventCh:
+			if !ok {
+				return
+			}
 			if bufferSeqNum%uint64(m.config.EventsPerFile) == 0 {
 				bufferFile, err = m.rollBufferFile(bufferFile, bufferSeqNum)
 				if err != nil {
@@ -138,8 +143,11 @@ func (m *FileBufferedEventSource) writeEventsToBuffer(ctx context.Context, sourc
 				m.lastBufferedSeqNum <- bufferSeqNum
 			}
 
-		case err = <-sourceErrCh:
-			sinkErrorCh <- err
+		case srcErr, ok := <-sourceErrCh:
+			if !ok {
+				return
+			}
+			sinkErrorCh <- srcErr
 		case <-ctx.Done():
 			return
 		}
@@ -161,6 +169,8 @@ func (m *FileBufferedEventSource) readEventsFromBuffer(ctx context.Context, sink
 				m.log.Errorf("failed to close event buffer file:%w", err)
 			}
 		}
+		close(sinkEventCh)
+		close(sinkErrorCh)
 	}()
 
 	for {
