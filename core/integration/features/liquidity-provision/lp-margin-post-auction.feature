@@ -1,12 +1,10 @@
-Feature: test the implementation of market.stake.target.scalingFactor
+Feature: Assure LP margin is correct
 
   Background:
 
     Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau  | mu | r | sigma |
       | 0.000001      | 0.01 | 0  | 0 | 1.0   |
-    #risk factor short: 0.6323374
-    #risk factor long: 0.393276818
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
@@ -23,7 +21,7 @@ Feature: test the implementation of market.stake.target.scalingFactor
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
 
-  Scenario: 001, LP first commit 50,000 which is less than required to end auction, LP then amend commit to 55,000, check the margin account
+  Scenario: Assure LP margin is released when opening auction concludes with a price lower than indicative uncrossing price at the time of LP submission
     Given the following network parameters are set:
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
@@ -53,7 +51,14 @@ Feature: test the implementation of market.stake.target.scalingFactor
       | lp1 | party0 | ETH/MAR22 | 55000             | 0.001 | sell | ASK              | 500        | 17     | amendment |
       | lp1 | party0 | ETH/MAR22 | 55000             | 0.001 | buy  | BID              | 500        | 17     | amendment |
 
-    And the parties cancel the following orders:
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search  | initial | release |
+      | party0 | ETH/MAR22 | 1380011     | 1518012 | 1656013 | 1932015 |
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin  | general   | bond  |
+      | party0 | USD   | ETH/MAR22 | 1656013 | 498288987 | 55000 |
+
+    Then the parties cancel the following orders:
       | party  | reference  |
       | party3 | sell-ref-4 |
 
@@ -64,33 +69,6 @@ Feature: test the implementation of market.stake.target.scalingFactor
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 9484         | 55000          | 10            |
 
-    Then debug detailed orderbook volumes for market "ETH/MAR22"
-
-    Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | party0 | ETH/MAR22 | 79043       | 86947  | 94851   | 110660  |
-      | party3 | ETH/MAR22 | 0           | 0      | 0       | 0       |
-    And the parties should have the following account balances:
-      | party  | asset | market id | margin | general   | bond  |
-      | party0 | USD   | ETH/MAR22 | 94851  | 499850149 | 55000 |
-      | party3 | USD   | ETH/MAR22 | 0      | 100000000 | 0     |
-
-    And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/MAR22 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/MAR22 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-
-    Then the order book should have the following volumes for market "ETH/MAR22":
-      | side | price | volume |
-      | sell | 1100  | 1      |
-      | sell | 1027  | 125    |
-      | sell | 1010  | 1      |
-      | buy  | 990   | 1      |
-      | buy  | 973   | 131    |
-      | buy  | 900   | 1      |
-
-    # Excessive margin gets released now
-    # margin maintenance level for party0: 1000*125*0.6323374=79043
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party0 | ETH/MAR22 | 79043       | 86947  | 94851   | 110660  |
