@@ -352,7 +352,7 @@ func NewMarket(
 
 	now := timeService.GetTimeNow()
 	liqEngine := liquidity.NewSnapshotEngine(
-		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
+		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, book, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
 
 	// The market is initially created in a proposed state
 	mkt.State = types.MarketStateProposed
@@ -641,8 +641,6 @@ func (m *Market) GetID() string {
 func (m *Market) PostRestore(ctx context.Context) error {
 	m.settlement.Update(m.position.Positions())
 
-	m.liquidity.ReconcileWithOrderBook(m.matching)
-
 	pps := m.position.Parties()
 	peggedOrder := m.peggedOrders.parked
 	parties := make(map[string]struct{}, len(pps)+len(peggedOrder))
@@ -840,7 +838,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 
 	for _, party := range m.liquidity.ProvisionsPerParty().Slice() {
 		// we don't care about the actual orders as they will be cancelled in the book as part of settlement anyways.
-		_, err := m.liquidity.StopLiquidityProvision(ctx, party.Party)
+		err := m.liquidity.StopLiquidityProvision(ctx, party.Party)
 		if err != nil {
 			return err
 		}
@@ -2249,7 +2247,7 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	// 2. have invalid order referencing lp order which have been canceleld
 	okOrders := []*types.Order{}
 	for _, order := range orders {
-		if m.liquidity.IsLiquidityOrder(partyID, order.ID) {
+		if order.IsLiquidityOrder() {
 			continue
 		}
 		okOrders = append(okOrders, order)
@@ -2294,7 +2292,7 @@ func (m *Market) CancelOrderWithIDGenerator(
 	}
 
 	// cancelling and amending an order that is part of the LP commitment isn't allowed
-	if m.liquidity.IsLiquidityOrder(partyID, orderID) {
+	if o, err := m.matching.GetOrderByID(orderID); err == nil && o.IsLiquidityOrder() {
 		return nil, types.ErrEditNotAllowed
 	}
 
@@ -2413,11 +2411,6 @@ func (m *Market) AmendOrderWithIDGenerator(
 		return nil, ErrTradingNotAllowed
 	}
 
-	// explicitly/directly ordering an LP commitment order is not allowed
-	if m.liquidity.IsLiquidityOrder(party, orderAmendment.OrderID) {
-		return nil, types.ErrEditNotAllowed
-	}
-
 	conf, updatedOrders, err := m.amendOrder(ctx, orderAmendment, party)
 	if err != nil {
 		return nil, err
@@ -2474,6 +2467,10 @@ func (m *Market) findOrderAndEnsureOwnership(
 			logging.Order(*existingOrder),
 			logging.Error(types.ErrInvalidMarketID),
 		)
+	}
+
+	if existingOrder.IsLiquidityOrder() {
+		return nil, false, types.ErrEditNotAllowed
 	}
 
 	return existingOrder, foundOnBook, err
@@ -3249,7 +3246,7 @@ func (m *Market) stopAllLiquidityProvisionOnReject(ctx context.Context) error {
 		// state, which means that liquidity provision can be submitted
 		// but orders would never be able to be deployed, so it's safe
 		// to ignorethe second return as it shall be an empty slice.
-		_, err := m.liquidity.StopLiquidityProvision(ctx, party)
+		err := m.liquidity.StopLiquidityProvision(ctx, party)
 		if err != nil {
 			return err
 		}

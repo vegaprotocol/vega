@@ -91,13 +91,13 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
 
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond |
-            | party0 | ETH   | USD/DEC21 | 8536   | 4972160  | 1000 |
+            | party0 | ETH   | USD/DEC21 | 8110   | 4973012  | 1000 |
             | party1 | ETH   | USD/DEC21 | 1081   | 99996757 | 0    |
             | party2 | ETH   | USD/DEC21 | 4388   | 99986836 | 0    |
-            | party0 | ETH   | USD/DEC20 | 7768   | 4972160  | 1000 |
+            | party0 | ETH   | USD/DEC20 | 7768   | 4973012  | 1000 |
             | party1 | ETH   | USD/DEC20 | 1081   | 99996757 | 0    |
             | party2 | ETH   | USD/DEC20 | 4388   | 99986836 | 0    |
-            | party0 | ETH   | USD/DEC19 | 8536   | 4972160  | 1000 |
+            | party0 | ETH   | USD/DEC19 | 8110   | 4973012  | 1000 |
             | party1 | ETH   | USD/DEC19 | 1081   | 99996757 | 0    |
             | party2 | ETH   | USD/DEC19 | 4388   | 99986836 | 0    |
 

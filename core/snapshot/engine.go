@@ -506,20 +506,10 @@ func (e *Engine) applySnap(ctx context.Context) error {
 	}
 	// iterate over all payloads, add them to the tree
 	ordered := make(map[types.SnapshotNamespace][]*types.Payload, len(nodeOrder))
-	// positions and matching are linked to the market, work out how many payloads those will be:
-	// total nodes - all nodes that aren't position or matching, divide by 2
-	// not accounting for engines that have 2 or more nodes, this is a rough approximation of how many
-	// nodes are matching/position engines, should not require reallocation
-	mbPos := (len(e.snapshot.Nodes) - len(nodeOrder) + 2) / 2
 	for _, pl := range e.snapshot.Nodes {
 		ns := pl.Namespace()
 		if _, ok := ordered[ns]; !ok {
-			if ns == types.MatchingSnapshot || ns == types.PositionsSnapshot {
-				ordered[ns] = make([]*types.Payload, 0, mbPos)
-			} else {
-				// some engines have 2, others 1
-				ordered[ns] = []*types.Payload{}
-			}
+			ordered[ns] = []*types.Payload{}
 		}
 		// node was verified and set on tree
 		ordered[ns] = append(ordered[ns], pl)

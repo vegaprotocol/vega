@@ -504,18 +504,6 @@ func getDummyData() *types.Chunk {
 			},
 		},
 	}, &types.Payload{
-		Data: &types.PayloadLiquidityPartiesLiquidityOrders{
-			PartiesLiquidityOrders: &v1.LiquidityPartiesLiquidityOrders{
-				MarketId: "key",
-			},
-		},
-	}, &types.Payload{
-		Data: &types.PayloadLiquidityPartiesOrders{
-			PartiesOrders: &v1.LiquidityPartiesOrders{
-				MarketId: "key",
-			},
-		},
-	}, &types.Payload{
 		Data: &types.PayloadLiquidityProvisions{
 			Provisions: &v1.LiquidityProvisions{
 				MarketId: "key",
@@ -687,18 +675,6 @@ func TestPayloadConversion(t *testing.T) {
 	}, &types.Payload{
 		Data: &types.PayloadLiquidityPendingProvisions{
 			PendingProvisions: &v1.LiquidityPendingProvisions{
-				MarketId: "key",
-			},
-		},
-	}, &types.Payload{
-		Data: &types.PayloadLiquidityPartiesLiquidityOrders{
-			PartiesLiquidityOrders: &v1.LiquidityPartiesLiquidityOrders{
-				MarketId: "key",
-			},
-		},
-	}, &types.Payload{
-		Data: &types.PayloadLiquidityPartiesOrders{
-			PartiesOrders: &v1.LiquidityPartiesOrders{
 				MarketId: "key",
 			},
 		},
