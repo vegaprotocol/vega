@@ -26,6 +26,7 @@
 - [6679](https://github.com/vegaprotocol/vega/issues/6679) - Permit `GFN` pegged orders
 - [6707](https://github.com/vegaprotocol/vega/issues/6707) - Fix order event for liquidity provisions
 - [6699](https://github.com/vegaprotocol/vega/issues/6699) - `orders` and `orders_current` view uses a redundant union causing performance issues
+- [6717](https://github.com/vegaprotocol/vega/issues/6717) - Fix log formatting (broker)
 
 
 ## 0.61.0
