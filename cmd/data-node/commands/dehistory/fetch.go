@@ -77,7 +77,8 @@ func (cmd *fetchCmd) Execute(args []string) error {
 				HistorySegmentId: historySegmentId,
 			})
 			if err != nil {
-				return initialise.FetchResult{}, fmt.Errorf("failed to fetch decentralized history segments:%w", err)
+				return initialise.FetchResult{},
+					errorFromGrpcError("failed to fetch decentralized history segments", err)
 			}
 
 			return initialise.FetchResult{
