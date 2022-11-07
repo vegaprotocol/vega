@@ -92,10 +92,6 @@ type Engine struct {
 	// state
 	provisions *SnapshotableProvisionsPerParty
 
-	// liquidityOrder stores the orders generated to satisfy the liquidity commitment of a given party.
-	// indexed as: map of PartyID -> OrdersID -> order
-	liquidityOrders *SnapshotablePartiesOrders
-
 	// The list of parties which submitted liquidity submission
 	// which still haven't been deployed even once.
 	pendings *SnapshotablePendingProvisions
@@ -109,6 +105,11 @@ type Engine struct {
 
 	// this is the ratio between 10^{asset_dp} / 10^{market_dp}
 	priceFactor *num.Uint
+
+	// lpPartyOrders are ones that have been removed from the book but we need to know
+	// what they were to calculate new LP orders. They are cleared once the new LP orders are
+	// ready to deploy
+	lpPartyOrders map[string][]*types.Order
 }
 
 // NewEngine returns a new Liquidity Engine.
@@ -145,8 +146,9 @@ func NewEngine(config Config,
 		// provisions related state
 		provisions: newSnapshotableProvisionsPerParty(),
 		pendings:   newSnapshotablePendingProvisions(),
-		// orders related state
-		liquidityOrders: newSnapshotablePartiesOrders(),
+
+		// lp orders that have been removed from the book but yet to be redeployed
+		lpPartyOrders: map[string][]*types.Order{},
 	}
 
 	return e
@@ -198,35 +200,6 @@ func (e *Engine) GetPending() []string {
 	return pending
 }
 
-func (e *Engine) GetAllLiquidityOrders() []*types.Order {
-	orders := []*types.Order{}
-	for _, v := range e.liquidityOrders.m {
-		for _, o := range v {
-			if o.Status == types.OrderStatusActive {
-				orders = append(orders, o)
-			}
-		}
-	}
-
-	sort.Slice(orders, func(i, j int) bool {
-		return orders[i].ID < orders[j].ID
-	})
-
-	return orders
-}
-
-func (e *Engine) GetLiquidityOrders(party string) []*types.Order {
-	orders := []*types.Order{}
-	porders, ok := e.liquidityOrders.GetForParty(party)
-	if !ok {
-		return nil
-	}
-	for _, v := range porders {
-		orders = append(orders, v)
-	}
-	return orders
-}
-
 // GetInactiveParties returns a set of all the parties
 // with inactive commitment.
 func (e *Engine) GetInactiveParties() map[string]struct{} {
@@ -241,35 +214,19 @@ func (e *Engine) GetInactiveParties() map[string]struct{} {
 
 func (e *Engine) stopLiquidityProvision(
 	ctx context.Context, party string, status types.LiquidityProvisionStatus,
-) ([]*types.Order, error) {
+) error {
 	lp, ok := e.provisions.Get(party)
 	if !ok {
-		return nil, errors.New("party have no liquidity provision orders")
+		return errors.New("party have no liquidity provision orders")
 	}
 
 	lp.Status = status
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 
-	// get the liquidity order to be cancelled
-	lorders, _ := e.liquidityOrders.GetForParty(party)
-	orders := make([]*types.Order, 0, len(lorders))
-	for _, o := range lorders {
-		orders = append(orders, o)
-	}
-
-	// FIXME(JEREMY): if sorting them is the actual solution
-	// review the implementation to write some eventually more efficient
-	// way to sort this here and make sure that all orders are always
-	// cancelled in the same order
-	sort.Slice(orders, func(i, j int) bool {
-		return orders[i].ID < orders[j].ID
-	})
-
 	// now delete all stuff
-	e.liquidityOrders.DeleteParty(party)
 	e.provisions.Delete(party)
 	e.pendings.Delete(party)
-	return orders, nil
+	return nil
 }
 
 // IsLiquidityProvider returns true if the party hold any liquidity commitmement.
@@ -280,21 +237,21 @@ func (e *Engine) IsLiquidityProvider(party string) bool {
 
 // RejectLiquidityProvision removes a parties commitment of liquidity.
 func (e *Engine) RejectLiquidityProvision(ctx context.Context, party string) error {
-	_, err := e.stopLiquidityProvision(
+	err := e.stopLiquidityProvision(
 		ctx, party, types.LiquidityProvisionStatusRejected)
 	return err
 }
 
 // CancelLiquidityProvision removes a parties commitment of liquidity
 // Returns the liquidityOrders if any.
-func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) ([]*types.Order, error) {
+func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) error {
 	return e.stopLiquidityProvision(
 		ctx, party, types.LiquidityProvisionStatusCancelled)
 }
 
 // StopLiquidityProvision removes a parties commitment of liquidity
 // Returns the liquidityOrders if any.
-func (e *Engine) StopLiquidityProvision(ctx context.Context, party string) ([]*types.Order, error) {
+func (e *Engine) StopLiquidityProvision(ctx context.Context, party string) error {
 	return e.stopLiquidityProvision(
 		ctx, party, types.LiquidityProvisionStatusStopped)
 }
@@ -302,6 +259,18 @@ func (e *Engine) StopLiquidityProvision(ctx context.Context, party string) ([]*t
 // ProvisionsPerParty returns the registered a map of party-id -> LiquidityProvision.
 func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
 	return e.provisions.ProvisionsPerParty
+}
+
+// SaveLPOrders sets LP orders that have been cancelled from the book but we need to know
+// what they were to recalculate and redeploy.
+func (e *Engine) SaveLPOrders() {
+	for _, p := range e.provisions.ProvisionsPerParty {
+		e.lpPartyOrders[p.Party] = e.orderBook.GetOrdersPerParty(p.Party)
+	}
+}
+
+func (e *Engine) ClearLPOrders() {
+	e.lpPartyOrders = map[string][]*types.Order{}
 }
 
 func (e *Engine) ValidateLiquidityProvisionSubmission(
@@ -427,7 +396,6 @@ func (e *Engine) SubmitLiquidityProvision(
 	}()
 
 	e.provisions.Set(party, lp)
-	e.liquidityOrders.ResetForParty(party)
 	e.pendings.Add(party)
 	lp.UpdatedAt = now
 	lp.CommitmentAmount = lps.CommitmentAmount
@@ -471,12 +439,6 @@ func (e *Engine) setShapesReferencesOnLiquidityProvision(
 func (e *Engine) LiquidityProvisionByPartyID(partyID string) *types.LiquidityProvision {
 	lp, _ := e.provisions.Get(partyID)
 	return lp
-}
-
-// IsLiquidityOrder checks to see if a given order is part of the LP orders for a given party.
-func (e *Engine) IsLiquidityOrder(party, order string) bool {
-	_, ok := e.liquidityOrders.Get(party, order)
-	return ok
 }
 
 // CreateInitialOrders returns two slices of orders, one for orders to be
@@ -694,9 +656,12 @@ func (e *Engine) buildOrder(side types.Side, price *num.Uint, partyID, marketID 
 func (e *Engine) undeployOrdersFromShape(
 	party string, supplied []*supplied.LiquidityOrder, side types.Side,
 ) *ToCancel {
-	lm, ok := e.liquidityOrders.GetForParty(party)
-	if !ok {
-		e.liquidityOrders.ResetForParty(party)
+	lm := map[string]*types.Order{}
+	for _, lo := range e.orderBook.GetLiquidityOrders(party) {
+		lm[lo.ID] = lo
+	}
+	for _, lo := range e.lpPartyOrders[party] {
+		lm[lo.ID] = lo
 	}
 
 	var (
@@ -726,7 +691,6 @@ func (e *Engine) undeployOrdersFromShape(
 			}
 
 			// then we can delete the order from our mapping
-			e.liquidityOrders.Delete(order.Party, order.ID)
 			delete(lm, ref.OrderID)
 		}
 	}
@@ -737,9 +701,12 @@ func (e *Engine) undeployOrdersFromShape(
 func (e *Engine) createOrdersFromShape(
 	party string, supplied []*supplied.LiquidityOrder, side types.Side,
 ) ([]*types.Order, *ToCancel) {
-	lm, ok := e.liquidityOrders.GetForParty(party)
-	if !ok {
-		e.liquidityOrders.ResetForParty(party)
+	lm := map[string]*types.Order{}
+	for _, lo := range e.orderBook.GetLiquidityOrders(party) {
+		lm[lo.ID] = lo
+	}
+	for _, lo := range e.lpPartyOrders[party] {
+		lm[lo.ID] = lo
 	}
 	lp := e.LiquidityProvisionByPartyID(party)
 
@@ -768,9 +735,6 @@ func (e *Engine) createOrdersFromShape(
 			if order.Remaining != 0 {
 				toCancel.Add(order.ID)
 			}
-
-			// then we can delete the order from our mapping
-			e.liquidityOrders.Delete(order.Party, order.ID)
 		}
 
 		// We either don't need this order anymore or
@@ -797,7 +761,6 @@ func (e *Engine) createOrdersFromShape(
 		order = e.buildOrder(side, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference, lp.ID)
 		order.ID = ref.OrderID
 		newOrders = append(newOrders, order)
-		e.liquidityOrders.Add(order.Party, order)
 		ref.OrderID = order.ID
 	}
 

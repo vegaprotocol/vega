@@ -107,19 +107,11 @@ func (b *OrderBook) LoadState(_ context.Context, payload *types.Payload) ([]type
 	for _, o := range mb.Buy {
 		b.buy.addOrder(o)
 		b.addOrderToMaps(o)
-		// reconstruct pegged orders state
-		if o.PeggedOrder != nil {
-			b.peggedOrders[o.ID] = struct{}{}
-		}
 	}
 
 	for _, o := range mb.Sell {
 		b.sell.addOrder(o)
 		b.addOrderToMaps(o)
-		// reconstruct pegged orders state
-		if o.PeggedOrder != nil {
-			b.peggedOrders[o.ID] = struct{}{}
-		}
 	}
 
 	// If we are in an auction we need to build the IP&V structure
@@ -130,13 +122,10 @@ func (b *OrderBook) LoadState(_ context.Context, payload *types.Payload) ([]type
 }
 
 func (b *OrderBook) addOrderToMaps(o *types.Order) {
-	b.ordersByID[o.ID] = o
+	b.add(o)
 
-	if orders, ok := b.ordersPerParty[o.Party]; !ok {
-		b.ordersPerParty[o.Party] = map[string]struct{}{
-			o.ID: {},
-		}
-	} else {
-		orders[o.ID] = struct{}{}
+	// reconstruct pegged orders state
+	if o.PeggedOrder != nil {
+		b.peggedOrders[o.ID] = struct{}{}
 	}
 }

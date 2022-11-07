@@ -146,8 +146,13 @@ func (m *Market) repriceAllSpecialOrders(
 	// book as no prices would be conlficting
 	needsPeggedUpdates := len(parked) > 0 || len(toSubmit) > 0
 
+	// first we save all the LP orders into the liquidity engine so that it can
+	// know the history during Update
+	m.liquidity.SaveLPOrders()
+	defer m.liquidity.ClearLPOrders()
+
 	// now we get the list of all LP orders, and get them out of the book
-	lpOrders := m.liquidity.GetAllLiquidityOrders()
+	lpOrders := m.matching.GetAllLiquidityOrders()
 	m.removeLPOrdersFromBook(ctx, lpOrders)
 
 	// now no lp orders are in the book anymore,
@@ -184,6 +189,7 @@ func (m *Market) repriceAllSpecialOrders(
 		m.log.Error("could not update liquidity", logging.Error(err))
 	}
 
+	m.liquidity.ClearLPOrders()
 	return m.updateLPOrders(ctx, lpOrders, newOrders, cancels, partiesPos)
 }
 

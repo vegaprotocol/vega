@@ -34,6 +34,20 @@ func (m *MockOrderBook) EXPECT() *MockOrderBookMockRecorder {
 	return m.recorder
 }
 
+// GetLiquidityOrders mocks base method.
+func (m *MockOrderBook) GetLiquidityOrders(arg0 string) []*types.Order {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLiquidityOrders", arg0)
+	ret0, _ := ret[0].([]*types.Order)
+	return ret0
+}
+
+// GetLiquidityOrders indicates an expected call of GetLiquidityOrders.
+func (mr *MockOrderBookMockRecorder) GetLiquidityOrders(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLiquidityOrders", reflect.TypeOf((*MockOrderBook)(nil).GetLiquidityOrders), arg0)
+}
+
 // GetOrderByID mocks base method.
 func (m *MockOrderBook) GetOrderByID(arg0 string) (*types.Order, error) {
 	m.ctrl.T.Helper()
