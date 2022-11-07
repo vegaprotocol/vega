@@ -60,7 +60,7 @@ var (
 		"oracle_data",
 		"oracle_data_current",
 		"oracle_specs",
-		"orders_history",
+		"orders",
 		"orders_live",
 		"parties",
 		"positions",

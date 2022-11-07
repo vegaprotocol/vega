@@ -175,7 +175,9 @@ create table ledger
 );
 SELECT create_hypertable('ledger', 'ledger_entry_time', chunk_time_interval => INTERVAL '1 day');
 
-CREATE TABLE orders_history (
+DROP TABLE IF EXISTS orders_history;
+
+CREATE TABLE orders (
     id                BYTEA                     NOT NULL,
     market_id         BYTEA                     NOT NULL,
     party_id          BYTEA                     NOT NULL, -- at some point add REFERENCES parties(id),
@@ -203,11 +205,11 @@ CREATE TABLE orders_history (
     PRIMARY KEY(vega_time, seq_num)
 );
 
-SELECT create_hypertable('orders_history', 'vega_time', chunk_time_interval => INTERVAL '1 day');
-CREATE INDEX ON orders_history (market_id, vega_time DESC) where vega_time_to='infinity';
-CREATE INDEX ON orders_history (party_id, vega_time DESC) where vega_time_to='infinity';
-CREATE INDEX ON orders_history (reference, vega_time DESC) where vega_time_to='infinity';
-CREATE INDEX ON orders_history (id, vega_time_to);
+SELECT create_hypertable('orders', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+CREATE INDEX ON orders (market_id, vega_time DESC) where vega_time_to='infinity';
+CREATE INDEX ON orders (party_id, vega_time DESC) where vega_time_to='infinity';
+CREATE INDEX ON orders (reference, vega_time DESC) where vega_time_to='infinity';
+CREATE INDEX ON orders (id, vega_time_to);
 
 CREATE TABLE orders_live (
     id                BYTEA                     NOT NULL,
@@ -242,13 +244,6 @@ CREATE INDEX ON orders_live (party_id, vega_time DESC);
 CREATE INDEX ON orders_live (reference, vega_time DESC);
 CREATE INDEX ON orders_live USING HASH (id);
 
--- Orders is an updatable view (via the trigger below) which handles moving rows between orders_history and orders_live
-CREATE VIEW orders AS (
-  SELECT * FROM orders_live
-  UNION
-  SELECT * FROM orders_history
-);
-
 -- +goose StatementBegin
 
 CREATE OR REPLACE FUNCTION archive_orders()
@@ -259,7 +254,7 @@ $$
     -- It is permitted by core to re-use order IDs and 'resurrect' done orders (specifically,
     -- LP orders do this, so we need to check our history table to see if we need to updated
     -- vega_time_to on any most-recent-version-of an order.
-    UPDATE orders_history
+    UPDATE orders
        SET vega_time_to = NEW.vega_time
      WHERE vega_time_to = 'infinity'
        AND id = NEW.id;
@@ -281,29 +276,21 @@ $$
               new.tx_hash, new.vega_time, new.seq_num, 'infinity');
     END IF;
 
-    INSERT INTO orders_history
-    VALUES(new.id, new.market_id, new.party_id, new.side, new.price,
-           new.size, new.remaining, new.time_in_force, new.type, new.status,
-           new.reference, new.reason, new.version, new.batch_id, new.pegged_offset,
-           new.pegged_reference, new.lp_id, new.created_at, new.updated_at, new.expires_at,
-           new.tx_hash, new.vega_time, new.seq_num, 'infinity');
-    RETURN NULL;
+    RETURN NEW;
 
     END;
 $$;
 
 -- +goose StatementEnd
 
-CREATE TRIGGER archive_orders INSTEAD OF INSERT ON orders FOR EACH ROW EXECUTE function archive_orders();
+CREATE TRIGGER archive_orders BEFORE INSERT ON orders FOR EACH ROW EXECUTE function archive_orders();
 
 
 -- Orders contains all the historical changes to each order (as of the end of the block),
 -- this view contains the *current* state of the latest version each order
 --  (e.g. it's unique on order ID)
 CREATE VIEW orders_current AS (
-  SELECT * FROM orders_live WHERE vega_time_to = 'infinity'
-  UNION
-  SELECT * FROM orders_history WHERE vega_time_to = 'infinity'
+  SELECT * FROM orders WHERE vega_time_to = 'infinity'
 );
 
 -- Manual updates to the order (e.g. user changing price level) increment the 'version'
@@ -1652,7 +1639,7 @@ DROP TYPE IF EXISTS withdrawal_status;
 
 DROP TRIGGER IF EXISTS archive_orders ON orders;
 DROP FUNCTION IF EXISTS archive_orders;
-DROP VIEW IF EXISTS orders;
+DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS orders_live;
 DROP TABLE IF EXISTS orders_history;
 

@@ -78,9 +78,10 @@ func checkOrderSubmission(cmd *commandspb.OrderSubmission) Errors {
 		}
 
 		if cmd.TimeInForce != types.Order_TIME_IN_FORCE_GTT &&
-			cmd.TimeInForce != types.Order_TIME_IN_FORCE_GTC {
+			cmd.TimeInForce != types.Order_TIME_IN_FORCE_GTC &&
+			cmd.TimeInForce != types.Order_TIME_IN_FORCE_GFN {
 			errs.AddForProperty("order_submission.time_in_force",
-				errors.New("is expected to have a time in force of type GTT or GTC when the order is pegged"),
+				errors.New("is expected to have a time in force of type GTT, GTC or GFN when the order is pegged"),
 			)
 		}
 

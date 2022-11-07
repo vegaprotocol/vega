@@ -23,7 +23,9 @@
 - [6686](https://github.com/vegaprotocol/vega/issues/6686) - Expose `admin.rename_wallet` in admin wallet API
 - [6496](https://github.com/vegaprotocol/vega/issues/6496) - Fix margin calculation for pegged and liquidity orders
 - [6670](https://github.com/vegaprotocol/vega/issues/6670) - Add governance by `ID` endpoint to `REST` bindings
+- [6679](https://github.com/vegaprotocol/vega/issues/6679) - Permit `GFN` pegged orders
 - [6707](https://github.com/vegaprotocol/vega/issues/6707) - Fix order event for liquidity provisions
+- [6699](https://github.com/vegaprotocol/vega/issues/6699) - `orders` and `orders_current` view uses a redundant union causing performance issues
 
 
 ## 0.61.0
