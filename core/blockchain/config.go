@@ -63,6 +63,12 @@ func NewDefaultTendermintConfig() TendermintConfig {
 	}
 }
 
+type ReplayConfig struct {
+	Record     bool   `long:"record" description:"whether to record block data to a file to allow replaying"`
+	Replay     bool   `long:"replay" description:"whether to replay any blockdata found in replay-file"`
+	ReplayFile string `long:"replay-file" description:"path to file of which to write/read replay data"`
+}
+
 type NullChainConfig struct {
 	Level                encoding.LogLevel `long:"log-level"`
 	BlockDuration        encoding.Duration `long:"block-duration" description:"(default 1s)"`
@@ -70,6 +76,7 @@ type NullChainConfig struct {
 	GenesisFile          string            `long:"genesis-file" description:"path to a tendermint genesis file"`
 	IP                   string            `long:"ip" description:"time-forwarding IP (default localhost)"`
 	Port                 int               `long:"port" description:"time-forwarding port (default 3009)"`
+	Replay               ReplayConfig
 }
 
 // NewDefaultNullChainConfig creates an instance of the package specific configuration, given a
@@ -81,5 +88,6 @@ func NewDefaultNullChainConfig() NullChainConfig {
 		TransactionsPerBlock: 10,
 		IP:                   "localhost",
 		Port:                 3101,
+		Replay:               ReplayConfig{},
 	}
 }

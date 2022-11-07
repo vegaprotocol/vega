@@ -362,30 +362,27 @@ func testValidatorScore(t *testing.T) {
 		OptimalStakeMultiplier: optimalStakeMultiplier,
 	}
 
-	// minVal > numVal/compLevel => a = 5
+	// valStake = 10k, totalStake = 100k, optStake = 20k
 	// valScore = 0.1
-	require.Equal(t, "0.10", CalcValidatorScore(validatorStake, totalStake, num.DecimalFromInt64(5), stakeScoreParams).StringFixed(2))
+	require.Equal(t, "0.10", CalcValidatorScore(validatorStake, totalStake, num.DecimalFromInt64(20000), stakeScoreParams).StringFixed(2))
 
-	// // minVal < numVal/compLevel => a = 20
-	// require.Equal(t, "0.05", calcValidatorScore(validatorStake, totalStake, minVal, compLevel, num.DecimalFromInt64(22), optimalStakeMultiplier).StringFixed(2))
-
-	// minVal > numVal/compLevel => a = 5
-	// valScore = 0.1
+	// valStake = 20k, totalStake = 100k, optStake = 20k
+	// valScore = 0.2
 	// no pentalty
-	require.Equal(t, "0.20", CalcValidatorScore(largeValidatorStake, totalStake, num.DecimalFromInt64(5), stakeScoreParams).StringFixed(2))
+	require.Equal(t, "0.20", CalcValidatorScore(largeValidatorStake, totalStake, num.DecimalFromInt64(20000), stakeScoreParams).StringFixed(2))
 
-	// minVal > numVal/compLevel => a = 5
-	// valScore = 0.1
+	// valStake = 60k, totalStake = 100k, optStake = 20k
+	// valScore = 0.2
 	// with flat pentalty
-	require.Equal(t, "0.20", CalcValidatorScore(extraLargeValidatorStake, totalStake, num.DecimalFromInt64(5), stakeScoreParams).StringFixed(2))
+	require.Equal(t, "0.20", CalcValidatorScore(extraLargeValidatorStake, totalStake, num.DecimalFromInt64(20000), stakeScoreParams).StringFixed(2))
 
-	// minVal > numVal/compLevel => a = 5
+	// valStake = 70k, totalStake = 100k, optStake = 20k
 	// valScore = 0.1
 	// with flat and down pentalty
-	require.Equal(t, "0.10", CalcValidatorScore(extraExtraLargeValidatorStake, totalStake, num.DecimalFromInt64(5), stakeScoreParams).StringFixed(2))
+	require.Equal(t, "0.10", CalcValidatorScore(extraExtraLargeValidatorStake, totalStake, num.DecimalFromInt64(20000), stakeScoreParams).StringFixed(2))
 
 	// no stake => 0
-	require.Equal(t, "0.00", CalcValidatorScore(num.DecimalZero(), num.DecimalZero(), num.DecimalFromInt64(5), stakeScoreParams).StringFixed(2))
+	require.Equal(t, "0.00", CalcValidatorScore(num.DecimalZero(), num.DecimalZero(), num.DecimalFromInt64(20000), stakeScoreParams).StringFixed(2))
 }
 
 func testGetValScore(t *testing.T) {
@@ -468,6 +465,7 @@ func testGetMultisigScore(t *testing.T) {
 	log := logging.NewTestLogger()
 	multisigScore := getMultisigScore(
 		log,
+		ValidatorStatusTendermint,
 		stakeScore, perfScore, multisigTopology, 5,
 		nodeIDToEthAddress,
 	)
@@ -491,7 +489,7 @@ func testGetMultisigScore(t *testing.T) {
 	multisigValidators["node100"] = struct{}{}
 	nodeIDToEthAddress["node100"] = "node100eth"
 
-	multisigScore = getMultisigScore(log, stakeScore, perfScore, multisigTopology, 5, nodeIDToEthAddress)
+	multisigScore = getMultisigScore(log, ValidatorStatusTendermint, stakeScore, perfScore, multisigTopology, 5, nodeIDToEthAddress)
 	require.Equal(t, "0", multisigScore["node1"].String())
 	require.Equal(t, "0", multisigScore["node2"].String())
 	require.Equal(t, "0", multisigScore["node3"].String())
@@ -568,7 +566,7 @@ func testCalculateTMScores(t *testing.T) {
 		{NodeID: "node11", PubKey: "node11PubKey", StakeByDelegators: num.NewUint(5000), SelfStake: num.NewUint(2000), Delegators: map[string]*num.Uint{}, TmPubKey: "key11"},
 		{NodeID: "node12", PubKey: "node12PubKey", StakeByDelegators: num.NewUint(5000), SelfStake: num.NewUint(1000), Delegators: map[string]*num.Uint{}, TmPubKey: "key12"},
 	}
-	scoreData := topology.calculateTMScores(delegation, types.StakeScoreParams{MinVal: num.DecimalFromFloat(5), CompLevel: num.DecimalFromFloat(3.3), OptimalStakeMultiplier: num.DecimalFromFloat(3)})
+	scoreData, _ := topology.calculateScores(delegation, ValidatorStatusTendermint, types.StakeScoreParams{MinVal: num.DecimalFromFloat(5), CompLevel: num.DecimalFromFloat(3.3), OptimalStakeMultiplier: num.DecimalFromFloat(3)}, nil)
 
 	require.Equal(t, 10, len(scoreData.RawValScores))
 	require.Equal(t, 10, len(scoreData.PerformanceScores))
@@ -742,7 +740,8 @@ func testCalculateErsatzScores(t *testing.T) {
 		{NodeID: "node12", PubKey: "node12PubKey", StakeByDelegators: num.NewUint(5000), SelfStake: num.NewUint(1000), Delegators: map[string]*num.Uint{}, TmPubKey: "key12"},
 	}
 	topology.rng = rand.New(rand.NewSource(100000))
-	scoreData := topology.calculateErsatzScores(delegation)
+	optimalScore := num.DecimalFromInt64(10000)
+	scoreData, _ := topology.calculateScores(delegation, ValidatorStatusErsatz, types.StakeScoreParams{MinVal: num.DecimalFromFloat(5), CompLevel: num.DecimalFromFloat(3.3), OptimalStakeMultiplier: num.DecimalFromFloat(5)}, &optimalScore)
 
 	require.Equal(t, 10, len(scoreData.RawValScores))
 	require.Equal(t, 10, len(scoreData.PerformanceScores))
@@ -752,23 +751,24 @@ func testCalculateErsatzScores(t *testing.T) {
 
 	// raw scores
 	// total = 110000
+	// opt stake = 10000
 	// node1 = 10000/110000 = 0.09090909091
 	// node2 = 5000/110000 = 0.04545454545
 	// node3 = 10000/110000 = 0.09090909091
-	// node4 = 15000/110000 = 0.1363636364
-	// node5 = 20000/110000 = 0.1818181818
-	// node6 = 12000/110000 = 0.1090909091
-	// node7 = 11000/110000 = 0.1
+	// node4 = 15000/110000 = 10000/110000 = 0.09090909091 (with flat penalty)
+	// node5 = 20000/110000 = 10000/110000 = 0.09090909091 (with flat penalty)
+	// node6 = 12000/110000 = 10000/110000 = 0.09090909091 (with flat penalty)
+	// node7 = 11000/110000 = 10000/110000 = 0.09090909091 (with flat penalty)
 	// node8 = 10000/110000 = 0.09090909091
 	// node9 = 9000/110000 = 0.08181818182
 	// node10 = 8000/110000 = 0.07272727273
 	require.Equal(t, "0.09090909", scoreData.RawValScores["node1"].StringFixed(8))
 	require.Equal(t, "0.04545455", scoreData.RawValScores["node2"].StringFixed(8))
 	require.Equal(t, "0.09090909", scoreData.RawValScores["node3"].StringFixed(8))
-	require.Equal(t, "0.13636364", scoreData.RawValScores["node4"].StringFixed(8))
-	require.Equal(t, "0.18181818", scoreData.RawValScores["node5"].StringFixed(8))
-	require.Equal(t, "0.10909091", scoreData.RawValScores["node6"].StringFixed(8))
-	require.Equal(t, "0.10000000", scoreData.RawValScores["node7"].StringFixed(8))
+	require.Equal(t, "0.09090909", scoreData.RawValScores["node4"].StringFixed(8))
+	require.Equal(t, "0.09090909", scoreData.RawValScores["node5"].StringFixed(8))
+	require.Equal(t, "0.09090909", scoreData.RawValScores["node6"].StringFixed(8))
+	require.Equal(t, "0.09090909", scoreData.RawValScores["node7"].StringFixed(8))
 	require.Equal(t, "0.09090909", scoreData.RawValScores["node8"].StringFixed(8))
 	require.Equal(t, "0.08181818", scoreData.RawValScores["node9"].StringFixed(8))
 	require.Equal(t, "0.07272727", scoreData.RawValScores["node10"].StringFixed(8))
@@ -811,11 +811,11 @@ func testCalculateErsatzScores(t *testing.T) {
 	// val score = stake_score x performance_score:
 	// node1 = 0
 	// node2 = 0.04545454545 * 0.1 = 0.004545454545
-	// node3= 0.09090909091 * 0.2 = 0.01818181818
-	// node4 = 0.1363636364 * 0.3 = 0.04090909091
-	// node5 = 0.1818181818 * 0.4 = 0.07272727273
-	// node6 = 0.1090909091 * 0.5 = 0.05454545455
-	// node7 = 0.1 * 0.6 = 0.06
+	// node3 = 0.09090909091 * 0.2 = 0.01818181818
+	// node4 = 0.09090909091 * 0.3 = 0.02727272727
+	// node5 = 0.09090909091 * 0.4 = 0.03636363636
+	// node6 = 0.09090909091 * 0.5 = 0.04545454545
+	// node7 = 0.09090909091 * 0.6 = 0.05454545455
 	// node8 = 0.09090909091 * 0.7 = 0.06363636364
 	// node9 = 0.08181818182 * 0.8 = 0.06545454545
 	// node10 = 0.07272727273 * 0.9 = 0.06545454545
@@ -824,35 +824,35 @@ func testCalculateErsatzScores(t *testing.T) {
 	require.Equal(t, "0", scoreData.ValScores["node1"].String())
 	require.Equal(t, "0.00454545455", scoreData.ValScores["node2"].StringFixed(11))
 	require.Equal(t, "0.01818181818", scoreData.ValScores["node3"].StringFixed(11))
-	require.Equal(t, "0.04090909091", scoreData.ValScores["node4"].StringFixed(11))
-	require.Equal(t, "0.07272727273", scoreData.ValScores["node5"].StringFixed(11))
-	require.Equal(t, "0.05454545455", scoreData.ValScores["node6"].StringFixed(11))
-	require.Equal(t, "0.06", scoreData.ValScores["node7"].StringFixed(2))
+	require.Equal(t, "0.02727272727", scoreData.ValScores["node4"].StringFixed(11))
+	require.Equal(t, "0.03636363636", scoreData.ValScores["node5"].StringFixed(11))
+	require.Equal(t, "0.04545454545", scoreData.ValScores["node6"].StringFixed(11))
+	require.Equal(t, "0.05454545455", scoreData.ValScores["node7"].StringFixed(11))
 	require.Equal(t, "0.06363636364", scoreData.ValScores["node8"].StringFixed(11))
 	require.Equal(t, "0.06545454545", scoreData.ValScores["node9"].StringFixed(11))
 	require.Equal(t, "0.06545454545", scoreData.ValScores["node10"].StringFixed(11))
 
 	// normalised scores
 	// node1 = 0
-	// node2 = 0.00454545455 / 0.4454545455 = 0.01020408163
-	// node3 = 0.01818181818 / 0.4454545455 = 0.04081632653
-	// node4 = 0.04090909092 / 0.4454545455 = 0.09183673469
-	// node5 = 0.07272727273 / 0.4454545455 = 0.1632653061
-	// node6 = 0.05454545455 / 0.4454545455 = 0.1224489796
-	// node7 = 0.06 / 0.4454545455 = 0.1346938776
-	// node8 = 0.06363636364 / 0.4454545455 = 0.1428571429
-	// node9 = 0.06545454545 / 0.4454545455 = 0.1469387755
-	// node10 = 0.06545454545 / 0.4454545455 = 0.1469387755
+	// node2 = 0.00454545455 / 0.3809090909 = 0.01193317424
+	// node3 = 0.01818181818 / 0.3809090909 = 0.0477326969
+	// node4 = 0.02727272727 / 0.3809090909 = 0.07159904534
+	// node5 = 0.03636363636 / 0.3809090909 = 0.09546539379
+	// node6 = 0.04545454545 / 0.3809090909 = 0.1193317422
+	// node7 = 0.05454545455 / 0.3809090909 = 0.1431980907
+	// node8 = 0.06363636364 / 0.3809090909 = 0.1670644391
+	// node9 = 0.06545454545 / 0.3809090909 = 0.1718377088
+	// node10 = 0.06545454545 / 0.3809090909 = 0.1718377088
 	require.Equal(t, "0.00000000000", scoreData.NormalisedScores["node1"].StringFixed(11))
-	require.Equal(t, "0.01020408163", scoreData.NormalisedScores["node2"].StringFixed(11))
-	require.Equal(t, "0.04081632653", scoreData.NormalisedScores["node3"].StringFixed(11))
-	require.Equal(t, "0.09183673469", scoreData.NormalisedScores["node4"].StringFixed(11))
-	require.Equal(t, "0.1632653061", scoreData.NormalisedScores["node5"].StringFixed(10))
-	require.Equal(t, "0.1224489796", scoreData.NormalisedScores["node6"].StringFixed(10))
-	require.Equal(t, "0.1346938776", scoreData.NormalisedScores["node7"].StringFixed(10))
-	require.Equal(t, "0.1428571429", scoreData.NormalisedScores["node8"].StringFixed(10))
-	require.Equal(t, "0.1469387755", scoreData.NormalisedScores["node9"].StringFixed(10))
-	require.Equal(t, "0.1469387755", scoreData.NormalisedScores["node10"].StringFixed(10))
+	require.Equal(t, "0.0119331742", scoreData.NormalisedScores["node2"].StringFixed(10))
+	require.Equal(t, "0.0477326969", scoreData.NormalisedScores["node3"].StringFixed(10))
+	require.Equal(t, "0.0715990453", scoreData.NormalisedScores["node4"].StringFixed(10))
+	require.Equal(t, "0.0954653938", scoreData.NormalisedScores["node5"].StringFixed(10))
+	require.Equal(t, "0.1193317422", scoreData.NormalisedScores["node6"].StringFixed(10))
+	require.Equal(t, "0.1431980907", scoreData.NormalisedScores["node7"].StringFixed(10))
+	require.Equal(t, "0.1670644391", scoreData.NormalisedScores["node8"].StringFixed(10))
+	require.Equal(t, "0.1718377088", scoreData.NormalisedScores["node9"].StringFixed(10))
+	require.Equal(t, "0.1718377088", scoreData.NormalisedScores["node10"].StringFixed(10))
 
 	totalNormScore := num.DecimalZero()
 	for _, d := range scoreData.NormalisedScores {

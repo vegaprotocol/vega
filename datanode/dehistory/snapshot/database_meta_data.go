@@ -3,6 +3,7 @@ package snapshot
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
@@ -121,9 +122,11 @@ func getTableSortOrders(ctx context.Context, conn *pgxpool.Pool) (map[string]str
 		return nil, fmt.Errorf("failed to get primary key indexes:%w", err)
 	}
 
+	includeRegexp := regexp.MustCompile(`(?i)include(\s*)\(.*$`)
 	tableNameToSortOrder := map[string]string{}
 	for _, pkIdx := range primaryKeyIndexes {
-		split := strings.Split(pkIdx.Indexdef, "(")
+		withoutInclude := includeRegexp.ReplaceAllString(pkIdx.Indexdef, "")
+		split := strings.Split(withoutInclude, "(")
 		if len(split) != 2 {
 			return nil, fmt.Errorf("unexpected primary key index definition:%s", pkIdx.Indexdef)
 		}

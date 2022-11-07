@@ -21,12 +21,12 @@ import (
 
 func DebugTransfers(broker *stubs.BrokerStub, log *logging.Logger) {
 	log.Info("DUMPING TRANSFERS")
-	s := fmt.Sprintf("\n\t|%40s |%40s |%25s |%25s |%15s |\n", "Type", "Reference", "From", "To", "Amount")
+	s := fmt.Sprintf("\n\t|%37s |%89s |%89s |%12s |\n", "Type", "From", "To", "Amount")
 	transferEvents := broker.GetLedgerMovements()
 	for _, e := range transferEvents {
 		for _, t := range e.LedgerMovements() {
 			for _, v := range t.GetEntries() {
-				s += fmt.Sprintf("\t|%40s |%25s |%25s |%15s |\n", v.Type, v.FromAccount, v.ToAccount, v.Amount)
+				s += fmt.Sprintf("\t|%37s |%89s |%89s |%12s |\n", v.Type, v.FromAccount, v.ToAccount, v.Amount)
 			}
 		}
 	}

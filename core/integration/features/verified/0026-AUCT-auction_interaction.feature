@@ -249,7 +249,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party2 | ETH/DEC21 | sell | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC21 | buy  | 20     | 1010  | 3                | TYPE_LIMIT | TIF_GTC |
-    
+
     # verify that we don't enter liquidity auction immediately, but at the end of block as per 0035-LIQM-003
     And the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             | target stake | supplied stake | open interest |
@@ -273,7 +273,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | AuctionEvent                       |
       | MarketUpdatedEvent                 |
     # LP repricing, checking, and cancelling emits a ton of events
-    And a total of "132" events should be emitted
+    And a total of "106" events should be emitted
 
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |

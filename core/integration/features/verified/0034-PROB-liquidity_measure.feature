@@ -23,7 +23,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | id  | decimal places |
       | ETH | 3              |
     And the markets:
-      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring | data source config          | decimal places | position decimal places |
+      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring | data source config     | decimal places | position decimal places |
       | ETH/DEC19 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2              | 2                       |
 
     Given the parties deposit on asset's general account the following amount:
@@ -35,24 +35,24 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
 
     And the parties submit the following liquidity provision:
       | id  | party      | market id | commitment amount | fee | side | pegged reference | proportion | offset | reference | lp type    |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | buy  | BID              | 1          | 100000 | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | buy  | BID              | 1          | 90000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | buy  | BID              | 1          | 80000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | buy  | BID              | 1          | 70000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | buy  | BID              | 1          | 60000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | buy  | BID              | 1          | 50000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | buy  | BID              | 1          | 40000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | buy  | BID              | 1          | 30000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | buy  | BID              | 1          | 20000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | sell | ASK              | 1          | 20000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | sell | ASK              | 1          | 30000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | sell | ASK              | 1          | 40000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | sell | ASK              | 1          | 50000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | sell | ASK              | 1          | 60000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | sell | ASK              | 1          | 70000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | sell | ASK              | 1          | 80000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | sell | ASK              | 1          | 90000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | sell | ASK              | 1          | 100000 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 100000 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 90000  | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 80000  | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 70000  | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 60000  | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 50000  | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 40000  | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 30000  | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 20000  | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 20000  | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 30000  | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 40000  | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 50000  | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 60000  | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 70000  | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 80000  | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 90000  | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 100000 | lp-1-ref  | amendment  |
 
     # Trigger an auction to set the mark price
     When the parties place the following orders:
@@ -71,25 +71,25 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     Then the order book should have the following volumes for market "ETH/DEC19":
-      | side | price      | volume      |
-      | buy  | 1199990000 | 1           |
-      | buy  | 1199970000 | 1859        |
-      | buy  | 1199960000 | 1863        |
-      | buy  | 1199950000 | 1867        |
-      | buy  | 1199940000 | 1870        |
-      | buy  | 1199930000 | 1874        |
-      | buy  | 1199920000 | 1877        |
-      | buy  | 1199910000 | 1881        |
-      | buy  | 1199900000 | 1885        |
-      | sell | 1200010000 | 1           |
-      | sell | 1200030000 | 1859        |
-      | sell | 1200040000 | 1863        |
-      | sell | 1200050000 | 1866        |
-      | sell | 1200060000 | 1870        |
-      | sell | 1200070000 | 1874        |
-      | sell | 1200080000 | 1877        |
-      | sell | 1200090000 | 1881        |
-      | sell | 1200100000 | 1884        |
+      | side | price      | volume |
+      | buy  | 1199990000 | 1      |
+      | buy  | 1199970000 | 1859   |
+      | buy  | 1199960000 | 1863   |
+      | buy  | 1199950000 | 1867   |
+      | buy  | 1199940000 | 1870   |
+      | buy  | 1199930000 | 1874   |
+      | buy  | 1199920000 | 1877   |
+      | buy  | 1199910000 | 1881   |
+      | buy  | 1199900000 | 1885   |
+      | sell | 1200010000 | 1      |
+      | sell | 1200030000 | 1859   |
+      | sell | 1200040000 | 1863   |
+      | sell | 1200050000 | 1866   |
+      | sell | 1200060000 | 1870   |
+      | sell | 1200070000 | 1874   |
+      | sell | 1200080000 | 1877   |
+      | sell | 1200090000 | 1881   |
+      | sell | 1200100000 | 1884   |
 
   Scenario:  LP pegged volume is pushed inside price monitoring bounds(0034-PROB-002, 0009-MRKP-003, 0009-MRKP-004, 0009-MRKP-005);
 
@@ -103,7 +103,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | horizon | probability | auction extension |
       | 43200   | 0.982       | 300               |
     And the markets:
-      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          |
+      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
       | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
@@ -235,7 +235,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | horizon | probability    | auction extension |
       | 43200   | 0.999999999999 | 300               |
     And the markets:
-      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          |
+      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
       | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount          |
@@ -287,7 +287,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | 0.004     | 0.001              |
 
     And the markets:
-      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring | data source config          |
+      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring | data source config     |
       | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount              |
@@ -310,6 +310,10 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
     When the opening auction period ends for market "ETH2/MAR22"
     Then the auction ends with a traded volume of "10" at a price of "1000"
 
+    And the market data for the market "ETH2/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3611         | 50000000       | 10            |
+
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party1 | 10     | 0              | 0            |
@@ -324,6 +328,9 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | buy  | 300   | 16666666666667 |
       | buy  | 900   | 1              |
 
+  # vol_LP_Short= 50000000/1709/1e-8=2.925e12
+  # vol_LP_Long= 50000000/300/1e-8=1.66e13
+
   Scenario:  Create LP shape that pegs to mid and deploys volumes and price between best ask and best bid (0034-PROB-005)
 
     Given the fees configuration named "fees-config-1":
@@ -331,7 +338,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | 0.004     | 0.001              |
 
     And the markets:
-      | id         | quote name | asset | risk model                | margin calculator         | auction duration | fees          | price monitoring | data source config          |
+      | id         | quote name | asset | risk model                | margin calculator         | auction duration | fees          | price monitoring | data source config     |
       | ETH2/MAR22 | ETH2       | ETH2  | default-simple-risk-model | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount              |

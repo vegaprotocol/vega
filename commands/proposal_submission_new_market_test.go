@@ -2709,7 +2709,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 		},
 	}
 	err = checkProposalSubmission(cNeg)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-3,100]"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-3,50]"))
 
 	cTooSmall := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -2733,7 +2733,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 		},
 	}
 	err = checkProposalSubmission(cTooSmall)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-3,100]"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-3,50]"))
 
 	cTooLarge := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -2746,7 +2746,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0.0,
-									Sigma: 100 + 1e-12,
+									Sigma: 50 + 1e-12,
 									R:     0,
 								},
 							},
@@ -2757,7 +2757,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 		},
 	}
 	err = checkProposalSubmission(cTooLarge)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-3,100]"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-3,50]"))
 
 	cJustAboutRight1 := &commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -2794,7 +2794,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 								Tau:                   0.2,
 								Params: &protoTypes.LogNormalModelParams{
 									Mu:    0.0,
-									Sigma: 100,
+									Sigma: 50,
 									R:     0,
 								},
 							},

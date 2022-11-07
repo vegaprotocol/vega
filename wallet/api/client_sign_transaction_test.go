@@ -8,9 +8,9 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
+	"code.vegaprotocol.io/vega/wallet/api/node/adapters"
 	nodemock "code.vegaprotocol.io/vega/wallet/api/node/mocks"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/golang/mock/gomock"
@@ -121,12 +121,12 @@ func testSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
-	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(&apipb.LastBlockHeightResponse{
-		Height:              100,
-		Hash:                vgrand.RandomStr(64),
-		SpamPowHashFunction: "sha3_24_rounds",
-		SpamPowDifficulty:   1,
-		ChainId:             vgrand.RandomStr(5),
+	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(adapters.LastBlock{
+		BlockHeight:             100,
+		BlockHash:               vgrand.RandomStr(64),
+		ProofOfWorkHashFunction: "sha3_24_rounds",
+		ProofOfWorkDifficulty:   1,
+		ChainID:                 vgrand.RandomStr(5),
 	}, nil)
 	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.TransactionSuccessfullySigned).Times(1)
 	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
@@ -399,7 +399,7 @@ func testFailingToGetLastBlockDoesNotSignTransaction(t *testing.T) {
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
-	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(nil, assert.AnError)
+	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(adapters.LastBlock{}, assert.AnError)
 	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get the latest block from the node: %w", assert.AnError)).Times(1)
 	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
