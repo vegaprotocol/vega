@@ -1,6 +1,6 @@
 Feature: check the impact from change of market parameter: market.liquidity.probabilityOfTrading.tau.scaling
 
-  Scenario: 001, market.liquidity.probabilityOfTrading.tau.scaling=10
+  Scenario: 001, market.liquidity.probabilityOfTrading.tau.scaling=10, 0034-PROB-006
 
     Given time is updated to "2020-11-30T00:00:00Z"
 
@@ -97,7 +97,7 @@ Feature: check the impact from change of market parameter: market.liquidity.prob
       | party1 | 52     | 704            | 0            |
       | party2 | -51    | -704           | 0            |
 
-  Scenario: 002,market.liquidity.probabilityOfTrading.tau.scaling=2
+  Scenario: 002,market.liquidity.probabilityOfTrading.tau.scaling=2, 0034-PROB-006
 
     Given time is updated to "2020-11-30T00:00:00Z"
 
@@ -194,7 +194,7 @@ Feature: check the impact from change of market parameter: market.liquidity.prob
       | party1 | 52     | 704            | 0            |
       | party2 | -51    | -704           | 0            |
 
-  Scenario: 003,market.liquidity.probabilityOfTrading.tau.scaling default
+  Scenario: 003,market.liquidity.probabilityOfTrading.tau.scaling default, 0034-PROB-006
 
     Given time is updated to "2020-11-30T00:00:00Z"
 
@@ -290,13 +290,15 @@ Feature: check the impact from change of market parameter: market.liquidity.prob
       | party1 | 52     | 704            | 0            |
       | party2 | -51    | -704           | 0            |
 
-  Scenario: 004,market.liquidity.probabilityOfTrading.tau.scaling=1
+  Scenario: 004,market.liquidity.probabilityOfTrading.tau.scaling=1, 0034-PROB-006, 0034-PROB-001, 0013-ACCT-007
 
     Given time is updated to "2020-11-30T00:00:00Z"
 
     Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
+    # risk factor short: 3.5569036
+    # risk factor long: 0.800728208
 
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -365,6 +367,7 @@ Feature: check the impact from change of market parameter: market.liquidity.prob
       | party1 | 50     | 0              | 0            |
       | party2 | -50    | 0              | 0            |
 
+    # maintenance margin level for party0: 9975*1000*3.5569036=35480114
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search   | initial  | release  |
       | party0 | ETH/MAR22 | 35480114    | 39028125 | 42576136 | 49672159 |
