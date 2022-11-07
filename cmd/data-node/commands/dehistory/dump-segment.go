@@ -2,21 +2,25 @@ package dehistory
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+
+	"google.golang.org/grpc/status"
 
 	"code.vegaprotocol.io/vega/datanode/config"
-	"code.vegaprotocol.io/vega/datanode/dehistory/initialise"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
 
-type latestHistorySegment struct {
+type dumpSegment struct {
 	config.VegaHomeFlag
 	config.Config
 }
 
-func (cmd *latestHistorySegment) Execute(_ []string) error {
+func (cmd *dumpSegment) Execute(args []string) error {
 	cfg := logging.NewDefaultConfig()
 	cfg.Custom.Zap.Level = logging.InfoLevel
 	cfg.Environment = "custom"
@@ -26,6 +30,12 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 	defer log.AtExit()
 
 	var err error
+
+	if len(args) != 1 {
+		return errors.New("expected <history-segment-id>")
+	}
+
+	segmentID := args[0]
 
 	vegaPaths := paths.New(cmd.VegaHome)
 
@@ -49,29 +59,31 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 	}
 	defer func() { _ = conn.Close() }()
 
-	resp, err := client.GetActiveDeHistoryPeerAddresses(context.Background(), &v2.GetActiveDeHistoryPeerAddressesRequest{})
+	path, err := os.Getwd()
 	if err != nil {
-		return errorFromGrpcError("failed to get active peer addresses", err)
-	}
-	peerAddresses := resp.IpAddresses
-
-	grpcAPIPorts := []int{cmd.Config.API.Port}
-	grpcAPIPorts = append(grpcAPIPorts, cmd.Config.DeHistory.Initialise.GrpcAPIPorts...)
-	suggestedRootSegment, peerToSegment, err := initialise.GetMostRecentHistorySegmentFromPeers(context.Background(), peerAddresses,
-		grpcAPIPorts)
-
-	segmentsInfo := "Most Recent History Segments:\n\n"
-	for peer, segment := range peerToSegment {
-		segmentsInfo += fmt.Sprintf("Peer:%-39s Segment{%s}\n\n", peer, segment)
+		return fmt.Errorf("failed to get working directory:%w", err)
 	}
 
-	fmt.Println(segmentsInfo)
+	targetFilePath := filepath.Join(path, segmentID+".tar")
+	_, err = client.CopyHistorySegmentToFile(context.Background(), &v2.CopyHistorySegmentToFileRequest{
+		HistorySegmentId: segmentID,
+		TargetFile:       targetFilePath,
+	})
 
 	if err != nil {
-		return fmt.Errorf("failed to get most recent history segment from peers:%w", err)
+		return errorFromGrpcError("failed to copy segment to target file", err)
 	}
 
-	fmt.Printf("Suggested segment to use to fetch decentralised history data {%s}\n\n", suggestedRootSegment)
+	fmt.Printf("segment %s dumped to target file %s\n", segmentID, targetFilePath)
 
 	return nil
+}
+
+func errorFromGrpcError(msg string, err error) error {
+	s, ok := status.FromError(err)
+	if !ok {
+		return fmt.Errorf("%s:%s", msg, err)
+	}
+
+	return fmt.Errorf("%s:%s", msg, s.Details())
 }
