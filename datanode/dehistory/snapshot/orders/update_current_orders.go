@@ -12,11 +12,11 @@ func UpdateCurrentOrdersState(ctx context.Context, vegaDbConn sqlstore.Connectio
 		SELECT id,
 		vega_time,
 		COALESCE((LEAD(vega_time) OVER w), 'infinity') as vega_time_to
-	FROM orders_history
+	FROM orders
 	WINDOW w AS (PARTITION BY id order by vega_time))
-	UPDATE orders_history SET vega_time_to=vegatimetomapping.vega_time_to
+	UPDATE orders SET vega_time_to=vegatimetomapping.vega_time_to
 	FROM vegatimetomapping
-	WHERE orders_history.id=vegatimetomapping.id AND orders_history.vega_time=vegatimetomapping.vega_time`
+	WHERE orders.id=vegatimetomapping.id AND orders.vega_time=vegatimetomapping.vega_time`
 
 	_, err := vegaDbConn.Exec(ctx, updateVegaTimeToSQL)
 	if err != nil {

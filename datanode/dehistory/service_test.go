@@ -15,16 +15,15 @@ import (
 	"testing"
 	"time"
 
-	config2 "code.vegaprotocol.io/vega/datanode/config"
-	"code.vegaprotocol.io/vega/datanode/dehistory"
-	"code.vegaprotocol.io/vega/datanode/dehistory/initialise"
-	"code.vegaprotocol.io/vega/datanode/dehistory/store"
-
 	"code.vegaprotocol.io/vega/cmd/data-node/commands/start"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
+	config2 "code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
+	"code.vegaprotocol.io/vega/datanode/dehistory"
+	"code.vegaprotocol.io/vega/datanode/dehistory/initialise"
 	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
+	"code.vegaprotocol.io/vega/datanode/dehistory/store"
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
@@ -249,11 +248,11 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmYYmDfM32z1fDSmd9P8YyZRoaShkZ7hrm9d5vVKgVegTN", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmaFMVLu72ri79eCdgQ35AuzGauwbdaRDbRwJiqzBRhbTL", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmfRCqqJ7LsbTpP48pFxohvQ8nhwE9fox7Y9icWcKkPWKo", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmXm286qSz7fi6ixMgX73Z93mZFPZsaP8Ykk4oxDUTeKbz", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmUS3C6Z8RZXAWucK2UohrbbpCuEn3GwJobtfEzCyXdGHY", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmWi1n2ThUJH5xbfpFok8t7wmkuBXT2teF5JHe4v7w8rvA", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmfWeZhn61CASePPF8fxKK1Bw1DGSyp1ugrj1MYeMiKKd3", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmW38mGsdwQLn2hVwqX6dbcNUSC3A5kxnChnvAHA17uiU6", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmZukJauzCc11ojzPyZXG9uVHXwLvaWqZAigpt1XbmXmnv", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmS1S8Pi74g5mAVCLpFZG2KSr3Fd6RnU1LXAfa8VtcYM1x", snapshots)
 	}, postgresRuntimePath)
 
 	if exitCode != 0 {
