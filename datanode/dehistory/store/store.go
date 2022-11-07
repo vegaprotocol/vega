@@ -526,23 +526,32 @@ func (p *Store) getHistorySegmentForHeight(ctx context.Context, toHeight int64, 
 	if err != nil {
 		return "", fmt.Errorf("failed to get index entry for height:%d:%w", toHeight, err)
 	}
+	segmentFileName := fmt.Sprintf("%s-%d-%d.tar", indexEntry.ChainID, indexEntry.HeightFrom, indexEntry.HeightTo)
 
-	ipfsCid, err := cid.Parse(indexEntry.HistorySegmentID)
+	historySegmentID := indexEntry.HistorySegmentID
+	pathToSegment = filepath.Join(toDir, segmentFileName)
+	err = p.CopyHistorySegmentToFile(ctx, historySegmentID, pathToSegment)
 	if err != nil {
-		return "", fmt.Errorf("failed to create ipfs content id for history segment id %s:%w", indexEntry.HistorySegmentID, err)
+		return "", fmt.Errorf("failed to get history segment:%w", err)
+	}
+	return pathToSegment, nil
+}
+
+func (p *Store) CopyHistorySegmentToFile(ctx context.Context, historySegmentID string, targetFile string) error {
+	ipfsCid, err := cid.Parse(historySegmentID)
+	if err != nil {
+		return fmt.Errorf("failed to parse history segment id:%w", err)
 	}
 
 	ipfsFile, err := p.ipfsAPI.Unixfs().Get(ctx, path.IpfsPath(ipfsCid))
 	if err != nil {
-		return "", fmt.Errorf("failed to get ipfs file:%w", err)
+		return fmt.Errorf("failed to get ipfs file:%w", err)
 	}
 
-	segmentFileName := fmt.Sprintf("%s-%d-%d.tar", indexEntry.ChainID, indexEntry.HeightFrom, indexEntry.HeightTo)
-	pathToSegment = filepath.Join(toDir, segmentFileName)
-	if err = files.WriteTo(ipfsFile, pathToSegment); err != nil {
-		return "", fmt.Errorf("failed to write to staging file:%w", err)
+	if err = files.WriteTo(ipfsFile, targetFile); err != nil {
+		return fmt.Errorf("failed to write to staging file:%w", err)
 	}
-	return pathToSegment, nil
+	return nil
 }
 
 func (p *Store) removeOldHistorySegments(ctx context.Context) ([]SegmentIndexEntry, error) {
