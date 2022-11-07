@@ -147,7 +147,7 @@ func (v *Visor) Run(ctx context.Context) error {
 				if err != nil {
 					// Binary has not started yet - waiting for first startup
 					if numOfRestarts == 0 {
-						if maxNumberOfFirstConnectionRetries > maxUpgradeStatusErrs {
+						if numOfUpgradeStatusErrs > maxNumberOfFirstConnectionRetries {
 							return failedToGetStatusErr(maxNumberOfFirstConnectionRetries, err)
 						}
 					} else { // Binary has been started already. Somethig has failed after the startup
