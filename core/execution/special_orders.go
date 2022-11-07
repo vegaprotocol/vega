@@ -191,6 +191,10 @@ func (m *Market) enterAuctionSpecialOrders(
 	ctx context.Context,
 	updatedOrders []*types.Order,
 ) {
+	// first remove all GFN orders from the peg list
+	ordersEvts := m.peggedOrders.EnterAuction(ctx)
+	m.broker.SendBatch(ordersEvts)
+
 	m.stopAllSpecialOrders(ctx, updatedOrders)
 }
 
