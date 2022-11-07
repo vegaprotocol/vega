@@ -26,6 +26,7 @@
 - [6679](https://github.com/vegaprotocol/vega/issues/6679) - Permit `GFN` pegged orders
 - [6707](https://github.com/vegaprotocol/vega/issues/6707) - Fix order event for liquidity provisions
 - [6699](https://github.com/vegaprotocol/vega/issues/6699) - `orders` and `orders_current` view uses a redundant union causing performance issues
+- [6721](https://github.com/vegaprotocol/vega/issues/6721) - Visor fix if condition for `maxNumberOfFirstConnectionRetries`
 
 
 ## 0.61.0
@@ -50,7 +51,6 @@
 - [6601](https://github.com/vegaprotocol/vega/issues/6601) - Removed resend event when the socket client fails
 - [5715](https://github.com/vegaprotocol/vega/issues/5715) - Fix documentation for Oracle Submission elements
 - [5770](https://github.com/vegaprotocol/vega/issues/5770) - Fix Nodes data query returns incorrect results
-- [6721](https://github.com/vegaprotocol/vega/issues/6721) - Visor fix if condition for maxNumberOfFirstConnectionRetries
 
 
 ## 0.60.0
