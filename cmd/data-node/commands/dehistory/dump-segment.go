@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"google.golang.org/grpc/status"
+
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -69,10 +71,19 @@ func (cmd *dumpSegment) Execute(args []string) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to copy segment to target file:%w", err)
+		return errorFromGrpcError("failed to copy segment to target file", err)
 	}
 
 	fmt.Printf("segment %s dumped to target file %s\n", segmentID, targetFilePath)
 
 	return nil
+}
+
+func errorFromGrpcError(msg string, err error) error {
+	s, ok := status.FromError(err)
+	if !ok {
+		return fmt.Errorf("%s:%s", msg, err)
+	}
+
+	return fmt.Errorf("%s:%s", msg, s.Details())
 }

@@ -51,7 +51,7 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 
 	resp, err := client.GetActiveDeHistoryPeerAddresses(context.Background(), &v2.GetActiveDeHistoryPeerAddressesRequest{})
 	if err != nil {
-		return fmt.Errorf("failed to active peer addresses:%w", err)
+		return errorFromGrpcError("failed to get active peer addresses", err)
 	}
 	peerAddresses := resp.IpAddresses
 
