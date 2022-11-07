@@ -8,6 +8,7 @@ import (
 	"net"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/service"
@@ -23,10 +24,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-var (
-	ErrFailedToGetSegment = errors.New("no history segment found")
-	ErrChainNotFound      = errors.New("no chain found")
-)
+var ErrChainNotFound = errors.New("no chain found")
 
 type deHistoryService interface {
 	GetActivePeerAddresses() []string
@@ -35,7 +33,7 @@ type deHistoryService interface {
 }
 
 func DatanodeFromDeHistory(parentCtx context.Context, cfg Config, log *logging.Logger,
-	deHistoryService deHistoryService, grpcAPIPort int,
+	deHistoryService deHistoryService, grpcPorts []int,
 ) (err error) {
 	ctx, ctxCancelFn := context.WithTimeout(parentCtx, cfg.TimeOut.Duration)
 	defer ctxCancelFn()
@@ -54,7 +52,7 @@ func DatanodeFromDeHistory(parentCtx context.Context, cfg Config, log *logging.L
 		return fmt.Errorf("failed to find any active peer addresses")
 	}
 
-	mostRecentHistorySegmentFromPeers, _, err := GetMostRecentHistorySegmentFromPeers(ctx, activePeerAddresses, grpcAPIPort)
+	mostRecentHistorySegmentFromPeers, _, err := GetMostRecentHistorySegmentFromPeers(ctx, activePeerAddresses, grpcPorts)
 	if err != nil {
 		return fmt.Errorf("failed to get most recent history segment from peers:%w", err)
 	}
@@ -89,7 +87,7 @@ func DatanodeFromDeHistory(parentCtx context.Context, cfg Config, log *logging.L
 }
 
 func GetMostRecentHistorySegmentFromPeers(ctx context.Context, peerAddresses []string,
-	grpcAPIPort int,
+	grpcAPIPorts []int,
 ) (*v2.HistorySegment, map[string]*v2.HistorySegment, error) {
 	const maxPeersToContact = 10
 
@@ -100,17 +98,20 @@ func GetMostRecentHistorySegmentFromPeers(ctx context.Context, peerAddresses []s
 	ctxWithTimeOut, ctxCancelFn := context.WithTimeout(ctx, 30*time.Second)
 	defer ctxCancelFn()
 	peerToSegment := map[string]*v2.HistorySegment{}
+	var errorMsgs []string
 	for _, peerAddress := range peerAddresses {
-		// We assume here that all/most datanodes will be running their GRPC API on the same port
-		segment, err := GetMostRecentHistorySegmentFromPeer(ctxWithTimeOut, peerAddress, grpcAPIPort)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get most recent history segment:%w", err)
+		for _, grpcAPIPort := range grpcAPIPorts {
+			segment, err := GetMostRecentHistorySegmentFromPeer(ctxWithTimeOut, peerAddress, grpcAPIPort)
+			if err == nil {
+				peerToSegment[peerAddress] = segment
+			} else {
+				errorMsgs = append(errorMsgs, err.Error())
+			}
 		}
-		peerToSegment[peerAddress] = segment
 	}
 
 	if len(peerToSegment) == 0 {
-		return nil, nil, ErrFailedToGetSegment
+		return nil, nil, fmt.Errorf(strings.Join(errorMsgs, "\n"))
 	}
 
 	rootSegment := SelectRootSegment(peerToSegment)
@@ -209,13 +210,13 @@ func DataNodeIsEmpty(ctx context.Context, connConfig sqlstore.ConnectionConfig) 
 func GetMostRecentHistorySegmentFromPeer(ctx context.Context, ip string, datanodeGrpcAPIPort int) (*v2.HistorySegment, error) {
 	client, conn, err := GetDatanodeClientFromIPAndPort(ip, datanodeGrpcAPIPort)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get datanode client")
+		return nil, fmt.Errorf("failed to get datanode client:%w", err)
 	}
 	defer func() { _ = conn.Close() }()
 
 	resp, err := client.GetMostRecentDeHistorySegment(ctx, &v2.GetMostRecentDeHistorySegmentRequest{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get most recent history segment")
+		return nil, fmt.Errorf("failed to get most recent history segment:%w", err)
 	}
 
 	return resp.GetSegment(), nil

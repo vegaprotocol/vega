@@ -55,8 +55,10 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 	}
 	peerAddresses := resp.IpAddresses
 
+	grpcAPIPorts := []int{cmd.Config.API.Port}
+	grpcAPIPorts = append(grpcAPIPorts, cmd.Config.DeHistory.Initialise.GrpcAPIPorts...)
 	suggestedRootSegment, peerToSegment, err := initialise.GetMostRecentHistorySegmentFromPeers(context.Background(), peerAddresses,
-		cmd.Config.API.Port)
+		grpcAPIPorts)
 
 	segmentsInfo := "Most Recent History Segments:\n\n"
 	for peer, segment := range peerToSegment {
