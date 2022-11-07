@@ -401,8 +401,9 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/MAR22 | buy  | 2      | 1014  | 1                | TYPE_LIMIT | TIF_GTC | buy-p1-2  |
+      | party1 | ETH/MAR22 | buy  | 1      | 1014  | 1                | TYPE_LIMIT | TIF_GTC | buy-p1-2  |
 
+    # liquidity fee: 1*1014*0.02=21
     And the accumulated liquidity fees should be "21" for the market "ETH/MAR22"
 
     Then the parties should have the following profit and loss:
