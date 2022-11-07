@@ -50,6 +50,7 @@
 - [6601](https://github.com/vegaprotocol/vega/issues/6601) - Removed resend event when the socket client fails
 - [5715](https://github.com/vegaprotocol/vega/issues/5715) - Fix documentation for Oracle Submission elements
 - [5770](https://github.com/vegaprotocol/vega/issues/5770) - Fix Nodes data query returns incorrect results
+- [6721](https://github.com/vegaprotocol/vega/issues/6721) - Visor fix if condition for maxNumberOfFirstConnectionRetries
 
 
 ## 0.60.0
