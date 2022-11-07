@@ -265,7 +265,7 @@ func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
 // what they were to recalculate and redeploy.
 func (e *Engine) SaveLPOrders() {
 	for _, p := range e.provisions.ProvisionsPerParty {
-		e.lpPartyOrders[p.Party] = e.orderBook.GetOrdersPerParty(p.Party)
+		e.lpPartyOrders[p.Party] = e.orderBook.GetLiquidityOrders(p.Party)
 	}
 }
 

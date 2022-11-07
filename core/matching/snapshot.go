@@ -106,12 +106,12 @@ func (b *OrderBook) LoadState(_ context.Context, payload *types.Payload) ([]type
 
 	for _, o := range mb.Buy {
 		b.buy.addOrder(o)
-		b.addOrderToMaps(o)
+		b.add(o)
 	}
 
 	for _, o := range mb.Sell {
 		b.sell.addOrder(o)
-		b.addOrderToMaps(o)
+		b.add(o)
 	}
 
 	// If we are in an auction we need to build the IP&V structure
@@ -119,13 +119,4 @@ func (b *OrderBook) LoadState(_ context.Context, payload *types.Payload) ([]type
 		b.indicativePriceAndVolume = NewIndicativePriceAndVolume(b.log, b.buy, b.sell)
 	}
 	return nil, nil
-}
-
-func (b *OrderBook) addOrderToMaps(o *types.Order) {
-	b.add(o)
-
-	// reconstruct pegged orders state
-	if o.PeggedOrder != nil {
-		b.peggedOrders[o.ID] = struct{}{}
-	}
 }

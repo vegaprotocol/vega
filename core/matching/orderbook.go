@@ -799,12 +799,6 @@ func (b *OrderBook) ReSubmitSpecialOrders(order *types.Order) {
 
 	// now we can nicely add the order to the book, no uncrossing needed
 	b.getSide(order.Side).addOrder(order)
-
-	// only for pegged orders, liquidity orders do not get added in here
-	if order.PeggedOrder != nil {
-		b.peggedOrders[order.ID] = struct{}{}
-	}
-
 	b.add(order)
 }
 
@@ -842,9 +836,6 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// and we did not hit a error / wash trade error
 	if order.IsPersistent() && err == nil {
 		b.getSide(order.Side).addOrder(order)
-		if order.PeggedOrder != nil {
-			b.peggedOrders[order.ID] = struct{}{}
-		}
 		// also add it to the indicative price and volume if in auction
 		if b.auction {
 			b.indicativePriceAndVolume.AddVolumeAtPrice(
@@ -1120,6 +1111,10 @@ func (b *OrderBook) add(o *types.Order) {
 		}
 	} else {
 		orders[o.ID] = struct{}{}
+	}
+
+	if o.PeggedOrder != nil {
+		b.peggedOrders[o.ID] = struct{}{}
 	}
 
 	if !o.IsLiquidityOrder() {
