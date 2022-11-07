@@ -23,7 +23,7 @@ Feature: test the implementation of market.stake.target.scalingFactor
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
 
-  Scenario: 002, LP first commit 50,000 which is less than required to end auction, LP then amend commit to 55,000
+  Scenario: 001, LP first commit 50,000 which is less than required to end auction, LP then amend commit to 55,000, check the margin account
     Given the following network parameters are set:
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
@@ -71,16 +71,26 @@ Feature: test the implementation of market.stake.target.scalingFactor
       | party0 | ETH/MAR22 | 79043       | 86947  | 94851   | 110660  |
       | party3 | ETH/MAR22 | 0           | 0      | 0       | 0       |
     And the parties should have the following account balances:
-      | party  | asset | market id | margin  | general   | bond  |
-      | party0 | USD   | ETH/MAR22 | 94851   | 499850149 | 55000 |
-      | party3 | USD   | ETH/MAR22 |       0 | 100000000 |     0 |
+      | party  | asset | market id | margin | general   | bond  |
+      | party0 | USD   | ETH/MAR22 | 94851  | 499850149 | 55000 |
+      | party3 | USD   | ETH/MAR22 | 0      | 100000000 | 0     |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/MAR22 | buy  | 1     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/MAR22 | sell | 1     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/MAR22 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | sell | 1100  | 1      |
+      | sell | 1027  | 125    |
+      | sell | 1010  | 1      |
+      | buy  | 990   | 1      |
+      | buy  | 973   | 131    |
+      | buy  | 900   | 1      |
 
     # Excessive margin gets released now
+    # margin maintenance level for party0: 1000*125*0.6323374=79043
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party0 | ETH/MAR22 | 79043       | 86947  | 94851   | 110660  |
