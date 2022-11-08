@@ -41,11 +41,11 @@ func addTestNode(t *testing.T, ps *sqlstore.Node, block entities.Block, id strin
 	return node
 }
 
-func addNodeAnnounced(t *testing.T, ps *sqlstore.Node, nodeID entities.NodeID, added bool, fromEpoch uint64, vegatime time.Time) {
+func addNodeAnnounced(t *testing.T, ps *sqlstore.Node, nodeID entities.NodeID, added bool, epochSeq uint64, vegatime time.Time) {
 	t.Helper()
 	aux := entities.ValidatorUpdateAux{
-		Added:     added,
-		FromEpoch: fromEpoch,
+		Added:    added,
+		EpochSeq: epochSeq,
 	}
 	err := ps.AddNodeAnnouncedEvent(context.Background(), nodeID.String(), vegatime, &aux)
 	require.NoError(t, err)

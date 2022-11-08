@@ -534,6 +534,7 @@ func (t *Topology) sendValidatorUpdateEvent(ctx context.Context, data ValidatorD
 		data.AvatarURL,
 		data.FromEpoch,
 		added,
+		t.epochSeq,
 	))
 }
 

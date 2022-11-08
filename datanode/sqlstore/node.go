@@ -102,7 +102,7 @@ func (store *Node) AddNodeAnnouncedEvent(ctx context.Context, nodeID string, veg
 		ON CONFLICT (node_id, epoch_seq, vega_time) DO UPDATE SET
 			added=EXCLUDED.added`,
 		entities.NodeID(nodeID),
-		aux.FromEpoch,
+		aux.EpochSeq,
 		aux.Added,
 		aux.TxHash,
 		vegatime,

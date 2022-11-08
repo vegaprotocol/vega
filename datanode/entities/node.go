@@ -54,7 +54,7 @@ type Node struct {
 
 type ValidatorUpdateAux struct {
 	Added           bool
-	FromEpoch       uint64
+	EpochSeq        uint64
 	VegaPubKeyIndex uint32
 	TxHash          TxHash
 }
@@ -132,7 +132,7 @@ func NodeFromValidatorUpdateEvent(evt eventspb.ValidatorUpdate, txHash TxHash, v
 			RankingScore:      nil,
 		}, ValidatorUpdateAux{
 			Added:           evt.Added,
-			FromEpoch:       evt.FromEpoch,
+			EpochSeq:        evt.EpochSeq,
 			VegaPubKeyIndex: evt.VegaPubKeyIndex,
 			TxHash:          txHash,
 		}, nil
