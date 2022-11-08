@@ -8,9 +8,10 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | BTC        | BTC   | my-simple-risk-model | default-margin-calculator | 5                | default-none | default-basic    | default-eth-for-future |
     And the following network parameters are set:
-      | name                               | value |
-      | market.auction.minimumDuration     | 5     |
-      | network.floatingPointUpdates.delay | 10s   |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 5     |
+      | network.floatingPointUpdates.delay      | 10s   |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @OpenIP
   Scenario: Simple test with different indicative price before auction uncross
@@ -92,15 +93,17 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party5 | t5-s-1    | STATUS_FILLED    |
       | party6 | t6-b-1    | STATUS_CANCELLED |
 
+    When the network moves ahead "1" blocks
+    And the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release |
+      | party2 | ETH/DEC19 | 39992       | 43991  | 47990   | 55988   |
     Then the following transfers should happen:
       | from   | to     | from account        | to account           | market id | amount | asset |
-      | party2 | party2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9480   | BTC   |
+      | party4 | party4 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 1320   | BTC   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
-      | party2 | BTC   | ETH/DEC19 | 19200  | 99980800 |
-      | party1 | BTC   | ETH/DEC19 | 108000 | 99892000 |
-      # values before uint
-      #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
+      | party2 | BTC   | ETH/DEC19 | 47990  | 99952010 |
+      | party1 | BTC   | ETH/DEC19 | 54010  | 99945990 |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
       | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
@@ -162,15 +165,18 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party1 | t1-b-3    | STATUS_CANCELLED |
       | party2 | t2-s-3    | STATUS_FILLED    |
 
-    Then the following transfers should happen:
+    When the network moves ahead "1" blocks
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release |
+      | party2 | ETH/DEC19 | 39992       | 43991  | 47990   | 55988   |
+    And the following transfers should happen:
       | from   | to     | from account        | to account           | market id | amount | asset |
-      | party2 | party2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9480   | BTC   |
+      | party4 | party4 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 1440   | BTC   |
+
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
-      | party2 | BTC   | ETH/DEC19 | 19200  | 99980800 |
-      | party1 | BTC   | ETH/DEC19 | 96000  | 99904000 |
-      # values before uint
-      #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
+      | party2 | BTC   | ETH/DEC19 | 47990  | 99952010 |
+      | party1 | BTC   | ETH/DEC19 | 48009  | 99951991 |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
       | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
@@ -247,13 +253,17 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party5 | t5-s-1    | STATUS_FILLED    |
       | party6 | t6-b-1    | STATUS_CANCELLED |
 
-    Then the following transfers should happen:
+    When the network moves ahead "1" blocks
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release |
+      | party2 | ETH/DEC19 | 39992       | 43991  | 47990   | 55988   |
+    And the following transfers should happen:
       | from   | to     | from account        | to account           | market id | amount | asset |
-      | party2 | party2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9480   | BTC   |
+      | party4 | party4 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 1320   | BTC   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
-      | party2 | BTC   | ETH/DEC19 | 19200  | 99980800 |
-      | party1 | BTC   | ETH/DEC19 | 108000 | 99892000 |
+      | party2 | BTC   | ETH/DEC19 | 47990  | 99952010 |
+      | party1 | BTC   | ETH/DEC19 | 54010  | 99945990 |
       # values before uint
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
     And the market data for the market "ETH/DEC19" should be:
@@ -338,15 +348,14 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party5 | t5-s-1    | STATUS_CANCELLED |
       | party6 | t6-b-1    | STATUS_FILLED    |
 
+    When the network moves ahead "1" blocks
     Then the following transfers should happen:
       | from   | to     | from account        | to account           | market id | amount | asset |
-      | party2 | party2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9480   | BTC   |
+      | party4 | party4 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 1440   | BTC   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
-      | party2 | BTC   | ETH/DEC19 | 19200  | 99980800 |
-      #| party1 | BTC   | ETH/DEC19 | 108000 | 99892000 |
-      # values before uint
-      #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
+      | party2 | BTC   | ETH/DEC19 | 47990  | 99952010 |
+      | party1 | BTC   | ETH/DEC19 | 42008  | 99957992 |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
       | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
