@@ -57,9 +57,11 @@ set
 	dataSourceSpec := spec.ExternalDataSourceSpec.Spec
 	signers := []entities.Signer{}
 	filters := []entities.Filter{}
-	if dataSourceSpec.Config != nil {
-		filters = dataSourceSpec.Config.Filters
-		signers = dataSourceSpec.Config.Signers
+	if dataSourceSpec.Data != nil {
+		if dataSourceSpec.Data.External != nil {
+			filters = dataSourceSpec.Data.External.Filters
+			signers = dataSourceSpec.Data.External.Signers
+		}
 	}
 	if _, err := os.Connection.Exec(ctx, query, dataSourceSpec.ID, dataSourceSpec.CreatedAt, dataSourceSpec.UpdatedAt, signers,
 		filters, dataSourceSpec.Status, dataSourceSpec.TxHash, dataSourceSpec.VegaTime); err != nil {
@@ -83,9 +85,11 @@ order by id, vega_time desc`, getOracleSpecsQuery())
 				ID:        spec.ID,
 				CreatedAt: spec.CreatedAt,
 				UpdatedAt: spec.UpdatedAt,
-				Config: &entities.DataSourceSpecConfiguration{
-					Filters: spec.Filters,
-					Signers: spec.Signers,
+				Data: &entities.DataSourceDefinition{
+					External: &entities.DataSourceDefinitionExternal{
+						Signers: spec.Signers,
+						Filters: spec.Filters,
+					},
 				},
 				Status:   spec.Status,
 				TxHash:   spec.TxHash,
@@ -106,20 +110,22 @@ func (os *OracleSpec) GetSpecs(ctx context.Context, pagination entities.OffsetPa
 
 	specs := []entities.DataSourceSpec{}
 	for _, specRaw := range specsRaw {
-		specs = append(specs,
-			entities.DataSourceSpec{
-				ID:        specRaw.ID,
-				CreatedAt: specRaw.CreatedAt,
-				UpdatedAt: specRaw.UpdatedAt,
-				Config: &entities.DataSourceSpecConfiguration{
-					Filters: specRaw.Filters,
+		newSpec := entities.DataSourceSpec{
+			ID:        specRaw.ID,
+			CreatedAt: specRaw.CreatedAt,
+			UpdatedAt: specRaw.UpdatedAt,
+			Data: &entities.DataSourceDefinition{
+				External: &entities.DataSourceDefinitionExternal{
 					Signers: specRaw.Signers,
+					Filters: specRaw.Filters,
 				},
-				Status:   specRaw.Status,
-				TxHash:   specRaw.TxHash,
-				VegaTime: specRaw.VegaTime,
 			},
-		)
+			Status:   specRaw.Status,
+			TxHash:   specRaw.TxHash,
+			VegaTime: specRaw.VegaTime,
+		}
+
+		specs = append(specs, newSpec)
 	}
 	return specs, err
 }
@@ -172,22 +178,26 @@ func (os *OracleSpec) getSpecsWithPageInfo(ctx context.Context, pagination entit
 
 	if len(dataSpecs) > 0 {
 		for i := range dataSpecs {
-			specs = append(specs, entities.OracleSpec{
+			newSpecs := entities.OracleSpec{
 				ExternalDataSourceSpec: &entities.ExternalDataSourceSpec{
 					Spec: &entities.DataSourceSpec{
 						ID:        dataSpecs[i].ID,
 						CreatedAt: dataSpecs[i].CreatedAt,
 						UpdatedAt: dataSpecs[i].UpdatedAt,
-						Config: &entities.DataSourceSpecConfiguration{
-							Filters: dataSpecs[i].Filters,
-							Signers: dataSpecs[i].Signers,
+						Data: &entities.DataSourceDefinition{
+							External: &entities.DataSourceDefinitionExternal{
+								Signers: dataSpecs[i].Signers,
+								Filters: dataSpecs[i].Filters,
+							},
 						},
 						Status:   dataSpecs[i].Status,
 						TxHash:   dataSpecs[i].TxHash,
 						VegaTime: dataSpecs[i].VegaTime,
 					},
 				},
-			})
+			}
+
+			specs = append(specs, newSpecs)
 		}
 	}
 	specs, pageInfo = entities.PageEntities[*v2.OracleSpecEdge](specs, pagination)

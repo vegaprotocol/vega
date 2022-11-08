@@ -5,29 +5,33 @@
     "id": "1",
     "createdAt": "0",
     "updatedAt": "0",
-    "config": {
-      "signers": [
-        {
-          "pubKey": {
-            "key": "0xDEADBEEF"
-          }
-        },
-        {
-          "pubKey": {
-            "key": "0xCAFEDOOD"
-          }
-        }
-      ],
-      "filters": [
-        {
-          "key": {
-            "name": "prices.ETH.value",
-            "type": "TYPE_INTEGER"
-          },
-          "conditions": [
+    "data": {
+      "external": {
+        "oracle": {
+          "signers": [
+            {
+              "pubKey": {
+                "key": "0xDEADBEEF"
+              }
+            },
+            {
+              "pubKey": {
+                "key": "0xCAFEDOOD"
+              }
+            }
+          ],
+          "filters": [
+            {
+              "key": {
+                "name": "prices.ETH.value",
+                "type": "TYPE_INTEGER"
+              },
+              "conditions": [
+              ]
+            }
           ]
         }
-      ]
+      }
     },
     "status": "STATUS_UNSPECIFIED"
   },
@@ -35,29 +39,33 @@
     "id": "2",
     "createdAt": "0",
     "updatedAt": "0",
-    "config": {
-      "signers": [
-        {
-          "pubKey": {
-            "key": "0xDEADBEEF"
-          }
-        },
-        {
-          "pubKey": {
-            "key": "0xCAFEDOOD"
-          }
-        }
-      ],
-      "filters": [
-        {
-          "key": {
-            "name": "trading.terminated",
-            "type": "TYPE_BOOLEAN"
-          },
-          "conditions": [
+    "data": {
+      "external": {
+        "oracle": {
+          "signers": [
+            {
+              "pubKey": {
+                "key": "0xDEADBEEF"
+              }
+            },
+            {
+              "pubKey": {
+                "key": "0xCAFEDOOD"
+              }
+            }
+          ],
+          "filters": [
+            {
+              "key": {
+                "name": "trading.terminated",
+                "type": "TYPE_BOOLEAN"
+              },
+              "conditions": [
+              ]
+            }
           ]
         }
-      ]
+      }
     },
     "status": "STATUS_UNSPECIFIED"
   },

@@ -33,6 +33,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"github.com/stretchr/testify/require"
@@ -331,33 +332,41 @@ func newMarket(ID string, pubKey *types.SignerPubKey) *types.Market {
 						SettlementAsset: "Ethereum/Ether",
 						DataSourceSpecForSettlementData: &types.DataSourceSpec{
 							ID: hex.EncodeToString(crypto.Hash([]byte(ID + "price"))),
-							Config: &types.DataSourceSpecConfiguration{
-								Signers: []*types.Signer{types.CreateSignerFromString(pubKey.PubKey.Key, types.DataSignerTypePubKey)},
-								Filters: []*types.DataSourceSpecFilter{
-									{
-										Key: &types.DataSourceSpecPropertyKey{
-											Name: "prices.ETH.value",
-											Type: datapb.PropertyKey_TYPE_INTEGER,
+							Data: types.NewDataSourceDefinition(
+								vegapb.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&types.DataSourceSpecConfiguration{
+									Signers: []*types.Signer{types.CreateSignerFromString(pubKey.PubKey.Key, types.DataSignerTypePubKey)},
+									Filters: []*types.DataSourceSpecFilter{
+										{
+											Key: &types.DataSourceSpecPropertyKey{
+												Name: "prices.ETH.value",
+												Type: datapb.PropertyKey_TYPE_INTEGER,
+											},
+											Conditions: []*types.DataSourceSpecCondition{},
 										},
-										Conditions: []*types.DataSourceSpecCondition{},
 									},
 								},
-							},
+							),
 						},
 						DataSourceSpecForTradingTermination: &types.DataSourceSpec{
 							ID: hex.EncodeToString(crypto.Hash([]byte(ID + "tt"))),
-							Config: &types.DataSourceSpecConfiguration{
-								Signers: []*types.Signer{types.CreateSignerFromString(pubKey.PubKey.Key, types.DataSignerTypePubKey)},
-								Filters: []*types.DataSourceSpecFilter{
-									{
-										Key: &types.DataSourceSpecPropertyKey{
-											Name: "trading.terminated",
-											Type: datapb.PropertyKey_TYPE_BOOLEAN,
+							Data: types.NewDataSourceDefinition(
+								vegapb.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&types.DataSourceSpecConfiguration{
+									Signers: []*types.Signer{types.CreateSignerFromString(pubKey.PubKey.Key, types.DataSignerTypePubKey)},
+									Filters: []*types.DataSourceSpecFilter{
+										{
+											Key: &types.DataSourceSpecPropertyKey{
+												Name: "trading.terminated",
+												Type: datapb.PropertyKey_TYPE_BOOLEAN,
+											},
+											Conditions: []*types.DataSourceSpecCondition{},
 										},
-										Conditions: []*types.DataSourceSpecCondition{},
 									},
 								},
-							},
+							),
 						},
 						DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
 							SettlementDataProperty:     "prices.ETH.value",

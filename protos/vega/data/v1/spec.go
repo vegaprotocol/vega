@@ -6,15 +6,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 )
 
-func (DataSourceSpec) IsEvent() {}
-
-func NewDataSourceSpec(sc *DataSourceSpecConfiguration) *DataSourceSpec {
-	return &DataSourceSpec{
-		Id:     NewID(sc.Signers, sc.Filters),
-		Config: sc,
-	}
-}
-
 func NewID(signers []*Signer, filters []*Filter) string {
 	buf := []byte{}
 	for _, filter := range filters {
@@ -29,12 +20,41 @@ func NewID(signers []*Signer, filters []*Filter) string {
 	return hex.EncodeToString(crypto.Hash(buf))
 }
 
-func NewOracleSpec(d *DataSourceSpec) *OracleSpec {
-	return &OracleSpec{
-		ExternalDataSourceSpec: &ExternalDataSourceSpec{
-			Spec: d,
-		},
+func (p PropertyKey) DeepClone() *PropertyKey {
+	return &PropertyKey{
+		Name: p.Name,
+		Type: p.Type,
 	}
 }
 
-func (*OracleSpec) IsEvent() {}
+func (p Property) DeepClone() *Property {
+	return &p
+}
+
+func (c Condition) DeepClone() *Condition {
+	return &Condition{
+		Value:    c.Value,
+		Operator: c.Operator,
+	}
+}
+
+func (s Signer) DeepClone() *Signer {
+	return &Signer{
+		Signer: s.Signer,
+	}
+}
+
+func (f Filter) DeepClone() *Filter {
+	if f.Key != nil {
+		f.Key = f.Key.DeepClone()
+	}
+
+	if len(f.Conditions) > 0 {
+		conditions := f.Conditions
+		f.Conditions = make([]*Condition, len(conditions))
+		for i, c := range conditions {
+			f.Conditions[i] = c.DeepClone()
+		}
+	}
+	return &f
+}

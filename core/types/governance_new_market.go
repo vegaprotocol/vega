@@ -400,8 +400,8 @@ func InstrumentConfigurationFromProto(
 			Future: &FutureProduct{
 				SettlementAsset:                     pr.Future.SettlementAsset,
 				QuoteName:                           pr.Future.QuoteName,
-				DataSourceSpecForSettlementData:     DataSourceSpecConfigurationFromProto(pr.Future.DataSourceSpecForSettlementData),
-				DataSourceSpecForTradingTermination: DataSourceSpecConfigurationFromProto(pr.Future.DataSourceSpecForTradingTermination),
+				DataSourceSpecForSettlementData:     *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData),
+				DataSourceSpecForTradingTermination: *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination),
 				SettlementDataDecimalPlaces:         pr.Future.SettlementDataDecimals,
 				DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
 			},
@@ -425,8 +425,8 @@ func (InstrumentConfigurationFuture) isInstrumentConfigurationProduct() {}
 type FutureProduct struct {
 	SettlementAsset                     string
 	QuoteName                           string
-	DataSourceSpecForSettlementData     *DataSourceSpecConfiguration
-	DataSourceSpecForTradingTermination *DataSourceSpecConfiguration
+	DataSourceSpecForSettlementData     DataSourceDefinition
+	DataSourceSpecForTradingTermination DataSourceDefinition
 	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
 	SettlementDataDecimalPlaces         uint32
 }
@@ -443,11 +443,13 @@ func (f FutureProduct) IntoProto() *vegapb.FutureProduct {
 }
 
 func (f FutureProduct) DeepClone() *FutureProduct {
+	settlData := f.DataSourceSpecForSettlementData.DeepClone()
+	termData := f.DataSourceSpecForTradingTermination.DeepClone()
 	return &FutureProduct{
 		SettlementAsset:                     f.SettlementAsset,
 		QuoteName:                           f.QuoteName,
-		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.DeepClone(),
-		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.DeepClone(),
+		DataSourceSpecForSettlementData:     settlData,
+		DataSourceSpecForTradingTermination: termData,
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.DeepClone(),
 	}
 }

@@ -52,7 +52,3 @@ message Data {
 message ExternalData {
   Data data = 1;
 }
-
-message OracleData {
-  ExternalData external_data = 1;
-}
