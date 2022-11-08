@@ -39,7 +39,6 @@ func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider) {
 		am := e.markets[m.mkt.ID]
 		m.nextMTM = am.nextMTM
 		e.log.Debug("serialising market", logging.String("id", m.mkt.ID))
-		mkt := m.getState()
 		mks = append(mks, m.getState())
 
 		if _, ok := e.generatedProviders[m.GetID()]; !ok {

@@ -728,7 +728,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	// check auction, if any
 	m.checkAuction(ctx, t)
 	// MTM if we have to (ie time passed, not in auction, and we have a mark price)
-	if mp := m.getMarkPrice(); !mp.IsZero() && !m.nextMTM.After(t) && !m.as.InAuction() {
+	if mp := m.getCurrentMarkPrice(); mp != nil && !mp.IsZero() && !m.nextMTM.After(t) && !m.as.InAuction() {
 		m.nextMTM = t.Add(m.mtmDelta)                 // add delta here
 		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
 		dummy := &types.Order{
@@ -1067,8 +1067,8 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	// now that we're left the auction, we can mark all positions
 	// in case any party is distressed (Which shouldn't be possible)
 	// we'll fall back to the a network order at the new mark price (mid-price)
-	cmp := m.getCurrentMarkPrice()
-	mcmp := num.UintZero().Div(cmp, m.priceFactor) // create the market representation of the price
+	// cmp := m.getCurrentMarkPrice()
+	// mcmp := num.UintZero().Div(cmp, m.priceFactor) // create the market representation of the price
 	// m.confirmMTM(ctx, &types.Order{
 	// ID:            m.idgen.NextID(),
 	// Price:         cmp,
@@ -1616,7 +1616,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	}
 
 	m.handleConfirmationPassiveOrders(ctx, conf)
-	end := m.as.CanLeave()
+	// end := m.as.CanLeave()
 
 	if len(conf.Trades) > 0 {
 		// Calculate and set current mark price
@@ -1663,11 +1663,12 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 
 func (m *Market) confirmMTM(
 	ctx context.Context, order *types.Order,
-) (orderUpdates []*types.Order) {
+) {
 	// now let's get the transfers for MTM settlement
 	markPrice := m.getCurrentMarkPrice()
 	evts := m.position.UpdateMarkPrice(markPrice)
 	settle := m.settlement.SettleMTM(ctx, markPrice, evts)
+	var orderUpdates []*types.Order
 
 	// Only process collateral and risk once per order, not for every trade
 	margins := m.collateralAndRisk(ctx, settle)
@@ -1697,7 +1698,11 @@ func (m *Market) confirmMTM(
 		m.updateLiquidityFee(ctx)
 	}
 
-	return orderUpdates
+	// orders updated -> check reference moves
+	if len(orderUpdates) > 0 && !m.as.InAuction() {
+		m.checkForReferenceMoves(
+			ctx, orderUpdates, false)
+	}
 }
 
 // updateLiquidityFee computes the current LiquidityProvision fee and updates
