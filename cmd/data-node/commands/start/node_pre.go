@@ -19,7 +19,7 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"google.golang.org/grpc"
-	"gopkg.in/natefinch/lumberjack.v2"
+	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
@@ -104,6 +104,14 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		return fmt.Errorf("failed to check if data node has scheme or is empty: %w", err)
 	}
 
+	if dataNodeHasData && bool(l.conf.SQLStore.WipeOnStartup) {
+		if err = sqlstore.WipeDatabase(l.Log, l.conf.SQLStore.ConnectionConfig); err != nil {
+			return fmt.Errorf("failed to wiped database:%w", err)
+		}
+		dataNodeHasData = false
+		l.Log.Info("Wiped all existing data from the datanode")
+	}
+
 	if !dataNodeHasData && bool(l.conf.DeHistory.Enabled) && bool(l.conf.AutoInitialiseFromDeHistory) {
 		l.Log.Info("Auto Initialising Datanode From Decentralized History")
 		apiPorts := []int{l.conf.API.Port}
@@ -175,7 +183,7 @@ func (l *NodeCommand) initialiseDatabase() error {
 
 	hasVegaSchema, err := initialise.HasVegaSchema(l.ctx, l.conf.SQLStore.ConnectionConfig)
 	if err != nil {
-		return fmt.Errorf("failed to check if database is empty: %w", err)
+		return fmt.Errorf("failed to check if database has schema: %w", err)
 	}
 
 	// If it's an empty database, recreate it with correct locale settings
@@ -186,7 +194,7 @@ func (l *NodeCommand) initialiseDatabase() error {
 		}
 	}
 
-	err = sqlstore.MigrateToLatestSchema(l.Log, l.conf.SQLStore)
+	err = sqlstore.MigrateSchema(l.Log, l.conf.SQLStore.ConnectionConfig)
 	if err != nil {
 		return fmt.Errorf("failed to migrate to latest schema:%w", err)
 	}
