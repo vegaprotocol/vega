@@ -14,7 +14,6 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party4 | BTC   | 100000000 |
       | lpprov | BTC   | 100000000 |
 
-  @MTMDelta2
   Scenario: set up 2 parties with balance
     # place orders and generate trades
     When the parties place the following orders:

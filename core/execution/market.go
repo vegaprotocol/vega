@@ -725,15 +725,12 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 		}
 	}
 
-	wasAuction := m.as.InAuction()
 	// check auction, if any
 	m.checkAuction(ctx, t)
-	if wasAuction {
-		// @TODO remove GFA orders from book and update positions so we MTM correctly
-	}
-	// MTM if we have to (ie time passed, not in auction, and we have a mark price)
-	// if mp := m.getCurrentMarkPrice(); mp != nil && !mp.IsZero() && !m.nextMTM.After(t) && !m.as.InAuction() {
-	if mp := m.getCurrentMarkPrice(); mp != nil && !mp.IsZero() && ((!m.nextMTM.After(t) && !m.as.InAuction()) || (!m.as.InAuction() && wasAuction)) {
+
+	// MTM if enough time has elapsed, we are not in auction, and we have a non-zero mark price.
+	// we MTM in leaveAuction before deploying LP orders like we did before, but we do update nextMTM there
+	if mp := m.getCurrentMarkPrice(); mp != nil && !mp.IsZero() && !m.nextMTM.After(t) && !m.as.InAuction() {
 		m.nextMTM = t.Add(m.mtmDelta)                 // add delta here
 		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
 		dummy := &types.Order{
@@ -1057,8 +1054,6 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	// or which were cancelled at end of auction
 	updatedOrders := []*types.Order{}
 
-	// parties := make([]string, 0, len(ordersToCancel))
-	// pMap := make(map[string]struct{}, len(ordersToCancel))
 	// Process each order we have to cancel
 	for _, order := range ordersToCancel {
 		conf, err := m.cancelOrder(ctx, order.Party, order.ID)
@@ -1069,27 +1064,20 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		}
 
 		updatedOrders = append(updatedOrders, conf.Order)
-		// if _, ok := pMap[order.Party]; !ok {
-		// pMap[order.Party] = struct{}{}
-		// parties = append(parties, order.Party)
-		// }
 	}
-	// update settlement removing these orders
-	// we are leaving an auction, these should be GFA orders
-	// @TODO MTMDelta check this
-	// mEvts := m.position.GetPositionsByParty(parties...)
-	// m.settlement.Update(mEvts)
 
 	// now that we're left the auction, we can mark all positions
 	// in case any party is distressed (Which shouldn't be possible)
 	// we'll fall back to the a network order at the new mark price (mid-price)
-	// cmp := m.getCurrentMarkPrice()
-	// mcmp := num.UintZero().Div(cmp, m.priceFactor) // create the market representation of the price
-	// m.confirmMTM(ctx, &types.Order{
-	// ID:            m.idgen.NextID(),
-	// Price:         cmp,
-	// OriginalPrice: mcmp,
-	// })
+	cmp := m.getCurrentMarkPrice()
+	mcmp := num.UintZero().Div(cmp, m.priceFactor) // create the market representation of the price
+	m.confirmMTM(ctx, &types.Order{
+		ID:            m.idgen.NextID(),
+		Price:         cmp,
+		OriginalPrice: mcmp,
+	})
+	// set next MTM
+	m.nextMTM = m.timeService.GetTimeNow().Add(m.mtmDelta)
 
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.Left(ctx, now)
