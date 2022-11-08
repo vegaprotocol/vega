@@ -29,6 +29,7 @@ Feature: Test liquidity provider reward distribution
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
+      | network.markPriceUpdateMaximumFrequency             | 1s    |
 
   Given the average block duration is "2"
 
@@ -36,7 +37,7 @@ Feature: Test liquidity provider reward distribution
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
-      | lp1     | ETH   | 1000000000 |
+      | lp1    | ETH   | 1000000000 |
       | party1 | ETH   | 100000000  |
       | party2 | ETH   | 100000000  |
 
@@ -57,7 +58,7 @@ Feature: Test liquidity provider reward distribution
     Then the opening auction period ends for market "ETH/DEC21"
 
     And the following trades should be executed:
-      | buyer   | price | size | seller  |
+      | buyer  | price | size | seller  |
       | party1 | 1000  | 10   | party2 |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"

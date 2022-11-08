@@ -1,5 +1,10 @@
 Feature: Fees calculations
 
+  Background:
+    Given the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
+
   Scenario: Testing fees in continuous trading with one trade
 
     Given the fees configuration named "fees-config-1":
@@ -41,7 +46,7 @@ Feature: Fees calculations
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |
-    When the parties place the following orders:
+    When the parties place the following orders "1" blocks apart:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC21 | buy  | 300    | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -52,7 +57,7 @@ Feature: Fees calculations
     And the accumulated infrastructure fees should be "0" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders "1" blocks apart:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader4 | ETH/DEC21 | sell | 400    | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
 
@@ -82,12 +87,17 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1082   | 8934    |
+      | trader3 | ETH   | ETH/DEC21 | 1089   | 8927    |
+      #| trader3 | ETH   | ETH/DEC21 | 1082   | 8934    |
       | trader4 | ETH   | ETH/DEC21 | 715    | 8961    |
 
     And the accumulated infrastructure fees should be "7" for the asset "ETH"
-    And the accumulated liquidity fees should be "301" for the market "ETH/DEC21"
+    ## Because we move forwards in time to MTM, the fees have been paid already. We see the transfer of 301, but that is paid out
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+    #And the accumulated liquidity fees should be "301" for the market "ETH/DEC21"
 
+  # @TODO
+  @MTMDelta
   Scenario: Testing fees in continuous trading with two trades
 
     Given the fees configuration named "fees-config-1":
