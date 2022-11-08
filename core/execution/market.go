@@ -1706,7 +1706,6 @@ func (m *Market) confirmMTM(
 		m.checkForReferenceMoves(
 			ctx, orderUpdates, false)
 	}
-	fmt.Println("Performed MTM settlement")
 }
 
 // updateLiquidityFee computes the current LiquidityProvision fee and updates
