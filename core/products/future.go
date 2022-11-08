@@ -275,10 +275,7 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 	}
 
 	// Oracle spec for trading termination.
-	oracleSpecForTerminatedMarket, err := oracles.NewOracleSpec(
-		types.ExternalDataSourceSpec{
-			Spec: f.DataSourceSpecForTradingTermination,
-		})
+	oracleSpecForTerminatedMarket, err := oracles.NewOracleSpec(*f.DataSourceSpecForTradingTermination.ToExternalDataSourceSpec())
 	if err != nil {
 		return nil, err
 	}

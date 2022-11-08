@@ -18,6 +18,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	"github.com/stretchr/testify/assert"
@@ -49,21 +50,24 @@ func testOracleSpecCreatingWithoutPubKeysFails(t *testing.T) {
 	// given
 	spec := types.ExternalDataSourceSpec{
 		Spec: &types.DataSourceSpec{
-			Config: &types.DataSourceSpecConfiguration{
-				Signers: []*types.Signer{},
-				Filters: []*types.DataSourceSpecFilter{
-					{
-						Key: &types.DataSourceSpecPropertyKey{
-							Name: "price",
-							Type: datapb.PropertyKey_TYPE_INTEGER,
+			Data: types.NewDataSourceDefinition(
+				vegapb.DataSourceDefinitionTypeExt,
+			).SetOracleConfig(
+				&types.DataSourceSpecConfiguration{
+					Signers: []*types.Signer{},
+					Filters: []*types.DataSourceSpecFilter{
+						{
+							Key: &types.DataSourceSpecPropertyKey{
+								Name: "price",
+								Type: datapb.PropertyKey_TYPE_INTEGER,
+							},
+							Conditions: []*types.DataSourceSpecCondition{},
 						},
-						Conditions: []*types.DataSourceSpecCondition{},
 					},
 				},
-			},
+			),
 		},
 	}
-
 	// when
 	oracleSpec, err := oracles.NewOracleSpec(spec)
 
@@ -77,12 +81,16 @@ func testOracleSpecCreatingWithoutFiltersFails(t *testing.T) {
 	// given
 	spec := types.ExternalDataSourceSpec{
 		Spec: &types.DataSourceSpec{
-			Config: &types.DataSourceSpecConfiguration{
-				Signers: []*types.Signer{
-					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+			Data: types.NewDataSourceDefinition(
+				vegapb.DataSourceDefinitionTypeExt,
+			).SetOracleConfig(
+				&types.DataSourceSpecConfiguration{
+					Signers: []*types.Signer{
+						types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+					},
+					Filters: []*types.DataSourceSpecFilter{},
 				},
-				Filters: []*types.DataSourceSpecFilter{},
-			},
+			),
 		},
 	}
 
@@ -99,17 +107,21 @@ func testOracleSpecCreatingWithFiltersWithoutKeyFails(t *testing.T) {
 	// given
 	spec := types.ExternalDataSourceSpec{
 		Spec: &types.DataSourceSpec{
-			Config: &types.DataSourceSpecConfiguration{
-				Signers: []*types.Signer{
-					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-				},
-				Filters: []*types.DataSourceSpecFilter{
-					{
-						Key:        nil,
-						Conditions: nil,
+			Data: types.NewDataSourceDefinition(
+				vegapb.DataSourceDefinitionTypeExt,
+			).SetOracleConfig(
+				&types.DataSourceSpecConfiguration{
+					Signers: []*types.Signer{
+						types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+					},
+					Filters: []*types.DataSourceSpecFilter{
+						{
+							Key:        nil,
+							Conditions: nil,
+						},
 					},
 				},
-			},
+			),
 		},
 	}
 
@@ -126,20 +138,24 @@ func testOracleSpecCreatingWithFiltersWithoutPropertyNameFails(t *testing.T) {
 	// given
 	spec := types.ExternalDataSourceSpec{
 		Spec: &types.DataSourceSpec{
-			Config: &types.DataSourceSpecConfiguration{
-				Signers: []*types.Signer{
-					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-				},
-				Filters: []*types.DataSourceSpecFilter{
-					{
-						Key: &types.DataSourceSpecPropertyKey{
-							Name: "",
-							Type: datapb.PropertyKey_TYPE_INTEGER,
+			Data: types.NewDataSourceDefinition(
+				vegapb.DataSourceDefinitionTypeExt,
+			).SetOracleConfig(
+				&types.DataSourceSpecConfiguration{
+					Signers: []*types.Signer{
+						types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+					},
+					Filters: []*types.DataSourceSpecFilter{
+						{
+							Key: &types.DataSourceSpecPropertyKey{
+								Name: "",
+								Type: datapb.PropertyKey_TYPE_INTEGER,
+							},
+							Conditions: nil,
 						},
-						Conditions: nil,
 					},
 				},
-			},
+			),
 		},
 	}
 
@@ -156,37 +172,41 @@ func testOracleSpecCreatingWithSplitFiltersWithSameTypeWorks(t *testing.T) {
 	// given
 	spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 		Spec: &types.DataSourceSpec{
-			Config: &types.DataSourceSpecConfiguration{
-				Signers: []*types.Signer{
-					types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
-					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-				},
-				Filters: []*types.DataSourceSpecFilter{
-					{
-						Key: &types.DataSourceSpecPropertyKey{
-							Name: "prices.BTC.value",
-							Type: datapb.PropertyKey_TYPE_INTEGER,
-						},
-						Conditions: []*types.DataSourceSpecCondition{
-							{
-								Value:    "42",
-								Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+			Data: types.NewDataSourceDefinition(
+				vegapb.DataSourceDefinitionTypeExt,
+			).SetOracleConfig(
+				&types.DataSourceSpecConfiguration{
+					Signers: []*types.Signer{
+						types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+						types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+					},
+					Filters: []*types.DataSourceSpecFilter{
+						{
+							Key: &types.DataSourceSpecPropertyKey{
+								Name: "prices.BTC.value",
+								Type: datapb.PropertyKey_TYPE_INTEGER,
 							},
-						},
-					}, {
-						Key: &types.DataSourceSpecPropertyKey{
-							Name: "prices.BTC.value",
-							Type: datapb.PropertyKey_TYPE_INTEGER,
-						},
-						Conditions: []*types.DataSourceSpecCondition{
-							{
-								Value:    "84",
-								Operator: datapb.Condition_OPERATOR_LESS_THAN,
+							Conditions: []*types.DataSourceSpecCondition{
+								{
+									Value:    "42",
+									Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+								},
+							},
+						}, {
+							Key: &types.DataSourceSpecPropertyKey{
+								Name: "prices.BTC.value",
+								Type: datapb.PropertyKey_TYPE_INTEGER,
+							},
+							Conditions: []*types.DataSourceSpecCondition{
+								{
+									Value:    "84",
+									Operator: datapb.Condition_OPERATOR_LESS_THAN,
+								},
 							},
 						},
 					},
 				},
-			},
+			),
 		},
 	})
 
@@ -229,37 +249,41 @@ func testOracleSpecCreatingWithSplitFiltersWithDifferentTypeWorks(t *testing.T) 
 	// given
 	originalSpec := types.ExternalDataSourceSpec{
 		Spec: &types.DataSourceSpec{
-			Config: &types.DataSourceSpecConfiguration{
-				Signers: []*types.Signer{
-					types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
-					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-				},
-				Filters: []*types.DataSourceSpecFilter{
-					{
-						Key: &types.DataSourceSpecPropertyKey{
-							Name: "prices.BTC.value",
-							Type: datapb.PropertyKey_TYPE_INTEGER,
-						},
-						Conditions: []*types.DataSourceSpecCondition{
-							{
-								Value:    "42",
-								Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+			Data: types.NewDataSourceDefinition(
+				vegapb.DataSourceDefinitionTypeExt,
+			).SetOracleConfig(
+				&types.DataSourceSpecConfiguration{
+					Signers: []*types.Signer{
+						types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+						types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+					},
+					Filters: []*types.DataSourceSpecFilter{
+						{
+							Key: &types.DataSourceSpecPropertyKey{
+								Name: "prices.BTC.value",
+								Type: datapb.PropertyKey_TYPE_INTEGER,
 							},
-						},
-					}, {
-						Key: &types.DataSourceSpecPropertyKey{
-							Name: "prices.BTC.value",
-							Type: datapb.PropertyKey_TYPE_TIMESTAMP,
-						},
-						Conditions: []*types.DataSourceSpecCondition{
-							{
-								Value:    "84",
-								Operator: datapb.Condition_OPERATOR_LESS_THAN,
+							Conditions: []*types.DataSourceSpecCondition{
+								{
+									Value:    "42",
+									Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+								},
+							},
+						}, {
+							Key: &types.DataSourceSpecPropertyKey{
+								Name: "prices.BTC.value",
+								Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+							},
+							Conditions: []*types.DataSourceSpecCondition{
+								{
+									Value:    "84",
+									Operator: datapb.Condition_OPERATOR_LESS_THAN,
+								},
 							},
 						},
 					},
 				},
-			},
+			),
 		},
 	}
 
@@ -302,25 +326,29 @@ func testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails(t *testing.T) {
 			// given
 			originalSpec := types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
-					Config: &types.DataSourceSpecConfiguration{
-						Signers: []*types.Signer{
-							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-						},
-						Filters: []*types.DataSourceSpecFilter{
-							{
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: "prices.BTC.value",
-									Type: c.typ,
-								},
-								Conditions: []*types.DataSourceSpecCondition{
-									{
-										Value:    c.value,
-										Operator: datapb.Condition_OPERATOR_EQUALS,
+					Data: types.NewDataSourceDefinition(
+						vegapb.DataSourceDefinitionTypeExt,
+					).SetOracleConfig(
+						&types.DataSourceSpecConfiguration{
+							Signers: []*types.Signer{
+								types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+							},
+							Filters: []*types.DataSourceSpecFilter{
+								{
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "prices.BTC.value",
+										Type: c.typ,
+									},
+									Conditions: []*types.DataSourceSpecCondition{
+										{
+											Value:    c.value,
+											Operator: datapb.Condition_OPERATOR_EQUALS,
+										},
 									},
 								},
 							},
 						},
-					},
+					),
 				},
 			}
 
@@ -338,26 +366,30 @@ func testOracleSpecMatchingUnauthorizedPubKeysFails(t *testing.T) {
 	// given
 	spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 		Spec: &types.DataSourceSpec{
-			Config: &types.DataSourceSpecConfiguration{
-				Signers: []*types.Signer{
-					types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
-					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-				},
-				Filters: []*types.DataSourceSpecFilter{
-					{
-						Key: &types.DataSourceSpecPropertyKey{
-							Name: "prices.BTC.value",
-							Type: datapb.PropertyKey_TYPE_INTEGER,
-						},
-						Conditions: []*types.DataSourceSpecCondition{
-							{
-								Value:    "42",
-								Operator: datapb.Condition_OPERATOR_EQUALS,
+			Data: types.NewDataSourceDefinition(
+				vegapb.DataSourceDefinitionTypeExt,
+			).SetOracleConfig(
+				&types.DataSourceSpecConfiguration{
+					Signers: []*types.Signer{
+						types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+						types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+					},
+					Filters: []*types.DataSourceSpecFilter{
+						{
+							Key: &types.DataSourceSpecPropertyKey{
+								Name: "prices.BTC.value",
+								Type: datapb.PropertyKey_TYPE_INTEGER,
+							},
+							Conditions: []*types.DataSourceSpecCondition{
+								{
+									Value:    "42",
+									Operator: datapb.Condition_OPERATOR_EQUALS,
+								},
 							},
 						},
 					},
 				},
-			},
+			),
 		},
 	})
 
@@ -383,27 +415,31 @@ func testOracleSpecMatchingAuthorizedPubKeysSucceeds(t *testing.T) {
 	// given
 	spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 		Spec: &types.DataSourceSpec{
-			Config: &types.DataSourceSpecConfiguration{
-				Signers: []*types.Signer{
-					types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
-					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-					types.CreateSignerFromString("0xBADDCAFE", types.DataSignerTypePubKey),
-				},
-				Filters: []*types.DataSourceSpecFilter{
-					{
-						Key: &types.DataSourceSpecPropertyKey{
-							Name: "prices.BTC.value",
-							Type: datapb.PropertyKey_TYPE_INTEGER,
-						},
-						Conditions: []*types.DataSourceSpecCondition{
-							{
-								Value:    "42",
-								Operator: datapb.Condition_OPERATOR_EQUALS,
+			Data: types.NewDataSourceDefinition(
+				vegapb.DataSourceDefinitionTypeExt,
+			).SetOracleConfig(
+				&types.DataSourceSpecConfiguration{
+					Signers: []*types.Signer{
+						types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+						types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+						types.CreateSignerFromString("0xBADDCAFE", types.DataSignerTypePubKey),
+					},
+					Filters: []*types.DataSourceSpecFilter{
+						{
+							Key: &types.DataSourceSpecPropertyKey{
+								Name: "prices.BTC.value",
+								Type: datapb.PropertyKey_TYPE_INTEGER,
+							},
+							Conditions: []*types.DataSourceSpecCondition{
+								{
+									Value:    "42",
+									Operator: datapb.Condition_OPERATOR_EQUALS,
+								},
 							},
 						},
 					},
 				},
-			},
+			),
 		},
 	})
 
@@ -501,36 +537,40 @@ func testOracleSpecMatchingEqualPropertiesWorks(t *testing.T) {
 			// given
 			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
-					Config: &types.DataSourceSpecConfiguration{
-						Signers: []*types.Signer{
-							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-						},
-						Filters: []*types.DataSourceSpecFilter{
-							{
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: "prices.BTC.value",
-									Type: c.keyType,
-								},
-								Conditions: []*types.DataSourceSpecCondition{
-									{
-										Value:    c.specValue,
-										Operator: datapb.Condition_OPERATOR_EQUALS,
+					Data: types.NewDataSourceDefinition(
+						vegapb.DataSourceDefinitionTypeExt,
+					).SetOracleConfig(
+						&types.DataSourceSpecConfiguration{
+							Signers: []*types.Signer{
+								types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+							},
+							Filters: []*types.DataSourceSpecFilter{
+								{
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "prices.BTC.value",
+										Type: c.keyType,
 									},
-								},
-							}, {
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: "prices.ETH.value",
-									Type: datapb.PropertyKey_TYPE_INTEGER,
-								},
-								Conditions: []*types.DataSourceSpecCondition{
-									{
-										Value:    "42",
-										Operator: datapb.Condition_OPERATOR_EQUALS,
+									Conditions: []*types.DataSourceSpecCondition{
+										{
+											Value:    c.specValue,
+											Operator: datapb.Condition_OPERATOR_EQUALS,
+										},
+									},
+								}, {
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "prices.ETH.value",
+										Type: datapb.PropertyKey_TYPE_INTEGER,
+									},
+									Conditions: []*types.DataSourceSpecCondition{
+										{
+											Value:    "42",
+											Operator: datapb.Condition_OPERATOR_EQUALS,
+										},
 									},
 								},
 							},
 						},
-					},
+					),
 				},
 			})
 
@@ -606,36 +646,40 @@ func testOracleSpecMatchingGreaterThanPropertiesWorks(t *testing.T) {
 			// given
 			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
-					Config: &types.DataSourceSpecConfiguration{
-						Signers: []*types.Signer{
-							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-						},
-						Filters: []*types.DataSourceSpecFilter{
-							{
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: "prices.BTC.value",
-									Type: c.keyType,
-								},
-								Conditions: []*types.DataSourceSpecCondition{
-									{
-										Value:    c.specValue,
-										Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+					Data: types.NewDataSourceDefinition(
+						vegapb.DataSourceDefinitionTypeExt,
+					).SetOracleConfig(
+						&types.DataSourceSpecConfiguration{
+							Signers: []*types.Signer{
+								types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+							},
+							Filters: []*types.DataSourceSpecFilter{
+								{
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "prices.BTC.value",
+										Type: c.keyType,
 									},
-								},
-							}, {
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: "prices.ETH.value",
-									Type: datapb.PropertyKey_TYPE_INTEGER,
-								},
-								Conditions: []*types.DataSourceSpecCondition{
-									{
-										Value:    "42",
-										Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+									Conditions: []*types.DataSourceSpecCondition{
+										{
+											Value:    c.specValue,
+											Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+										},
+									},
+								}, {
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "prices.ETH.value",
+										Type: datapb.PropertyKey_TYPE_INTEGER,
+									},
+									Conditions: []*types.DataSourceSpecCondition{
+										{
+											Value:    "42",
+											Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+										},
 									},
 								},
 							},
 						},
-					},
+					),
 				},
 			})
 
@@ -729,36 +773,40 @@ func testOracleSpecMatchingGreaterThanOrEqualPropertiesWorks(t *testing.T) {
 			// given
 			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
-					Config: &types.DataSourceSpecConfiguration{
-						Signers: []*types.Signer{
-							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-						},
-						Filters: []*types.DataSourceSpecFilter{
-							{
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: "prices.BTC.value",
-									Type: c.keyType,
-								},
-								Conditions: []*types.DataSourceSpecCondition{
-									{
-										Value:    c.specValue,
-										Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+					Data: types.NewDataSourceDefinition(
+						vegapb.DataSourceDefinitionTypeExt,
+					).SetOracleConfig(
+						&types.DataSourceSpecConfiguration{
+							Signers: []*types.Signer{
+								types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+							},
+							Filters: []*types.DataSourceSpecFilter{
+								{
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "prices.BTC.value",
+										Type: c.keyType,
 									},
-								},
-							}, {
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: "prices.ETH.value",
-									Type: datapb.PropertyKey_TYPE_INTEGER,
-								},
-								Conditions: []*types.DataSourceSpecCondition{
-									{
-										Value:    "42",
-										Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+									Conditions: []*types.DataSourceSpecCondition{
+										{
+											Value:    c.specValue,
+											Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+										},
+									},
+								}, {
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "prices.ETH.value",
+										Type: datapb.PropertyKey_TYPE_INTEGER,
+									},
+									Conditions: []*types.DataSourceSpecCondition{
+										{
+											Value:    "42",
+											Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+										},
 									},
 								},
 							},
 						},
-					},
+					),
 				},
 			})
 
@@ -834,36 +882,40 @@ func testOracleSpecMatchingLessThanPropertiesWorks(t *testing.T) {
 			// given
 			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
-					Config: &types.DataSourceSpecConfiguration{
-						Signers: []*types.Signer{
-							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-						},
-						Filters: []*types.DataSourceSpecFilter{
-							{
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: "prices.BTC.value",
-									Type: c.keyType,
-								},
-								Conditions: []*types.DataSourceSpecCondition{
-									{
-										Value:    c.specValue,
-										Operator: datapb.Condition_OPERATOR_LESS_THAN,
+					Data: types.NewDataSourceDefinition(
+						vegapb.DataSourceDefinitionTypeExt,
+					).SetOracleConfig(
+						&types.DataSourceSpecConfiguration{
+							Signers: []*types.Signer{
+								types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+							},
+							Filters: []*types.DataSourceSpecFilter{
+								{
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "prices.BTC.value",
+										Type: c.keyType,
 									},
-								},
-							}, {
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: "prices.ETH.value",
-									Type: datapb.PropertyKey_TYPE_INTEGER,
-								},
-								Conditions: []*types.DataSourceSpecCondition{
-									{
-										Value:    "42",
-										Operator: datapb.Condition_OPERATOR_LESS_THAN,
+									Conditions: []*types.DataSourceSpecCondition{
+										{
+											Value:    c.specValue,
+											Operator: datapb.Condition_OPERATOR_LESS_THAN,
+										},
+									},
+								}, {
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "prices.ETH.value",
+										Type: datapb.PropertyKey_TYPE_INTEGER,
+									},
+									Conditions: []*types.DataSourceSpecCondition{
+										{
+											Value:    "42",
+											Operator: datapb.Condition_OPERATOR_LESS_THAN,
+										},
 									},
 								},
 							},
 						},
-					},
+					),
 				},
 			})
 
@@ -957,36 +1009,40 @@ func testOracleSpecMatchingLessThanOrEqualPropertiesWorks(t *testing.T) {
 			// given
 			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
-					Config: &types.DataSourceSpecConfiguration{
-						Signers: []*types.Signer{
-							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-						},
-						Filters: []*types.DataSourceSpecFilter{
-							{
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: "prices.BTC.value",
-									Type: c.keyType,
-								},
-								Conditions: []*types.DataSourceSpecCondition{
-									{
-										Value:    c.specValue,
-										Operator: datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
+					Data: types.NewDataSourceDefinition(
+						vegapb.DataSourceDefinitionTypeExt,
+					).SetOracleConfig(
+						&types.DataSourceSpecConfiguration{
+							Signers: []*types.Signer{
+								types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+							},
+							Filters: []*types.DataSourceSpecFilter{
+								{
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "prices.BTC.value",
+										Type: c.keyType,
 									},
-								},
-							}, {
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: "prices.ETH.value",
-									Type: datapb.PropertyKey_TYPE_INTEGER,
-								},
-								Conditions: []*types.DataSourceSpecCondition{
-									{
-										Value:    "42",
-										Operator: datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
+									Conditions: []*types.DataSourceSpecCondition{
+										{
+											Value:    c.specValue,
+											Operator: datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
+										},
+									},
+								}, {
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "prices.ETH.value",
+										Type: datapb.PropertyKey_TYPE_INTEGER,
+									},
+									Conditions: []*types.DataSourceSpecCondition{
+										{
+											Value:    "42",
+											Operator: datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
+										},
 									},
 								},
 							},
 						},
-					},
+					),
 				},
 			})
 
@@ -1038,27 +1094,31 @@ func testOracleSpecMatchingPropertiesPresenceSucceeds(t *testing.T) {
 			// given
 			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
-					Config: &types.DataSourceSpecConfiguration{
-						Signers: []*types.Signer{
-							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-						},
-						Filters: []*types.DataSourceSpecFilter{
-							{
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: "prices.BTC.value",
-									Type: c.keyType,
-								},
-								Conditions: []*types.DataSourceSpecCondition{},
+					Data: types.NewDataSourceDefinition(
+						vegapb.DataSourceDefinitionTypeExt,
+					).SetOracleConfig(
+						&types.DataSourceSpecConfiguration{
+							Signers: []*types.Signer{
+								types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 							},
-							{
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: "prices.ETH.value",
-									Type: datapb.PropertyKey_TYPE_INTEGER,
+							Filters: []*types.DataSourceSpecFilter{
+								{
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "prices.BTC.value",
+										Type: c.keyType,
+									},
+									Conditions: []*types.DataSourceSpecCondition{},
 								},
-								Conditions: []*types.DataSourceSpecCondition{},
+								{
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "prices.ETH.value",
+										Type: datapb.PropertyKey_TYPE_INTEGER,
+									},
+									Conditions: []*types.DataSourceSpecCondition{},
+								},
 							},
 						},
-					},
+					),
 				},
 			})
 
@@ -1110,27 +1170,31 @@ func testOracleSpecMatchingPropertiesPresenceFails(t *testing.T) {
 			// given
 			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
-					Config: &types.DataSourceSpecConfiguration{
-						Signers: []*types.Signer{
-							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-						},
-						Filters: []*types.DataSourceSpecFilter{
-							{
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: "prices.BTC.value",
-									Type: c.keyType,
-								},
-								Conditions: []*types.DataSourceSpecCondition{},
+					Data: types.NewDataSourceDefinition(
+						vegapb.DataSourceDefinitionTypeExt,
+					).SetOracleConfig(
+						&types.DataSourceSpecConfiguration{
+							Signers: []*types.Signer{
+								types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 							},
-							{
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: "prices.ETH.value",
-									Type: datapb.PropertyKey_TYPE_INTEGER,
+							Filters: []*types.DataSourceSpecFilter{
+								{
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "prices.BTC.value",
+										Type: c.keyType,
+									},
+									Conditions: []*types.DataSourceSpecCondition{},
 								},
-								Conditions: []*types.DataSourceSpecCondition{},
+								{
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "prices.ETH.value",
+										Type: datapb.PropertyKey_TYPE_INTEGER,
+									},
+									Conditions: []*types.DataSourceSpecCondition{},
+								},
 							},
 						},
-					},
+					),
 				},
 			})
 
@@ -1188,25 +1252,29 @@ func testOracleSpecMatchingWithInconvertibleTypeFails(t *testing.T) {
 			// given
 			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
-					Config: &types.DataSourceSpecConfiguration{
-						Signers: []*types.Signer{
-							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-						},
-						Filters: []*types.DataSourceSpecFilter{
-							{
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: "prices.BTC.value",
-									Type: c.keyType,
-								},
-								Conditions: []*types.DataSourceSpecCondition{
-									{
-										Value:    c.specValue,
-										Operator: datapb.Condition_OPERATOR_EQUALS,
+					Data: types.NewDataSourceDefinition(
+						vegapb.DataSourceDefinitionTypeExt,
+					).SetOracleConfig(
+						&types.DataSourceSpecConfiguration{
+							Signers: []*types.Signer{
+								types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+							},
+							Filters: []*types.DataSourceSpecFilter{
+								{
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "prices.BTC.value",
+										Type: c.keyType,
+									},
+									Conditions: []*types.DataSourceSpecCondition{
+										{
+											Value:    c.specValue,
+											Operator: datapb.Condition_OPERATOR_EQUALS,
+										},
 									},
 								},
 							},
 						},
-					},
+					),
 				},
 			})
 
@@ -1323,20 +1391,24 @@ func testOracleSpecVerifyingBindingWorks(t *testing.T) {
 			// given
 			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
-					Config: &types.DataSourceSpecConfiguration{
-						Signers: []*types.Signer{
-							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-						},
-						Filters: []*types.DataSourceSpecFilter{
-							{
-								Key: &types.DataSourceSpecPropertyKey{
-									Name: c.declaredProperty,
-									Type: c.declaredType,
+					Data: types.NewDataSourceDefinition(
+						vegapb.DataSourceDefinitionTypeExt,
+					).SetOracleConfig(
+						&types.DataSourceSpecConfiguration{
+							Signers: []*types.Signer{
+								types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+							},
+							Filters: []*types.DataSourceSpecFilter{
+								{
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: c.declaredProperty,
+										Type: c.declaredType,
+									},
+									Conditions: []*types.DataSourceSpecCondition{},
 								},
-								Conditions: []*types.DataSourceSpecCondition{},
 							},
 						},
-					},
+					),
 				},
 			})
 

@@ -18,13 +18,13 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/logging"
-	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/pkg/errors"
 )
 
 type OracleDataEvent interface {
 	events.Event
-	OracleData() datapb.OracleData
+	OracleData() vegapb.OracleData
 }
 
 type OracleDataStore interface {

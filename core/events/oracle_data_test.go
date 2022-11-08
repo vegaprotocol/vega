@@ -18,6 +18,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
 )
@@ -46,7 +47,7 @@ func TestOracleDataDeepClone(t *testing.T) {
 		},
 	}
 
-	odEvent := events.NewOracleDataEvent(ctx, datapb.OracleData{ExternalData: &od})
+	odEvent := events.NewOracleDataEvent(ctx, vegapb.OracleData{ExternalData: &od})
 
 	od2 := odEvent.OracleData()
 

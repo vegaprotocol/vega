@@ -27,3 +27,7 @@ func (SimpleRiskModel) IsRiskModel()                                      {}
 func (SimpleModelParams) IsRiskModel()                                    {}
 func (UpdateMarketConfiguration_Simple) IsUpdateMarketRiskParameters()    {}
 func (UpdateMarketConfiguration_LogNormal) IsUpdateMarketRiskParameters() {}
+func (DataSourceDefinitionInternal) IsDataSourceKind()                    {}
+func (DataSourceDefinitionExternal) IsDataSourceKind()                    {}
+func (DataSourceSpecConfiguration) IsExternalDataSourceKind()             {}
+func (DataSourceSpecConfigurationTime) IsInternalDataSourceKind()         {}

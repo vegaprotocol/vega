@@ -8,6 +8,7 @@ import (
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -147,14 +148,14 @@ func UnmarshalNodeSignatureKind(v interface{}) (commandspb.NodeSignatureKind, er
 	return commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED, ErrUnimplemented
 }
 
-func MarshalOracleSpecStatus(s datapb.DataSourceSpec_Status) graphql.Marshaler {
+func MarshalOracleSpecStatus(s vegapb.DataSourceSpec_Status) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		w.Write([]byte(strconv.Quote(s.String())))
 	})
 }
 
-func UnmarshalOracleSpecStatus(v interface{}) (datapb.DataSourceSpec_Status, error) {
-	return datapb.DataSourceSpec_STATUS_UNSPECIFIED, ErrUnimplemented
+func UnmarshalOracleSpecStatus(v interface{}) (vegapb.DataSourceSpec_Status, error) {
+	return vegapb.DataSourceSpec_STATUS_UNSPECIFIED, ErrUnimplemented
 }
 
 func MarshalPropertyKeyType(s datapb.PropertyKey_Type) graphql.Marshaler {

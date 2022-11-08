@@ -32,6 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -935,29 +936,37 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 						Future: &types.FutureProduct{
 							SettlementAsset: "VUSD",
 							QuoteName:       "VUSD",
-							DataSourceSpecForSettlementData: &types.DataSourceSpecConfiguration{
-								Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-								Filters: []*types.DataSourceSpecFilter{
-									{
-										Key: &types.DataSourceSpecPropertyKey{
-											Name: "prices.ETH.value",
-											Type: datapb.PropertyKey_TYPE_INTEGER,
-										},
-										Conditions: []*types.DataSourceSpecCondition{
-											{
-												Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-												Value:    "0",
+							DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
+								vegapb.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&types.DataSourceSpecConfiguration{
+									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+									Filters: []*types.DataSourceSpecFilter{
+										{
+											Key: &types.DataSourceSpecPropertyKey{
+												Name: "prices.ETH.value",
+												Type: datapb.PropertyKey_TYPE_INTEGER,
+											},
+											Conditions: []*types.DataSourceSpecCondition{
+												{
+													Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+													Value:    "0",
+												},
 											},
 										},
 									},
 								},
-							},
-							DataSourceSpecForTradingTermination: &types.DataSourceSpecConfiguration{
-								Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-								Filters: []*types.DataSourceSpecFilter{
-									termFilter,
+							),
+							DataSourceSpecForTradingTermination: *types.NewDataSourceDefinition(
+								vegapb.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&types.DataSourceSpecConfiguration{
+									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+									Filters: []*types.DataSourceSpecFilter{
+										termFilter,
+									},
 								},
-							},
+							),
 							DataSourceSpecBinding: termBinding,
 						},
 					},
@@ -1005,24 +1014,32 @@ func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *type
 					Product: &types.UpdateInstrumentConfigurationFuture{
 						Future: &types.UpdateFutureProduct{
 							QuoteName: "VUSD",
-							DataSourceSpecForSettlementData: &types.DataSourceSpecConfiguration{
-								Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-								Filters: []*types.DataSourceSpecFilter{
-									{
-										Key: &types.DataSourceSpecPropertyKey{
-											Name: "prices.ETH.value",
-											Type: datapb.PropertyKey_TYPE_INTEGER,
+							DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
+								vegapb.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&types.DataSourceSpecConfiguration{
+									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+									Filters: []*types.DataSourceSpecFilter{
+										{
+											Key: &types.DataSourceSpecPropertyKey{
+												Name: "prices.ETH.value",
+												Type: datapb.PropertyKey_TYPE_INTEGER,
+											},
+											Conditions: []*types.DataSourceSpecCondition{},
 										},
-										Conditions: []*types.DataSourceSpecCondition{},
 									},
 								},
-							},
-							DataSourceSpecForTradingTermination: &types.DataSourceSpecConfiguration{
-								Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-								Filters: []*types.DataSourceSpecFilter{
-									termFilter,
+							),
+							DataSourceSpecForTradingTermination: *types.NewDataSourceDefinition(
+								vegapb.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&types.DataSourceSpecConfiguration{
+									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+									Filters: []*types.DataSourceSpecFilter{
+										termFilter,
+									},
 								},
-							},
+							),
 							DataSourceSpecBinding: termBinding,
 						},
 					},

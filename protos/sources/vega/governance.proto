@@ -6,7 +6,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega";
 import "vega/markets.proto";
 import "vega/vega.proto";
 import "vega/assets.proto";
-import "vega/data/v1/spec.proto";
+import "vega/data_source.proto";
 
 // Future product configuration
 message FutureProduct {
@@ -15,9 +15,9 @@ message FutureProduct {
   // Product quote name
   string quote_name = 2;
   // The data source spec describing the data source for settlement
-  vega.data.v1.DataSourceSpecConfiguration data_source_spec_for_settlement_data = 3;
+  vega.DataSourceDefinition data_source_spec_for_settlement_data = 3;
   // The external data source spec describing the data source of trading termination
-  vega.data.v1.DataSourceSpecConfiguration data_source_spec_for_trading_termination = 4;
+  vega.DataSourceDefinition data_source_spec_for_trading_termination = 4;
   // The binding between the data source spec and the settlement data
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
   // The number of decimal places implied by the settlement data (such as price) emitted by the settlement data source
@@ -109,9 +109,9 @@ message UpdateFutureProduct {
   // Human-readable name/abbreviation of the quote name
   string quote_name = 1;
   // The data source spec describing the data of settlement data
-  vega.data.v1.DataSourceSpecConfiguration data_source_spec_for_settlement_data = 2;
+  vega.DataSourceDefinition data_source_spec_for_settlement_data = 2;
   // The data source spec describing the data source for trading termination
-  vega.data.v1.DataSourceSpecConfiguration data_source_spec_for_trading_termination = 3;
+  vega.DataSourceDefinition data_source_spec_for_trading_termination = 3;
   // The binding between the data source spec and the settlement data
   DataSourceSpecToFutureBinding data_source_spec_binding = 4;
   // The number of decimal places implied by the settlement data (such as price) emitted by the settlement external data source

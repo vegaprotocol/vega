@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"github.com/cosmos/iavl"
@@ -398,16 +399,25 @@ func getDummyData() *types.Chunk {
 											QuoteName:       "AST",
 											DataSourceSpecForSettlementData: &types.DataSourceSpec{
 												ID: "o1",
-												Config: &types.DataSourceSpecConfiguration{
-													Signers: []*types.Signer{},
-													Filters: []*types.DataSourceSpecFilter{},
-												},
+												Data: types.NewDataSourceDefinition(
+													vegapb.DataSourceDefinitionTypeExt,
+												).SetOracleConfig(
+													&types.DataSourceSpecConfiguration{
+														Signers: []*types.Signer{},
+														Filters: []*types.DataSourceSpecFilter{},
+													},
+												),
 											},
 											DataSourceSpecForTradingTermination: &types.DataSourceSpec{
 												ID: "os1",
-												Config: &types.DataSourceSpecConfiguration{
-													Filters: []*types.DataSourceSpecFilter{},
-												},
+												Data: types.NewDataSourceDefinition(
+													vegapb.DataSourceDefinitionTypeExt,
+												).SetOracleConfig(
+													&types.DataSourceSpecConfiguration{
+														Signers: []*types.Signer{},
+														Filters: []*types.DataSourceSpecFilter{},
+													},
+												),
 											},
 											DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{},
 										},

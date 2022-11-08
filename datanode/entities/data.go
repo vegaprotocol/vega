@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/types"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
@@ -124,8 +125,8 @@ func (od *ExternalData) ToProto() *datapb.ExternalData {
 	}
 }
 
-func (od ExternalData) ToOracleProto() *datapb.OracleData {
-	return &datapb.OracleData{
+func (od ExternalData) ToOracleProto() *vegapb.OracleData {
+	return &vegapb.OracleData{
 		ExternalData: od.ToProto(),
 	}
 }

@@ -15,16 +15,17 @@ package events
 import (
 	"context"
 
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type OracleData struct {
 	*Base
-	o datapb.OracleData
+	o vegapb.OracleData
 }
 
-func NewOracleDataEvent(ctx context.Context, spec datapb.OracleData) *OracleData {
+func NewOracleDataEvent(ctx context.Context, spec vegapb.OracleData) *OracleData {
 	cpy := &datapb.Data{}
 	if spec.ExternalData != nil {
 		if spec.ExternalData.Data != nil {
@@ -34,12 +35,12 @@ func NewOracleDataEvent(ctx context.Context, spec datapb.OracleData) *OracleData
 
 	return &OracleData{
 		Base: newBase(ctx, OracleDataEvent),
-		o:    datapb.OracleData{ExternalData: &datapb.ExternalData{Data: cpy}},
+		o:    vegapb.OracleData{ExternalData: &datapb.ExternalData{Data: cpy}},
 	}
 }
 
-func (o *OracleData) OracleData() datapb.OracleData {
-	data := datapb.OracleData{
+func (o *OracleData) OracleData() vegapb.OracleData {
+	data := vegapb.OracleData{
 		ExternalData: &datapb.ExternalData{
 			Data: &datapb.Data{},
 		},
@@ -52,7 +53,7 @@ func (o *OracleData) OracleData() datapb.OracleData {
 	return data
 }
 
-func (o OracleData) Proto() datapb.OracleData {
+func (o OracleData) Proto() vegapb.OracleData {
 	return o.o
 }
 

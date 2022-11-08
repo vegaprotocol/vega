@@ -28,6 +28,9 @@
 - [6707](https://github.com/vegaprotocol/vega/issues/6707) - Fix order event for liquidity provisions
 - [6699](https://github.com/vegaprotocol/vega/issues/6699) - `orders` and `orders_current` view uses a redundant union causing performance issues
 - [6721](https://github.com/vegaprotocol/vega/issues/6721) - Visor fix if condition for `maxNumberOfFirstConnectionRetries`
+- [6655](https://github.com/vegaprotocol/vega/issues/6655) - Fix market query by `ID`
+- [6656](https://github.com/vegaprotocol/vega/issues/6656) - Fix data sources to handle opening with internal source
+- [6722](https://github.com/vegaprotocol/vega/issues/6722) - Fix get market response to contain oracle id
 
 
 ## 0.61.0

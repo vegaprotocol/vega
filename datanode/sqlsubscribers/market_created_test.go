@@ -23,6 +23,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/mock/gomock"
+
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 func Test_MarketCreated_Push(t *testing.T) {
@@ -60,20 +62,28 @@ func getTestMarket() types.Market {
 							ID:        "",
 							CreatedAt: 0,
 							UpdatedAt: 0,
-							Config: &types.DataSourceSpecConfiguration{
-								Signers: nil,
-								Filters: nil,
-							},
+							Data: types.NewDataSourceDefinition(
+								vegapb.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&types.DataSourceSpecConfiguration{
+									Signers: nil,
+									Filters: nil,
+								},
+							),
 							Status: 0,
 						},
 						DataSourceSpecForTradingTermination: &types.DataSourceSpec{
 							ID:        "",
 							CreatedAt: 0,
 							UpdatedAt: 0,
-							Config: &types.DataSourceSpecConfiguration{
-								Signers: nil,
-								Filters: nil,
-							},
+							Data: types.NewDataSourceDefinition(
+								vegapb.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&types.DataSourceSpecConfiguration{
+									Signers: nil,
+									Filters: nil,
+								},
+							),
 							Status: 0,
 						},
 						DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{

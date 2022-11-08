@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -90,32 +91,40 @@ func testFuture(t *testing.T) *tstFuture {
 		SettlementAsset: "ETH",
 		QuoteName:       "ETH",
 		DataSourceSpecForSettlementData: &types.DataSourceSpec{
-			Config: &types.DataSourceSpecConfiguration{
-				Signers: pubKeys,
-				Filters: []*types.DataSourceSpecFilter{
-					{
-						Key: &types.DataSourceSpecPropertyKey{
-							Name: "price.ETH.value",
-							Type: datapb.PropertyKey_TYPE_INTEGER,
+			Data: types.NewDataSourceDefinition(
+				vegapb.DataSourceDefinitionTypeExt,
+			).SetOracleConfig(
+				&types.DataSourceSpecConfiguration{
+					Signers: pubKeys,
+					Filters: []*types.DataSourceSpecFilter{
+						{
+							Key: &types.DataSourceSpecPropertyKey{
+								Name: "price.ETH.value",
+								Type: datapb.PropertyKey_TYPE_INTEGER,
+							},
+							Conditions: nil,
 						},
-						Conditions: nil,
 					},
 				},
-			},
+			),
 		},
 		DataSourceSpecForTradingTermination: &types.DataSourceSpec{
-			Config: &types.DataSourceSpecConfiguration{
-				Signers: pubKeys,
-				Filters: []*types.DataSourceSpecFilter{
-					{
-						Key: &types.DataSourceSpecPropertyKey{
-							Name: "trading.termination",
-							Type: datapb.PropertyKey_TYPE_BOOLEAN,
+			Data: types.NewDataSourceDefinition(
+				vegapb.DataSourceDefinitionTypeExt,
+			).SetOracleConfig(
+				&types.DataSourceSpecConfiguration{
+					Signers: pubKeys,
+					Filters: []*types.DataSourceSpecFilter{
+						{
+							Key: &types.DataSourceSpecPropertyKey{
+								Name: "trading.termination",
+								Type: datapb.PropertyKey_TYPE_BOOLEAN,
+							},
+							Conditions: nil,
 						},
-						Conditions: nil,
 					},
 				},
-			},
+			),
 		},
 		DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
 			SettlementDataProperty:     "price.ETH.value",

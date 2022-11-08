@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package vega;
+option go_package = "code.vegaprotocol.io/vega/protos/vega";
+
+import "vega/data/v1/spec.proto";
+import "vega/data/v1/data.proto";
+
+// DataSourceDefinition represents the top level object that deals with data sources.
+// DataSourceDefinition can be external or internal, with whatever number of data sources are defined
+// for each type in the child objects below.
+message DataSourceDefinition {
+  oneof source_type {
+    DataSourceDefinitionInternal internal = 1;
+    DataSourceDefinitionExternal external = 2;
+  }
+}
+  
+// DataSourceSpecConfigurationTime is the internal data source used for emitting timestamps.
+message DataSourceSpecConfigurationTime {
+  // Conditions that the timestamps should meet in order to be considered.
+  repeated vega.data.v1.Condition conditions = 1;
+}
+    
+// DataSourceDefinitionInternal is the top level object used for all internal data sources.
+// It contains one of any of the defined `SourceType` variants.
+message DataSourceDefinitionInternal {
+  // Types of internal data sources
+  oneof source_type {
+    DataSourceSpecConfigurationTime time = 1;
+  }
+}
+
+// DataSourceDefinitionExternal is the top level object used for all external data sources.
+// It contains one of any of the defined `SourceType` variants.
+message DataSourceDefinitionExternal {
+  // Types of External data sources
+  oneof source_type {
+    DataSourceSpecConfiguration oracle = 1;
+  }
+}
+  
+// All types of external data sources use the same configuration set for meeting requirements
+// in order for the data to be useful for Vega - valid signatures and matching filters.
+message DataSourceSpecConfiguration {
+  // signers is the list of authorized signatures that signed the data for this
+  // source. All the signatures in the data source data should be contained in this
+  // external source. All the signatures in the data should be contained in this list.
+  repeated vega.data.v1.Signer signers = 1;
+
+  // filters describes which source data are considered of interest or not for
+  // the product (or the risk model).
+  repeated vega.data.v1.Filter filters = 2;
+}
+  
+// A data source spec describes the data source base that a product (or a risk model)
+// wants to get from the data source engine.
+// This message contains additional information used by the API.
+message DataSourceSpec {
+  // id is a hash generated from the DataSpec data.
+  string id = 1;
+  // Creation Date time
+  int64 created_at = 2;
+  // Last Updated timestamp
+  int64 updated_at = 3;
+
+  DataSourceDefinition data = 4;
+
+  // status describes the status of the data source spec
+  Status status = 5;
+
+  // Status describe the status of the data source spec
+  enum Status {
+    // The default value.
+    STATUS_UNSPECIFIED = 0;
+    // STATUS_ACTIVE describes an active data source spec.
+    STATUS_ACTIVE = 1;
+    // STATUS_DEACTIVATED describes an data source spec that is not listening to data
+    // anymore.
+    STATUS_DEACTIVATED = 2;
+  }
+}
+
+message ExternalDataSourceSpec {
+  DataSourceSpec spec = 1;
+}

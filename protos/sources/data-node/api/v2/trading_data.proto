@@ -6,8 +6,7 @@ import "vega/vega.proto";
 import "vega/governance.proto";
 import "vega/markets.proto";
 import "vega/assets.proto";
-import "vega/data/v1/data.proto";
-import "vega/data/v1/spec.proto";
+import "vega/oracle.proto";
 import "vega/events/v1/events.proto";
 import "vega/commands/v1/validator_commands.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
@@ -1359,7 +1358,7 @@ message GetOracleSpecRequest {
 // The response for a oracle spec
 message GetOracleSpecResponse {
     // The external data spec matching the ID.
-    vega.data.v1.OracleSpec oracle_spec = 1 ;
+    vega.OracleSpec oracle_spec = 1 ;
 }
 
 // The request to get all active oracle specs
@@ -1388,7 +1387,7 @@ message ListOracleDataResponse {
 }
 
 message OracleSpecEdge {
-    vega.data.v1.OracleSpec node = 1;
+    vega.OracleSpec node = 1;
     string cursor = 2;
 }
 
@@ -1398,7 +1397,7 @@ message OracleSpecsConnection {
 }
 
 message OracleDataEdge {
-    vega.data.v1.OracleData node = 1;
+    vega.OracleData node = 1;
     string cursor = 2;
 }
 

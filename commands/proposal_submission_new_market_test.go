@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/core/types"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
@@ -1059,9 +1060,9 @@ func testNewFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t *testing.
 	t.Helper()
 	future := &protoTypes.FutureProduct{}
 	if oracleSpecName == "data_source_spec_for_settlement_data" {
-		future.DataSourceSpecForTradingTermination = &datapb.DataSourceSpecConfiguration{}
+		future.DataSourceSpecForTradingTermination = &vegapb.DataSourceDefinition{}
 	} else {
-		future.DataSourceSpecForSettlementData = &datapb.DataSourceSpecConfiguration{}
+		future.DataSourceSpecForSettlementData = &vegapb.DataSourceDefinition{}
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -1092,8 +1093,8 @@ func testNewFutureMarketChangeSubmissionWithOracleSpecSucceeds(t *testing.T) {
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForSettlementData:     &datapb.DataSourceSpecConfiguration{},
-									DataSourceSpecForTradingTermination: &datapb.DataSourceSpecConfiguration{},
+									DataSourceSpecForSettlementData:     &vegapb.DataSourceDefinition{},
+									DataSourceSpecForTradingTermination: &vegapb.DataSourceDefinition{},
 								},
 							},
 						},
@@ -1115,9 +1116,7 @@ func testNewFutureMarketChangeSubmissionWithoutPubKeysFails(t *testing.T) {
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-										Signers: []*datapb.Signer{},
-									},
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(vegapb.DataSourceDefinitionTypeExt),
 								},
 							},
 						},
@@ -1158,9 +1157,13 @@ func testNewFutureMarketChangeSubmissionWithWrongPubKeysFails(t *testing.T) {
 								Instrument: &protoTypes.InstrumentConfiguration{
 									Product: &protoTypes.InstrumentConfiguration_Future{
 										Future: &protoTypes.FutureProduct{
-											DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-												Signers: tc.value,
-											},
+											DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+												vegapb.DataSourceDefinitionTypeExt,
+											).SetOracleConfig(
+												&vegapb.DataSourceSpecConfiguration{
+													Signers: tc.value,
+												},
+											),
 										},
 									},
 								},
@@ -1189,12 +1192,20 @@ func testNewFutureMarketChangeSubmissionWithPubKeysSucceeds(t *testing.T) {
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-										Signers: types.SignersIntoProto(pubKeys),
-									},
-									DataSourceSpecForTradingTermination: &datapb.DataSourceSpecConfiguration{
-										Signers: types.SignersIntoProto(pubKeys),
-									},
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Signers: types.SignersIntoProto(pubKeys),
+										},
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Signers: types.SignersIntoProto(pubKeys),
+										},
+									),
 								},
 							},
 						},
@@ -1218,9 +1229,9 @@ func testNewFutureMarketChangeSubmissionWithoutFiltersFails(t *testing.T) {
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-										Filters: []*datapb.Filter{},
-									},
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									),
 								},
 							},
 						},
@@ -1242,16 +1253,24 @@ func testNewFutureMarketChangeSubmissionWithFiltersSucceeds(t *testing.T) {
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-										Filters: []*datapb.Filter{
-											{},
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{},
+											},
 										},
-									},
-									DataSourceSpecForTradingTermination: &datapb.DataSourceSpecConfiguration{
-										Filters: []*datapb.Filter{
-											{},
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{},
+											},
 										},
-									},
+									),
 								},
 							},
 						},
@@ -1273,11 +1292,15 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyFails(t *testing.T) 
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-										Filters: []*datapb.Filter{
-											{}, {},
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{}, {},
+											},
 										},
-									},
+									),
 								},
 							},
 						},
@@ -1300,24 +1323,32 @@ func testNewFutureMarketChangeSubmissionWithFilterWithKeySucceeds(t *testing.T) 
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-										Filters: []*datapb.Filter{
-											{
-												Key: &datapb.PropertyKey{},
-											}, {
-												Key: &datapb.PropertyKey{},
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{},
+												}, {
+													Key: &datapb.PropertyKey{},
+												},
 											},
 										},
-									},
-									DataSourceSpecForTradingTermination: &datapb.DataSourceSpecConfiguration{
-										Filters: []*datapb.Filter{
-											{
-												Key: &datapb.PropertyKey{},
-											}, {
-												Key: &datapb.PropertyKey{},
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{},
+												}, {
+													Key: &datapb.PropertyKey{},
+												},
 											},
 										},
-									},
+									),
 								},
 							},
 						},
@@ -1340,19 +1371,23 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyNameFails(t *testing
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-										Filters: []*datapb.Filter{
-											{
-												Key: &datapb.PropertyKey{
-													Name: "",
-												},
-											}, {
-												Key: &datapb.PropertyKey{
-													Name: "",
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: "",
+													},
+												}, {
+													Key: &datapb.PropertyKey{
+														Name: "",
+													},
 												},
 											},
 										},
-									},
+									),
 								},
 							},
 						},
@@ -1375,32 +1410,40 @@ func testNewFutureMarketChangeSubmissionWithFilterWithKeyNameSucceeds(t *testing
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-										Filters: []*datapb.Filter{
-											{
-												Key: &datapb.PropertyKey{
-													Name: "key1",
-												},
-											}, {
-												Key: &datapb.PropertyKey{
-													Name: "key2",
-												},
-											},
-										},
-									},
-									DataSourceSpecForTradingTermination: &datapb.DataSourceSpecConfiguration{
-										Filters: []*datapb.Filter{
-											{
-												Key: &datapb.PropertyKey{
-													Name: "key1",
-												},
-											}, {
-												Key: &datapb.PropertyKey{
-													Name: "key2",
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: "key1",
+													},
+												}, {
+													Key: &datapb.PropertyKey{
+														Name: "key2",
+													},
 												},
 											},
 										},
-									},
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: "key1",
+													},
+												}, {
+													Key: &datapb.PropertyKey{
+														Name: "key2",
+													},
+												},
+											},
+										},
+									),
 								},
 							},
 						},
@@ -1423,28 +1466,36 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyTypeFails(t *testing
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-										Filters: []*datapb.Filter{
-											{
-												Key: &datapb.PropertyKey{
-													Type: datapb.PropertyKey_TYPE_UNSPECIFIED,
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Type: datapb.PropertyKey_TYPE_UNSPECIFIED,
+													},
+												}, {
+													Key: &datapb.PropertyKey{},
 												},
-											}, {
-												Key: &datapb.PropertyKey{},
 											},
 										},
-									},
-									DataSourceSpecForTradingTermination: &datapb.DataSourceSpecConfiguration{
-										Filters: []*datapb.Filter{
-											{
-												Key: &datapb.PropertyKey{
-													Type: datapb.PropertyKey_TYPE_UNSPECIFIED,
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Type: datapb.PropertyKey_TYPE_UNSPECIFIED,
+													},
+												}, {
+													Key: &datapb.PropertyKey{},
 												},
-											}, {
-												Key: &datapb.PropertyKey{},
 											},
 										},
-									},
+									),
 								},
 							},
 						},
@@ -1493,19 +1544,23 @@ func testNewFutureMarketChangeSubmissionWithFilterWithKeyTypeSucceeds(t *testing
 								Instrument: &protoTypes.InstrumentConfiguration{
 									Product: &protoTypes.InstrumentConfiguration_Future{
 										Future: &protoTypes.FutureProduct{
-											DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-												Filters: []*datapb.Filter{
-													{
-														Key: &datapb.PropertyKey{
-															Type: tc.value,
-														},
-													}, {
-														Key: &datapb.PropertyKey{
-															Type: tc.value,
+											DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+												vegapb.DataSourceDefinitionTypeExt,
+											).SetOracleConfig(
+												&vegapb.DataSourceSpecConfiguration{
+													Filters: []*datapb.Filter{
+														{
+															Key: &datapb.PropertyKey{
+																Type: tc.value,
+															},
+														}, {
+															Key: &datapb.PropertyKey{
+																Type: tc.value,
+															},
 														},
 													},
 												},
-											},
+											),
 										},
 									},
 								},
@@ -1530,13 +1585,17 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionsSucceeds(t *t
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-										Filters: []*datapb.Filter{
-											{
-												Conditions: []*datapb.Condition{},
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Conditions: []*datapb.Condition{},
+												},
 											},
 										},
-									},
+									),
 								},
 							},
 						},
@@ -1558,18 +1617,22 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionOperatorFails(
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-										Filters: []*datapb.Filter{
-											{
-												Conditions: []*datapb.Condition{
-													{
-														Operator: datapb.Condition_OPERATOR_UNSPECIFIED,
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Conditions: []*datapb.Condition{
+														{
+															Operator: datapb.Condition_OPERATOR_UNSPECIFIED,
+														},
+														{},
 													},
-													{},
 												},
 											},
 										},
-									},
+									),
 								},
 							},
 						},
@@ -1615,20 +1678,24 @@ func testNewFutureMarketChangeSubmissionWithFilterWithConditionOperatorSucceeds(
 								Instrument: &protoTypes.InstrumentConfiguration{
 									Product: &protoTypes.InstrumentConfiguration_Future{
 										Future: &protoTypes.FutureProduct{
-											DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-												Filters: []*datapb.Filter{
-													{
-														Conditions: []*datapb.Condition{
-															{
-																Operator: tc.value,
-															},
-															{
-																Operator: tc.value,
+											DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+												vegapb.DataSourceDefinitionTypeExt,
+											).SetOracleConfig(
+												&vegapb.DataSourceSpecConfiguration{
+													Filters: []*datapb.Filter{
+														{
+															Conditions: []*datapb.Condition{
+																{
+																	Operator: tc.value,
+																},
+																{
+																	Operator: tc.value,
+																},
 															},
 														},
 													},
 												},
-											},
+											),
 										},
 									},
 								},
@@ -1653,20 +1720,24 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionValueFails(t *
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-										Filters: []*datapb.Filter{
-											{
-												Conditions: []*datapb.Condition{
-													{
-														Value: "",
-													},
-													{
-														Value: "",
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Conditions: []*datapb.Condition{
+														{
+															Value: "",
+														},
+														{
+															Value: "",
+														},
 													},
 												},
 											},
 										},
-									},
+									),
 								},
 							},
 						},
@@ -1689,20 +1760,24 @@ func testNewFutureMarketChangeSubmissionWithFilterWithConditionValueSucceeds(t *
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-										Filters: []*datapb.Filter{
-											{
-												Conditions: []*datapb.Condition{
-													{
-														Value: "value 1",
-													},
-													{
-														Value: "value 2",
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Conditions: []*datapb.Condition{
+														{
+															Value: "value 1",
+														},
+														{
+															Value: "value 2",
+														},
 													},
 												},
 											},
 										},
-									},
+									),
 								},
 							},
 						},
@@ -1815,17 +1890,21 @@ func testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingFor
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForSettlementData: &datapb.DataSourceSpecConfiguration{
-										Filters: []*datapb.Filter{
-											{
-												Key: &datapb.PropertyKey{
-													Name: bindingKey,
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: bindingKey,
+													},
+												}, {
+													Key: &datapb.PropertyKey{},
 												},
-											}, {
-												Key: &datapb.PropertyKey{},
 											},
 										},
-									},
+									),
 									DataSourceSpecBinding: binding,
 								},
 							},
@@ -2825,23 +2904,27 @@ func testFutureMarketSubmissionWithInternalTimestampForTradingTerminationSucceed
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForTradingTermination: &datapb.DataSourceSpecConfiguration{
-										Signers: []*datapb.Signer{},
-										Filters: []*datapb.Filter{
-											{
-												Key: &datapb.PropertyKey{
-													Name: "vegaprotocol.builtin.timestamp",
-													Type: datapb.PropertyKey_TYPE_TIMESTAMP,
-												},
-												Conditions: []*datapb.Condition{
-													{
-														Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-														Value:    fmt.Sprintf("%d", time.Now().Add(time.Hour*24*365).UnixNano()),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Signers: []*datapb.Signer{},
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: "vegaprotocol.builtin.timestamp",
+														Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+													},
+													Conditions: []*datapb.Condition{
+														{
+															Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+															Value:    fmt.Sprintf("%d", time.Now().Add(time.Hour*24*365).UnixNano()),
+														},
 													},
 												},
 											},
 										},
-									},
+									),
 								},
 							},
 						},
@@ -2863,18 +2946,22 @@ func testFutureMarketSubmissionWithExternalTradingTerminationNoPublicKeyFails(t 
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForTradingTermination: &datapb.DataSourceSpecConfiguration{
-										Signers: []*datapb.Signer{},
-										Filters: []*datapb.Filter{
-											{
-												Key: &datapb.PropertyKey{
-													Name: "trading.terminated",
-													Type: datapb.PropertyKey_TYPE_BOOLEAN,
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Signers: []*datapb.Signer{},
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: "trading.terminated",
+														Type: datapb.PropertyKey_TYPE_BOOLEAN,
+													},
+													Conditions: []*datapb.Condition{},
 												},
-												Conditions: []*datapb.Condition{},
 											},
 										},
-									},
+									),
 								},
 							},
 						},
