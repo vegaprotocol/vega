@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.62.0
+## Unreleased 0.63.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -15,21 +15,55 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.62.0
+
+### 🚨 Breaking changes
+- [6598](https://github.com/vegaprotocol/vega/issues/6598) - Rework `vega tools snapshot` command to be more consistent with other CLI options
+
+### 🛠 Improvements
+- [6681](https://github.com/vegaprotocol/vega/issues/6681) - Add indexes to improve balance history query
+- [6682](https://github.com/vegaprotocol/vega/issues/6682) - Add indexes to orders by reference query
+- [6668](https://github.com/vegaprotocol/vega/issues/6668) - Add indexes to trades by buyer/seller
+- [6628](https://github.com/vegaprotocol/vega/issues/6628) - Improve node health check in the wallet
+- [6711](https://github.com/vegaprotocol/vega/issues/6711) - `Anti-whale ersatz` validators reward stake scores
+
+### 🐛 Fixes
+- [6701](https://github.com/vegaprotocol/vega/issues/6701) - Fix `GraphQL` `API` not returning `x-vega-*` headers
+- [6563](https://github.com/vegaprotocol/vega/issues/6563) - Liquidity engine reads orders directly from the matching engine
+- [6696](https://github.com/vegaprotocol/vega/issues/6696) - New nodes are now visible from the epoch they announced and not epoch they become active
+- [6661](https://github.com/vegaprotocol/vega/issues/6661) - Scale price to asset decimal in estimate orders
+- [6685](https://github.com/vegaprotocol/vega/issues/6685) - `vega announce_node` now returns a `txHash` when successful or errors from `CheckTx`
+- [6687](https://github.com/vegaprotocol/vega/issues/6687) - Expose `admin.update_passphrase` in admin wallet API
+- [6686](https://github.com/vegaprotocol/vega/issues/6686) - Expose `admin.rename_wallet` in admin wallet API
+- [6496](https://github.com/vegaprotocol/vega/issues/6496) - Fix margin calculation for pegged and liquidity orders
+- [6670](https://github.com/vegaprotocol/vega/issues/6670) - Add governance by `ID` endpoint to `REST` bindings
+- [6679](https://github.com/vegaprotocol/vega/issues/6679) - Permit `GFN` pegged orders
+- [6707](https://github.com/vegaprotocol/vega/issues/6707) - Fix order event for liquidity provisions
+- [6699](https://github.com/vegaprotocol/vega/issues/6699) - `orders` and `orders_current` view uses a redundant union causing performance issues
+- [6721](https://github.com/vegaprotocol/vega/issues/6721) - Visor fix if condition for `maxNumberOfFirstConnectionRetries`
+- [6655](https://github.com/vegaprotocol/vega/issues/6655) - Fix market query by `ID`
+- [6656](https://github.com/vegaprotocol/vega/issues/6656) - Fix data sources to handle opening with internal source
+- [6722](https://github.com/vegaprotocol/vega/issues/6722) - Fix get market response to contain oracle id
+
+
 ## 0.61.0
 
 ### 🚨 Breaking changes
 - [5714](https://github.com/vegaprotocol/vega/issues/5714) - Update data sourcing types
 
 ### 🛠 Improvements
-- [6608](https://github.com/vegaprotocol/vega/issues/6608) - Put embedded `postgres` files in proper state directory
+- [6603](https://github.com/vegaprotocol/vega/issues/6603) - Put embedded `postgres` files in proper state directory
 - [6552](https://github.com/vegaprotocol/vega/issues/6552) - Add `datanode` `API` for querying protocol upgrade proposals
 - [6613](https://github.com/vegaprotocol/vega/issues/6613) - Add file buffering to datanode
 - [6602](https://github.com/vegaprotocol/vega/issues/6602) - Panic if data node receives events in unexpected order
 - [6595](https://github.com/vegaprotocol/vega/issues/6595) - Support for cross network parameter dependency and validation
 - [6627](https://github.com/vegaprotocol/vega/issues/6627) - Fix order estimates
 - [6604](https://github.com/vegaprotocol/vega/issues/6604) - Fix transfer funds documentations in `protos`
+- [6463](https://github.com/vegaprotocol/vega/issues/6463) - Implement chain replay and snapshot restore for the `nullblockchain`
+- [6652](https://github.com/vegaprotocol/vega/issues/6652) - Change protocol upgrade consensus do be based on voting power
 
 ### 🐛 Fixes
+- [6356](https://github.com/vegaprotocol/vega/issues/6356) - When querying for proposals from `GQL` return votes.
 - [6623](https://github.com/vegaprotocol/vega/issues/6623) - Fix `nil` pointer panic in `datanode` for race condition in `recvEventRequest`
 - [6601](https://github.com/vegaprotocol/vega/issues/6601) - Removed resend event when the socket client fails
 - [5715](https://github.com/vegaprotocol/vega/issues/5715) - Fix documentation for Oracle Submission elements
@@ -258,6 +292,7 @@
 - [5961](https://github.com/vegaprotocol/vega/issues/5961) - Add batch market instructions command
 - [5974](https://github.com/vegaprotocol/vega/issues/5974) - Flatten subscription in `Graphql`
 - [6146](https://github.com/vegaprotocol/vega/issues/6146) - Add version command to Vega Visor
+- [6671](https://github.com/vegaprotocol/vega/issues/6671) - Vega Visor allows to postpone first failure when Core node is slow to startup
 
 ### 🐛 Fixes
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read

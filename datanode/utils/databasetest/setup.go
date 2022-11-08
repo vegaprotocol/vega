@@ -60,7 +60,7 @@ var (
 		"oracle_data",
 		"oracle_data_current",
 		"oracle_specs",
-		"orders_history",
+		"orders",
 		"orders_live",
 		"parties",
 		"positions",
@@ -131,7 +131,7 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 		}
 		defer embeddedPostgres.Stop()
 
-		if err = sqlstore.MigrateToLatestSchema(log, sqlConfig); err != nil {
+		if err = sqlstore.WipeDatabase(log, sqlConfig.ConnectionConfig); err != nil {
 			panic(err)
 		}
 

@@ -263,9 +263,9 @@ models:
   DataSourceSpecToFutureBinding:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecToFutureBinding
   DataSourceSpecConfiguration:
-    model: code.vegaprotocol.io/vega/protos/vega/data/v1.DataSourceSpecConfiguration
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecConfiguration
   OracleSpec:
-    model: code.vegaprotocol.io/vega/protos/vega/data/v1.OracleSpec
+    model: code.vegaprotocol.io/vega/protos/vega.OracleSpec
   Filter:
     model: code.vegaprotocol.io/vega/protos/vega/data/v1.Filter
   PropertyKey:
@@ -273,7 +273,7 @@ models:
   Condition:
     model: code.vegaprotocol.io/vega/protos/vega/data/v1.Condition
   OracleData:
-    model: code.vegaprotocol.io/vega/protos/vega/data/v1.OracleData
+    model: code.vegaprotocol.io/vega/protos/vega.OracleData
     fields:
       broadcastAt:
         resolver: true

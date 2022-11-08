@@ -35,6 +35,20 @@ func (m *MockDeHistoryService) EXPECT() *MockDeHistoryServiceMockRecorder {
 	return m.recorder
 }
 
+// CopyHistorySegmentToFile mocks base method.
+func (m *MockDeHistoryService) CopyHistorySegmentToFile(arg0 context.Context, arg1, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CopyHistorySegmentToFile", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CopyHistorySegmentToFile indicates an expected call of CopyHistorySegmentToFile.
+func (mr *MockDeHistoryServiceMockRecorder) CopyHistorySegmentToFile(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CopyHistorySegmentToFile", reflect.TypeOf((*MockDeHistoryService)(nil).CopyHistorySegmentToFile), arg0, arg1, arg2)
+}
+
 // FetchHistorySegment mocks base method.
 func (m *MockDeHistoryService) FetchHistorySegment(arg0 context.Context, arg1 string) (store.SegmentIndexEntry, error) {
 	m.ctrl.T.Helper()

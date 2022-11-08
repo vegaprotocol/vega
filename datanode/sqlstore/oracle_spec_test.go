@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
@@ -130,7 +131,8 @@ func testGetSpecByID(t *testing.T) {
 	// truncate the time to microseconds as postgres doesn't support nanosecond granularity.
 	want.UpdatedAt = want.UpdatedAt.Truncate(time.Microsecond)
 	want.CreatedAt = want.CreatedAt.Truncate(time.Microsecond)
-	assert.Equal(t, want, got.ExternalDataSourceSpec.Spec)
+	s := got.ExternalDataSourceSpec.Spec
+	assert.Equal(t, want, s)
 }
 
 func testGetSpecs(t *testing.T) {
@@ -172,89 +174,101 @@ func testGetSpecs(t *testing.T) {
 	assert.ElementsMatch(t, wantSpec, got)
 }
 
-func getTestSpecs() []*datapb.OracleSpec {
+func getTestSpecs() []*vegapb.OracleSpec {
 	pk1 := types.CreateSignerFromString("b105f00d", types.DataSignerTypePubKey)
 	pk2 := types.CreateSignerFromString("baddcafe", types.DataSignerTypePubKey)
 
-	return []*datapb.OracleSpec{
+	return []*vegapb.OracleSpec{
 		{
-			ExternalDataSourceSpec: &datapb.ExternalDataSourceSpec{
-				Spec: &datapb.DataSourceSpec{
+			ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
+				Spec: &vegapb.DataSourceSpec{
 					Id:        "deadbeef",
 					CreatedAt: time.Now().UnixNano(),
 					UpdatedAt: time.Now().UnixNano(),
-					Config: &datapb.DataSourceSpecConfiguration{
-						Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
-						Filters: []*datapb.Filter{
-							{
-								Key: &datapb.PropertyKey{
-									Name: "Ticker",
-									Type: datapb.PropertyKey_TYPE_STRING,
-								},
-								Conditions: []*datapb.Condition{
-									{
-										Operator: datapb.Condition_OPERATOR_EQUALS,
-										Value:    "USDETH",
+					Data: vegapb.NewDataSourceDefinition(
+						vegapb.DataSourceDefinitionTypeExt,
+					).SetOracleConfig(
+						&vegapb.DataSourceSpecConfiguration{
+							Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+							Filters: []*datapb.Filter{
+								{
+									Key: &datapb.PropertyKey{
+										Name: "Ticker",
+										Type: datapb.PropertyKey_TYPE_STRING,
+									},
+									Conditions: []*datapb.Condition{
+										{
+											Operator: datapb.Condition_OPERATOR_EQUALS,
+											Value:    "USDETH",
+										},
 									},
 								},
 							},
 						},
-					},
-					Status: datapb.DataSourceSpec_STATUS_ACTIVE,
+					),
+					Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
 				},
 			},
 		},
 		{
-			ExternalDataSourceSpec: &datapb.ExternalDataSourceSpec{
-				Spec: &datapb.DataSourceSpec{
+			ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
+				Spec: &vegapb.DataSourceSpec{
 					Id:        "cafed00d",
 					CreatedAt: time.Now().UnixNano(),
 					UpdatedAt: time.Now().UnixNano(),
-					Config: &datapb.DataSourceSpecConfiguration{
-						Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
-						Filters: []*datapb.Filter{
-							{
-								Key: &datapb.PropertyKey{
-									Name: "Ticker",
-									Type: datapb.PropertyKey_TYPE_STRING,
-								},
-								Conditions: []*datapb.Condition{
-									{
-										Operator: datapb.Condition_OPERATOR_EQUALS,
-										Value:    "USDBTC",
+					Data: vegapb.NewDataSourceDefinition(
+						vegapb.DataSourceDefinitionTypeExt,
+					).SetOracleConfig(
+						&vegapb.DataSourceSpecConfiguration{
+							Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+							Filters: []*datapb.Filter{
+								{
+									Key: &datapb.PropertyKey{
+										Name: "Ticker",
+										Type: datapb.PropertyKey_TYPE_STRING,
+									},
+									Conditions: []*datapb.Condition{
+										{
+											Operator: datapb.Condition_OPERATOR_EQUALS,
+											Value:    "USDBTC",
+										},
 									},
 								},
 							},
 						},
-					},
-					Status: datapb.DataSourceSpec_STATUS_ACTIVE,
+					),
+					Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
 				},
 			},
 		},
 		{
-			ExternalDataSourceSpec: &datapb.ExternalDataSourceSpec{
-				Spec: &datapb.DataSourceSpec{
+			ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
+				Spec: &vegapb.DataSourceSpec{
 					Id:        "deadbaad",
 					CreatedAt: time.Now().UnixNano(),
 					UpdatedAt: time.Now().UnixNano(),
-					Config: &datapb.DataSourceSpecConfiguration{
-						Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
-						Filters: []*datapb.Filter{
-							{
-								Key: &datapb.PropertyKey{
-									Name: "Ticker",
-									Type: datapb.PropertyKey_TYPE_STRING,
-								},
-								Conditions: []*datapb.Condition{
-									{
-										Operator: datapb.Condition_OPERATOR_EQUALS,
-										Value:    "USDSOL",
+					Data: vegapb.NewDataSourceDefinition(
+						vegapb.DataSourceDefinitionTypeExt,
+					).SetOracleConfig(
+						&vegapb.DataSourceSpecConfiguration{
+							Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+							Filters: []*datapb.Filter{
+								{
+									Key: &datapb.PropertyKey{
+										Name: "Ticker",
+										Type: datapb.PropertyKey_TYPE_STRING,
+									},
+									Conditions: []*datapb.Condition{
+										{
+											Operator: datapb.Condition_OPERATOR_EQUALS,
+											Value:    "USDSOL",
+										},
 									},
 								},
 							},
 						},
-					},
-					Status: datapb.DataSourceSpec_STATUS_ACTIVE,
+					),
+					Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
 				},
 			},
 		},
@@ -293,9 +307,11 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 					ID:        entities.SpecID(fmt.Sprintf("deadbeef%02d", i+1)),
 					CreatedAt: time.Now().Truncate(time.Microsecond),
 					UpdatedAt: time.Now().Truncate(time.Microsecond),
-					Config: &entities.DataSourceSpecConfiguration{
-						Signers: serializedKey,
-						Filters: nil,
+					Data: &entities.DataSourceDefinition{
+						External: &entities.DataSourceDefinitionExternal{
+							Signers: serializedKey,
+							Filters: nil,
+						},
 					},
 					Status:   entities.OracleSpecActive,
 					VegaTime: block.VegaTime,

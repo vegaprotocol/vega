@@ -179,14 +179,22 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 			futureUp := &types.UpdateFutureProduct{
 				QuoteName:              ti.Future.QuoteName,
 				SettlementDataDecimals: settlementDecimals,
-				DataSourceSpecForSettlementData: &types.DataSourceSpecConfiguration{
-					Signers: settleSpec.ExternalDataSourceSpec.Spec.Config.Signers,
-					Filters: settleSpec.ExternalDataSourceSpec.Spec.Config.Filters,
-				},
-				DataSourceSpecForTradingTermination: &types.DataSourceSpecConfiguration{
-					Signers: termSpec.ExternalDataSourceSpec.Spec.Config.Signers,
-					Filters: termSpec.ExternalDataSourceSpec.Spec.Config.Filters,
-				},
+				DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
+					proto.DataSourceDefinitionTypeExt,
+				).SetOracleConfig(
+					&types.DataSourceSpecConfiguration{
+						Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
+						Filters: settleSpec.ExternalDataSourceSpec.Spec.Data.GetFilters(),
+					},
+				),
+				DataSourceSpecForTradingTermination: *types.NewDataSourceDefinition(
+					proto.DataSourceDefinitionTypeExt,
+				).SetOracleConfig(
+					&types.DataSourceSpecConfiguration{
+						Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
+						Filters: settleSpec.ExternalDataSourceSpec.Spec.Data.GetFilters(),
+					},
+				),
 				DataSourceSpecBinding: types.DataSourceSpecBindingForFutureFromProto(&proto.DataSourceSpecToFutureBinding{
 					SettlementDataProperty:     oracleSettlement.Binding.SettlementDataProperty,
 					TradingTerminationProperty: oracleTermination.Binding.TradingTerminationProperty,

@@ -29,12 +29,29 @@ func changeOracleSpec(spec *types.DataSourceSpec) {
 	spec.CreatedAt = 999
 	spec.UpdatedAt = 999
 
-	spec.Config.Signers[0] = types.CreateSignerFromString("Changed", types.DataSignerTypePubKey)
-	spec.Config.Filters[0].Key.Name = "Changed"
-	spec.Config.Filters[0].Key.Type = datapb.PropertyKey_TYPE_UNSPECIFIED
-	spec.Config.Filters[0].Conditions[0].Operator = datapb.Condition_OPERATOR_UNSPECIFIED
-	spec.Config.Filters[0].Conditions[0].Value = "Changed"
-	spec.Status = datapb.DataSourceSpec_STATUS_UNSPECIFIED
+	filters := []*types.DataSourceSpecFilter{
+		{
+			Key: &types.DataSourceSpecPropertyKey{
+				Name: "Changed",
+				Type: datapb.PropertyKey_TYPE_UNSPECIFIED,
+			},
+			Conditions: []*types.DataSourceSpecCondition{
+				{
+					Operator: datapb.Condition_OPERATOR_UNSPECIFIED,
+					Value:    "Changed",
+				},
+			},
+		},
+	}
+
+	spec.Data.SetOracleConfig(
+		&types.DataSourceSpecConfiguration{
+			Signers: []*types.Signer{types.CreateSignerFromString("Changed", types.DataSignerTypePubKey)},
+			Filters: filters,
+		},
+	)
+
+	spec.Status = vegapb.DataSourceSpec_STATUS_UNSPECIFIED
 }
 
 func assertSpecsNotEqual(t *testing.T, spec1 *types.DataSourceSpec, spec2 *types.DataSourceSpec) {
@@ -42,11 +59,11 @@ func assertSpecsNotEqual(t *testing.T, spec1 *types.DataSourceSpec, spec2 *types
 	assert.NotEqual(t, spec1.ID, spec2.ID)
 	assert.NotEqual(t, spec1.CreatedAt, spec2.CreatedAt)
 	assert.NotEqual(t, spec1.UpdatedAt, spec2.UpdatedAt)
-	assert.NotEqual(t, spec1.Config.Signers[0], spec2.Config.Signers[0])
-	assert.NotEqual(t, spec1.Config.Filters[0].Key.Name, spec2.Config.Filters[0].Key.Name)
-	assert.NotEqual(t, spec1.Config.Filters[0].Key.Type, spec2.Config.Filters[0].Key.Type)
-	assert.NotEqual(t, spec1.Config.Filters[0].Conditions[0].Operator, spec2.Config.Filters[0].Conditions[0].Operator)
-	assert.NotEqual(t, spec1.Config.Filters[0].Conditions[0].Value, spec2.Config.Filters[0].Conditions[0].Value)
+	assert.NotEqual(t, spec1.Data.GetSigners()[0], spec2.Data.GetSigners()[0])
+	assert.NotEqual(t, spec1.Data.GetFilters()[0].Key.Name, spec2.Data.GetFilters()[0].Key.Name)
+	assert.NotEqual(t, spec1.Data.GetFilters()[0].Key.Type, spec2.Data.GetFilters()[0].Key.Type)
+	assert.NotEqual(t, spec1.Data.GetFilters()[0].Conditions[0].Operator, spec2.Data.GetFilters()[0].Conditions[0].Operator)
+	assert.NotEqual(t, spec1.Data.GetFilters()[0].Conditions[0].Value, spec2.Data.GetFilters()[0].Conditions[0].Value)
 	assert.NotEqual(t, spec1.Status, spec2.Status)
 }
 
@@ -70,51 +87,67 @@ func TestMarketDeepClone(t *testing.T) {
 					Future: &vegapb.Future{
 						SettlementAsset: "Asset",
 						QuoteName:       "QuoteName",
-						DataSourceSpecForSettlementData: &datapb.DataSourceSpec{
+						DataSourceSpecForSettlementData: &vegapb.DataSourceSpec{
 							Id:        "Id",
 							CreatedAt: 1000,
 							UpdatedAt: 2000,
-							Config: &datapb.DataSourceSpecConfiguration{
-								Signers: types.SignersIntoProto(pubKeys),
-								Filters: []*datapb.Filter{
-									{
-										Key: &datapb.PropertyKey{
-											Name: "Name",
-											Type: datapb.PropertyKey_TYPE_DECIMAL,
-										},
-										Conditions: []*datapb.Condition{
-											{
-												Operator: datapb.Condition_OPERATOR_EQUALS,
-												Value:    "Value",
+							Data: &vegapb.DataSourceDefinition{
+								SourceType: &vegapb.DataSourceDefinition_External{
+									External: &vegapb.DataSourceDefinitionExternal{
+										SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
+											Oracle: &vegapb.DataSourceSpecConfiguration{
+												Signers: types.SignersIntoProto(pubKeys),
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{
+															Name: "Name",
+															Type: datapb.PropertyKey_TYPE_DECIMAL,
+														},
+														Conditions: []*datapb.Condition{
+															{
+																Operator: datapb.Condition_OPERATOR_EQUALS,
+																Value:    "Value",
+															},
+														},
+													},
+												},
 											},
 										},
 									},
 								},
 							},
-							Status: datapb.DataSourceSpec_STATUS_ACTIVE,
+							Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
 						},
-						DataSourceSpecForTradingTermination: &datapb.DataSourceSpec{
+						DataSourceSpecForTradingTermination: &vegapb.DataSourceSpec{
 							Id:        "Id2",
 							CreatedAt: 1000,
 							UpdatedAt: 2000,
-							Config: &datapb.DataSourceSpecConfiguration{
-								Signers: types.SignersIntoProto(pubKeys),
-								Filters: []*datapb.Filter{
-									{
-										Key: &datapb.PropertyKey{
-											Name: "Name",
-											Type: datapb.PropertyKey_TYPE_BOOLEAN,
-										},
-										Conditions: []*datapb.Condition{
-											{
-												Operator: datapb.Condition_OPERATOR_EQUALS,
-												Value:    "Value",
+							Data: &vegapb.DataSourceDefinition{
+								SourceType: &vegapb.DataSourceDefinition_External{
+									External: &vegapb.DataSourceDefinitionExternal{
+										SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
+											Oracle: &vegapb.DataSourceSpecConfiguration{
+												Signers: types.SignersIntoProto(pubKeys),
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{
+															Name: "Name",
+															Type: datapb.PropertyKey_TYPE_BOOLEAN,
+														},
+														Conditions: []*datapb.Condition{
+															{
+																Operator: datapb.Condition_OPERATOR_EQUALS,
+																Value:    "Value",
+															},
+														},
+													},
+												},
 											},
 										},
 									},
 								},
 							},
-							Status: datapb.DataSourceSpec_STATUS_ACTIVE,
+							Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
 						},
 
 						DataSourceSpecBinding: &vegapb.DataSourceSpecToFutureBinding{

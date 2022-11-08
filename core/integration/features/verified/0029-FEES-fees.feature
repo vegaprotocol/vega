@@ -42,7 +42,7 @@ Scenario: Testing fees get collected when amended order trades (0029-FEES-005)
       | side | price | volume |
       | sell | 1080  | 1      |
       | buy  | 920   | 1      |
-      | buy  | 910   | 220    |
+      | buy  | 910   | 210    |
       | sell | 1090  | 184    |
 
     When the parties place the following orders:

@@ -38,7 +38,7 @@ func (m *MockCommander) EXPECT() *MockCommanderMockRecorder {
 }
 
 // Command mocks base method.
-func (m *MockCommander) Command(arg0 context.Context, arg1 txn.Command, arg2 protoiface.MessageV1, arg3 func(error), arg4 *backoff.ExponentialBackOff) {
+func (m *MockCommander) Command(arg0 context.Context, arg1 txn.Command, arg2 protoiface.MessageV1, arg3 func(string, error), arg4 *backoff.ExponentialBackOff) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Command", arg0, arg1, arg2, arg3, arg4)
 }
@@ -50,7 +50,7 @@ func (mr *MockCommanderMockRecorder) Command(arg0, arg1, arg2, arg3, arg4 interf
 }
 
 // CommandSync mocks base method.
-func (m *MockCommander) CommandSync(arg0 context.Context, arg1 txn.Command, arg2 protoiface.MessageV1, arg3 func(error), arg4 *backoff.ExponentialBackOff) {
+func (m *MockCommander) CommandSync(arg0 context.Context, arg1 txn.Command, arg2 protoiface.MessageV1, arg3 func(string, error), arg4 *backoff.ExponentialBackOff) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "CommandSync", arg0, arg1, arg2, arg3, arg4)
 }

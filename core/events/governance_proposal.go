@@ -26,9 +26,10 @@ type Proposal struct {
 }
 
 func NewProposalEvent(ctx context.Context, p types.Proposal) *Proposal {
+	ip := p.IntoProto()
 	return &Proposal{
 		Base: newBase(ctx, ProposalEvent),
-		p:    *p.IntoProto(),
+		p:    *ip,
 	}
 }
 

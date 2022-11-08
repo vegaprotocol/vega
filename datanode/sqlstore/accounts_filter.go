@@ -81,7 +81,7 @@ func filterAccountBalancesQuery(af entities.AccountFilter) (string, []interface{
 		for i, party := range af.PartyIDs {
 			bytes, err := party.Bytes()
 			if err != nil {
-				return "", nil, fmt.Errorf("Couldn't decode party ID: %w", err)
+				return "", nil, fmt.Errorf("could not decode party ID: %w", err)
 			}
 			partyIDs[i] = bytes
 		}
@@ -103,7 +103,7 @@ func filterAccountBalancesQuery(af entities.AccountFilter) (string, []interface{
 		for i, market := range af.MarketIDs {
 			bytes, err := market.Bytes()
 			if err != nil {
-				return "", nil, fmt.Errorf("Couldn't decode market ID: %w", err)
+				return "", nil, fmt.Errorf("could not decode market ID: %w", err)
 			}
 			marketIDs[i] = bytes
 		}
@@ -111,7 +111,7 @@ func filterAccountBalancesQuery(af entities.AccountFilter) (string, []interface{
 		where = fmt.Sprintf(`%s%sACCOUNTS.market_id=ANY(%s)`, where, and, nextBindVar(&args, marketIDs))
 	}
 
-	query := `SELECT ACCOUNTS.id, ACCOUNTS.party_id, ACCOUNTS.asset_id, ACCOUNTS.market_id, ACCOUNTS.type, 
+	query := `SELECT ACCOUNTS.id, ACCOUNTS.party_id, ACCOUNTS.asset_id, ACCOUNTS.market_id, ACCOUNTS.type,
 				current_balances.balance, current_balances.tx_hash, current_balances.vega_time
 	          FROM ACCOUNTS JOIN current_balances ON ACCOUNTS.id = current_balances.account_id `
 

@@ -1,46 +1,54 @@
 {
   "dataSourceSpecForSettlementData": {
     "id": "100",
-    "config": {
-      "signers": [
-        {
-          "pubKey": {
-            "key": "0x0000"
-          }
-        }
-      ],
-      "filters": [
-        {
-          "key": {
-            "name": "price.DAI.value",
-            "type": "TYPE_INTEGER"
-          },
-          "conditions": [
+    "data": {
+      "external": {
+        "oracle": {
+          "signers": [
+            {
+              "pubKey": {
+                "key": "0x0000"
+              }
+            }
+          ],
+          "filters": [
+            {
+              "key": {
+                "name": "price.DAI.value",
+                "type": "TYPE_INTEGER"
+              },
+              "conditions": [
+              ]
+            }
           ]
         }
-      ]
+      }
     },
     "status": "STATUS_UNSPECIFIED"
   },
   "dataSourceSpecForTradingTermination": {
-    "config": {
-      "signers": [
-        {
-          "pubKey": {
-            "key": "0x0000"
-          }
-        }
-      ],
-      "filters": [
-        {
-          "key": {
-            "name": "price.DAI.value",
-            "type": "TYPE_INTEGER"
-          },
-          "conditions": [
+    "data": {
+      "external": {
+        "oracle": {
+          "signers": [
+            {
+              "pubKey": {
+                "key": "0x0000"
+              }
+            }
+          ],
+          "filters": [
+            {
+              "key": {
+                "name": "price.DAI.value",
+                "type": "TYPE_INTEGER"
+              },
+              "conditions": [
+              ]
+            }
           ]
         }
-      ]
+      }
     },
     "status": "STATUS_UNSPECIFIED"
 },

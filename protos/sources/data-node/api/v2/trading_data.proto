@@ -6,8 +6,7 @@ import "vega/vega.proto";
 import "vega/governance.proto";
 import "vega/markets.proto";
 import "vega/assets.proto";
-import "vega/data/v1/data.proto";
-import "vega/data/v1/spec.proto";
+import "vega/oracle.proto";
 import "vega/events/v1/events.proto";
 import "vega/commands/v1/validator_commands.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
@@ -17,7 +16,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.61.0";
+    version: "v0.62.0";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz/datanode/rest"
@@ -417,6 +416,11 @@ service TradingDataService {
     //
     // List the addresses of all active decentralized history peers
     rpc GetActiveDeHistoryPeerAddresses(GetActiveDeHistoryPeerAddressesRequest) returns (GetActiveDeHistoryPeerAddressesResponse);
+
+    // Copy history segment to file
+    //
+    // Copy history segment data to a target file
+    rpc CopyHistorySegmentToFile(CopyHistorySegmentToFileRequest) returns (CopyHistorySegmentToFileResponse);
 
     // Ping
     //
@@ -1354,7 +1358,7 @@ message GetOracleSpecRequest {
 // The response for a oracle spec
 message GetOracleSpecResponse {
     // The external data spec matching the ID.
-    vega.data.v1.OracleSpec oracle_spec = 1 ;
+    vega.OracleSpec oracle_spec = 1 ;
 }
 
 // The request to get all active oracle specs
@@ -1383,7 +1387,7 @@ message ListOracleDataResponse {
 }
 
 message OracleSpecEdge {
-    vega.data.v1.OracleSpec node = 1;
+    vega.OracleSpec node = 1;
     string cursor = 2;
 }
 
@@ -1393,7 +1397,7 @@ message OracleSpecsConnection {
 }
 
 message OracleDataEdge {
-    vega.data.v1.OracleData node = 1;
+    vega.OracleData node = 1;
     string cursor = 2;
 }
 
@@ -2136,6 +2140,16 @@ message GetActiveDeHistoryPeerAddressesRequest {
 // Response containing the addresses of active decentralized history peers
 message GetActiveDeHistoryPeerAddressesResponse {
     repeated string ip_addresses = 1;
+}
+
+// Request to copy a history segment to a file
+message CopyHistorySegmentToFileRequest {
+    string history_segment_id  = 1;
+    string target_file  = 2;
+}
+
+// Response from copying a history segment to a file
+message CopyHistorySegmentToFileResponse {
 }
 
 // Request to ping the datanode

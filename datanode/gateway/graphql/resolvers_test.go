@@ -96,33 +96,41 @@ func getTestMarket() *protoTypes.Market {
 				Product: &protoTypes.Instrument_Future{
 					Future: &protoTypes.Future{
 						SettlementAsset: "Ethereum/Ether",
-						DataSourceSpecForSettlementData: &datav1.DataSourceSpec{
-							Config: &datav1.DataSourceSpecConfiguration{
-								Signers: []*datav1.Signer{pk.IntoProto()},
-								Filters: []*datav1.Filter{
-									{
-										Key: &datav1.PropertyKey{
-											Name: "prices.ETH.value",
-											Type: datav1.PropertyKey_TYPE_INTEGER,
+						DataSourceSpecForSettlementData: &protoTypes.DataSourceSpec{
+							Data: protoTypes.NewDataSourceDefinition(
+								protoTypes.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&protoTypes.DataSourceSpecConfiguration{
+									Signers: []*datav1.Signer{pk.IntoProto()},
+									Filters: []*datav1.Filter{
+										{
+											Key: &datav1.PropertyKey{
+												Name: "prices.ETH.value",
+												Type: datav1.PropertyKey_TYPE_INTEGER,
+											},
+											Conditions: []*datav1.Condition{},
 										},
-										Conditions: []*datav1.Condition{},
 									},
 								},
-							},
+							),
 						},
-						DataSourceSpecForTradingTermination: &datav1.DataSourceSpec{
-							Config: &datav1.DataSourceSpecConfiguration{
-								Signers: []*datav1.Signer{pk.IntoProto()},
-								Filters: []*datav1.Filter{
-									{
-										Key: &datav1.PropertyKey{
-											Name: "trading.terminated",
-											Type: datav1.PropertyKey_TYPE_BOOLEAN,
+						DataSourceSpecForTradingTermination: &protoTypes.DataSourceSpec{
+							Data: protoTypes.NewDataSourceDefinition(
+								protoTypes.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&protoTypes.DataSourceSpecConfiguration{
+									Signers: []*datav1.Signer{pk.IntoProto()},
+									Filters: []*datav1.Filter{
+										{
+											Key: &datav1.PropertyKey{
+												Name: "trading.terminated",
+												Type: datav1.PropertyKey_TYPE_BOOLEAN,
+											},
+											Conditions: []*datav1.Condition{},
 										},
-										Conditions: []*datav1.Condition{},
 									},
 								},
-							},
+							),
 						},
 						DataSourceSpecBinding: &protoTypes.DataSourceSpecToFutureBinding{
 							SettlementDataProperty:     "prices.ETH.value",

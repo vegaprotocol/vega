@@ -17,19 +17,19 @@ import (
 
 	"code.vegaprotocol.io/vega/core/types"
 	proto "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
-	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/require"
 )
 
-var testFilter1 = &v1.Filter{
-	Key: &v1.PropertyKey{
+var testFilter1 = &datapb.Filter{
+	Key: &datapb.PropertyKey{
 		Name: "filter1",
-		Type: v1.PropertyKey_TYPE_STRING,
+		Type: datapb.PropertyKey_TYPE_STRING,
 	},
-	Conditions: []*v1.Condition{
+	Conditions: []*datapb.Condition{
 		{
-			Operator: v1.Condition_OPERATOR_EQUALS,
+			Operator: datapb.Condition_OPERATOR_EQUALS,
 			Value:    "true",
 		},
 	},
@@ -52,25 +52,33 @@ func TestMarketFromIntoProto(t *testing.T) {
 					Future: &proto.Future{
 						SettlementAsset: "GBP",
 						QuoteName:       "USD",
-						DataSourceSpecForSettlementData: &v1.DataSourceSpec{
+						DataSourceSpecForSettlementData: &vegapb.DataSourceSpec{
 							Id:        "os1",
 							CreatedAt: 0,
 							UpdatedAt: 1,
-							Config: &v1.DataSourceSpecConfiguration{
-								Signers: []*datapb.Signer{pk.IntoProto()},
-								Filters: []*v1.Filter{testFilter1},
-							},
-							Status: v1.DataSourceSpec_STATUS_ACTIVE,
+							Data: vegapb.NewDataSourceDefinition(
+								vegapb.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&vegapb.DataSourceSpecConfiguration{
+									Signers: []*datapb.Signer{pk.IntoProto()},
+									Filters: []*datapb.Filter{testFilter1},
+								},
+							),
+							Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
 						},
-						DataSourceSpecForTradingTermination: &v1.DataSourceSpec{
+						DataSourceSpecForTradingTermination: &vegapb.DataSourceSpec{
 							Id:        "os1",
 							CreatedAt: 0,
 							UpdatedAt: 1,
-							Config: &v1.DataSourceSpecConfiguration{
-								Signers: []*datapb.Signer{pk.IntoProto()},
-								Filters: []*v1.Filter{},
-							},
-							Status: v1.DataSourceSpec_STATUS_ACTIVE,
+							Data: vegapb.NewDataSourceDefinition(
+								vegapb.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&vegapb.DataSourceSpecConfiguration{
+									Signers: []*datapb.Signer{pk.IntoProto()},
+									Filters: []*datapb.Filter{},
+								},
+							),
+							Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
 						},
 						DataSourceSpecBinding: &proto.DataSourceSpecToFutureBinding{
 							SettlementDataProperty: "something",

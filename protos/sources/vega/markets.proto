@@ -3,7 +3,7 @@ syntax = "proto3";
 package vega;
 option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
-import "vega/data/v1/spec.proto";
+import "vega/data_source.proto";
 
 // An auction duration is used to configure 3 auction periods:
 // 1. `duration > 0`, `volume == 0`:
@@ -26,10 +26,10 @@ message Future {
   // Quote name of the instrument
   string quote_name = 2;
   // The data source specification that describes the settlement data source filter
-  vega.data.v1.DataSourceSpec data_source_spec_for_settlement_data = 3;
+  vega.DataSourceSpec data_source_spec_for_settlement_data = 3;
 
   // The data source specification that describes the trading termination data source filter
-  vega.data.v1.DataSourceSpec data_source_spec_for_trading_termination = 4;
+  vega.DataSourceSpec data_source_spec_for_trading_termination = 4;
 
   // The binding between the data spec and the data source
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;

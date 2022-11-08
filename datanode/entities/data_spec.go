@@ -20,19 +20,21 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type ExternalDataSourceSpec struct {
 	Spec *DataSourceSpec
 }
 
-func (s *ExternalDataSourceSpec) ToProto() *datapb.ExternalDataSourceSpec {
-	return &datapb.ExternalDataSourceSpec{
+func (s *ExternalDataSourceSpec) ToProto() *vegapb.ExternalDataSourceSpec {
+	return &vegapb.ExternalDataSourceSpec{
 		Spec: s.Spec.ToProto(),
 	}
 }
 
-func ExternalDataSourceSpecFromProto(spec *datapb.ExternalDataSourceSpec, txHash TxHash, vegaTime time.Time) (*ExternalDataSourceSpec, error) {
+func ExternalDataSourceSpecFromProto(spec *vegapb.ExternalDataSourceSpec, txHash TxHash, vegaTime time.Time) (*ExternalDataSourceSpec, error) {
 	if spec.Spec != nil {
 		ds, err := DataSourceSpecFromProto(spec.Spec, txHash, vegaTime)
 		if err != nil {
@@ -68,7 +70,7 @@ type DataSourceSpec struct {
 	ID        SpecID
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Config    *DataSourceSpecConfiguration
+	Data      *DataSourceDefinition
 	Status    DataSourceSpecStatus
 	TxHash    TxHash
 	VegaTime  time.Time
@@ -85,59 +87,66 @@ type DataSourceSpecRaw struct {
 	VegaTime  time.Time
 }
 
-func DataSourceSpecFromProto(spec *datapb.DataSourceSpec, txHash TxHash, vegaTime time.Time) (*DataSourceSpec, error) {
-	id := SpecID(spec.Id)
-	filters := []Filter{}
-	signers := Signers{}
+func DataSourceSpecFromProto(spec *vegapb.DataSourceSpec, txHash TxHash, vegaTime time.Time) (*DataSourceSpec, error) {
+	if spec != nil {
+		id := SpecID(spec.Id)
 
-	if spec.Config != nil {
-		filters = FiltersFromProto(spec.Config.Filters)
-		var err error
-		signers, err = SerializeSigners(types.SignersFromProto(spec.Config.Signers))
-		if err != nil {
-			return nil, err
+		data := &DataSourceDefinition{}
+		if spec.Data != nil {
+			filters := FiltersFromProto(spec.Data.GetFilters())
+			signers, err := SerializeSigners(types.SignersFromProto(spec.Data.GetSigners()))
+			if err != nil {
+				return nil, err
+			}
+
+			data.External = &DataSourceDefinitionExternal{
+				Signers: signers,
+				Filters: filters,
+			}
 		}
-	}
 
-	return &DataSourceSpec{
-		ID:        id,
-		CreatedAt: time.Unix(0, spec.CreatedAt),
-		UpdatedAt: time.Unix(0, spec.UpdatedAt),
-		Config: &DataSourceSpecConfiguration{
-			Filters: filters,
-			Signers: signers,
-		},
-		Status:   DataSourceSpecStatus(spec.Status),
-		TxHash:   txHash,
-		VegaTime: vegaTime,
-	}, nil
+		return &DataSourceSpec{
+			ID:        id,
+			CreatedAt: time.Unix(0, spec.CreatedAt),
+			UpdatedAt: time.Unix(0, spec.UpdatedAt),
+			Data:      data,
+			Status:    DataSourceSpecStatus(spec.Status),
+			TxHash:    txHash,
+			VegaTime:  vegaTime,
+		}, nil
+	}
+	return nil, nil
 }
 
-func (ds *DataSourceSpec) ToProto() *datapb.DataSourceSpec {
+func (ds *DataSourceSpec) ToProto() *vegapb.DataSourceSpec {
 	filters := []*datapb.Filter{}
 	signers := []*datapb.Signer{}
 
-	if ds.Config != nil {
-		desSigners := DeserializeSigners(ds.Config.Signers)
+	if ds.Data != nil {
+		desSigners := DeserializeSigners(ds.Data.External.Signers)
 		signers = types.SignersIntoProto(desSigners)
-		filters = filtersToProto(ds.Config.Filters)
+		filters = filtersToProto(ds.Data.External.Filters)
 	}
 
-	return &datapb.DataSourceSpec{
+	return &vegapb.DataSourceSpec{
 		Id:        ds.ID.String(),
 		CreatedAt: ds.CreatedAt.UnixNano(),
 		UpdatedAt: ds.UpdatedAt.UnixNano(),
-		Config: &datapb.DataSourceSpecConfiguration{
-			Signers: signers,
-			Filters: filters,
-		},
-		Status: datapb.DataSourceSpec_Status(ds.Status),
+		Data: vegapb.NewDataSourceDefinition(
+			vegapb.DataSourceDefinitionTypeExt,
+		).SetOracleConfig(
+			&vegapb.DataSourceSpecConfiguration{
+				Signers: signers,
+				Filters: filters,
+			},
+		),
+		Status: vegapb.DataSourceSpec_Status(ds.Status),
 	}
 }
 
-func (ds *DataSourceSpec) ToOracleProto() *datapb.OracleSpec {
-	return &datapb.OracleSpec{
-		ExternalDataSourceSpec: &datapb.ExternalDataSourceSpec{
+func (ds *DataSourceSpec) ToOracleProto() *vegapb.OracleSpec {
+	return &vegapb.OracleSpec{
+		ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
 			Spec: ds.ToProto(),
 		},
 	}

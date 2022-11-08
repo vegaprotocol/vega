@@ -41,6 +41,7 @@ import (
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -351,7 +352,7 @@ func NewMarket(
 
 	now := timeService.GetTimeNow()
 	liqEngine := liquidity.NewSnapshotEngine(
-		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
+		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, book, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
 
 	// The market is initially created in a proposed state
 	mkt.State = types.MarketStateProposed
@@ -640,8 +641,6 @@ func (m *Market) GetID() string {
 func (m *Market) PostRestore(ctx context.Context) error {
 	m.settlement.Update(m.position.Positions())
 
-	m.liquidity.ReconcileWithOrderBook(m.matching)
-
 	pps := m.position.Parties()
 	peggedOrder := m.peggedOrders.parked
 	parties := make(map[string]struct{}, len(pps)+len(peggedOrder))
@@ -671,7 +670,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	_, blockHash := vegacontext.TraceIDFromContext(ctx)
 	// make deterministics ID for this market, concatenate
 	// the block hash and the market ID
-	m.idgen = idgeneration.New(blockHash + crypto.HashStr(m.GetID()))
+	m.idgen = idgeneration.New(blockHash + crypto.HashStrToHex(m.GetID()))
 	// and we call next ID on this directly just so we don't have an ID which have
 	// a different from others, we basically burn the first ID.
 	_ = m.idgen.NextID()
@@ -839,7 +838,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 
 	for _, party := range m.liquidity.ProvisionsPerParty().Slice() {
 		// we don't care about the actual orders as they will be cancelled in the book as part of settlement anyways.
-		_, err := m.liquidity.StopLiquidityProvision(ctx, party.Party)
+		err := m.liquidity.StopLiquidityProvision(ctx, party.Party)
 		if err != nil {
 			return err
 		}
@@ -1080,7 +1079,7 @@ func (m *Market) validatePeggedOrder(order *types.Order) types.OrderError {
 		return types.ErrPeggedOrderMustBeLimitOrder
 	}
 
-	if order.TimeInForce != types.OrderTimeInForceGTT && order.TimeInForce != types.OrderTimeInForceGTC {
+	if order.TimeInForce != types.OrderTimeInForceGTT && order.TimeInForce != types.OrderTimeInForceGTC && order.TimeInForce != types.OrderTimeInForceGFN {
 		// Pegged orders can only be GTC or GTT
 		return types.ErrPeggedOrderMustBeGTTOrGTC
 	}
@@ -1666,7 +1665,8 @@ func (m *Market) confirmMTM(
 			m.broker.Send(events.NewLedgerMovements(ctx, transfers))
 		}
 		if len(closed) > 0 {
-			orderUpdates, err = m.resolveClosedOutParties(ctx, closed, order)
+			orderUpdates, err = m.resolveClosedOutParties(
+				ctx, closed, ptr.From(order.ID))
 			if err != nil {
 				m.log.Error("unable to closed out parties",
 					logging.String("market-id", m.GetID()),
@@ -1705,7 +1705,7 @@ func (m *Market) getLiquidityFee() num.Decimal {
 // need to be closed out -> the network buys/sells the open volume, and trades with the rest of the network
 // this flow is similar to the SubmitOrder bit where trades are made, with fewer checks (e.g. no MTM settlement, no risk checks)
 // pass in the order which caused parties to be distressed.
-func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEvts []events.Margin, o *types.Order) ([]*types.Order, error) {
+func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEvts []events.Margin, orderID *string) ([]*types.Order, error) {
 	if len(distressedMarginEvts) == 0 {
 		return nil, nil
 	}
@@ -1772,7 +1772,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 
 	// now we also remove ALL parked order for the different parties
 	for _, v := range distressedPos {
-		orders, oevts := m.peggedOrders.RemoveAllParkedForParty(
+		orders, oevts := m.peggedOrders.RemoveAllForParty(
 			ctx, v.Party(), types.OrderStatusStopped)
 
 		for _, v := range orders {
@@ -1783,16 +1783,6 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		orderUpdates = append(orderUpdates, orders...)
 		// add all events to evts list
 		evts = append(evts, oevts...)
-
-		if m.liquidity.IsLiquidityProvider(v.Party()) {
-			if err := m.confiscateBondAccount(ctx, v.Party()); err != nil {
-				m.log.Error("unable to confiscate liquidity provision for a distressed party",
-					logging.String("party-id", o.Party),
-					logging.String("market-id", mktID),
-					logging.Error(err),
-				)
-			}
-		}
 	}
 
 	// send all orders which got stopped through the event bus
@@ -1846,6 +1836,12 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	if networkPos < 0 {
 		size = uint64(-networkPos)
 	}
+
+	ref := "LS"
+	if orderID != nil {
+		ref = fmt.Sprintf("LS-%s", *orderID)
+	}
+
 	no := types.Order{
 		MarketID:    m.GetID(),
 		Remaining:   size,
@@ -1853,8 +1849,8 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		Party:       types.NetworkParty, // network is not a party as such
 		Side:        types.SideSell,     // assume sell, price is zero in that case anyway
 		CreatedAt:   now.UnixNano(),
-		Reference:   fmt.Sprintf("LS-%s", o.ID), // liquidity sourcing, reference the order which caused the problem
-		TimeInForce: types.OrderTimeInForceFOK,  // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
+		Reference:   ref,                       // liquidity sourcing, reference the order which caused the problem
+		TimeInForce: types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 		Type:        types.OrderTypeNetwork,
 		Price:       num.UintZero(),
 	}
@@ -1945,7 +1941,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		m.broker.SendBatch(tradeEvts)
 	}
 
-	m.zeroOutNetwork(ctx, closedMPs, &no, o, distressedPartiesFees)
+	m.zeroOutNetwork(ctx, closedMPs, &no, orderID, distressedPartiesFees)
 
 	// swipe all accounts and stuff
 	m.finalizePartiesCloseOut(ctx, closed, closedMPs)
@@ -2009,40 +2005,7 @@ func (m *Market) finalizePartiesCloseOut(
 	}
 }
 
-func (m *Market) confiscateBondAccount(ctx context.Context, partyID string) error {
-	asset, err := m.mkt.GetAsset()
-	if err != nil {
-		return err
-	}
-	bacc, err := m.collateral.GetOrCreatePartyBondAccount(ctx, partyID, m.mkt.ID, asset)
-	if err != nil {
-		return err
-	}
-
-	// we may alreadu have confiscated all funds
-	if bacc.Balance.IsZero() {
-		return nil
-	}
-
-	transfer := &types.Transfer{
-		Owner: partyID,
-		Amount: &types.FinancialAmount{
-			Amount: bacc.Balance, // no need to clone, bacc isn't used after this
-			Asset:  asset,
-		},
-		Type:      types.TransferTypeBondSlashing,
-		MinAmount: bacc.Balance.Clone(),
-	}
-	tresp, err := m.collateral.BondUpdate(ctx, m.mkt.ID, transfer)
-	if err != nil {
-		return err
-	}
-	m.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{tresp}))
-
-	return nil
-}
-
-func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosition, settleOrder, initial *types.Order, fees map[string]*types.Fee) {
+func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosition, settleOrder *types.Order, orderID *string, fees map[string]*types.Fee) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "zeroOutNetwork")
 	defer timer.EngineTimeCounterAdd()
 
@@ -2092,6 +2055,11 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 
 		order.ID = m.idgen.NextID()
 
+		ref := fmt.Sprintf("distressed-%d", i)
+		if orderID != nil {
+			ref = fmt.Sprintf("distressed-%d-%s", i, *orderID)
+		}
+
 		// this is the party order
 		partyOrder := types.Order{
 			MarketID:      marketID,
@@ -2103,7 +2071,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 			Price:         settleOrder.Price.Clone(), // average price
 			OriginalPrice: settleOrder.OriginalPrice.Clone(),
 			CreatedAt:     now,
-			Reference:     fmt.Sprintf("distressed-%d-%s", i, initial.ID),
+			Reference:     ref,
 			TimeInForce:   types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 			Type:          types.OrderTypeNetwork,
 		}
@@ -2279,7 +2247,7 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	// 2. have invalid order referencing lp order which have been canceleld
 	okOrders := []*types.Order{}
 	for _, order := range orders {
-		if m.liquidity.IsLiquidityOrder(partyID, order.ID) {
+		if order.IsLiquidityOrder() {
 			continue
 		}
 		okOrders = append(okOrders, order)
@@ -2324,7 +2292,7 @@ func (m *Market) CancelOrderWithIDGenerator(
 	}
 
 	// cancelling and amending an order that is part of the LP commitment isn't allowed
-	if m.liquidity.IsLiquidityOrder(partyID, orderID) {
+	if o, err := m.matching.GetOrderByID(orderID); err == nil && o.IsLiquidityOrder() {
 		return nil, types.ErrEditNotAllowed
 	}
 
@@ -2443,11 +2411,6 @@ func (m *Market) AmendOrderWithIDGenerator(
 		return nil, ErrTradingNotAllowed
 	}
 
-	// explicitly/directly ordering an LP commitment order is not allowed
-	if m.liquidity.IsLiquidityOrder(party, orderAmendment.OrderID) {
-		return nil, types.ErrEditNotAllowed
-	}
-
 	conf, updatedOrders, err := m.amendOrder(ctx, orderAmendment, party)
 	if err != nil {
 		return nil, err
@@ -2504,6 +2467,10 @@ func (m *Market) findOrderAndEnsureOwnership(
 			logging.Order(*existingOrder),
 			logging.Error(types.ErrInvalidMarketID),
 		)
+	}
+
+	if existingOrder.IsLiquidityOrder() {
+		return nil, false, types.ErrEditNotAllowed
 	}
 
 	return existingOrder, foundOnBook, err
@@ -3279,7 +3246,7 @@ func (m *Market) stopAllLiquidityProvisionOnReject(ctx context.Context) error {
 		// state, which means that liquidity provision can be submitted
 		// but orders would never be able to be deployed, so it's safe
 		// to ignorethe second return as it shall be an empty slice.
-		_, err := m.liquidity.StopLiquidityProvision(ctx, party)
+		err := m.liquidity.StopLiquidityProvision(ctx, party)
 		if err != nil {
 			return err
 		}

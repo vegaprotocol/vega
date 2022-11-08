@@ -46,6 +46,11 @@ func (opts *RotateEthKeyCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
+	output, err := opts.GetOutput()
+	if err != nil {
+		return err
+	}
+
 	vegaPaths := paths.New(opts.VegaHome)
 
 	_, conf, err := config.EnsureNodeConfig(vegaPaths)
@@ -93,40 +98,37 @@ func (opts *RotateEthKeyCmd) Execute(_ []string) error {
 	}
 	defer cfunc()
 
-	ch := make(chan error)
+	var txHash string
+	ch := make(chan struct{})
 	commander.Command(
 		context.Background(),
 		txn.RotateEthereumKeySubmissionCommand,
 		&cmd,
-		func(err error) {
-			if err != nil {
-				ch <- fmt.Errorf("failed to send ethereum key rotation command: %v", err)
-			}
+		func(h string, e error) {
+			txHash, err = h, e
 			close(ch)
 		}, nil)
 
-	err = <-ch
-	if err != nil {
-		return err
-	}
-
-	output, err := opts.GetOutput()
+	<-ch
 	if err != nil {
 		return err
 	}
 
 	if output.IsHuman() {
-		fmt.Printf("ethereum key rotation successfully sent.\nethereum signature: %v\nRotating from: %s\nRotating to: %s",
+		fmt.Printf("ethereum key rotation successfully sent\ntxHash: %s\nethereum signature: %v\nRotating from: %s\nRotating to: %s",
+			txHash,
 			cmd.EthereumSignature.Value,
 			opts.RotateFrom,
 			cmd.NewAddress,
 		)
 	} else if output.IsJSON() {
 		return vgjson.Print(struct {
+			TxHash            string `json:"txHash"`
 			EthereumSignature string `json:"ethereumSignature"`
 			RotateFrom        string `json:"rotateFrom"`
 			RotateTo          string `json:"rotateTo"`
 		}{
+			TxHash:            txHash,
 			RotateFrom:        opts.RotateFrom,
 			RotateTo:          cmd.NewAddress,
 			EthereumSignature: cmd.EthereumSignature.Value,

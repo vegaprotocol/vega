@@ -17,6 +17,7 @@ import (
 	"context"
 	"testing"
 
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
@@ -138,33 +139,41 @@ func getMarketConfig() *types.Market {
 						SettlementAsset: "Ethereum/Ether",
 						DataSourceSpecForSettlementData: &types.DataSourceSpec{
 							ID: "1",
-							Config: &types.DataSourceSpecConfiguration{
-								Signers: pubKeys,
-								Filters: []*types.DataSourceSpecFilter{
-									{
-										Key: &types.DataSourceSpecPropertyKey{
-											Name: "prices.ETH.value",
-											Type: datapb.PropertyKey_TYPE_INTEGER,
+							Data: types.NewDataSourceDefinition(
+								vegapb.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&types.DataSourceSpecConfiguration{
+									Signers: pubKeys,
+									Filters: []*types.DataSourceSpecFilter{
+										{
+											Key: &types.DataSourceSpecPropertyKey{
+												Name: "prices.ETH.value",
+												Type: datapb.PropertyKey_TYPE_INTEGER,
+											},
+											Conditions: []*types.DataSourceSpecCondition{},
 										},
-										Conditions: []*types.DataSourceSpecCondition{},
 									},
 								},
-							},
+							),
 						},
 						DataSourceSpecForTradingTermination: &types.DataSourceSpec{
 							ID: "2",
-							Config: &types.DataSourceSpecConfiguration{
-								Signers: pubKeys,
-								Filters: []*types.DataSourceSpecFilter{
-									{
-										Key: &types.DataSourceSpecPropertyKey{
-											Name: "trading.terminated",
-											Type: datapb.PropertyKey_TYPE_BOOLEAN,
+							Data: types.NewDataSourceDefinition(
+								vegapb.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&types.DataSourceSpecConfiguration{
+									Signers: pubKeys,
+									Filters: []*types.DataSourceSpecFilter{
+										{
+											Key: &types.DataSourceSpecPropertyKey{
+												Name: "trading.terminated",
+												Type: datapb.PropertyKey_TYPE_BOOLEAN,
+											},
+											Conditions: []*types.DataSourceSpecCondition{},
 										},
-										Conditions: []*types.DataSourceSpecCondition{},
 									},
 								},
-							},
+							),
 						},
 						DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
 							SettlementDataProperty:     "prices.ETH.value",

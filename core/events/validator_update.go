@@ -32,6 +32,7 @@ type ValidatorUpdate struct {
 	avatarURL       string
 	fromEpoch       uint64
 	added           bool
+	epochSeq        uint64
 }
 
 func NewValidatorUpdateEvent(
@@ -47,6 +48,7 @@ func NewValidatorUpdateEvent(
 	avatarURL string,
 	fromEpoch uint64,
 	added bool,
+	epochSeq uint64,
 ) *ValidatorUpdate {
 	return &ValidatorUpdate{
 		Base:            newBase(ctx, ValidatorUpdateEvent),
@@ -61,6 +63,7 @@ func NewValidatorUpdateEvent(
 		avatarURL:       avatarURL,
 		fromEpoch:       fromEpoch,
 		added:           added,
+		epochSeq:        epochSeq,
 	}
 }
 
@@ -126,6 +129,7 @@ func (vu ValidatorUpdate) Proto() eventspb.ValidatorUpdate {
 		AvatarUrl:       vu.avatarURL,
 		FromEpoch:       vu.fromEpoch,
 		Added:           vu.added,
+		EpochSeq:        vu.epochSeq,
 	}
 }
 
@@ -159,5 +163,6 @@ func ValidatorUpdateEventFromStream(ctx context.Context, be *eventspb.BusEvent) 
 		avatarURL:       event.GetAvatarUrl(),
 		fromEpoch:       event.FromEpoch,
 		added:           event.Added,
+		epochSeq:        event.EpochSeq,
 	}
 }
