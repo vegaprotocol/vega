@@ -666,6 +666,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Param:   netparams.LimitsProposeAssetEnabledFrom,
 			Watcher: svcs.limits.OnLimitsProposeAssetEnabledFromUpdate,
 		},
+		{
+			Param:   netparams.MarkPriceUpdateMaximumFrequency,
+			Watcher: svcs.executionEngine.OnMarkPriceUpdateMaximumFrequency,
+		},
 	}
 
 	watchers = append(watchers, powWatchers...)

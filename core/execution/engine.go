@@ -128,6 +128,7 @@ type netParamsValues struct {
 	minProbabilityOfTradingLPOrders num.Decimal
 	minLpStakeQuantumMultiple       num.Decimal
 	marketCreationQuantumMultiple   num.Decimal
+	markPriceUpdateMaximumFrequency time.Duration
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -146,6 +147,7 @@ func defaultNetParamsValues() netParamsValues {
 		minProbabilityOfTradingLPOrders: num.DecimalFromInt64(-1),
 		minLpStakeQuantumMultiple:       num.DecimalFromInt64(-1),
 		marketCreationQuantumMultiple:   num.DecimalFromInt64(-1),
+		markPriceUpdateMaximumFrequency: time.Duration(0), // ??
 	}
 }
 
@@ -477,6 +479,9 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 	if !e.npv.maxLiquidityFee.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(e.npv.maxLiquidityFee)
 	}
+	if e.npv.markPriceUpdateMaximumFrequency > 0 {
+		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, e.npv.markPriceUpdateMaximumFrequency)
+	}
 	return nil
 }
 
@@ -807,6 +812,19 @@ func (e *Engine) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d tim
 		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, d)
 	}
 	e.npv.auctionMinDuration = d
+	return nil
+}
+
+func (e *Engine) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.Duration) error {
+	// we make sure to update both the copy and the actual markets for snapshots
+	// although we can most likely just update the market because we're already ensuring the nextMTM value
+	// is set correctly when getting state
+	for _, cpMkt := range e.marketsCpy {
+		mkt := e.markets[cpMkt.mkt.ID]
+		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, d)
+		cpMkt.nextMTM = mkt.nextMTM
+	}
+	e.npv.markPriceUpdateMaximumFrequency = d
 	return nil
 }
 
