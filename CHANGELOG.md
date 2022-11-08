@@ -18,6 +18,7 @@
 ### 🐛 Fixes
 - [6701](https://github.com/vegaprotocol/vega/issues/6701) - Fix `GraphQL` `API` not returning `x-vega-*` headers
 - [6563](https://github.com/vegaprotocol/vega/issues/6563) - Liquidity engine reads orders directly from the matching engine
+- [6696](https://github.com/vegaprotocol/vega/issues/6696) - New nodes are now visible from the epoch they announced and not epoch they become active
 - [6661](https://github.com/vegaprotocol/vega/issues/6661) - Scale price to asset decimal in estimate orders
 - [6685](https://github.com/vegaprotocol/vega/issues/6685) - `vega announce_node` now returns a `txHash` when successful or errors from `CheckTx`
 - [6687](https://github.com/vegaprotocol/vega/issues/6687) - Expose `admin.update_passphrase` in admin wallet API

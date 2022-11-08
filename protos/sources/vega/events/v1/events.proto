@@ -469,10 +469,12 @@ message ValidatorUpdate {
   uint32 vega_pub_key_index = 9;
   // Flag indicating if the validator has been added to or removed from vega
   bool added = 10;
-  // The epoch from which the validator was added or removed
+  // The epoch in which the announced pending node will start participating in the network
   uint64 from_epoch = 11;
   // Ethereum public key being used as the submitter to allow automatic signature generation
   string submitter_address = 12;
+  // The epoch in which the node was announced or removed from the network
+  uint64 epoch_seq = 13;
 }
 
 // An event that explains the status of the validator for the coming epoch
