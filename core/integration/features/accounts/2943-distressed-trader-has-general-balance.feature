@@ -39,13 +39,9 @@ Feature: Distressed parties should not have general balance left
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders "1" blocks apart:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    # force MTM
-    Then the network moves ahead "1" blocks
-    And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | party1 | ETH/DEC20 | sell | 20     | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | party2 | ETH/DEC20 | buy  | 20     | 80    | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
@@ -57,17 +53,10 @@ Feature: Distressed parties should not have general balance left
     # T0 + 1min - this causes the price for comparison of the bounds to be 567
     Then time is updated to "2020-10-16T00:01:00Z"
 
-    When the parties place the following orders:
+    When the parties place the following orders "1" blocks apart:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party4 | ETH/DEC20 | sell | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party5 | ETH/DEC20 | buy  | 10     | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-1     |
-    # Force MTM again
-    Then the network moves ahead "1" blocks
-    And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC20 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | party3 | ETH/DEC20 | sell | 10     | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
@@ -93,22 +82,20 @@ Feature: Distressed parties should not have general balance left
       | party3 | ETH   | ETH/DEC20 | 12606  | 1394    |
 
     ## Now let's increase the mark price so party3 gets distressed
-    When the parties place the following orders:
+    When the parties place the following orders "1" blocks apart:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party5 | ETH/DEC20 | buy  | 20     | 165   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    And the network moves ahead "1" blocks
     Then the mark price should be "120" for the market "ETH/DEC20"
 
-    Then the parties should have the following account balances:
+    And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party3 | ETH   | ETH/DEC20 | 15127  | 0       |
 
     ## Now let's increase the mark price so party3 gets distressed
-    When the parties place the following orders:
+    When the parties place the following orders "1" blocks apart:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party4 | ETH/DEC20 | sell | 30     | 165   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party5 | ETH/DEC20 | buy  | 30     | 165   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    And then network moves ahead "1" blocks
     Then the mark price should be "130" for the market "ETH/DEC20"
 
     And the parties should have the following account balances:

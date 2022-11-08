@@ -15,13 +15,66 @@ package steps
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/cucumber/godog"
 
+	"code.vegaprotocol.io/vega/core/integration/helpers"
+	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 )
+
+func PartiesPlaceTheFollowingOrdersBlocksApart(exec Execution, time *stubs.TimeStub, block *helpers.Block, epochService EpochService, table *godog.Table, blockCount string) error {
+	nr, err := strconv.ParseInt(blockCount, 10, 0)
+	if err != nil {
+		return err
+	}
+	for _, r := range parseSubmitOrderTable(table) {
+		row := newSubmitOrderRow(r)
+
+		orderSubmission := types.OrderSubmission{
+			MarketID:    row.MarketID(),
+			Side:        row.Side(),
+			Price:       row.Price(),
+			Size:        row.Volume(),
+			ExpiresAt:   row.ExpirationDate(),
+			Type:        row.OrderType(),
+			TimeInForce: row.TimeInForce(),
+			Reference:   row.Reference(),
+		}
+
+		resp, err := exec.SubmitOrder(context.Background(), &orderSubmission, row.Party())
+		if ceerr := checkExpectedError(row, err, nil); ceerr != nil {
+			return ceerr
+		}
+
+		if !row.ExpectResultingTrades() || err != nil {
+			continue
+		}
+
+		actualTradeCount := int64(len(resp.Trades))
+		if actualTradeCount != row.ResultingTrades() {
+			return formatDiff(fmt.Sprintf("the resulting trades didn't match the expectation for order \"%v\"", row.Reference()),
+				map[string]string{
+					"total": i64ToS(row.ResultingTrades()),
+				},
+				map[string]string{
+					"total": i64ToS(actualTradeCount),
+				},
+			)
+		}
+		now := time.GetTimeNow()
+		for i := int64(0); i < nr; i++ {
+			epochService.OnBlockEnd(context.Background())
+			now = now.Add(block.GetDuration())
+			// progress time
+			time.SetTime(now)
+		}
+	}
+	return nil
+}
 
 func PartiesPlaceTheFollowingOrders(
 	exec Execution,
