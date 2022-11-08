@@ -38,30 +38,37 @@ func DatanodeFromDeHistory(parentCtx context.Context, cfg Config, log *logging.L
 	ctx, ctxCancelFn := context.WithTimeout(parentCtx, cfg.TimeOut.Duration)
 	defer ctxCancelFn()
 
-	var activePeerAddresses []string
-	// Time for connections to be established
-	time.Sleep(5 * time.Second)
-	for retries := 0; retries < 5; retries++ {
-		activePeerAddresses = deHistoryService.GetActivePeerAddresses()
-		if len(activePeerAddresses) == 0 {
-			time.Sleep(5 * time.Second)
+	var toSegmentID string
+	if len(cfg.ToSegment) == 0 {
+		var activePeerAddresses []string
+		// Time for connections to be established
+		time.Sleep(5 * time.Second)
+		for retries := 0; retries < 5; retries++ {
+			activePeerAddresses = deHistoryService.GetActivePeerAddresses()
+			if len(activePeerAddresses) == 0 {
+				time.Sleep(5 * time.Second)
+			}
 		}
+
+		if len(activePeerAddresses) == 0 {
+			return fmt.Errorf("failed to find any active peer addresses")
+		}
+
+		mostRecentHistorySegmentFromPeers, _, err := GetMostRecentHistorySegmentFromPeers(ctx, activePeerAddresses, grpcPorts)
+		if err != nil {
+			return fmt.Errorf("failed to get most recent history segment from peers:%w", err)
+		}
+
+		log.Infof("got most recent history segment:%s", mostRecentHistorySegmentFromPeers)
+
+		toSegmentID = mostRecentHistorySegmentFromPeers.HistorySegmentId
+	} else {
+		toSegmentID = cfg.ToSegment
 	}
 
-	if len(activePeerAddresses) == 0 {
-		return fmt.Errorf("failed to find any active peer addresses")
-	}
+	log.Infof("fetching history using as the first segment:{%s} and minimum block count of %d", toSegmentID, cfg.MinimumBlockCount)
 
-	mostRecentHistorySegmentFromPeers, _, err := GetMostRecentHistorySegmentFromPeers(ctx, activePeerAddresses, grpcPorts)
-	if err != nil {
-		return fmt.Errorf("failed to get most recent history segment from peers:%w", err)
-	}
-
-	log.Infof("got most recent history segment:%s", mostRecentHistorySegmentFromPeers)
-
-	log.Infof("fetching history using as the first segment:{%s} and minimum block count of %d", mostRecentHistorySegmentFromPeers, cfg.MinimumBlockCount)
-
-	blocksFetched, err := FetchHistoryBlocks(ctx, log.Infof, mostRecentHistorySegmentFromPeers.HistorySegmentId,
+	blocksFetched, err := FetchHistoryBlocks(ctx, log.Infof, toSegmentID,
 		func(ctx context.Context, historySegmentID string) (FetchResult, error) {
 			segment, err := deHistoryService.FetchHistorySegment(ctx, historySegmentID)
 			if err != nil {
