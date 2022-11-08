@@ -725,13 +725,15 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 		}
 	}
 
+	wasAuction := m.as.InAuction()
 	// check auction, if any
 	m.checkAuction(ctx, t)
-	if m.nextMTM.IsZero() {
-		m.nextMTM = t.Add(m.mtmDelta)
+	if wasAuction {
+		// @TODO remove GFA orders from book and update positions so we MTM correctly
 	}
 	// MTM if we have to (ie time passed, not in auction, and we have a mark price)
-	if mp := m.getCurrentMarkPrice(); mp != nil && !mp.IsZero() && !m.nextMTM.After(t) && !m.as.InAuction() {
+	// if mp := m.getCurrentMarkPrice(); mp != nil && !mp.IsZero() && !m.nextMTM.After(t) && !m.as.InAuction() {
+	if mp := m.getCurrentMarkPrice(); mp != nil && !mp.IsZero() && ((!m.nextMTM.After(t) && !m.as.InAuction()) || (!m.as.InAuction() && wasAuction)) {
 		m.nextMTM = t.Add(m.mtmDelta)                 // add delta here
 		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
 		dummy := &types.Order{
@@ -1055,6 +1057,8 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	// or which were cancelled at end of auction
 	updatedOrders := []*types.Order{}
 
+	// parties := make([]string, 0, len(ordersToCancel))
+	// pMap := make(map[string]struct{}, len(ordersToCancel))
 	// Process each order we have to cancel
 	for _, order := range ordersToCancel {
 		conf, err := m.cancelOrder(ctx, order.Party, order.ID)
@@ -1065,7 +1069,16 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		}
 
 		updatedOrders = append(updatedOrders, conf.Order)
+		// if _, ok := pMap[order.Party]; !ok {
+		// pMap[order.Party] = struct{}{}
+		// parties = append(parties, order.Party)
+		// }
 	}
+	// update settlement removing these orders
+	// we are leaving an auction, these should be GFA orders
+	// @TODO MTMDelta check this
+	// mEvts := m.position.GetPositionsByParty(parties...)
+	// m.settlement.Update(mEvts)
 
 	// now that we're left the auction, we can mark all positions
 	// in case any party is distressed (Which shouldn't be possible)
