@@ -93,10 +93,10 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party5 | t5-s-1    | STATUS_FILLED    |
       | party6 | t6-b-1    | STATUS_CANCELLED |
 
-    When the network moves ahead "1" blocks
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party2 | ETH/DEC19 | 39992       | 43991  | 47990   | 55988   |
+    Then debug transfers
     Then the following transfers should happen:
       | from   | to     | from account        | to account           | market id | amount | asset |
       | party4 | party4 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 1320   | BTC   |

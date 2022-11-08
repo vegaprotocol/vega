@@ -14,6 +14,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party4 | BTC   | 100000000 |
       | lpprov | BTC   | 100000000 |
 
+  @MTMDelta2
   Scenario: set up 2 parties with balance
     # place orders and generate trades
     When the parties place the following orders:
@@ -56,12 +57,13 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the opening auction period ends for market "ETH/DEC19"
     ## We're seeing these events twice for some reason
     And the following trades should be executed:
-      | buyer   | price | size | seller  |
+      | buyer  | price | size | seller  |
       | party1 | 10000 | 3    | party2 |
       | party1 | 10000 | 2    | party2 |
       | party1 | 10000 | 3    | party2 |
     And the mark price should be "10000" for the market "ETH/DEC19"
     ## Network for distressed party1 -> cancelled, nothing on the book is remaining
+    When the network moves ahead "1" blocks
     Then the orders should have the following status:
       | party  | reference | status           |
       | party1 | t1-b-1    | STATUS_FILLED    |
@@ -70,8 +72,9 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party2 | t2-s-2    | STATUS_CANCELLED |
       | party1 | t1-b-3    | STATUS_CANCELLED |
       | party2 | t2-s-3    | STATUS_FILLED    |
+    And debug transfers
     And the following transfers should happen:
-      | from    | to      | from account        | to account           | market id | amount | asset |
+      | from   | to     | from account        | to account           | market id | amount | asset |
       | party2 | party2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9480   | BTC   |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
@@ -80,6 +83,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       # values before uint
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
 
+  @MTMDelta
   Scenario: Uncross auction via order amendment
     # place orders and generate trades
     When the parties place the following orders:
