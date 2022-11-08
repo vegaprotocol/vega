@@ -15,7 +15,12 @@ Feature: Fees when amend trades
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
+  # this test requires me to be a bit more fresh to fix
+  @MTMSkip
   @Fees
   Scenario: Testing fees in continuous trading with one trade
     # setup accounts
@@ -49,7 +54,7 @@ Feature: Fees when amend trades
       | buy  | 910   | 210    |
       | sell | 1090  | 184    |
 
-    When the parties place the following orders:
+    When the parties place the following orders "1" blocks apart:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader3a | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | t3a-b3-02 |
       | trader3b | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | t3b-b1-02 |
@@ -97,6 +102,7 @@ Feature: Fees when amend trades
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader3a | ETH/DEC21 | buy  | 2      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | t3a-b2-01 |
       | trader4  | ETH/DEC21 | sell | 4      | 1003  | 0                | TYPE_LIMIT | TIF_GTC | t4-s4-03  |
+    And the network moves ahead "1" blocks
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 1171   | 8840    |

@@ -12,6 +12,7 @@ Feature: Staking & Delegation
       | reward.staking.delegation.competitionLevel        |  1.1   |
       | reward.staking.delegation.minValidators           |  5     |
       | reward.staking.delegation.optimalStakeMultiplier  |  5.0   |
+      | network.markPriceUpdateMaximumFrequency           | 0s     |
 
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
@@ -335,4 +336,4 @@ Feature: Staking & Delegation
     | party3 |  node2   | 0      |       
     | party3 |  node3   | 0      |  
     | party3 |  node4   | 0      |  
-    | party3 |  node5   | 500    |  
+    | party3 |  node5   | 500    |
