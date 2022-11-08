@@ -6,9 +6,11 @@ Feature: Distressed parties should not have general balance left
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC20 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
+  @MTMDelta
   Scenario: Upper bound breached
     Given the parties deposit on asset's general account the following amount:
       | party     | asset | amount         |
@@ -40,6 +42,10 @@ Feature: Distressed parties should not have general balance left
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+    # force MTM
+    Then the network moves ahead "1" blocks
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | party1 | ETH/DEC20 | sell | 20     | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | party2 | ETH/DEC20 | buy  | 20     | 80    | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
@@ -58,6 +64,10 @@ Feature: Distressed parties should not have general balance left
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party5 | ETH/DEC20 | buy  | 10     | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-1     |
+    # Force MTM again
+    Then the network moves ahead "1" blocks
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC20 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | party3 | ETH/DEC20 | sell | 10     | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
@@ -86,6 +96,7 @@ Feature: Distressed parties should not have general balance left
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party5 | ETH/DEC20 | buy  | 20     | 165   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+    And the network moves ahead "1" blocks
     Then the mark price should be "120" for the market "ETH/DEC20"
 
     Then the parties should have the following account balances:
@@ -97,8 +108,9 @@ Feature: Distressed parties should not have general balance left
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party4 | ETH/DEC20 | sell | 30     | 165   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party5 | ETH/DEC20 | buy  | 30     | 165   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    And the mark price should be "130" for the market "ETH/DEC20"
+    And then network moves ahead "1" blocks
+    Then the mark price should be "130" for the market "ETH/DEC20"
 
-    Then the parties should have the following account balances:
+    And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party3 | ETH   | ETH/DEC20 | 15027  | 0       |

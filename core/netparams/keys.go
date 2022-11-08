@@ -280,4 +280,5 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalUpdateAssetMinProposerBalance:          {},
 	GovernanceProposalUpdateAssetMinVoterBalance:             {},
 	SpamProtectionMaxBatchSize:                               {},
+	MarkPriceUpdateMaximumFrequency:                          {},
 }
