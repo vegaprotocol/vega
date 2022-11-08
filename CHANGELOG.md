@@ -1,12 +1,24 @@
 # Changelog
 
-## Unreleased 0.62.0
+## Unreleased 0.63.0
 
 ### 🚨 Breaking changes
-- [6598](https://github.com/vegaprotocol/vega/issues/6598) - Rework `vega tools snapshot` command to be more consistent with other CLI options
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.62.0
+
+### 🚨 Breaking changes
+- [6598](https://github.com/vegaprotocol/vega/issues/6598) - Rework `vega tools snapshot` command to be more consistent with other CLI options
 
 ### 🛠 Improvements
 - [6681](https://github.com/vegaprotocol/vega/issues/6681) - Add indexes to improve balance history query
