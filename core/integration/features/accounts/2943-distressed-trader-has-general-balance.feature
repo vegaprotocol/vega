@@ -62,15 +62,16 @@ Feature: Distressed parties should not have general balance left
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general       |
-      | party4 | ETH   | ETH/DEC20 | 240    | 9999999999760 |
+      | party4 | ETH   | ETH/DEC20 | 360    | 9999999999640 |
+      #| party4 | ETH   | ETH/DEC20 | 240    | 9999999999760 |
       | party5 | ETH   | ETH/DEC20 | 372    | 9999999999528 |
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party3 | ETH/DEC20 | 10000             | 0.1 | buy  | BID              | 10         | 10     | submission |
-      | lp1 | party3 | ETH/DEC20 | 10000             | 0.1 | sell | ASK              | 10         | 10     | amendment  |
+      | lp2 | party3 | ETH/DEC20 | 10000             | 0.1 | buy  | BID              | 10         | 10     | submission |
+      | lp2 | party3 | ETH/DEC20 | 10000             | 0.1 | sell | ASK              | 10         | 10     | amendment  |
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status        |
-      | lp1 | party3 | ETH/DEC20 | 10000             | STATUS_ACTIVE |
+      | lp2 | party3 | ETH/DEC20 | 10000             | STATUS_ACTIVE |
 
     Then the orders should have the following states:
       | party  | market id | side | volume | price | status        |
@@ -88,8 +89,9 @@ Feature: Distressed parties should not have general balance left
     Then the mark price should be "120" for the market "ETH/DEC20"
 
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general |
-      | party3 | ETH   | ETH/DEC20 | 15127  | 0       |
+      | party  | asset | market id | margin | general       |
+      | party3 | ETH   | ETH/DEC20 | 15127  | 0             |
+      | party4 | ETH   | ETH/DEC20 | 160    | 9999999999640 |
 
     ## Now let's increase the mark price so party3 gets distressed
     When the parties place the following orders "1" blocks apart:
