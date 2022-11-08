@@ -1,12 +1,13 @@
 Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTests.py & https://github.com/vegaprotocol/scenario-runner/tree/develop/scenarios/QA/issues/86)
 
   Background:
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts
@@ -35,7 +36,7 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
     Then the opening auction period ends for market "ETH/DEC19"
 
     # place orders and generate trades
-    When the parties place the following orders:
+    When the parties place the following orders "1" blocks apart:
       | party | market id | side | volume | price | resulting trades | type        | tif     | reference | expires in |
       | tt_10 | ETH/DEC19 | buy  | 5      | 100   | 0                | TYPE_LIMIT  | TIF_GTT | tt_10-1   | 3600       |
       | tt_11 | ETH/DEC19 | sell | 5      | 100   | 1                | TYPE_LIMIT  | TIF_GTT | tt_11-1   | 3600       |

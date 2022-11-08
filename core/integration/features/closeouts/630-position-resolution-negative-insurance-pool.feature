@@ -2,9 +2,12 @@ Feature: Regression test for issue 630
 
   Background:
 
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                | margin calculator         | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: Trader is being closed out.
 # setup accounts
@@ -37,7 +40,7 @@ Feature: Regression test for issue 630
     And the mark price should be "100" for the market "ETH/DEC19"
 
 # setup orderbook
-    When the parties place the following orders:
+    When the parties place the following orders "1" blocks apart:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 200    | 10000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 200    | 1     | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -45,7 +48,7 @@ Feature: Regression test for issue 630
     Then the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
       | sellSideProvider | ETH/DEC19 | 2000        | 2200   | 2400    | 2800    |
-    When the parties place the following orders:
+    When the parties place the following orders "1" blocks apart:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | partyGuy | ETH/DEC19 | buy  | 100    | 10000 | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following account balances:

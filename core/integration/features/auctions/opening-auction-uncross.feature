@@ -82,7 +82,6 @@ Feature: Set up a market, with an opening auction, then uncross the book
       # values before uint
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
 
-  @MTMDelta
   Scenario: Uncross auction via order amendment
     # place orders and generate trades
     When the parties place the following orders:
