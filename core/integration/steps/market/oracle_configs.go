@@ -21,7 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
 	types "code.vegaprotocol.io/vega/protos/vega"
-	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 var (
@@ -41,7 +41,7 @@ type oracleConfigs struct {
 }
 
 type OracleConfig struct {
-	Spec    *datav1.OracleSpec
+	Spec    *vegapb.OracleSpec
 	Binding *types.DataSourceSpecToFutureBinding
 }
 
@@ -84,13 +84,13 @@ func (f *oracleConfigs) GetSettlementDataDP(name string) uint32 {
 func (f *oracleConfigs) Add(
 	name string,
 	specType string,
-	spec *datav1.DataSourceSpec,
+	spec *vegapb.DataSourceSpec,
 	binding *types.DataSourceSpecToFutureBinding,
 ) error {
 	if specType == "settlement data" {
 		f.configForSettlementData[name] = &OracleConfig{
-			Spec: &datav1.OracleSpec{
-				ExternalDataSourceSpec: &datav1.ExternalDataSourceSpec{
+			Spec: &vegapb.OracleSpec{
+				ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
 					Spec: spec,
 				},
 			},
@@ -98,8 +98,8 @@ func (f *oracleConfigs) Add(
 		}
 	} else if specType == "trading termination" {
 		f.configFoTradingTermination[name] = &OracleConfig{
-			Spec: &datav1.OracleSpec{
-				ExternalDataSourceSpec: &datav1.ExternalDataSourceSpec{
+			Spec: &vegapb.OracleSpec{
+				ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
 					Spec: spec,
 				},
 			},

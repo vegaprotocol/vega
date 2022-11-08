@@ -6,9 +6,8 @@ import "vega/vega.proto";
 import "vega/markets.proto";
 import "vega/governance.proto";
 import "vega/assets.proto";
+import "vega/oracle.proto";
 import "vega/events/v1/events.proto";
-import "vega/data/v1/spec.proto";
-import "vega/data/v1/data.proto";
 import "vega/commands/v1/validator_commands.proto";
 
 package datanode.api.v1;
@@ -1232,7 +1231,7 @@ message OracleSpecRequest {
 // A response for a oracle spec
 message OracleSpecResponse {
   // The withdrawal matching the identifier from the request
-  vega.data.v1.OracleSpec oracle_spec = 1;
+  vega.OracleSpec oracle_spec = 1;
 }
 
 // A request to get a specific oracle spec by identifier
@@ -1243,7 +1242,7 @@ message OracleSpecsRequest {
 // The response for a list of withdrawals
 message OracleSpecsResponse {
   // The list of external data specs
-  repeated vega.data.v1.OracleSpec oracle_specs = 1;
+  repeated vega.OracleSpec oracle_specs = 1;
 }
 
 // A request to all oracle data broadcast to a given spec
@@ -1257,7 +1256,7 @@ message OracleDataBySpecRequest {
 // The response for a list of all oracle data broadcast to a given spec
 message OracleDataBySpecResponse {
   // The list of external data broadcast to a given spec
-  repeated vega.data.v1.OracleData oracle_data = 1;
+  repeated vega.OracleData oracle_data = 1;
 }
 
 // The request to get all seen oracle data
@@ -1268,7 +1267,7 @@ message ListOracleDataRequest {
 // The response to get all seen oracle data
 message ListOracleDataResponse {
   // The list of seen oracle data
-  repeated vega.data.v1.OracleData oracle_data = 1;
+  repeated vega.OracleData oracle_data = 1;
 }
 
 message ObserveRewardsRequest {

@@ -16,14 +16,14 @@ import (
 	"time"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type OracleSpec struct {
 	ExternalDataSourceSpec *ExternalDataSourceSpec
 }
 
-func OracleSpecFromProto(spec *datapb.OracleSpec, txHash TxHash, vegaTime time.Time) (*OracleSpec, error) {
+func OracleSpecFromProto(spec *vegapb.OracleSpec, txHash TxHash, vegaTime time.Time) (*OracleSpec, error) {
 	if spec.ExternalDataSourceSpec != nil {
 		ds, err := ExternalDataSourceSpecFromProto(spec.ExternalDataSourceSpec, txHash, vegaTime)
 		if err != nil {
@@ -40,8 +40,8 @@ func OracleSpecFromProto(spec *datapb.OracleSpec, txHash TxHash, vegaTime time.T
 	}, nil
 }
 
-func (os *OracleSpec) ToProto() *datapb.OracleSpec {
-	return &datapb.OracleSpec{
+func (os *OracleSpec) ToProto() *vegapb.OracleSpec {
+	return &vegapb.OracleSpec{
 		ExternalDataSourceSpec: os.ExternalDataSourceSpec.ToProto(),
 	}
 }

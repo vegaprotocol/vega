@@ -34,8 +34,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
-	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
-	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/version"
 
@@ -1673,8 +1671,8 @@ func (t *tradingDataServiceV2) GetOracleSpec(ctx context.Context, req *v2.GetOra
 	}
 
 	return &v2.GetOracleSpecResponse{
-		OracleSpec: &datapb.OracleSpec{
-			ExternalDataSourceSpec: &v1.ExternalDataSourceSpec{
+		OracleSpec: &vega.OracleSpec{
+			ExternalDataSourceSpec: &vega.ExternalDataSourceSpec{
 				Spec: spec.ToProto().ExternalDataSourceSpec.Spec,
 			},
 		},

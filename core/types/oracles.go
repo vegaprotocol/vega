@@ -21,7 +21,7 @@ type OracleSpecConfiguration struct {
 	ExternalDataSourceSpec *ExternalDataSourceSpecConfiguration
 }
 
-func OracleSpecConfigurationFromProto(protoConfig *datapb.DataSourceSpecConfiguration) *OracleSpecConfiguration {
+func OracleSpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfiguration) *OracleSpecConfiguration {
 	return &OracleSpecConfiguration{
 		ExternalDataSourceSpec: &ExternalDataSourceSpecConfiguration{
 			DataSourceSpec: &DataSourceSpecConfiguration{
@@ -95,10 +95,12 @@ type OracleSpec struct {
 	ExternalDataSourceSpec *ExternalDataSourceSpec
 }
 
-func OracleSpecFromProto(specProto *datapb.OracleSpec) *OracleSpec {
+func OracleSpecFromProto(specProto *vegapb.OracleSpec) *OracleSpec {
 	if specProto.ExternalDataSourceSpec != nil {
+		r := ExternalDataSourceSpecFromProto(specProto.ExternalDataSourceSpec)
+
 		return &OracleSpec{
-			ExternalDataSourceSpecFromProto(specProto.ExternalDataSourceSpec),
+			r,
 		}
 	}
 

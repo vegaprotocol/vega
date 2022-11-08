@@ -304,8 +304,8 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 		r.Product = &UpdateInstrumentConfigurationFuture{
 			Future: &UpdateFutureProduct{
 				QuoteName:                           pr.Future.QuoteName,
-				DataSourceSpecForSettlementData:     DataSourceSpecConfigurationFromProto(pr.Future.DataSourceSpecForSettlementData),
-				DataSourceSpecForTradingTermination: DataSourceSpecConfigurationFromProto(pr.Future.DataSourceSpecForTradingTermination),
+				DataSourceSpecForSettlementData:     *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData),
+				DataSourceSpecForTradingTermination: *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination),
 				SettlementDataDecimals:              pr.Future.SettlementDataDecimals,
 				DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
 			},
@@ -316,8 +316,8 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 
 type UpdateFutureProduct struct {
 	QuoteName                           string
-	DataSourceSpecForSettlementData     *DataSourceSpecConfiguration
-	DataSourceSpecForTradingTermination *DataSourceSpecConfiguration
+	DataSourceSpecForSettlementData     DataSourceDefinition
+	DataSourceSpecForTradingTermination DataSourceDefinition
 	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
 	SettlementDataDecimals              uint32
 }

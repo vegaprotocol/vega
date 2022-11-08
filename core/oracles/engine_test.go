@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/core/oracles/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -309,7 +310,7 @@ func newEngine(ctx context.Context, t *testing.T, tm time.Time) *testEngine {
 
 type dataBundle struct {
 	data  oracles.OracleData
-	proto datapb.OracleData
+	proto vegapb.OracleData
 }
 
 func dataWithPrice(currency, price string) dataBundle {
@@ -325,7 +326,7 @@ func dataWithPrice(currency, price string) dataBundle {
 			},
 			Signers: signers,
 		},
-		proto: datapb.OracleData{
+		proto: vegapb.OracleData{
 			ExternalData: &datapb.ExternalData{
 				Data: &datapb.Data{
 					Data: []*datapb.Property{
@@ -348,41 +349,62 @@ type specBundle struct {
 
 func spec(t *testing.T, currency string, op datapb.Condition_Operator, price string, keys ...string) specBundle {
 	t.Helper()
-	var signers []*types.Signer
+	var signers []*datapb.Signer
 	if len(keys) > 0 {
-		signers = make([]*types.Signer, len(keys))
+		signers = make([]*datapb.Signer, len(keys))
 		for i, k := range keys {
-			signers[i] = types.CreateSignerFromString(k, types.DataSignerTypePubKey)
+			signers[i] = &datapb.Signer{
+				Signer: &datapb.Signer_PubKey{
+					PubKey: &datapb.PubKey{
+						Key: k,
+					},
+				},
+			}
 		}
 	}
 	if len(keys) == 0 {
-		signers = []*types.Signer{types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey)}
+		signers = []*datapb.Signer{
+			{
+				Signer: &datapb.Signer_PubKey{
+					PubKey: &datapb.PubKey{
+						Key: "0xCAFED00D",
+					},
+				},
+			},
+		}
 	}
 
-	typedOracleSpec := types.OracleSpecFromProto(
-		&datapb.OracleSpec{
-			ExternalDataSourceSpec: &datapb.ExternalDataSourceSpec{
-				Spec: datapb.NewDataSourceSpec(
-					&datapb.DataSourceSpecConfiguration{
-						Signers: types.SignersIntoProto(signers),
-						Filters: []*datapb.Filter{
+	testSpec := vegapb.NewDataSourceSpec(
+		vegapb.NewDataSourceDefinition(
+			vegapb.DataSourceDefinitionTypeExt,
+		).SetOracleConfig(
+			&vegapb.DataSourceSpecConfiguration{
+				Signers: signers,
+				Filters: []*datapb.Filter{
+					{
+						Key: &datapb.PropertyKey{
+							Name: fmt.Sprintf("prices.%s.value", currency),
+							Type: datapb.PropertyKey_TYPE_INTEGER,
+						},
+						Conditions: []*datapb.Condition{
 							{
-								Key: &datapb.PropertyKey{
-									Name: fmt.Sprintf("prices.%s.value", currency),
-									Type: datapb.PropertyKey_TYPE_INTEGER,
-								},
-								Conditions: []*datapb.Condition{
-									{
-										Value:    price,
-										Operator: op,
-									},
-								},
+								Value:    price,
+								Operator: op,
 							},
 						},
 					},
-				),
+				},
+			},
+		),
+	)
+
+	typedOracleSpec := types.OracleSpecFromProto(
+		&vegapb.OracleSpec{
+			ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
+				Spec: testSpec,
 			},
 		})
+
 	spec, err := oracles.NewOracleSpec(*typedOracleSpec.ExternalDataSourceSpec)
 	if err != nil {
 		t.Fatalf("Couldn't create oracle spec: %v", err)
@@ -433,18 +455,18 @@ func newTimeService(ctx context.Context, t *testing.T) *testTimeService {
 func (b *testBroker) expectNewOracleSpecSubscription(currentTime time.Time, spec *types.OracleSpec) {
 	proto := spec.ExternalDataSourceSpec.IntoProto()
 	proto.Spec.CreatedAt = currentTime.UnixNano()
-	proto.Spec.Status = datapb.DataSourceSpec_STATUS_ACTIVE
-	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, datapb.OracleSpec{ExternalDataSourceSpec: proto})).Times(1)
+	proto.Spec.Status = vegapb.DataSourceSpec_STATUS_ACTIVE
+	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, vegapb.OracleSpec{ExternalDataSourceSpec: proto})).Times(1)
 }
 
 func (b *testBroker) expectOracleSpecSubscriptionDeactivation(currentTime time.Time, spec *types.OracleSpec) {
 	proto := spec.ExternalDataSourceSpec.IntoProto()
 	proto.Spec.CreatedAt = currentTime.UnixNano()
-	proto.Spec.Status = datapb.DataSourceSpec_STATUS_DEACTIVATED
-	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, datapb.OracleSpec{ExternalDataSourceSpec: proto})).Times(1)
+	proto.Spec.Status = vegapb.DataSourceSpec_STATUS_DEACTIVATED
+	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, vegapb.OracleSpec{ExternalDataSourceSpec: proto})).Times(1)
 }
 
-func (b *testBroker) expectMatchedOracleDataEvent(currentTime time.Time, data *datapb.OracleData, specIDs []string) {
+func (b *testBroker) expectMatchedOracleDataEvent(currentTime time.Time, data *vegapb.OracleData, specIDs []string) {
 	data.ExternalData.Data.MatchedSpecIds = specIDs
 	data.ExternalData.Data.BroadcastAt = currentTime.UnixNano()
 	b.EXPECT().Send(events.NewOracleDataEvent(b.ctx, *data)).Times(1)

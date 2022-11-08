@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
@@ -152,30 +153,30 @@ func (e *Engine) Unsubscribe(ctx context.Context, id SubscriptionID) {
 // subscription (and thus activation) to an oracle spec.
 // This may be a subscription to a brand-new oracle spec, or an additional one.
 func (e *Engine) sendNewOracleSpecSubscription(ctx context.Context, update updatedSubscription) {
-	proto := &datapb.ExternalDataSourceSpec{
-		Spec: &datapb.DataSourceSpec{},
+	proto := &vegapb.ExternalDataSourceSpec{
+		Spec: &vegapb.DataSourceSpec{},
 	}
 	if update.spec.ExternalDataSourceSpec != nil {
 		proto = update.spec.ExternalDataSourceSpec.IntoProto()
 	}
 	proto.Spec.CreatedAt = update.specActivatedAt.UnixNano()
-	proto.Spec.Status = datapb.DataSourceSpec_STATUS_ACTIVE
-	e.broker.Send(events.NewOracleSpecEvent(ctx, datapb.OracleSpec{ExternalDataSourceSpec: proto}))
+	proto.Spec.Status = vegapb.DataSourceSpec_STATUS_ACTIVE
+	e.broker.Send(events.NewOracleSpecEvent(ctx, vegapb.OracleSpec{ExternalDataSourceSpec: proto}))
 }
 
 // sendOracleSpecDeactivation send an event to the broker to inform of
 // the deactivation (and thus activation) to an oracle spec.
 // This may be a subscription to a brand-new oracle spec, or an additional one.
 func (e *Engine) sendOracleSpecDeactivation(ctx context.Context, update updatedSubscription) {
-	proto := &datapb.ExternalDataSourceSpec{
-		Spec: &datapb.DataSourceSpec{},
+	proto := &vegapb.ExternalDataSourceSpec{
+		Spec: &vegapb.DataSourceSpec{},
 	}
 	if update.spec.ExternalDataSourceSpec != nil {
 		proto = update.spec.ExternalDataSourceSpec.IntoProto()
 	}
 	proto.Spec.CreatedAt = update.specActivatedAt.UnixNano()
-	proto.Spec.Status = datapb.DataSourceSpec_STATUS_DEACTIVATED
-	e.broker.Send(events.NewOracleSpecEvent(ctx, datapb.OracleSpec{ExternalDataSourceSpec: proto}))
+	proto.Spec.Status = vegapb.DataSourceSpec_STATUS_DEACTIVATED
+	e.broker.Send(events.NewOracleSpecEvent(ctx, vegapb.OracleSpec{ExternalDataSourceSpec: proto}))
 }
 
 // sendMatchedOracleData send an event to the broker to inform of
@@ -199,7 +200,7 @@ func (e *Engine) sendMatchedOracleData(ctx context.Context, data OracleData, spe
 		sigs[i] = s.IntoProto()
 	}
 
-	dataProto := datapb.OracleData{
+	dataProto := vegapb.OracleData{
 		ExternalData: &datapb.ExternalData{
 			Data: &datapb.Data{
 				Signers:        sigs,
@@ -209,5 +210,5 @@ func (e *Engine) sendMatchedOracleData(ctx context.Context, data OracleData, spe
 			},
 		},
 	}
-	e.broker.Send(events.NewOracleDataEvent(ctx, datapb.OracleData{ExternalData: dataProto.ExternalData}))
+	e.broker.Send(events.NewOracleDataEvent(ctx, vegapb.OracleData{ExternalData: dataProto.ExternalData}))
 }

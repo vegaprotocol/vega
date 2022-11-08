@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
@@ -102,11 +103,11 @@ func testGetOracleDataBySpecID(t *testing.T) {
 	assert.Equal(t, 2, len(got))
 }
 
-func getTestOracleData() []*datapb.OracleData {
+func getTestOracleData() []*vegapb.OracleData {
 	pk1 := types.CreateSignerFromString("b105f00d", types.DataSignerTypePubKey)
 	pk2 := types.CreateSignerFromString("baddcafe", types.DataSignerTypePubKey)
 
-	return []*datapb.OracleData{
+	return []*vegapb.OracleData{
 		{ // 0
 			ExternalData: &datapb.ExternalData{
 				Data: &datapb.Data{

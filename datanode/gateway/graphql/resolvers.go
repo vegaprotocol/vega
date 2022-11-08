@@ -34,8 +34,6 @@ import (
 	types "code.vegaprotocol.io/vega/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
-	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -242,6 +240,10 @@ func (r *VegaResolverRoot) NewAsset() NewAssetResolver {
 
 func (r *VegaResolverRoot) UpdateAsset() UpdateAssetResolver {
 	return (*updateAssetResolver)(r)
+}
+
+func (r *VegaResolverRoot) UpdateFutureProduct() UpdateFutureProductResolver {
+	return (*updateFutureProductResolver)(r)
 }
 
 func (r *VegaResolverRoot) NewMarket() NewMarketResolver {
@@ -507,7 +509,7 @@ func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {
 }
 
 // Deprecated: Use OracleSpecsConnection.
-func (r *myQueryResolver) OracleSpecs(ctx context.Context, pagination *OffsetPagination) ([]*datapb.OracleSpec, error) {
+func (r *myQueryResolver) OracleSpecs(ctx context.Context, pagination *OffsetPagination) ([]*types.OracleSpec, error) {
 	paginationProto, err := pagination.ToProto()
 	if err != nil {
 		return nil, fmt.Errorf("invalid pagination object: %w", err)
@@ -536,7 +538,7 @@ func (r *myQueryResolver) OracleSpecsConnection(ctx context.Context, pagination 
 	return res.OracleSpecs, nil
 }
 
-func (r *myQueryResolver) OracleSpec(ctx context.Context, id string) (*datapb.OracleSpec, error) {
+func (r *myQueryResolver) OracleSpec(ctx context.Context, id string) (*types.OracleSpec, error) {
 	res, err := r.tradingDataClientV2.GetOracleSpec(
 		ctx, &v2.GetOracleSpecRequest{OracleSpecId: id},
 	)
@@ -550,7 +552,7 @@ func (r *myQueryResolver) OracleSpec(ctx context.Context, id string) (*datapb.Or
 // Deprecated: Use OracleDataBySpecConnection instead.
 func (r *myQueryResolver) OracleDataBySpec(ctx context.Context, id string,
 	pagination *OffsetPagination,
-) ([]*datapb.OracleData, error) {
+) ([]*types.OracleData, error) {
 	paginationProto, err := pagination.ToProto()
 	if err != nil {
 		return nil, fmt.Errorf("invalid pagination object: %w", err)
@@ -590,7 +592,7 @@ func (r *myQueryResolver) OracleDataBySpecConnection(ctx context.Context, oracle
 }
 
 // Deprecated: Use OracleDataConnection instead.
-func (r *myQueryResolver) OracleData(ctx context.Context, pagination *OffsetPagination) ([]*datapb.OracleData, error) {
+func (r *myQueryResolver) OracleData(ctx context.Context, pagination *OffsetPagination) ([]*types.OracleData, error) {
 	paginationProto, err := pagination.ToProto()
 	if err != nil {
 		return nil, fmt.Errorf("invalid pagination object: %w", err)
@@ -2411,7 +2413,7 @@ func (r *myCandleResolver) Volume(_ context.Context, obj *v2.Candle) (string, er
 // BEGIN: DataSourceSpecConfiguration Resolver.
 type myDataSourceSpecConfigurationResolver VegaResolverRoot
 
-func (m *myDataSourceSpecConfigurationResolver) Signers(ctx context.Context, obj *v1.DataSourceSpecConfiguration) ([]*Signer, error) {
+func (m *myDataSourceSpecConfigurationResolver) Signers(ctx context.Context, obj *types.DataSourceSpecConfiguration) ([]*Signer, error) {
 	if len(obj.Signers) > 0 {
 		signers := make([]*Signer, len(obj.Signers))
 

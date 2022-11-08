@@ -17,9 +17,21 @@ type AssetSource interface {
 	IsAssetSource()
 }
 
+type DataSourceKind interface {
+	IsDataSourceKind()
+}
+
 // Union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind
 type Event interface {
 	IsEvent()
+}
+
+type ExternalDataSourceKind interface {
+	IsExternalDataSourceKind()
+}
+
+type InternalDataSourceKind interface {
+	IsInternalDataSourceKind()
 }
 
 type Oracle interface {
@@ -113,6 +125,29 @@ type Data struct {
 	BroadcastAt string `json:"broadcastAt"`
 }
 
+// DataSourceDefinition represents the top level object that deals with data sources.
+// DataSourceDefinition can be external or internal, with whatever number of data sources are defined
+// for each type in the child objects below.
+type DataSourceDefinition struct {
+	SourceType DataSourceKind `json:"sourceType"`
+}
+
+// DataSourceDefinitionExternal is the top level object used for all external data sources.
+// It contains one of any of the defined `SourceType` variants.
+type DataSourceDefinitionExternal struct {
+	SourceType ExternalDataSourceKind `json:"sourceType"`
+}
+
+func (DataSourceDefinitionExternal) IsDataSourceKind() {}
+
+// DataSourceDefinitionInternal is the top level object used for all internal data sources.
+// It contains one of any of the defined `SourceType` variants.
+type DataSourceDefinitionInternal struct {
+	SourceType InternalDataSourceKind `json:"sourceType"`
+}
+
+func (DataSourceDefinitionInternal) IsDataSourceKind() {}
+
 // An data source specification describes the data source data that a product (or a risk model)
 // wants to get from the oracle engine.
 type DataSourceSpec struct {
@@ -121,11 +156,18 @@ type DataSourceSpec struct {
 	// RFC3339Nano creation date time
 	CreatedAt string `json:"createdAt"`
 	// RFC3339Nano last updated timestamp
-	UpdatedAt *string                         `json:"updatedAt"`
-	Config    *v1.DataSourceSpecConfiguration `json:"config"`
+	UpdatedAt *string               `json:"updatedAt"`
+	Data      *DataSourceDefinition `json:"data"`
 	// Status describes the status of the data source spec
 	Status DataSourceSpecStatus `json:"status"`
 }
+
+// DataSourceSpecConfigurationTime is the internal data source used for emitting timestamps.
+type DataSourceSpecConfigurationTime struct {
+	Conditions []*v1.Condition `json:"conditions"`
+}
+
+func (DataSourceSpecConfigurationTime) IsInternalDataSourceKind() {}
 
 // Frequent batch auctions trading mode
 type DiscreteTrading struct {
