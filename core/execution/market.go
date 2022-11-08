@@ -727,10 +727,16 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 
 	// check auction, if any
 	m.checkAuction(ctx, t)
-	// should we MTM regardless of auction state?
-	if !m.nextMTM.After(t) {
-		m.nextMTM = t.Add(m.mtmDelta) // add delta here
-		m.confirmMTMNoOrder(ctx)
+	// MTM if we have to (ie time passed, not in auction, and we have a mark price)
+	if mp := m.getMarkPrice(); !mp.IsZero() && !m.nextMTM.After(t) && !m.as.InAuction() {
+		m.nextMTM = t.Add(m.mtmDelta)                 // add delta here
+		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
+		dummy := &types.Order{
+			ID:            m.idgen.NextID(),
+			Price:         mp.Clone(),
+			OriginalPrice: mcmp,
+		}
+		m.confirmMTM(ctx, dummy)
 	}
 	timer.EngineTimeCounterAdd()
 
@@ -1682,48 +1688,6 @@ func (m *Market) confirmMTM(
 		if len(closed) > 0 {
 			orderUpdates, err = m.resolveClosedOutParties(
 				ctx, closed, ptr.From(order.ID))
-			if err != nil {
-				m.log.Error("unable to closed out parties",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
-			}
-		}
-		m.updateLiquidityFee(ctx)
-	}
-
-	return orderUpdates
-}
-
-func (m *Market) confirmMTMNoOrder(ctx context.Context) {
-	markPrice := m.getCurrentMarkPrice()
-	evts := m.position.UpdateMarkPrice(markPrice)
-	settle := m.settlement.SettleMTM(ctx, markPrice, evts)
-	mcmp := num.UintZero().Div(markPrice, m.priceFactor) // create the market representation of the price
-	dummy := types.Order{
-		ID:            m.idgen.NextID(),
-		Price:         markPrice.Clone(),
-		OriginalPrice: mcmp,
-	}
-
-	// Only process collateral and risk once per order, not for every trade
-	margins := m.collateralAndRisk(ctx, settle)
-	if len(margins) > 0 {
-		transfers, closed, bondPenalties, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
-		if err == nil && len(transfers) > 0 {
-			evt := events.NewLedgerMovements(ctx, transfers)
-			m.broker.Send(evt)
-		}
-		if len(bondPenalties) > 0 {
-			transfers, err := m.bondSlashing(ctx, bondPenalties...)
-			if err != nil {
-				m.log.Error("Failed to perform bond slashing",
-					logging.Error(err))
-			}
-			m.broker.Send(events.NewLedgerMovements(ctx, transfers))
-		}
-		if len(closed) > 0 {
-			orderUpdates, err = m.resolveClosedOutParties(
-				ctx, closed, ptr.From(dummy.ID))
 			if err != nil {
 				m.log.Error("unable to closed out parties",
 					logging.String("market-id", m.GetID()),
