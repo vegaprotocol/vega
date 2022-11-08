@@ -1,4 +1,4 @@
-Feature: Closeout-cascades, 2 parties get close-out at the same time
+Feature: Closeout scenarios
   # This is a test case to demonstrate an order can be rejected when the trader (who places an initial order) does not have enouge collateral to cover the initial margin level
 
   Background:
@@ -14,11 +14,12 @@ Feature: Closeout-cascades, 2 parties get close-out at the same time
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring | data source config     |
       | ETH/DEC19 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future |
+      | ETH/DEC20 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | default-basic    | default-eth-for-future |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: Distressed position gets taken over by LP, distressed order gets canceled (0005-COLL-002; 0012-POSR-001; 0012-POSR-002; 0012-POSR-004; 0012-POSR-005)
+  Scenario: 2 parties get close-out at the same time. Distressed position gets taken over by LP, distressed order gets canceled (0005-COLL-002; 0012-POSR-001; 0012-POSR-002; 0012-POSR-004; 0012-POSR-005)
     # setup accounts, we are trying to closeout trader3 first and then trader2
 
     Given the insurance pool balance should be "0" for the market "ETH/DEC19"
@@ -135,4 +136,71 @@ Feature: Closeout-cascades, 2 parties get close-out at the same time
       | lprov      | 10     | 550            | -461         |
     And the mark price should be "100" for the market "ETH/DEC19"
 
+Scenario: Position becomes distressed upon exiting an auction (0012-POSR-007)
+    Given the insurance pool balance should be "0" for the market "ETH/DEC19"
+    Given the parties deposit on asset's general account the following amount:
+      | party      | asset | amount        |
+      | auxiliary1 | USD   | 1000000000000 |
+      | auxiliary2 | USD   | 1000000000000 |
+      | trader2    | USD   | 1027          |
+      | lprov      | USD   | 1000000000000 |
 
+    When the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lprov | ETH/DEC20 | 100000            | 0.001 | sell | ASK              | 100        | 55     | submission |
+      | lp1 | lprov | ETH/DEC20 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendmend  |
+    Then the parties place the following orders:
+      | party      | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | auxiliary2 | ETH/DEC20 | buy  | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-5    |
+      | auxiliary1 | ETH/DEC20 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1000 |
+      | auxiliary2 | ETH/DEC20 | buy  | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1    |
+      | auxiliary1 | ETH/DEC20 | sell | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1    |
+    When the opening auction period ends for market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 10         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 5       | 10        | 10        | 3556         | 100000         | 10            |
+      | 10         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 10      | 10        | 10        | 3556         | 100000         | 10            |
+
+    When the parties place the following orders:
+      | party      | market id  | side | volume | price | resulting trades | type       | tif     |
+      | auxiliary2 | ETH/DEC20  | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2    | ETH/DEC20  | sell | 1      | 10    | 1                | TYPE_LIMIT | TIF_GTC |
+
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader2 | ETH/DEC20 | 1026        | 1539   | 2052    | 3078    |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader2 | USD   | ETH/DEC20 | 1026   | 0       |
+
+    When the parties place the following orders:
+      | party      | market id | side | volume | price | resulting trades | type       | tif     |
+      | auxiliary1 | ETH/DEC20 | sell | 10     | 40    | 0                | TYPE_LIMIT | TIF_GTC |
+      | auxiliary2 | ETH/DEC20 | buy  | 10     | 40    | 0                | TYPE_LIMIT | TIF_GTC |
+
+   Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | target stake | supplied stake | open interest |
+      | 10         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 29877        | 100000         | 11            |
+
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader2 | -1     | 0              | 0            |
+
+    Then the network moves ahead "14" blocks
+    And the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | auction trigger               | target stake | supplied stake | open interest |
+      | 10         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 29877        | 100000         | 11            |
+
+    Then the network moves ahead "1" blocks
+    And the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 40         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 29877        | 100000         | 21            |   
+
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader2 | 0      | 0              | -1026        |
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader2 | USD   | ETH/DEC20 | 0      | 0       |
+   
