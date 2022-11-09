@@ -7,6 +7,9 @@ Feature: Verify the order size is correctly cumulated.
     And the markets:
       | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size.
 
@@ -45,7 +48,7 @@ Feature: Verify the order size is correctly cumulated.
       | party-lp-1 | ETH/DEC19 | buy  | 167    | 11999990 | STATUS_ACTIVE |
       | party-lp-1 | ETH/DEC19 | sell | 167    | 12000010 | STATUS_ACTIVE |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 167    | 11999990 | 0                | TYPE_LIMIT | TIF_GTC | party3-1 |
       | party3 | ETH/DEC19 | sell | 167    | 12000010 | 0                | TYPE_LIMIT | TIF_GTC | party3-2 |
