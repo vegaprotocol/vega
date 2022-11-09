@@ -209,6 +209,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties place the following orders "([^"]+)" blocks apart:$`, func(blockCount string, table *godog.Table) error {
 		return steps.PartiesPlaceTheFollowingOrdersBlocksApart(execsetup.executionEngine, execsetup.timeService, execsetup.block, execsetup.epochEngine, table, blockCount)
 	})
+	s.Step(`^the parties place the following orders with ticks:$`, func(table *godog.Table) error {
+		return steps.PartiesPlaceTheFollowingOrdersWithTicks(execsetup.executionEngine, execsetup.timeService, execsetup.epochEngine, table)
+	})
 
 	s.Step(`^the parties submit the following liquidity provision:$`, func(table *godog.Table) error {
 		return steps.PartiesSubmitLiquidityProvision(execsetup.executionEngine, table)

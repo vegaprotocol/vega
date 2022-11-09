@@ -26,6 +26,49 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
+func PartiesPlaceTheFollowingOrdersWithTicks(exec Execution, time *stubs.TimeStub, epochService EpochService, table *godog.Table) error {
+	for _, r := range parseSubmitOrderTable(table) {
+		row := newSubmitOrderRow(r)
+
+		orderSubmission := types.OrderSubmission{
+			MarketID:    row.MarketID(),
+			Side:        row.Side(),
+			Price:       row.Price(),
+			Size:        row.Volume(),
+			ExpiresAt:   row.ExpirationDate(),
+			Type:        row.OrderType(),
+			TimeInForce: row.TimeInForce(),
+			Reference:   row.Reference(),
+		}
+
+		resp, err := exec.SubmitOrder(context.Background(), &orderSubmission, row.Party())
+		if ceerr := checkExpectedError(row, err, nil); ceerr != nil {
+			return ceerr
+		}
+
+		if !row.ExpectResultingTrades() || err != nil {
+			continue
+		}
+
+		actualTradeCount := int64(len(resp.Trades))
+		if actualTradeCount != row.ResultingTrades() {
+			return formatDiff(fmt.Sprintf("the resulting trades didn't match the expectation for order \"%v\"", row.Reference()),
+				map[string]string{
+					"total": i64ToS(row.ResultingTrades()),
+				},
+				map[string]string{
+					"total": i64ToS(actualTradeCount),
+				},
+			)
+		}
+		// make it look like we start a new block
+		epochService.OnBlockEnd(context.Background())
+		// trigger OnTick calls, but without actually progressing time
+		time.SetTime(time.GetTimeNow())
+	}
+	return nil
+}
+
 func PartiesPlaceTheFollowingOrdersBlocksApart(exec Execution, time *stubs.TimeStub, block *helpers.Block, epochService EpochService, table *godog.Table, blockCount string) error {
 	nr, err := strconv.ParseInt(blockCount, 10, 0)
 	if err != nil {
