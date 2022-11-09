@@ -1,0 +1,1 @@
+{"TestName":"TestTransfers_Transfers","Query":"{ transfersConnection(direction : To){ edges{ node{ id from fromAccountType to toAccountType amount reference status asset{ id } } } } }","Result":{"transfersConnection":{"edges":null}},"Duration":1446291}
