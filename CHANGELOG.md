@@ -16,6 +16,8 @@
 - [6764](https://github.com/vegaprotocol/vega/issues/6764) - If a trading terminated oracle changes after trading already terminated do not subscribe to it
 - [6775](https://github.com/vegaprotocol/vega/issues/6775) - Fix oracle spec identifiers
 - [6762](https://github.com/vegaprotocol/vega/issues/6762) - Fix one off transfer events serialization
+- [6747](https://github.com/vegaprotocol/vega/issues/6747) - Ensure proposal with no participation does not get enacted
+
 
 ## 0.62.0
 

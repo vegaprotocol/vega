@@ -57,7 +57,6 @@ type Broker interface {
 
 // Markets allows to get the market data for use in the market update proposal
 // computation.
-
 type Markets interface {
 	MarketExists(market string) bool
 	GetMarket(market string) (types.Market, bool)
@@ -69,7 +68,6 @@ type Markets interface {
 }
 
 // StakingAccounts ...
-
 type StakingAccounts interface {
 	GetAvailableBalance(party string) (*num.Uint, error)
 	GetStakingAssetTotalSupply() *num.Uint
@@ -1140,9 +1138,15 @@ func (p *proposal) computeVoteStateUsingTokens(accounts StakingAccounts) (types.
 	totalTokensDec := num.DecimalFromUint(totalTokens)
 	p.weightVotesFromToken(p.yes, totalTokensDec)
 	p.weightVotesFromToken(p.no, totalTokensDec)
-	majorityThreshold := totalTokensDec.Mul(p.Proposal.RequiredMajority)
+	majorityThreshold := totalTokensDec.Mul(p.RequiredMajority)
 	totalStakeDec := num.DecimalFromUint(totalStake)
-	participationThreshold := totalStakeDec.Mul(p.Proposal.RequiredParticipation)
+	participationThreshold := totalStakeDec.Mul(p.RequiredParticipation)
+
+	// if we have 0 votes, then just return straight away,
+	// prevents a proposal to go through if the participation is set to 0
+	if totalTokens.IsZero() {
+		return types.ProposalStateDeclined, types.ProposalErrorParticipationThresholdNotReached
+	}
 
 	if yesDec.GreaterThanOrEqual(majorityThreshold) && totalTokensDec.GreaterThanOrEqual(participationThreshold) {
 		return types.ProposalStatePassed, types.ProposalErrorUnspecified
@@ -1160,11 +1164,11 @@ func (p *proposal) computeVoteStateUsingEquityLikeShare(markets Markets) (types.
 	no := p.countEquityLikeShare(p.no, markets)
 	totalEquityLikeShare := yes.Add(no)
 
-	if yes.GreaterThanOrEqual(p.Proposal.RequiredLPMajority) && totalEquityLikeShare.GreaterThanOrEqual(p.Proposal.RequiredLPParticipation) {
+	if yes.GreaterThanOrEqual(p.RequiredLPMajority) && totalEquityLikeShare.GreaterThanOrEqual(p.RequiredLPParticipation) {
 		return types.ProposalStatePassed, types.ProposalErrorUnspecified
 	}
 
-	if totalEquityLikeShare.LessThan(p.Proposal.RequiredLPParticipation) {
+	if totalEquityLikeShare.LessThan(p.RequiredLPParticipation) {
 		return types.ProposalStateDeclined, types.ProposalErrorParticipationThresholdNotReached
 	}
 
