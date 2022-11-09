@@ -1,10 +1,12 @@
 Feature: Regression test for issue 598
 
   Background:
-
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | BTC        | BTC   | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: Open position but ZERO in margin account
     Given the parties deposit on asset's general account the following amount:
@@ -36,7 +38,7 @@ Feature: Regression test for issue 598
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "100" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | edd    | ETH/DEC19 | sell | 10     | 101   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | edd    | ETH/DEC19 | sell | 12     | 102   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -53,7 +55,7 @@ Feature: Regression test for issue 598
       | edd    | BTC   | ETH/DEC19 | 571    | 429     |
       | barney | BTC   | ETH/DEC19 | 535    | 465     |
 # next instruction will trade with edd
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris | ETH/DEC19 | buy  | 10     | 0     | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then the parties should have the following account balances:
@@ -61,7 +63,7 @@ Feature: Regression test for issue 598
       | edd   | BTC   | ETH/DEC19 | 571    | 429     |
       | chris | BTC   | ETH/DEC19 | 109    | 891     |
 # next instruction will trade with barney
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris | ETH/DEC19 | sell | 10     | 0     | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then the parties should have the following account balances:

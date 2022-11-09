@@ -2,9 +2,12 @@ Feature: test for issue 1920
 
   Background:
 
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: a party place a new order in the system, margin are calculated, then the order is stopped, the margin is released
     Given the parties deposit on asset's general account the following amount:
@@ -28,7 +31,7 @@ Feature: test for issue 1920
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "1000" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK | ref-1     |
 

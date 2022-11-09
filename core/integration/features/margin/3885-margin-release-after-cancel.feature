@@ -2,9 +2,12 @@ Feature: Regression test for issue 3885
 
   Background:
 
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | auction duration | risk model                    | margin calculator         | fees         | data source config          | price monitoring |
       | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-eth-for-future | default-none     |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @Cancel
   Scenario: Margin should be released after the order was canceled
@@ -38,7 +41,7 @@ Feature: Regression test for issue 3885
       | party  | asset | market id | margin | general |
       | party1 | BTC   | ETH/DEC19 | 14     | 9986    |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | party1-2  |
       | party2 | ETH/DEC19 | sell | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC | party2-2  |
@@ -48,7 +51,7 @@ Feature: Regression test for issue 3885
       | party  | asset | market id | margin | general |
       | party1 | BTC   | ETH/DEC19 | 28     | 9972    |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | party1-3  |
     Then the parties should have the following account balances:
