@@ -6394,6 +6394,8 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	cnf, err := tm.market.SubmitOrder(ctx, newOrder)
 	assert.NoError(t, err)
 	assert.True(t, len(cnf.Trades) > 0)
+	// force MTM transfers here, we reset the events after
+	tm.market.OnTick(ctx, tm.now)
 
 	// clean the events
 	// then check for transfer of liquidity fees
@@ -6818,10 +6820,11 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		TimeInForce: types.OrderTimeInForceGTC,
 	})
 
-	tm.events = nil
 	cnf, err := tm.market.SubmitOrder(ctx, newOrder)
 	assert.NoError(t, err)
 	assert.True(t, len(cnf.Trades) > 0)
+	// force MTM
+	tm.market.OnTick(ctx, tm.now)
 
 	// clean the events
 	// then check for transfer of liquidity fees
