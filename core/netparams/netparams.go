@@ -409,7 +409,6 @@ func (s *Store) AddRules(params ...AddParamRules) error {
 	for _, v := range params {
 		value, ok := s.store[v.Param]
 		if !ok {
-			panic("??")
 			return ErrUnknownKey
 		}
 		if err := value.AddRules(v.Rules...); err != nil {
