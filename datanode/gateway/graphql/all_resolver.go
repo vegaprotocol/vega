@@ -16,14 +16,12 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/logging"
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type allResolver struct {
 	log  *logging.Logger
-	clt  TradingDataServiceClient
 	clt2 TradingDataServiceClientV2
 }
 
@@ -57,10 +55,10 @@ func (r *allResolver) getAssetByID(ctx context.Context, id string) (*types.Asset
 	if len(id) <= 0 {
 		return nil, ErrMissingIDOrReference
 	}
-	req := &protoapi.AssetByIDRequest{
-		Id: id,
+	req := &v2.GetAssetRequest{
+		AssetId: id,
 	}
-	res, err := r.clt.AssetByID(ctx, req)
+	res, err := r.clt2.GetAsset(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +69,8 @@ func (r *allResolver) getNodeByID(ctx context.Context, id string) (*types.Node, 
 	if len(id) <= 0 {
 		return nil, ErrMissingNodeID
 	}
-	resp, err := r.clt.GetNodeByID(
-		ctx, &protoapi.GetNodeByIDRequest{Id: id})
+	resp, err := r.clt2.GetNode(
+		ctx, &v2.GetNodeRequest{Id: id})
 	if err != nil {
 		return nil, err
 	}
@@ -92,20 +90,6 @@ func (r *allResolver) getMarketByID(ctx context.Context, id string) (*types.Mark
 		return nil, nil
 	}
 	return res.Market, nil
-}
-
-func (r *allResolver) allRewards(ctx context.Context, partyID, assetID string, skip, first, last *int) ([]*types.Reward, error) {
-	req := &protoapi.GetRewardsRequest{
-		PartyId:    partyID,
-		AssetId:    assetID,
-		Pagination: makePagination(skip, first, last),
-	}
-	resp, err := r.clt.GetRewards(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Rewards, nil
 }
 
 func (r *allResolver) transfersConnection(

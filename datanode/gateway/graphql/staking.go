@@ -16,7 +16,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/datanode/vegatime"
-	dnapiproto "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vgproto "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
@@ -41,6 +41,10 @@ func (s *stakeLinkingResolver) FinalizedAt(ctx context.Context, obj *eventspb.St
 
 type partyStakeResolver VegaResolverRoot
 
-func (p *partyStakeResolver) Linkings(ctx context.Context, obj *dnapiproto.PartyStakeResponse) ([]*eventspb.StakeLinking, error) {
-	return obj.StakeLinkings, nil
+func (p *partyStakeResolver) Linkings(_ context.Context, obj *v2.GetStakeResponse) ([]*eventspb.StakeLinking, error) {
+	var linkings []*eventspb.StakeLinking
+	for _, l := range obj.GetStakeLinkings().GetEdges() {
+		linkings = append(linkings, l.GetNode())
+	}
+	return linkings, nil
 }

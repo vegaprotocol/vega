@@ -29,8 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/logging"
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
-	protoapi2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
@@ -59,7 +58,7 @@ type BlockService interface {
 
 // DeHistoryService ...
 //
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/block_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api DeHistoryService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/dehistory_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api DeHistoryService
 type DeHistoryService interface {
 	GetHighestBlockHeightHistorySegment() (store.SegmentIndexEntry, error)
 	ListAllHistorySegments() ([]store.SegmentIndexEntry, error)
@@ -76,7 +75,6 @@ type GRPCServer struct {
 
 	eventService               *subscribers.Service
 	coreProxySvc               *coreProxyService
-	tradingDataService         protoapi.TradingDataServiceServer
 	orderService               *service.Order
 	candleService              *candlesv2.Svc
 	networkLimitsService       *service.NetworkLimits
@@ -368,45 +366,6 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 	g.coreProxySvc = coreProxySvc
 	vegaprotoapi.RegisterCoreServiceServer(g.srv, coreProxySvc)
 
-	g.tradingDataService = &tradingDataService{
-		log:          g.log,
-		Config:       g.Config,
-		eventService: g.eventService,
-		// tradingDataService:          tradingDataSvc,
-		orderService:              g.orderService,
-		tradeService:              g.tradeService,
-		assetService:              g.assetService,
-		accountService:            g.accountService,
-		rewardService:             g.rewardService,
-		marketService:             g.marketsService,
-		delegationService:         g.delegationService,
-		epochService:              g.epochService,
-		depositService:            g.depositService,
-		withdrawalService:         g.withdrawalService,
-		governanceService:         g.governanceService,
-		riskFactorService:         g.riskFactorService,
-		networkParameterService:   g.networkParameterService,
-		blockService:              g.blockService,
-		checkpointService:         g.checkpointService,
-		partyService:              g.partyService,
-		candleService:             g.candleService,
-		oracleSpecService:         g.oracleSpecService,
-		oracleDataService:         g.oracleDataService,
-		liquidityProvisionService: g.liquidityProvisionService,
-		positionService:           g.positionService,
-		transferService:           g.transferService,
-		stakeLinkingService:       g.stakeLinkingService,
-		notaryService:             g.notaryService,
-		keyRotationService:        g.keyRotationService,
-		nodeService:               g.nodeService,
-		marketDepthService:        g.marketDepthService,
-		riskService:               g.riskService,
-		marketDataService:         g.marketDataService,
-		ledgerService:             g.ledgerService,
-	}
-
-	protoapi.RegisterTradingDataServiceServer(g.srv, g.tradingDataService)
-
 	tradingDataSvcV2 := &tradingDataServiceV2{
 		config:                     g.Config,
 		log:                        g.log,
@@ -449,7 +408,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		deHistoryService:           g.deHistoryService,
 	}
 
-	protoapi2.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)
+	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)
 
 	eg, ctx := errgroup.WithContext(ctx)
 

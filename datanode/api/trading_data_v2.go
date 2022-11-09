@@ -1064,6 +1064,14 @@ func (t *tradingDataServiceV2) GetLastTrade(ctx context.Context, req *v2.GetLast
 	return &v2.GetLastTradeResponse{}, nil
 }
 
+func tradesToProto(trades []entities.Trade) []*vega.Trade {
+	var protoTrades []*vega.Trade
+	for _, trade := range trades {
+		protoTrades = append(protoTrades, trade.ToProto())
+	}
+	return protoTrades
+}
+
 // Get trades by using a cursor based pagination model.
 func (t *tradingDataServiceV2) ListTrades(ctx context.Context, in *v2.ListTradesRequest) (*v2.ListTradesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListTradesV2")()
@@ -2727,6 +2735,14 @@ func (t *tradingDataServiceV2) proposalToGovernanceData(ctx context.Context, pro
 		No:       protoNoVotes,
 	}
 	return &gd, nil
+}
+
+func voteListToProto(votes []entities.Vote) []*vega.Vote {
+	protoVotes := make([]*vega.Vote, len(votes))
+	for j, vote := range votes {
+		protoVotes[j] = vote.ToProto()
+	}
+	return protoVotes
 }
 
 func (t *tradingDataServiceV2) ObserveVotes(req *v2.ObserveVotesRequest, stream v2.TradingDataService_ObserveVotesServer) error {

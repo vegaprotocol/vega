@@ -28,7 +28,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 	types "code.vegaprotocol.io/vega/protos/vega"
@@ -50,16 +49,11 @@ var (
 	ErrInvalidProposal = errors.New("invalid proposal")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/datanode/gateway/graphql CoreProxyServiceClient,TradingDataServiceClientV2,TradingDataServiceClient
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/datanode/gateway/graphql CoreProxyServiceClient,TradingDataServiceClientV2
 
 // CoreProxyServiceClient ...
 type CoreProxyServiceClient interface {
 	vegaprotoapi.CoreServiceClient
-}
-
-// TradingDataServiceClient ...
-type TradingDataServiceClient interface {
-	protoapi.TradingDataServiceClient
 }
 
 type TradingDataServiceClientV2 interface {
@@ -72,7 +66,6 @@ type VegaResolverRoot struct {
 
 	log                 *logging.Logger
 	tradingProxyClient  CoreProxyServiceClient
-	tradingDataClient   TradingDataServiceClient
 	tradingDataClientV2 TradingDataServiceClientV2
 	r                   allResolver
 }
@@ -82,16 +75,14 @@ func NewResolverRoot(
 	log *logging.Logger,
 	config gateway.Config,
 	tradingClient CoreProxyServiceClient,
-	tradingDataClient TradingDataServiceClient,
 	tradingDataClientV2 TradingDataServiceClientV2,
 ) *VegaResolverRoot {
 	return &VegaResolverRoot{
 		log:                 log,
 		Config:              config,
 		tradingProxyClient:  tradingClient,
-		tradingDataClient:   tradingDataClient,
 		tradingDataClientV2: tradingDataClientV2,
-		r:                   allResolver{log, tradingDataClient, tradingDataClientV2},
+		r:                   allResolver{log, tradingDataClientV2},
 	}
 }
 
@@ -318,11 +309,6 @@ func (r *VegaResolverRoot) Epoch() EpochResolver {
 
 func (r *VegaResolverRoot) EpochTimestamps() EpochTimestampsResolver {
 	return (*epochTimestampsResolver)(r)
-}
-
-// TODO: RewardPerAssetDetail is deprecated, remove once front end has caught up.
-func (r *VegaResolverRoot) RewardPerAssetDetail() RewardPerAssetDetailResolver {
-	return (*rewardPerAssetDetailResolver)(r)
 }
 
 func (r *VegaResolverRoot) Reward() RewardResolver {
@@ -1135,43 +1121,6 @@ func (r *myNodeSignatureResolver) Signature(ctx context.Context, obj *commandspb
 // BEGIN: Party Resolver
 
 type myPartyResolver VegaResolverRoot
-
-// func makePagination(skip, first, last *int) *protoapi.Pagination {.
-func makePagination(skip, first, last *int) *protoapi.Pagination {
-	var (
-		offset, limit uint64
-		descending    bool
-	)
-	if skip != nil {
-		offset = uint64(*skip)
-	}
-	if last != nil {
-		limit = uint64(*last)
-		descending = true
-	} else if first != nil {
-		limit = uint64(*first)
-	}
-	return &protoapi.Pagination{
-		Skip:       offset,
-		Limit:      limit,
-		Descending: descending,
-	}
-}
-
-// TODO: RewardDetails have been depricated, remove once front end catches up.
-func (r *myPartyResolver) RewardDetails(
-	ctx context.Context,
-	party *types.Party,
-) ([]*types.RewardSummary, error) {
-	req := &protoapi.GetRewardSummariesRequest{
-		PartyId: party.Id,
-	}
-	resp, err := r.tradingDataClient.GetRewardSummaries(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.Summaries, err
-}
 
 func (r *myPartyResolver) TransfersConnection(
 	ctx context.Context,
@@ -2419,7 +2368,7 @@ func (r *mySubscriptionResolver) busEvents(stream v2.TradingDataService_ObserveE
 }
 
 func (r *mySubscriptionResolver) busEventsWithBatch(batchSize int64, stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
-	poll := &protoapi.ObserveEventBusRequest{
+	poll := &v2.ObserveEventBusRequest{
 		BatchSize: batchSize,
 	}
 	for {

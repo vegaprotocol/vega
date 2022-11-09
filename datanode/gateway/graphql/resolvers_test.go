@@ -17,6 +17,11 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	gql "code.vegaprotocol.io/vega/datanode/gateway/graphql"
@@ -25,11 +30,6 @@ import (
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
-	"google.golang.org/grpc"
-
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
@@ -293,13 +293,11 @@ func buildTestResolverRoot(t *testing.T) *testResolver {
 	log := logging.NewTestLogger()
 	conf := gateway.NewDefaultConfig()
 	coreProxyClient := mocks.NewMockCoreProxyServiceClient(ctrl)
-	tradingDataClient := mocks.NewMockTradingDataServiceClient(ctrl)
 	tradingDataClientV2 := mocks.NewMockTradingDataServiceClientV2(ctrl)
 	resolver := gql.NewResolverRoot(
 		log,
 		conf,
 		coreProxyClient,
-		tradingDataClient,
 		tradingDataClientV2,
 	)
 	return &testResolver{

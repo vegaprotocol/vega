@@ -18,6 +18,7 @@
 ## 0.61.0
 
 ### 🚨 Breaking changes
+- [5674](https://github.com/vegaprotocol/vega/issues/5674) - Remove `V1` data node `API`
 - [5714](https://github.com/vegaprotocol/vega/issues/5714) - Update data sourcing types
 
 ### 🛠 Improvements

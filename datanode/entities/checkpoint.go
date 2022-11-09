@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"time"
 
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
@@ -29,15 +28,6 @@ type Checkpoint struct {
 	TxHash      TxHash
 	VegaTime    time.Time
 	SeqNum      uint64
-}
-
-func (cp *Checkpoint) ToV1Proto() *protoapi.Checkpoint {
-	pcp := protoapi.Checkpoint{
-		Hash:      cp.Hash,
-		BlockHash: cp.BlockHash,
-		AtBlock:   uint64(cp.BlockHeight),
-	}
-	return &pcp
 }
 
 func (cp *Checkpoint) ToProto() *v2.Checkpoint {
