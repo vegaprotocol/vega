@@ -2,12 +2,13 @@ Feature: Test LP orders
 
   Background:
 
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          | position decimal places |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |            2            |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: create liquidity provisions
     Given the parties deposit on asset's general account the following amount:
@@ -32,7 +33,7 @@ Feature: Test LP orders
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 100000 | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 100000 | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |

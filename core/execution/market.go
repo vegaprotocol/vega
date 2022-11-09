@@ -1721,7 +1721,7 @@ func (m *Market) confirmMTM(
 	// orders updated -> check reference moves
 	// force check
 	m.checkForReferenceMoves(
-		ctx, orderUpdates, true)
+		ctx, orderUpdates, false)
 }
 
 // updateLiquidityFee computes the current LiquidityProvision fee and updates

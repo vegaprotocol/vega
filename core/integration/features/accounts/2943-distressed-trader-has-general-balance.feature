@@ -10,7 +10,6 @@ Feature: Distressed parties should not have general balance left
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  @MTMDelta
   Scenario: Upper bound breached
     Given the parties deposit on asset's general account the following amount:
       | party     | asset | amount         |
