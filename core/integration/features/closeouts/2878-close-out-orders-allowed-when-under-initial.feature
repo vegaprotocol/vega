@@ -10,9 +10,6 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  # this one is skipped for now, the use of absolute time setting doesn't work well with the quick-fix for the MTM change
-  # Needs to be reviewed more thoroughly
-  @MTMSkip
   Scenario: Trader under initial margin closes out their own position
     Given the parties deposit on asset's general account the following amount:
       | party     | asset | amount         |
@@ -25,6 +22,7 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
       | aux2      | ETH   | 100000000000   |
       | auxiliary | ETH   | 100000000000   |
       | lpprov    | ETH   | 10000000000000 |
+      | party6    | ETH   | 10000000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -44,11 +42,12 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
     # T0 + 1min - this causes the price for comparison of the bounds to be 567
     Then time is updated to "2020-10-16T00:01:00Z"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC20 | sell | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party6 | ETH/DEC20 | sell | 10     | 200   | 0                | TYPE_LIMIT | TIF_GTC | ref-61    |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party5 | ETH/DEC20 | buy  | 10     | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-1     |
       | party4 | ETH/DEC20 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -66,7 +65,7 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
       | party3 | ETH/DEC20 | 1100        | 1210   | 1320    | 1540    |
 
     ## Now party 3, though below initial margin places a buy order to close their position out
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party5 | ETH/DEC20 | sell | 20     | 115   | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
       | party4 | ETH/DEC20 | buy  | 15     | 115   | 1                | TYPE_LIMIT | TIF_GTC | ref-7     |

@@ -738,7 +738,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 			Price:         mp.Clone(),
 			OriginalPrice: mcmp,
 		}
-		m.confirmMTM(ctx, dummy)
+		m.confirmMTM(ctx, dummy, nil)
 	}
 	timer.EngineTimeCounterAdd()
 
@@ -1075,7 +1075,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		ID:            m.idgen.NextID(),
 		Price:         cmp,
 		OriginalPrice: mcmp,
-	})
+	}, updatedOrders)
 	// set next MTM
 	m.nextMTM = m.timeService.GetTimeNow().Add(m.mtmDelta)
 
@@ -1603,7 +1603,7 @@ func (m *Market) handleConfirmationPassiveOrders(
 	}
 }
 
-func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfirmation) (orderUpdates []*types.Order) {
+func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfirmation) []*types.Order {
 	// When re-submitting liquidity order, it happen that the pricing is putting
 	// the order at a price which makes it uncross straight away.
 	// then triggering this handleConfirmation flow, etc.
@@ -1620,59 +1620,72 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	}
 
 	m.handleConfirmationPassiveOrders(ctx, conf)
-	// end := m.as.CanLeave()
+	end := m.as.CanLeave()
+	orderUpdates := make([]*types.Order, 0, len(conf.PassiveOrdersAffected)+1)
+	orderUpdates = append(orderUpdates, conf.Order)
+	orderUpdates = append(orderUpdates, conf.PassiveOrdersAffected...)
 
-	if len(conf.Trades) > 0 {
-		// Calculate and set current mark price
-		m.setMarkPrice(conf.Trades[len(conf.Trades)-1])
-
-		// Insert all trades resulted from the executed order
-		tradeEvts := make([]events.Event, 0, len(conf.Trades))
-		tradedValue, _ := num.UintFromDecimal(
-			conf.TradedValue().ToDecimal().Div(m.positionFactor))
-		for idx, trade := range conf.Trades {
-			trade.SetIDs(m.idgen.NextID(), conf.Order, conf.PassiveOrdersAffected[idx])
-
-			tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
-
-			m.position.Update(ctx, trade)
-
-			// Record open interest change
-			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.timeService.GetTimeNow()); err != nil {
-				m.log.Debug("unable record open interest",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
-			}
-			// add trade to settlement engine for correct MTM settlement of individual trades
-			m.settlement.AddTrade(trade)
-		}
-		m.feeSplitter.AddTradeValue(tradedValue)
-		m.marketActivityTracker.AddValueTraded(m.mkt.ID, tradedValue)
-		m.broker.SendBatch(tradeEvts)
-
-		// if !end {
-		// orderUpdates = m.confirmMTM(ctx, conf.Order)
-		// }
-		// } else {
-		// we had no trade, but still want to register this position in the settlement
-		// engine I guess
-		// party := conf.Order.Party
-		// if pos, ok := m.position.GetPositionByPartyID(party); ok {
-		// m.settlement.AddPosition(party, pos)
-		// }
+	if len(conf.Trades) == 0 {
+		return orderUpdates
 	}
+	// Calculate and set current mark price
+	m.setMarkPrice(conf.Trades[len(conf.Trades)-1])
+
+	// Insert all trades resulted from the executed order
+	tradeEvts := make([]events.Event, 0, len(conf.Trades))
+	tradedValue, _ := num.UintFromDecimal(
+		conf.TradedValue().ToDecimal().Div(m.positionFactor))
+	for idx, trade := range conf.Trades {
+		trade.SetIDs(m.idgen.NextID(), conf.Order, conf.PassiveOrdersAffected[idx])
+
+		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
+
+		m.position.Update(ctx, trade)
+
+		// Record open interest change
+		if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.timeService.GetTimeNow()); err != nil {
+			m.log.Debug("unable record open interest",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
+		// add trade to settlement engine for correct MTM settlement of individual trades
+		m.settlement.AddTrade(trade)
+	}
+	m.feeSplitter.AddTradeValue(tradedValue)
+	m.marketActivityTracker.AddValueTraded(m.mkt.ID, tradedValue)
+	m.broker.SendBatch(tradeEvts)
+	// check reference moves if we have order updates, and we are not in an auction (or leaving an auction)
+	// we handle reference moves in confirmMTM when leaving an auction already
+	if len(orderUpdates) > 0 && !end && !m.as.InAuction() {
+		m.checkForReferenceMoves(
+			ctx, orderUpdates, false)
+	}
+
+	// if !end {
+	// orderUpdates = m.confirmMTM(ctx, conf.Order)
+	// }
+	// } else {
+	// we had no trade, but still want to register this position in the settlement
+	// engine I guess
+	// party := conf.Order.Party
+	// if pos, ok := m.position.GetPositionByPartyID(party); ok {
+	// m.settlement.AddPosition(party, pos)
+	// }
 
 	return orderUpdates
 }
 
 func (m *Market) confirmMTM(
-	ctx context.Context, order *types.Order,
+	ctx context.Context, order *types.Order, orderUpdates []*types.Order,
 ) {
 	// now let's get the transfers for MTM settlement
 	markPrice := m.getCurrentMarkPrice()
 	evts := m.position.UpdateMarkPrice(markPrice)
 	settle := m.settlement.SettleMTM(ctx, markPrice, evts)
-	var orderUpdates []*types.Order
+	if len(orderUpdates) == 0 {
+		// make sure the slice is initialised
+		orderUpdates = []*types.Order{}
+	}
 
 	// Only process collateral and risk once per order, not for every trade
 	margins := m.collateralAndRisk(ctx, settle)
@@ -1691,22 +1704,24 @@ func (m *Market) confirmMTM(
 			m.broker.Send(events.NewLedgerMovements(ctx, transfers))
 		}
 		if len(closed) > 0 {
-			orderUpdates, err = m.resolveClosedOutParties(
+			upd, err := m.resolveClosedOutParties(
 				ctx, closed, ptr.From(order.ID))
 			if err != nil {
 				m.log.Error("unable to closed out parties",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err))
 			}
+			if len(upd) > 0 {
+				orderUpdates = append(orderUpdates, upd...)
+			}
 		}
 		m.updateLiquidityFee(ctx)
 	}
 
 	// orders updated -> check reference moves
-	if len(orderUpdates) > 0 && !m.as.InAuction() {
-		m.checkForReferenceMoves(
-			ctx, orderUpdates, false)
-	}
+	// force check
+	m.checkForReferenceMoves(
+		ctx, orderUpdates, true)
 }
 
 // updateLiquidityFee computes the current LiquidityProvision fee and updates

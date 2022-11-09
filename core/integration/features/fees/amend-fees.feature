@@ -20,7 +20,6 @@ Feature: Fees when amend trades
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
   # this test requires me to be a bit more fresh to fix
-  @MTMSkip
   @Fees
   Scenario: Testing fees in continuous trading with one trade
     # setup accounts
@@ -31,6 +30,7 @@ Feature: Fees when amend trades
       | trader3a | ETH   | 10000     |
       | trader3b | ETH   | 10000     |
       | trader4  | ETH   | 10000     |
+      | trader5  | ETH   | 100000000 |
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -54,11 +54,13 @@ Feature: Fees when amend trades
       | buy  | 910   | 210    |
       | sell | 1090  | 184    |
 
-    When the parties place the following orders "1" blocks apart:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader3a | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | t3a-b3-02 |
       | trader3b | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | t3b-b1-02 |
       | trader4  | ETH/DEC21 | sell | 4      | 1002  | 2                | TYPE_LIMIT | TIF_GTC | t4-s4-02  |
+      #| trader5  | ETH/DEC21 | sell | 1      | 2002  | 0                | TYPE_LIMIT | TIF_GTC | t5-s4-02  |
+      #| trader5  | ETH/DEC21 | buy  | 1      | 101   | 0                | TYPE_LIMIT | TIF_GTC | t5-b1-02  |
 
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
@@ -94,15 +96,17 @@ Feature: Fees when amend trades
     # Trader4  margin + general account balance = 10000 - (11+6) ( Maker fees) - 8 (Infra fee) = 99975
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 480    | 9531    |
-      | trader3b | ETH   | ETH/DEC21 | 240    | 9766    |
-      | trader4  | ETH   | ETH/DEC21 | 679    | 9291    |
+      | trader3a | ETH   | ETH/DEC21 | 690    | 9321    |
+      #| trader3a | ETH   | ETH/DEC21 | 480    | 9531    |
+      | trader3b | ETH   | ETH/DEC21 | 339    | 9667    |
+      #| trader3b | ETH   | ETH/DEC21 | 240    | 9766    |
+      #| trader4  | ETH   | ETH/DEC21 | 679    | 9291    |
+      | trader4  | ETH   | ETH/DEC21 | 480    | 9490    |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader3a | ETH/DEC21 | buy  | 2      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | t3a-b2-01 |
       | trader4  | ETH/DEC21 | sell | 4      | 1003  | 0                | TYPE_LIMIT | TIF_GTC | t4-s4-03  |
-    And the network moves ahead "1" blocks
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 1171   | 8840    |
@@ -180,7 +184,7 @@ Feature: Fees when amend trades
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3b | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -223,12 +227,13 @@ Feature: Fees when amend trades
     # TODO: Check why margin doesn't go up after the trade WHEN the liquidity provision order gets included (seems to work fine without LP orders) (expecting first commented out values) but getting second value in other cases
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 699    | 9312    |
+      | trader3a | ETH   | ETH/DEC21 | 702    | 9309    |
+      #| trader3a | ETH   | ETH/DEC21 | 699    | 9312    |
       | trader3b | ETH   | ETH/DEC21 | 339    | 9667    |
       | trader4  | ETH   | ETH/DEC21 | 690    | 533     |
 
    # Placing second set of orders
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3a | ETH/DEC21 | buy  | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader3a-buy-1 |
       | trader4  | ETH/DEC21 | sell | 4      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
@@ -242,6 +247,7 @@ Feature: Fees when amend trades
     And the parties amend the following orders:
       | party   | reference      | price | size delta | tif     |
       | trader4 | trader4-sell-2 | 1000  | 0          | TIF_GTC |
+    Then the network moves ahead "1" blocks
 
     # matching the order now
     And the following trades should be executed:
