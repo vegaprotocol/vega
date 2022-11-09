@@ -7,6 +7,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter         | 1     |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
+      | network.markPriceUpdateMaximumFrequency       | 0s    |
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
@@ -57,10 +58,10 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     # check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 1213   | 187      | 5000 |
+      | party0 | ETH   | ETH/DEC21 | 1213   | 187     | 5000 |
 
     # Now let's make some trades happen to increase the margin for LP
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
       | party3 | ETH/DEC21 | buy  | 300    | 1010  | 2                | TYPE_LIMIT | TIF_GTC | party3-buy-1  |
       | party2 | ETH/DEC21 | sell | 500    | 1010  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell-4 |
@@ -73,9 +74,28 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party  | asset | market id | margin | general | bond |
       | party0 | ETH   | ETH/DEC21 | 1562   | 0       | 4694 |
 
+    And the order book should have the following volumes for market "ETH/DEC21":
+      | side | price | volume |
+      | sell | 1100  | 100    |
+      | sell | 1010  | 1491   |
+      | buy  | 990   | 1111   |
+      | buy  | 900   | 100    |
+
     # progress time a bit, so the price bounds get updated
     When the network moves ahead "2" blocks
-    And the parties place the following orders:
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | bond |
+      | party0 | ETH   | ETH/DEC21 | 1562   | 0       | 4699 |
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1010       | TRADING_MODE_CONTINUOUS | 1       | 993       | 1012      | 1313         | 5000           | 1300          |
+    And the order book should have the following volumes for market "ETH/DEC21":
+      | side | price | volume |
+      | sell | 1100  | 100    |
+      | sell | 1010  | 1491   |
+      | buy  | 990   | 1111   |
+      | buy  | 900   | 100    |
+    And the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
       | party3 | ETH/DEC21 | buy  | 1000   | 1022  | 2                | TYPE_LIMIT | TIF_GTC | party3-buy-1  |
       | party3 | ETH/DEC21 | buy  | 300    | 1020  | 0                | TYPE_LIMIT | TIF_GTC | party3-buy-2  |
@@ -132,7 +152,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party0 | ETH   | ETH/DEC21 | 1213   | 187     | 5000 |
 
     # Now let's make some trades happen to increase the margin for LP
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
       | party3 | ETH/DEC21 | buy  | 300    | 1010  | 2                | TYPE_LIMIT | TIF_GTC | party3-buy-4  |
       | party2 | ETH/DEC21 | sell | 500    | 1010  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell-4 |
@@ -147,7 +167,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
 
     # progress time a bit, so the price bounds get updated
     When the network moves ahead "2" blocks
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
       | party3 | ETH/DEC21 | buy  | 1000   | 1022  | 2                | TYPE_LIMIT | TIF_GTC | party3-buy-5  |
       | party2 | ETH/DEC21 | sell | 7500   | 1050  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell-5 |
@@ -163,7 +183,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
 
     # Move price out of bounds
     When the network moves ahead "2" blocks
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC21 | buy  | 1000   | 1060  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the market data for the market "ETH/DEC21" should be:

@@ -20,6 +20,9 @@ Feature: Assure LP margin is correct
       | party1 | USD   | 100000000 |
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: Assure LP margin is released when opening auction concludes with a price lower than indicative uncrossing price at the time of LP submission
     Given the following network parameters are set:
