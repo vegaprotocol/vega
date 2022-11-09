@@ -47,8 +47,13 @@ func (b *Service) CreateSnapshot(ctx context.Context, chainID string, fromHeight
 	var cleanUp []func()
 	ctxWithTimeout, cancelFn := context.WithTimeout(ctx, b.config.WaitForCreationLockTimeout.Duration)
 	defer cancelFn()
+
+	// This lock ensures snapshots cannot be created in parallel, during normal run this should never be an issue
+	// as the time between snapshots is sufficiently large, however during event replay (and some testing/dev scenarios)
+	// the time between snapshots can be sufficiently small to run the risk that snapshotting could overlap without this
+	// lock.
 	if !b.createSnapshotLock.Lock(ctxWithTimeout) {
-		return CreateSnapshotResult{}, fmt.Errorf("context cancelled whilst waiting for create snapshot lock")
+		panic("context cancelled whilst waiting for create snapshot lock")
 	}
 
 	cleanUp = append(cleanUp, func() { b.createSnapshotLock.Unlock() })
@@ -87,10 +92,7 @@ func (b *Service) CreateSnapshot(ctx context.Context, chainID string, fromHeight
 		defer func() { runAllInReverseOrder(cleanUp) }()
 		err = b.snapshotData(ctx, copyDataTx, dbMetaData, currentSnapshot, historySnapshot)
 		if err != nil {
-			b.log.Error("failed to snapshot data", logging.Error(err))
-			if b.config.PanicOnSnapshotCreationError {
-				panic(fmt.Sprintf("failed to snapshot data:%s", err))
-			}
+			b.log.Panic("failed to snapshot data", logging.Error(err))
 		}
 	}()
 
