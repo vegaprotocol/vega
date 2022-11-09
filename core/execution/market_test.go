@@ -411,6 +411,7 @@ func getTestMarket2WithDP(
 	}
 	require.NoError(t, err)
 	mkt := getMarketWithDP(pMonitorSettings, openingAuctionDuration, decimalPlaces)
+	// ensure nextMTM is happening every block
 	mktCfg := &mkt
 	mktCfg.DecimalPlaces = cfgAsset.DecimalPlaces()
 
@@ -428,6 +429,8 @@ func getTestMarket2WithDP(
 	if err != nil {
 		t.Fatalf("couldn't create a market: %v", err)
 	}
+	// ensure MTM settlements happen every block
+	mktEngine.OnMarkPriceUpdateMaximumFrequency(context.Background(), time.Duration(0))
 	mktEngine.UpdateRiskFactorsForTest()
 
 	if startOpeningAuction {
@@ -1837,6 +1840,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 		Reference:   "party2-sell-order-2",
 	}
 	confirmationSell, err = tm.market.SubmitOrder(context.Background(), orderSell2)
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
