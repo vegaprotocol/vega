@@ -460,6 +460,7 @@ func (e *Engine) CreateInitialOrders(
 func (e *Engine) UndeployLPs(ctx context.Context, orders []*types.Order) []*ToCancel {
 	provisions := e.provisions.Slice()
 	cancels := make([]*ToCancel, 0, len(provisions)*2) // one for each side
+	evts := make([]events.Event, 0, len(provisions)*2)
 	for _, lp := range provisions {
 		if lp.Status != types.LiquidityProvisionStatusActive {
 			continue
@@ -486,7 +487,10 @@ func (e *Engine) UndeployLPs(ctx context.Context, orders []*types.Order) []*ToCa
 		}
 		// set as undeployed so we can redeploy it once the pegs become available again
 		lp.Status = types.LiquidityProvisionStatusUndeployed
+		evts = append(evts, events.NewLiquidityProvisionEvent(ctx, lp))
 	}
+
+	e.broker.SendBatch(evts)
 	return cancels
 }
 
