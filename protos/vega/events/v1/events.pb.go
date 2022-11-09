@@ -838,6 +838,7 @@ type Transfer struct {
 	Timestamp       int64            `protobuf:"varint,10,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	Reason          *string          `protobuf:"bytes,11,opt,name=reason,proto3,oneof" json:"reason,omitempty"`
 	// Types that are assignable to Kind:
+	//
 	//	*Transfer_OneOff
 	//	*Transfer_Recurring
 	Kind isTransfer_Kind `protobuf_oneof:"kind"`
@@ -1667,7 +1668,7 @@ func (x *RewardPayoutEvent) GetMarket() string {
 	return ""
 }
 
-//ValidatorScoreEvent is the score a validator gets for a given epoch
+// ValidatorScoreEvent is the score a validator gets for a given epoch
 type ValidatorScoreEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1771,7 +1772,7 @@ func (x *ValidatorScoreEvent) GetMultisigScore() string {
 	return ""
 }
 
-//DelegationBalanceEvent - updates on the delegation balance of a party to a node in the current epoch in effect
+// DelegationBalanceEvent - updates on the delegation balance of a party to a node in the current epoch in effect
 type DelegationBalanceEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1914,6 +1915,7 @@ type TransactionResult struct {
 	// The hash of the transaction
 	Hash string `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty"` // The transaction itself as received by the network
 	// Types that are assignable to Transaction:
+	//
 	//	*TransactionResult_OrderSubmission
 	//	*TransactionResult_OrderAmendment
 	//	*TransactionResult_OrderCancellation
@@ -1938,6 +1940,7 @@ type TransactionResult struct {
 	// extra details about the transaction processing
 	//
 	// Types that are assignable to Extra:
+	//
 	//	*TransactionResult_Success
 	//	*TransactionResult_Failure
 	Extra isTransactionResult_Extra `protobuf_oneof:"extra"`
@@ -2316,6 +2319,7 @@ type TxErrorEvent struct {
 	// The transaction that failed
 	//
 	// Types that are assignable to Transaction:
+	//
 	//	*TxErrorEvent_OrderSubmission
 	//	*TxErrorEvent_OrderAmendment
 	//	*TxErrorEvent_OrderCancellation
@@ -4010,7 +4014,7 @@ func (x *ProtocolUpgradeEvent) GetStatus() ProtocolUpgradeProposalStatus {
 	return ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_UNSPECIFIED
 }
 
-//StateVarEvent - updates on state changes in state variable consensus
+// StateVarEvent - updates on state changes in state variable consensus
 type StateVar struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4247,6 +4251,7 @@ type BusEvent struct {
 	// The type of bus event (one of the list below)
 	Type BusEventType `protobuf:"varint,3,opt,name=type,proto3,enum=vega.events.v1.BusEventType" json:"type,omitempty"`
 	// Types that are assignable to Event:
+	//
 	//	*BusEvent_TimeUpdate
 	//	*BusEvent_LedgerMovements
 	//	*BusEvent_PositionResolution

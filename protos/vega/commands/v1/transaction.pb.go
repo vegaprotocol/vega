@@ -99,6 +99,7 @@ type InputData struct {
 	// `block_height` prevents replay attacks in conjunction with `nonce` (see above).
 	BlockHeight uint64 `protobuf:"varint,2,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
 	// Types that are assignable to Command:
+	//
 	//	*InputData_OrderSubmission
 	//	*InputData_OrderCancellation
 	//	*InputData_OrderAmendment
@@ -520,7 +521,8 @@ type Transaction struct {
 
 	// One of the set of Vega commands.
 	// These bytes are should be built as follow:
-	//   chain_id_as_bytes + \0 character as delimiter + proto_marshalled_command
+	//
+	//	chain_id_as_bytes + \0 character as delimiter + proto_marshalled_command
 	InputData []byte `protobuf:"bytes,1,opt,name=input_data,json=inputData,proto3" json:"input_data,omitempty"`
 	// The signature of the inputData.
 	Signature *Signature `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
@@ -528,6 +530,7 @@ type Transaction struct {
 	// Any of the following would be valid:
 	//
 	// Types that are assignable to From:
+	//
 	//	*Transaction_Address
 	//	*Transaction_PubKey
 	From isTransaction_From `protobuf_oneof:"from"`

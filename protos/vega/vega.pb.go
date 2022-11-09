@@ -3144,6 +3144,7 @@ type WithdrawExt struct {
 	// Foreign chain specifics
 	//
 	// Types that are assignable to Ext:
+	//
 	//	*WithdrawExt_Erc20
 	Ext isWithdrawExt_Ext `protobuf_oneof:"ext"`
 }
@@ -4055,7 +4056,8 @@ type MarketData struct {
 	// Lowest price level on an order book for offer orders
 	BestOfferPrice string `protobuf:"bytes,4,opt,name=best_offer_price,json=bestOfferPrice,proto3" json:"best_offer_price,omitempty"`
 	// Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly
-	//  // formatted price of `1.23456` assuming market configured to 5 decimal places
+	//
+	//	// formatted price of `1.23456` assuming market configured to 5 decimal places
 	BestOfferVolume uint64 `protobuf:"varint,5,opt,name=best_offer_volume,json=bestOfferVolume,proto3" json:"best_offer_volume,omitempty"`
 	// Highest price on the order book for buy orders not including pegged orders
 	BestStaticBidPrice string `protobuf:"bytes,6,opt,name=best_static_bid_price,json=bestStaticBidPrice,proto3" json:"best_static_bid_price,omitempty"`
@@ -5009,7 +5011,7 @@ type EthereumConfig struct {
 	NetworkId string `protobuf:"bytes,1,opt,name=network_id,json=networkId,proto3" json:"network_id,omitempty"`
 	// Chain identifier of this Ethereum network.
 	ChainId string `protobuf:"bytes,2,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
-	//// Contract configuration of the collateral bridge contract for this Ethereum network.
+	// // Contract configuration of the collateral bridge contract for this Ethereum network.
 	CollateralBridgeContract *EthereumContractConfig `protobuf:"bytes,3,opt,name=collateral_bridge_contract,json=collateralBridgeContract,proto3" json:"collateral_bridge_contract,omitempty"`
 	// Number of block confirmations to wait to consider an Ethereum transaction trusted.
 	// An Ethereum block is trusted when there are at least "n" blocks confirmed by the
@@ -6313,6 +6315,7 @@ type StateVarValue struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Value:
+	//
 	//	*StateVarValue_ScalarVal
 	//	*StateVarValue_VectorVal
 	//	*StateVarValue_MatrixVal
