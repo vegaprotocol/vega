@@ -4,10 +4,9 @@ import (
 	"context"
 	"strconv"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/netparams"
-	"code.vegaprotocol.io/vega/datanode/broker"
-	"code.vegaprotocol.io/vega/datanode/config/encoding"
 	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/logging"
@@ -16,10 +15,6 @@ import (
 )
 
 func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
-	brokerCfg := broker.NewDefaultConfig()
-	brokerCfg.UseEventFile = true
-	brokerCfg.FileEventSourceConfig.TimeBetweenBlocks = encoding.Duration{Duration: 0}
-
 	log := logging.NewTestLogger()
 
 	snapshotInterval := &struct {
@@ -30,7 +25,7 @@ func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
 
 	var snapshots []int64
 
-	snapshotData := func(ctx context.Context, chainID string, toHeight int64, fromHeight int64) error {
+	snapshotData := func(ctx context.Context, chainID string, toHeight int64) error {
 		if toHeight >= 5000 {
 			snapshotInterval.interval = 300
 		}
@@ -48,7 +43,7 @@ func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
 		}, nil
 	}
 
-	commitHandler := snapshot.NewBlockCommitHandler(log, snapshotData, getNetworkParameter, brokerCfg)
+	commitHandler := snapshot.NewBlockCommitHandler(log, snapshotData, getNetworkParameter, true, time.Duration(0))
 
 	ctx := context.Background()
 	for blockHeight := int64(0); blockHeight < 6100; blockHeight++ {
@@ -66,7 +61,6 @@ func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
 
 func TestAlteringBlockCommitHandlerSnapshotInterval(t *testing.T) {
 	log := logging.NewTestLogger()
-	brokerConfig := broker.NewDefaultConfig()
 
 	snapshotInterval := &struct {
 		interval int
@@ -76,7 +70,7 @@ func TestAlteringBlockCommitHandlerSnapshotInterval(t *testing.T) {
 
 	var snapshots []int64
 
-	snapshotData := func(ctx context.Context, chainID string, toHeight int64, fromHeight int64) error {
+	snapshotData := func(ctx context.Context, chainID string, toHeight int64) error {
 		if toHeight >= 5000 {
 			snapshotInterval.interval = 500
 		}
@@ -94,7 +88,7 @@ func TestAlteringBlockCommitHandlerSnapshotInterval(t *testing.T) {
 		}, nil
 	}
 
-	commitHandler := snapshot.NewBlockCommitHandler(log, snapshotData, getNetworkParameter, brokerConfig)
+	commitHandler := snapshot.NewBlockCommitHandler(log, snapshotData, getNetworkParameter, false, time.Duration(0))
 
 	ctx := context.Background()
 	for blockHeight := int64(0); blockHeight < 6100; blockHeight++ {

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+
 	"code.vegaprotocol.io/vega/datanode/dehistory/initialise"
 	"code.vegaprotocol.io/vega/datanode/dehistory/store"
 
@@ -65,7 +67,12 @@ func (cmd *loadCmd) Execute(_ []string) error {
 
 	snapshotService, err := snapshot.NewSnapshotService(log, cmd.Config.DeHistory.Snapshot, cmd.Config.SQLStore.ConnectionConfig,
 		vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyFrom),
-		vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyTo))
+		vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyTo), func(version int64) error {
+			if err = sqlstore.MigrateToSchemaVersion(log, cmd.Config.SQLStore, version); err != nil {
+				return fmt.Errorf("failed to migrate to schema version %d: %w", version, err)
+			}
+			return nil
+		})
 	if err != nil {
 		return fmt.Errorf("failed to create snapshot service: %w", err)
 	}
