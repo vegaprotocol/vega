@@ -16,13 +16,13 @@ import "testing"
 
 func TestOracles(t *testing.T) {
 	queries := map[string]string{
-		"OracleSpecs": `{ oracleSpecs { id, createdAt, updatedAt, pubKeys, filters { key { name, type }, conditions { operator, value } }, status } }`,
-		//"OracleData": `{ oracleSpecs { id, data { pubKeys, data { name, value } } } }`,
+		"OracleDataSource":     `{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt config { signers { signer { ... on ETHAddress{ address } ... on PubKey{ key } } } } status } } } } } }`,
+		"OracleDataConnection": `{ oracleSpecsConnection { edges { node { dataConnection { edges { node { externalData { data { matchedSpecIds broadcastAt } } } } } } } } }`,
 	}
 
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
-			assertGraphQLQueriesReturnSame[struct{ OracleSpecs []OracleSpec }](t, query)
+			assertGraphQLQueriesReturnSame(t, query)
 		})
 	}
 }

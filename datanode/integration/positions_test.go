@@ -17,16 +17,24 @@ import "testing"
 func TestPositions(t *testing.T) {
 	queries := map[string]string{
 		"Positions": `{
-			parties {
-			  id
-			  positions{
-				market{id}
-				party{id}
-				openVolume
-				realisedPNL
-				unrealisedPNL
-				averageEntryPrice
-				updatedAt
+			partiesConnection {
+			  edges {
+				node {
+				  id
+				  positionsConnection{
+				    edges{
+					  node {
+						market{id}
+				    	party{id}
+				    	openVolume
+				    	realisedPNL
+				    	unrealisedPNL
+				    	averageEntryPrice
+				    	updatedAt
+  					  }
+					}
+				  }
+				}
 			  }
 			}
 		  }`,
@@ -34,7 +42,7 @@ func TestPositions(t *testing.T) {
 
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
-			assertGraphQLQueriesReturnSame[struct{ Parties []Party }](t, query)
+			assertGraphQLQueriesReturnSame(t, query)
 		})
 	}
 }

@@ -32,6 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/data-node/commands/start"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
+	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -44,7 +45,7 @@ import (
 )
 
 const (
-	LastEpoch       = 2090
+	LastEpoch       = 298 // 2090
 	PlaybackTimeout = 3 * time.Minute
 )
 
@@ -140,7 +141,7 @@ func compareResponses(t *testing.T, oldResp, newResp interface{}) {
 	sortNetParams := cmpopts.SortSlices(func(a NetworkParameter, b NetworkParameter) bool { return a.Key < b.Key })
 	sortParties := cmpopts.SortSlices(func(a Party, b Party) bool { return a.ID < b.ID })
 	sortDeposits := cmpopts.SortSlices(func(a Deposit, b Deposit) bool { return a.ID < b.ID })
-	sortSpecs := cmpopts.SortSlices(func(a, b OracleSpec) bool { return a.ID < b.ID })
+	sortSpecs := cmpopts.SortSlices(func(a, b OracleSpecEdge) bool { return a.Node.DataSourceSpec.Spec.Id < b.Node.DataSourceSpec.Spec.Id })
 	sortPositions := cmpopts.SortSlices(func(a, b Position) bool {
 		if a.Party.ID != b.Party.ID {
 			return a.Party.ID < b.Party.ID
@@ -202,28 +203,28 @@ func removeDupVotes() cmp.Option {
 	})
 }
 
-type queryDetails[T any] struct {
+type queryDetails struct {
 	TestName string
 	Query    string
-	Result   T
+	Result   any
 	Duration time.Duration
 }
 
-func assertGraphQLQueriesReturnSame[T any](t *testing.T, query string) {
+func assertGraphQLQueriesReturnSame(t *testing.T, query string) {
 	t.Helper()
 
 	req := graphql.NewRequest(query)
-	var resp T
-	start := time.Now()
+	var resp map[string]interface{}
+	s := time.Now()
 	err := client.Run(context.Background(), req, &resp)
-	require.NoError(t, err)
-	elapsed := time.Since(start)
+	require.NoError(t, err, "failed to run query: '%s'; %s", query, err)
+	elapsed := time.Since(s)
 
 	niceName := strings.Replace(t.Name(), "/", "_", -1)
 	goldenFile := filepath.Join(goldenDir, niceName)
 
 	if *writeGolden {
-		details := queryDetails[T]{
+		details := queryDetails{
 			TestName: niceName,
 			Query:    query,
 			Result:   resp,
@@ -231,13 +232,12 @@ func assertGraphQLQueriesReturnSame[T any](t *testing.T, query string) {
 		}
 		jsonBytes, err := json.Marshal(details)
 		require.NoError(t, err)
-
-		os.WriteFile(goldenFile, jsonBytes, 0o644)
+		require.NoError(t, os.WriteFile(goldenFile, jsonBytes, 0o644))
 	} else {
 		jsonBytes, err := os.ReadFile(goldenFile)
 		require.NoError(t, err, "No golden file for this test, generate one by running 'go test' with the -golden flag")
 
-		details := queryDetails[T]{}
+		details := queryDetails{}
 		err = json.Unmarshal(jsonBytes, &details)
 		require.NoError(t, err, "Unable to unmarshal golden file")
 
@@ -254,10 +254,16 @@ func newTestConfig() (*config.Config, error) {
 
 	cfg := config.NewDefaultConfig()
 	cfg.Broker.UseEventFile = true
-	cfg.Broker.FileEventSourceConfig.File = filepath.Join(cwd, "testdata", "system_tests.evt")
+	cfg.Broker.FileEventSourceConfig.File = filepath.Join(cwd, "testdata", "smoketest_to_block_5000.evt")
 	cfg.Broker.FileEventSourceConfig.TimeBetweenBlocks = encoding.Duration{Duration: 0}
-	cfg.API.WebUIEnabled = encoding.Bool(true)
-	cfg.API.Reflection = encoding.Bool(true)
+	cfg.API.WebUIEnabled = true
+	cfg.API.Reflection = true
+	//cfg.ChainID = "chain-ze7mNt"
+	//cfg.ChainID = "chain-exNqDX"
+	cfg.ChainID = "testnet"
+
+	testDBPort := databasetest.GetNextFreePort()
+	cfg.SQLStore = databasetest.NewTestConfig(testDBPort)
 
 	return &cfg, nil
 }
@@ -290,7 +296,11 @@ func runTestNode(cfg *config.Config) error {
 		VersionHash: "",
 	}
 
-	go cmd.Run(configWatcher, vegaPaths, []string{})
+	go func() {
+		if err := cmd.Run(configWatcher, vegaPaths, []string{}); err != nil {
+			log.Fatal("Couldn't run node", logging.Error(err))
+		}
+	}()
 	return nil
 }
 
@@ -301,8 +311,11 @@ func waitForEpoch(client *graphql.Client, epoch int, timeout time.Duration) erro
 		if err == nil && currentEpoch >= epoch {
 			return nil
 		}
+
+		log.Printf("Current epoch is %d, waiting for %d", currentEpoch, epoch)
+
 		if time.Now().After(giveUpAt) {
-			return fmt.Errorf("Didn't reach epoch %v within %v", epoch, timeout)
+			return fmt.Errorf("didn't reach epoch %v within %v", epoch, timeout)
 		}
 		time.Sleep(time.Second)
 	}
@@ -316,7 +329,7 @@ func getCurrentEpoch(client *graphql.Client) (int, error) {
 		return 0, err
 	}
 	if resp.Epoch.ID == "" {
-		return 0, fmt.Errorf("Empty epoch id")
+		return 0, fmt.Errorf("empty epoch id")
 	}
 
 	return strconv.Atoi(resp.Epoch.ID)
