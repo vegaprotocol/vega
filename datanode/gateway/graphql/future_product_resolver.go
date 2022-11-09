@@ -15,34 +15,36 @@ package gql
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/protos/vega"
-	vega "code.vegaprotocol.io/vega/protos/vega"
+	protoTypes "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type myFutureProductResolver VegaResolverRoot
 
-func (r *myFutureProductResolver) SettlementAsset(ctx context.Context, obj *types.FutureProduct) (*types.Asset, error) {
+func (r *myFutureProductResolver) SettlementAsset(ctx context.Context, obj *protoTypes.FutureProduct) (*protoTypes.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.SettlementAsset)
 }
 
-func (r *myFutureProductResolver) DataSourceSpecForSettlementData(ctx context.Context, obj *vega.FutureProduct) (*DataSourceDefinition, error) {
-	if obj.DataSourceSpecForSettlementData == nil {
-		return nil, nil
+func (r *myFutureProductResolver) DataSourceSpecForSettlementData(ctx context.Context, obj *vegapb.FutureProduct) (*DataSourceDefinition, error) {
+	d := &DataSourceDefinition{}
+
+	if obj != nil {
+		if obj.DataSourceSpecForSettlementData != nil {
+			d = resolveDataSourceDefinition(obj.DataSourceSpecForSettlementData)
+		}
 	}
 
-	dataSourceSpec := obj.DataSourceSpecForSettlementData
-	return &DataSourceDefinition{
-		SourceType: dataSourceSpec.SourceType.(DataSourceKind),
-	}, nil
+	return d, nil
 }
 
-func (r *myFutureProductResolver) DataSourceSpecForTradingTermination(ctx context.Context, obj *vega.FutureProduct) (*DataSourceDefinition, error) {
-	if obj.DataSourceSpecForTradingTermination == nil {
-		return nil, nil
+func (r *myFutureProductResolver) DataSourceSpecForTradingTermination(ctx context.Context, obj *vegapb.FutureProduct) (*DataSourceDefinition, error) {
+	d := &DataSourceDefinition{}
+
+	if obj != nil {
+		if obj.DataSourceSpecForTradingTermination != nil {
+			d = resolveDataSourceDefinition(obj.DataSourceSpecForTradingTermination)
+		}
 	}
 
-	dataSourceSpec := obj.DataSourceSpecForTradingTermination
-	return &DataSourceDefinition{
-		SourceType: dataSourceSpec.SourceType.(DataSourceKind),
-	}, nil
+	return d, nil
 }

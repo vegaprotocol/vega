@@ -21,23 +21,25 @@ import (
 type updateFutureProductResolver VegaResolverRoot
 
 func (r *updateFutureProductResolver) DataSourceSpecForSettlementData(ctx context.Context, obj *vega.UpdateFutureProduct) (*DataSourceDefinition, error) {
-	if obj.DataSourceSpecForSettlementData != nil {
-		return nil, nil
+	ds := &DataSourceDefinition{}
+
+	if obj != nil {
+		if obj.DataSourceSpecForSettlementData != nil {
+			ds = resolveDataSourceDefinition(obj.DataSourceSpecForSettlementData)
+		}
 	}
 
-	dataSourceSpec := obj.DataSourceSpecForSettlementData
-	return &DataSourceDefinition{
-		SourceType: dataSourceSpec.SourceType.(DataSourceKind),
-	}, nil
+	return ds, nil
 }
 
 func (r *updateFutureProductResolver) DataSourceSpecForTradingTermination(ctx context.Context, obj *vega.UpdateFutureProduct) (*DataSourceDefinition, error) {
-	if obj.DataSourceSpecForTradingTermination == nil {
-		return nil, nil
+	ds := &DataSourceDefinition{}
+
+	if obj != nil {
+		if obj.DataSourceSpecForTradingTermination != nil {
+			ds = resolveDataSourceDefinition(obj.DataSourceSpecForTradingTermination)
+		}
 	}
 
-	dataSourceSpec := obj.DataSourceSpecForTradingTermination
-	return &DataSourceDefinition{
-		SourceType: dataSourceSpec.SourceType.(DataSourceKind),
-	}, nil
+	return ds, nil
 }

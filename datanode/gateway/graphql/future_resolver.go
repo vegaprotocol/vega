@@ -15,34 +15,40 @@ package gql
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/protos/vega"
-	vega "code.vegaprotocol.io/vega/protos/vega"
+	protoTypes "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type myFutureResolver VegaResolverRoot
 
-func (r *myFutureResolver) SettlementAsset(ctx context.Context, obj *types.Future) (*types.Asset, error) {
+func (r *myFutureResolver) SettlementAsset(ctx context.Context, obj *protoTypes.Future) (*protoTypes.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.SettlementAsset)
 }
 
-func (r *myFutureResolver) DataSourceSpecForSettlementData(ctx context.Context, obj *vega.Future) (*DataSourceSpec, error) {
-	if obj.DataSourceSpecForSettlementData == nil {
-		return nil, nil
+func (r *myFutureResolver) DataSourceSpecForSettlementData(ctx context.Context, obj *vegapb.Future) (*DataSourceSpec, error) {
+	ds := &DataSourceSpec{
+		Data: &DataSourceDefinition{},
 	}
 
-	dataSourceSpec := obj.DataSourceSpecForSettlementData
-	return &DataSourceSpec{
-		ID: dataSourceSpec.GetId(),
-	}, nil
+	if obj != nil {
+		if obj.DataSourceSpecForSettlementData != nil {
+			ds = resolveDataSourceSpec(obj.DataSourceSpecForSettlementData)
+		}
+	}
+
+	return ds, nil
 }
 
-func (r *myFutureResolver) DataSourceSpecForTradingTermination(ctx context.Context, obj *vega.Future) (*DataSourceSpec, error) {
-	if obj.DataSourceSpecForTradingTermination == nil {
-		return nil, nil
+func (r *myFutureResolver) DataSourceSpecForTradingTermination(ctx context.Context, obj *vegapb.Future) (*DataSourceSpec, error) {
+	ds := &DataSourceSpec{
+		Data: &DataSourceDefinition{},
 	}
 
-	dataSourceSpec := obj.DataSourceSpecForTradingTermination
-	return &DataSourceSpec{
-		ID: dataSourceSpec.GetId(),
-	}, nil
+	if obj != nil {
+		if obj.DataSourceSpecForTradingTermination != nil {
+			ds = resolveDataSourceSpec(obj.DataSourceSpecForTradingTermination)
+		}
+	}
+
+	return ds, nil
 }
