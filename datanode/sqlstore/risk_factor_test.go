@@ -39,7 +39,7 @@ func setupRiskFactorTests(t *testing.T, ctx context.Context) (*sqlstore.Blocks, 
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	rfStore := sqlstore.NewRiskFactors(connectionSource)
-	config := NewTestConfig(testDBPort)
+	config := NewTestConfig()
 
 	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
 	require.NoError(t, err)

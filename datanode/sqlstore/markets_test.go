@@ -168,7 +168,7 @@ func shouldInsertAValidMarketRecord(t *testing.T) {
 	bs, md, config := setupMarketsTest(t)
 	connStr := config.ConnectionConfig.GetConnectionString()
 
-	testTimeout := time.Second * 10
+	testTimeout := time.Second * 1000000
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
@@ -201,8 +201,7 @@ func setupMarketsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Markets, sqlsto
 
 	DeleteEverything()
 
-	config := sqlstore.NewDefaultConfig()
-	config.ConnectionConfig.Port = testDBPort
+	config := NewTestConfig()
 
 	return bs, md, config
 }
