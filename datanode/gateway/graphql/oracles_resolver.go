@@ -14,6 +14,7 @@ package gql
 
 import (
 	"context"
+	"errors"
 	"strconv"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -71,10 +72,16 @@ func (o *oracleDataResolver) ExternalData(ctx context.Context, obj *vegapb.Oracl
 		var signers []*Signer
 		if len(obj.ExternalData.Data.Signers) > 0 {
 			signers = make([]*Signer, len(obj.ExternalData.Data.Signers))
-			for i, signer := range obj.ExternalData.Data.Signers {
-				signers[i] = &Signer{
-					Signer: signer.GetSigner().(SignerKind),
+			for i := range obj.ExternalData.Data.Signers {
+				signerObj, signer := obj.ExternalData.Data.Signers[i], &Signer{}
+				if pubKey := signerObj.GetPubKey(); pubKey != nil {
+					signer.Signer = &PubKey{Key: &pubKey.Key}
+				} else if ethAddress := signerObj.GetEthAddress(); ethAddress != nil {
+					signer.Signer = &ETHAddress{Address: &ethAddress.Address}
+				} else {
+					return nil, errors.New("invalid signer type")
 				}
+				signers[i] = signer
 			}
 		}
 		ed := &ExternalData{

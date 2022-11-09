@@ -21,6 +21,7 @@
 - [6598](https://github.com/vegaprotocol/vega/issues/6598) - Rework `vega tools snapshot` command to be more consistent with other CLI options
 
 ### 🛠 Improvements
+- [6755](https://github.com/vegaprotocol/vega/issues/6755) - Fix the `internal error` response from including `signers` in the `oracleSpecsConnection` `GQL` query
 - [6681](https://github.com/vegaprotocol/vega/issues/6681) - Add indexes to improve balance history query
 - [6682](https://github.com/vegaprotocol/vega/issues/6682) - Add indexes to orders by reference query
 - [6668](https://github.com/vegaprotocol/vega/issues/6668) - Add indexes to trades by buyer/seller

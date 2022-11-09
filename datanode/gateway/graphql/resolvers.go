@@ -2413,16 +2413,20 @@ func (r *myCandleResolver) Volume(_ context.Context, obj *v2.Candle) (string, er
 // BEGIN: DataSourceSpecConfiguration Resolver.
 type myDataSourceSpecConfigurationResolver VegaResolverRoot
 
-func (m *myDataSourceSpecConfigurationResolver) Signers(ctx context.Context, obj *types.DataSourceSpecConfiguration) ([]*Signer, error) {
+func (m *myDataSourceSpecConfigurationResolver) Signers(_ context.Context, obj *types.DataSourceSpecConfiguration) ([]*Signer, error) {
 	if len(obj.Signers) > 0 {
 		signers := make([]*Signer, len(obj.Signers))
-
-		for i, signer := range obj.Signers {
-			signers[i] = &Signer{
-				Signer: signer.GetSigner().(SignerKind),
+		for i := range obj.Signers {
+			signerObj, signer := obj.Signers[i], &Signer{}
+			if pubKey := signerObj.GetPubKey(); pubKey != nil {
+				signer.Signer = &PubKey{Key: &pubKey.Key}
+			} else if ethAddress := signerObj.GetEthAddress(); ethAddress != nil {
+				signer.Signer = &ETHAddress{Address: &ethAddress.Address}
+			} else {
+				return nil, errors.New("invalid signer type")
 			}
+			signers[i] = signer
 		}
-
 		return signers, nil
 	}
 	return nil, nil
