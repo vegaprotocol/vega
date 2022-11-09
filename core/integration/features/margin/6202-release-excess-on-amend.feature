@@ -21,6 +21,9 @@ Feature: test margin during amending orders
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
       | party4 | USD   | 100000000 |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
    @ExcessAmend
    Scenario: 001, reduce order size, 0011-MARA-004
@@ -57,15 +60,19 @@ Feature: test margin during amending orders
     # check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
-      | party1 | USD   | ETH/MAR22 | 19218  | 99980782 | 0     |
-      | party4 | USD   | ETH/MAR22 | 85366  | 99914634 | 0     |
+      | party1 | USD   | ETH/MAR22 | 36514  | 99963486 | 0     |
+      | party4 | USD   | ETH/MAR22 | 179268 | 99820732 | 0     |
+      # | party1 | USD   | ETH/MAR22 | 19218  | 99980782 | 0     |
+      # | party4 | USD   | ETH/MAR22 | 85366  | 99914634 | 0     |
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/MAR22 | 16015       | 17616  | 19218   | 22421   |
-      | party4 | ETH/MAR22 | 71139       | 78252  | 85366   | 99594   |
+      | party1 | ETH/MAR22 | 30429       | 33471  | 36514   | 79114   |
+      | party4 | ETH/MAR22 | 149391      | 164329 | 179268  | 209146  |
+      # | party1 | ETH/MAR22 | 16015       | 17616  | 19218   | 22421   |
+      # | party4 | ETH/MAR22 | 71139       | 78252  | 85366   | 99594   |
 
-    Then the parties amend the following orders:
+      Then the parties amend the following orders:
       | party  | reference   | price | size delta | tif     | 
       | party1 | buy-ref-1   | 900   | -18        | TIF_GTC | 
       | party4 | sell-ref-4  | 1100  | 20         | TIF_GTC | 
@@ -73,7 +80,8 @@ Feature: test margin during amending orders
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond |
       | party1 | USD   | ETH/MAR22 | 1922   | 99998078 | 0    |
-      | party4 | USD   | ETH/MAR22 | 170732 | 99829268 | 0    |
+      | party4 | USD   | ETH/MAR22 | 179268 | 99820732 | 0    |
+      # | party4 | USD   | ETH/MAR22 | 170732 | 99829268 | 0    |
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |

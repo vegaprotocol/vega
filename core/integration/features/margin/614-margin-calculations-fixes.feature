@@ -1,10 +1,12 @@
 Feature: test bugfix 614 for margin calculations
 
   Background:
-
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: CASE-1: Trader submits long order that will trade - new formula & high exit price
     Given the parties deposit on asset's general account the following amount:
@@ -38,7 +40,7 @@ Feature: test bugfix 614 for margin calculations
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "94" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | chris   | ETH/DEC19 | sell | 100    | 250   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | edd     | ETH/DEC19 | sell | 11     | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -48,8 +50,8 @@ Feature: test bugfix 614 for margin calculations
       | chris   | ETH/DEC19 | buy  | 15     | 90    | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
       | rebecca | ETH/DEC19 | buy  | 50     | 87    | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
       # this is now the actual party that we are testing
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+    When the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tamlyn | ETH/DEC19 | buy  | 13     | 150   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
@@ -58,7 +60,9 @@ Feature: test bugfix 614 for margin calculations
       | party   | asset | market id | margin | general |
       | tamlyn  | ETH   | ETH/DEC19 | 3536   | 6343    |
       | chris   | ETH   | ETH/DEC19 | 5600   | 4400    |
-      | edd     | ETH   | ETH/DEC19 | 3784   | 6216    |
-      | barney  | ETH   | ETH/DEC19 | 688    | 9256    |
+      | edd     | ETH   | ETH/DEC19 | 5456   | 4544    |
+      #| edd     | ETH   | ETH/DEC19 | 3784   | 6216    |
+      | barney  | ETH   | ETH/DEC19 | 992    | 8952    |
+      #| barney  | ETH   | ETH/DEC19 | 688    | 9256    |
       | rebecca | ETH   | ETH/DEC19 | 5600   | 4400    |
     And the cumulated balance for all accounts should be worth "3051000"
