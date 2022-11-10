@@ -224,6 +224,8 @@ func createEmbeddedPostgres(runtimePath string, dataPath *paths.StatePath, write
 		Password(conf.Password).
 		Database(conf.Database).
 		Port(uint32(conf.Port)).
+		ListenAddr(conf.Host).
+		SocketDir(conf.SocketDir).
 		Logger(writer)
 
 	if len(runtimePath) != 0 {

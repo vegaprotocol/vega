@@ -79,10 +79,8 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 
 	DeleteEverything()
 
-	config := sqlstore.NewDefaultConfig()
-	config.ConnectionConfig.Port = testDBPort
-
-	connStr := connectionString(config.ConnectionConfig)
+	config := NewTestConfig()
+	connStr := config.ConnectionConfig.GetConnectionString()
 
 	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)

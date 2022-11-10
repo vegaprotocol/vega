@@ -39,9 +39,9 @@ func setupNotaryStoreTests(t *testing.T, ctx context.Context) (*sqlstore.Notary,
 	ns := sqlstore.NewNotary(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	config := NewTestConfig(testDBPort)
+	config := NewTestConfig()
 
-	conn, err := pgx.Connect(ctx, connectionString(config.ConnectionConfig))
+	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
 	require.NoError(t, err)
 
 	return ns, bs, conn
