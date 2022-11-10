@@ -31,7 +31,6 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | market.liquidity.targetstake.triggering.ratio       | 1     |
       | market.liquidity.providers.fee.distributionTimeStep | 10s   |
 
-
     Given the average block duration is "2"
 
   Scenario: All liquidity providers in the market receive a greater than zero amount of liquidity fee, 0042-LIQF-010
@@ -60,7 +59,6 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | party2 | ETH/MAR22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/MAR22"
-
     And the following trades should be executed:
       | buyer  | price | size | seller |
       | party1 | 1000  | 10   | party2 |
@@ -128,5 +126,9 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | market | lp1    | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 5      | USD   |
       | market | lp2    | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 599    | USD   |
       | market | lp3    | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 599396 | USD   |
+
+# liquidity fee lp1 = 600000 * 0.0000099899101907 = 5
+# liquidity fee lp2 = 600000 * 0.0009989910190707 = 599
+# liquidity fee lp3 = 600000 * 0.9989910190707386 = 599396
 
 
