@@ -147,7 +147,9 @@ func (n *Command) Run(
 		// start the nullblockchain if we are in that mode, it *needs* to be after we've started the gRPC server
 		// otherwise it'll start calling init-chain and all the way before we're ready.
 		if n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
-			n.nullBlockchain.StartServer()
+			if err := n.nullBlockchain.StartServer(); err != nil {
+				errCh <- err
+			}
 		}
 	}()
 
