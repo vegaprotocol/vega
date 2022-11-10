@@ -1,8 +1,11 @@
 package types
 
 import (
+	"encoding/hex"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -342,10 +345,10 @@ func (s *DataSourceDefinition) UpdateFilters(filters []*DataSourceSpecFilter) {
 }
 
 func (s DataSourceDefinition) ToDataSourceSpec() *DataSourceSpec {
+	bytes, _ := proto.Marshal(s.IntoProto())
+	specID := hex.EncodeToString(crypto.Hash(bytes))
 	return &DataSourceSpec{
-		ID: SpecID(
-			s.GetSigners(),
-			DataSourceSpecFilters(s.GetFilters()).IntoProto()),
+		ID:   specID,
 		Data: &s,
 	}
 }

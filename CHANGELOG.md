@@ -13,7 +13,8 @@
 
 ### 🐛 Fixes
 - [6759](https://github.com/vegaprotocol/vega/issues/6759) - Send events when liquidity provisions are `undeployed`
-
+- [6764](https://github.com/vegaprotocol/vega/issues/6764) - If a trading terminated oracle changes after trading already terminated do not subscribe to it
+- [6775](https://github.com/vegaprotocol/vega/issues/6775) - Fix oracle spec identifiers
 
 ## 0.62.0
 
