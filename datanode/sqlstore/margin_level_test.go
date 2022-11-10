@@ -100,7 +100,7 @@ func setupMarginLevelTests(t *testing.T, ctx context.Context) (*testBlockSource,
 
 	accountStore := sqlstore.NewAccounts(connectionSource)
 	ml := sqlstore.NewMarginLevels(connectionSource)
-	config := NewTestConfig(testDBPort)
+	config := NewTestConfig()
 
 	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
 	require.NoError(t, err)
