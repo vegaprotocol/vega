@@ -15,36 +15,15 @@
 package types
 
 import (
-	"encoding/hex"
 	"fmt"
 	"strings"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 type ExternalDataSourceSpecConfiguration struct {
 	DataSourceSpec *DataSourceSpecConfiguration
-}
-
-func SpecID(signers []*Signer, filters []*datapb.Filter) string {
-	buf := []byte{}
-	for _, filter := range filters {
-		s := filter.Key.Name + filter.Key.Type.String()
-		for _, c := range filter.Conditions {
-			s += c.Operator.String() + c.Value
-		}
-
-		buf = append(buf, []byte(s)...)
-	}
-	allSigners := []string{}
-	for _, signer := range signers {
-		allSigners = append(allSigners, signer.String())
-	}
-	buf = append(buf, []byte(strings.Join(allSigners, ""))...)
-
-	return hex.EncodeToString(crypto.Hash(buf))
 }
 
 type DataSourceSpecFilter struct {

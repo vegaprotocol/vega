@@ -662,8 +662,41 @@ func TestMarketClosing(t *testing.T) {
 	assert.False(t, closed)
 	assert.Equal(t, types.MarketStateTradingTerminated, tm.market.State())
 
+	// now update the market with different trading terminated key
+	tm.mktCfg.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination = &types.DataSourceSpec{
+		ID: "2",
+		Data: types.NewDataSourceDefinition(
+			vegapb.DataSourceDefinitionTypeExt,
+		).SetOracleConfig(&types.DataSourceSpecConfiguration{
+			Signers: pubKeys,
+			Filters: []*types.DataSourceSpecFilter{
+				{
+					Key: &types.DataSourceSpecPropertyKey{
+						Name: "tradingTerminated",
+						Type: datapb.PropertyKey_TYPE_BOOLEAN,
+					},
+				},
+			},
+		}),
+	}
+	tm.mktCfg.TradableInstrument.Instrument.GetFuture().DataSourceSpecBinding.TradingTerminationProperty = "tradingTerminated"
+	err = tm.market.Update(context.Background(), tm.mktCfg, tm.oracleEngine)
+	require.NoError(t, err)
+
+	// now update the market again with the *same* spec ID
+	err = tm.market.Update(context.Background(), tm.mktCfg, tm.oracleEngine)
+	require.NoError(t, err)
+
+	properties = map[string]string{}
+	properties["tradingTerminated"] = "true"
+	err = tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		Signers: pubKeys,
+		Data:    properties,
+	})
+	require.NoError(t, err)
+
 	// let the oracle update settlement data
-	delete(properties, "trading.terminated")
+	delete(properties, "tradingTerminated")
 	properties["prices.ETH.value"] = "100"
 	err = tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
 		Signers: pubKeys,
