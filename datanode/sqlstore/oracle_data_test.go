@@ -39,7 +39,7 @@ func setupOracleDataTest(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *
 	bs := sqlstore.NewBlocks(connectionSource)
 	od := sqlstore.NewOracleData(connectionSource)
 
-	config := NewTestConfig(testDBPort)
+	config := NewTestConfig()
 	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
 	require.NoError(t, err)
 

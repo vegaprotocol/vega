@@ -39,6 +39,7 @@ type ConnectionConfig struct {
 	Username              string            `long:"username"`
 	Password              string            `long:"password"`
 	Database              string            `long:"database"`
+	SocketDir             string            `long:"location of postgres UNIX socket directory (used if host is empty string)"`
 	MaxConnLifetime       encoding.Duration `long:"max-conn-lifetime"`
 	MaxConnLifetimeJitter encoding.Duration `long:"max-conn-lifetime-jitter"`
 }
@@ -65,6 +66,15 @@ func (conf ConnectionConfig) GetConnectionString() string {
 }
 
 func (conf ConnectionConfig) getConnectionStringForDatabase(database string) string {
+	if conf.Host == "" {
+		//nolint:nosprintfhostport
+		return fmt.Sprintf("postgresql://%s:%s@/%s?host=%s&port=%d",
+			conf.Username,
+			conf.Password,
+			database,
+			conf.SocketDir,
+			conf.Port)
+	}
 	//nolint:nosprintfhostport
 	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
 		conf.Username,
@@ -97,6 +107,7 @@ func NewDefaultConfig() Config {
 			Username:              "vega",
 			Password:              "vega",
 			Database:              "vega",
+			SocketDir:             "/tmp",
 			MaxConnLifetime:       encoding.Duration{Duration: time.Minute * 30},
 			MaxConnLifetimeJitter: encoding.Duration{Duration: time.Minute * 5},
 		},

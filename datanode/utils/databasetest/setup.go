@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -25,6 +26,7 @@ var (
 	minPort          = 30000
 	maxPort          = 40000
 	testDBPort       int
+	testDBSocketDir  string
 
 	tableNames = [...]string{
 		"accounts",
@@ -85,8 +87,9 @@ var (
 func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.ConnectionSource, *bytes.Buffer),
 	postgresRuntimePath string,
 ) int {
-	testDBPort = GetNextFreePort()
-	sqlConfig := NewTestConfig(testDBPort)
+	testDBSocketDir = filepath.Join(postgresRuntimePath)
+	testDBPort = 5432 // GetNextFreePort()
+	sqlConfig := NewTestConfig(testDBPort, testDBSocketDir)
 
 	if sqlTestsEnabled {
 		log := logging.NewTestLogger()
@@ -150,8 +153,8 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 func DeleteEverything() {
 	ctx, cancelFn := context.WithTimeout(context.Background(), postgresServerTimeout)
 	defer cancelFn()
-	sqlConfig := NewTestConfig(testDBPort)
-	connStr := connectionString(sqlConfig.ConnectionConfig)
+	sqlConfig := NewTestConfig(testDBPort, testDBSocketDir)
+	connStr := sqlConfig.ConnectionConfig.GetConnectionString()
 	conn, err := pgx.Connect(ctx, connStr)
 	defer func() {
 		err = conn.Close(context.Background())
@@ -171,20 +174,12 @@ func DeleteEverything() {
 	}
 }
 
-func connectionString(config sqlstore.ConnectionConfig) string {
-	//nolint:nosprintfhostport
-	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
-		config.Username,
-		config.Password,
-		config.Host,
-		config.Port,
-		config.Database)
-}
-
-func NewTestConfig(port int) sqlstore.Config {
+func NewTestConfig(port int, socketDir string) sqlstore.Config {
 	sqlConfig := sqlstore.NewDefaultConfig()
 	sqlConfig.UseEmbedded = true
 	sqlConfig.ConnectionConfig.Port = port
+	sqlConfig.ConnectionConfig.Host = ""
+	sqlConfig.ConnectionConfig.SocketDir = socketDir
 
 	return sqlConfig
 }

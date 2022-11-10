@@ -76,7 +76,7 @@ func setupDepositStoreTests(t *testing.T, ctx context.Context) (*sqlstore.Blocks
 	bs := sqlstore.NewBlocks(connectionSource)
 	ds := sqlstore.NewDeposits(connectionSource)
 
-	config := NewTestConfig(testDBPort)
+	config := NewTestConfig()
 
 	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
 	require.NoError(t, err)
