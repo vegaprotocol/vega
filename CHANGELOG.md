@@ -9,6 +9,15 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.62.1
+
+### 🛠 Improvements
 - [6726](https://github.com/vegaprotocol/vega/issues/6726) - Talk to embedded `postgres` via a `UNIX` domain socket in tests.
 
 ### 🐛 Fixes
