@@ -53,7 +53,7 @@ func setupLPTests(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstor
 	bs := sqlstore.NewBlocks(connectionSource)
 	lp := sqlstore.NewLiquidityProvision(connectionSource, logging.NewTestLogger())
 
-	config := NewTestConfig(testDBPort)
+	config := NewTestConfig()
 	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
 	require.NoError(t, err)
 
