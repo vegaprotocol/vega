@@ -25,8 +25,9 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | trading.terminated | TYPE_BOOLEAN | trading termination |
 
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
     And the settlement data decimals for the oracle named "ethDec20Oracle" is given in "2" decimal places
     And the settlement data decimals for the oracle named "ethDec21Oracle" is given in "1" decimal places
