@@ -443,7 +443,12 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.lMonitor.UpdateParameters(m.mkt.LiquidityMonitoringParameters)
 	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor)
 
-	m.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(m.tradingTerminated)
+	// if we're already in trading terminated, not point to listen to trading termination oracle
+	if m.mkt.State != types.MarketStateTradingTerminated {
+		m.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(m.tradingTerminated)
+	} else {
+		m.tradableInstrument.Instrument.UnsubscribeTradingTerminated(ctx)
+	}
 	m.tradableInstrument.Instrument.Product.NotifyOnSettlementData(m.settlementData)
 
 	m.updateLiquidityFee(ctx)

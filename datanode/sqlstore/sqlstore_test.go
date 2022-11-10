@@ -17,7 +17,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -35,6 +34,7 @@ import (
 var (
 	connectionSource *sqlstore.ConnectionSource
 	testDBPort       int
+	testDBSocketDir  string
 )
 
 func TestMain(m *testing.M) {
@@ -50,6 +50,7 @@ func TestMain(m *testing.M) {
 		postgresLog *bytes.Buffer,
 	) {
 		testDBPort = cfg.ConnectionConfig.Port
+		testDBSocketDir = cfg.ConnectionConfig.SocketDir
 		connectionSource = source
 	}, postgresRuntimePath)
 }
@@ -58,18 +59,8 @@ func DeleteEverything() {
 	databasetest.DeleteEverything()
 }
 
-func NewTestConfig(port int) sqlstore.Config {
-	return databasetest.NewTestConfig(port)
-}
-
-func connectionString(config sqlstore.ConnectionConfig) string {
-	//nolint:nosprintfhostport
-	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
-		config.Username,
-		config.Password,
-		config.Host,
-		config.Port,
-		config.Database)
+func NewTestConfig() sqlstore.Config {
+	return databasetest.NewTestConfig(testDBPort, testDBSocketDir)
 }
 
 func generateTxHash() entities.TxHash {

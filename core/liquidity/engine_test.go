@@ -396,7 +396,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	)
 }
 
-func TestUpdate(t *testing.T) {
+func TestUpdateAndUndeploy(t *testing.T) {
 	var (
 		party = "party-1"
 		ctx   = context.Background()
@@ -407,7 +407,6 @@ func TestUpdate(t *testing.T) {
 
 	// We don't care about the following calls
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	tng.orderbook.EXPECT().GetLiquidityOrders(gomock.Any()).Times(2)
 
 	// Send a submission to create the shape
@@ -474,6 +473,12 @@ func TestUpdate(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, newOrders, 0)
 	require.Len(t, toCancels, 0)
+
+	tng.orderbook.EXPECT().GetLiquidityOrders(gomock.Any()).Times(2)
+	tng.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	tng.engine.UndeployLPs(ctx, nil)
+	lp := tng.engine.LiquidityProvisionByPartyID(party)
+	require.Equal(t, types.LiquidityProvisionStatusUndeployed, lp.Status)
 }
 
 func TestCalculateSuppliedStake(t *testing.T) {

@@ -15,29 +15,21 @@ package gql
 import (
 	"context"
 
-	vega "code.vegaprotocol.io/vega/protos/vega"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 type updateFutureProductResolver VegaResolverRoot
 
-func (r *updateFutureProductResolver) DataSourceSpecForSettlementData(ctx context.Context, obj *vega.UpdateFutureProduct) (*DataSourceDefinition, error) {
-	if obj.DataSourceSpecForSettlementData != nil {
+func (r *updateFutureProductResolver) DataSourceSpecForSettlementData(_ context.Context, obj *vega.UpdateFutureProduct) (*DataSourceDefinition, error) {
+	if obj.DataSourceSpecForSettlementData == nil {
 		return nil, nil
 	}
-
-	dataSourceSpec := obj.DataSourceSpecForSettlementData
-	return &DataSourceDefinition{
-		SourceType: dataSourceSpec.SourceType.(DataSourceKind),
-	}, nil
+	return resolveDataSourceDefinition(obj.DataSourceSpecForSettlementData), nil
 }
 
-func (r *updateFutureProductResolver) DataSourceSpecForTradingTermination(ctx context.Context, obj *vega.UpdateFutureProduct) (*DataSourceDefinition, error) {
+func (r *updateFutureProductResolver) DataSourceSpecForTradingTermination(_ context.Context, obj *vega.UpdateFutureProduct) (*DataSourceDefinition, error) {
 	if obj.DataSourceSpecForTradingTermination == nil {
 		return nil, nil
 	}
-
-	dataSourceSpec := obj.DataSourceSpecForTradingTermination
-	return &DataSourceDefinition{
-		SourceType: dataSourceSpec.SourceType.(DataSourceKind),
-	}, nil
+	return resolveDataSourceDefinition(obj.DataSourceSpecForTradingTermination), nil
 }

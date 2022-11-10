@@ -13,10 +13,35 @@
 package governance_test
 
 import (
+	"context"
 	_ "embed"
+	"encoding/base64"
+	"encoding/json"
+	"testing"
+	"time"
+
+	"code.vegaprotocol.io/vega/core/assets"
+	amocks "code.vegaprotocol.io/vega/core/assets/mocks"
+	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
+	"code.vegaprotocol.io/vega/core/checkpoint"
+	"code.vegaprotocol.io/vega/core/collateral"
+	"code.vegaprotocol.io/vega/core/execution"
+	emocks "code.vegaprotocol.io/vega/core/execution/mocks"
+	"code.vegaprotocol.io/vega/core/governance"
+	"code.vegaprotocol.io/vega/core/governance/mocks"
+	"code.vegaprotocol.io/vega/core/netparams"
+	"code.vegaprotocol.io/vega/core/nodewallets"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/proto"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	vgtesting "code.vegaprotocol.io/vega/libs/testing"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
+	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
 )
 
-/*
 //go:embed testcp/checkpoint.cp
 var cpFile []byte
 
@@ -27,7 +52,7 @@ func TestMarketRestoreFromCheckpoint(t *testing.T) {
 	now := time.Now()
 	ex, gov, cpEng := createExecutionEngine(t, now)
 	genesis := &checkpoint.GenesisState{
-		CheckpointHash:  "36fe3e8a6dea4a89c983ae9467ad05e656fa7754857f6a917d588d157b9b064f",
+		CheckpointHash:  "b60aa26b5b167ecf72620778b481a65d029367c1a56bd280b55614b5586f3e8c",
 		CheckpointState: base64.StdEncoding.EncodeToString(cpFile),
 	}
 	gd := &struct {
@@ -40,12 +65,14 @@ func TestMarketRestoreFromCheckpoint(t *testing.T) {
 	require.NoError(t, cpEng.UponGenesis(context.Background(), gdBytes))
 
 	expectedMarkets := []string{
-		"82644318987f9c2a63c3cab6d210c2b034fb4caba0e22327f1f2ed47f4dfb97d",
-		"18ab3360c634cb0f8f195b6336d1fefe9ec1f7e35fda2472529c76e82c2a3597",
-		"5e66c6db9dc321c5351eef38b7d1c780e06577306ed29f773e929de0ca50183e",
-		"22d3553ee217c8d8db5a0b975fd35d5f429cb529587d51ee1b2abfa8399c5e52",
-		"ac5f1fdfe21bff8daa8a9008faa9760cae7df908c9cdd1d74c007240453b77db",
-		"471973be39e0e242173117adcb0ddc1fa1fcef8ec8c108b86ce593924d0797db",
+		"86948f946a64e14bb2e284f825cd46879d1cb581ce405cc62e4f74fcded190d3",
+		"3fed7242cce2cbe7df8cc3a2808969fc6e108f2047838c4af323c10430dfe041",
+		"5ed56476934d952229c0d796e143be4d1a96871d1607f9188dfa3727bdd6f7a0",
+		"2bf3cab7a239f34f40145a0700f8f12bc504bd2ec3a65d5915c4e58881dfcb52",
+		"eda61c9948ae97182c344b6a900e960a6c85271a4db1926eb26c82d847d9ba78",
+		"954410d873a6d1a419b8a11e7e3a5178f65b976f3140bb78fc97d21daf08877f",
+		"14719259af09239e479c107c6a69dbdae05dbde619ad06632af27a2fc2c9a9c7",
+		"3201812426fed4cc6d5cfbacdaa54e738791deb9f72743f8b18d3e9f6a3e222c",
 	}
 	govProposalsCP, _ := gov.Checkpoint()
 	proposals := &checkpointpb.Proposals{}
@@ -121,4 +148,3 @@ func createExecutionEngine(t *testing.T, tm time.Time) (*execution.Engine, *gove
 
 	return exec, gov, cpEngine
 }
-*/

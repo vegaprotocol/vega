@@ -70,7 +70,7 @@ func setupWithdrawalStoreTests(t *testing.T, ctx context.Context) (*sqlstore.Blo
 	bs := sqlstore.NewBlocks(connectionSource)
 	ws := sqlstore.NewWithdrawals(connectionSource)
 
-	config := NewTestConfig(testDBPort)
+	config := NewTestConfig()
 
 	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
 	require.NoError(t, err)
