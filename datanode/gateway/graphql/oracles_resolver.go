@@ -14,9 +14,9 @@ package gql
 
 import (
 	"context"
-	"errors"
 	"strconv"
 
+	"code.vegaprotocol.io/vega/datanode/utils"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -24,18 +24,12 @@ import (
 
 type oracleSpecResolver VegaResolverRoot
 
-func (o *oracleSpecResolver) DataSourceSpec(ctx context.Context, obj *vegapb.OracleSpec) (*ExternalDataSourceSpec, error) {
-	dataSourceSpec := &DataSourceSpec{
-		Data: &DataSourceDefinition{},
+func (o *oracleSpecResolver) DataSourceSpec(_ context.Context, obj *vegapb.OracleSpec) (extDss *ExternalDataSourceSpec, _ error) {
+	extDss = &ExternalDataSourceSpec{Spec: &DataSourceSpec{Data: &DataSourceDefinition{}}}
+	if obj.ExternalDataSourceSpec != nil {
+		extDss.Spec = resolveDataSourceSpec(obj.ExternalDataSourceSpec.Spec)
 	}
-
-	if ed := obj.ExternalDataSourceSpec; ed != nil && ed.Spec != nil && ed.Spec.Data != nil {
-		dataSourceSpec = resolveDataSourceSpec(ed.Spec)
-	}
-
-	return &ExternalDataSourceSpec{
-		Spec: dataSourceSpec,
-	}, nil
+	return
 }
 
 func (o *oracleSpecResolver) DataConnection(ctx context.Context, obj *vegapb.OracleSpec, pagination *v2.Pagination) (*v2.OracleDataConnection, error) {
@@ -59,95 +53,71 @@ func (o *oracleSpecResolver) DataConnection(ctx context.Context, obj *vegapb.Ora
 
 type oracleDataResolver VegaResolverRoot
 
-func (o *oracleDataResolver) ExternalData(ctx context.Context, obj *vegapb.OracleData) (*ExternalData, error) {
-	ed := &ExternalData{
+func (o *oracleDataResolver) ExternalData(_ context.Context, obj *vegapb.OracleData) (ed *ExternalData, _ error) {
+	ed = &ExternalData{
 		Data: &Data{},
 	}
 
-	if obj != nil {
-		if obj.ExternalData != nil && obj.ExternalData.Data != nil {
-			o := obj.ExternalData.Data
-			broadcastAt := strconv.FormatInt(o.BroadcastAt, 10)
-
-			signers, err := resolveSigners(o.Signers)
-			if err != nil {
-				return nil, err
-			}
-
-			ed.Data = &Data{
-				Signers:        signers,
-				Data:           o.Data,
-				MatchedSpecIds: o.MatchedSpecIds,
-				BroadcastAt:    broadcastAt,
-			}
-		}
+	oed := obj.ExternalData
+	if oed == nil || oed.Data == nil {
+		return
 	}
 
-	return ed, nil
+	ed.Data.Signers = resolveSigners(oed.Data.Signers)
+	ed.Data.Data = oed.Data.Data
+	ed.Data.MatchedSpecIds = oed.Data.MatchedSpecIds
+	ed.Data.BroadcastAt = strconv.FormatInt(oed.Data.BroadcastAt, 10)
+
+	return
 }
 
-func resolveSigners(obj []*v1.Signer) ([]*Signer, error) {
-	signers := []*Signer{}
-	if len(obj) > 0 {
-		for i := range obj {
-			o, signer := obj[i], &Signer{}
-
-			if pk := o.GetPubKey(); pk != nil {
-				signer.Signer = &PubKey{
-					Key: &pk.Key,
-				}
-			} else if ethAddr := o.GetEthAddress(); ethAddr != nil {
-				signer.Signer = &ETHAddress{
-					Address: &ethAddr.Address,
-				}
-			} else {
-				return signers, errors.New("invalid signer type")
-			}
-
-			signers = append(signers, signer)
-		}
+func resolveSigners(obj []*v1.Signer) (signers []*Signer) {
+	for i := range obj {
+		signers = append(signers, &Signer{Signer: resolveSigner(obj[i].Signer)})
 	}
-
-	return signers, nil
+	return
 }
 
-func resolveDataSourceDefinition(d *vegapb.DataSourceDefinition) *DataSourceDefinition {
-	ds := &DataSourceDefinition{}
+func resolveSigner(obj any) (signer SignerKind) {
+	switch sig := obj.(type) {
+	case *v1.Signer_PubKey:
+		signer = &PubKey{Key: &sig.PubKey.Key}
+	case *v1.Signer_EthAddress:
+		signer = &ETHAddress{Address: &sig.EthAddress.Address}
+	}
+	return
+}
+
+func resolveDataSourceDefinition(d *vegapb.DataSourceDefinition) (ds *DataSourceDefinition) {
+	ds = &DataSourceDefinition{}
+	if d == nil {
+		return
+	}
 	switch dst := d.SourceType.(type) {
 	case *vegapb.DataSourceDefinition_External:
-		if dst.External != nil {
-			ds.SourceType = DataSourceDefinitionExternal{
-				SourceType: dst.External.GetOracle(),
-			}
-		}
+		ds.SourceType = dst.External
 	case *vegapb.DataSourceDefinition_Internal:
-		if dst.Internal != nil {
-			ds.SourceType = DataSourceDefinitionInternal{
-				SourceType: dst.Internal.GetTime(),
-			}
-		}
+		ds.SourceType = dst.Internal
 	}
-
-	return ds
+	return
 }
 
-func resolveDataSourceSpec(d *vegapb.DataSourceSpec) *DataSourceSpec {
-	ds := &DataSourceSpec{}
-
-	if d != nil {
-		updatedAt := strconv.FormatInt(d.UpdatedAt, 10)
-
-		ds = &DataSourceSpec{
-			ID:        d.GetId(),
-			CreatedAt: strconv.FormatInt(d.CreatedAt, 10),
-			UpdatedAt: &updatedAt,
-			Status:    DataSourceSpecStatus(strconv.FormatInt(int64(d.Status), 10)),
-		}
-
-		if d.Data != nil {
-			ds.Data = resolveDataSourceDefinition(d.Data)
-		}
+func resolveDataSourceSpec(d *vegapb.DataSourceSpec) (ds *DataSourceSpec) {
+	ds = &DataSourceSpec{
+		Data: &DataSourceDefinition{},
+	}
+	if d == nil {
+		return
 	}
 
-	return ds
+	ds.ID = d.GetId()
+	ds.CreatedAt = strconv.FormatInt(d.CreatedAt, 10)
+	ds.UpdatedAt = utils.ToPtr(strconv.FormatInt(d.UpdatedAt, 10))
+	ds.Status = DataSourceSpecStatus(strconv.FormatInt(int64(d.Status), 10))
+
+	if d.Data != nil {
+		ds.Data = resolveDataSourceDefinition(d.Data)
+	}
+
+	return
 }

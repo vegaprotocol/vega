@@ -25,26 +25,10 @@ func (r *myFutureResolver) SettlementAsset(ctx context.Context, obj *protoTypes.
 	return r.r.getAssetByID(ctx, obj.SettlementAsset)
 }
 
-func (r *myFutureResolver) DataSourceSpecForSettlementData(ctx context.Context, obj *vegapb.Future) (*DataSourceSpec, error) {
-	ds := &DataSourceSpec{
-		Data: &DataSourceDefinition{},
-	}
-
-	if obj.DataSourceSpecForSettlementData != nil {
-		ds = resolveDataSourceSpec(obj.DataSourceSpecForSettlementData)
-	}
-
-	return ds, nil
+func (r *myFutureResolver) DataSourceSpecForSettlementData(_ context.Context, obj *vegapb.Future) (*DataSourceSpec, error) {
+	return resolveDataSourceSpec(obj.DataSourceSpecForSettlementData), nil
 }
 
-func (r *myFutureResolver) DataSourceSpecForTradingTermination(ctx context.Context, obj *vegapb.Future) (*DataSourceSpec, error) {
-	ds := &DataSourceSpec{
-		Data: &DataSourceDefinition{},
-	}
-
-	if obj.DataSourceSpecForTradingTermination != nil {
-		ds = resolveDataSourceSpec(obj.DataSourceSpecForTradingTermination)
-	}
-
-	return ds, nil
+func (r *myFutureResolver) DataSourceSpecForTradingTermination(_ context.Context, obj *vegapb.Future) (*DataSourceSpec, error) {
+	return resolveDataSourceSpec(obj.DataSourceSpecForTradingTermination), nil
 }
