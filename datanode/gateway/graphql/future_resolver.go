@@ -26,9 +26,15 @@ func (r *myFutureResolver) SettlementAsset(ctx context.Context, obj *protoTypes.
 }
 
 func (r *myFutureResolver) DataSourceSpecForSettlementData(_ context.Context, obj *vegapb.Future) (*DataSourceSpec, error) {
+	if obj.DataSourceSpecForSettlementData == nil {
+		return nil, nil
+	}
 	return resolveDataSourceSpec(obj.DataSourceSpecForSettlementData), nil
 }
 
 func (r *myFutureResolver) DataSourceSpecForTradingTermination(_ context.Context, obj *vegapb.Future) (*DataSourceSpec, error) {
+	if obj.DataSourceSpecForTradingTermination == nil {
+		return nil, nil
+	}
 	return resolveDataSourceSpec(obj.DataSourceSpecForTradingTermination), nil
 }

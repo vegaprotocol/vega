@@ -21,9 +21,15 @@ import (
 type updateFutureProductResolver VegaResolverRoot
 
 func (r *updateFutureProductResolver) DataSourceSpecForSettlementData(_ context.Context, obj *vega.UpdateFutureProduct) (*DataSourceDefinition, error) {
+	if obj.DataSourceSpecForSettlementData == nil {
+		return nil, nil
+	}
 	return resolveDataSourceDefinition(obj.DataSourceSpecForSettlementData), nil
 }
 
 func (r *updateFutureProductResolver) DataSourceSpecForTradingTermination(_ context.Context, obj *vega.UpdateFutureProduct) (*DataSourceDefinition, error) {
+	if obj.DataSourceSpecForTradingTermination == nil {
+		return nil, nil
+	}
 	return resolveDataSourceDefinition(obj.DataSourceSpecForTradingTermination), nil
 }

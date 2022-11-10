@@ -16,7 +16,7 @@ import (
 	"context"
 	"strconv"
 
-	"code.vegaprotocol.io/vega/datanode/utils"
+	utils "code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -95,9 +95,13 @@ func resolveDataSourceDefinition(d *vegapb.DataSourceDefinition) (ds *DataSource
 	}
 	switch dst := d.SourceType.(type) {
 	case *vegapb.DataSourceDefinition_External:
-		ds.SourceType = dst.External
+		ds.SourceType = DataSourceDefinitionExternal{
+			SourceType: dst.External.GetOracle(),
+		}
 	case *vegapb.DataSourceDefinition_Internal:
-		ds.SourceType = dst.Internal
+		ds.SourceType = DataSourceDefinitionInternal{
+			SourceType: dst.Internal.GetTime(),
+		}
 	}
 	return
 }
@@ -112,7 +116,7 @@ func resolveDataSourceSpec(d *vegapb.DataSourceSpec) (ds *DataSourceSpec) {
 
 	ds.ID = d.GetId()
 	ds.CreatedAt = strconv.FormatInt(d.CreatedAt, 10)
-	ds.UpdatedAt = utils.ToPtr(strconv.FormatInt(d.UpdatedAt, 10))
+	ds.UpdatedAt = utils.From(strconv.FormatInt(d.UpdatedAt, 10))
 	ds.Status = DataSourceSpecStatus(strconv.FormatInt(int64(d.Status), 10))
 
 	if d.Data != nil {
