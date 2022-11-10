@@ -11031,7 +11031,7 @@ type ERC20 {
   lifetimeLimit: String!
   """
   The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
-  There’s no limit on the size of a withdrawal
+  There is no limit on the size of a withdrawal
   Note: this is a temporary measure that can be changed by governance
   """
   withdrawThreshold: String!
@@ -11046,7 +11046,7 @@ type UpdateERC20 {
   lifetimeLimit: String!
   """
   The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
-  There’s no limit on the size of a withdrawal
+  There is no limit on the size of a withdrawal
   Note: this is a temporary measure that can be changed by governance
   """
   withdrawThreshold: String!
@@ -11252,44 +11252,6 @@ type Future {
 
   "The number of decimal places implied by the settlement data (such as price) emitted by the settlement data source"
   settlementDataDecimals: Int!
-}
-
-"""
-DataSourceSpecConfigurationTime is the internal data source used for emitting timestamps.
-"""
-type DataSourceSpecConfigurationTime {
-  conditions: [Condition]!
-}
-
-union InternalDataSourceKind = DataSourceSpecConfigurationTime
-
-"""
-DataSourceDefinitionInternal is the top level object used for all internal data sources.
-It contains one of any of the defined ` + "`" + `SourceType` + "`" + ` variants.
-"""
-type DataSourceDefinitionInternal {
-  sourceType: InternalDataSourceKind!
-}
-
-union ExternalDataSourceKind = DataSourceSpecConfiguration
-
-"""
-DataSourceDefinitionExternal is the top level object used for all external data sources.
-It contains one of any of the defined ` + "`" + `SourceType` + "`" + ` variants.
-"""
-type DataSourceDefinitionExternal {
-  sourceType: ExternalDataSourceKind!
-}
-
-union DataSourceKind = DataSourceDefinitionInternal | DataSourceDefinitionExternal
-
-"""
-DataSourceDefinition represents the top level object that deals with data sources.
-DataSourceDefinition can be external or internal, with whatever number of data sources are defined
-for each type in the child objects below.
-"""
-type DataSourceDefinition {
-  sourceType: DataSourceKind!
 }
 
 """
@@ -13188,7 +13150,7 @@ type FutureProduct {
 }
 
 """
-A data spec describes the source data that an instrument wants to get from the
+DataSourceSpecConfiguration describes the source data that an instrument wants to get from the
 sourcing engine.
 """
 type DataSourceSpecConfiguration {
@@ -14490,6 +14452,44 @@ type ProtocolUpgradeProposal {
   approvers: [String!]!
   "the status of the proposal"
   status: ProtocolUpgradeProposalStatus!
+}
+
+"""
+DataSourceSpecConfigurationTime is the internal data source used for emitting timestamps.
+"""
+type DataSourceSpecConfigurationTime {
+  conditions: [Condition]!
+}
+
+union InternalDataSourceKind = DataSourceSpecConfigurationTime
+
+"""
+DataSourceDefinitionInternal is the top level object used for all internal data sources.
+It contains one of any of the defined ` + "`" + `SourceType` + "`" + ` variants.
+"""
+type DataSourceDefinitionInternal {
+  sourceType: InternalDataSourceKind!
+}
+
+union ExternalDataSourceKind = DataSourceSpecConfiguration
+
+"""
+DataSourceDefinitionExternal is the top level object used for all external data sources.
+It contains one of any of the defined ` + "`" + `SourceType` + "`" + ` variants.
+"""
+type DataSourceDefinitionExternal {
+  sourceType: ExternalDataSourceKind!
+}
+
+union DataSourceKind = DataSourceDefinitionInternal | DataSourceDefinitionExternal
+
+"""
+DataSourceDefinition represents the top level object that deals with data sources.
+DataSourceDefinition can be external or internal, with whatever number of data sources are defined
+for each type in the child objects below.
+"""
+type DataSourceDefinition {
+  sourceType: DataSourceKind!
 }
 `, BuiltIn: false},
 }
