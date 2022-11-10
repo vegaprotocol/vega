@@ -77,6 +77,7 @@ func (r *Replayer) Commit() (resp abci.ResponseCommit) {
 	resp = r.app.Commit()
 	r.current.AppHash = resp.Data
 	r.write(r.current)
+	r.current = nil
 	return
 }
 
@@ -90,6 +91,11 @@ func (r *Replayer) Info(req abci.RequestInfo) (resp abci.ResponseInfo) {
 }
 
 func (r *Replayer) Stop() error {
+	if r.current != nil {
+		// a panic must've occurred while processing a block because we didn't make it to commit
+		// save what we have
+		r.write(r.current)
+	}
 	return r.rFile.Close()
 }
 
@@ -138,8 +144,16 @@ func (r *Replayer) replayChain(appHeight int64, chainID string) (int64, time.Tim
 				Height: data.Height,
 			},
 		)
+		resp := r.app.Commit()
 
-		if resp := r.app.Commit(); !bytes.Equal(data.AppHash, resp.Data) {
+		if len(data.AppHash) == 0 {
+			// we've replayed a block which when recorded must have panicked so we do not have a apphash
+			// somehow we've made it through this time, maybe someone is testing a fix so we skip the hash check and log it as strange
+			r.log.Error("app-hash missing from block data -- a block with a panic is working now?")
+			continue
+		}
+
+		if !bytes.Equal(data.AppHash, resp.Data) {
 			return replayedHeight, replayedTime, fmt.Errorf("appHash mismatch on replay, expected %s got %s", hex.EncodeToString(data.AppHash), hex.EncodeToString(resp.Data))
 		}
 	}
