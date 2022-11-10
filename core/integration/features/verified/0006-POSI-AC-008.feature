@@ -1,13 +1,13 @@
 Feature: test AC 0006-POSI-008
 
   Background:
-
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario:  Open long position, trades occur closing the long position and opening a short position (0006-POSI-008)
   Given the parties deposit on asset's general account the following amount:
@@ -37,29 +37,31 @@ Feature: test AC 0006-POSI-008
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |  
       | party2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 132    | 9868    |
+      | party1 | ETH   | ETH/DEC19 | 4921   | 5079    |
+      #| party1 | ETH   | ETH/DEC19 | 132    | 9868    |
       | party2 | ETH   | ETH/DEC19 | 1273   | 8627    |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 5041   | 4959    |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC19 | buy  | 1      | 2000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 504    | 8496    |
+      | party1 | ETH   | ETH/DEC19 | 7682   | 1318    |
+      #| party1 | ETH   | ETH/DEC19 | 504    | 8496    |
       | party2 | ETH   | ETH/DEC19 | 2605   | 8295    |
       | party3 | ETH   | ETH/DEC19 | 2605   | 7195    |
 
@@ -78,7 +80,7 @@ Feature: test AC 0006-POSI-008
       | party2   | 1      | 1000           | 0            |
       | party3   | 1      | 0              | 0            |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | aux    | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux3   | ETH/DEC19 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
