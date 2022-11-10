@@ -460,6 +460,7 @@ func (e *Engine) CreateInitialOrders(
 func (e *Engine) UndeployLPs(ctx context.Context, orders []*types.Order) []*ToCancel {
 	provisions := e.provisions.Slice()
 	cancels := make([]*ToCancel, 0, len(provisions)*2) // one for each side
+	evts := make([]events.Event, 0, len(provisions))
 	for _, lp := range provisions {
 		if lp.Status != types.LiquidityProvisionStatusActive {
 			continue
@@ -486,7 +487,10 @@ func (e *Engine) UndeployLPs(ctx context.Context, orders []*types.Order) []*ToCa
 		}
 		// set as undeployed so we can redeploy it once the pegs become available again
 		lp.Status = types.LiquidityProvisionStatusUndeployed
+		evts = append(evts, events.NewLiquidityProvisionEvent(ctx, lp))
 	}
+
+	e.broker.SendBatch(evts)
 	return cancels
 }
 
@@ -541,6 +545,7 @@ func (e *Engine) createOrUpdateForParty(
 		buysShape      = make([]*supplied.LiquidityOrder, 0, len(lp.Buys))
 		sellsShape     = make([]*supplied.LiquidityOrder, 0, len(lp.Sells))
 		repriceFailure bool
+		lpChanged      bool
 	)
 
 	for _, buy := range lp.Buys {
@@ -597,6 +602,7 @@ func (e *Engine) createOrUpdateForParty(
 		if lp.Status != types.LiquidityProvisionStatusUndeployed &&
 			lp.Status != types.LiquidityProvisionStatusPending {
 			lp.Status = types.LiquidityProvisionStatusUndeployed
+			lpChanged = true
 		}
 	} else {
 		// Create a slice shaped copy of the orders
@@ -622,13 +628,17 @@ func (e *Engine) createOrUpdateForParty(
 		needsCreateSells, needsUpdateSells = e.createOrdersFromShape(
 			party, sellsShape, types.SideSell)
 
-		lp.Status = types.LiquidityProvisionStatusActive
+		if lp.Status != types.LiquidityProvisionStatusActive {
+			lp.Status = types.LiquidityProvisionStatusActive
+			lpChanged = true
+		}
 	}
 
 	// fields in the lp might have changed so we re-set it to trigger the snapshot `changed` flag
 	e.provisions.Set(party, lp)
-	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
-
+	if lpChanged {
+		e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
+	}
 	return append(needsCreateBuys, needsCreateSells...),
 		needsUpdateBuys.Merge(needsUpdateSells),
 		nil
