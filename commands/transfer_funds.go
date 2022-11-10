@@ -17,7 +17,7 @@ func CheckTransfer(cmd *commandspb.Transfer) error {
 	return checkTransfer(cmd).ErrorOrNil()
 }
 
-func checkTransfer(cmd *commandspb.Transfer) Errors {
+func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 	errs := NewErrors()
 
 	if cmd == nil {
@@ -108,10 +108,10 @@ func checkTransfer(cmd *commandspb.Transfer) Errors {
 			// dispatch strategy only makes sense for reward pools
 			if k.Recurring.DispatchStrategy != nil {
 				// check account type is one of the relevant reward accounts
-				if !(cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES ||
-					cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
-					cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES ||
-					cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS) {
+				if cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES &&
+					cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES &&
+					cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES &&
+					cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
 					errs.AddForProperty("transfer.kind.dispatch_strategy", ErrIsNotValid)
 				}
 				// check asset for metric is passed unless it's a market proposer reward

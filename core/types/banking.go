@@ -168,6 +168,7 @@ func (o *OneOffTransfer) IntoEvent(reason *string) *eventspb.Transfer {
 		Reason:          reason,
 	}
 
+	out.Kind = &eventspb.Transfer_OneOff{}
 	if o.DeliverOn != nil {
 		out.Kind = &eventspb.Transfer_OneOff{
 			OneOff: &eventspb.OneOffTransfer{
