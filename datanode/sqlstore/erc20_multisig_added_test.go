@@ -38,9 +38,9 @@ func setupERC20MultiSigEventStoreTests(t *testing.T, ctx context.Context) (*sqls
 	DeleteEverything()
 	ms := sqlstore.NewERC20MultiSigSignerEvent(connectionSource)
 
-	config := NewTestConfig(testDBPort)
+	config := NewTestConfig()
 
-	conn, err := pgx.Connect(ctx, connectionString(config.ConnectionConfig))
+	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
 	require.NoError(t, err)
 
 	return ms, conn
