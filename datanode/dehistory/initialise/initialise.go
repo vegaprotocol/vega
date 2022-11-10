@@ -76,6 +76,9 @@ func DatanodeFromDeHistory(parentCtx context.Context, cfg Config, log *logging.L
 			}
 			return FromSegmentIndexEntry(segment), nil
 		}, cfg.MinimumBlockCount)
+	if err != nil {
+		return fmt.Errorf("failed to fetch history blocks:%w", err)
+	}
 
 	if blocksFetched == 0 {
 		return fmt.Errorf("failed to get any blocks from decentralised history")
