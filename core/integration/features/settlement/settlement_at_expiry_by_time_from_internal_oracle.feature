@@ -71,7 +71,7 @@ Feature: Test settlement at expiry time from internal oracle
       | prices.ETH.value | 42    |
     Then time is updated to "2020-01-01T01:01:02Z"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
 
@@ -142,7 +142,7 @@ Feature: Test settlement at expiry time from internal oracle
 
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -162,7 +162,7 @@ Feature: Test settlement at expiry time from internal oracle
     And the cumulated balance for all accounts should be worth "100236000"
 
     # Close positions by aux parties
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
@@ -177,7 +177,7 @@ Feature: Test settlement at expiry time from internal oracle
     When time is updated to "2020-01-01T01:01:01Z"
 
     # Order can't be placed after oracle data is received (expecting party positions to remain unchanged)
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | error               |
       | party3 | ETH/DEC19 | buy  | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC | trading not allowed |
 
@@ -194,7 +194,7 @@ Feature: Test settlement at expiry time from internal oracle
 
     Then time is updated to "2020-01-01T01:01:02Z"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
 
@@ -254,7 +254,7 @@ Feature: Test settlement at expiry time from internal oracle
     And the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
     And the market state should be "STATE_ACTIVE" for the market "ETH/DEC21"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux2  | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | aux1  | ETH/DEC21 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-3     |
@@ -286,7 +286,7 @@ Feature: Test settlement at expiry time from internal oracle
 
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -295,7 +295,7 @@ Feature: Test settlement at expiry time from internal oracle
     And the cumulated balance for all accounts should be worth "200236000"
 
     # Close positions by aux parties
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
@@ -309,7 +309,7 @@ Feature: Test settlement at expiry time from internal oracle
 
     Then time is updated to "2020-01-01T01:01:02Z"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
 
@@ -362,7 +362,7 @@ Feature: Test settlement at expiry time from internal oracle
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | buy  | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -376,7 +376,7 @@ Feature: Test settlement at expiry time from internal oracle
     And the cumulated balance for all accounts should be worth "100213000"
 
     # Close positions by aux parties
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
@@ -439,7 +439,7 @@ Feature: Test settlement at expiry time from internal oracle
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | buy  | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -496,7 +496,7 @@ Feature: Test settlement at expiry time from internal oracle
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
       | party2 | ETH/DEC21 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-6     |
@@ -510,12 +510,13 @@ Feature: Test settlement at expiry time from internal oracle
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC21 | 132    | 9873    |
+      | party1 | ETH   | ETH/DEC21 | 252    | 9753    |
+      #| party1 | ETH   | ETH/DEC21 | 132    | 9873    |
       | party2 | ETH   | ETH/DEC21 | 372    | 603     |
 
     And then the network moves ahead "10" blocks
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC21 | sell | 1      | 1101  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
       | party2 | ETH/DEC21 | buy  | 1      | 1101  | 0                | TYPE_LIMIT | TIF_GTC | ref-8     |
