@@ -23,10 +23,8 @@ type updateFutureProductResolver VegaResolverRoot
 func (r *updateFutureProductResolver) DataSourceSpecForSettlementData(ctx context.Context, obj *vega.UpdateFutureProduct) (*DataSourceDefinition, error) {
 	ds := &DataSourceDefinition{}
 
-	if obj != nil {
-		if obj.DataSourceSpecForSettlementData != nil {
-			ds = resolveDataSourceDefinition(obj.DataSourceSpecForSettlementData)
-		}
+	if obj.DataSourceSpecForSettlementData != nil {
+		ds = resolveDataSourceDefinition(obj.DataSourceSpecForSettlementData)
 	}
 
 	return ds, nil
@@ -35,10 +33,8 @@ func (r *updateFutureProductResolver) DataSourceSpecForSettlementData(ctx contex
 func (r *updateFutureProductResolver) DataSourceSpecForTradingTermination(ctx context.Context, obj *vega.UpdateFutureProduct) (*DataSourceDefinition, error) {
 	ds := &DataSourceDefinition{}
 
-	if obj != nil {
-		if obj.DataSourceSpecForTradingTermination != nil {
-			ds = resolveDataSourceDefinition(obj.DataSourceSpecForTradingTermination)
-		}
+	if obj.DataSourceSpecForTradingTermination != nil {
+		ds = resolveDataSourceDefinition(obj.DataSourceSpecForTradingTermination)
 	}
 
 	return ds, nil

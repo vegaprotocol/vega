@@ -28,10 +28,8 @@ func (r *myFutureProductResolver) SettlementAsset(ctx context.Context, obj *prot
 func (r *myFutureProductResolver) DataSourceSpecForSettlementData(ctx context.Context, obj *vegapb.FutureProduct) (*DataSourceDefinition, error) {
 	d := &DataSourceDefinition{}
 
-	if obj != nil {
-		if obj.DataSourceSpecForSettlementData != nil {
-			d = resolveDataSourceDefinition(obj.DataSourceSpecForSettlementData)
-		}
+	if obj.DataSourceSpecForSettlementData != nil {
+		d = resolveDataSourceDefinition(obj.DataSourceSpecForSettlementData)
 	}
 
 	return d, nil
@@ -40,10 +38,8 @@ func (r *myFutureProductResolver) DataSourceSpecForSettlementData(ctx context.Co
 func (r *myFutureProductResolver) DataSourceSpecForTradingTermination(ctx context.Context, obj *vegapb.FutureProduct) (*DataSourceDefinition, error) {
 	d := &DataSourceDefinition{}
 
-	if obj != nil {
-		if obj.DataSourceSpecForTradingTermination != nil {
-			d = resolveDataSourceDefinition(obj.DataSourceSpecForTradingTermination)
-		}
+	if obj.DataSourceSpecForTradingTermination != nil {
+		d = resolveDataSourceDefinition(obj.DataSourceSpecForTradingTermination)
 	}
 
 	return d, nil

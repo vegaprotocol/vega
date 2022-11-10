@@ -18,7 +18,6 @@ import (
 	"strconv"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	types "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
@@ -30,12 +29,8 @@ func (o *oracleSpecResolver) DataSourceSpec(ctx context.Context, obj *vegapb.Ora
 		Data: &DataSourceDefinition{},
 	}
 
-	if obj.ExternalDataSourceSpec != nil {
-		if obj.ExternalDataSourceSpec.Spec != nil {
-			if obj.ExternalDataSourceSpec.Spec.Data != nil {
-				dataSourceSpec = resolveDataSourceSpec(obj.ExternalDataSourceSpec.Spec)
-			}
-		}
+	if ed := obj.ExternalDataSourceSpec; ed != nil && ed.Spec != nil && ed.Spec.Data != nil {
+		dataSourceSpec = resolveDataSourceSpec(ed.Spec)
 	}
 
 	return &ExternalDataSourceSpec{
@@ -45,12 +40,8 @@ func (o *oracleSpecResolver) DataSourceSpec(ctx context.Context, obj *vegapb.Ora
 
 func (o *oracleSpecResolver) DataConnection(ctx context.Context, obj *vegapb.OracleSpec, pagination *v2.Pagination) (*v2.OracleDataConnection, error) {
 	var specID *string
-	if obj != nil {
-		if obj.ExternalDataSourceSpec != nil {
-			if obj.ExternalDataSourceSpec.Spec != nil {
-				specID = &obj.ExternalDataSourceSpec.Spec.Id
-			}
-		}
+	if ed := obj.ExternalDataSourceSpec; ed != nil && ed.Spec != nil && ed.Spec.Id != "" {
+		specID = &ed.Spec.Id
 	}
 
 	req := v2.ListOracleDataRequest{
@@ -77,15 +68,6 @@ func (o *oracleDataResolver) ExternalData(ctx context.Context, obj *vegapb.Oracl
 		if obj.ExternalData != nil && obj.ExternalData.Data != nil {
 			o := obj.ExternalData.Data
 			broadcastAt := strconv.FormatInt(o.BroadcastAt, 10)
-			matchedSpecs := []string{}
-			if len(o.MatchedSpecIds) > 0 {
-				matchedSpecs = o.MatchedSpecIds
-			}
-
-			properties := []*v1.Property{}
-			if len(o.Data) > 0 {
-				properties = o.Data
-			}
 
 			signers, err := resolveSigners(o.Signers)
 			if err != nil {
@@ -94,8 +76,8 @@ func (o *oracleDataResolver) ExternalData(ctx context.Context, obj *vegapb.Oracl
 
 			ed.Data = &Data{
 				Signers:        signers,
-				Data:           properties,
-				MatchedSpecIds: matchedSpecs,
+				Data:           o.Data,
+				MatchedSpecIds: o.MatchedSpecIds,
 				BroadcastAt:    broadcastAt,
 			}
 		}
@@ -119,7 +101,7 @@ func resolveSigners(obj []*v1.Signer) ([]*Signer, error) {
 					Address: &ethAddr.Address,
 				}
 			} else {
-				return nil, errors.New("invalid signer type")
+				return signers, errors.New("invalid signer type")
 			}
 
 			signers = append(signers, signer)
@@ -131,26 +113,17 @@ func resolveSigners(obj []*v1.Signer) ([]*Signer, error) {
 
 func resolveDataSourceDefinition(d *vegapb.DataSourceDefinition) *DataSourceDefinition {
 	ds := &DataSourceDefinition{}
-
-	if d.SourceType != nil {
-		if ext := d.GetExternal(); ext != nil {
-			switch ext.SourceType.(type) {
-			case *vegapb.DataSourceDefinitionExternal_Oracle:
-				o := ext.GetOracle()
-
-				ds = &DataSourceDefinition{
-					SourceType: &DataSourceDefinitionExternal{
-						SourceType: &types.DataSourceSpecConfiguration{
-							Filters: o.Filters,
-							Signers: o.Signers,
-						},
-					},
-				}
+	switch dst := d.SourceType.(type) {
+	case *vegapb.DataSourceDefinition_External:
+		if dst.External != nil {
+			ds.SourceType = DataSourceDefinitionExternal{
+				SourceType: dst.External.GetOracle(),
 			}
-		} else if int := d.GetInternal(); int != nil {
-			switch int.SourceType.(type) {
-			case *vegapb.DataSourceDefinitionInternal_Time:
-				_ = int.GetTime()
+		}
+	case *vegapb.DataSourceDefinition_Internal:
+		if dst.Internal != nil {
+			ds.SourceType = DataSourceDefinitionInternal{
+				SourceType: dst.Internal.GetTime(),
 			}
 		}
 	}

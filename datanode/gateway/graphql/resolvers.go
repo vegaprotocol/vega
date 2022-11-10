@@ -2414,11 +2414,7 @@ func (r *myCandleResolver) Volume(_ context.Context, obj *v2.Candle) (string, er
 type myDataSourceSpecConfigurationResolver VegaResolverRoot
 
 func (m *myDataSourceSpecConfigurationResolver) Signers(ctx context.Context, obj *types.DataSourceSpecConfiguration) ([]*Signer, error) {
-	if obj != nil {
-		return resolveSigners(obj.Signers)
-	}
-
-	return []*Signer{}, nil
+	return resolveSigners(obj.Signers)
 }
 
 // END: DataSourceSpecConfiguration Resolver

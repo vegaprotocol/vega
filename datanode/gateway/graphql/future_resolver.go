@@ -30,10 +30,8 @@ func (r *myFutureResolver) DataSourceSpecForSettlementData(ctx context.Context, 
 		Data: &DataSourceDefinition{},
 	}
 
-	if obj != nil {
-		if obj.DataSourceSpecForSettlementData != nil {
-			ds = resolveDataSourceSpec(obj.DataSourceSpecForSettlementData)
-		}
+	if obj.DataSourceSpecForSettlementData != nil {
+		ds = resolveDataSourceSpec(obj.DataSourceSpecForSettlementData)
 	}
 
 	return ds, nil
@@ -44,10 +42,8 @@ func (r *myFutureResolver) DataSourceSpecForTradingTermination(ctx context.Conte
 		Data: &DataSourceDefinition{},
 	}
 
-	if obj != nil {
-		if obj.DataSourceSpecForTradingTermination != nil {
-			ds = resolveDataSourceSpec(obj.DataSourceSpecForTradingTermination)
-		}
+	if obj.DataSourceSpecForTradingTermination != nil {
+		ds = resolveDataSourceSpec(obj.DataSourceSpecForTradingTermination)
 	}
 
 	return ds, nil
