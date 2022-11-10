@@ -50,8 +50,6 @@ Feature: Test mark to market settlement
       | party    | volume | unrealised pnl | realised pnl |
       | aux      | -1     | 0              | 0            |
       | aux2     | 1      | 0              | 0            |
-      # | party3   | -1     | 0              | 0            |
-      
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the parties place the following orders:
@@ -213,3 +211,58 @@ Feature: Test mark to market settlement
     And the cumulated balance for all accounts should be worth "330000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
+  Scenario: Assure correct MTM flows after matching with two passive orders placed at different price levels (0003-MTMK-013)
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount |
+      | party1 | ETH   |   500  |
+      | party2 | ETH   |   500  |
+      | party3 | ETH   |   500  |
+      | aux    | ETH   | 100000 |
+      | aux2   | ETH   | 100000 |
+      | lpprov | ETH   | 100000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 10     | submission |
+
+     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      |  990  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 1030  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC19 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/DEC19 | buy  | 2      | 1010  | 2                | TYPE_LIMIT | TIF_GTC |
+
+    # Assure appropriate MTM transfers happen 
+    Then the following transfers should happen:
+      | from   | to     | from account            | to account              | market id | amount | asset |
+      | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |     10 | ETH   |
+      | market | party3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 |     10 | ETH   |
+
+    Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl |
+      | party1   | -1     | -10            | 0            |
+      | party2   | -1     | 0              | 0            |
+      | party3   |  2     | 10             | 0            |
+
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | ETH   | ETH/DEC19 | 145    |    345  |
+      | party2 | ETH   | ETH/DEC19 | 145    |    355  |
+      | party3 | ETH   | ETH/DEC19 | 315    |    195  |
+
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release |
+      | party1 | ETH/DEC19 |         121 |    133 |     145 |     169 |
+      | party2 | ETH/DEC19 |         121 |    133 |     145 |     169 |
+      | party3 | ETH/DEC19 |         263 |    289 |     315 |     368 |

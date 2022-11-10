@@ -195,7 +195,7 @@ type Erc20 struct {
 	// Note: this is a temporary measure that can be changed by governance
 	LifetimeLimit string `json:"lifetimeLimit"`
 	// The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
-	// There’s no limit on the size of a withdrawal
+	// There is no limit on the size of a withdrawal
 	// Note: this is a temporary measure that can be changed by governance
 	WithdrawThreshold string `json:"withdrawThreshold"`
 }
@@ -685,7 +685,7 @@ type UpdateErc20 struct {
 	// Note: this is a temporary measure that can be changed by governance
 	LifetimeLimit string `json:"lifetimeLimit"`
 	// The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
-	// There’s no limit on the size of a withdrawal
+	// There is no limit on the size of a withdrawal
 	// Note: this is a temporary measure that can be changed by governance
 	WithdrawThreshold string `json:"withdrawThreshold"`
 }

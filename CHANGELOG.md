@@ -13,6 +13,12 @@
 
 ### 🐛 Fixes
 - [6759](https://github.com/vegaprotocol/vega/issues/6759) - Send events when liquidity provisions are `undeployed`
+- [6764](https://github.com/vegaprotocol/vega/issues/6764) - If a trading terminated oracle changes after trading already terminated do not subscribe to it
+- [6775](https://github.com/vegaprotocol/vega/issues/6775) - Fix oracle spec identifiers
+- [6762](https://github.com/vegaprotocol/vega/issues/6762) - Fix one off transfer events serialization
+- [6747](https://github.com/vegaprotocol/vega/issues/6747) - Ensure proposal with no participation does not get enacted
+- [6757](https://github.com/vegaprotocol/vega/issues/6655) - Fix oracle spec resolvers in Gateway
+- [6757](https://github.com/vegaprotocol/vega/issues/6757) - Fix signers resolvers in Gateway
 
 
 ## 0.62.0

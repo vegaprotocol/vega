@@ -147,7 +147,6 @@ func (n *NullBlockchain) StartChain() error {
 
 	// not replaying or recording, proceed as normal
 	if !n.cfg.Replay.Record && !n.cfg.Replay.Replay {
-		n.BeginBlock()
 		return nil
 	}
 
@@ -166,6 +165,7 @@ func (n *NullBlockchain) StartChain() error {
 			return err
 		}
 
+		n.log.Info("nullchain finished replaying chain", logging.Int64("block-height", blockHeight))
 		if blockHeight != 0 {
 			// set the next height to where we replayed to
 			n.blockHeight = blockHeight + 1
@@ -178,7 +178,6 @@ func (n *NullBlockchain) StartChain() error {
 		n.app = r // sandwich our replayer between nullchain <-> protocol
 	}
 
-	n.BeginBlock()
 	return nil
 }
 
@@ -186,6 +185,8 @@ func (n *NullBlockchain) processBlock() {
 	if n.log.GetLevel() <= logging.DebugLevel {
 		n.log.Debugf("processing block %d with %d transactions", n.blockHeight, len(n.pending))
 	}
+
+	n.BeginBlock()
 	for _, tx := range n.pending {
 		n.app.DeliverTx(*tx)
 	}
@@ -194,10 +195,9 @@ func (n *NullBlockchain) processBlock() {
 	n.EndBlock()
 	n.app.Commit()
 
-	// Increment time, blockheight, and start a new block
+	// Increment time, blockheight, ready to start a new block
 	n.blockHeight++
 	n.now = n.now.Add(n.blockDuration)
-	n.BeginBlock()
 }
 
 func (n *NullBlockchain) handleTransaction(tx []byte) {
