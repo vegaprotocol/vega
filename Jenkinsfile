@@ -352,8 +352,8 @@ pipeline {
                     options { retry(3) }
                     steps {
                         dir('vega/datanode/integration') {
-                            sh 'godog build -o datanode_integration.test && ./datanode_integration.test --format=junit:datanode-integration-report.xml'
-                            junit checksName: 'Datanode Integration Tests', testResults: 'datanode-integration-report.xml'
+                            sh 'go test -integration -v ./... 2>&1 | tee integration-test-results.txt && cat integration-test-results.txt | go-junit-report > datanode-integration-test-report.xml'
+                            junit checksName: 'Datanode Integration Tests', testResults: 'datanode-integration-test-report.xml'
                         }
                     }
                 }
