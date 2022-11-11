@@ -10,9 +10,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
@@ -59,11 +56,8 @@ func NewBufferedEventSource(log *logging.Logger, config BufferedEventSourceConfi
 		bufferFilePath:     bufferFilePath,
 	}
 
-	p := message.NewPrinter(language.English)
-	formattedMaxBufferedEvents := p.Sprintf("%f", config.MaxBufferedEvents)
-
-	fb.log.Infof("Starting buffered event source with a max buffered event count of %s, and events per buffer file size %d",
-		formattedMaxBufferedEvents, config.EventsPerFile)
+	fb.log.Infof("Starting buffered event source with a max buffered event count of %d, and events per buffer file size %d",
+		config.MaxBufferedEvents, config.EventsPerFile)
 
 	return fb, nil
 }
@@ -83,12 +77,14 @@ func (m *FileBufferedEventSource) Receive(ctx context.Context) (<-chan events.Ev
 	sinkEventCh := make(chan events.Event, m.sendChannelBufferSize)
 	sinkErrorCh := make(chan error, 1)
 
+	ctxWithCancel, cancel := context.WithCancel(ctx)
 	go func() {
 		m.writeEventsToBuffer(ctx, sourceEventCh, sourceErrCh, sinkErrorCh)
+		cancel()
 	}()
 
 	go func() {
-		m.readEventsFromBuffer(ctx, sinkEventCh, sinkErrorCh)
+		m.readEventsFromBuffer(ctxWithCancel, sinkEventCh, sinkErrorCh)
 	}()
 
 	return sinkEventCh, sinkErrorCh
@@ -112,7 +108,10 @@ func (m *FileBufferedEventSource) writeEventsToBuffer(ctx context.Context, sourc
 	var err error
 	for {
 		select {
-		case event := <-sourceEventCh:
+		case event, ok := <-sourceEventCh:
+			if !ok {
+				return
+			}
 			if bufferSeqNum%uint64(m.config.EventsPerFile) == 0 {
 				bufferFile, err = m.rollBufferFile(bufferFile, bufferSeqNum)
 				if err != nil {
@@ -144,8 +143,11 @@ func (m *FileBufferedEventSource) writeEventsToBuffer(ctx context.Context, sourc
 				m.lastBufferedSeqNum <- bufferSeqNum
 			}
 
-		case err = <-sourceErrCh:
-			sinkErrorCh <- err
+		case srcErr, ok := <-sourceErrCh:
+			if !ok {
+				return
+			}
+			sinkErrorCh <- srcErr
 		case <-ctx.Done():
 			return
 		}
@@ -167,6 +169,8 @@ func (m *FileBufferedEventSource) readEventsFromBuffer(ctx context.Context, sink
 				m.log.Errorf("failed to close event buffer file:%w", err)
 			}
 		}
+		close(sinkEventCh)
+		close(sinkErrorCh)
 	}()
 
 	for {

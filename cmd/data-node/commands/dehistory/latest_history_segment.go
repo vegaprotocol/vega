@@ -51,12 +51,14 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 
 	resp, err := client.GetActiveDeHistoryPeerAddresses(context.Background(), &v2.GetActiveDeHistoryPeerAddressesRequest{})
 	if err != nil {
-		return fmt.Errorf("failed to active peer addresses:%w", err)
+		return errorFromGrpcError("failed to get active peer addresses", err)
 	}
 	peerAddresses := resp.IpAddresses
 
+	grpcAPIPorts := []int{cmd.Config.API.Port}
+	grpcAPIPorts = append(grpcAPIPorts, cmd.Config.DeHistory.Initialise.GrpcAPIPorts...)
 	suggestedRootSegment, peerToSegment, err := initialise.GetMostRecentHistorySegmentFromPeers(context.Background(), peerAddresses,
-		cmd.Config.API.Port)
+		grpcAPIPorts)
 
 	segmentsInfo := "Most Recent History Segments:\n\n"
 	for peer, segment := range peerToSegment {

@@ -34,8 +34,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
-	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
-	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/version"
 
@@ -1681,8 +1679,8 @@ func (t *tradingDataServiceV2) GetOracleSpec(ctx context.Context, req *v2.GetOra
 	}
 
 	return &v2.GetOracleSpecResponse{
-		OracleSpec: &datapb.OracleSpec{
-			ExternalDataSourceSpec: &v1.ExternalDataSourceSpec{
+		OracleSpec: &vega.OracleSpec{
+			ExternalDataSourceSpec: &vega.ExternalDataSourceSpec{
 				Spec: spec.ToProto().ExternalDataSourceSpec.Spec,
 			},
 		},
@@ -3044,11 +3042,28 @@ func toHistorySegment(segment store.SegmentIndexEntry) *v2.HistorySegment {
 
 func (t *tradingDataServiceV2) GetActiveDeHistoryPeerAddresses(_ context.Context, _ *v2.GetActiveDeHistoryPeerAddressesRequest) (*v2.GetActiveDeHistoryPeerAddressesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentHistorySegmentFromPeers")()
+	if t.deHistoryService == nil {
+		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
+	}
 	addresses := t.deHistoryService.GetActivePeerAddresses()
 
 	return &v2.GetActiveDeHistoryPeerAddressesResponse{
 		IpAddresses: addresses,
 	}, nil
+}
+
+func (t *tradingDataServiceV2) CopyHistorySegmentToFile(ctx context.Context, req *v2.CopyHistorySegmentToFileRequest) (*v2.CopyHistorySegmentToFileResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("CopyHistorySegmentToFile")()
+	if t.deHistoryService == nil {
+		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
+	}
+
+	err := t.deHistoryService.CopyHistorySegmentToFile(ctx, req.HistorySegmentId, req.TargetFile)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrCopyHistorySegmentToFile, err)
+	}
+
+	return &v2.CopyHistorySegmentToFileResponse{}, nil
 }
 
 func batch[T any](in []T, batchSize int) [][]T {

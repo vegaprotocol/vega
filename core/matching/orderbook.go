@@ -56,9 +56,11 @@ type OrderBook struct {
 	indicativePriceAndVolume *IndicativePriceAndVolume
 	snapshot                 *types.PayloadMatchingBook
 	stopped                  bool // if true then we should stop creating snapshots
-	// we keep track here of which orders in the order book are pegged orders.
-	// this gets updated when orders are added or removed from the book.
-	peggedOrders map[string]struct{}
+
+	// we keep track here of which type of orders are in the orderbook so we can quickly
+	// find an order of a certain type. These get updated when orders are added or removed from the book.
+	peggedOrders     map[string]struct{}
+	lpOrdersPerParty map[string]map[string]struct{}
 }
 
 // CumulativeVolumeLevel represents the cumulative volume at a price level for both bid and ask.
@@ -82,17 +84,18 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string, auction b
 	log.SetLevel(config.Level.Get())
 
 	return &OrderBook{
-		log:             log,
-		marketID:        marketID,
-		cfgMu:           &sync.Mutex{},
-		buy:             &OrderBookSide{log: log, side: types.SideBuy},
-		sell:            &OrderBookSide{log: log, side: types.SideSell},
-		Config:          config,
-		ordersByID:      map[string]*types.Order{},
-		auction:         auction,
-		batchID:         0,
-		ordersPerParty:  map[string]map[string]struct{}{},
-		lastTradedPrice: num.UintZero(),
+		log:              log,
+		marketID:         marketID,
+		cfgMu:            &sync.Mutex{},
+		buy:              &OrderBookSide{log: log, side: types.SideBuy},
+		sell:             &OrderBookSide{log: log, side: types.SideSell},
+		Config:           config,
+		ordersByID:       map[string]*types.Order{},
+		auction:          auction,
+		batchID:          0,
+		ordersPerParty:   map[string]map[string]struct{}{},
+		lpOrdersPerParty: map[string]map[string]struct{}{},
+		lastTradedPrice:  num.UintZero(),
 		snapshot: &types.PayloadMatchingBook{
 			MatchingBook: &types.MatchingBook{
 				MarketID: marketID,
@@ -197,10 +200,7 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 	for _, uo := range uncrossedOrders {
 		if uo.Order.Remaining == 0 {
 			uo.Order.Status = types.OrderStatusFilled
-			// delete from lookup tables
-			delete(b.peggedOrders, uo.Order.ID)
-			delete(b.ordersByID, uo.Order.ID)
-			delete(b.ordersPerParty[uo.Order.Party], uo.Order.ID)
+			b.remove(uo.Order)
 		}
 
 		uo.Order.UpdatedAt = ts
@@ -209,11 +209,7 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 			// also remove the orders from lookup tables
 			if uo.PassiveOrdersAffected[idx].Remaining == 0 {
 				uo.PassiveOrdersAffected[idx].Status = types.OrderStatusFilled
-
-				// delete from lookup tables
-				delete(b.peggedOrders, uo.Order.ID)
-				delete(b.ordersByID, po.ID)
-				delete(b.ordersPerParty[po.Party], po.ID)
+				b.remove(po)
 			}
 		}
 		for _, tr := range uo.Trades {
@@ -575,6 +571,30 @@ func (b *OrderBook) GetOrdersPerParty(party string) []*types.Order {
 	return orders
 }
 
+func (b *OrderBook) GetLiquidityOrders(party string) []*types.Order {
+	orderIDs := b.lpOrdersPerParty[party]
+	if len(orderIDs) <= 0 {
+		return []*types.Order{}
+	}
+
+	orders := make([]*types.Order, 0, len(orderIDs))
+	for oid := range orderIDs {
+		orders = append(orders, b.ordersByID[oid])
+	}
+	return orders
+}
+
+func (b *OrderBook) GetAllLiquidityOrders() []*types.Order {
+	orders := make([]*types.Order, 0)
+	for party := range b.lpOrdersPerParty {
+		orders = append(orders, b.GetLiquidityOrders(party)...)
+	}
+	sort.Slice(orders, func(i, j int) bool {
+		return orders[i].ID < orders[j].ID
+	})
+	return orders
+}
+
 // BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book.
 func (b *OrderBook) BestBidPriceAndVolume() (*num.Uint, uint64, error) {
 	return b.buy.BestPriceAndVolume()
@@ -747,11 +767,47 @@ func (b *OrderBook) ReplaceOrder(rm, rpl *types.Order) (*types.OrderConfirmation
 	return b.SubmitOrder(rpl)
 }
 
+func (b *OrderBook) ReSubmitSpecialOrders(order *types.Order) {
+	// not allowed to submit a normal order here
+	if len(order.LiquidityProvisionID) <= 0 && order.PeggedOrder == nil {
+		b.log.Panic("only pegged orders or liquidity orders allowed", logging.Order(order))
+	}
+
+	order.BatchID = b.batchID
+
+	// check if order would trade, that should never happen as well.
+	switch order.Side {
+	case types.SideBuy:
+		price, err := b.GetBestAskPrice()
+		if err != nil {
+			b.log.Panic("tried to re submit special orders in an empty book", logging.Order(order))
+		}
+		if price.LTE(order.Price) {
+			b.log.Panic("re submit special order would cross", logging.Order(order), logging.BigUint("best-ask", price))
+		}
+	case types.SideSell:
+		price, err := b.GetBestBidPrice()
+		if err != nil {
+			b.log.Panic("tried to re submit special orders in an empty book", logging.Order(order))
+		}
+		if price.GTE(order.Price) {
+			b.log.Panic("re submit special order would cross", logging.Order(order), logging.BigUint("best-bid", price))
+		}
+	default:
+		b.log.Panic("invalid order side", logging.Order(order))
+	}
+
+	// now we can nicely add the order to the book, no uncrossing needed
+	b.getSide(order.Side).addOrder(order)
+	b.add(order)
+}
+
 // SubmitOrder Add an order and attempt to uncross the book, returns a TradeSet protobuf message object.
 func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	if err := b.validateOrder(order); err != nil {
 		return nil, err
 	}
+
 	if _, ok := b.ordersByID[order.ID]; ok {
 		b.log.Panic("an order in the book already exists with the same ID", logging.Order(*order))
 	}
@@ -780,9 +836,6 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// and we did not hit a error / wash trade error
 	if order.IsPersistent() && err == nil {
 		b.getSide(order.Side).addOrder(order)
-		if order.PeggedOrder != nil {
-			b.peggedOrders[order.ID] = struct{}{}
-		}
 		// also add it to the indicative price and volume if in auction
 		if b.auction {
 			b.indicativePriceAndVolume.AddVolumeAtPrice(
@@ -821,10 +874,8 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		if impactedOrders[idx].Remaining == 0 {
 			impactedOrders[idx].Status = types.OrderStatusFilled
 
-			// delete from lookup table
-			delete(b.peggedOrders, impactedOrders[idx].ID)
-			delete(b.ordersByID, impactedOrders[idx].ID)
-			delete(b.ordersPerParty[impactedOrders[idx].Party], impactedOrders[idx].ID)
+			// delete from lookup tables
+			b.remove(impactedOrders[idx])
 		}
 	}
 
@@ -839,14 +890,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	if order.Status == types.OrderStatusActive {
-		b.ordersByID[order.ID] = order
-		if orders, ok := b.ordersPerParty[order.Party]; !ok {
-			b.ordersPerParty[order.Party] = map[string]struct{}{
-				order.ID: {},
-			}
-		} else {
-			orders[order.ID] = struct{}{}
-		}
+		b.add(order)
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
@@ -868,9 +912,7 @@ func (b *OrderBook) DeleteOrder(
 		return nil, types.ErrOrderRemovalFailure
 	}
 
-	delete(b.ordersByID, order.ID)
-	delete(b.ordersPerParty[order.Party], order.ID)
-	delete(b.peggedOrders, order.ID)
+	b.remove(order)
 
 	// also remove it to the indicative price and volume if in auction
 	// here we use specifically the order which was in the book, just in case
@@ -1029,10 +1071,7 @@ func (b *OrderBook) Settled() []*types.Order {
 	})
 
 	// reset all order stores
-	b.ordersByID = map[string]*types.Order{}
-	b.ordersPerParty = map[string]map[string]struct{}{}
-	b.indicativePriceAndVolume = nil
-	b.peggedOrders = map[string]struct{}{}
+	b.cleanup()
 	b.buy.cleanup()
 	b.sell.cleanup()
 
@@ -1053,4 +1092,49 @@ func (b *OrderBook) GetActivePeggedOrderIDs() []string {
 	}
 	sort.Strings(pegged)
 	return pegged
+}
+
+// remove removes the given order from all the lookup map.
+func (b *OrderBook) remove(o *types.Order) {
+	delete(b.ordersByID, o.ID)
+	delete(b.ordersPerParty[o.Party], o.ID)
+	delete(b.peggedOrders, o.ID)
+	delete(b.lpOrdersPerParty[o.Party], o.ID)
+}
+
+// add adds the given order too all the lookup maps.
+func (b *OrderBook) add(o *types.Order) {
+	b.ordersByID[o.ID] = o
+	if orders, ok := b.ordersPerParty[o.Party]; !ok {
+		b.ordersPerParty[o.Party] = map[string]struct{}{
+			o.ID: {},
+		}
+	} else {
+		orders[o.ID] = struct{}{}
+	}
+
+	if o.PeggedOrder != nil {
+		b.peggedOrders[o.ID] = struct{}{}
+	}
+
+	if !o.IsLiquidityOrder() {
+		return
+	}
+
+	if orders, ok := b.lpOrdersPerParty[o.Party]; !ok {
+		b.lpOrdersPerParty[o.Party] = map[string]struct{}{
+			o.ID: {},
+		}
+	} else {
+		orders[o.ID] = struct{}{}
+	}
+}
+
+// cleanup removes all orders and resets the the order lookup maps.
+func (b *OrderBook) cleanup() {
+	b.ordersByID = map[string]*types.Order{}
+	b.ordersPerParty = map[string]map[string]struct{}{}
+	b.lpOrdersPerParty = map[string]map[string]struct{}{}
+	b.indicativePriceAndVolume = nil
+	b.peggedOrders = map[string]struct{}{}
 }

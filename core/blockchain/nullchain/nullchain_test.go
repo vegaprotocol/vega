@@ -15,6 +15,7 @@ package nullchain_test
 import (
 	"context"
 	"fmt"
+	"path"
 	"path/filepath"
 	"testing"
 	"time"
@@ -45,6 +46,9 @@ func TestNullChain(t *testing.T) {
 	t.Run("test timeforwarding creates blocks", testTimeForwardingCreatesBlocks)
 	t.Run("test timeforwarding less than a block does nothing", testTimeForwardingLessThanABlockDoesNothing)
 	t.Run("test timeforwarding request conversion", testTimeForwardingRequestConversion)
+	t.Run("test replay from genesis", testReplayFromGenesis)
+	t.Run("test replay with snapshot restore", testReplayWithSnapshotRestore)
+	t.Run("test replay with a block that panics", testReplayPanicBlock)
 }
 
 func testBasics(t *testing.T) {
@@ -71,7 +75,7 @@ func testTransactionsCreateBlock(t *testing.T) {
 
 	// Expected BeginBlock to be called with time shuffled forward by a block
 	now, _ := testChain.chain.GetGenesisTime(ctx)
-	r := abci.RequestBeginBlock{Header: types.Header{Time: now.Add(time.Second), ChainID: chainID, Height: 2}}
+	r := abci.RequestBeginBlock{Header: types.Header{Time: now, ChainID: chainID, Height: 1}}
 
 	// One round of block processing calls
 	testChain.app.EXPECT().BeginBlock(gomock.Any()).Do(func(rr abci.RequestBeginBlock) {
@@ -120,8 +124,7 @@ func testTimeForwardingCreatesBlocks(t *testing.T) {
 	testChain.app.EXPECT().DeliverTx(gomock.Any()).Times(3)
 
 	testChain.chain.ForwardTime(step)
-
-	assert.True(t, beginBlockTime.Equal(now.Add(20*time.Second)))
+	assert.True(t, beginBlockTime.Equal(now.Add(18*time.Second))) // the start of the next block will take us to +20 seconds
 	assert.Equal(t, 10, height)
 
 	count, err := testChain.chain.GetUnconfirmedTxCount(ctx)
@@ -176,41 +179,186 @@ func testTimeForwardingRequestConversion(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func testReplayWithSnapshotRestore(t *testing.T) {
+	ctx := context.Background()
+	rplFile := path.Join(t.TempDir(), "rfile")
+	testChain := getTestUnstartedNullChain(t, 2, time.Second, &blockchain.ReplayConfig{Record: true, Replay: true, ReplayFile: rplFile})
+	defer testChain.ctrl.Finish()
+
+	generateChain(t, testChain, 15)
+	testChain.chain.Stop()
+
+	// pretend the protocol restores to block height 10
+	restoredBlockTime := time.Unix(10000, 15)
+	restoreBlockHeight := int64(10)
+	testChain.app.EXPECT().Info(gomock.Any()).Times(1).Return(
+		abci.ResponseInfo{
+			LastBlockHeight: restoreBlockHeight,
+		},
+	)
+
+	// we'll replay 5 blocks
+	testChain.app.EXPECT().BeginBlock(gomock.Any()).Times(5)
+	testChain.app.EXPECT().DeliverTx(gomock.Any()).Times(10)
+	testChain.app.EXPECT().EndBlock(gomock.Any()).Times(5)
+	testChain.app.EXPECT().Commit().Times(5)
+	testChain.ts.EXPECT().GetTimeNow().Times(1).Return(restoredBlockTime)
+
+	// start the nullchain from a snapshot
+	err := testChain.chain.StartChain()
+	require.NoError(t, err)
+
+	// continue the chain and check we're at the right block height and stuff
+	testChain.app.EXPECT().DeliverTx(gomock.Any()).Times(2)
+	testChain.app.EXPECT().EndBlock(gomock.Any()).Times(1)
+	testChain.app.EXPECT().Commit().Times(1)
+
+	// the next begin block should be at block height 16 (restored to 10, replayed 5, starting the next)
+	req := abci.RequestBeginBlock{}
+	testChain.app.EXPECT().BeginBlock(gomock.Any()).Times(1).Do(func(r abci.RequestBeginBlock) {
+		req = r
+	})
+
+	// fill the block
+	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
+	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
+
+	genesis, err := testChain.chain.GetGenesisTime(ctx)
+	require.NoError(t, err)
+	require.Equal(t, int64(16), req.Header.Height)
+	require.Equal(t, genesis.Add(15*time.Second).UnixNano(), req.Header.Time.UnixNano())
+	require.Equal(t, chainID, req.Header.ChainID)
+}
+
+func testReplayFromGenesis(t *testing.T) {
+	// replay file
+	rplFile := path.Join(t.TempDir(), "rfile")
+	testChain := getTestUnstartedNullChain(t, 2, time.Second, &blockchain.ReplayConfig{Record: true, ReplayFile: rplFile})
+	defer testChain.ctrl.Finish()
+
+	generateChain(t, testChain, 15)
+	testChain.chain.Stop()
+
+	newChain := getTestUnstartedNullChain(t, 2, time.Second, &blockchain.ReplayConfig{Replay: true, ReplayFile: rplFile})
+	defer newChain.ctrl.Finish()
+
+	// protocol is starting from 0
+	newChain.app.EXPECT().Info(gomock.Any()).Times(1).Return(
+		abci.ResponseInfo{
+			LastBlockHeight: 0,
+		},
+	)
+
+	// we'll replay 15 blocks
+	newChain.app.EXPECT().InitChain(gomock.Any()).Times(1)
+	newChain.app.EXPECT().BeginBlock(gomock.Any()).Times(15)
+	newChain.app.EXPECT().DeliverTx(gomock.Any()).Times(30)
+	newChain.app.EXPECT().EndBlock(gomock.Any()).Times(15)
+	newChain.app.EXPECT().Commit().Times(15)
+
+	// start the nullchain from genesis
+	err := newChain.chain.StartChain()
+	require.NoError(t, err)
+}
+
+func testReplayPanicBlock(t *testing.T) {
+	ctx := context.Background()
+	// replay file
+	rplFile := path.Join(t.TempDir(), "rfile")
+	testChain := getTestUnstartedNullChain(t, 2, time.Second, &blockchain.ReplayConfig{Record: true, ReplayFile: rplFile})
+	defer testChain.ctrl.Finish()
+
+	generateChain(t, testChain, 5)
+
+	// send in a single transaction that works
+	testChain.app.EXPECT().BeginBlock(gomock.Any()).Times(1)
+	testChain.app.EXPECT().DeliverTx(gomock.Any()).Times(1)
+	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
+
+	// the next transaction will panic
+	testChain.app.EXPECT().DeliverTx(gomock.Any()).Do(func(rr abci.RequestDeliverTx) {
+		panic("ah panic processing transaction")
+	}).Times(1)
+
+	require.Panics(t, func() {
+		testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
+	})
+
+	// now stop the nullchain so we save the unfinished block
+	testChain.chain.Stop()
+
+	// replay the chain
+	newChain := getTestUnstartedNullChain(t, 2, time.Second, &blockchain.ReplayConfig{Replay: true, ReplayFile: rplFile})
+	defer newChain.ctrl.Finish()
+
+	// protocol is starting from 0
+	newChain.app.EXPECT().Info(gomock.Any()).Times(1).Return(
+		abci.ResponseInfo{
+			LastBlockHeight: 0,
+		},
+	)
+
+	// we'll replay 5 full blocks, and process the 6th "panic" block ready to start the 7th
+	newChain.app.EXPECT().InitChain(gomock.Any()).Times(1)
+	newChain.app.EXPECT().BeginBlock(gomock.Any()).Times(6)
+	newChain.app.EXPECT().DeliverTx(gomock.Any()).Times(12)
+	newChain.app.EXPECT().EndBlock(gomock.Any()).Times(6)
+	newChain.app.EXPECT().Commit().Times(6)
+
+	// start the nullchain from genesis
+	err := newChain.chain.StartChain()
+	require.NoError(t, err)
+}
+
 type testNullBlockChain struct {
 	chain *nullchain.NullBlockchain
 	ctrl  *gomock.Controller
 	app   *mocks.MockApplicationService
+	ts    *mocks.MockTimeService
+	cfg   blockchain.NullChainConfig
 }
 
-func getTestNullChain(t *testing.T, txnPerBlock uint64, d time.Duration) *testNullBlockChain {
+func getTestUnstartedNullChain(t *testing.T, txnPerBlock uint64, d time.Duration, rplCfg *blockchain.ReplayConfig) *testNullBlockChain {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
 
 	app := mocks.NewMockApplicationService(ctrl)
+	ts := mocks.NewMockTimeService(ctrl)
 
 	cfg := blockchain.NewDefaultNullChainConfig()
 	cfg.GenesisFile = newGenesisFile(t)
 	cfg.BlockDuration = encoding.Duration{Duration: d}
 	cfg.TransactionsPerBlock = txnPerBlock
 	cfg.Level = encoding.LogLevel{Level: logging.DebugLevel}
+	if rplCfg != nil {
+		cfg.Replay = *rplCfg
+	}
 
-	n := nullchain.NewClient(logging.NewTestLogger(), cfg)
+	n := nullchain.NewClient(logging.NewTestLogger(), cfg, ts)
 	n.SetABCIApp(app)
 	require.NotNil(t, n)
-
-	app.EXPECT().Info(gomock.Any()).Times(1)
-	app.EXPECT().InitChain(gomock.Any()).Times(1)
-	app.EXPECT().BeginBlock(gomock.Any()).Times(1)
-
-	err := n.StartChain()
-	require.NoError(t, err)
 
 	return &testNullBlockChain{
 		chain: n,
 		ctrl:  ctrl,
 		app:   app,
+		ts:    ts,
+		cfg:   cfg,
 	}
+}
+
+func getTestNullChain(t *testing.T, txnPerBlock uint64, d time.Duration) *testNullBlockChain {
+	t.Helper()
+	nc := getTestUnstartedNullChain(t, txnPerBlock, d, nil)
+
+	nc.app.EXPECT().Info(gomock.Any()).Times(1)
+	nc.app.EXPECT().InitChain(gomock.Any()).Times(1)
+
+	err := nc.chain.StartChain()
+	require.NoError(t, err)
+
+	return nc
 }
 
 func newGenesisFile(t *testing.T) string {
@@ -222,4 +370,33 @@ func newGenesisFile(t *testing.T) string {
 		t.Fatalf("couldn't write file: %v", err)
 	}
 	return filePath
+}
+
+// generateChain start the nullblockchain and generates random chain data until it reaches the given block height.
+func generateChain(t *testing.T, nc *testNullBlockChain, height int) {
+	t.Helper()
+
+	nTxns := int(nc.cfg.TransactionsPerBlock) * height
+
+	ctx := context.Background()
+	nc.app.EXPECT().InitChain(gomock.Any()).Times(1)
+	nc.app.EXPECT().BeginBlock(gomock.Any()).Times(height)
+	nc.app.EXPECT().DeliverTx(gomock.Any()).Times(nTxns)
+	nc.app.EXPECT().EndBlock(gomock.Any()).Times(height)
+	nc.app.EXPECT().Commit().Times(height)
+	nc.app.EXPECT().Info(gomock.Any()).Times(1).Return(
+		abci.ResponseInfo{
+			LastBlockHeight: 0,
+		},
+	)
+
+	// start the nullchain
+	err := nc.chain.StartChain()
+	require.NoError(t, err)
+
+	// send in enough transactions to fill the required blocks
+
+	for i := 0; i < nTxns; i++ {
+		nc.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
+	}
 }

@@ -167,8 +167,10 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 	switch v := t.Kind.(type) {
 	case *eventspb.Transfer_OneOff:
 		transfer.TransferType = OneOff
-		deliverOn := time.Unix(v.OneOff.DeliverOn, 0)
-		transfer.DeliverOn = &deliverOn
+		if v.OneOff != nil {
+			deliverOn := time.Unix(v.OneOff.DeliverOn, 0)
+			transfer.DeliverOn = &deliverOn
+		}
 	case *eventspb.Transfer_Recurring:
 		transfer.TransferType = Recurring
 		transfer.StartEpoch = &v.Recurring.StartEpoch

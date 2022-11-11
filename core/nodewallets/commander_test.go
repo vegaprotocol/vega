@@ -91,7 +91,7 @@ func testSignedCommandSuccess(t *testing.T) {
 	commander.chain.EXPECT().SubmitTransactionSync(gomock.Any(), gomock.Any()).Times(1).Return(&tmctypes.ResultBroadcastTx{}, nil)
 
 	ok := make(chan error)
-	commander.Command(context.Background(), cmd, payload, func(err error) {
+	commander.Command(context.Background(), cmd, payload, func(_ string, err error) {
 		ok <- err
 	}, nil)
 	assert.NoError(t, <-ok)
@@ -110,7 +110,7 @@ func testSignedCommandFailure(t *testing.T) {
 	commander.chain.EXPECT().SubmitTransactionSync(gomock.Any(), gomock.Any()).Times(1).Return(&tmctypes.ResultBroadcastTx{}, assert.AnError)
 
 	ok := make(chan error)
-	commander.Command(context.Background(), cmd, payload, func(err error) {
+	commander.Command(context.Background(), cmd, payload, func(_ string, err error) {
 		ok <- err
 	}, nil)
 	assert.Error(t, <-ok)

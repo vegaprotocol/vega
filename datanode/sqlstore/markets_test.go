@@ -20,7 +20,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/protos/vega"
-	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
@@ -169,7 +168,7 @@ func shouldInsertAValidMarketRecord(t *testing.T) {
 	bs, md, config := setupMarketsTest(t)
 	connStr := config.ConnectionConfig.GetConnectionString()
 
-	testTimeout := time.Second * 10
+	testTimeout := time.Second * 1000000
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
@@ -202,8 +201,7 @@ func setupMarketsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Markets, sqlsto
 
 	DeleteEverything()
 
-	config := sqlstore.NewDefaultConfig()
-	config.ConnectionConfig.Port = testDBPort
+	config := NewTestConfig()
 
 	return bs, md, config
 }
@@ -313,24 +311,32 @@ func getTestMarket() *vega.Market {
 					Future: &vega.Future{
 						SettlementAsset: "Test Asset",
 						QuoteName:       "Test Quote",
-						DataSourceSpecForSettlementData: &v1.DataSourceSpec{
+						DataSourceSpecForSettlementData: &vega.DataSourceSpec{
 							Id:        "",
 							CreatedAt: 0,
 							UpdatedAt: 0,
-							Config: &v1.DataSourceSpecConfiguration{
-								Signers: nil,
-								Filters: nil,
-							},
+							Data: vega.NewDataSourceDefinition(
+								vega.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&vega.DataSourceSpecConfiguration{
+									Signers: nil,
+									Filters: nil,
+								},
+							),
 							Status: 0,
 						},
-						DataSourceSpecForTradingTermination: &v1.DataSourceSpec{
+						DataSourceSpecForTradingTermination: &vega.DataSourceSpec{
 							Id:        "",
 							CreatedAt: 0,
 							UpdatedAt: 0,
-							Config: &v1.DataSourceSpecConfiguration{
-								Signers: nil,
-								Filters: nil,
-							},
+							Data: vega.NewDataSourceDefinition(
+								vega.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&vega.DataSourceSpecConfiguration{
+									Signers: nil,
+									Filters: nil,
+								},
+							),
 							Status: 0,
 						},
 						DataSourceSpecBinding: &vega.DataSourceSpecToFutureBinding{

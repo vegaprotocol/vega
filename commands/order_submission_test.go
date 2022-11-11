@@ -328,9 +328,6 @@ func testPeggedOrderSubmissionWithWrongTimeInForceFails(t *testing.T) {
 		}, {
 			msg:   "with GFA",
 			value: types.Order_TIME_IN_FORCE_GFA,
-		}, {
-			msg:   "with GFN",
-			value: types.Order_TIME_IN_FORCE_GFN,
 		},
 	}
 	for _, tc := range testCases {
@@ -340,7 +337,7 @@ func testPeggedOrderSubmissionWithWrongTimeInForceFails(t *testing.T) {
 				PeggedOrder: &types.PeggedOrder{},
 			})
 
-			assert.Contains(t, err.Get("order_submission.time_in_force"), errors.New("is expected to have a time in force of type GTT or GTC when the order is pegged"))
+			assert.Contains(t, err.Get("order_submission.time_in_force"), errors.New("is expected to have a time in force of type GTT, GTC or GFN when the order is pegged"))
 		})
 	}
 }
@@ -356,6 +353,9 @@ func testPeggedOrderSubmissionWithRightTimeInForceSucceeds(t *testing.T) {
 		}, {
 			msg:   "with GTT",
 			value: types.Order_TIME_IN_FORCE_GTT,
+		}, {
+			msg:   "with GFN",
+			value: types.Order_TIME_IN_FORCE_GFN,
 		},
 	}
 	for _, tc := range testCases {
@@ -365,7 +365,7 @@ func testPeggedOrderSubmissionWithRightTimeInForceSucceeds(t *testing.T) {
 				PeggedOrder: &types.PeggedOrder{},
 			})
 
-			assert.NotContains(t, err.Get("order_submission.time_in_force"), errors.New("is expected to have a time in force of type GTT or GTC when the order is pegged"))
+			assert.NotContains(t, err.Get("order_submission.time_in_force"), errors.New("is expected to have a time in force of type GTT, GTC or GFN when the order is pegged"))
 		})
 	}
 }

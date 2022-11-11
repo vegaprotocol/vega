@@ -42,4 +42,15 @@ The Null-Blockchain is made to work with as few external dependencies as possibl
 To be able to be able to flex goverance the null-blockchain will need to be able to pretend that a party has staked to allow voting and proposals to work. This is done with a mock up a staking account that loops itself into the collateral engine. To be able to simulate staking the faucet can be used to deposit the built-in asset `VOTE` into a party's general account in the collateral engine. This general account balance for `VOTE` is then sneakily looped into governance as if it were a staked balance.
 
 
+## Replaying the chain and restoring from a snapshot
 
+The Null-Blockchain contains functionality that allows saving to a file all the per-block-transactions in a way that it can be replayed. The following options control this behaviour:
+```
+--blockchain.nullchain.replay-file=SOME_PATH/replay-file
+--blockchain.nullchain.replay
+--blockchain.nullchain.record
+```
+
+where `--blockchain.nullchain.record` will turn on writing transaction data into `SOME_PATH/replay-file`, and `--blockchain.nullchain.replay` will turn on replaying the chain from that file.
+
+The Null-Blockchain also supports loading from a snapshot. This means that with replay turned on, a stopped chain that is restarted can quickly return to its previous state in exactly the same way as a chain using Tendermint and the blockchain provider.

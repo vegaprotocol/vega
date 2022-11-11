@@ -70,22 +70,32 @@ type condition func(string) (bool, error)
 // NewOracleSpec builds an OracleSpec from a types.OracleSpec in a form that
 // suits the processing of the filters.
 func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, error) {
-	if originalSpec.Spec.Config == nil || len(originalSpec.Spec.Config.Signers) == 0 {
+	signersFromSpec := []*types.Signer{}
+	if originalSpec.Spec != nil {
+		if originalSpec.Spec.Data != nil {
+			src := *originalSpec.Spec.Data
+
+			signersFromSpec = src.GetSigners()
+		}
+	}
+
+	if len(signersFromSpec) == 0 {
 		return nil, ErrMissingSigners
 	}
 
 	signers := map[string]struct{}{}
-	for _, pk := range originalSpec.Spec.Config.Signers {
+	for _, pk := range signersFromSpec {
 		signers[pk.String()] = struct{}{}
 	}
 
-	if len(originalSpec.Spec.Config.Filters) == 0 {
+	filtersFromSpec := originalSpec.Spec.Data.GetFilters()
+	if len(filtersFromSpec) == 0 {
 		return nil, ErrAtLeastOneFilterIsRequired
 	}
 
 	typedFilters := map[string]*filter{}
-	for _, f := range originalSpec.Spec.Config.Filters {
-		if f.Key == nil {
+	for _, f := range filtersFromSpec {
+		if types.DataSourceSpecPropertyKeyIsEmpty(f.Key) {
 			return nil, ErrMissingPropertyKey
 		}
 		if len(f.Key.Name) == 0 {
@@ -115,14 +125,16 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 		typedFilter.conditions = append(typedFilter.conditions, conditions...)
 	}
 
-	return &OracleSpec{
+	os := &OracleSpec{
 		id:      OracleSpecID(originalSpec.Spec.ID),
 		signers: signers,
 		filters: typedFilters,
 		OriginalSpec: &types.OracleSpec{
 			ExternalDataSourceSpec: &originalSpec,
 		},
-	}, nil
+	}
+
+	return os, nil
 }
 
 func (s OracleSpec) EnsureBoundableProperty(property string, propType datapb.PropertyKey_Type) error {

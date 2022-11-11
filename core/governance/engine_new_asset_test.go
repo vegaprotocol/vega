@@ -19,7 +19,9 @@ import (
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/assets/builtin"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/governance"
+	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -216,4 +218,86 @@ func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
 	// then
 	require.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalDoesNotExist.Error())
+}
+
+func TestNoVotesAnd0RequiredFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	ctx := context.Background()
+	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.GovernanceProposalAssetRequiredParticipation, "0")).Times(1)
+	assert.NoError(t,
+		eng.netp.Update(ctx,
+			"governance.proposal.asset.requiredParticipation",
+			"0",
+		),
+	)
+
+	// when
+	proposer := vgrand.RandomStr(5)
+	proposal := eng.newProposalForNewAsset(proposer, eng.tsvc.GetTimeNow())
+
+	// setup
+	var fcheck func(interface{}, bool)
+	var rescheck validators.Resource
+	eng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(_ context.Context, ref string, assetDetails *types.AssetDetails) (string, error) {
+		return ref, nil
+	})
+	eng.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Do(func(r validators.Resource, f func(interface{}, bool), _ time.Time) error {
+		fcheck = f
+		rescheck = r
+		return nil
+	})
+	eng.ensureStakingAssetTotalSupply(t, 9)
+	eng.ensureAllAssetEnabled(t)
+	eng.ensureTokenBalanceForParty(t, proposer, 1)
+
+	// expect
+	eng.expectProposalWaitingForNodeVoteEvent(t, proposer, proposal.ID)
+
+	// when
+	_, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.NoError(t, err)
+
+	// call success on the validation
+	fcheck(rescheck, true)
+
+	// then
+	require.NoError(t, err)
+	afterValidation := time.Unix(proposal.Terms.ValidationTimestamp, 0).Add(time.Second)
+
+	// setup
+	// eng.ensureTokenBalanceForParty(t, voter1, 7)
+
+	// expect
+	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
+	eng.expectGetMarketState(t, proposal.ID)
+
+	// when
+	eng.OnTick(context.Background(), afterValidation)
+
+	// given
+	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
+
+	// expect
+	eng.expectDeclinedProposalEvent(t, proposal.ID, types.ProposalErrorParticipationThresholdNotReached)
+	// empty list of votes
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+
+	eng.assets.EXPECT().SetRejected(gomock.Any(), proposal.ID).Times(1)
+
+	// when
+	eng.OnTick(context.Background(), afterClosing)
+
+	// given
+	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
+
+	// when
+	// no calculations, no state change, simply removed from governance engine
+	toBeEnacted, _ := eng.OnTick(context.Background(), afterEnactment)
+
+	// then
+	require.Len(t, toBeEnacted, 0)
 }

@@ -18,6 +18,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,30 +30,38 @@ func TestOracleSpecDeepClone(t *testing.T) {
 		types.CreateSignerFromString("PubKey1", types.DataSignerTypePubKey),
 	}
 
-	os := datapb.OracleSpec{
-		ExternalDataSourceSpec: &datapb.ExternalDataSourceSpec{
-			Spec: &datapb.DataSourceSpec{
+	os := vegapb.OracleSpec{
+		ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
+			Spec: &vegapb.DataSourceSpec{
 				Id:        "Id",
 				CreatedAt: 10000,
 				UpdatedAt: 20000,
-				Config: &datapb.DataSourceSpecConfiguration{
-					Signers: types.SignersIntoProto(pubKeys),
-					Filters: []*datapb.Filter{
-						{
-							Key: &datapb.PropertyKey{
-								Name: "Name",
-								Type: datapb.PropertyKey_TYPE_BOOLEAN,
-							},
-							Conditions: []*datapb.Condition{
-								{
-									Operator: datapb.Condition_OPERATOR_EQUALS,
-									Value:    "Value",
+				Data: &vegapb.DataSourceDefinition{
+					SourceType: &vegapb.DataSourceDefinition_External{
+						External: &vegapb.DataSourceDefinitionExternal{
+							SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
+								Oracle: &vegapb.DataSourceSpecConfiguration{
+									Signers: types.SignersIntoProto(pubKeys),
+									Filters: []*datapb.Filter{
+										{
+											Key: &datapb.PropertyKey{
+												Name: "Name",
+												Type: datapb.PropertyKey_TYPE_BOOLEAN,
+											},
+											Conditions: []*datapb.Condition{
+												{
+													Operator: datapb.Condition_OPERATOR_EQUALS,
+													Value:    "Value",
+												},
+											},
+										},
+									},
 								},
 							},
 						},
 					},
 				},
-				Status: datapb.DataSourceSpec_STATUS_ACTIVE,
+				Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
 			},
 		},
 	}
@@ -67,25 +76,45 @@ func TestOracleSpecDeepClone(t *testing.T) {
 	os.ExternalDataSourceSpec.Spec.Id = "Changed"
 	os.ExternalDataSourceSpec.Spec.CreatedAt = 999
 	os.ExternalDataSourceSpec.Spec.UpdatedAt = 999
-	os.ExternalDataSourceSpec.Spec.Config.Signers[0] = pk1.IntoProto()
-	os.ExternalDataSourceSpec.Spec.Config.Signers[1] = pk2.IntoProto()
-	os.ExternalDataSourceSpec.Spec.Config.Filters[0].Key.Name = "Changed"
-	os.ExternalDataSourceSpec.Spec.Config.Filters[0].Key.Type = datapb.PropertyKey_TYPE_EMPTY
-	os.ExternalDataSourceSpec.Spec.Config.Filters[0].Conditions[0].Operator = datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL
-	os.ExternalDataSourceSpec.Spec.Config.Filters[0].Conditions[0].Value = "Changed"
-	os.ExternalDataSourceSpec.Spec.Status = datapb.DataSourceSpec_STATUS_UNSPECIFIED
+	os.ExternalDataSourceSpec.Spec.Status = vegapb.DataSourceSpec_STATUS_UNSPECIFIED
+
+	signers := []*datapb.Signer{
+		pk1.IntoProto(), pk2.IntoProto(),
+	}
+
+	filters := []*datapb.Filter{
+		{
+			Key: &datapb.PropertyKey{
+				Name: "Changed",
+				Type: datapb.PropertyKey_TYPE_EMPTY,
+			},
+			Conditions: []*datapb.Condition{
+				{
+					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+					Value:    "Changed",
+				},
+			},
+		},
+	}
+
+	os.ExternalDataSourceSpec.Spec.Data.SetOracleConfig(
+		&vegapb.DataSourceSpecConfiguration{
+			Signers: signers,
+			Filters: filters,
+		},
+	)
 
 	// Check things have changed
 	os2DataSourceSpec := os2.ExternalDataSourceSpec.Spec
-	osDataSourceSpec := os.ExternalDataSourceSpec.Spec
+	osDataSourceSpec := *os.ExternalDataSourceSpec.Spec
 	assert.NotEqual(t, osDataSourceSpec.Id, os2DataSourceSpec.Id)
 	assert.NotEqual(t, osDataSourceSpec.CreatedAt, os2DataSourceSpec.CreatedAt)
 	assert.NotEqual(t, osDataSourceSpec.UpdatedAt, os2DataSourceSpec.UpdatedAt)
-	assert.NotEqual(t, osDataSourceSpec.Config.Signers[0], os2DataSourceSpec.Config.Signers[0])
-	assert.NotEqual(t, osDataSourceSpec.Config.Signers[1], os2DataSourceSpec.Config.Signers[1])
-	assert.NotEqual(t, osDataSourceSpec.Config.Filters[0].Key.Name, os2DataSourceSpec.Config.Filters[0].Key.Name)
-	assert.NotEqual(t, osDataSourceSpec.Config.Filters[0].Key.Type, os2DataSourceSpec.Config.Filters[0].Key.Type)
-	assert.NotEqual(t, osDataSourceSpec.Config.Filters[0].Conditions[0].Operator, os2DataSourceSpec.Config.Filters[0].Conditions[0].Operator)
-	assert.NotEqual(t, osDataSourceSpec.Config.Filters[0].Conditions[0].Value, os2DataSourceSpec.Config.Filters[0].Conditions[0].Value)
+	assert.NotEqual(t, osDataSourceSpec.Data.GetSigners()[0], os2DataSourceSpec.Data.GetSigners()[0])
+	assert.NotEqual(t, osDataSourceSpec.Data.GetSigners()[1], os2DataSourceSpec.Data.GetSigners()[1])
+	assert.NotEqual(t, osDataSourceSpec.Data.GetFilters()[0].Key.Name, os2DataSourceSpec.Data.GetFilters()[0].Key.Name)
+	assert.NotEqual(t, osDataSourceSpec.Data.GetFilters()[0].Key.Type, os2DataSourceSpec.Data.GetFilters()[0].Key.Type)
+	assert.NotEqual(t, osDataSourceSpec.Data.GetFilters()[0].Conditions[0].Operator, os2DataSourceSpec.Data.GetFilters()[0].Conditions[0].Operator)
+	assert.NotEqual(t, osDataSourceSpec.Data.GetFilters()[0].Conditions[0].Value, os2DataSourceSpec.Data.GetFilters()[0].Conditions[0].Value)
 	assert.NotEqual(t, osDataSourceSpec.Status, os2DataSourceSpec.Status)
 }

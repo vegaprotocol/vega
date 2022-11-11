@@ -26,8 +26,8 @@ func NewCommanderStub() *CommanderStub {
 	return &CommanderStub{}
 }
 
-func (*CommanderStub) Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error), bo *backoff.ExponentialBackOff) {
+func (*CommanderStub) Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(string, error), bo *backoff.ExponentialBackOff) {
 }
 
-func (*CommanderStub) CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error), bo *backoff.ExponentialBackOff) {
+func (*CommanderStub) CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, f func(string, error), bo *backoff.ExponentialBackOff) {
 }

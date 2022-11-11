@@ -1061,7 +1061,7 @@ type ERC20 {
   lifetimeLimit: String!
   """
   The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
-  There’s no limit on the size of a withdrawal
+  There is no limit on the size of a withdrawal
   Note: this is a temporary measure that can be changed by governance
   """
   withdrawThreshold: String!
@@ -1076,7 +1076,7 @@ type UpdateERC20 {
   lifetimeLimit: String!
   """
   The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
-  There’s no limit on the size of a withdrawal
+  There is no limit on the size of a withdrawal
   Note: this is a temporary measure that can be changed by governance
   """
   withdrawThreshold: String!
@@ -1305,7 +1305,7 @@ type DataSourceSpec {
   "RFC3339Nano last updated timestamp"
   updatedAt: String
 
-  config: DataSourceSpecConfiguration!
+  data: DataSourceDefinition!
 
   "Status describes the status of the data source spec"
   status: DataSourceSpecStatus!
@@ -3035,11 +3035,11 @@ type FutureProduct {
   """
   Describes the data source data that an instrument wants to get from the data source engine for settlement data.
   """
-  dataSourceSpecForSettlementData: DataSourceSpecConfiguration!
+  dataSourceSpecForSettlementData: DataSourceDefinition!
   """
   Describes the source data that an instrument wants to get from the data source engine for trading termination.
   """
-  dataSourceSpecForTradingTermination: DataSourceSpecConfiguration!
+  dataSourceSpecForTradingTermination: DataSourceDefinition!
   """
   DataSourceSpecToFutureBinding tells on which property source data should be
   used as settlement data.
@@ -3051,7 +3051,7 @@ type FutureProduct {
 }
 
 """
-A data spec describes the source data that an instrument wants to get from the
+DataSourceSpecConfiguration describes the source data that an instrument wants to get from the
 sourcing engine.
 """
 type DataSourceSpecConfiguration {
@@ -3113,8 +3113,8 @@ type UpdateInstrumentConfiguration {
 
 type UpdateFutureProduct {
   quoteName: String!
-  dataSourceSpecForSettlementData: DataSourceSpecConfiguration!
-  dataSourceSpecForTradingTermination: DataSourceSpecConfiguration!
+  dataSourceSpecForSettlementData: DataSourceDefinition!
+  dataSourceSpecForTradingTermination: DataSourceDefinition!
   dataSourceSpecBinding: DataSourceSpecToFutureBinding!
 }
 
@@ -4333,4 +4333,42 @@ type ProtocolUpgradeProposal {
   approvers: [String!]!
   "the status of the proposal"
   status: ProtocolUpgradeProposalStatus!
+}
+
+"""
+DataSourceSpecConfigurationTime is the internal data source used for emitting timestamps.
+"""
+type DataSourceSpecConfigurationTime {
+  conditions: [Condition]!
+}
+
+union InternalDataSourceKind = DataSourceSpecConfigurationTime
+
+"""
+DataSourceDefinitionInternal is the top level object used for all internal data sources.
+It contains one of any of the defined `SourceType` variants.
+"""
+type DataSourceDefinitionInternal {
+  sourceType: InternalDataSourceKind!
+}
+
+union ExternalDataSourceKind = DataSourceSpecConfiguration
+
+"""
+DataSourceDefinitionExternal is the top level object used for all external data sources.
+It contains one of any of the defined `SourceType` variants.
+"""
+type DataSourceDefinitionExternal {
+  sourceType: ExternalDataSourceKind!
+}
+
+union DataSourceKind = DataSourceDefinitionInternal | DataSourceDefinitionExternal
+
+"""
+DataSourceDefinition represents the top level object that deals with data sources.
+DataSourceDefinition can be external or internal, with whatever number of data sources are defined
+for each type in the child objects below.
+"""
+type DataSourceDefinition {
+  sourceType: DataSourceKind!
 }

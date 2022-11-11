@@ -474,6 +474,7 @@ func testAddNewNodeSendsValidatorUpdateEventToBroker(t *testing.T) {
 		nr.AvatarUrl,
 		nr.FromEpoch,
 		true,
+		0,
 	)
 
 	rankingEvent := events.NewValidatorRanking(ctx, "0", nr.Id, "0", "0", "0", "pending", "tendermint", 10)

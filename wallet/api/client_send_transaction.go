@@ -101,7 +101,6 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		h.interactor.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not find a healthy node: %w", err))
 		return nil, networkError(ErrNoHealthyNodeAvailable)
 	}
-	h.interactor.Log(ctx, traceID, SuccessLog, "A healthy node has been found.")
 
 	h.interactor.Log(ctx, traceID, InfoLog, "Retrieving latest block information...")
 	lastBlockData, err := currentNode.LastBlock(ctx)
@@ -111,13 +110,13 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	}
 	h.interactor.Log(ctx, traceID, SuccessLog, "Latest block information has been retrieved.")
 
-	if lastBlockData.ChainId == "" {
-		h.interactor.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get chainID from node: %w", err))
+	if lastBlockData.ChainID == "" {
+		h.interactor.NotifyError(ctx, traceID, NetworkError, ErrCouldNotGetChainIDFromNode)
 		return nil, networkError(ErrCouldNotGetChainIDFromNode)
 	}
 
 	// Sign the payload.
-	rawInputData := wcommands.ToInputData(request, lastBlockData.Height)
+	rawInputData := wcommands.ToInputData(request, lastBlockData.BlockHeight)
 	inputData, err := commands.MarshalInputData(rawInputData)
 	if err != nil {
 		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not marshal input data: %w", err))
@@ -125,7 +124,7 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	}
 
 	h.interactor.Log(ctx, traceID, InfoLog, "Signing the transaction...")
-	signature, err := connectedWallet.Wallet.SignTx(params.PublicKey, commands.BundleInputDataForSigning(inputData, lastBlockData.ChainId))
+	signature, err := connectedWallet.Wallet.SignTx(params.PublicKey, commands.BundleInputDataForSigning(inputData, lastBlockData.ChainID))
 	if err != nil {
 		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not sign command: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)
@@ -142,7 +141,7 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	// Generate the proof of work for the transaction.
 	h.interactor.Log(ctx, traceID, InfoLog, "Computing proof-of-work...")
 	txID := vgcrypto.RandomHash()
-	powNonce, _, err := vgcrypto.PoW(lastBlockData.Hash, txID, uint(lastBlockData.SpamPowDifficulty), vgcrypto.Sha3)
+	powNonce, _, err := vgcrypto.PoW(lastBlockData.BlockHash, txID, uint(lastBlockData.ProofOfWorkDifficulty), vgcrypto.Sha3)
 	if err != nil {
 		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not compute the proof-of-work: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)

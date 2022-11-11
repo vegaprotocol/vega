@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+
 	"code.vegaprotocol.io/vega/datanode/dehistory/fsutil"
 
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -45,8 +47,13 @@ func (b *Service) CreateSnapshot(ctx context.Context, chainID string, fromHeight
 	var cleanUp []func()
 	ctxWithTimeout, cancelFn := context.WithTimeout(ctx, b.config.WaitForCreationLockTimeout.Duration)
 	defer cancelFn()
+
+	// This lock ensures snapshots cannot be created in parallel, during normal run this should never be an issue
+	// as the time between snapshots is sufficiently large, however during event replay (and some testing/dev scenarios)
+	// the time between snapshots can be sufficiently small to run the risk that snapshotting could overlap without this
+	// lock.
 	if !b.createSnapshotLock.Lock(ctxWithTimeout) {
-		return CreateSnapshotResult{}, fmt.Errorf("context cancelled whilst waiting for create snapshot lock")
+		panic("context cancelled whilst waiting for create snapshot lock")
 	}
 
 	cleanUp = append(cleanUp, func() { b.createSnapshotLock.Unlock() })
@@ -78,14 +85,14 @@ func (b *Service) CreateSnapshot(ctx context.Context, chainID string, fromHeight
 	}
 	cleanUp = append(cleanUp, func() { _ = os.Remove(snapshotInProgressFile) })
 
+	// To ensure reads are isolated from this point forward execute a read on last block
+	sqlstore.GetLastBlockUsingConnection(ctx, copyDataTx)
+
 	go func() {
 		defer func() { runAllInReverseOrder(cleanUp) }()
 		err = b.snapshotData(ctx, copyDataTx, dbMetaData, currentSnapshot, historySnapshot)
 		if err != nil {
-			b.log.Error("failed to snapshot data", logging.Error(err))
-			if b.config.PanicOnSnapshotCreationError {
-				panic(fmt.Sprintf("failed to snapshot data:%s", err))
-			}
+			b.log.Panic("failed to snapshot data", logging.Error(err))
 		}
 	}()
 
@@ -173,7 +180,8 @@ func (b *Service) snapshotData(ctx context.Context, copyDataTx pgx.Tx, dbMetaDat
 	metrics.SetLastSnapshotSeconds(time.Since(start).Seconds())
 
 	b.log.Info("finished creating snapshot for chain", logging.String("chain", currentSnapshot.ChainID),
-		logging.Int64("height", currentSnapshot.Height), logging.Duration("time taken", time.Since(start)),
+		logging.Int64("from height", historySnapshot.HeightFrom),
+		logging.Int64("to height", currentSnapshot.Height), logging.Duration("time taken", time.Since(start)),
 		logging.Int64("rows copied", rowsCopied),
 		logging.Int64("compressed current state data size", compressedCurrentStateByteCount),
 		logging.Int64("compressed history data size", compressedHistoryByteCount),

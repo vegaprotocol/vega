@@ -117,7 +117,7 @@ jobs:
           files: build/*.zip
           name: ${{ inputs.tag || github.ref_name }}
           tag_name: ${{ inputs.tag || github.ref_name }}
-          prerelease: ${{ endsWith(github.ref, '-pre') || endsWith(inputs.tag, '-pre') }}
+          prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -235,7 +235,7 @@ jobs:
           files: build/*.zip
           name: ${{ inputs.tag || github.ref_name }}
           tag_name: ${{ inputs.tag || github.ref_name }}
-          prerelease: ${{ endsWith(github.ref, '-pre') || endsWith(inputs.tag, '-pre') }}
+          prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -317,6 +317,6 @@ jobs:
           files: build/*.zip
           name: ${{ inputs.tag || github.ref_name }}
           tag_name: ${{ inputs.tag || github.ref_name }}
-          prerelease: ${{ endsWith(github.ref, '-pre') || endsWith(inputs.tag, '-pre') }}
+          prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

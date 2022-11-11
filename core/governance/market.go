@@ -59,10 +59,13 @@ func assignProduct(
 		if product.Future == nil {
 			return types.ProposalErrorInvalidFutureProduct, ErrMissingFutureProduct
 		}
-		if product.Future.DataSourceSpecForSettlementData == nil {
+		settlData := &product.Future.DataSourceSpecForSettlementData
+		if settlData == nil {
 			return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
 		}
-		if product.Future.DataSourceSpecForTradingTermination == nil {
+
+		tterm := &product.Future.DataSourceSpecForTradingTermination
+		if tterm == nil {
 			return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
 		}
 		if product.Future.DataSourceSpecBinding == nil {
@@ -227,33 +230,35 @@ func validateAsset(assetID string, decimals uint64, assets Assets, deepCheck boo
 }
 
 func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool) (types.ProposalError, error) {
-	if future.DataSourceSpecForSettlementData == nil {
+	settlData := &future.DataSourceSpecForSettlementData
+	if settlData == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
 	}
 
-	if future.DataSourceSpecForTradingTermination == nil {
+	tterm := &future.DataSourceSpecForTradingTermination
+	if tterm == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
 	}
 
 	if !et.shouldNotVerify {
-		dataSourceSpec := future.DataSourceSpecForTradingTermination.ToDataSourceSpec()
-		if dataSourceSpec.Config != nil {
-			for i, f := range dataSourceSpec.Config.Filters {
-				if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
-					for j, cond := range f.Conditions {
-						v, err := strconv.ParseInt(cond.Value, 10, 64)
-						if err != nil {
-							return types.ProposalErrorInvalidFutureProduct, err
-						}
+		filters := future.DataSourceSpecForTradingTermination.GetFilters()
 
-						future.DataSourceSpecForTradingTermination.Filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
-						if v <= et.current {
-							return types.ProposalErrorInvalidFutureProduct, ErrDataSourceSpecTerminationTimeBeforeEnactment
-						}
+		for i, f := range filters {
+			if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
+				for j, cond := range f.Conditions {
+					v, err := strconv.ParseInt(cond.Value, 10, 64)
+					if err != nil {
+						return types.ProposalErrorInvalidFutureProduct, err
+					}
+
+					filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
+					if v <= et.current {
+						return types.ProposalErrorInvalidFutureProduct, ErrDataSourceSpecTerminationTimeBeforeEnactment
 					}
 				}
 			}
 		}
+		future.DataSourceSpecForTradingTermination.UpdateFilters(filters)
 	}
 
 	if future.DataSourceSpecBinding == nil {
@@ -308,7 +313,7 @@ func validateLogNormalRiskParams(lnm *types.LogNormalRiskModel) (types.ProposalE
 		lnm.Tau.LessThan(num.DecimalFromFloat(1e-8)) || lnm.Tau.GreaterThan(num.DecimalOne()) || // 1e-8 <= tau <=1
 		lnm.Params.Mu.LessThan(num.DecimalFromFloat(-1e-6)) || lnm.Params.Mu.GreaterThan(num.DecimalFromFloat(1e-6)) || // -1e-6 <= mu <= 1e-6
 		lnm.Params.R.LessThan(num.DecimalFromInt64(-1)) || lnm.Params.R.GreaterThan(num.DecimalFromInt64(1)) || // -1 <= r <= 1
-		lnm.Params.Sigma.LessThan(num.DecimalFromFloat(1e-3)) || lnm.Params.Sigma.GreaterThan(num.DecimalFromInt64(100)) { // 1e-3 <= sigma <= 100
+		lnm.Params.Sigma.LessThan(num.DecimalFromFloat(1e-3)) || lnm.Params.Sigma.GreaterThan(num.DecimalFromInt64(50)) { // 1e-3 <= sigma <= 50
 		return types.ProposalErrorInvalidRiskParameter, ErrInvalidRiskParameter
 	}
 	return types.ProposalErrorUnspecified, nil
@@ -397,33 +402,36 @@ func validateUpdateInstrument(instrument *types.UpdateInstrumentConfiguration, e
 }
 
 func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) (types.ProposalError, error) {
-	if future.DataSourceSpecForSettlementData == nil {
+	settlData := &future.DataSourceSpecForSettlementData
+	if settlData == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
 	}
 
-	if future.DataSourceSpecForTradingTermination == nil {
+	tterm := &future.DataSourceSpecForTradingTermination
+	if tterm == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
 	}
 
 	if !et.shouldNotVerify {
-		dataSourcespec := future.DataSourceSpecForTradingTermination.ToDataSourceSpec()
-		if dataSourcespec.Config != nil {
-			for i, f := range dataSourcespec.Config.Filters {
-				if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
-					for j, cond := range f.Conditions {
-						v, err := strconv.ParseInt(cond.Value, 10, 64)
-						if err != nil {
-							return types.ProposalErrorInvalidFutureProduct, err
-						}
+		filters := future.DataSourceSpecForTradingTermination.GetFilters()
 
-						future.DataSourceSpecForTradingTermination.Filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
-						if v <= et.current {
-							return types.ProposalErrorInvalidFutureProduct, ErrDataSourceSpecTerminationTimeBeforeEnactment
-						}
+		for i, f := range filters {
+			if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
+				for j, cond := range f.Conditions {
+					v, err := strconv.ParseInt(cond.Value, 10, 64)
+					if err != nil {
+						return types.ProposalErrorInvalidFutureProduct, err
+					}
+
+					filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
+					if v <= et.current {
+						return types.ProposalErrorInvalidFutureProduct, ErrDataSourceSpecTerminationTimeBeforeEnactment
 					}
 				}
 			}
 		}
+
+		future.DataSourceSpecForTradingTermination.UpdateFilters(filters)
 	}
 
 	if future.DataSourceSpecBinding == nil {
@@ -431,7 +439,8 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 	}
 
 	// ensure the oracle spec for settlement data can be constructed
-	ospec, err := oracles.NewOracleSpec(*future.DataSourceSpecForSettlementData.ToExternalDataSourceSpec())
+	tedss := *future.DataSourceSpecForSettlementData.ToExternalDataSourceSpec()
+	ospec, err := oracles.NewOracleSpec(tedss)
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}

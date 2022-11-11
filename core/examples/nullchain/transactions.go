@@ -48,27 +48,43 @@ func MarketProposalTxn(now time.Time, oraclePubkey string) (*walletpb.SubmitTran
 									Future: &vega.FutureProduct{
 										SettlementAsset: asset,
 										QuoteName:       "BTCUSD",
-										DataSourceSpecForSettlementData: &datav1.DataSourceSpecConfiguration{
-											Signers: []*datav1.Signer{pubKey.IntoProto()},
-											Filters: []*datav1.Filter{
-												{
-													Key: &datav1.PropertyKey{
-														Name: "prices." + asset + ".value",
-														Type: datav1.PropertyKey_TYPE_INTEGER,
+										DataSourceSpecForSettlementData: &vega.DataSourceDefinition{
+											SourceType: &vega.DataSourceDefinition_External{
+												External: &vega.DataSourceDefinitionExternal{
+													SourceType: &vega.DataSourceDefinitionExternal_Oracle{
+														Oracle: &vega.DataSourceSpecConfiguration{
+															Signers: []*datav1.Signer{pubKey.IntoProto()},
+															Filters: []*datav1.Filter{
+																{
+																	Key: &datav1.PropertyKey{
+																		Name: "prices." + asset + ".value",
+																		Type: datav1.PropertyKey_TYPE_INTEGER,
+																	},
+																	Conditions: []*datav1.Condition{},
+																},
+															},
+														},
 													},
-													Conditions: []*datav1.Condition{},
 												},
 											},
 										},
-										DataSourceSpecForTradingTermination: &datav1.DataSourceSpecConfiguration{
-											Signers: []*datav1.Signer{pubKey.IntoProto()},
-											Filters: []*datav1.Filter{
-												{
-													Key: &datav1.PropertyKey{
-														Name: "trading.termination",
-														Type: datav1.PropertyKey_TYPE_BOOLEAN,
+										DataSourceSpecForTradingTermination: &vega.DataSourceDefinition{
+											SourceType: &vega.DataSourceDefinition_External{
+												External: &vega.DataSourceDefinitionExternal{
+													SourceType: &vega.DataSourceDefinitionExternal_Oracle{
+														Oracle: &vega.DataSourceSpecConfiguration{
+															Signers: []*datav1.Signer{pubKey.IntoProto()},
+															Filters: []*datav1.Filter{
+																{
+																	Key: &datav1.PropertyKey{
+																		Name: "trading.termination",
+																		Type: datav1.PropertyKey_TYPE_BOOLEAN,
+																	},
+																	Conditions: []*datav1.Condition{},
+																},
+															},
+														},
 													},
-													Conditions: []*datav1.Condition{},
 												},
 											},
 										},

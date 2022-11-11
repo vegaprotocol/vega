@@ -50,18 +50,18 @@ func (cmd *listActivePeers) Execute(_ []string) error {
 
 	resp, err := client.GetActiveDeHistoryPeerAddresses(context.Background(), &v2.GetActiveDeHistoryPeerAddressesRequest{})
 	if err != nil {
-		return fmt.Errorf("failed to active peer addresses:%w", err)
+		return errorFromGrpcError("failed to active peer addresses", err)
 	}
 	peerAddresses := resp.IpAddresses
 
 	if len(peerAddresses) == 0 {
-		fmt.Printf("No active peers found:\n\n")
-	}
+		fmt.Printf("No active peers found\n")
+	} else {
+		fmt.Printf("Active Peers:\n\n")
 
-	fmt.Printf("Active Peers:\n\n")
-
-	for _, peer := range peerAddresses {
-		fmt.Printf("Active Peer:  %s\n", peer)
+		for _, peer := range peerAddresses {
+			fmt.Printf("Active Peer:  %s\n", peer)
+		}
 	}
 
 	return nil

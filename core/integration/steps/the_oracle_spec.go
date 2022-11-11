@@ -84,12 +84,16 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 	return config.OracleConfigs.Add(
 		name,
 		specType,
-		&datav1.DataSourceSpec{
+		&protoTypes.DataSourceSpec{
 			Id: vgrand.RandomStr(10),
-			Config: &datav1.DataSourceSpecConfiguration{
-				Signers: pubKeysSigners,
-				Filters: filters,
-			},
+			Data: protoTypes.NewDataSourceDefinition(
+				protoTypes.DataSourceDefinitionTypeExt,
+			).SetOracleConfig(
+				&protoTypes.DataSourceSpecConfiguration{
+					Signers: pubKeysSigners,
+					Filters: filters,
+				},
+			),
 		},
 		binding,
 	)

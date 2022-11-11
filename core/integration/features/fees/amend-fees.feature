@@ -46,7 +46,7 @@ Feature: Fees when amend trades
       | side | price | volume |
       | sell | 1080  | 1      |
       | buy  | 920   | 1      |
-      | buy  | 910   | 220    |
+      | buy  | 910   | 210    |
       | sell | 1090  | 184    |
 
     When the parties place the following orders:
@@ -107,7 +107,7 @@ Feature: Fees when amend trades
       | sell | 1080  | 1      |
       | buy  | 1001  | 2      |
       | buy  | 920   | 1      |
-      | buy  | 991   | 202    |
+      | buy  | 991   | 201    |
       | sell | 1012  | 198    |
       | sell | 1002  | 1      |
       | sell | 1003  | 4      |
@@ -123,7 +123,7 @@ Feature: Fees when amend trades
       | sell | 1080  | 1      |
       | buy  | 1001  | 2      |
       | buy  | 920   | 1      |
-      | buy  | 991   | 202    |
+      | buy  | 991   | 201    |
       | sell | 1012  | 198    |
       | sell | 1002  | 5      |
 

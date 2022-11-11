@@ -16,14 +16,14 @@ import (
 	"time"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type OracleData struct {
 	ExternalData *ExternalData
 }
 
-func OracleDataFromProto(data *datapb.OracleData, txHash TxHash, vegaTime time.Time, seqNum uint64) (*OracleData, error) {
+func OracleDataFromProto(data *vegapb.OracleData, txHash TxHash, vegaTime time.Time, seqNum uint64) (*OracleData, error) {
 	extData, err := ExternalDataFromProto(data.ExternalData, txHash, vegaTime, seqNum)
 	if err != nil {
 		return nil, err
@@ -34,8 +34,8 @@ func OracleDataFromProto(data *datapb.OracleData, txHash TxHash, vegaTime time.T
 	}, nil
 }
 
-func (od *OracleData) ToProto() *datapb.OracleData {
-	return &datapb.OracleData{
+func (od *OracleData) ToProto() *vegapb.OracleData {
+	return &vegapb.OracleData{
 		ExternalData: od.ExternalData.ToProto(),
 	}
 }

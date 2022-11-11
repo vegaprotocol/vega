@@ -20,14 +20,15 @@ import (
 	"io"
 	"time"
 
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/paths"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/pkg/errors"
 	"github.com/pressly/goose/v3"
 	"github.com/shopspring/decimal"
+
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 )
 
 var ErrBadID = errors.New("Bad ID (must be hex string)")
@@ -37,13 +38,31 @@ var EmbedMigrations embed.FS
 
 const SQLMigrationsDir = "migrations"
 
-func MigrateToLatestSchema(log *logging.Logger, config Config) error {
+func MigrateSchema(log *logging.Logger, config ConnectionConfig) error {
 	goose.SetBaseFS(EmbedMigrations)
 	goose.SetLogger(log.Named("db migration").GooseLogger())
 
-	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
+	poolConfig, err := config.GetPoolConfig()
 	if err != nil {
-		return errors.Wrap(err, "migrating schema")
+		return fmt.Errorf("failed to get pool config:%w", err)
+	}
+
+	db := stdlib.OpenDB(*poolConfig.ConnConfig)
+	defer db.Close()
+
+	if err := goose.Up(db, SQLMigrationsDir); err != nil {
+		return fmt.Errorf("failed to goose up the schema: %w", err)
+	}
+	return nil
+}
+
+func WipeDatabase(log *logging.Logger, config ConnectionConfig) error {
+	goose.SetBaseFS(EmbedMigrations)
+	goose.SetLogger(log.Named("wipe database").GooseLogger())
+
+	poolConfig, err := config.GetPoolConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get pool config:%w", err)
 	}
 
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
@@ -54,14 +73,14 @@ func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 		return err
 	}
 
-	if currentVersion > 0 && config.WipeOnStartup {
+	if currentVersion > 0 {
 		if err := goose.Down(db, SQLMigrationsDir); err != nil {
-			return fmt.Errorf("error clearing sql schema: %w", err)
+			return fmt.Errorf("failed to goose down the schema: %w", err)
 		}
 	}
 
 	if err := goose.Up(db, SQLMigrationsDir); err != nil {
-		return fmt.Errorf("error migrating sql schema: %w", err)
+		return fmt.Errorf("failed to goose up the schema: %w", err)
 	}
 	return nil
 }
@@ -183,7 +202,6 @@ func checkPolicyPeriodIsAtOrAboveMinimum(minimumInSeconds int64, policy Retentio
 
 type EmbeddedPostgresLog interface {
 	io.Writer
-	fmt.Stringer
 }
 
 func StartEmbeddedPostgres(log *logging.Logger, config Config, runtimeDir string, postgresLog EmbeddedPostgresLog) (*embeddedpostgres.EmbeddedPostgres, error) {
@@ -193,7 +211,7 @@ func StartEmbeddedPostgres(log *logging.Logger, config Config, runtimeDir string
 		postgresLog, config.ConnectionConfig)
 
 	if err := embeddedPostgres.Start(); err != nil {
-		log.Errorf("postgres log: \n%s", postgresLog.String())
+		log.Errorf("error starting embedded postgres: %v", err)
 		return nil, fmt.Errorf("use embedded database was true, but failed to start: %w", err)
 	}
 
@@ -205,9 +223,10 @@ func createEmbeddedPostgres(runtimePath string, dataPath *paths.StatePath, write
 		Username(conf.Username).
 		Password(conf.Password).
 		Database(conf.Database).
-		Port(uint32(conf.Port))
-
-	dbConfig = dbConfig.Logger(writer)
+		Port(uint32(conf.Port)).
+		ListenAddr(conf.Host).
+		SocketDir(conf.SocketDir).
+		Logger(writer)
 
 	if len(runtimePath) != 0 {
 		dbConfig = dbConfig.RuntimePath(runtimePath).BinariesPath(runtimePath)

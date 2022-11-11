@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -1047,7 +1047,7 @@ func (s *Service) writeErrors(w http.ResponseWriter, statusCode int, errs comman
 
 func unmarshalBody(r *http.Request, into interface{}) error {
 	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return ErrCouldNotReadRequest
 	}

@@ -44,8 +44,8 @@ type TimeService interface {
 }
 
 type Commander interface {
-	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error), bo *backoff.ExponentialBackOff)
-	CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error), bo *backoff.ExponentialBackOff)
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(string, error), bo *backoff.ExponentialBackOff)
+	CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, f func(string, error), bo *backoff.ExponentialBackOff)
 }
 
 type ValidatorTopology interface {
@@ -373,7 +373,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			if v.selfVoteReceived(w.top.SelfVegaPubKey()) {
 				continue
 			}
-			w.onCommandSent(v.res.GetID())(errors.New("no self votes received after 10 seconds"))
+			w.onCommandSent(v.res.GetID())("", errors.New("no self votes received after 10 seconds"))
 		}
 	}
 }
@@ -388,8 +388,8 @@ func (w *Witness) needResend(res string) bool {
 	return false
 }
 
-func (w *Witness) onCommandSent(res string) func(error) {
-	return func(err error) {
+func (w *Witness) onCommandSent(res string) func(string, error) {
+	return func(_ string, err error) {
 		if err != nil {
 			w.log.Error("could not send command", logging.String("res-id", res), logging.Error(err))
 			w.needResendMu.Lock()

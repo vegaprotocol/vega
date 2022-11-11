@@ -15,6 +15,11 @@ package start
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+
+	"github.com/cenkalti/backoff"
+	"google.golang.org/grpc"
+	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
@@ -28,9 +33,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
-
-	"github.com/cenkalti/backoff"
-	"google.golang.org/grpc"
 )
 
 func (l *NodeCommand) persistentPre([]string) (err error) {
@@ -67,9 +69,16 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		logging.String("version-hash", l.VersionHash))
 
 	if l.conf.SQLStore.UseEmbedded {
+		postgresLogger := &lumberjack.Logger{
+			Filename: paths.StatePath(filepath.Join(paths.DataNodeLogsHome.String(), "embedded-postgres.log")).String(),
+			MaxSize:  l.conf.SQLStore.LogRotationConfig.MaxSize,
+			MaxAge:   l.conf.SQLStore.LogRotationConfig.MaxAge,
+			Compress: true,
+		}
+
 		runtimeDir := l.vegaPaths.StatePathFor(paths.DataNodeEmbeddedPostgresRuntimeDir)
 		l.embeddedPostgres, err = sqlstore.StartEmbeddedPostgres(l.Log, l.conf.SQLStore,
-			runtimeDir, EmbeddedPostgresLog{})
+			runtimeDir, postgresLogger)
 
 		if err != nil {
 			return fmt.Errorf("failed to start embedded postgres: %w", err)
@@ -95,10 +104,20 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		return fmt.Errorf("failed to check if data node has scheme or is empty: %w", err)
 	}
 
+	if dataNodeHasData && bool(l.conf.SQLStore.WipeOnStartup) {
+		if err = sqlstore.WipeDatabase(l.Log, l.conf.SQLStore.ConnectionConfig); err != nil {
+			return fmt.Errorf("failed to wiped database:%w", err)
+		}
+		dataNodeHasData = false
+		l.Log.Info("Wiped all existing data from the datanode")
+	}
+
 	if !dataNodeHasData && bool(l.conf.DeHistory.Enabled) && bool(l.conf.AutoInitialiseFromDeHistory) {
 		l.Log.Info("Auto Initialising Datanode From Decentralized History")
+		apiPorts := []int{l.conf.API.Port}
+		apiPorts = append(apiPorts, l.conf.DeHistory.Initialise.GrpcAPIPorts...)
 		if err = initialise.DatanodeFromDeHistory(l.ctx, l.conf.DeHistory.Initialise,
-			l.Log, l.deHistoryService, l.conf.API.Port); err != nil {
+			l.Log, l.deHistoryService, apiPorts); err != nil {
 			return fmt.Errorf("failed to initialise datanode from decentralized history:%w", err)
 		}
 		l.Log.Info("Finished Auto Initialising Datanode From Decentralized History")
@@ -164,7 +183,7 @@ func (l *NodeCommand) initialiseDatabase() error {
 
 	hasVegaSchema, err := initialise.HasVegaSchema(l.ctx, l.conf.SQLStore.ConnectionConfig)
 	if err != nil {
-		return fmt.Errorf("failed to check if database is empty: %w", err)
+		return fmt.Errorf("failed to check if database has schema: %w", err)
 	}
 
 	// If it's an empty database, recreate it with correct locale settings
@@ -175,7 +194,7 @@ func (l *NodeCommand) initialiseDatabase() error {
 		}
 	}
 
-	err = sqlstore.MigrateToLatestSchema(l.Log, l.conf.SQLStore)
+	err = sqlstore.MigrateSchema(l.Log, l.conf.SQLStore.ConnectionConfig)
 	if err != nil {
 		return fmt.Errorf("failed to migrate to latest schema:%w", err)
 	}
@@ -275,15 +294,4 @@ func (l *NodeCommand) initialiseDecentralizedHistory() error {
 	}
 
 	return nil
-}
-
-// Todo should be able to configure this to send to a file.
-type EmbeddedPostgresLog struct{}
-
-func (n2 EmbeddedPostgresLog) Write(p []byte) (n int, err error) {
-	return len(p), nil
-}
-
-func (n2 EmbeddedPostgresLog) String() string {
-	return ""
 }

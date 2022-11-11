@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
@@ -559,27 +560,29 @@ func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
 	return errs
 }
 
-func checkDataSourceSpec(spec *datapb.DataSourceSpecConfiguration, name string, parentProperty string) Errors {
+func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentProperty string) Errors {
 	errs := NewErrors()
 	if spec == nil {
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), ErrIsRequired)
 	}
 
-	if isBuiltInSpec(spec.Filters) {
-		return checkDataSourceSpecFilters(spec, name, parentProperty)
+	signers := spec.GetSigners()
+	filters := spec.GetFilters()
+	if isBuiltInSpec(filters) {
+		return checkDataSourceSpecFilters(filters, name, parentProperty)
 	}
 
-	if len(spec.Signers) == 0 {
+	if len(signers) == 0 {
 		errs.AddForProperty(fmt.Sprintf("%s.%s.signers", parentProperty, name), ErrIsRequired)
 	}
-	for i, key := range spec.Signers {
+	for i, key := range signers {
 		signer := types.SignerFromProto(key)
 		if signer.IsEmpty() {
 			errs.AddForProperty(fmt.Sprintf("%s.%s.signers.%d", parentProperty, name, i), ErrIsNotValid)
 		}
 	}
 
-	errs.Merge(checkDataSourceSpecFilters(spec, name, parentProperty))
+	errs.Merge(checkDataSourceSpecFilters(filters, name, parentProperty))
 
 	return errs
 }
@@ -600,14 +603,14 @@ func isBuiltInSpec(filters []*datapb.Filter) bool {
 	return false
 }
 
-func checkDataSourceSpecFilters(spec *datapb.DataSourceSpecConfiguration, name string, parentProperty string) Errors {
+func checkDataSourceSpecFilters(filters []*datapb.Filter, name string, parentProperty string) Errors {
 	errs := NewErrors()
 
-	if len(spec.Filters) == 0 {
+	if len(filters) == 0 {
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.filters", parentProperty, name), ErrIsRequired)
 	}
 
-	for i, filter := range spec.Filters {
+	for i, filter := range filters {
 		if filter.Key == nil {
 			errs.AddForProperty(fmt.Sprintf("%s.%s.filters.%d.key", parentProperty, name, i), ErrIsNotValid)
 		} else {
@@ -634,10 +637,14 @@ func checkDataSourceSpecFilters(spec *datapb.DataSourceSpecConfiguration, name s
 	return errs
 }
 
-func isBindingMatchingSpec(spec *datapb.DataSourceSpecConfiguration, bindingProperty string) bool {
+func isBindingMatchingSpec(spec *vegapb.DataSourceDefinition, bindingProperty string) bool {
 	bindingPropertyFound := false
-	if spec != nil && spec.Filters != nil {
-		for _, filter := range spec.Filters {
+	filters := []*datapb.Filter{}
+	if spec != nil {
+		filters = spec.GetFilters()
+	}
+	if spec != nil && filters != nil {
+		for _, filter := range filters {
 			if filter.Key != nil && filter.Key.Name == bindingProperty {
 				bindingPropertyFound = true
 			}
@@ -813,8 +820,8 @@ func checkNewLogNormalRiskParameters(params *protoTypes.NewMarketConfiguration_L
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma", ErrIsNotValidNumber)
 	}
 
-	if params.LogNormal.Params.Sigma < 1e-3 || params.LogNormal.Params.Sigma > 100 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma", errors.New("must be between [1e-3,100]"))
+	if params.LogNormal.Params.Sigma < 1e-3 || params.LogNormal.Params.Sigma > 50 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma", errors.New("must be between [1e-3,50]"))
 	}
 
 	if math.IsNaN(params.LogNormal.Params.R) {

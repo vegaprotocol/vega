@@ -61,7 +61,7 @@ func TestUpdateCurrentOrdersState(t *testing.T) {
 	ctx := context.Background()
 
 	batcher := sqlstore.NewMapBatcher[entities.OrderKey, entities.Order](
-		"orders_history",
+		"orders",
 		entities.OrderColumns)
 
 	vegaTime := time.Now()
@@ -89,7 +89,7 @@ func TestUpdateCurrentOrdersState(t *testing.T) {
 	connectionSource.Connection.QueryRow(ctx, "select vega_time_to")
 
 	rows, err := connectionSource.Connection.Query(context.Background(),
-		"select vega_time, vega_time_to from orders_history")
+		"select vega_time, vega_time_to from orders")
 
 	require.NoError(t, err)
 

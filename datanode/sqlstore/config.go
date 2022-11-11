@@ -16,9 +16,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v4/pgxpool"
+
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type Config struct {
@@ -29,6 +30,7 @@ type Config struct {
 	FanOutBufferSize      int                   `long:"fan-out-buffer-size" description:"buffer size used by the fan out event source"`
 	RetentionPolicies     []RetentionPolicy     `group:"RetentionPolicies" namespace:"RetentionPolicies"`
 	ConnectionRetryConfig ConnectionRetryConfig `group:"ConnectionRetryConfig" namespace:"ConnectionRetryConfig"`
+	LogRotationConfig     LogRotationConfig     `group:"LogRotationConfig" namespace:"LogRotationConfig"`
 }
 
 type ConnectionConfig struct {
@@ -37,6 +39,7 @@ type ConnectionConfig struct {
 	Username              string            `long:"username"`
 	Password              string            `long:"password"`
 	Database              string            `long:"database"`
+	SocketDir             string            `long:"location of postgres UNIX socket directory (used if host is empty string)"`
 	MaxConnLifetime       encoding.Duration `long:"max-conn-lifetime"`
 	MaxConnLifetimeJitter encoding.Duration `long:"max-conn-lifetime-jitter"`
 }
@@ -53,11 +56,25 @@ type ConnectionRetryConfig struct {
 	MaxElapsedTime  time.Duration `long:"max-elapsed-time" description:"the maximum elapsed time to wait before giving up"`
 }
 
+type LogRotationConfig struct {
+	MaxSize int `long:"max-size" description:"the maximum size of the log file in bytes"`
+	MaxAge  int `long:"max-age" description:"the maximum number of days to keep the log file"`
+}
+
 func (conf ConnectionConfig) GetConnectionString() string {
 	return conf.getConnectionStringForDatabase(conf.Database)
 }
 
 func (conf ConnectionConfig) getConnectionStringForDatabase(database string) string {
+	if conf.Host == "" {
+		//nolint:nosprintfhostport
+		return fmt.Sprintf("postgresql://%s:%s@/%s?host=%s&port=%d",
+			conf.Username,
+			conf.Password,
+			database,
+			conf.SocketDir,
+			conf.Port)
+	}
 	//nolint:nosprintfhostport
 	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
 		conf.Username,
@@ -90,6 +107,7 @@ func NewDefaultConfig() Config {
 			Username:              "vega",
 			Password:              "vega",
 			Database:              "vega",
+			SocketDir:             "/tmp",
 			MaxConnLifetime:       encoding.Duration{Duration: time.Minute * 30},
 			MaxConnLifetimeJitter: encoding.Duration{Duration: time.Minute * 5},
 		},
@@ -103,7 +121,7 @@ func NewDefaultConfig() Config {
 			{HypertableOrCaggName: "conflated_balances", DataRetentionPeriod: "1 year"},
 			{HypertableOrCaggName: "delegations", DataRetentionPeriod: "7 days"},
 			{HypertableOrCaggName: "ledger", DataRetentionPeriod: "7 days"},
-			{HypertableOrCaggName: "orders_history", DataRetentionPeriod: "7 days"},
+			{HypertableOrCaggName: "orders", DataRetentionPeriod: "7 days"},
 			{HypertableOrCaggName: "trades", DataRetentionPeriod: "7 days"},
 			{HypertableOrCaggName: "trades_candle_1_minute", DataRetentionPeriod: "1 month"},
 			{HypertableOrCaggName: "trades_candle_5_minutes", DataRetentionPeriod: "1 month"},
@@ -122,6 +140,10 @@ func NewDefaultConfig() Config {
 			InitialInterval: time.Second,
 			MaxInterval:     time.Second * 10,
 			MaxElapsedTime:  time.Minute,
+		},
+		LogRotationConfig: LogRotationConfig{
+			MaxSize: 100,
+			MaxAge:  2,
 		},
 	}
 }

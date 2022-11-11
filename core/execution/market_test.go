@@ -492,33 +492,41 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 						QuoteName:       "USD",
 						DataSourceSpecForSettlementData: &types.DataSourceSpec{
 							ID: "1",
-							Config: &types.DataSourceSpecConfiguration{
-								Signers: pubKeys,
-								Filters: []*types.DataSourceSpecFilter{
-									{
-										Key: &types.DataSourceSpecPropertyKey{
-											Name: "prices.ETH.value",
-											Type: datapb.PropertyKey_TYPE_INTEGER,
+							Data: types.NewDataSourceDefinition(
+								vegapb.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&types.DataSourceSpecConfiguration{
+									Signers: pubKeys,
+									Filters: []*types.DataSourceSpecFilter{
+										{
+											Key: &types.DataSourceSpecPropertyKey{
+												Name: "prices.ETH.value",
+												Type: datapb.PropertyKey_TYPE_INTEGER,
+											},
+											Conditions: []*types.DataSourceSpecCondition{},
 										},
-										Conditions: []*types.DataSourceSpecCondition{},
 									},
 								},
-							},
+							),
 						},
 						DataSourceSpecForTradingTermination: &types.DataSourceSpec{
 							ID: "2",
-							Config: &types.DataSourceSpecConfiguration{
-								Signers: pubKeys,
-								Filters: []*types.DataSourceSpecFilter{
-									{
-										Key: &types.DataSourceSpecPropertyKey{
-											Name: "trading.terminated",
-											Type: datapb.PropertyKey_TYPE_BOOLEAN,
+							Data: types.NewDataSourceDefinition(
+								vegapb.DataSourceDefinitionTypeExt,
+							).SetOracleConfig(
+								&types.DataSourceSpecConfiguration{
+									Signers: pubKeys,
+									Filters: []*types.DataSourceSpecFilter{
+										{
+											Key: &types.DataSourceSpecPropertyKey{
+												Name: "trading.terminated",
+												Type: datapb.PropertyKey_TYPE_BOOLEAN,
+											},
+											Conditions: []*types.DataSourceSpecCondition{},
 										},
-										Conditions: []*types.DataSourceSpecCondition{},
 									},
 								},
-							},
+							),
 						},
 						DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
 							SettlementDataProperty:     "prices.ETH.value",
@@ -654,8 +662,41 @@ func TestMarketClosing(t *testing.T) {
 	assert.False(t, closed)
 	assert.Equal(t, types.MarketStateTradingTerminated, tm.market.State())
 
+	// now update the market with different trading terminated key
+	tm.mktCfg.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination = &types.DataSourceSpec{
+		ID: "2",
+		Data: types.NewDataSourceDefinition(
+			vegapb.DataSourceDefinitionTypeExt,
+		).SetOracleConfig(&types.DataSourceSpecConfiguration{
+			Signers: pubKeys,
+			Filters: []*types.DataSourceSpecFilter{
+				{
+					Key: &types.DataSourceSpecPropertyKey{
+						Name: "tradingTerminated",
+						Type: datapb.PropertyKey_TYPE_BOOLEAN,
+					},
+				},
+			},
+		}),
+	}
+	tm.mktCfg.TradableInstrument.Instrument.GetFuture().DataSourceSpecBinding.TradingTerminationProperty = "tradingTerminated"
+	err = tm.market.Update(context.Background(), tm.mktCfg, tm.oracleEngine)
+	require.NoError(t, err)
+
+	// now update the market again with the *same* spec ID
+	err = tm.market.Update(context.Background(), tm.mktCfg, tm.oracleEngine)
+	require.NoError(t, err)
+
+	properties = map[string]string{}
+	properties["tradingTerminated"] = "true"
+	err = tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		Signers: pubKeys,
+		Data:    properties,
+	})
+	require.NoError(t, err)
+
 	// let the oracle update settlement data
-	delete(properties, "trading.terminated")
+	delete(properties, "tradingTerminated")
 	properties["prices.ETH.value"] = "100"
 	err = tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
 		Signers: pubKeys,
@@ -715,7 +756,17 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 
 	// given
 	updatedMkt := tm.mktCfg.DeepClone()
-	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Config.Filters[0].Key.Name = "prices.ETHEREUM.value"
+	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Data.UpdateFilters(
+		[]*types.DataSourceSpecFilter{
+			{
+				Key: &types.OracleSpecPropertyKey{
+					Name: "prices.ETHEREUM.value",
+					Type: datapb.PropertyKey_TYPE_INTEGER,
+				},
+			},
+		},
+	)
+
 	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecBinding.SettlementDataProperty = "prices.ETHEREUM.value"
 
 	// when
@@ -837,7 +888,17 @@ func TestMarketLiquidityFeeAfterUpdate(t *testing.T) {
 	// given
 	previousLiqFee := tm.market.GetLiquidityFee()
 	updatedMkt := tm.mktCfg.DeepClone()
-	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Config.Filters[0].Key.Name = "prices.ETHEREUM.value"
+	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Data.UpdateFilters(
+		[]*types.DataSourceSpecFilter{
+			{
+				Key: &types.OracleSpecPropertyKey{
+					Name: "prices.ETHEREUM.value",
+					Type: datapb.PropertyKey_TYPE_INTEGER,
+				},
+			},
+		},
+	)
+
 	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecBinding.SettlementDataProperty = "prices.ETHEREUM.value"
 
 	// when
@@ -1204,20 +1265,23 @@ func TestUpdateMarketWithOracleSpecEarlyTermination(t *testing.T) {
 	// now update the market
 	updatedMkt := tm.mktCfg.DeepClone()
 
-	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination.Config.Filters = []*types.DataSourceSpecFilter{
-		{
-			Key: &types.OracleSpecPropertyKey{
-				Name: oracles.BuiltinOracleTimestamp,
-				Type: datapb.PropertyKey_TYPE_TIMESTAMP,
-			},
-			Conditions: []*types.OracleSpecCondition{
-				{
-					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-					Value:    "0",
+	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination.Data.UpdateFilters(
+		[]*types.DataSourceSpecFilter{
+			{
+				Key: &types.OracleSpecPropertyKey{
+					Name: oracles.BuiltinOracleTimestamp,
+					Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+				},
+				Conditions: []*types.OracleSpecCondition{
+					{
+						Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+						Value:    "0",
+					},
 				},
 			},
 		},
-	}
+	)
+
 	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecBinding.TradingTerminationProperty = oracles.BuiltinOracleTimestamp
 
 	err = tm.market.Update(context.Background(), updatedMkt, tm.oracleEngine)
@@ -1317,35 +1381,39 @@ func Test6056(t *testing.T) {
 	// now update the market
 	updatedMkt := tm.mktCfg.DeepClone()
 
-	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Config.Filters = []*types.DataSourceSpecFilter{
-		{
-			Key: &types.OracleSpecPropertyKey{
-				Name: "prices.ETH.value",
-				Type: datapb.PropertyKey_TYPE_INTEGER,
-			},
-			Conditions: []*types.OracleSpecCondition{
-				{
-					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-					Value:    "1",
+	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Data.UpdateFilters(
+		[]*types.DataSourceSpecFilter{
+			{
+				Key: &types.OracleSpecPropertyKey{
+					Name: "prices.ETH.value",
+					Type: datapb.PropertyKey_TYPE_INTEGER,
+				},
+				Conditions: []*types.OracleSpecCondition{
+					{
+						Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+						Value:    "1",
+					},
 				},
 			},
 		},
-	}
+	)
 
-	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination.Config.Filters = []*types.DataSourceSpecFilter{
-		{
-			Key: &types.DataSourceSpecPropertyKey{
-				Name: "trading.terminated",
-				Type: datapb.PropertyKey_TYPE_BOOLEAN,
-			},
-			Conditions: []*types.DataSourceSpecCondition{
-				{
-					Operator: datapb.Condition_OPERATOR_EQUALS,
-					Value:    "false",
+	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination.Data.UpdateFilters(
+		[]*types.DataSourceSpecFilter{
+			{
+				Key: &types.DataSourceSpecPropertyKey{
+					Name: "trading.terminated",
+					Type: datapb.PropertyKey_TYPE_BOOLEAN,
+				},
+				Conditions: []*types.DataSourceSpecCondition{
+					{
+						Operator: datapb.Condition_OPERATOR_EQUALS,
+						Value:    "false",
+					},
 				},
 			},
 		},
-	}
+	)
 
 	pubKeys := []*types.Signer{
 		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),

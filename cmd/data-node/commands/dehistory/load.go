@@ -42,6 +42,9 @@ func (cmd *loadCmd) Execute(_ []string) error {
 		return fmt.Errorf("failed to read configuration:%w", err)
 	}
 
+	// Wiping data from dehistory before loading then loading the data should never happen in any circumstance
+	cmd.Config.DeHistory.WipeOnStartup = false
+
 	hasSchema, err := initialise.HasVegaSchema(context.Background(), cmd.SQLStore.ConnectionConfig)
 	if err != nil {
 		return fmt.Errorf("failed to check for existing schema:%w", err)

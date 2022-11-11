@@ -15,93 +15,15 @@
 package types
 
 import (
-	"encoding/hex"
 	"fmt"
 	"strings"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 type ExternalDataSourceSpecConfiguration struct {
 	DataSourceSpec *DataSourceSpecConfiguration
-}
-
-type DataSourceSpecConfiguration struct {
-	Signers []*Signer
-	Filters []*DataSourceSpecFilter
-}
-
-func SpecID(signers []*Signer, filters []*datapb.Filter) string {
-	buf := []byte{}
-	for _, filter := range filters {
-		s := filter.Key.Name + filter.Key.Type.String()
-		for _, c := range filter.Conditions {
-			s += c.Operator.String() + c.Value
-		}
-
-		buf = append(buf, []byte(s)...)
-	}
-	allSigners := []string{}
-	for _, signer := range signers {
-		allSigners = append(allSigners, signer.String())
-	}
-	buf = append(buf, []byte(strings.Join(allSigners, ""))...)
-
-	return hex.EncodeToString(crypto.Hash(buf))
-}
-
-func (s DataSourceSpecConfiguration) String() string {
-	return fmt.Sprintf(
-		"signers(%v) filters(%v)",
-		s.Signers,
-		s.Filters,
-	)
-}
-
-func (s *DataSourceSpecConfiguration) IntoProto() *datapb.DataSourceSpecConfiguration {
-	return &datapb.DataSourceSpecConfiguration{
-		// SignersIntoProto returns a list of signers after checking the list length.
-		Signers: SignersIntoProto(s.Signers),
-		Filters: DataSourceSpecFilters(s.Filters).IntoProto(),
-	}
-}
-
-func (s *DataSourceSpecConfiguration) DeepClone() *DataSourceSpecConfiguration {
-	return &DataSourceSpecConfiguration{
-		Signers: s.Signers,
-		Filters: DeepCloneDataSourceSpecFilters(s.Filters),
-	}
-}
-
-func (s *DataSourceSpecConfiguration) ToDataSourceSpec() *DataSourceSpec {
-	return &DataSourceSpec{
-		ID: SpecID(
-			s.Signers,
-			DataSourceSpecFilters(s.Filters).IntoProto()),
-		Config: &DataSourceSpecConfiguration{
-			Signers: s.Signers,
-			Filters: s.Filters,
-		},
-	}
-}
-
-func (s *DataSourceSpecConfiguration) ToExternalDataSourceSpec() *ExternalDataSourceSpec {
-	return &ExternalDataSourceSpec{
-		Spec: s.ToDataSourceSpec(),
-	}
-}
-
-func DataSourceSpecConfigurationFromProto(protoConfig *datapb.DataSourceSpecConfiguration) *DataSourceSpecConfiguration {
-	ds := &DataSourceSpecConfiguration{}
-	if protoConfig != nil {
-		// SignersFromProto returns a list of signers after checking the list length.
-		ds.Signers = SignersFromProto(protoConfig.Signers)
-		ds.Filters = DataSourceSpecFiltersFromProto(protoConfig.Filters)
-	}
-
-	return ds
 }
 
 type DataSourceSpecFilter struct {
@@ -207,80 +129,7 @@ func DeepCloneDataSourceSpecFilters(filters []*DataSourceSpecFilter) []*DataSour
 	return clonedFilters
 }
 
-type DataSourceSpecConditions []*DataSourceSpecCondition
-
-func (sc DataSourceSpecConditions) IntoProto() []*datapb.Condition {
-	protoConditions := make([]*datapb.Condition, 0, len(sc))
-	for _, condition := range sc {
-		protoConditions = append(protoConditions, condition.IntoProto())
-	}
-	return protoConditions
-}
-
-func (sc DataSourceSpecConditions) String() string {
-	if sc == nil {
-		return "[]"
-	}
-	strs := make([]string, 0, len(sc))
-	for _, c := range sc {
-		strs = append(strs, c.String())
-	}
-	return "[" + strings.Join(strs, ", ") + "]"
-}
-
-type DataSourceSpecCondition struct {
-	Operator DataSourceSpecConditionOperator
-	Value    string
-}
-
-func (c DataSourceSpecCondition) String() string {
-	return fmt.Sprintf(
-		"value(%s) operator(%s)",
-		c.Value,
-		c.Operator.String(),
-	)
-}
-
-func (c DataSourceSpecCondition) IntoProto() *datapb.Condition {
-	return &datapb.Condition{
-		Operator: c.Operator,
-		Value:    c.Value,
-	}
-}
-
-func (c *DataSourceSpecCondition) DeepClone() *DataSourceSpecCondition {
-	return &DataSourceSpecCondition{
-		Operator: c.Operator,
-		Value:    c.Value,
-	}
-}
-
-func DataSourceSpecConditionFromProto(protoCondition *datapb.Condition) *DataSourceSpecCondition {
-	return &DataSourceSpecCondition{
-		Operator: protoCondition.Operator,
-		Value:    protoCondition.Value,
-	}
-}
-
-func DataSourceSpecConditionsFromProto(protoConditions []*datapb.Condition) []*DataSourceSpecCondition {
-	conditions := make([]*DataSourceSpecCondition, 0, len(protoConditions))
-	for _, protoCondition := range protoConditions {
-		conditions = append(conditions, DataSourceSpecConditionFromProto(protoCondition))
-	}
-	return conditions
-}
-
-func DeepCloneDataSourceSpecConditions(conditions []*DataSourceSpecCondition) []*DataSourceSpecCondition {
-	othConditions := make([]*DataSourceSpecCondition, 0, len(conditions))
-	for _, condition := range conditions {
-		othConditions = append(othConditions, condition.DeepClone())
-	}
-	return othConditions
-}
-
 type DataSourceSpecPropertyKeyType = datapb.PropertyKey_Type
-
-type DataSourceSpecConditionOperator = datapb.Condition_Operator
 
 type DataSourceSpecToFutureBinding struct{}
 
@@ -318,39 +167,39 @@ func DataSourceSpecBindingForFutureFromProto(o *vegapb.DataSourceSpecToFutureBin
 	}
 }
 
-type DataSourceSpecStatus = datapb.DataSourceSpec_Status
+type DataSourceSpecStatus = vegapb.DataSourceSpec_Status
 
 type DataSourceSpec struct {
 	ID        string
 	CreatedAt int64
 	UpdatedAt int64
-	Config    *DataSourceSpecConfiguration
+	Data      *DataSourceDefinition
 	Status    DataSourceSpecStatus
 }
 
-func (s *DataSourceSpec) IntoProto() *datapb.DataSourceSpec {
-	config := &datapb.DataSourceSpecConfiguration{}
-	if s.Config != nil {
-		config = s.Config.IntoProto()
+func (s *DataSourceSpec) IntoProto() *vegapb.DataSourceSpec {
+	config := &vegapb.DataSourceDefinition{}
+	if s.Data != nil {
+		config = s.Data.IntoProto()
 	}
 
-	return &datapb.DataSourceSpec{
+	return &vegapb.DataSourceSpec{
 		Id:        s.ID,
 		CreatedAt: s.CreatedAt,
 		UpdatedAt: s.UpdatedAt,
-		Config:    config,
+		Data:      config,
 		Status:    s.Status,
 	}
 }
 
 func (s *DataSourceSpec) String() string {
 	configAsString := ""
-	if s.Config != nil {
-		configAsString = s.Config.String()
+	if s.Data != nil {
+		configAsString = s.Data.String()
 	}
 
 	return fmt.Sprintf(
-		"ID(%s) createdAt(%v) updatedAt(%v) config(%s) status(%s)",
+		"ID(%s) createdAt(%v) updatedAt(%v) data(%s) status(%s)",
 		s.ID,
 		s.CreatedAt,
 		s.UpdatedAt,
@@ -359,18 +208,21 @@ func (s *DataSourceSpec) String() string {
 	)
 }
 
+// /
+// ToExternalDataSourceSpec wraps the DataSourceSpec receiver into ExternalDataSourceSpec.
+// Used for aligning with required types in the code.
 func (s *DataSourceSpec) ToExternalDataSourceSpec() *ExternalDataSourceSpec {
 	return &ExternalDataSourceSpec{
 		Spec: s,
 	}
 }
 
-func DataSourceSpecFromProto(specProto *datapb.DataSourceSpec) *DataSourceSpec {
+func DataSourceSpecFromProto(specProto *vegapb.DataSourceSpec) *DataSourceSpec {
 	return &DataSourceSpec{
 		ID:        specProto.Id,
 		CreatedAt: specProto.CreatedAt,
 		UpdatedAt: specProto.UpdatedAt,
-		Config:    DataSourceSpecConfigurationFromProto(specProto.Config),
+		Data:      DataSourceDefinitionFromProto(specProto.Data),
 		Status:    specProto.Status,
 	}
 }
@@ -419,12 +271,20 @@ func DataSourceSpecPropertyKeyFromProto(protoKey *datapb.PropertyKey) *DataSourc
 	}
 }
 
+func DataSourceSpecPropertyKeyIsEmpty(key *DataSourceSpecPropertyKey) bool {
+	if key.Name == "" && key.Type == 0 {
+		return true
+	}
+
+	return false
+}
+
 type ExternalDataSourceSpec struct {
 	Spec *DataSourceSpec
 }
 
-func (s *ExternalDataSourceSpec) IntoProto() *datapb.ExternalDataSourceSpec {
-	return &datapb.ExternalDataSourceSpec{
+func (s *ExternalDataSourceSpec) IntoProto() *vegapb.ExternalDataSourceSpec {
+	return &vegapb.ExternalDataSourceSpec{
 		Spec: s.Spec.IntoProto(),
 	}
 }
@@ -433,10 +293,11 @@ func (s *ExternalDataSourceSpec) String() string {
 	return s.Spec.String()
 }
 
-func ExternalDataSourceSpecFromProto(specProto *datapb.ExternalDataSourceSpec) *ExternalDataSourceSpec {
+func ExternalDataSourceSpecFromProto(specProto *vegapb.ExternalDataSourceSpec) *ExternalDataSourceSpec {
 	if specProto.Spec != nil {
+		r := DataSourceSpecFromProto(specProto.Spec)
 		return &ExternalDataSourceSpec{
-			Spec: DataSourceSpecFromProto(specProto.Spec),
+			Spec: r,
 		}
 	}
 

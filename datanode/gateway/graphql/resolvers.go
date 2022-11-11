@@ -33,8 +33,6 @@ import (
 	types "code.vegaprotocol.io/vega/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
-	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -233,6 +231,10 @@ func (r *VegaResolverRoot) NewAsset() NewAssetResolver {
 
 func (r *VegaResolverRoot) UpdateAsset() UpdateAssetResolver {
 	return (*updateAssetResolver)(r)
+}
+
+func (r *VegaResolverRoot) UpdateFutureProduct() UpdateFutureProductResolver {
+	return (*updateFutureProductResolver)(r)
 }
 
 func (r *VegaResolverRoot) NewMarket() NewMarketResolver {
@@ -477,7 +479,7 @@ func (r *myQueryResolver) OracleSpecsConnection(ctx context.Context, pagination 
 	return res.OracleSpecs, nil
 }
 
-func (r *myQueryResolver) OracleSpec(ctx context.Context, id string) (*datapb.OracleSpec, error) {
+func (r *myQueryResolver) OracleSpec(ctx context.Context, id string) (*types.OracleSpec, error) {
 	res, err := r.tradingDataClientV2.GetOracleSpec(
 		ctx, &v2.GetOracleSpecRequest{OracleSpecId: id},
 	)
@@ -1742,19 +1744,8 @@ func (r *myCandleResolver) Volume(_ context.Context, obj *v2.Candle) (string, er
 // BEGIN: DataSourceSpecConfiguration Resolver.
 type myDataSourceSpecConfigurationResolver VegaResolverRoot
 
-func (m *myDataSourceSpecConfigurationResolver) Signers(ctx context.Context, obj *v1.DataSourceSpecConfiguration) ([]*Signer, error) {
-	if len(obj.Signers) > 0 {
-		signers := make([]*Signer, len(obj.Signers))
-
-		for i, signer := range obj.Signers {
-			signers[i] = &Signer{
-				Signer: signer.GetSigner().(SignerKind),
-			}
-		}
-
-		return signers, nil
-	}
-	return nil, nil
+func (m *myDataSourceSpecConfigurationResolver) Signers(_ context.Context, obj *types.DataSourceSpecConfiguration) ([]*Signer, error) {
+	return resolveSigners(obj.Signers), nil
 }
 
 // END: DataSourceSpecConfiguration Resolver
