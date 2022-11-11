@@ -79,12 +79,27 @@ Feature: test AC 0006-POSI-008
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC19 | buy  | 1      | 2000  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 5011  | 18     |
+      | sell | 5001  | 5      |
+      | buy  | 49    | 5      |
+      | buy  | 39    | 2308   |
+
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release |
+      | party1 | ETH/DEC19 | 6402        | 7042   | 7682    | 8962    |
+
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 7682   | 1318    |
       #| party1 | ETH   | ETH/DEC19 | 504    | 8496    |
       | party2 | ETH   | ETH/DEC19 | 2605   | 8295    |
       | party3 | ETH   | ETH/DEC19 | 2605   | 7195    |
+
+    # maintenance margin for party1: 2*(5001-2000)+2*0.1*2000 = 6402
+    # initial margin for party1: 6402*1.2=7682
 
     Then the following transfers should happen:
       | from   | to     | from account        | to account              | market id | amount | asset |
