@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -68,15 +67,13 @@ func TestMain(t *testing.M) {
 	defer cancelOuterCtx()
 
 	var err error
-	testID := uuid.NewV4().String()
-	snapshotsBackupDir, err = ioutil.TempDir("", testID)
+	snapshotsBackupDir, err = os.MkdirTemp("", "snapshotbackup")
 	if err != nil {
 		panic(err)
 	}
 	defer os.RemoveAll(snapshotsBackupDir)
 
-	testID = uuid.NewV4().String()
-	eventsDir, err := ioutil.TempDir("", testID)
+	eventsDir, err := os.MkdirTemp("", "eventsdir")
 	if err != nil {
 		panic(err)
 	}
@@ -87,16 +84,14 @@ func TestMain(t *testing.M) {
 	eventsFile = filepath.Join(eventsDir, "smoketest_to_block_5000_or_above.evts")
 	decompressEventFile()
 
-	testID = uuid.NewV4().String()
-	tempDir, err := ioutil.TempDir("", testID)
+	tempDir, err := os.MkdirTemp("", "dehistory")
 	if err != nil {
 		panic(err)
 	}
 	postgresRuntimePath := filepath.Join(tempDir, "sqlstore")
-	defer os.RemoveAll(postgresRuntimePath)
+	defer os.RemoveAll(tempDir)
 
-	testID = uuid.NewV4().String()
-	deHistoryHome, err := ioutil.TempDir("", testID)
+	deHistoryHome, err := os.MkdirTemp("", "dehistoryhome")
 	if err != nil {
 		panic(err)
 	}

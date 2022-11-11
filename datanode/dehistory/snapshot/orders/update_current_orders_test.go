@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -16,7 +15,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgtype"
-	uuid "github.com/satori/go.uuid"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,20 +27,20 @@ var (
 )
 
 func TestMain(t *testing.M) {
-	testID := uuid.NewV4().String()
-	tempDir, err := ioutil.TempDir("", testID)
+	tmp, err := os.MkdirTemp("", "orders")
 	if err != nil {
 		panic(err)
 	}
-	postgresRuntimePath := filepath.Join(tempDir, "sqlstore")
-	defer os.RemoveAll(postgresRuntimePath)
+	postgresRuntimePath := filepath.Join(tmp, "sqlstore")
+	defer os.RemoveAll(tmp)
 
-	testID = uuid.NewV4().String()
-	tempDir, err = ioutil.TempDir("", testID)
+	snapsTmp, err := os.MkdirTemp("", "snapshots")
 	if err != nil {
 		panic(err)
 	}
-	snapshotCopyToPath := filepath.Join(tempDir, "snapshotsCopyTo")
+	defer os.RemoveAll(snapsTmp)
+
+	snapshotCopyToPath := filepath.Join(snapsTmp, "snapshotsCopyTo")
 	err = os.MkdirAll(snapshotCopyToPath, os.ModePerm)
 	if err != nil {
 		panic(fmt.Errorf("failed to create snapshots directory: %w", err))
