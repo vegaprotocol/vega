@@ -702,14 +702,13 @@ message FinancialAmount {
 
 // Transfers can occur between parties on Vega, these are the types that indicate why a transfer took place
 enum TransferType {
+  reserved 3, 17;
   // Default value, always invalid
   TRANSFER_TYPE_UNSPECIFIED = 0;
   // Loss
   TRANSFER_TYPE_LOSS = 1;
   // Win
   TRANSFER_TYPE_WIN = 2;
-  // Close
-  TRANSFER_TYPE_CLOSE = 3;
   // Mark to market loss
   TRANSFER_TYPE_MTM_LOSS = 4;
   // Mark to market win
@@ -736,8 +735,6 @@ enum TransferType {
   TRANSFER_TYPE_BOND_LOW = 15;
   // Bond too high
   TRANSFER_TYPE_BOND_HIGH = 16;
-  // Lock amount for withdraw
-  TRANSFER_TYPE_WITHDRAW_LOCK = 17;
   // Actual withdraw from system
   TRANSFER_TYPE_WITHDRAW = 18;
   // Deposit funds
