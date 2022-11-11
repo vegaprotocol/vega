@@ -13,5 +13,5 @@
 package tools
 
 import (
-	_ "github.com/99designs/gqlgen/cmd" // this presumably does something useful
+	_ "github.com/99designs/gqlgen" // this presumably does something useful
 )
