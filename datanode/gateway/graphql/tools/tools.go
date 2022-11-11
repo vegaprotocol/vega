@@ -13,5 +13,5 @@
 package tools
 
 import (
-	_ "github.com/99designs/gqlgen" // this presumably does something useful
+	_ "github.com/99designs/gqlgen/graphql" // this presumably does something useful
 )
