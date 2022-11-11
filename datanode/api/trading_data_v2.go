@@ -1063,9 +1063,9 @@ func (t *tradingDataServiceV2) GetLastTrade(ctx context.Context, req *v2.GetLast
 }
 
 func tradesToProto(trades []entities.Trade) []*vega.Trade {
-	var protoTrades []*vega.Trade
-	for _, trade := range trades {
-		protoTrades = append(protoTrades, trade.ToProto())
+	protoTrades := make([]*vega.Trade, len(trades))
+	for i := range trades {
+		protoTrades[i] = trades[i].ToProto()
 	}
 	return protoTrades
 }

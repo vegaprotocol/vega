@@ -23,15 +23,15 @@ import (
 
 type stakeLinkingResolver VegaResolverRoot
 
-func (s *stakeLinkingResolver) Timestamp(ctx context.Context, obj *eventspb.StakeLinking) (string, error) {
+func (s *stakeLinkingResolver) Timestamp(_ context.Context, obj *eventspb.StakeLinking) (string, error) {
 	return vegatime.Format(vegatime.Unix(obj.Ts, 0)), nil
 }
 
-func (s *stakeLinkingResolver) Party(ctx context.Context, obj *eventspb.StakeLinking) (*vgproto.Party, error) {
+func (s *stakeLinkingResolver) Party(_ context.Context, obj *eventspb.StakeLinking) (*vgproto.Party, error) {
 	return &vgproto.Party{Id: obj.Party}, nil
 }
 
-func (s *stakeLinkingResolver) FinalizedAt(ctx context.Context, obj *eventspb.StakeLinking) (*string, error) {
+func (s *stakeLinkingResolver) FinalizedAt(_ context.Context, obj *eventspb.StakeLinking) (*string, error) {
 	if obj.FinalizedAt == 0 {
 		return nil, nil
 	}
@@ -42,9 +42,10 @@ func (s *stakeLinkingResolver) FinalizedAt(ctx context.Context, obj *eventspb.St
 type partyStakeResolver VegaResolverRoot
 
 func (p *partyStakeResolver) Linkings(_ context.Context, obj *v2.GetStakeResponse) ([]*eventspb.StakeLinking, error) {
-	var linkings []*eventspb.StakeLinking
-	for _, l := range obj.GetStakeLinkings().GetEdges() {
-		linkings = append(linkings, l.GetNode())
+	linkingEdges := obj.GetStakeLinkings().GetEdges()
+	linkings := make([]*eventspb.StakeLinking, 0, len(linkingEdges))
+	for i := range linkingEdges {
+		linkings[i] = linkingEdges[i].GetNode()
 	}
 	return linkings, nil
 }
