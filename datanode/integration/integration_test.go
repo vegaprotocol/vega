@@ -17,14 +17,14 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io/fs"
 	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"testing"
 	"time"
@@ -32,21 +32,22 @@ import (
 	"code.vegaprotocol.io/vega/cmd/data-node/commands/start"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
+	"code.vegaprotocol.io/vega/datanode/utils"
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	LastEpoch       = 298 // 2090
-	PlaybackTimeout = 3 * time.Minute
+	lastEpoch       = 619
+	playbackTimeout = 3 * time.Minute
+	chainID         = "testnet"
+	testdataPath    = "testdata/system_tests.evt"
 )
 
 var (
@@ -65,28 +66,43 @@ func TestMain(m *testing.M) {
 		return
 	}
 
-	cwd, err := os.Getwd()
+	vegaHome, postgresRuntimePath, err := setupDirs()
 	if err != nil {
-		panic("couldn't get working directory")
+		log.Fatalf("couldn't setup directories: %s", err)
 	}
+	defer func() { _ = os.RemoveAll(postgresRuntimePath) }()
 
-	goldenDir = filepath.Join(cwd, "testdata", "golden")
-	err = vgfs.EnsureDir(goldenDir)
-	if err != nil {
-		panic("couldn't ensure golden data dir")
-	}
-
-	cfg, err := newTestConfig()
+	testDBSocketDir := filepath.Join(postgresRuntimePath)
+	cfg, err := newTestConfig(testDBSocketDir)
 	if err != nil {
 		log.Fatal("couldn't set up config: ", err)
 	}
 
-	if err := runTestNode(cfg); err != nil {
-		log.Fatal("running test node: ", err)
+	eventFile := cfg.Broker.FileEventSourceConfig.File
+	if err = utils.DecompressFile(eventFile+".gz", eventFile); err != nil {
+		log.Fatal("couldn't decompress event file: ", err)
 	}
 
+	defer func() {
+		if err := os.RemoveAll(eventFile); err != nil {
+			log.Printf("failed to remove event file: %s", err)
+		}
+	}()
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	stopper := make(chan struct{})
+
+	go func() {
+		defer wg.Done()
+		if err := runTestNode(cfg, vegaHome, stopper); err != nil {
+			log.Fatal("running test node: ", err)
+		}
+	}()
+
 	client = graphql.NewClient(fmt.Sprintf("http://localhost:%v/query", cfg.Gateway.GraphQL.Port))
-	if err := waitForEpoch(client, LastEpoch, PlaybackTimeout); err != nil {
+	if err = waitForEpoch(client, lastEpoch, playbackTimeout); err != nil {
 		log.Fatal("problem piping event stream: ", err)
 	}
 
@@ -101,112 +117,45 @@ func TestMain(m *testing.M) {
 	// sending queries via the graphql playground etc..
 	if blockWhenDone != nil && *blockWhenDone {
 		log.Print("Blocking now to allow debugging")
-		waitForSIGTERM()
-	}
-}
-
-func waitForSIGTERM() {
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM) // nolint
-	go func() {
+		c := make(chan os.Signal)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM) // nolint
 		<-c
-		os.Exit(1)
-	}()
-
-	for {
-		time.Sleep(1 * time.Second)
+		os.Exit(0)
 	}
+
+	close(stopper)
+	wg.Wait()
 }
 
-func compareResponses(t *testing.T, oldResp, newResp interface{}) {
-	t.Helper()
-	require.NotEmpty(t, oldResp)
-	require.NotEmpty(t, newResp)
+func setupDirs() (string, string, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", "", fmt.Errorf("couldn't get working directory: %w", err)
+	}
 
-	sortAccounts := cmpopts.SortSlices(func(a Account, b Account) bool {
-		if a.Type != b.Type {
-			return a.Type < b.Type
-		}
-		if a.Asset.ID != b.Asset.ID {
-			return a.Asset.ID < b.Asset.ID
-		}
-		if a.Market.ID != b.Market.ID {
-			return a.Market.ID < b.Market.ID
-		}
-		return a.Balance < b.Balance
-	})
-	sortTrades := cmpopts.SortSlices(func(a Trade, b Trade) bool { return a.ID < b.ID })
-	sortMarkets := cmpopts.SortSlices(func(a Market, b Market) bool { return a.ID < b.ID })
-	sortProposals := cmpopts.SortSlices(func(a Proposal, b Proposal) bool { return a.ID < b.ID })
-	sortNetParams := cmpopts.SortSlices(func(a NetworkParameter, b NetworkParameter) bool { return a.Key < b.Key })
-	sortParties := cmpopts.SortSlices(func(a Party, b Party) bool { return a.ID < b.ID })
-	sortDeposits := cmpopts.SortSlices(func(a Deposit, b Deposit) bool { return a.ID < b.ID })
-	sortSpecs := cmpopts.SortSlices(func(a, b OracleSpecEdge) bool { return a.Node.DataSourceSpec.Spec.Id < b.Node.DataSourceSpec.Spec.Id })
-	sortPositions := cmpopts.SortSlices(func(a, b Position) bool {
-		if a.Party.ID != b.Party.ID {
-			return a.Party.ID < b.Party.ID
-		}
-		return a.Market.ID < b.Market.ID
-	})
-	sortTransfers := cmpopts.SortSlices(func(a Transfer, b Transfer) bool { return a.ID < b.ID })
-	sortWithdrawals := cmpopts.SortSlices(func(a, b Withdrawal) bool { return a.ID < b.ID })
-	sortOrders := cmpopts.SortSlices(func(a, b Order) bool { return a.ID < b.ID })
-	sortNodes := cmpopts.SortSlices(func(a, b Node) bool { return a.ID < b.ID })
-	sortDelegations := cmpopts.SortSlices(func(a, b Delegation) bool { return a.Party.ID < b.Party.ID })
+	goldenDir = filepath.Join(cwd, "testdata", "golden")
+	if err = vgfs.EnsureDir(goldenDir); err != nil {
+		return "", "", fmt.Errorf("couldn't create golden dir: %w", err)
+	}
 
-	// The old API has nulls for the 'UpdatedAt' field in positions
-	ignorePositionTimestamps := cmpopts.IgnoreFields(Position{}, "UpdatedAt")
-	truncateOrderNanoseconds := cmp.Transformer("truncateOrderNanoseconds", func(input Order) Order {
-		if input.UpdatedAt == "" {
-			return input
-		}
+	vegaHome, err := os.MkdirTemp("", "datanode_test")
+	if err != nil {
+		return "", "", fmt.Errorf("couldn't create temp dir: %w", err)
+	}
 
-		updatedAt, err := time.Parse(time.RFC3339Nano, input.UpdatedAt)
-		if err != nil {
-			t.Logf("could not conver order Update At timestamp: %v", err)
-			return input
-		}
+	postgresRuntimePath := filepath.Join(vegaHome, "pgdb")
 
-		input.UpdatedAt = updatedAt.Truncate(time.Microsecond).Format(time.RFC3339Nano)
-		return input
-	})
-	normaliseEthereumAddress := cmp.Transformer("normaliseEthereumAddress", func(input Node) Node {
-		input.EthereumAddress = strings.ToLower(input.EthereumAddress)
-		return input
-	})
+	if err = os.Mkdir(postgresRuntimePath, fs.ModePerm); err != nil {
+		return "", "", fmt.Errorf("couldn't create postgres runtime dir: %w", err)
+	}
 
-	diff := cmp.Diff(oldResp, newResp, removeDupVotes(), normaliseEthereumAddress, truncateOrderNanoseconds,
-		sortTrades, sortAccounts, sortMarkets, sortProposals, sortNetParams, sortParties, sortDeposits,
-		sortSpecs, sortTransfers, sortWithdrawals, sortOrders, sortNodes, sortPositions, ignorePositionTimestamps,
-		sortDelegations)
-
-	assert.Empty(t, diff)
-}
-
-func removeDupVotes() cmp.Option {
-	// This is a bit grim; in the old API you get repeated entries for votes when they are updated,
-	// which is a bug not present in the new API - so remove duplicates when comparing (and sort)
-	return cmp.Transformer("DuplicateVotes", func(in []Vote) []Vote {
-		m := make(map[string]Vote)
-		for _, vote := range in {
-			m[fmt.Sprintf("%v-%v", vote.ProposalID, vote.Party.ID)] = vote
-		}
-
-		keys := make([]string, len(m))
-		sort.Strings(keys)
-
-		out := make([]Vote, len(m))
-		for i, key := range keys {
-			out[i] = m[key]
-		}
-		return out
-	})
+	return vegaHome, postgresRuntimePath, nil
 }
 
 type queryDetails struct {
 	TestName string
 	Query    string
-	Result   any
+	Result   json.RawMessage
 	Duration time.Duration
 }
 
@@ -220,33 +169,34 @@ func assertGraphQLQueriesReturnSame(t *testing.T, query string) {
 	require.NoError(t, err, "failed to run query: '%s'; %s", query, err)
 	elapsed := time.Since(s)
 
-	niceName := strings.Replace(t.Name(), "/", "_", -1)
+	var respJsn json.RawMessage
+	respJsn, err = json.MarshalIndent(resp, "", "\t")
+	require.NoError(t, err)
+
+	niceName := strings.ReplaceAll(t.Name(), "/", "_")
 	goldenFile := filepath.Join(goldenDir, niceName)
 
 	if *writeGolden {
 		details := queryDetails{
 			TestName: niceName,
 			Query:    query,
-			Result:   resp,
+			Result:   respJsn,
 			Duration: elapsed,
 		}
-		jsonBytes, err := json.Marshal(details)
+		jsonBytes, err := json.MarshalIndent(details, "", "\t")
 		require.NoError(t, err)
 		require.NoError(t, os.WriteFile(goldenFile, jsonBytes, 0o644))
 	} else {
 		jsonBytes, err := os.ReadFile(goldenFile)
 		require.NoError(t, err, "No golden file for this test, generate one by running 'go test' with the -golden flag")
-
 		details := queryDetails{}
-		err = json.Unmarshal(jsonBytes, &details)
-		require.NoError(t, err, "Unable to unmarshal golden file")
-
+		require.NoError(t, json.Unmarshal(jsonBytes, &details), "Unable to unmarshal golden file")
 		assert.Equal(t, details.Query, query, "GraphQL query string differs from recorded in the golden file, regenerate by running 'go test' with the -golden flag")
-		compareResponses(t, resp, details.Result)
+		assert.JSONEq(t, string(respJsn), string(respJsn))
 	}
 }
 
-func newTestConfig() (*config.Config, error) {
+func newTestConfig(postgresRuntimePath string) (*config.Config, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get working directory: %w", err)
@@ -254,53 +204,48 @@ func newTestConfig() (*config.Config, error) {
 
 	cfg := config.NewDefaultConfig()
 	cfg.Broker.UseEventFile = true
-	cfg.Broker.FileEventSourceConfig.File = filepath.Join(cwd, "testdata", "smoketest_to_block_5000.evt")
+	cfg.Broker.FileEventSourceConfig.File = filepath.Join(cwd, testdataPath)
 	cfg.Broker.FileEventSourceConfig.TimeBetweenBlocks = encoding.Duration{Duration: 0}
 	cfg.API.WebUIEnabled = true
 	cfg.API.Reflection = true
-	//cfg.ChainID = "chain-ze7mNt"
-	//cfg.ChainID = "chain-exNqDX"
-	cfg.ChainID = "testnet"
-
-	testDBPort := databasetest.GetNextFreePort()
-	cfg.SQLStore = databasetest.NewTestConfig(testDBPort)
+	cfg.ChainID = chainID
+	cfg.SQLStore = databasetest.NewTestConfig(5432, postgresRuntimePath)
 
 	return &cfg, nil
 }
 
-func runTestNode(cfg *config.Config) error {
-	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
-
-	vegaHome, err := ioutil.TempDir("", "datanode_integration_test")
-	if err != nil {
-		return fmt.Errorf("Couldn't create temporary vega home: %w", err)
-	}
-
+func runTestNode(cfg *config.Config, vegaHome string, stopper chan struct{}) error {
 	vegaPaths := paths.New(vegaHome)
 
 	loader, err := config.InitialiseLoader(vegaPaths)
 	if err != nil {
-		return fmt.Errorf("Couldn't create config loader: %w", err)
+		return fmt.Errorf("couldn't create config loader: %w", err)
 	}
 
-	loader.Save(cfg)
+	if err = loader.Save(cfg); err != nil {
+		return fmt.Errorf("couldn't save config: %w", err)
+	}
 
-	configWatcher, err := config.NewWatcher(context.Background(), log, vegaPaths)
+	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
+	configWatcher, err := config.NewWatcher(context.Background(), logger, vegaPaths)
 	if err != nil {
-		log.Fatal("Couldn't set up config", logging.Error(err))
+		return fmt.Errorf("couldn't create config watcher: %w", err)
 	}
 
 	cmd := start.NodeCommand{
-		Log:         log,
+		Log:         logger,
 		Version:     "test",
 		VersionHash: "",
 	}
 
 	go func() {
-		if err := cmd.Run(configWatcher, vegaPaths, []string{}); err != nil {
-			log.Fatal("Couldn't run node", logging.Error(err))
-		}
+		<-stopper
+		cmd.Stop()
 	}()
+
+	if err = cmd.Run(configWatcher, vegaPaths, []string{}); err != nil {
+		return fmt.Errorf("couldn't run node: %w", err)
+	}
 	return nil
 }
 

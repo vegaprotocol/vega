@@ -1,1 +1,10 @@
-{"TestName":"TestNodeSignatures_NodeSignatures","Query":"{ nodeSignaturesConnection(resourceId:\"7ee15f2fc0d49687df4a791fce246d82a0b82c420d02a562e7d4bcc430e9a8c7\") { edges { node { id signature kind } } } }","Result":{"nodeSignaturesConnection":{"edges":[]}},"Duration":1005625}
+{
+	"TestName": "TestNodeSignatures_NodeSignatures",
+	"Query": "{ nodeSignaturesConnection(resourceId:\"7ee15f2fc0d49687df4a791fce246d82a0b82c420d02a562e7d4bcc430e9a8c7\") { edges { node { id signature kind } } } }",
+	"Result": {
+		"nodeSignaturesConnection": {
+			"edges": []
+		}
+	},
+	"Duration": 1025375
+}

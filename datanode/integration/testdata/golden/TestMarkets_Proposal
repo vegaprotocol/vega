@@ -1,1 +1,731 @@
-{"TestName":"TestMarkets_Proposal","Query":"{ marketsConnection{ edges { node { id, proposal{ id, reference, party { id }, state, datetime, rejectionReason} } } } }","Result":{"marketsConnection":{"edges":[{"node":{"id":"3906e9678f7939f2f2eeaca1b917cef0555b973804af4c92d2c078e2073d4f23","proposal":{"datetime":"2022-10-27T09:37:41.384678Z","id":"3906e9678f7939f2f2eeaca1b917cef0555b973804af4c92d2c078e2073d4f23","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"9E736C86C0","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"cc8f1fc70aa2adb4cd3463857b6ebeca14fe0f016e549e8a780529e5159d98e4","proposal":{"datetime":"2022-10-27T09:36:52.341218Z","id":"cc8f1fc70aa2adb4cd3463857b6ebeca14fe0f016e549e8a780529e5159d98e4","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"E1EEBBDD9E","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"e4e07815abc3c449e7e5b905c49b2bbd82e0dc39087c0e78c4b0d0072a1c86b5","proposal":{"datetime":"2022-10-27T09:36:04.185067Z","id":"e4e07815abc3c449e7e5b905c49b2bbd82e0dc39087c0e78c4b0d0072a1c86b5","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"1CD36D1C3E","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"6c847de68a525226946dc987b8ff9a3c36fd6f40637aed849f4477ac2de1b0e6","proposal":{"datetime":"2022-10-27T09:35:32.017068Z","id":"6c847de68a525226946dc987b8ff9a3c36fd6f40637aed849f4477ac2de1b0e6","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"7525A4A496","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"2dcb97a506a3aafd0765ffae3ad28258706d762ab3ca3dcc39050dff13dee1f9","proposal":{"datetime":"2022-10-27T09:34:57.248015Z","id":"2dcb97a506a3aafd0765ffae3ad28258706d762ab3ca3dcc39050dff13dee1f9","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"6E39E67B1B","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"76f1504d243d95433099ae4b7be3cf6d53c639fc5a6dfb395a2f38ed0534a9ea","proposal":{"datetime":"2022-10-27T09:34:38.573417Z","id":"76f1504d243d95433099ae4b7be3cf6d53c639fc5a6dfb395a2f38ed0534a9ea","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"6534884E17","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"5bd8ff7d276fa033999fdc476ba128afc6254e5dfb2419ca06f8293b4ac5244d","proposal":{"datetime":"2022-10-27T09:34:04.865859Z","id":"5bd8ff7d276fa033999fdc476ba128afc6254e5dfb2419ca06f8293b4ac5244d","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"0A6CAC23DD","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"8a541b43489b87c4bbbd063125227e4d9c8fc32d2193760345261117d22e7443","proposal":{"datetime":"2022-10-27T09:33:35.841654Z","id":"8a541b43489b87c4bbbd063125227e4d9c8fc32d2193760345261117d22e7443","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"34FC2E3B0A","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"fde0c8a521b54c495c55955ef70f3b2f874ac61bbc254cbf6dd4965c84c56ab6","proposal":{"datetime":"2022-10-27T09:33:02.529668Z","id":"fde0c8a521b54c495c55955ef70f3b2f874ac61bbc254cbf6dd4965c84c56ab6","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"781392BB6D","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"194bd030853c6fa1ed8aa0bb83776e787927ef99415a7df3c6b786ebc6c357c2","proposal":{"datetime":"2022-10-27T09:32:34.080543Z","id":"194bd030853c6fa1ed8aa0bb83776e787927ef99415a7df3c6b786ebc6c357c2","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"2C4B3990A8","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"419ca2c659b45bfd9d77692836ebb64be9150855ed2b9038380a7a194e0eeb7b","proposal":{"datetime":"2022-10-27T09:31:46.326635Z","id":"419ca2c659b45bfd9d77692836ebb64be9150855ed2b9038380a7a194e0eeb7b","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"51E545F82A","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"29d668e6fe5dc7f9ac5f130658bbcc071e869f6f16fa6cf0ab090191c4a6a5a6","proposal":{"datetime":"2022-10-27T09:27:58.891999Z","id":"29d668e6fe5dc7f9ac5f130658bbcc071e869f6f16fa6cf0ab090191c4a6a5a6","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"65A3CFC3D7","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"5453a65c1e6ea26c1e802ede59f484d9c4082af54c702a5d156e4ebe4081dd9a","proposal":{"datetime":"2022-10-27T09:26:43.847103Z","id":"5453a65c1e6ea26c1e802ede59f484d9c4082af54c702a5d156e4ebe4081dd9a","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"6B51724798","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"34c8ea2e14bb091067e91bc55a25d17870e000a630e796c27b61e85c9e4be6da","proposal":{"datetime":"2022-10-27T09:24:49.628158Z","id":"34c8ea2e14bb091067e91bc55a25d17870e000a630e796c27b61e85c9e4be6da","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"A2F233AC4E","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"e28982c1255c7ea26e9c7397cf3662e5166f6dd47f349cb829b9e28cc440f503","proposal":{"datetime":"2022-10-27T09:27:04.04585Z","id":"e28982c1255c7ea26e9c7397cf3662e5166f6dd47f349cb829b9e28cc440f503","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"6C7BACFC3E","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"b1bb34938b0c12f181ffd6484cc76490d524334012f5b0624cf60a66858b5368","proposal":{"datetime":"2022-10-27T09:13:09.917052Z","id":"b1bb34938b0c12f181ffd6484cc76490d524334012f5b0624cf60a66858b5368","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"E3D6DDDF4D","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"37f09417a3c610febeb290ec3fcbec316ad11aaecbcda4f2a5ec2da348828080","proposal":{"datetime":"2022-10-27T09:14:20.104438Z","id":"37f09417a3c610febeb290ec3fcbec316ad11aaecbcda4f2a5ec2da348828080","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"D8A355A9C0","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"6510c098d35d3b7aa94a97a850aa73cf0c4c6b50396567cfa3a452b724509769","proposal":{"datetime":"2022-10-27T09:14:47.669875Z","id":"6510c098d35d3b7aa94a97a850aa73cf0c4c6b50396567cfa3a452b724509769","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"2EE1CC66BD","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"74c0e2f0fa399e5ddd1533cc33f7f45b77693421194fd527b39989f552dece12","proposal":{"datetime":"2022-10-27T09:19:26.434679Z","id":"74c0e2f0fa399e5ddd1533cc33f7f45b77693421194fd527b39989f552dece12","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"DCF787F3F0","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"4379c206c3695c6d43f35a00a7cfb43cf9989ab429241dfa52839d38eeb75898","proposal":{"datetime":"2022-10-27T09:15:11.570831Z","id":"4379c206c3695c6d43f35a00a7cfb43cf9989ab429241dfa52839d38eeb75898","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"F78AB526BB","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"f16596c81b5907aded1c73cd343d2ea6ab1b1a6ad1da0bede636e3f46c72bf47","proposal":{"datetime":"2022-10-27T09:18:56.49368Z","id":"f16596c81b5907aded1c73cd343d2ea6ab1b1a6ad1da0bede636e3f46c72bf47","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"FF6D4EB69C","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"ef9f6c72b9c0ed2fe7ad29a132ef9c5d76507e601122078125dc921a37cbe5a2","proposal":{"datetime":"2022-10-27T09:15:41.054503Z","id":"ef9f6c72b9c0ed2fe7ad29a132ef9c5d76507e601122078125dc921a37cbe5a2","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"67A7DF363D","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"543afb6941a8c1c923efdad8132fd0272eafb0938a6a9fcfd5c011905c36a0e9","proposal":{"datetime":"2022-10-27T09:20:24.61531Z","id":"543afb6941a8c1c923efdad8132fd0272eafb0938a6a9fcfd5c011905c36a0e9","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"1AA94E384A","rejectionReason":null,"state":"STATE_ENACTED"}}},{"node":{"id":"9d82f5ca46d2f20d84bf79d148e15ca67e31edec25e0dabbaead1385a803ed9e","proposal":{"datetime":"2022-10-27T09:21:33.462797Z","id":"9d82f5ca46d2f20d84bf79d148e15ca67e31edec25e0dabbaead1385a803ed9e","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"888A5BE1D6","rejectionReason":null,"state":"STATE_ENACTED"}}}]}},"Duration":11721958}
+{
+	"TestName": "TestMarkets_Proposal",
+	"Query": "{ marketsConnection{ edges { node { id, proposal{ id, reference, party { id }, state, datetime, rejectionReason} } } } }",
+	"Result": {
+		"marketsConnection": {
+			"edges": [
+				{
+					"node": {
+						"id": "162397c1072a83001c4c6b98a414987b7b7412f25a2d1c9b94a4cf4709e1149a",
+						"proposal": {
+							"datetime": "2022-11-08T08:43:42.337647Z",
+							"id": "162397c1072a83001c4c6b98a414987b7b7412f25a2d1c9b94a4cf4709e1149a",
+							"party": {
+								"id": "45d1adec55094c7d9bf1ef9974338cb0cf0db922e35cfccd32bd3ae0863f945b"
+							},
+							"reference": "7DCE5FAE42",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "a612587a48a615ba3182868cd2e193b2661983cb41d8e7afa21c74d5821897a2",
+						"proposal": {
+							"datetime": "2022-11-08T08:45:03.045841Z",
+							"id": "a612587a48a615ba3182868cd2e193b2661983cb41d8e7afa21c74d5821897a2",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "35044F7DE8",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6067f86da2134e56b82f2900ab9b83a97f3daf7cb16fb211c39e87f63a9853c7",
+						"proposal": {
+							"datetime": "2022-11-08T08:52:38.240996Z",
+							"id": "6067f86da2134e56b82f2900ab9b83a97f3daf7cb16fb211c39e87f63a9853c7",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "72E1809AF0",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "0deaa2062da090d5b165dc22a8ed748744268ab2aca801dc5e9915b69a2198ef",
+						"proposal": {
+							"datetime": "2022-11-08T08:56:57.546565Z",
+							"id": "0deaa2062da090d5b165dc22a8ed748744268ab2aca801dc5e9915b69a2198ef",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "2CCF5EC403",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "de20aeb7cd22fb71702f603ae0e0cafe32fcebf0c6c8ce7cfd4c9c7aa41f7d04",
+						"proposal": {
+							"datetime": "2022-11-08T09:03:19.514994Z",
+							"id": "de20aeb7cd22fb71702f603ae0e0cafe32fcebf0c6c8ce7cfd4c9c7aa41f7d04",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "9DA44EA593",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "c6721a3034b19790c9f3618248c2c9b352f9e47d1c0f7f1d0febad52798044f4",
+						"proposal": {
+							"datetime": "2022-11-08T09:33:57.515772Z",
+							"id": "c6721a3034b19790c9f3618248c2c9b352f9e47d1c0f7f1d0febad52798044f4",
+							"party": {
+								"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+							},
+							"reference": "9AA25BA3D3",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "70a3df066de2098a63519ae66072a8c26a21be9c950ab850a516290de9f1b244",
+						"proposal": {
+							"datetime": "2022-11-08T09:32:24.83484Z",
+							"id": "70a3df066de2098a63519ae66072a8c26a21be9c950ab850a516290de9f1b244",
+							"party": {
+								"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+							},
+							"reference": "CDB56B5A45",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "625c0922eeb6fba74c5fe82f10dd460cb8c6e0e6b35d1f575a29456c972230cf",
+						"proposal": {
+							"datetime": "2022-11-08T09:26:42.67953Z",
+							"id": "625c0922eeb6fba74c5fe82f10dd460cb8c6e0e6b35d1f575a29456c972230cf",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "0D430808E3",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "a2aa9de3d9deffd9bb3d9bff1c9fe5e00b255f9140d1b97cb6dcd56a59278d5d",
+						"proposal": {
+							"datetime": "2022-11-08T09:26:24.312924Z",
+							"id": "a2aa9de3d9deffd9bb3d9bff1c9fe5e00b255f9140d1b97cb6dcd56a59278d5d",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "58A141F500",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "4c3def402473719214131430f905534fa25d06e8152e82cbea1a059e63351174",
+						"proposal": {
+							"datetime": "2022-11-08T09:30:14.891617Z",
+							"id": "4c3def402473719214131430f905534fa25d06e8152e82cbea1a059e63351174",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "4403531D45",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "1894530899e87003889a139718950c218529b7c67b008b4ec815b23f92805eea",
+						"proposal": {
+							"datetime": "2022-11-08T09:29:13.887465Z",
+							"id": "1894530899e87003889a139718950c218529b7c67b008b4ec815b23f92805eea",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "41CD23CA83",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "74beaf7257e43c8f8443d413fccd8d092608b5926aa6e78bb17747de18cb359d",
+						"proposal": {
+							"datetime": "2022-11-08T09:28:12.492146Z",
+							"id": "74beaf7257e43c8f8443d413fccd8d092608b5926aa6e78bb17747de18cb359d",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "8F2DB20482",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "47831ba264f9075387a885823ee00f66776eb39661c9c8c9b74b9eddd03d4f42",
+						"proposal": {
+							"datetime": "2022-11-08T09:27:11.707742Z",
+							"id": "47831ba264f9075387a885823ee00f66776eb39661c9c8c9b74b9eddd03d4f42",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "91538F7C41",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6d5be5173bb643bdeb2921986a1ecb5f91a28109631babb9212031838d46d124",
+						"proposal": {
+							"datetime": "2022-11-08T09:25:47.63243Z",
+							"id": "6d5be5173bb643bdeb2921986a1ecb5f91a28109631babb9212031838d46d124",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "C32FEE5D98",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "06be6ca2fb0629b183136e2195d3a8a0cb49768faf2df8a60480a2d5cb7901f1",
+						"proposal": {
+							"datetime": "2022-11-08T09:25:01.206395Z",
+							"id": "06be6ca2fb0629b183136e2195d3a8a0cb49768faf2df8a60480a2d5cb7901f1",
+							"party": {
+								"id": "c84470154b135e71c1a6b83059e381b7d746b76a13a9951c9caefa60ffaa3b04"
+							},
+							"reference": "7ECA26D2C6",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "659aca3537054a82b3d1af1fe81c405d4a9b4b4d94676e063d947b8c6c73c968",
+						"proposal": {
+							"datetime": "2022-11-08T09:21:27.824046Z",
+							"id": "659aca3537054a82b3d1af1fe81c405d4a9b4b4d94676e063d947b8c6c73c968",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "C2DD7518C0",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "210f764b1310288cd15ce1697749121642e48f278d0e2a71bf2736f20d3afb69",
+						"proposal": {
+							"datetime": "2022-11-08T09:24:20.665137Z",
+							"id": "210f764b1310288cd15ce1697749121642e48f278d0e2a71bf2736f20d3afb69",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "32820D7119",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "ebf4d62ed1a7f38b675c6355d9c1920cd3fff3b0b2d20785058a1fe2b15366de",
+						"proposal": {
+							"datetime": "2022-11-08T09:23:36.59511Z",
+							"id": "ebf4d62ed1a7f38b675c6355d9c1920cd3fff3b0b2d20785058a1fe2b15366de",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "09ED56D992",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "d96eee2a1947886fb2d9571fc51059c1c58bf39b4e303ecb1694b2aa0c30b44d",
+						"proposal": {
+							"datetime": "2022-11-08T09:20:26.91368Z",
+							"id": "d96eee2a1947886fb2d9571fc51059c1c58bf39b4e303ecb1694b2aa0c30b44d",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "FF79873A3A",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "b92cefff4ceedd6dc766cbba13656e5fbd0d50723540636950ba79865ddcc65e",
+						"proposal": {
+							"datetime": "2022-11-08T09:19:15.696933Z",
+							"id": "b92cefff4ceedd6dc766cbba13656e5fbd0d50723540636950ba79865ddcc65e",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "BEE9DB1B96",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "33a1801e41a5c69e1e91affcb8444b8c4c8c5d12d97d9f242a6541d6ee5f6ed3",
+						"proposal": {
+							"datetime": "2022-11-08T09:22:06.265248Z",
+							"id": "33a1801e41a5c69e1e91affcb8444b8c4c8c5d12d97d9f242a6541d6ee5f6ed3",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "04DC977392",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "932ffd1da9e295590f41923f7b2e0bc9d12f5ab882b9513c7a77ae026241242a",
+						"proposal": {
+							"datetime": "2022-11-08T09:18:43.290415Z",
+							"id": "932ffd1da9e295590f41923f7b2e0bc9d12f5ab882b9513c7a77ae026241242a",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "1380BA2025",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "52451b3a827e21c6cbfa021af0491c1130015ffac90329500d4d8f482d2bf927",
+						"proposal": {
+							"datetime": "2022-11-08T09:18:23.635313Z",
+							"id": "52451b3a827e21c6cbfa021af0491c1130015ffac90329500d4d8f482d2bf927",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "54C44CAB32",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "75d65ecb4f19c06e68b03f76c9abb04dfc3555b13b264e971d313249feccae7f",
+						"proposal": {
+							"datetime": "2022-11-08T09:17:59.756624Z",
+							"id": "75d65ecb4f19c06e68b03f76c9abb04dfc3555b13b264e971d313249feccae7f",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "E352990126",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "866a85e287046b855952dc1cabff2b9a33cd0b2f3895014cbbc45444024d3e48",
+						"proposal": {
+							"datetime": "2022-11-08T09:17:05.483259Z",
+							"id": "866a85e287046b855952dc1cabff2b9a33cd0b2f3895014cbbc45444024d3e48",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "25401595E0",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "97501650e5977c4852b6da07b94ccd085dc7158a462e1766d5754bd2ba3c8068",
+						"proposal": {
+							"datetime": "2022-11-08T09:16:47.662939Z",
+							"id": "97501650e5977c4852b6da07b94ccd085dc7158a462e1766d5754bd2ba3c8068",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "89510413C8",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "210a23f8613c89af4c36d1c67c3c1ca199faaf7b48078acb6324717ff0d75027",
+						"proposal": {
+							"datetime": "2022-11-08T09:16:13.53533Z",
+							"id": "210a23f8613c89af4c36d1c67c3c1ca199faaf7b48078acb6324717ff0d75027",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "35B039F737",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "e96ce4f99707a7825a46d41648f53d5da4c157b4a9b6c1f1d51731532f3221b5",
+						"proposal": {
+							"datetime": "2022-11-08T09:15:18.23247Z",
+							"id": "e96ce4f99707a7825a46d41648f53d5da4c157b4a9b6c1f1d51731532f3221b5",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "EC42D993F8",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "527b8f3885321e4ae85ca8506b6cdbf1e43bc2b66c145e5b58775317cde86297",
+						"proposal": {
+							"datetime": "2022-11-08T09:14:22.421431Z",
+							"id": "527b8f3885321e4ae85ca8506b6cdbf1e43bc2b66c145e5b58775317cde86297",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "1067E2DDE7",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "87b05e95bfc2801e568fde2679611d9b69de3266d14f4063dc18ffd12c14d5a4",
+						"proposal": {
+							"datetime": "2022-11-08T09:13:58.126703Z",
+							"id": "87b05e95bfc2801e568fde2679611d9b69de3266d14f4063dc18ffd12c14d5a4",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "0EC183B50E",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "011f1acc103c31cf9222fe12d00f7dd4d5c50b7d2b3dfae592e2a59e4c318c40",
+						"proposal": {
+							"datetime": "2022-11-08T09:13:31.399019Z",
+							"id": "011f1acc103c31cf9222fe12d00f7dd4d5c50b7d2b3dfae592e2a59e4c318c40",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "D06D606E37",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "b3c285cbdc892b50c8dfabc09a98a0562c1d04f652f049ea26872d6c8c103551",
+						"proposal": {
+							"datetime": "2022-11-08T09:13:05.589345Z",
+							"id": "b3c285cbdc892b50c8dfabc09a98a0562c1d04f652f049ea26872d6c8c103551",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "70FB6D0A10",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "739e0a602305f55484601b23abff525030a7531f46cb2c5fbda2c78f96bfb95f",
+						"proposal": {
+							"datetime": "2022-11-08T09:12:41.190233Z",
+							"id": "739e0a602305f55484601b23abff525030a7531f46cb2c5fbda2c78f96bfb95f",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "33623C81FA",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "538b3d41ba96a46ca073af7549912395753ec09810e85ce0a7630a0a5f18c49e",
+						"proposal": {
+							"datetime": "2022-11-08T09:11:39.175812Z",
+							"id": "538b3d41ba96a46ca073af7549912395753ec09810e85ce0a7630a0a5f18c49e",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "4C34783CF4",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "1e3395ff90a9cd3e6dc655116cc16e1bc9c329501c88f40facd6dc3e99d05ae0",
+						"proposal": {
+							"datetime": "2022-11-08T09:10:49.336638Z",
+							"id": "1e3395ff90a9cd3e6dc655116cc16e1bc9c329501c88f40facd6dc3e99d05ae0",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "463AEEE053",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "0f2d4d795e802240894581b345c2baa25cdad27c0f8ea10a2841eb40b9675a71",
+						"proposal": {
+							"datetime": "2022-11-08T09:10:23.676572Z",
+							"id": "0f2d4d795e802240894581b345c2baa25cdad27c0f8ea10a2841eb40b9675a71",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "3AB42786C8",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "fbdcf37f37751447ce1cca85ed4e86a6f58e059dd0cf8181fb5642416c1edb66",
+						"proposal": {
+							"datetime": "2022-11-08T09:10:04.180534Z",
+							"id": "fbdcf37f37751447ce1cca85ed4e86a6f58e059dd0cf8181fb5642416c1edb66",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "614788D5BB",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "982e50d022af5b2da9388130678a794017829e2087d6676a53912579cc3aa13e",
+						"proposal": {
+							"datetime": "2022-11-08T09:09:35.424922Z",
+							"id": "982e50d022af5b2da9388130678a794017829e2087d6676a53912579cc3aa13e",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "AC7AC90FE3",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "e35a0e2c8737d15784623e5504bd722efd2c1f22cd54948629d3bb270669cd20",
+						"proposal": {
+							"datetime": "2022-11-08T09:09:15.755736Z",
+							"id": "e35a0e2c8737d15784623e5504bd722efd2c1f22cd54948629d3bb270669cd20",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "ECBB3C0429",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "ad85f8df402c96e82c5ac2fd4571639b09b9a6f9926d135d90ed41b6279be5a6",
+						"proposal": {
+							"datetime": "2022-11-08T09:08:39.019785Z",
+							"id": "ad85f8df402c96e82c5ac2fd4571639b09b9a6f9926d135d90ed41b6279be5a6",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "CBB9C7AF99",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "627125d9f60ee847d5ad31dc35e3e3156167bf8bb8265dd24a2b23e2508ebebe",
+						"proposal": {
+							"datetime": "2022-11-08T09:08:02.29546Z",
+							"id": "627125d9f60ee847d5ad31dc35e3e3156167bf8bb8265dd24a2b23e2508ebebe",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "B6094B2518",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "1efc8147aa12101ac82b4f2ab40a465c9bee82f234cf4bc06285649b9d08d983",
+						"proposal": {
+							"datetime": "2022-11-08T09:07:25.222714Z",
+							"id": "1efc8147aa12101ac82b4f2ab40a465c9bee82f234cf4bc06285649b9d08d983",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "E164C5CEB1",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "c52efece1a48c27e1af872624ebab9e4154c8f48a58ac4382afa46743e7b9d41",
+						"proposal": {
+							"datetime": "2022-11-08T09:06:49.13118Z",
+							"id": "c52efece1a48c27e1af872624ebab9e4154c8f48a58ac4382afa46743e7b9d41",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "B5D2234A09",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "a027099269ba375bd6fbe208b6b196f65ad1f9d63979d765fe3e33e77bde11e4",
+						"proposal": {
+							"datetime": "2022-11-08T09:06:13.764442Z",
+							"id": "a027099269ba375bd6fbe208b6b196f65ad1f9d63979d765fe3e33e77bde11e4",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "03938FDAD9",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "3c3f313d8d7e0001ce1d15eae515b2d1597cb8444954bbc7c5fbe915497430b6",
+						"proposal": {
+							"datetime": "2022-11-08T09:05:36.273866Z",
+							"id": "3c3f313d8d7e0001ce1d15eae515b2d1597cb8444954bbc7c5fbe915497430b6",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "21A9CC76F0",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "4ff258ac39c4291c85af052c5c7a1e2bd51a6b9c016497c6b52dca023df94b88",
+						"proposal": {
+							"datetime": "2022-11-08T09:04:59.952743Z",
+							"id": "4ff258ac39c4291c85af052c5c7a1e2bd51a6b9c016497c6b52dca023df94b88",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "0F607E0F23",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6044636f22c644be52edf7d2d95fd5247deffdfbbdc138cee4e8ef145e5584a7",
+						"proposal": {
+							"datetime": "2022-11-08T09:04:22.907603Z",
+							"id": "6044636f22c644be52edf7d2d95fd5247deffdfbbdc138cee4e8ef145e5584a7",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "892BA0EEDE",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "32d8179f8ce6965e751bd0745bfdf20bb4916546e50c080a5571fe6c3a834f4e",
+						"proposal": {
+							"datetime": "2022-11-08T09:03:50.352773Z",
+							"id": "32d8179f8ce6965e751bd0745bfdf20bb4916546e50c080a5571fe6c3a834f4e",
+							"party": {
+								"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+							},
+							"reference": "610BD9CFBB",
+							"rejectionReason": null,
+							"state": "STATE_ENACTED"
+						}
+					}
+				}
+			]
+		}
+	},
+	"Duration": 20169500
+}

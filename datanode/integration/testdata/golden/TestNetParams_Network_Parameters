@@ -1,1 +1,659 @@
-{"TestName":"TestNetParams_Network_Parameters","Query":"{ networkParametersConnection{ edges { node { key, value } } } }","Result":{"networkParametersConnection":{"edges":[{"node":{"key":"blockchains.ethereumConfig","value":"{\"network_id\": \"1441\", \"chain_id\": \"1440\", \"collateral_bridge_contract\": { \"address\": \"0x9708FF7510D4A7B9541e1699d15b53Ecb1AFDc54\" }, \"confirmations\": 3, \"staking_bridge_contract\": { \"address\": \"0x9135f5afd6F055e731bca2348429482eE614CFfA\", \"deployment_block_height\": 0}, \"token_vesting_contract\": { \"address\": \"0xF41bD86d462D36b997C0bbb4D97a0a3382f205B7\", \"deployment_block_height\": 0 }, \"multisig_control_contract\": { \"address\": \"0xdEcdA30fd3449718304eA201A8f220eBdE25dd1E\", \"deployment_block_height\": 0 }}"}},{"node":{"key":"governance.proposal.asset.maxClose","value":"8760h0m0s"}},{"node":{"key":"governance.proposal.asset.maxEnact","value":"8760h0m0s"}},{"node":{"key":"governance.proposal.asset.minClose","value":"5s"}},{"node":{"key":"governance.proposal.asset.minEnact","value":"5s"}},{"node":{"key":"governance.proposal.asset.minProposerBalance","value":"2000000000000000000"}},{"node":{"key":"governance.proposal.asset.minVoterBalance","value":"2000000000000000000"}},{"node":{"key":"governance.proposal.asset.requiredMajority","value":"0.66"}},{"node":{"key":"governance.proposal.asset.requiredParticipation","value":"0.00000015"}},{"node":{"key":"governance.proposal.freeform.maxClose","value":"8760h0m0s"}},{"node":{"key":"governance.proposal.freeform.minClose","value":"5s"}},{"node":{"key":"governance.proposal.freeform.minProposerBalance","value":"1"}},{"node":{"key":"governance.proposal.freeform.minVoterBalance","value":"1"}},{"node":{"key":"governance.proposal.freeform.requiredMajority","value":"0.66"}},{"node":{"key":"governance.proposal.freeform.requiredParticipation","value":"0.00000015"}},{"node":{"key":"governance.proposal.market.maxClose","value":"8760h0m0s"}},{"node":{"key":"governance.proposal.market.maxEnact","value":"8760h0m0s"}},{"node":{"key":"governance.proposal.market.minClose","value":"5s"}},{"node":{"key":"governance.proposal.market.minEnact","value":"5s"}},{"node":{"key":"governance.proposal.market.minProposerBalance","value":"2000000000000000000"}},{"node":{"key":"governance.proposal.market.minVoterBalance","value":"2000000000000000000"}},{"node":{"key":"governance.proposal.market.requiredMajority","value":"0.66"}},{"node":{"key":"governance.proposal.market.requiredParticipation","value":"0.00000015"}},{"node":{"key":"governance.proposal.updateAsset.maxClose","value":"8760h0m0s"}},{"node":{"key":"governance.proposal.updateAsset.maxEnact","value":"8760h0m0s"}},{"node":{"key":"governance.proposal.updateAsset.minClose","value":"5s"}},{"node":{"key":"governance.proposal.updateAsset.minEnact","value":"5s"}},{"node":{"key":"governance.proposal.updateAsset.minProposerBalance","value":"2000000000000000000"}},{"node":{"key":"governance.proposal.updateAsset.minVoterBalance","value":"2000000000000000000"}},{"node":{"key":"governance.proposal.updateAsset.requiredMajority","value":"0.66"}},{"node":{"key":"governance.proposal.updateAsset.requiredParticipation","value":"0.00000015"}},{"node":{"key":"governance.proposal.updateMarket.maxClose","value":"8760h0m0s"}},{"node":{"key":"governance.proposal.updateMarket.maxEnact","value":"8760h0m0s"}},{"node":{"key":"governance.proposal.updateMarket.minClose","value":"5s"}},{"node":{"key":"governance.proposal.updateMarket.minEnact","value":"5s"}},{"node":{"key":"governance.proposal.updateMarket.minProposerBalance","value":"2000000000000000000"}},{"node":{"key":"governance.proposal.updateMarket.minProposerEquityLikeShare","value":"0.66"}},{"node":{"key":"governance.proposal.updateMarket.minVoterBalance","value":"2000000000000000000"}},{"node":{"key":"governance.proposal.updateMarket.requiredMajority","value":"0.66"}},{"node":{"key":"governance.proposal.updateMarket.requiredMajorityLP","value":"0.66"}},{"node":{"key":"governance.proposal.updateMarket.requiredParticipation","value":"0.00000015"}},{"node":{"key":"governance.proposal.updateMarket.requiredParticipationLP","value":"0.00001"}},{"node":{"key":"governance.proposal.updateNetParam.maxClose","value":"8760h0m0s"}},{"node":{"key":"governance.proposal.updateNetParam.maxEnact","value":"8760h0m0s"}},{"node":{"key":"governance.proposal.updateNetParam.minClose","value":"5s"}},{"node":{"key":"governance.proposal.updateNetParam.minEnact","value":"5s"}},{"node":{"key":"governance.proposal.updateNetParam.minProposerBalance","value":"2000000000000000000"}},{"node":{"key":"governance.proposal.updateNetParam.minVoterBalance","value":"2000000000000000000"}},{"node":{"key":"governance.proposal.updateNetParam.requiredMajority","value":"0.66"}},{"node":{"key":"governance.proposal.updateNetParam.requiredParticipation","value":"0.00000015"}},{"node":{"key":"limits.assets.proposeEnabledFrom","value":"2021-12-17T14:34:26Z"}},{"node":{"key":"limits.markets.proposeEnabledFrom","value":"2021-12-17T14:34:26Z"}},{"node":{"key":"market.auction.maximumDuration","value":"168h0m0s"}},{"node":{"key":"market.auction.minimumDuration","value":"1s"}},{"node":{"key":"market.fee.factors.infrastructureFee","value":"0.001"}},{"node":{"key":"market.fee.factors.makerFee","value":"0.004"}},{"node":{"key":"market.liquidity.bondPenaltyParameter","value":"0.1"}},{"node":{"key":"market.liquidity.maximumLiquidityFeeFactorLevel","value":"0.3"}},{"node":{"key":"market.liquidity.minimum.probabilityOfTrading.lpOrders","value":"1e-8"}},{"node":{"key":"market.liquidity.probabilityOfTrading.tau.scaling","value":"1"}},{"node":{"key":"market.liquidity.providers.fee.distributionTimeStep","value":"0s"}},{"node":{"key":"market.liquidity.stakeToCcySiskas","value":"0.2"}},{"node":{"key":"market.liquidity.targetstake.triggering.ratio","value":"0"}},{"node":{"key":"market.liquidityProvision.minLpStakeQuantumMultiple","value":"1"}},{"node":{"key":"market.liquidityProvision.shapes.maxSize","value":"10"}},{"node":{"key":"market.margin.scalingFactors","value":"{\"search_level\": 1.1, \"initial_margin\": 1.2, \"collateral_release\": 1.4}"}},{"node":{"key":"market.monitor.price.defaultParameters","value":"{\"triggers\": []}"}},{"node":{"key":"market.stake.target.scalingFactor","value":"5"}},{"node":{"key":"market.stake.target.timeWindow","value":"10s"}},{"node":{"key":"market.value.windowLength","value":"60s"}},{"node":{"key":"network.checkpoint.timeElapsedBetweenCheckpoints","value":"10s"}},{"node":{"key":"network.floatingPointUpdates.delay","value":"5m"}},{"node":{"key":"network.validators.ersatz.multipleOfTendermintValidators","value":"0.5"}},{"node":{"key":"network.validators.ersatz.rewardFactor","value":"0.5"}},{"node":{"key":"network.validators.incumbentBonus","value":"1"}},{"node":{"key":"network.validators.minimumEthereumEventsForNewValidator","value":"3"}},{"node":{"key":"network.validators.multisig.numberOfSigners","value":"13"}},{"node":{"key":"network.validators.tendermint.number","value":"30"}},{"node":{"key":"reward.asset","value":"b4f2726571fbe8e33b442dc92ed2d7f0d810e21835b7371a7915a365f07ccd9b"}},{"node":{"key":"reward.staking.delegation.competitionLevel","value":"1.1"}},{"node":{"key":"reward.staking.delegation.delegatorShare","value":"0.883"}},{"node":{"key":"reward.staking.delegation.maxPayoutPerEpoch","value":"7000000000000000000000"}},{"node":{"key":"reward.staking.delegation.maxPayoutPerParticipant","value":"0"}},{"node":{"key":"reward.staking.delegation.minValidators","value":"3"}},{"node":{"key":"reward.staking.delegation.minimumValidatorStake","value":"3000000000000000000"}},{"node":{"key":"reward.staking.delegation.optimalStakeMultiplier","value":"3.0"}},{"node":{"key":"reward.staking.delegation.payoutDelay","value":"0s"}},{"node":{"key":"reward.staking.delegation.payoutFraction","value":".1"}},{"node":{"key":"rewards.marketCreationQuantumMultiple","value":"10000000"}},{"node":{"key":"snapshot.interval.length","value":"12"}},{"node":{"key":"spam.pow.difficulty","value":"4"}},{"node":{"key":"spam.pow.hashFunction","value":"sha3_24_rounds"}},{"node":{"key":"spam.pow.increaseDifficulty","value":"0"}},{"node":{"key":"spam.pow.numberOfPastBlocks","value":"100"}},{"node":{"key":"spam.pow.numberOfTxPerBlock","value":"100"}},{"node":{"key":"spam.protection.delegation.min.tokens","value":"1000000000000000000"}},{"node":{"key":"spam.protection.max.batchSize","value":"15"}},{"node":{"key":"spam.protection.max.delegations","value":"3"}},{"node":{"key":"spam.protection.max.proposals","value":"3"}},{"node":{"key":"spam.protection.max.votes","value":"3"}},{"node":{"key":"spam.protection.maxUserTransfersPerEpoch","value":"20"}},{"node":{"key":"spam.protection.proposal.min.tokens","value":"1000000000000000000"}},{"node":{"key":"spam.protection.voting.min.tokens","value":"1000000000000000000"}},{"node":{"key":"transfer.fee.factor","value":"0.001"}},{"node":{"key":"transfer.minTransferQuantumMultiple","value":"0.1"}},{"node":{"key":"validators.delegation.minAmount","value":"1000000000000000000"}},{"node":{"key":"validators.epoch.length","value":"30s"}},{"node":{"key":"validators.vote.required","value":"0.67"}}]}},"Duration":2452875}
+{
+	"TestName": "TestNetParams_Network_Parameters",
+	"Query": "{ networkParametersConnection{ edges { node { key, value } } } }",
+	"Result": {
+		"networkParametersConnection": {
+			"edges": [
+				{
+					"node": {
+						"key": "blockchains.ethereumConfig",
+						"value": "{\"network_id\": \"1441\", \"chain_id\": \"1440\", \"collateral_bridge_contract\": { \"address\": \"0x9708FF7510D4A7B9541e1699d15b53Ecb1AFDc54\" }, \"confirmations\": 3, \"staking_bridge_contract\": { \"address\": \"0x9135f5afd6F055e731bca2348429482eE614CFfA\", \"deployment_block_height\": 0}, \"token_vesting_contract\": { \"address\": \"0xF41bD86d462D36b997C0bbb4D97a0a3382f205B7\", \"deployment_block_height\": 0 }, \"multisig_control_contract\": { \"address\": \"0xdEcdA30fd3449718304eA201A8f220eBdE25dd1E\", \"deployment_block_height\": 0 }}"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.asset.maxClose",
+						"value": "8760h0m0s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.asset.maxEnact",
+						"value": "8760h0m0s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.asset.minClose",
+						"value": "5s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.asset.minEnact",
+						"value": "5s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.asset.minProposerBalance",
+						"value": "2000000000000000000"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.asset.minVoterBalance",
+						"value": "2000000000000000000"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.asset.requiredMajority",
+						"value": "0.66"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.asset.requiredParticipation",
+						"value": "0.00000015"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.freeform.maxClose",
+						"value": "8760h0m0s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.freeform.minClose",
+						"value": "5s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.freeform.minProposerBalance",
+						"value": "1"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.freeform.minVoterBalance",
+						"value": "1"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.freeform.requiredMajority",
+						"value": "0.66"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.freeform.requiredParticipation",
+						"value": "0.00000015"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.market.maxClose",
+						"value": "8760h0m0s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.market.maxEnact",
+						"value": "8760h0m0s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.market.minClose",
+						"value": "5s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.market.minEnact",
+						"value": "5s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.market.minProposerBalance",
+						"value": "2000000000000000000"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.market.minVoterBalance",
+						"value": "2000000000000000000"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.market.requiredMajority",
+						"value": "0.66"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.market.requiredParticipation",
+						"value": "0.00000015"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateAsset.maxClose",
+						"value": "8760h0m0s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateAsset.maxEnact",
+						"value": "8760h0m0s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateAsset.minClose",
+						"value": "5s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateAsset.minEnact",
+						"value": "5s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateAsset.minProposerBalance",
+						"value": "2000000000000000000"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateAsset.minVoterBalance",
+						"value": "2000000000000000000"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateAsset.requiredMajority",
+						"value": "0.66"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateAsset.requiredParticipation",
+						"value": "0.00000015"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateMarket.maxClose",
+						"value": "8760h0m0s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateMarket.maxEnact",
+						"value": "8760h0m0s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateMarket.minClose",
+						"value": "5s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateMarket.minEnact",
+						"value": "5s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateMarket.minProposerBalance",
+						"value": "2000000000000000000"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateMarket.minProposerEquityLikeShare",
+						"value": "0.66"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateMarket.minVoterBalance",
+						"value": "2000000000000000000"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateMarket.requiredMajority",
+						"value": "0.66"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateMarket.requiredMajorityLP",
+						"value": "0.66"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateMarket.requiredParticipation",
+						"value": "0.00000015"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateMarket.requiredParticipationLP",
+						"value": "0.00001"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateNetParam.maxClose",
+						"value": "8760h0m0s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateNetParam.maxEnact",
+						"value": "8760h0m0s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateNetParam.minClose",
+						"value": "5s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateNetParam.minEnact",
+						"value": "5s"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateNetParam.minProposerBalance",
+						"value": "2000000000000000000"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateNetParam.minVoterBalance",
+						"value": "2000000000000000000"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateNetParam.requiredMajority",
+						"value": "0.66"
+					}
+				},
+				{
+					"node": {
+						"key": "governance.proposal.updateNetParam.requiredParticipation",
+						"value": "0.00000015"
+					}
+				},
+				{
+					"node": {
+						"key": "limits.assets.proposeEnabledFrom",
+						"value": "2021-12-17T14:34:26Z"
+					}
+				},
+				{
+					"node": {
+						"key": "limits.markets.proposeEnabledFrom",
+						"value": "2021-12-17T14:34:26Z"
+					}
+				},
+				{
+					"node": {
+						"key": "market.auction.maximumDuration",
+						"value": "168h0m0s"
+					}
+				},
+				{
+					"node": {
+						"key": "market.auction.minimumDuration",
+						"value": "1s"
+					}
+				},
+				{
+					"node": {
+						"key": "market.fee.factors.infrastructureFee",
+						"value": "0.001"
+					}
+				},
+				{
+					"node": {
+						"key": "market.fee.factors.makerFee",
+						"value": "0.004"
+					}
+				},
+				{
+					"node": {
+						"key": "market.liquidity.bondPenaltyParameter",
+						"value": "0.1"
+					}
+				},
+				{
+					"node": {
+						"key": "market.liquidity.maximumLiquidityFeeFactorLevel",
+						"value": "0.3"
+					}
+				},
+				{
+					"node": {
+						"key": "market.liquidity.minimum.probabilityOfTrading.lpOrders",
+						"value": "1e-8"
+					}
+				},
+				{
+					"node": {
+						"key": "market.liquidity.probabilityOfTrading.tau.scaling",
+						"value": "1"
+					}
+				},
+				{
+					"node": {
+						"key": "market.liquidity.providers.fee.distributionTimeStep",
+						"value": "0s"
+					}
+				},
+				{
+					"node": {
+						"key": "market.liquidity.stakeToCcySiskas",
+						"value": "0.2"
+					}
+				},
+				{
+					"node": {
+						"key": "market.liquidity.targetstake.triggering.ratio",
+						"value": "0"
+					}
+				},
+				{
+					"node": {
+						"key": "market.liquidityProvision.minLpStakeQuantumMultiple",
+						"value": "1"
+					}
+				},
+				{
+					"node": {
+						"key": "market.liquidityProvision.shapes.maxSize",
+						"value": "10"
+					}
+				},
+				{
+					"node": {
+						"key": "market.margin.scalingFactors",
+						"value": "{\"search_level\": 1.1, \"initial_margin\": 1.2, \"collateral_release\": 1.4}"
+					}
+				},
+				{
+					"node": {
+						"key": "market.monitor.price.defaultParameters",
+						"value": "{\"triggers\": []}"
+					}
+				},
+				{
+					"node": {
+						"key": "market.stake.target.scalingFactor",
+						"value": "5"
+					}
+				},
+				{
+					"node": {
+						"key": "market.stake.target.timeWindow",
+						"value": "10s"
+					}
+				},
+				{
+					"node": {
+						"key": "market.value.windowLength",
+						"value": "60s"
+					}
+				},
+				{
+					"node": {
+						"key": "network.checkpoint.timeElapsedBetweenCheckpoints",
+						"value": "10s"
+					}
+				},
+				{
+					"node": {
+						"key": "network.floatingPointUpdates.delay",
+						"value": "5m"
+					}
+				},
+				{
+					"node": {
+						"key": "network.validators.ersatz.multipleOfTendermintValidators",
+						"value": "0.5"
+					}
+				},
+				{
+					"node": {
+						"key": "network.validators.ersatz.rewardFactor",
+						"value": "0.5"
+					}
+				},
+				{
+					"node": {
+						"key": "network.validators.incumbentBonus",
+						"value": "1"
+					}
+				},
+				{
+					"node": {
+						"key": "network.validators.minimumEthereumEventsForNewValidator",
+						"value": "3"
+					}
+				},
+				{
+					"node": {
+						"key": "network.validators.multisig.numberOfSigners",
+						"value": "13"
+					}
+				},
+				{
+					"node": {
+						"key": "network.validators.tendermint.number",
+						"value": "30"
+					}
+				},
+				{
+					"node": {
+						"key": "reward.asset",
+						"value": "b4f2726571fbe8e33b442dc92ed2d7f0d810e21835b7371a7915a365f07ccd9b"
+					}
+				},
+				{
+					"node": {
+						"key": "reward.staking.delegation.competitionLevel",
+						"value": "1.1"
+					}
+				},
+				{
+					"node": {
+						"key": "reward.staking.delegation.delegatorShare",
+						"value": "0.883"
+					}
+				},
+				{
+					"node": {
+						"key": "reward.staking.delegation.maxPayoutPerEpoch",
+						"value": "7000000000000000000000"
+					}
+				},
+				{
+					"node": {
+						"key": "reward.staking.delegation.maxPayoutPerParticipant",
+						"value": "0"
+					}
+				},
+				{
+					"node": {
+						"key": "reward.staking.delegation.minValidators",
+						"value": "3"
+					}
+				},
+				{
+					"node": {
+						"key": "reward.staking.delegation.minimumValidatorStake",
+						"value": "0"
+					}
+				},
+				{
+					"node": {
+						"key": "reward.staking.delegation.optimalStakeMultiplier",
+						"value": "3.0"
+					}
+				},
+				{
+					"node": {
+						"key": "reward.staking.delegation.payoutDelay",
+						"value": "0s"
+					}
+				},
+				{
+					"node": {
+						"key": "reward.staking.delegation.payoutFraction",
+						"value": ".1"
+					}
+				},
+				{
+					"node": {
+						"key": "rewards.marketCreationQuantumMultiple",
+						"value": "10000000"
+					}
+				},
+				{
+					"node": {
+						"key": "snapshot.interval.length",
+						"value": "12"
+					}
+				},
+				{
+					"node": {
+						"key": "spam.pow.difficulty",
+						"value": "4"
+					}
+				},
+				{
+					"node": {
+						"key": "spam.pow.hashFunction",
+						"value": "sha3_24_rounds"
+					}
+				},
+				{
+					"node": {
+						"key": "spam.pow.increaseDifficulty",
+						"value": "0"
+					}
+				},
+				{
+					"node": {
+						"key": "spam.pow.numberOfPastBlocks",
+						"value": "100"
+					}
+				},
+				{
+					"node": {
+						"key": "spam.pow.numberOfTxPerBlock",
+						"value": "100"
+					}
+				},
+				{
+					"node": {
+						"key": "spam.protection.delegation.min.tokens",
+						"value": "1000000000000000000"
+					}
+				},
+				{
+					"node": {
+						"key": "spam.protection.max.batchSize",
+						"value": "15"
+					}
+				},
+				{
+					"node": {
+						"key": "spam.protection.max.delegations",
+						"value": "3"
+					}
+				},
+				{
+					"node": {
+						"key": "spam.protection.max.proposals",
+						"value": "3"
+					}
+				},
+				{
+					"node": {
+						"key": "spam.protection.max.votes",
+						"value": "3"
+					}
+				},
+				{
+					"node": {
+						"key": "spam.protection.maxUserTransfersPerEpoch",
+						"value": "20"
+					}
+				},
+				{
+					"node": {
+						"key": "spam.protection.proposal.min.tokens",
+						"value": "1000000000000000000"
+					}
+				},
+				{
+					"node": {
+						"key": "spam.protection.voting.min.tokens",
+						"value": "1000000000000000000"
+					}
+				},
+				{
+					"node": {
+						"key": "transfer.fee.factor",
+						"value": "0.001"
+					}
+				},
+				{
+					"node": {
+						"key": "transfer.minTransferQuantumMultiple",
+						"value": "0.1"
+					}
+				},
+				{
+					"node": {
+						"key": "validators.delegation.minAmount",
+						"value": "1000000000000000000"
+					}
+				},
+				{
+					"node": {
+						"key": "validators.epoch.length",
+						"value": "5s"
+					}
+				},
+				{
+					"node": {
+						"key": "validators.vote.required",
+						"value": "0.67"
+					}
+				}
+			]
+		}
+	},
+	"Duration": 2138209
+}

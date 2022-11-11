@@ -16,7 +16,7 @@ import "testing"
 
 func TestOracles(t *testing.T) {
 	queries := map[string]string{
-		"OracleDataSource":     `{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt config { signers { signer { ... on ETHAddress{ address } ... on PubKey{ key } } } } status } } } } } }`,
+		"OracleDataSource":     `{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt status data { sourceType { ... on DataSourceDefinitionExternal { sourceType { ... on DataSourceSpecConfiguration { signers { signer { ... on ETHAddress { address } ... on PubKey { key } } } } } } } } } } } } } }`,
 		"OracleDataConnection": `{ oracleSpecsConnection { edges { node { dataConnection { edges { node { externalData { data { matchedSpecIds broadcastAt } } } } } } } } }`,
 	}
 

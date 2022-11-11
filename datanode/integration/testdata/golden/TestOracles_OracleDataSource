@@ -1,1 +1,2236 @@
-{"TestName":"TestOracles_OracleDataSource","Query":"{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt config { signers { signer { ... on ETHAddress{ address } ... on PubKey{ key } } } } status } } } } } }","Result":{"oracleSpecsConnection":{"edges":[{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863297248015000","id":"f81be2edd0db5185ca1aac004edb1f72f0c0823a805ca3d679db5f3e900fb8d1","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862111570831000","id":"f5985313ee34c7e3cc15724503fbeece5b3b480785e8ee3433f2c8fb9d035b15","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862689628158000","id":"f0ae796b6bd5b4e695716fd11c4ebc04bd11e9936f6d3149c333629e4132c3fe","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863364185067000","id":"e51ba53db59967219146d007bb41f3fdf6450955056de2cc92d29906b65bf944","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666861989917052000","id":"e1c499dcef4f8eca25e89dcbff0042ddb8495e93e4ca73cc8fd17ecb0a737147","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863461384678000","id":"def64bc03fdec683a001493af705c8a5427ee441bed301d847a1a3f6cbd0938c","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862141054503000","id":"d6c46eed4a32b6cba57326dfbabf499424b1cafe100b93b46e62e96e7ffafa4e","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863182529668000","id":"d20cfd3953f7427c388c7106f5d74bdddee67b2dd6d6655bb64d35a61163ca6c","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862141054503000","id":"c930341bb44ab542abdace08c8e7484528aa052b0af4d940b3143df825ab6d7b","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862824045850000","id":"c7275a71dbc204aa9230bc53a80714317bd73836092476418081297a065b3e54","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863461384678000","id":"c2fcbef6587b3be239cf04b934ca80e351d3c1014c9ba115a8b7622174d84c0a","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862824045850000","id":"c08e84ac7b629c5b2657fcd2ca923c2293cbf8928e5f304c29695d5641c55832","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863147143085000","id":"be03e797caff8766d0cb0f20256695c415dc0c7e7fcf53c7f68836b2f494d67e","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863412341218000","id":"b26f2954cda2d7bac344f3a81c173ba87b9b483b20810a06f68f72224d271c81","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862493462797000","id":"988f8586f93873e4e7528da522bfe08e55efc1ae431258316bda28b7caf4a72f","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863182529668000","id":"94ad11763feab08d0bc4e32f6fc3efb66915bb8977ae692271f45407f9a9c667","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863244865859000","id":"8f326947835befec76e4c29cce0f577776c72867586d85ab2b1b1b732d493fe4","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862878891999000","id":"8eb1f1a669f810348aa3fb7da2c8dcbb14b4af607bde11fc13fe0971303b08f9","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862424615310000","id":"8afb12badeb98fa956e2c9b655ea62630c8d14303803c443662dc993d5cc6136","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863244865859000","id":"828357f3991247438755d74cd26d95da51690e9b32a88cd4204a9621a9a90299","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862111570831000","id":"7e480ee11ec1abe4e07f9810cab5c7139885b1b1e8c854eddb9be7c31212b3c0","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863154080543000","id":"79808e52e5ed0d82d075a4d9d698c4f580884b00dba1f32604bff4221bf7274b","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862060104438000","id":"797cfad24d737c5fedcb1a6dcdd37160fba3d3ad58fe5e5e71a91e7e6ef3199d","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666861989917052000","id":"6f74e13f3ee511b084fade9b6e216c35fd4e4ca89a638ef6cb12f627b1403d5a","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862336493680000","id":"693bc046e5397d508022bdbfe6b06ca634d84cbe0360536e7fad43deadf3477f","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863364185067000","id":"68c5190c0ca56669125141855df03db790ab99a0c10969371d8b5afe4ddd92d1","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862366434679000","id":"63d59bc285d394eeb7647ebb0eb4a9affca60cedb34d01b43c337aefbb9c0e1a","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862878891999000","id":"5f392010c14fd82c6671c8b0ce7712239f5add20969136064c5e3d8a511263dd","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863154080543000","id":"5c9382ded2cd39b78d3992f55c380e6facf74a3edea987540f084dd3a376890b","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862366434679000","id":"50fc85c5ec7a8a8c95510c6e02ecc55c9756199064909a1f7b1949e74b0593d8","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862493462797000","id":"4bffd0bde1955400ee4b09ad675e13e3b45551d2dc541e39d768ab0fcd2fea5d","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862060104438000","id":"483dd7e7060b9fee335ef1c89f294aaa22954b9e5a2ed73f4e48e4a76342da6c","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862689628158000","id":"4701bba079f6ba1f1837b2fafb0f763fef4d8685ed69359f90cf45ca2b2c044c","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863297248015000","id":"44027c6f3a68d6279aec2848919fe0ec529d011ee38605ad84423d2c78ba4da1","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863278573417000","id":"3a9829b4364072148710c92b05ac26ef3e47594cf2a947ef7b480593a0584fa0","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863215841654000","id":"3a15b5d8efa98db021ee3a06c579b58049a5a6e5cd5daf5a92e5f6a3749013e8","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863332017068000","id":"399723460918d20f65a9ceefb5f0f4b50002779a8c671b78d52b77beaa78e0e6","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863147143085000","id":"3647c4272294039760986da8cd8ce217a0d8cae48a7923b7ee7b5dc0fc89cd78","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863215841654000","id":"361ab4420b350360f3aced3028e5f44ebbbe8ad90a2871af57c4b26d3c35fe3b","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862336493680000","id":"34d5c0f28edd617ee90f59bfeb00e47a67928c2d56c99ee3b8bf9b7cdb598a0a","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863278573417000","id":"2f7325ccd5f9ffd74b6f95bc4b28b539a3463f28508951fa4993fde4543c8243","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862803847103000","id":"2462f445de240225ed13b4cea13b205017325f499e2f74794bc0c8103fdbe448","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862087669875000","id":"1f7aaaf39da2c1d853586f8c9d129df7e33519fa5a08a34ca7b25340ae413518","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862803847103000","id":"1a633c6120a060701805260d4c7f66325dfab9ba0f8432b770ce28f6cba03606","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862424615310000","id":"184f2c6d71e7eb975ce0f0b3fa8e6d1d8995f72e98c8d02d9e3751fe99b6acf0","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863332017068000","id":"16b5d61b2efa9a7e981a97aa01c98a9a825e00d2b185201b4d1fa8c0c2ad2c3f","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666863412341218000","id":"1454b4fff193c1a621a1ec63e96a2ff0302ec26f633894eb66fc3c4cc3b87e59","status":"STATUS_ACTIVE","updatedAt":"0"}}}},{"node":{"dataSourceSpec":{"spec":{"config":{"signers":[{"signer":{"key":"63643132626536363837633736653336333065343763353037373665643365336166656464663536336263396433376137333931366266376138343833646133"}}]},"createdAt":"1666862087669875000","id":"1206437073bab000e0812fbb5800a096cd695b1eaff2396e274c20d4a720eff4","status":"STATUS_ACTIVE","updatedAt":"0"}}}}]}},"Duration":2878083}
+{
+	"TestName": "TestOracles_OracleDataSource",
+	"Query": "{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt status data { sourceType { ... on DataSourceDefinitionExternal { sourceType { ... on DataSourceSpecConfiguration { signers { signer { ... on ETHAddress { address } ... on PubKey { key } } } } } } } } } } } } } }",
+	"Result": {
+		"oracleSpecsConnection": {
+			"edges": [
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898409131180000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "fe60f8c8906cff3dc44e75aa05083a80297765c92bbdf838593441a65529f2d3",
+								"status": "spec:{id:\"fe60f8c8906cff3dc44e75aa05083a80297765c92bbdf838593441a65529f2d3\" created_at:1667898409131180000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.termination5FF9E\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899547632430000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "62386338656433663739663730306439656237383162636336333233326537396534326663386535323061616562336362393934613638373232363534383564"
+													}
+												},
+												{
+													"signer": {
+														"key": "32356630333265326565643431396239653565356365383335613133333438313830613435333635333837383535313730663234303735656563356465616637"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "fdc348a84805bff3768c87f49cfaa23fe869f8c296810856b10559a05a53f695",
+								"status": "spec:{id:\"fdc348a84805bff3768c87f49cfaa23fe869f8c296810856b10559a05a53f695\" created_at:1667899547632430000 data:{external:{oracle:{signers:{pub_key:{key:\"62386338656433663739663730306439656237383162636336333233326537396534326663386535323061616562336362393934613638373232363534383564\"}} signers:{pub_key:{key:\"32356630333265326565643431396239653565356365383335613133333438313830613435333635333837383535313730663234303735656563356465616637\"}} filters:{key:{name:\"oracle.test.settlementA7F79\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"0\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899814891617000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "66434541644146616231346434366532303134344634383832346430433039423161303346324243"
+													}
+												},
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "f6203c106f89f3b00365b83a89c4e1347010f990bd80d92ba19fbd5363b41476",
+								"status": "spec:{id:\"f6203c106f89f3b00365b83a89c4e1347010f990bd80d92ba19fbd5363b41476\" created_at:1667899814891617000 data:{external:{oracle:{signers:{pub_key:{key:\"66434541644146616231346434366532303134344634383832346430433039423161303346324243\"}} signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"vegaprotocol.builtin.timestamp\" type:TYPE_TIMESTAMP} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"1667899874\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898230352773000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "f5791b93f723a7d5be70cb9853da55e1493a3aa967c688bfa49a730547912ad5",
+								"status": "spec:{id:\"f5791b93f723a7d5be70cb9853da55e1493a3aa967c688bfa49a730547912ad5\" created_at:1667898230352773000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.termination0BF54\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898262907603000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "f2b2a1622286005fe9aef76c96a522ba1d0f9ef7721865c0a56a9eb8025e5422",
+								"status": "spec:{id:\"f2b2a1622286005fe9aef76c96a522ba1d0f9ef7721865c0a56a9eb8025e5422\" created_at:1667898262907603000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.terminationA36F5\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898682149607000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "ecae82ae4cdf4ecabda80b25cddf9ac8087938c467021533f77a11b4c12b513e",
+								"status": "spec:{id:\"ecae82ae4cdf4ecabda80b25cddf9ac8087938c467021533f77a11b4c12b513e\" created_at:1667898682149607000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.terminationEB07C\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898604180534000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "e9f35963f86285506c05722e0f6e029f681a44b903e40ff28ac28e62bf8c1936",
+								"status": "spec:{id:\"e9f35963f86285506c05722e0f6e029f681a44b903e40ff28ac28e62bf8c1936\" created_at:1667898604180534000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.termination135E3\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899007662939000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "32393038616132343637396235373630376266616532386234653161623835353430346530323939636239353235643863303234323563316235343865333332"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "e85efa3252f3c3b284b79bc66b909d3242dbfd48ea731b002af83b19a651b7e6",
+								"status": "spec:{id:\"e85efa3252f3c3b284b79bc66b909d3242dbfd48ea731b002af83b19a651b7e6\" created_at:1667899007662939000 data:{external:{oracle:{signers:{pub_key:{key:\"32393038616132343637396235373630376266616532386234653161623835353430346530323939636239353235643863303234323563316235343865333332\"}} filters:{key:{name:\"vegaprotocol.builtin.timestamp\" type:TYPE_TIMESTAMP} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"1667899067\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898555755736000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "e13a2a8107525d9d748338f70d10d2c9418a1c87a16581fc7a681fb6ea885485",
+								"status": "spec:{id:\"e13a2a8107525d9d748338f70d10d2c9418a1c87a16581fc7a681fb6ea885485\" created_at:1667898555755736000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.termination263FA\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898623676572000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "dfe877692ba63cab28fc5050d32bf681db3a2da6440f7f4c70ce1e7709e18ea8",
+								"status": "spec:{id:\"dfe877692ba63cab28fc5050d32bf681db3a2da6440f7f4c70ce1e7709e18ea8\" created_at:1667898623676572000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlement135E3\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_LESS_THAN value:\"1000\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898482295460000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "da8308d6256cf4b675ebc62442493918b06cdd1b08c7fddd8cc142f8a6a27589",
+								"status": "spec:{id:\"da8308d6256cf4b675ebc62442493918b06cdd1b08c7fddd8cc142f8a6a27589\" created_at:1667898482295460000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.termination48090\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667897022337647000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "34356431616465633535303934633764396266316566393937343333386362306366306462393232653335636663636433326264336165303836336639343562"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "d6f5b1844531374717626e4d2ca1ddaa419f5796ba942ed99c75b9babe228229",
+								"status": "spec:{id:\"d6f5b1844531374717626e4d2ca1ddaa419f5796ba942ed99c75b9babe228229\" created_at:1667897022337647000 data:{external:{oracle:{signers:{pub_key:{key:\"34356431616465633535303934633764396266316566393937343333386362306366306462393232653335636663636433326264336165303836336639343562\"}} filters:{key:{name:\"oracle.test.terminationD7449\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_ACTIVE}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898199514994000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "d69e3d4cada184de433e091b0f33796f8800f6ccaa81fcbbf462feccc96e62f0",
+								"status": "spec:{id:\"d69e3d4cada184de433e091b0f33796f8800f6ccaa81fcbbf462feccc96e62f0\" created_at:1667898199514994000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlementB6A0D\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"0\"}}}}} status:STATUS_ACTIVE}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899226913680000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "d15d673083dcf774138508986f4cfc66653c7c4438aa89fa29767b88a1872ae9",
+								"status": "spec:{id:\"d15d673083dcf774138508986f4cfc66653c7c4438aa89fa29767b88a1872ae9\" created_at:1667899226913680000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"vegaprotocol.builtin.timestamp\" type:TYPE_TIMESTAMP} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"1667899287\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898743400262000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "cdc863ffb690f99009e6a5a32a234ea0f9897589887326e6f1433c230f0bcc90",
+								"status": "spec:{id:\"cdc863ffb690f99009e6a5a32a234ea0f9897589887326e6f1433c230f0bcc90\" created_at:1667898743400262000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlement34AB0\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_LESS_THAN value:\"100\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898409131180000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "cbfee7b592b77642248f06fe6f8b203fa16a7eca0c789401e9fe270dea33da3c",
+								"status": "spec:{id:\"cbfee7b592b77642248f06fe6f8b203fa16a7eca0c789401e9fe270dea33da3c\" created_at:1667898409131180000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlement7330A\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_EQUALS value:\"100\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898918232470000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "63643935326162373762663538386362346136666665353136316339353432386166376365336361363635653832343338303761356137313866373134663863"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "cb40f90e6ecfc39b42058bff3c9c1cc742284ca7c2668beb44553ce20eae547b",
+								"status": "spec:{id:\"cb40f90e6ecfc39b42058bff3c9c1cc742284ca7c2668beb44553ce20eae547b\" created_at:1667898918232470000 data:{external:{oracle:{signers:{pub_key:{key:\"63643935326162373762663538386362346136666665353136316339353432386166376365336361363635653832343338303761356137313866373134663863\"}} filters:{key:{name:\"prices.BTC.value\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN value:\"120\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898862421431000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "32343566623232326332626636383530316665393361623136313865656535386236383437383337353565636265623066383736346664613135353330633532"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "c867992e525316c768cf8ff13b013d90cbcf5ba6bffbbfb69a1b9ae064f41f48",
+								"status": "spec:{id:\"c867992e525316c768cf8ff13b013d90cbcf5ba6bffbbfb69a1b9ae064f41f48\" created_at:1667898862421431000 data:{external:{oracle:{signers:{pub_key:{key:\"32343566623232326332626636383530316665393361623136313865656535386236383437383337353565636265623066383736346664613135353330633532\"}} filters:{key:{name:\"trading.termination\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667900037515772000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "32663039373235323463303536333662343931663732316332383161653337623362323663323466663532303561646263663863616133396333636663343761"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "c78b85e425b3c33b93b94c8071623e47e7da38f0938e6dbce5446b20a68156bc",
+								"status": "spec:{id:\"c78b85e425b3c33b93b94c8071623e47e7da38f0938e6dbce5446b20a68156bc\" created_at:1667900037515772000 data:{external:{oracle:{signers:{pub_key:{key:\"32663039373235323463303536333662343931663732316332383161653337623362323663323466663532303561646263663863616133396333636663343761\"}} filters:{key:{name:\"oracle.test.settlementA2299\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"0\"}}}}} status:STATUS_ACTIVE}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899501206395000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "63383434373031353462313335653731633161366238333035396533383162376437343662373661313361393935316339636165666136306666616133623034"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "c4675a1f168c492ea107b1490b4b92afbaa000447f29ed07f19f64ee7da6662a",
+								"status": "spec:{id:\"c4675a1f168c492ea107b1490b4b92afbaa000447f29ed07f19f64ee7da6662a\" created_at:1667899501206395000 data:{external:{oracle:{signers:{pub_key:{key:\"63383434373031353462313335653731633161366238333035396533383162376437343662373661313361393935316339636165666136306666616133623034\"}} filters:{key:{name:\"oracle.test.termination\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899501206395000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "63383434373031353462313335653731633161366238333035396533383162376437343662373661313361393935316339636165666136306666616133623034"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "bd6901749bd29047a38963e23d1c1f492c9dc2b6e1fe71be10245387f1879b1d",
+								"status": "spec:{id:\"bd6901749bd29047a38963e23d1c1f492c9dc2b6e1fe71be10245387f1879b1d\" created_at:1667899501206395000 data:{external:{oracle:{signers:{pub_key:{key:\"63383434373031353462313335653731633161366238333035396533383162376437343662373661313361393935316339636165666136306666616133623034\"}} filters:{key:{name:\"oracle.test.settlement\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"130\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898862421431000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "32343566623232326332626636383530316665393361623136313865656535386236383437383337353565636265623066383736346664613135353330633532"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "bc2cc3e2919b05c3333590c71008756d8f2dae655b506949a5e93646440682ef",
+								"status": "spec:{id:\"bc2cc3e2919b05c3333590c71008756d8f2dae655b506949a5e93646440682ef\" created_at:1667898862421431000 data:{external:{oracle:{signers:{pub_key:{key:\"32343566623232326332626636383530316665393361623136313865656535386236383437383337353565636265623066383736346664613135353330633532\"}} filters:{key:{name:\"price.BTC.value\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN value:\"120\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899079756624000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "38613037386532333063656237313330356436386263613866393538393139303862633665616639343165643430663039356531343234333835663738336230"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "ba3bc75dd917aa7b389e2edad7334e4befc97602e68b015cfef89b551d3c247f",
+								"status": "spec:{id:\"ba3bc75dd917aa7b389e2edad7334e4befc97602e68b015cfef89b551d3c247f\" created_at:1667899079756624000 data:{external:{oracle:{signers:{pub_key:{key:\"38613037386532333063656237313330356436386263613866393538393139303862633665616639343165643430663039356531343234333835663738336230\"}} filters:{key:{name:\"prices.BTC.value\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN value:\"100\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898785589345000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "b7139dee70a974e9fbed13c3d9543e537b70ae0e11ed2d05f12f6fe81ef89e31",
+								"status": "spec:{id:\"b7139dee70a974e9fbed13c3d9543e537b70ae0e11ed2d05f12f6fe81ef89e31\" created_at:1667898785589345000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.terminationDB003\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667897558240996000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "b10e60a1c21c4cbc08c51ba484e9d74298bf61fe0ea355efeb9a48072395e2fc",
+								"status": "spec:{id:\"b10e60a1c21c4cbc08c51ba484e9d74298bf61fe0ea355efeb9a48072395e2fc\" created_at:1667897558240996000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlementA2322\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"0\"}}}}} status:STATUS_ACTIVE}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898519019785000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "aedc6227959d0a66e4c10b813a65fe5688e0034d77bc202dab049332c539bdb0",
+								"status": "spec:{id:\"aedc6227959d0a66e4c10b813a65fe5688e0034d77bc202dab049332c539bdb0\" created_at:1667898519019785000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlement53CC3\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_LESS_THAN_OR_EQUAL value:\"100\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899287824046000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "aec7cef7dc440b03b24b8f4f6a563fc66d2076040b91bd8b10cc4d57bbb03e99",
+								"status": "spec:{id:\"aec7cef7dc440b03b24b8f4f6a563fc66d2076040b91bd8b10cc4d57bbb03e99\" created_at:1667899287824046000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"vegaprotocol.builtin.timestamp\" type:TYPE_TIMESTAMP} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"1667899787\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667897103045841000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "a65c25ebbe7ceaec05b106e8bc854e2129aa967b1412ef70e819b5fe4ac5ade2",
+								"status": "spec:{id:\"a65c25ebbe7ceaec05b106e8bc854e2129aa967b1412ef70e819b5fe4ac5ade2\" created_at:1667897103045841000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.termination14583\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_ACTIVE}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899753887465000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "66434541644146616231346434366532303134344634383832346430433039423161303346324243"
+													}
+												},
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "a569fb45a6cbb9acaa8b467827f290e1d25fb2307d52b895e0de05ef1c71854f",
+								"status": "spec:{id:\"a569fb45a6cbb9acaa8b467827f290e1d25fb2307d52b895e0de05ef1c71854f\" created_at:1667899753887465000 data:{external:{oracle:{signers:{pub_key:{key:\"66434541644146616231346434366532303134344634383832346430433039423161303346324243\"}} signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"vegaprotocol.builtin.timestamp\" type:TYPE_TIMESTAMP} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"1667899813\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898761190233000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "38343061626335353861396335333336633834653331633631636166373661303763316532636466396331393866643636616261653036333133303062383664"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "a22e74e545bedf24337a27506f4d5d6446dd6e606d59f0c19ecb5acadfdbd052",
+								"status": "spec:{id:\"a22e74e545bedf24337a27506f4d5d6446dd6e606d59f0c19ecb5acadfdbd052\" created_at:1667898761190233000 data:{external:{oracle:{signers:{pub_key:{key:\"38343061626335353861396335333336633834653331633631636166373661303763316532636466396331393866643636616261653036333133303062383664\"}} filters:{key:{name:\"oracle.test.settlementADF37\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"0\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898811399019000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "a1f38424e280853d19e139d11803137c5abd73da71f87e763ebe4ad7e842a2c0",
+								"status": "spec:{id:\"a1f38424e280853d19e139d11803137c5abd73da71f87e763ebe4ad7e842a2c0\" created_at:1667898811399019000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.termination329BF\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898445222714000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "a13498e6a1001ecc8530c42d1a7133f5ef917e1d8fe93943dcaad682e9d66292",
+								"status": "spec:{id:\"a13498e6a1001ecc8530c42d1a7133f5ef917e1d8fe93943dcaad682e9d66292\" created_at:1667898445222714000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.terminationB1F95\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898973535330000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "63663034343936653262623735393134383637333730336338623236343935656636356464356433373137636663336661626633666462623666306631383565"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "a0b3ea4d9b782b9e9c1d32691030d6433eeda2c3a1c00075ad137428b5a60956",
+								"status": "spec:{id:\"a0b3ea4d9b782b9e9c1d32691030d6433eeda2c3a1c00075ad137428b5a60956\" created_at:1667898973535330000 data:{external:{oracle:{signers:{pub_key:{key:\"63663034343936653262623735393134383637333730336338623236343935656636356464356433373137636663336661626633666462623666306631383565\"}} filters:{key:{name:\"price.BTC.value\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN value:\"120\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898699175812000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "a084f886aff33b26cd8d8f9bf1740a8452d3707052dd854aded94c3551d47c52",
+								"status": "spec:{id:\"a084f886aff33b26cd8d8f9bf1740a8452d3707052dd854aded94c3551d47c52\" created_at:1667898699175812000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlement34AB0\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"100\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898336273866000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "9ff16f6f67cdfda2ce658c2cf9e41ee1a46a11a9e7671b43179e7f5d84374050",
+								"status": "spec:{id:\"9ff16f6f67cdfda2ce658c2cf9e41ee1a46a11a9e7671b43179e7f5d84374050\" created_at:1667898336273866000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.terminationD5334\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899326265248000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "951d07cf2d805200be8e43bec4a60b6f01daf5ad18057ec3f6abfd2d4950ac0c",
+								"status": "spec:{id:\"951d07cf2d805200be8e43bec4a60b6f01daf5ad18057ec3f6abfd2d4950ac0c\" created_at:1667899326265248000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"trading.termination\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899692492146000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "66434541644146616231346434366532303134344634383832346430433039423161303346324243"
+													}
+												},
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "8ed8d9e9564ddd33f0cfe5382a4767c092eb89ba922c218eee05c5a121b1c27b",
+								"status": "spec:{id:\"8ed8d9e9564ddd33f0cfe5382a4767c092eb89ba922c218eee05c5a121b1c27b\" created_at:1667899692492146000 data:{external:{oracle:{signers:{pub_key:{key:\"66434541644146616231346434366532303134344634383832346430433039423161303346324243\"}} signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"prices.BTC.value\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN value:\"100\"}} filters:{key:{name:\"prices.BTC.timestamp\" type:TYPE_TIMESTAMP} conditions:{operator:OPERATOR_LESS_THAN value:\"1660832470\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898336273866000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "8b9d680c80963f5cf9deece37d075a00180f3963495c90db316ad60b71ce7313",
+								"status": "spec:{id:\"8b9d680c80963f5cf9deece37d075a00180f3963495c90db316ad60b71ce7313\" created_at:1667898336273866000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlement3917F\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"100\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898199514994000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "8b7a3af6a47d7653ff8983db8626cbf9d92b8cc28cfc5a5bed9a123238cbaf76",
+								"status": "spec:{id:\"8b7a3af6a47d7653ff8983db8626cbf9d92b8cc28cfc5a5bed9a123238cbaf76\" created_at:1667898199514994000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.termination7124E\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_ACTIVE}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898575424922000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "885efddb33f7c28d570fb6eca35f0ed03874f6dd54236b89432db054521c2b08",
+								"status": "spec:{id:\"885efddb33f7c28d570fb6eca35f0ed03874f6dd54236b89432db054521c2b08\" created_at:1667898575424922000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlement263FA\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_LESS_THAN value:\"1000\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898299952743000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "865e0e905835a6e15929c0c23e45ca3bd732aa61c121a92813cb20816eeee4d0",
+								"status": "spec:{id:\"865e0e905835a6e15929c0c23e45ca3bd732aa61c121a92813cb20816eeee4d0\" created_at:1667898299952743000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.termination5DFD9\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667897022337647000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "34356431616465633535303934633764396266316566393937343333386362306366306462393232653335636663636433326264336165303836336639343562"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "83782741e3ebac5b963163ad4d0da7cdb7d6aee29786b65b7ad24887e1f57a66",
+								"status": "spec:{id:\"83782741e3ebac5b963163ad4d0da7cdb7d6aee29786b65b7ad24887e1f57a66\" created_at:1667897022337647000 data:{external:{oracle:{signers:{pub_key:{key:\"34356431616465633535303934633764396266316566393937343333386362306366306462393232653335636663636433326264336165303836336639343562\"}} filters:{key:{name:\"oracle.test.settlement72E78\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"0\"}}}}} status:STATUS_ACTIVE}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898445222714000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "80c86f9a698003b3a0618eea869a2360702d82d31d1a1ed0cb77eb09c9f35ce7",
+								"status": "spec:{id:\"80c86f9a698003b3a0618eea869a2360702d82d31d1a1ed0cb77eb09c9f35ce7\" created_at:1667898445222714000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlement1329C\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_LESS_THAN value:\"100\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899007662939000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "32393038616132343637396235373630376266616532386234653161623835353430346530323939636239353235643863303234323563316235343865333332"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "7f320610c85d8c8e247dcf177e4418284a8a1c6ce4f596c141cbd02bbdd1865b",
+								"status": "spec:{id:\"7f320610c85d8c8e247dcf177e4418284a8a1c6ce4f596c141cbd02bbdd1865b\" created_at:1667899007662939000 data:{external:{oracle:{signers:{pub_key:{key:\"32393038616132343637396235373630376266616532386234653161623835353430346530323939636239353235643863303234323563316235343865333332\"}} filters:{key:{name:\"prices.BTC.value\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN value:\"100\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899584312924000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "792072ba6659430d49112f8bddb04248fa6cc8efb9e5429389fce01118309042",
+								"status": "spec:{id:\"792072ba6659430d49112f8bddb04248fa6cc8efb9e5429389fce01118309042\" created_at:1667899584312924000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.termination\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898519019785000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "766825162a66af9753f14822d3ff040c02136ea0d7f11dcf943de6b1f57778b7",
+								"status": "spec:{id:\"766825162a66af9753f14822d3ff040c02136ea0d7f11dcf943de6b1f57778b7\" created_at:1667898519019785000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.termination74438\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899944834840000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "32663039373235323463303536333662343931663732316332383161653337623362323663323466663532303561646263663863616133396333636663343761"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "75502ef786ba1778acdd65c17522ed2174e287be3a1341b8348acfdbf2cf9da8",
+								"status": "spec:{id:\"75502ef786ba1778acdd65c17522ed2174e287be3a1341b8348acfdbf2cf9da8\" created_at:1667899944834840000 data:{external:{oracle:{signers:{pub_key:{key:\"32663039373235323463303536333662343931663732316332383161653337623362323663323466663532303561646263663863616133396333636663343761\"}} filters:{key:{name:\"oracle.test.settlement50697\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"0\"}}}}} status:STATUS_ACTIVE}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667897817546565000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "71503fef6a955fa05fbfba5f04df6a2309edc2205347e3506f91578429b24317",
+								"status": "spec:{id:\"71503fef6a955fa05fbfba5f04df6a2309edc2205347e3506f91578429b24317\" created_at:1667897817546565000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.termination8ED30\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_ACTIVE}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898838126703000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "31313136333231623233613861316161666639623631633461336432346638633564353436646533666637343134353961316139316334643030633133343565"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "6e576c5ce7e4b94d10d6ca692e79caff29dbb98c53270e956af23ae396e0c376",
+								"status": "spec:{id:\"6e576c5ce7e4b94d10d6ca692e79caff29dbb98c53270e956af23ae396e0c376\" created_at:1667898838126703000 data:{external:{oracle:{signers:{pub_key:{key:\"31313136333231623233613861316161666639623631633461336432346638633564353436646533666637343134353961316139316334643030633133343565\"}} filters:{key:{name:\"oracle.test.termination\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898811399019000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "6e1f4edb39020ee9b78331cac1b20d7e20867896f1187252ed729f732812c63e",
+								"status": "spec:{id:\"6e1f4edb39020ee9b78331cac1b20d7e20867896f1187252ed729f732812c63e\" created_at:1667898811399019000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlement329BF\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"0\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898299952743000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "65e990bb4cdc67203f5e4bdaf936412f67a29b61e221515be7412f368502b7b3",
+								"status": "spec:{id:\"65e990bb4cdc67203f5e4bdaf936412f67a29b61e221515be7412f368502b7b3\" created_at:1667898299952743000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlementE6916\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN value:\"100\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667897817546565000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "580fada69ad0c04be41f68805462ba28c4d0b95d9bd574517f6097987d980e74",
+								"status": "spec:{id:\"580fada69ad0c04be41f68805462ba28c4d0b95d9bd574517f6097987d980e74\" created_at:1667897817546565000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlement8FCEC\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"0\"}}}}} status:STATUS_ACTIVE}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898230352773000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "564f08a424ae4dfb49928581f7055ae2362e6ee44673ea6ed9491f21a0ec5cde",
+								"status": "spec:{id:\"564f08a424ae4dfb49928581f7055ae2362e6ee44673ea6ed9491f21a0ec5cde\" created_at:1667898230352773000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlementEAB88\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"0\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667897558240996000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "559cd0794a55cb8bd8ae550ab525b6ce077b5b16a6ab5d8191d873839a2db27a",
+								"status": "spec:{id:\"559cd0794a55cb8bd8ae550ab525b6ce077b5b16a6ab5d8191d873839a2db27a\" created_at:1667897558240996000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.termination1C8DA\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_ACTIVE}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898743400262000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "50f27505cdde083701a1ff64e543b8578ee5c560484602fa775b373db31e4148",
+								"status": "spec:{id:\"50f27505cdde083701a1ff64e543b8578ee5c560484602fa775b373db31e4148\" created_at:1667898743400262000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.termination34AB0\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_ACTIVE}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898482295460000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "45de0a688c194c75e105ccfe56f13c79bbf9eef335e67ba59dfc2b77988d32f1",
+								"status": "spec:{id:\"45de0a688c194c75e105ccfe56f13c79bbf9eef335e67ba59dfc2b77988d32f1\" created_at:1667898482295460000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlementA1EB9\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_LESS_THAN_OR_EQUAL value:\"100\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898838126703000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "31313136333231623233613861316161666639623631633461336432346638633564353436646533666637343134353961316139316334643030633133343565"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "45381c372b223d7974636fe0b55a30f2af2596a2d57529ff6474c85b26575a82",
+								"status": "spec:{id:\"45381c372b223d7974636fe0b55a30f2af2596a2d57529ff6474c85b26575a82\" created_at:1667898838126703000 data:{external:{oracle:{signers:{pub_key:{key:\"31313136333231623233613861316161666639623631633461336432346638633564353436646533666637343134353961316139316334643030633133343565\"}} filters:{key:{name:\"oracle.test.settlement\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"100\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899155696933000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "44be48d5baa0335742104ab9818dff00ef67b22e4d3cc8ffe64d3d3fea410f13",
+								"status": "spec:{id:\"44be48d5baa0335742104ab9818dff00ef67b22e4d3cc8ffe64d3d3fea410f13\" created_at:1667899155696933000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlement\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"0\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899319221891000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "41c121e0211166a35351635c4e12030183548f7f2246154e5ccb839f1503383e",
+								"status": "spec:{id:\"41c121e0211166a35351635c4e12030183548f7f2246154e5ccb839f1503383e\" created_at:1667899319221891000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"vegaprotocol.builtin.timestamp\" type:TYPE_TIMESTAMP} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"1667899325\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899155696933000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "40914b7fcf714008259853e95a933f95bea05b7ecd573bb18a45cca518ca0853",
+								"status": "spec:{id:\"40914b7fcf714008259853e95a933f95bea05b7ecd573bb18a45cca518ca0853\" created_at:1667899155696933000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"vegaprotocol.builtin.timestamp\" type:TYPE_TIMESTAMP} conditions:{operator:OPERATOR_GREATER_THAN value:\"1667899215\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899631707742000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "66434541644146616231346434366532303134344634383832346430433039423161303346324243"
+													}
+												},
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "3fb239b69a3b09bfa9c9da8c9adfb2016cc894e0b77ee28a5d2251c2e07823e5",
+								"status": "spec:{id:\"3fb239b69a3b09bfa9c9da8c9adfb2016cc894e0b77ee28a5d2251c2e07823e5\" created_at:1667899631707742000 data:{external:{oracle:{signers:{pub_key:{key:\"66434541644146616231346434366532303134344634383832346430433039423161303346324243\"}} signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"vegaprotocol.builtin.timestamp\" type:TYPE_TIMESTAMP} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"1667899691\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899814891617000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "66434541644146616231346434366532303134344634383832346430433039423161303346324243"
+													}
+												},
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "3e99892c78815066d20ea74f92f99b562b0321840fb20be4f7499e522480c58b",
+								"status": "spec:{id:\"3e99892c78815066d20ea74f92f99b562b0321840fb20be4f7499e522480c58b\" created_at:1667899814891617000 data:{external:{oracle:{signers:{pub_key:{key:\"66434541644146616231346434366532303134344634383832346430433039423161303346324243\"}} signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"prices.BTC.value\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN value:\"100\"}} filters:{key:{name:\"prices.BTC.timestamp\" type:TYPE_TIMESTAMP} conditions:{operator:OPERATOR_EQUALS value:\"1660832460\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898918232470000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "63643935326162373762663538386362346136666665353136316339353432386166376365336361363635653832343338303761356137313866373134663863"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "3c4414ad08954af74bbda922566c0391a71738f33ca84e90baaf6a4749e7e6c0",
+								"status": "spec:{id:\"3c4414ad08954af74bbda922566c0391a71738f33ca84e90baaf6a4749e7e6c0\" created_at:1667898918232470000 data:{external:{oracle:{signers:{pub_key:{key:\"63643935326162373762663538386362346136666665353136316339353432386166376365336361363635653832343338303761356137313866373134663863\"}} filters:{key:{name:\"trading.termination\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899123290415000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "36eb533d5cae5821e715be6758cb45f60837242bd1e8da43aa59f8abdbfe432a",
+								"status": "spec:{id:\"36eb533d5cae5821e715be6758cb45f60837242bd1e8da43aa59f8abdbfe432a\" created_at:1667899123290415000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"vegaprotocol.builtin.timestamp\" type:TYPE_TIMESTAMP} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"1667899153\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899547632430000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "62386338656433663739663730306439656237383162636336333233326537396534326663386535323061616562336362393934613638373232363534383564"
+													}
+												},
+												{
+													"signer": {
+														"key": "32356630333265326565643431396239653565356365383335613133333438313830613435333635333837383535313730663234303735656563356465616637"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "36b9e9ef2c00ee3a1284510aadc0e30c421cceff32027474bf9fca496cfd6cec",
+								"status": "spec:{id:\"36b9e9ef2c00ee3a1284510aadc0e30c421cceff32027474bf9fca496cfd6cec\" created_at:1667899547632430000 data:{external:{oracle:{signers:{pub_key:{key:\"62386338656433663739663730306439656237383162636336333233326537396534326663386535323061616562336362393934613638373232363534383564\"}} signers:{pub_key:{key:\"32356630333265326565643431396239653565356365383335613133333438313830613435333635333837383535313730663234303735656563356465616637\"}} filters:{key:{name:\"oracle.test.terminationA7F79\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898973535330000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "63663034343936653262623735393134383637333730336338623236343935656636356464356433373137636663336661626633666462623666306631383565"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "2c4955ba58fca480b0dc6e9f0c5545cd3c22dc28e053d2768a9d3f4685fe794a",
+								"status": "spec:{id:\"2c4955ba58fca480b0dc6e9f0c5545cd3c22dc28e053d2768a9d3f4685fe794a\" created_at:1667898973535330000 data:{external:{oracle:{signers:{pub_key:{key:\"63663034343936653262623735393134383637333730336338623236343935656636356464356433373137636663336661626633666462623666306631383565\"}} filters:{key:{name:\"trading.termination\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898785589345000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "2badc6ececdf29b0483e8af1f8313b9a5df3afad31588abb31d1c35d5c83cd0b",
+								"status": "spec:{id:\"2badc6ececdf29b0483e8af1f8313b9a5df3afad31588abb31d1c35d5c83cd0b\" created_at:1667898785589345000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlementDB003\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"0\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667897103045841000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "2aa3592ca2ba89fd6afd7e8296d030ea18afefc2a0742c877982911d03e6dbd6",
+								"status": "spec:{id:\"2aa3592ca2ba89fd6afd7e8296d030ea18afefc2a0742c877982911d03e6dbd6\" created_at:1667897103045841000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlement84A34\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"0\"}}}}} status:STATUS_ACTIVE}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898649336638000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "284b1439f575f59e6b08586b5f42c1ccd533beab676ab90a06fd72c44781e36f",
+								"status": "spec:{id:\"284b1439f575f59e6b08586b5f42c1ccd533beab676ab90a06fd72c44781e36f\" created_at:1667898649336638000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlementEB07C\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"100\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898604180534000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "2462cf7c68cb53af470a0cdacf10cc6a147a27e929ec8676728a48ed981f0a01",
+								"status": "spec:{id:\"2462cf7c68cb53af470a0cdacf10cc6a147a27e929ec8676728a48ed981f0a01\" created_at:1667898604180534000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlement135E3\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"500\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667900037515772000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "32663039373235323463303536333662343931663732316332383161653337623362323663323466663532303561646263663863616133396333636663343761"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "21c7418cd94027a8177a667d1a31041e7cac5b79ee3dd30f6c3fd4f8c4d0933f",
+								"status": "spec:{id:\"21c7418cd94027a8177a667d1a31041e7cac5b79ee3dd30f6c3fd4f8c4d0933f\" created_at:1667900037515772000 data:{external:{oracle:{signers:{pub_key:{key:\"32663039373235323463303536333662343931663732316332383161653337623362323663323466663532303561646263663863616133396333636663343761\"}} filters:{key:{name:\"oracle.test.terminationA56FA\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_ACTIVE}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899584312924000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "211865b8826a23c900fc61f2609c5be335f2c46e47f859e015d4d1def2249d58",
+								"status": "spec:{id:\"211865b8826a23c900fc61f2609c5be335f2c46e47f859e015d4d1def2249d58\" created_at:1667899584312924000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlement\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"130\"}}}}} status:STATUS_ACTIVE}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898761190233000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "38343061626335353861396335333336633834653331633631636166373661303763316532636466396331393866643636616261653036333133303062383664"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "20e144dd3e04731c52a9b3216d005842733081cef5e96b2eff9e5f2b7316ccb2",
+								"status": "spec:{id:\"20e144dd3e04731c52a9b3216d005842733081cef5e96b2eff9e5f2b7316ccb2\" created_at:1667898761190233000 data:{external:{oracle:{signers:{pub_key:{key:\"38343061626335353861396335333336633834653331633631636166373661303763316532636466396331393866643636616261653036333133303062383664\"}} filters:{key:{name:\"oracle.test.terminationADF37\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898555755736000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "20dfece8413dd81dc82b2617cac140fed0dda3bd33ee6cd052862d10c74c982a",
+								"status": "spec:{id:\"20dfece8413dd81dc82b2617cac140fed0dda3bd33ee6cd052862d10c74c982a\" created_at:1667898555755736000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlement263FA\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"1000\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899357362193000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "1d7879d8c7e9a4e03b6e97339e850cb32e52b0f4d835d8411788d07070d56ed0",
+								"status": "spec:{id:\"1d7879d8c7e9a4e03b6e97339e850cb32e52b0f4d835d8411788d07070d56ed0\" created_at:1667899357362193000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"price.BTC.value\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_LESS_THAN value:\"100\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898373764442000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "1a36d2c0206d53bd647dbd267356ec35741a664167fb44d170df6acb9e47c7a1",
+								"status": "spec:{id:\"1a36d2c0206d53bd647dbd267356ec35741a664167fb44d170df6acb9e47c7a1\" created_at:1667898373764442000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.terminationC54B5\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899025483259000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "32393038616132343637396235373630376266616532386234653161623835353430346530323939636239353235643863303234323563316235343865333332"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "19f245b51ba45d590ab9741ea5de1671b8fc00c00ceb09e6f8706273844e75e9",
+								"status": "spec:{id:\"19f245b51ba45d590ab9741ea5de1671b8fc00c00ceb09e6f8706273844e75e9\" created_at:1667899025483259000 data:{external:{oracle:{signers:{pub_key:{key:\"32393038616132343637396235373630376266616532386234653161623835353430346530323939636239353235643863303234323563316235343865333332\"}} filters:{key:{name:\"trading.termination\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898373764442000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "19d222e28cef0573fb6e9784a30137f97407f217dadfb2a41642d165e8374595",
+								"status": "spec:{id:\"19d222e28cef0573fb6e9784a30137f97407f217dadfb2a41642d165e8374595\" created_at:1667898373764442000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlement254F1\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"100\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899357362193000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "18a332e48e0ec69fe81e4fa1c2958eae11497168ab5c6338d6fc2f6bff311b31",
+								"status": "spec:{id:\"18a332e48e0ec69fe81e4fa1c2958eae11497168ab5c6338d6fc2f6bff311b31\" created_at:1667899357362193000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"vegaprotocol.builtin.timestamp\" type:TYPE_TIMESTAMP} conditions:{operator:OPERATOR_GREATER_THAN value:\"1667899373\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899079756624000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "38613037386532333063656237313330356436386263613866393538393139303862633665616639343165643430663039356531343234333835663738336230"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "15a892e1be452f8ab4d5f867f741b1c0e366b9339c7560590f351d0f61227567",
+								"status": "spec:{id:\"15a892e1be452f8ab4d5f867f741b1c0e366b9339c7560590f351d0f61227567\" created_at:1667899079756624000 data:{external:{oracle:{signers:{pub_key:{key:\"38613037386532333063656237313330356436386263613866393538393139303862633665616639343165643430663039356531343234333835663738336230\"}} filters:{key:{name:\"trading.termination\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899631707742000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "66434541644146616231346434366532303134344634383832346430433039423161303346324243"
+													}
+												},
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "13f462b131c91788a53418353167c7e90023d3f1038ce8a0a16de3ebe77ba7bf",
+								"status": "spec:{id:\"13f462b131c91788a53418353167c7e90023d3f1038ce8a0a16de3ebe77ba7bf\" created_at:1667899631707742000 data:{external:{oracle:{signers:{pub_key:{key:\"66434541644146616231346434366532303134344634383832346430433039423161303346324243\"}} signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"prices.BTC.value\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN value:\"100\"}} filters:{key:{name:\"prices.BTC.timestamp\" type:TYPE_TIMESTAMP} conditions:{operator:OPERATOR_GREATER_THAN value:\"1660832450\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899753887465000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "66434541644146616231346434366532303134344634383832346430433039423161303346324243"
+													}
+												},
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "13e06b903419f0eb891b0691ac67da7498149571fe7a884b5273daa4e233509c",
+								"status": "spec:{id:\"13e06b903419f0eb891b0691ac67da7498149571fe7a884b5273daa4e233509c\" created_at:1667899753887465000 data:{external:{oracle:{signers:{pub_key:{key:\"66434541644146616231346434366532303134344634383832346430433039423161303346324243\"}} signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"prices.BTC.value\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN value:\"100\"}} filters:{key:{name:\"prices.BTC.timestamp\" type:TYPE_TIMESTAMP} conditions:{operator:OPERATOR_LESS_THAN_OR_EQUAL value:\"1660832460\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899692492146000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "66434541644146616231346434366532303134344634383832346430433039423161303346324243"
+													}
+												},
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "13c28c144b4bf99a7104155b4bdead8020ba209e74661743f286e62ae554499c",
+								"status": "spec:{id:\"13c28c144b4bf99a7104155b4bdead8020ba209e74661743f286e62ae554499c\" created_at:1667899692492146000 data:{external:{oracle:{signers:{pub_key:{key:\"66434541644146616231346434366532303134344634383832346430433039423161303346324243\"}} signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"vegaprotocol.builtin.timestamp\" type:TYPE_TIMESTAMP} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"1667899752\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898682149607000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "13779c98ba377c108aeab807930c5c14a030360f95004ccbab08f440b2369438",
+								"status": "spec:{id:\"13779c98ba377c108aeab807930c5c14a030360f95004ccbab08f440b2369438\" created_at:1667898682149607000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlementEB07C\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_LESS_THAN value:\"100\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899326265248000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "1156f4e091e1d79113aba66d57dcac49a45f6c6f7b6a516adadf1181501e8898",
+								"status": "spec:{id:\"1156f4e091e1d79113aba66d57dcac49a45f6c6f7b6a516adadf1181501e8898\" created_at:1667899326265248000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"price.BTC.value\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN value:\"120\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667899944834840000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "32663039373235323463303536333662343931663732316332383161653337623362323663323466663532303561646263663863616133396333636663343761"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "06448eb1f0646db78b4515a87d02bc1bd18fa08d6a31c58320b97c0be4384256",
+								"status": "spec:{id:\"06448eb1f0646db78b4515a87d02bc1bd18fa08d6a31c58320b97c0be4384256\" created_at:1667899944834840000 data:{external:{oracle:{signers:{pub_key:{key:\"32663039373235323463303536333662343931663732316332383161653337623362323663323466663532303561646263663863616133396333636663343761\"}} filters:{key:{name:\"oracle.test.termination34D0D\" type:TYPE_BOOLEAN} conditions:{operator:OPERATOR_EQUALS value:\"True\"}}}}} status:STATUS_ACTIVE}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "1667898262907603000",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"signers": [
+												{
+													"signer": {
+														"key": "64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434"
+													}
+												}
+											]
+										}
+									}
+								},
+								"id": "03510473f342141f676a37e9bc67a8677c5a6da0a53da4d56fffdb7909704ae1",
+								"status": "spec:{id:\"03510473f342141f676a37e9bc67a8677c5a6da0a53da4d56fffdb7909704ae1\" created_at:1667898262907603000 data:{external:{oracle:{signers:{pub_key:{key:\"64313038643132386539633635363334653439363537303134363663323261383637623362313537356430366561663264666638643661343339356266643434\"}} filters:{key:{name:\"oracle.test.settlementCE6E3\" type:TYPE_INTEGER} conditions:{operator:OPERATOR_GREATER_THAN_OR_EQUAL value:\"0\"}}}}} status:STATUS_DEACTIVATED}",
+								"updatedAt": "0"
+							}
+						}
+					}
+				}
+			]
+		}
+	},
+	"Duration": 7584125
+}

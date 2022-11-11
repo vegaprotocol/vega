@@ -1,1 +1,1519 @@
-{"TestName":"TestGovernance_Proposals","Query":"{ proposalsConnection{ edges { node { id, reference, party { id }, state, datetime, rejectionReason, errorDetails } } } }","Result":{"proposalsConnection":{"edges":[{"node":{"datetime":"2022-10-27T09:39:31.681825Z","errorDetails":null,"id":"d336413c3387c561969ee8921c6600dcd02f7cf9ec7314147c970e6b199f3d4b","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"80BFF3825B","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:39:16.498394Z","errorDetails":null,"id":"d2fdbfe11819ccee9f98caa13160d3a2a5bd476889dbfd37e6df95ecb0188e4b","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"D1C949C34D","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:37:41.384678Z","errorDetails":null,"id":"3906e9678f7939f2f2eeaca1b917cef0555b973804af4c92d2c078e2073d4f23","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"9E736C86C0","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:36:52.341218Z","errorDetails":null,"id":"cc8f1fc70aa2adb4cd3463857b6ebeca14fe0f016e549e8a780529e5159d98e4","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"E1EEBBDD9E","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:36:04.185067Z","errorDetails":null,"id":"e4e07815abc3c449e7e5b905c49b2bbd82e0dc39087c0e78c4b0d0072a1c86b5","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"1CD36D1C3E","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:35:49.480925Z","errorDetails":null,"id":"88b4bae3a02e46c865b84499800d37fcb2794c8dc07321fedc20542564089331","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"D01E36EF02","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:35:32.017068Z","errorDetails":null,"id":"6c847de68a525226946dc987b8ff9a3c36fd6f40637aed849f4477ac2de1b0e6","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"7525A4A496","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:35:16.998417Z","errorDetails":null,"id":"c64eb981a33f3771c8ee758a4aab9c8a684f4b3da4e38b85da3cdd548eed8e76","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"41F9174EBD","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:34:57.248015Z","errorDetails":null,"id":"2dcb97a506a3aafd0765ffae3ad28258706d762ab3ca3dcc39050dff13dee1f9","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"6E39E67B1B","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:34:38.573417Z","errorDetails":null,"id":"76f1504d243d95433099ae4b7be3cf6d53c639fc5a6dfb395a2f38ed0534a9ea","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"6534884E17","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:34:04.865859Z","errorDetails":null,"id":"5bd8ff7d276fa033999fdc476ba128afc6254e5dfb2419ca06f8293b4ac5244d","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"0A6CAC23DD","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:33:35.841654Z","errorDetails":null,"id":"8a541b43489b87c4bbbd063125227e4d9c8fc32d2193760345261117d22e7443","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"34FC2E3B0A","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:33:02.529668Z","errorDetails":null,"id":"fde0c8a521b54c495c55955ef70f3b2f874ac61bbc254cbf6dd4965c84c56ab6","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"781392BB6D","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:32:34.080543Z","errorDetails":null,"id":"194bd030853c6fa1ed8aa0bb83776e787927ef99415a7df3c6b786ebc6c357c2","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"2C4B3990A8","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:32:13.889538Z","errorDetails":null,"id":"87ae90967a351de4fd6b9272a7c0c6d50695c0fc8f0486220ff5702be91238a5","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"9BDD16EA58","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:31:59.877089Z","errorDetails":null,"id":"8fdb843ad9b0469e39fe6f9db3985a621c470cfda4b700671587a1dae57069f9","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"1F21D8A92B","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:31:46.326635Z","errorDetails":null,"id":"419ca2c659b45bfd9d77692836ebb64be9150855ed2b9038380a7a194e0eeb7b","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"51E545F82A","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:31:31.922535Z","errorDetails":null,"id":"6c389ec89ac29f825345b1a3976a8364730b05522b33307af4e3e9fffd1dbe75","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"714B64D99F","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:29:12.087429Z","errorDetails":null,"id":"a4b39279cab9d5fd3dc2639bd00a605cf2f30352921ba988d5da0206bdbaf379","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"2B9575A825","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:27:58.891999Z","errorDetails":null,"id":"29d668e6fe5dc7f9ac5f130658bbcc071e869f6f16fa6cf0ab090191c4a6a5a6","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"65A3CFC3D7","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:27:04.04585Z","errorDetails":null,"id":"e28982c1255c7ea26e9c7397cf3662e5166f6dd47f349cb829b9e28cc440f503","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"6C7BACFC3E","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:26:43.847103Z","errorDetails":null,"id":"5453a65c1e6ea26c1e802ede59f484d9c4082af54c702a5d156e4ebe4081dd9a","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"6B51724798","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:24:49.628158Z","errorDetails":null,"id":"34c8ea2e14bb091067e91bc55a25d17870e000a630e796c27b61e85c9e4be6da","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"A2F233AC4E","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:21:33.462797Z","errorDetails":null,"id":"9d82f5ca46d2f20d84bf79d148e15ca67e31edec25e0dabbaead1385a803ed9e","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"888A5BE1D6","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:20:24.61531Z","errorDetails":null,"id":"543afb6941a8c1c923efdad8132fd0272eafb0938a6a9fcfd5c011905c36a0e9","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"1AA94E384A","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:19:26.434679Z","errorDetails":null,"id":"74c0e2f0fa399e5ddd1533cc33f7f45b77693421194fd527b39989f552dece12","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"DCF787F3F0","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:18:56.49368Z","errorDetails":null,"id":"f16596c81b5907aded1c73cd343d2ea6ab1b1a6ad1da0bede636e3f46c72bf47","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"FF6D4EB69C","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:15:41.054503Z","errorDetails":null,"id":"ef9f6c72b9c0ed2fe7ad29a132ef9c5d76507e601122078125dc921a37cbe5a2","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"67A7DF363D","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:15:11.570831Z","errorDetails":null,"id":"4379c206c3695c6d43f35a00a7cfb43cf9989ab429241dfa52839d38eeb75898","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"F78AB526BB","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:14:47.669875Z","errorDetails":null,"id":"6510c098d35d3b7aa94a97a850aa73cf0c4c6b50396567cfa3a452b724509769","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"2EE1CC66BD","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:14:20.104438Z","errorDetails":null,"id":"37f09417a3c610febeb290ec3fcbec316ad11aaecbcda4f2a5ec2da348828080","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"D8A355A9C0","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:13:09.917052Z","errorDetails":null,"id":"b1bb34938b0c12f181ffd6484cc76490d524334012f5b0624cf60a66858b5368","party":{"id":"cd12be6687c76e3630e47c50776ed3e3afeddf563bc9d37a73916bf7a8483da3"},"reference":"E3D6DDDF4D","rejectionReason":null,"state":"STATE_ENACTED"}},{"node":{"datetime":"2022-10-27T09:12:24.875501Z","errorDetails":null,"id":"e9ed3e89d2ab860af0d0fa34b4efa3110e6d22b2d8107655a4180b74e29b7eb7","party":{"id":"31c1a9c3fab5fafc81272ecdc664645c94227a121bbd8a261468a7e08a421fe4"},"reference":"ACEACF9662","rejectionReason":null,"state":"STATE_ENACTED"}}]}},"Duration":13245708}
+{
+	"TestName": "TestGovernance_Proposals",
+	"Query": "{ proposalsConnection{ edges { node { id, reference, party { id }, state, datetime, rejectionReason, errorDetails } } } }",
+	"Result": {
+		"proposalsConnection": {
+			"edges": [
+				{
+					"node": {
+						"datetime": "2022-11-08T08:44:33.116993Z",
+						"errorDetails": null,
+						"id": "2785d7ca0416be486abb606c9081e4700f03fd4930778e1cfc249bdb5c6fa930",
+						"party": {
+							"id": "51d94132a09a041c34d87c01f087aacfc94cc509de15c484fea123c54a19a204"
+						},
+						"reference": "D845D43052",
+						"rejectionReason": null,
+						"state": "STATE_OPEN"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:44:27.071096Z",
+						"errorDetails": null,
+						"id": "4d22d34607445e93052156b78ca6c1cfad4d4f9ce613338c9929f4174b20f05b",
+						"party": {
+							"id": "51d94132a09a041c34d87c01f087aacfc94cc509de15c484fea123c54a19a204"
+						},
+						"reference": "19F455DED4",
+						"rejectionReason": null,
+						"state": "STATE_OPEN"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:42:27.575267Z",
+						"errorDetails": null,
+						"id": "48de51651ef5c14c73c6a420976a9e8c62efad74ced2c16219b93e4eb3b3d41e",
+						"party": {
+							"id": "51d94132a09a041c34d87c01f087aacfc94cc509de15c484fea123c54a19a204"
+						},
+						"reference": "00DEAA0102",
+						"rejectionReason": null,
+						"state": "STATE_OPEN"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:37:20.271465Z",
+						"errorDetails": null,
+						"id": "e4f3f80d89a793f527854783e6ac132cebff5e06a0c2d38a93b48fa2caf04863",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "FB3B617987",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:36:36.973361Z",
+						"errorDetails": null,
+						"id": "5743f15d8f1a63da52d4cb2b9b02e56c7867fd921fb9a496b49553aca2299aa8",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "40EC09A931",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:36:19.687361Z",
+						"errorDetails": null,
+						"id": "f7b377bdc516e96e5b94cf0d83a2a5de4dc7da2817461cd816ef7a3a9118c17e",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "B4481D2301",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:36:02.338006Z",
+						"errorDetails": null,
+						"id": "873933a8a0cffe0a023f152671ab017503e85d695ff15783b5a4359b2bb36adf",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "D74ECF7ACD",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:35:41.973999Z",
+						"errorDetails": null,
+						"id": "561d4c5afe1dace7e384255eadc0e5e65d1979011ec603d798b0e07e5ff068c7",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "CD8015F1C8",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:35:25.994557Z",
+						"errorDetails": null,
+						"id": "bc8dd7d99a18e5086d8562530de0f7c0e20df01677ed307f5f1c74e5b499791c",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "BD8CCDF215",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:35:10.884539Z",
+						"errorDetails": null,
+						"id": "bddc9a2a4a745795320b2e117ff100a4029e016bc80f4a55639a61cba3b50e19",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "A14B11F96B",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:33:57.515772Z",
+						"errorDetails": null,
+						"id": "c6721a3034b19790c9f3618248c2c9b352f9e47d1c0f7f1d0febad52798044f4",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "9AA25BA3D3",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:33:04.274154Z",
+						"errorDetails": null,
+						"id": "f629b0979ef0bd2ed3f856a4bf3aa5a7b776a20478c7405c55177d6a653485fa",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "4105F7C36D",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:32:24.83484Z",
+						"errorDetails": null,
+						"id": "70a3df066de2098a63519ae66072a8c26a21be9c950ab850a516290de9f1b244",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "CDB56B5A45",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:31:42.255875Z",
+						"errorDetails": null,
+						"id": "45d11aa933ccf1dfd7e7569fc4372e364e6f48df2afbdde0d8a3aec105344f8e",
+						"party": {
+							"id": "c84470154b135e71c1a6b83059e381b7d746b76a13a9951c9caefa60ffaa3b04"
+						},
+						"reference": "05AE625EA5",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:30:14.891617Z",
+						"errorDetails": null,
+						"id": "4c3def402473719214131430f905534fa25d06e8152e82cbea1a059e63351174",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "4403531D45",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:29:13.887465Z",
+						"errorDetails": null,
+						"id": "1894530899e87003889a139718950c218529b7c67b008b4ec815b23f92805eea",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "41CD23CA83",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:28:12.492146Z",
+						"errorDetails": null,
+						"id": "74beaf7257e43c8f8443d413fccd8d092608b5926aa6e78bb17747de18cb359d",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "8F2DB20482",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:27:11.707742Z",
+						"errorDetails": null,
+						"id": "47831ba264f9075387a885823ee00f66776eb39661c9c8c9b74b9eddd03d4f42",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "91538F7C41",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:26:42.67953Z",
+						"errorDetails": null,
+						"id": "625c0922eeb6fba74c5fe82f10dd460cb8c6e0e6b35d1f575a29456c972230cf",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "0D430808E3",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:26:24.312924Z",
+						"errorDetails": null,
+						"id": "a2aa9de3d9deffd9bb3d9bff1c9fe5e00b255f9140d1b97cb6dcd56a59278d5d",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "58A141F500",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:25:47.63243Z",
+						"errorDetails": null,
+						"id": "6d5be5173bb643bdeb2921986a1ecb5f91a28109631babb9212031838d46d124",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "C32FEE5D98",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:25:01.206395Z",
+						"errorDetails": null,
+						"id": "06be6ca2fb0629b183136e2195d3a8a0cb49768faf2df8a60480a2d5cb7901f1",
+						"party": {
+							"id": "c84470154b135e71c1a6b83059e381b7d746b76a13a9951c9caefa60ffaa3b04"
+						},
+						"reference": "7ECA26D2C6",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:24:20.665137Z",
+						"errorDetails": null,
+						"id": "210f764b1310288cd15ce1697749121642e48f278d0e2a71bf2736f20d3afb69",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "32820D7119",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:23:36.59511Z",
+						"errorDetails": null,
+						"id": "ebf4d62ed1a7f38b675c6355d9c1920cd3fff3b0b2d20785058a1fe2b15366de",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "09ED56D992",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:23:11.547222Z",
+						"errorDetails": "data source spec termination time before enactment",
+						"id": "16391ff57291616991936c912637f809bbae701a3042e1d18ea422fcda175ae1",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "1CCCBA47A8",
+						"rejectionReason": "PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:22:23.233542Z",
+						"errorDetails": null,
+						"id": "2a13d9ac751bc53defdbf392a08b10a39402a1bdde2c4e01d981034b9a3f1579",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "F78CA623A5",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:22:06.265248Z",
+						"errorDetails": null,
+						"id": "33a1801e41a5c69e1e91affcb8444b8c4c8c5d12d97d9f242a6541d6ee5f6ed3",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "04DC977392",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:21:45.792447Z",
+						"errorDetails": null,
+						"id": "3b4cd2c2eb86c8b4368edf3d5f452ee17fafb63b29308da7321daa246743bf16",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "13AE272DAD",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:21:27.824046Z",
+						"errorDetails": null,
+						"id": "659aca3537054a82b3d1af1fe81c405d4a9b4b4d94676e063d947b8c6c73c968",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "C2DD7518C0",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:20:26.91368Z",
+						"errorDetails": null,
+						"id": "d96eee2a1947886fb2d9571fc51059c1c58bf39b4e303ecb1694b2aa0c30b44d",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "FF79873A3A",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:19:15.696933Z",
+						"errorDetails": null,
+						"id": "b92cefff4ceedd6dc766cbba13656e5fbd0d50723540636950ba79865ddcc65e",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "BEE9DB1B96",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:18:43.290415Z",
+						"errorDetails": null,
+						"id": "932ffd1da9e295590f41923f7b2e0bc9d12f5ab882b9513c7a77ae026241242a",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "1380BA2025",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:18:23.635313Z",
+						"errorDetails": null,
+						"id": "52451b3a827e21c6cbfa021af0491c1130015ffac90329500d4d8f482d2bf927",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "54C44CAB32",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:17:59.756624Z",
+						"errorDetails": null,
+						"id": "75d65ecb4f19c06e68b03f76c9abb04dfc3555b13b264e971d313249feccae7f",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "E352990126",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:17:05.483259Z",
+						"errorDetails": null,
+						"id": "866a85e287046b855952dc1cabff2b9a33cd0b2f3895014cbbc45444024d3e48",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "25401595E0",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:16:47.662939Z",
+						"errorDetails": null,
+						"id": "97501650e5977c4852b6da07b94ccd085dc7158a462e1766d5754bd2ba3c8068",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "89510413C8",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:16:13.53533Z",
+						"errorDetails": null,
+						"id": "210a23f8613c89af4c36d1c67c3c1ca199faaf7b48078acb6324717ff0d75027",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "35B039F737",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:15:18.23247Z",
+						"errorDetails": null,
+						"id": "e96ce4f99707a7825a46d41648f53d5da4c157b4a9b6c1f1d51731532f3221b5",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "EC42D993F8",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:14:22.421431Z",
+						"errorDetails": null,
+						"id": "527b8f3885321e4ae85ca8506b6cdbf1e43bc2b66c145e5b58775317cde86297",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "1067E2DDE7",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:13:58.126703Z",
+						"errorDetails": null,
+						"id": "87b05e95bfc2801e568fde2679611d9b69de3266d14f4063dc18ffd12c14d5a4",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "0EC183B50E",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:13:31.399019Z",
+						"errorDetails": null,
+						"id": "011f1acc103c31cf9222fe12d00f7dd4d5c50b7d2b3dfae592e2a59e4c318c40",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "D06D606E37",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:13:05.589345Z",
+						"errorDetails": null,
+						"id": "b3c285cbdc892b50c8dfabc09a98a0562c1d04f652f049ea26872d6c8c103551",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "70FB6D0A10",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:12:41.190233Z",
+						"errorDetails": null,
+						"id": "739e0a602305f55484601b23abff525030a7531f46cb2c5fbda2c78f96bfb95f",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "33623C81FA",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:12:09.943473Z",
+						"errorDetails": null,
+						"id": "829bfe932abf94baee6d91865410aca3fd639720d48e660a03555589b44727c9",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "8597470797",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:11:39.175812Z",
+						"errorDetails": null,
+						"id": "538b3d41ba96a46ca073af7549912395753ec09810e85ce0a7630a0a5f18c49e",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "4C34783CF4",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:11:08.832407Z",
+						"errorDetails": null,
+						"id": "9c982564cff3369d9b470b290439bdd5f9385ce5953e34f3fdf4bccf93ef970f",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "160017E2D7",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:10:49.336638Z",
+						"errorDetails": null,
+						"id": "1e3395ff90a9cd3e6dc655116cc16e1bc9c329501c88f40facd6dc3e99d05ae0",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "463AEEE053",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:10:23.676572Z",
+						"errorDetails": null,
+						"id": "0f2d4d795e802240894581b345c2baa25cdad27c0f8ea10a2841eb40b9675a71",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "3AB42786C8",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:10:04.180534Z",
+						"errorDetails": null,
+						"id": "fbdcf37f37751447ce1cca85ed4e86a6f58e059dd0cf8181fb5642416c1edb66",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "614788D5BB",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:09:35.424922Z",
+						"errorDetails": null,
+						"id": "982e50d022af5b2da9388130678a794017829e2087d6676a53912579cc3aa13e",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "AC7AC90FE3",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:09:15.755736Z",
+						"errorDetails": null,
+						"id": "e35a0e2c8737d15784623e5504bd722efd2c1f22cd54948629d3bb270669cd20",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "ECBB3C0429",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:08:39.019785Z",
+						"errorDetails": null,
+						"id": "ad85f8df402c96e82c5ac2fd4571639b09b9a6f9926d135d90ed41b6279be5a6",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "CBB9C7AF99",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:08:02.29546Z",
+						"errorDetails": null,
+						"id": "627125d9f60ee847d5ad31dc35e3e3156167bf8bb8265dd24a2b23e2508ebebe",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "B6094B2518",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:07:25.222714Z",
+						"errorDetails": null,
+						"id": "1efc8147aa12101ac82b4f2ab40a465c9bee82f234cf4bc06285649b9d08d983",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "E164C5CEB1",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:06:49.13118Z",
+						"errorDetails": null,
+						"id": "c52efece1a48c27e1af872624ebab9e4154c8f48a58ac4382afa46743e7b9d41",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "B5D2234A09",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:06:13.764442Z",
+						"errorDetails": null,
+						"id": "a027099269ba375bd6fbe208b6b196f65ad1f9d63979d765fe3e33e77bde11e4",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "03938FDAD9",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:05:36.273866Z",
+						"errorDetails": null,
+						"id": "3c3f313d8d7e0001ce1d15eae515b2d1597cb8444954bbc7c5fbe915497430b6",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "21A9CC76F0",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:04:59.952743Z",
+						"errorDetails": null,
+						"id": "4ff258ac39c4291c85af052c5c7a1e2bd51a6b9c016497c6b52dca023df94b88",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "0F607E0F23",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:04:22.907603Z",
+						"errorDetails": null,
+						"id": "6044636f22c644be52edf7d2d95fd5247deffdfbbdc138cee4e8ef145e5584a7",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "892BA0EEDE",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:03:50.352773Z",
+						"errorDetails": null,
+						"id": "32d8179f8ce6965e751bd0745bfdf20bb4916546e50c080a5571fe6c3a834f4e",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "610BD9CFBB",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:03:19.514994Z",
+						"errorDetails": null,
+						"id": "de20aeb7cd22fb71702f603ae0e0cafe32fcebf0c6c8ce7cfd4c9c7aa41f7d04",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "9DA44EA593",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:02:46.822622Z",
+						"errorDetails": "erc20 address already in use",
+						"id": "8383df951d162da5939d67b3a49eb153d4f77546eb58c43a316a3dac09259910",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "D33C3A6FF3",
+						"rejectionReason": "PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:02:31.88539Z",
+						"errorDetails": null,
+						"id": "f821cf3188ebf0b38b293869ee83014ffc3167227b0d62bc206eb0dc8de6666b",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "E0924B9077",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:02:00.212353Z",
+						"errorDetails": null,
+						"id": "e7992c821cd759786be5e9e11d35c35eee69701c7bc2aa5058f308db9b3bf35f",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "9A07D72832",
+						"rejectionReason": "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:01:47.877289Z",
+						"errorDetails": null,
+						"id": "5e39a2390c2a56ab899bb0b8076aa99acd3e29c103177138ffcdc8f4f1cd04f9",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "FC8A52C036",
+						"rejectionReason": "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:00:24.987588Z",
+						"errorDetails": null,
+						"id": "b775c642226bba19b61acbd17e0e8c29cbea01e608bcbeed31260179bbc024c8",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "9256DF2457",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:59:13.876552Z",
+						"errorDetails": null,
+						"id": "5a615c0fa27bb0aba364b09a5af2a5c1f05d5a0769b3bab6b98311e9194d1208",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "97D9621416",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:59:03.392375Z",
+						"errorDetails": "proposal closing time too soon, expected \u003e 2022-11-08 08:59:08.39237568 +0000 UTC, got 2022-11-08 08:59:04 +0000 UTC",
+						"id": "6853118e862988c6203b9e8f0177cbf4d89ec3235b529db85fdca5ae55ce18b9",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "F999D7260B",
+						"rejectionReason": "PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:58:47.913584Z",
+						"errorDetails": null,
+						"id": "20d14cd4f3a67810c895e862e583adb42d42a35bacd06add0836de798cf43467",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "D1C2415505",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:58:47.204757Z",
+						"errorDetails": "proposal validation timestamp invalid",
+						"id": "e385712cd4b360392c845f9c8d67ded0e654146a50db79fcd6a852d49d8955d1",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "2E44AE7DB9",
+						"rejectionReason": "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:58:35.269433Z",
+						"errorDetails": null,
+						"id": "620654a7b9c7914495a93002034ca90aa6b337fa1ff6c6c9d3f51c14ec310d44",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "7224AC8AA0",
+						"rejectionReason": "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:58:21.913203Z",
+						"errorDetails": null,
+						"id": "1db787e5f0e761c477234f053ea766d4c427267340544ac42c4f1bbb2e3dfa23",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "364702D3E5",
+						"rejectionReason": "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:58:09.990998Z",
+						"errorDetails": null,
+						"id": "0f60547967b175eb1f1163b918f3b40d73cde94b8956860dc0abff81a8c229db",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "DAFAD394A8",
+						"rejectionReason": "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:57:58.773892Z",
+						"errorDetails": null,
+						"id": "46fa9a5a7850eb7761bb01930a2718e119f4fec873e813dcca3443c55a155009",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "AA839CCAA2",
+						"rejectionReason": "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:57:42.560631Z",
+						"errorDetails": null,
+						"id": "d8c29d479e6539a02a9cedacbe5dd84034fbbc3e862decfd81cb1bf4a944623f",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "92CA992771",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:56:57.546565Z",
+						"errorDetails": null,
+						"id": "0deaa2062da090d5b165dc22a8ed748744268ab2aca801dc5e9915b69a2198ef",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "2CCF5EC403",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:55:37.696889Z",
+						"errorDetails": null,
+						"id": "2ffb845534519881b0e94edda7ee4567965cb0fb4f8c0e4dcf0049ae47a94e19",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "5FAB8686DA",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:55:02.398464Z",
+						"errorDetails": null,
+						"id": "71ed1adfb73c79a658663f05a71f09f773b4f19869bef9e18e5163f34366faa9",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "9993C09102",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:54:00.898611Z",
+						"errorDetails": null,
+						"id": "e51e465052cfaf5f7f51e5b338213531a1f1b4271bc171474f9d0ea923252086",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "6AA0D87972",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:53:20.539759Z",
+						"errorDetails": null,
+						"id": "8e9ad69580968668a30ff2f4625bc10828aa2a69839240c4eea8cdda4fb48c1b",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "9061B0FA28",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:53:02.065867Z",
+						"errorDetails": null,
+						"id": "fd33cf01126a58d950161dcdea1d2026dc9bea6f2e8f4db54d151d852ad82388",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "F0DD810EB5",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:52:38.240996Z",
+						"errorDetails": null,
+						"id": "6067f86da2134e56b82f2900ab9b83a97f3daf7cb16fb211c39e87f63a9853c7",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "72E1809AF0",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:51:00.660688Z",
+						"errorDetails": null,
+						"id": "41da6d9faa63f968015de2fdea769045414cbf2497809a6950a9b3abcd735d0a",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "DAA421F004",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:50:32.952319Z",
+						"errorDetails": null,
+						"id": "5afeec63fc8c991817a7c4d15e5e2bc0e0db9f5d4b8588b8e7e5c31f19923cf0",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "A2092A6092",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:49:59.779898Z",
+						"errorDetails": null,
+						"id": "d112e8ec08a8c55bc2e23bfa6f82f67f6b0918a0f69111e8e1a3b4a4cc12883a",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "34E358E26E",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:49:37.181463Z",
+						"errorDetails": "erc20 address already in use",
+						"id": "5781675641430fb305a77aa02094853c8635a721b01ec18e9b49a47aedf32963",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "3F66D33AD7",
+						"rejectionReason": "PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:48:57.010349Z",
+						"errorDetails": "erc20 address already in use",
+						"id": "43fa701bea8e7e7546141973800a11782162e4a6e62e4f134b8ce795215f1a6a",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "2311CE5A32",
+						"rejectionReason": "PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:48:22.295054Z",
+						"errorDetails": null,
+						"id": "50a1f81f9dd693babe3aee035051dd5b0b8eeecda4c370c04937c92c8a103fa8",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "9AFD03428F",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:47:32.383493Z",
+						"errorDetails": null,
+						"id": "b81fbe84f16898324516bc6afabd3eaab8137b05ad152ba6010ff3f5d3ed6e2a",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "659AF6E4BD",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:47:02.579678Z",
+						"errorDetails": null,
+						"id": "dda10bbd8b2c9f9c27ec0faf3ba5e0fd4b03081d2ccf00b1afe451cdebf2beff",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "59C322F264",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:46:23.832888Z",
+						"errorDetails": null,
+						"id": "9b3889b863760fce4805150d8b77ecf0f3f8813d4daef5637f887752c807a505",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "2146ABCB86",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:45:50.77209Z",
+						"errorDetails": null,
+						"id": "8e76c477bfb0b8b3164dcc309b7cb9b32a0e4198a899a65fbdbd0cd27a0dde8c",
+						"party": {
+							"id": "51d94132a09a041c34d87c01f087aacfc94cc509de15c484fea123c54a19a204"
+						},
+						"reference": "72CCC156FE",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:45:03.045841Z",
+						"errorDetails": null,
+						"id": "a612587a48a615ba3182868cd2e193b2661983cb41d8e7afa21c74d5821897a2",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "35044F7DE8",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:44:21.637738Z",
+						"errorDetails": null,
+						"id": "8aae4be5b878e7f3353b04a7084b299061a529d21d8860bab2a8ff0e03c9ec85",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "CB114F2C1A",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:44:15.264749Z",
+						"errorDetails": null,
+						"id": "37c040533a4df1d68bbcb0e1dc2fafc961cdc40627cd8cc8b7d204fde2d3cbc3",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "74B903C9D6",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:44:09.076404Z",
+						"errorDetails": null,
+						"id": "a3dd1be1fd843cbe3461b273486d7e8004887688639f5296527398160444de85",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "3D46202944",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:44:03.011824Z",
+						"errorDetails": null,
+						"id": "cfd0ac1846e15f50b3255efaab20b682a1889594c652c0604fad0d1a38c2f627",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "0C00880306",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:43:56.917335Z",
+						"errorDetails": null,
+						"id": "0cc66e6bf0062f5014afda499728da979de287dd26454d3181e02d711180df37",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "DA3056DB51",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:43:42.337647Z",
+						"errorDetails": null,
+						"id": "162397c1072a83001c4c6b98a414987b7b7412f25a2d1c9b94a4cf4709e1149a",
+						"party": {
+							"id": "45d1adec55094c7d9bf1ef9974338cb0cf0db922e35cfccd32bd3ae0863f945b"
+						},
+						"reference": "7DCE5FAE42",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:42:58.896386Z",
+						"errorDetails": null,
+						"id": "7a43e14bdd3ae2f05613cb0ad59bca493dc8cd0a79cd95535e403c32637f4f60",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "6205EF17E9",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:51.876304Z",
+						"errorDetails": null,
+						"id": "93884bc59d09bec81c614cbfddcb94433e49935bd4a6eeeb61a0c0d0265cd2aa",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "8DA24B622D",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:45.722346Z",
+						"errorDetails": null,
+						"id": "5a23f61df3feef09b48a31fff7710d006cbe69b9a9aff4117824653ab616964d",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "1E14CC1F78",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:39.558949Z",
+						"errorDetails": null,
+						"id": "63880cae33125002b9f6601eb691e47aec7cb653a9e6c1545292acebc1309062",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "1A6E140FEF",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:33.549583Z",
+						"errorDetails": null,
+						"id": "75c3b031975927b2d5180c64115b89457f1d71b908831374bc6072cc7008f9f2",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "19B2B0AED7",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:27.279164Z",
+						"errorDetails": null,
+						"id": "ce9dcc857ad86932b636ddda1105b10c8368443bae4f3148b8d504cd626e67d2",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "17ED1DF15D",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:21.222065Z",
+						"errorDetails": null,
+						"id": "e624e09a4a01f9510519b4c5d3de24e0037aa73b04a7919b4b25f7b696b5f5a5",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "18ABF134EF",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:15.350036Z",
+						"errorDetails": null,
+						"id": "7971e5aa6349eb326d9faa3a3bc75d4a01cd0e5fe26a210a755170f795abf8ae",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "6D4DDE44F0",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:09.015874Z",
+						"errorDetails": null,
+						"id": "3bdc87420ecea6c6f9f9c8a0a40a0420f01b033df6b36ce6a93caf8355052439",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "D077E0B437",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:03.043306Z",
+						"errorDetails": null,
+						"id": "13e42422949992d0480dd8fe5434cb86510f90b07f4d4f0d2ca5968111ab5177",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "CD1C2739BE",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:40:56.985788Z",
+						"errorDetails": null,
+						"id": "280e88d572f0fa77bcc36624035450e8c303b56bbc19b0ac86c2f05a9a38c717",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "540221D70C",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:40:50.82289Z",
+						"errorDetails": null,
+						"id": "5c533642c94e03176259446afa8ad913e315ac223b1ef77fe6163712db21caa1",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "666199F294",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:40:44.862899Z",
+						"errorDetails": null,
+						"id": "5ce4b0a1364c82429ba1d3bfe164a01fe85ceb69206b5d441a19b285b22b8de2",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "BAE13E8ED7",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:40:38.571914Z",
+						"errorDetails": null,
+						"id": "45f148aa80cba0b9c301c5e2e949a5afe54bc5922916f0b1c5abe85f30609f4e",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "04D3599A2B",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:40:32.503694Z",
+						"errorDetails": null,
+						"id": "c4c9f3f113f3d33166d2365240e330ac1f315b4a86ae6e5990d208a9f0e3c691",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "72A8B94710",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:40:26.247635Z",
+						"errorDetails": null,
+						"id": "679ab34d5d2dc96037571d6661d1add767de675c47fe91e20d2c8d12f45c4168",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "1BED1E300B",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:39:58.263384Z",
+						"errorDetails": null,
+						"id": "1e742dff5284512a23dab7ecc8a5b6e369df8db06ecbc910a715fffc59b3a717",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "24A48C4447",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				}
+			]
+		}
+	},
+	"Duration": 33733875
+}
