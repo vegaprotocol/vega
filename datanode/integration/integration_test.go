@@ -45,7 +45,7 @@ import (
 
 const (
 	lastEpoch       = 619
-	playbackTimeout = 3 * time.Minute
+	playbackTimeout = 5 * time.Minute
 	chainID         = "testnet"
 	testdataPath    = "testdata/system_tests.evt"
 )
