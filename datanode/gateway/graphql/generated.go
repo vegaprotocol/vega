@@ -961,6 +961,7 @@ type ComplexityRoot struct {
 		MarketTradingMode         func(childComplexity int) int
 		MarketValueProxy          func(childComplexity int) int
 		MidPrice                  func(childComplexity int) int
+		NextMarkToMarket          func(childComplexity int) int
 		OpenInterest              func(childComplexity int) int
 		PriceMonitoringBounds     func(childComplexity int) int
 		StaticMidPrice            func(childComplexity int) int
@@ -2015,6 +2016,7 @@ type ObservableMarketDataResolver interface {
 	PriceMonitoringBounds(ctx context.Context, obj *vega.MarketData) ([]*PriceMonitoringBounds, error)
 
 	LiquidityProviderFeeShare(ctx context.Context, obj *vega.MarketData) ([]*ObservableLiquidityProviderFeeShare, error)
+	NextMarkToMarket(ctx context.Context, obj *vega.MarketData) (string, error)
 }
 type ObservableMarketDepthResolver interface {
 	LastTrade(ctx context.Context, obj *vega.MarketDepth) (*MarketDepthTrade, error)
@@ -5797,6 +5799,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ObservableMarketData.MidPrice(childComplexity), true
+
+	case "ObservableMarketData.nextMarkToMarket":
+		if e.complexity.ObservableMarketData.NextMarkToMarket == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.NextMarkToMarket(childComplexity), true
 
 	case "ObservableMarketData.openInterest":
 		if e.complexity.ObservableMarketData.OpenInterest == nil {
@@ -36352,6 +36361,50 @@ func (ec *executionContext) fieldContext_ObservableMarketData_liquidityProviderF
 	return fc, nil
 }
 
+func (ec *executionContext) _ObservableMarketData_nextMarkToMarket(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ObservableMarketData_nextMarkToMarket(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().NextMarkToMarket(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ObservableMarketData_nextMarkToMarket(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ObservableMarketDepth_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepth) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ObservableMarketDepth_marketId(ctx, field)
 	if err != nil {
@@ -56060,6 +56113,8 @@ func (ec *executionContext) fieldContext_Subscription_marketsData(ctx context.Co
 				return ec.fieldContext_ObservableMarketData_marketValueProxy(ctx, field)
 			case "liquidityProviderFeeShare":
 				return ec.fieldContext_ObservableMarketData_liquidityProviderFeeShare(ctx, field)
+			case "nextMarkToMarket":
+				return ec.fieldContext_ObservableMarketData_nextMarkToMarket(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ObservableMarketData", field.Name)
 		},
@@ -72400,6 +72455,26 @@ func (ec *executionContext) _ObservableMarketData(ctx context.Context, sel ast.S
 					}
 				}()
 				res = ec._ObservableMarketData_liquidityProviderFeeShare(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "nextMarkToMarket":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_nextMarkToMarket(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
