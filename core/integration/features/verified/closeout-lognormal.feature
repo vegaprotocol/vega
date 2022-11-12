@@ -163,7 +163,7 @@ Scenario: Position becomes distressed upon exiting an auction (0012-POSR-007)
       | 10         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 5       | 10        | 10        | 3556         | 100000         | 10            |
       | 10         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 10      | 10        | 10        | 3556         | 100000         | 10            |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party      | market id  | side | volume | price | resulting trades | type       | tif     |
       | auxiliary2 | ETH/DEC20  | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2    | ETH/DEC20  | sell | 1      | 10    | 1                | TYPE_LIMIT | TIF_GTC |
@@ -176,7 +176,7 @@ Scenario: Position becomes distressed upon exiting an auction (0012-POSR-007)
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC20 | 1026   | 0       |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party      | market id | side | volume | price | resulting trades | type       | tif     |
       | auxiliary1 | ETH/DEC20 | sell | 10     | 40    | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary2 | ETH/DEC20 | buy  | 10     | 40    | 0                | TYPE_LIMIT | TIF_GTC |

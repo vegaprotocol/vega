@@ -93,7 +93,7 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
 
     And the liquidity fee factor should be "0.003" for the market "ETH/MAR22"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | party2 | ETH/MAR22 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party2-buy  |
@@ -103,7 +103,8 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | lp1    | USD   | ETH/MAR22 | 53353554   | 9999946636446 | 10000      |
       | lp2    | USD   | ETH/MAR22 | 53353554   | 9999945646446 | 1000000    |
       | lp3    | USD   | ETH/MAR22 | 9710346805 | 9989289653195 | 1000000000 |
-      | party1 | USD   | ETH/MAR22 | 536535540  | 999463544460  | 0          |
+      | party1 | USD   | ETH/MAR22 | 548535540  | 999451544460  | 0          |
+      #| party1 | USD   | ETH/MAR22 | 536535540  | 999463544460  | 0          |
       | party2 | USD   | ETH/MAR22 | 135109231  | 99864010769   | 0          |
 
     Then the order book should have the following volumes for market "ETH/MAR22":
