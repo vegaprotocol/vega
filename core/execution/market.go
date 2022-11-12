@@ -725,9 +725,6 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 		}
 	}
 
-	// check auction, if any
-	m.checkAuction(ctx, t)
-
 	// MTM if enough time has elapsed, we are not in auction, and we have a non-zero mark price.
 	// we MTM in leaveAuction before deploying LP orders like we did before, but we do update nextMTM there
 	if mp := m.getCurrentMarkPrice(); mp != nil && !mp.IsZero() && !m.nextMTM.After(t) && !m.as.InAuction() {
@@ -740,6 +737,9 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 		}
 		m.confirmMTM(ctx, dummy, nil)
 	}
+
+	// check auction, if any. If we leave auction, MTM is performed in this call
+	m.checkAuction(ctx, t)
 	timer.EngineTimeCounterAdd()
 
 	m.updateMarketValueProxy()

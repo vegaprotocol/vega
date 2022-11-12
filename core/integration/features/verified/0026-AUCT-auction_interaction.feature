@@ -274,7 +274,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | AuctionEvent                       |
       | MarketUpdatedEvent                 |
     # LP repricing, checking, and cancelling emits a ton of events
-    And a total of "100" events should be emitted
+    And a total of "116" events should be emitted
 
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
