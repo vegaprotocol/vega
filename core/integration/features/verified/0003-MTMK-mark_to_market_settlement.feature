@@ -237,7 +237,7 @@ Feature: Test mark to market settlement
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC19 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
