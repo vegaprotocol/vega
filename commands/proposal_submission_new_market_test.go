@@ -1125,8 +1125,7 @@ func testNewFutureMarketChangeSubmissionWithoutPubKeysFails(t *testing.T) {
 			},
 		},
 	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.signers"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithWrongPubKeysFails(t *testing.T) {
@@ -1173,7 +1172,7 @@ func testNewFutureMarketChangeSubmissionWithWrongPubKeysFails(t *testing.T) {
 				},
 			})
 
-			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.signers.1"), commands.ErrIsNotValid)
+			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers.1"), commands.ErrIsNotValid)
 		})
 	}
 }
@@ -1241,7 +1240,7 @@ func testNewFutureMarketChangeSubmissionWithoutFiltersFails(t *testing.T) {
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.filters"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithFiltersSucceeds(t *testing.T) {
@@ -1310,8 +1309,8 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyFails(t *testing.T) 
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.0.key"), commands.ErrIsNotValid)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.1.key"), commands.ErrIsNotValid)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.filters.0.key"), commands.ErrIsNotValid)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.filters.1.key"), commands.ErrIsNotValid)
 }
 
 func testNewFutureMarketChangeSubmissionWithFilterWithKeySucceeds(t *testing.T) {
@@ -1397,8 +1396,8 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyNameFails(t *testing
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.0.key.name"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.1.key.name"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.filters.0.key.name"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.filters.1.key.name"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithFilterWithKeyNameSucceeds(t *testing.T) {
@@ -1505,8 +1504,8 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyTypeFails(t *testing
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.0.key.type"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.1.key.type"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.filters.0.key.type"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.filters.1.key.type"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithFilterWithKeyTypeSucceeds(t *testing.T) {
@@ -1642,8 +1641,8 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionOperatorFails(
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.0.conditions.0.operator"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.0.conditions.1.operator"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.filters.0.conditions.0.operator"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.filters.0.conditions.1.operator"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithFilterWithConditionOperatorSucceeds(t *testing.T) {
@@ -1747,8 +1746,8 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionValueFails(t *
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.0.conditions.0.value"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.filters.0.conditions.1.value"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.filters.0.conditions.0.value"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.filters.0.conditions.1.value"), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithFilterWithConditionValueSucceeds(t *testing.T) {
@@ -2904,27 +2903,22 @@ func testFutureMarketSubmissionWithInternalTimestampForTradingTerminationSucceed
 						Instrument: &protoTypes.InstrumentConfiguration{
 							Product: &protoTypes.InstrumentConfiguration_Future{
 								Future: &protoTypes.FutureProduct{
-									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
-										vegapb.DataSourceDefinitionTypeExt,
-									).SetOracleConfig(
-										&vegapb.DataSourceSpecConfiguration{
-											Signers: []*datapb.Signer{},
-											Filters: []*datapb.Filter{
-												{
-													Key: &datapb.PropertyKey{
-														Name: "vegaprotocol.builtin.timestamp",
-														Type: datapb.PropertyKey_TYPE_TIMESTAMP,
-													},
-													Conditions: []*datapb.Condition{
-														{
-															Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-															Value:    fmt.Sprintf("%d", time.Now().Add(time.Hour*24*365).UnixNano()),
+									DataSourceSpecForTradingTermination: &vegapb.DataSourceDefinition{
+										SourceType: &vegapb.DataSourceDefinition_Internal{
+											Internal: &vegapb.DataSourceDefinitionInternal{
+												SourceType: &vegapb.DataSourceDefinitionInternal_Time{
+													Time: &vegapb.DataSourceSpecConfigurationTime{
+														Conditions: []*datapb.Condition{
+															{
+																Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+																Value:    fmt.Sprintf("%d", time.Now().Add(time.Hour*24*365).UnixNano()),
+															},
 														},
 													},
 												},
 											},
 										},
-									),
+									},
 								},
 							},
 						},
@@ -2971,5 +2965,5 @@ func testFutureMarketSubmissionWithExternalTradingTerminationNoPublicKeyFails(t 
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination.signers"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.signers"), commands.ErrIsRequired)
 }
