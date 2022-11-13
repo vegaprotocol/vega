@@ -566,23 +566,34 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), ErrIsRequired)
 	}
 
-	signers := spec.GetSigners()
-	filters := spec.GetFilters()
-	if isBuiltInSpec(filters) {
-		return checkDataSourceSpecFilters(filters, name, parentProperty)
+	if spec.SourceType == nil {
+		return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name+".source_type"), ErrIsRequired)
 	}
 
-	if len(signers) == 0 {
-		errs.AddForProperty(fmt.Sprintf("%s.%s.signers", parentProperty, name), ErrIsRequired)
-	}
-	for i, key := range signers {
-		signer := types.SignerFromProto(key)
-		if signer.IsEmpty() {
-			errs.AddForProperty(fmt.Sprintf("%s.%s.signers.%d", parentProperty, name, i), ErrIsNotValid)
+	switch tp := spec.SourceType.(type) {
+	case *vegapb.DataSourceDefinition_External:
+		// For now check only for oracle type for external data source. Add a check for Oracle type data later when other sources are added.
+		o := tp.External.GetOracle()
+
+		signers := o.Signers
+		if len(signers) == 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers", parentProperty, name), ErrIsRequired)
 		}
-	}
 
-	errs.Merge(checkDataSourceSpecFilters(filters, name, parentProperty))
+		for i, key := range signers {
+			signer := types.SignerFromProto(key)
+			if signer.IsEmpty() {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValid)
+			}
+		}
+
+		filters := o.Filters
+		if isBuiltInSpec(filters) {
+			return checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty)
+		}
+
+		errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty))
+	}
 
 	return errs
 }
@@ -667,7 +678,7 @@ func checkNewOracleBinding(future *protoTypes.FutureProduct) Errors {
 		if len(future.DataSourceSpecBinding.TradingTerminationProperty) == 0 {
 			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding.trading_termination_property", ErrIsRequired)
 		} else {
-			if !isBindingMatchingSpec(future.DataSourceSpecForTradingTermination, future.DataSourceSpecBinding.TradingTerminationProperty) {
+			if future.DataSourceSpecForTradingTermination == nil || future.DataSourceSpecForTradingTermination.GetExternal() != nil && !isBindingMatchingSpec(future.DataSourceSpecForTradingTermination, future.DataSourceSpecBinding.TradingTerminationProperty) {
 				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding.trading_termination_property", ErrIsMismatching)
 			}
 		}
