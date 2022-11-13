@@ -601,7 +601,7 @@ const (
 	OrderErrorUnableToAmendPriceOnPeggedOrder OrderError = proto.OrderError_ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER
 	// An FOK, IOC, or GFN order was rejected because it resulted in trades outside the price bounds.
 	OrderErrorNonPersistentOrderOutOfPriceBounds OrderError = proto.OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
-	// Unable to submit pegged order, temporarily too many pegged orders across all markets
+	// Unable to submit pegged order, temporarily too many pegged orders across all markets.
 	OrderErrorTooManyPeggedOrders OrderError = proto.OrderError_ORDER_ERROR_TOO_MANY_PEGGED_ORDERS
 )
 
