@@ -9,6 +9,9 @@ Feature: Verify the order size is correctly cumulated.
     And the markets:
       | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+    And the following network parameters are set:
+      | name                                                | value |
+      | market.liquidityProvision.shapes.maxSize            | 10    |
 
   Scenario: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size (0038-OLIQ-003, 0038-OLIQ-004, 0038-OLIQ-005)
 

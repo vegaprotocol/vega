@@ -183,7 +183,7 @@ func TestSubmit(t *testing.T) {
 		}
 
 		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
-		require.EqualError(t, err, "SIDE_BUY shape size exceed max (100)")
+		require.EqualError(t, err, "SIDE_BUY shape size exceed max (5)")
 		assert.Equal(t, 0, tm.market.GetLPSCount())
 	})
 
