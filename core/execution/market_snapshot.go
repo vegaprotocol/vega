@@ -52,6 +52,7 @@ func NewMarketFromSnapshot(
 	stateVarEngine StateVarEngine,
 	assetDetails *assets.Asset,
 	marketActivityTracker *MarketActivityTracker,
+	peggedOrderNotify func(int64),
 ) (*Market, error) {
 	mkt := em.Market
 	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(mkt.PositionDecimalPlaces))
@@ -69,7 +70,7 @@ func NewMarketFromSnapshot(
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
 	book := matching.NewCachedOrderBook(
-		log, matchingConfig, mkt.ID, as.InAuction())
+		log, matchingConfig, mkt.ID, as.InAuction(), peggedOrderNotify)
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 
 	// this needs to stay

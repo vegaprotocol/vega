@@ -515,6 +515,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			},
 		},
 		{
+			Param:   netparams.MaxPeggedOrders,
+			Watcher: svcs.executionEngine.OnMaxPeggedOrderUpdate,
+		},
+		{
 			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
 			Watcher: svcs.executionEngine.OnMarketLiquidityProvidersFeeDistributionTimeStep,
 		},
