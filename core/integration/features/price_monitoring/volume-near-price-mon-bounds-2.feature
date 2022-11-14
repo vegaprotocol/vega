@@ -9,12 +9,13 @@ Feature: Test margin for lp near price monitoring boundaries
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
 
     And the average block duration is "1"
 
   Scenario: second scenario for volume at near price monitoring bounds with log-normal
 
-    And the log normal risk model named "log-normal-risk-model-1":
+    Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau     | mu | r   | sigma  |
       | 0.000001      | 0.00273 | 0  | 0   |  1.2   |
     And the fees configuration named "fees-config-1":
