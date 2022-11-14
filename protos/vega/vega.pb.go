@@ -681,51 +681,51 @@ type TransferType int32
 const (
 	// Default value, always invalid
 	TransferType_TRANSFER_TYPE_UNSPECIFIED TransferType = 0
-	// Loss
+	// Funds deducted after final settlement loss
 	TransferType_TRANSFER_TYPE_LOSS TransferType = 1
-	// Win
+	// Funds added to general account after final settlement gain
 	TransferType_TRANSFER_TYPE_WIN TransferType = 2
-	// Mark to market loss
+	// Funds deducted from margin account after mark to market loss
 	TransferType_TRANSFER_TYPE_MTM_LOSS TransferType = 4
-	// Mark to market win
+	// Funds added to margin account after mark to market gain
 	TransferType_TRANSFER_TYPE_MTM_WIN TransferType = 5
-	// Margin too low
+	// Funds transferred from general account to meet margin requirement
 	TransferType_TRANSFER_TYPE_MARGIN_LOW TransferType = 6
-	// Margin too high
+	// Excess margin amount returned to general account
 	TransferType_TRANSFER_TYPE_MARGIN_HIGH TransferType = 7
-	// Margin was confiscated
+	// Margin confiscated from margin account to fulfil closeout
 	TransferType_TRANSFER_TYPE_MARGIN_CONFISCATED TransferType = 8
-	// Pay maker fee
+	// Maker fee paid from general account
 	TransferType_TRANSFER_TYPE_MAKER_FEE_PAY TransferType = 9
-	// Receive maker fee
+	// Maker fee received into general account
 	TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE TransferType = 10
-	// Pay infrastructure fee
+	// Infrastructure fee paid from general account
 	TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY TransferType = 11
-	// Receive infrastructure fee
+	// Infrastructure fee received into general account
 	TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE TransferType = 12
-	// Pay liquidity fee
+	// Liquidity fee paid from general account
 	TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY TransferType = 13
-	// Receive liquidity fee
+	// Liquidity fee received into general account
 	TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE TransferType = 14
-	// Bond too low
+	// Bond account funded from general account to meet required bond amount
 	TransferType_TRANSFER_TYPE_BOND_LOW TransferType = 15
-	// Bond too high
+	// Bond returned to general account after liquidity commitment was reduced
 	TransferType_TRANSFER_TYPE_BOND_HIGH TransferType = 16
-	// Actual withdraw from system
+	// Funds withdrawn from general account
 	TransferType_TRANSFER_TYPE_WITHDRAW TransferType = 18
-	// Deposit funds
+	// Funds deposited to general account
 	TransferType_TRANSFER_TYPE_DEPOSIT TransferType = 19
-	// Bond slashing
+	// Bond account penalised when liquidity commitment not met
 	TransferType_TRANSFER_TYPE_BOND_SLASHING TransferType = 20
-	// Stake reward
+	// Staking reward received
 	TransferType_TRANSFER_TYPE_STAKE_REWARD TransferType = 21
-	// A network internal instruction for the collateral engine to move funds from a user account onto the pending transfers pool
+	// A network internal instruction for the collateral engine to move funds from a user's general account into the pending transfers pool
 	TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_SEND TransferType = 22
-	// A network internal instruction for the collateral engine to move funds from the pending transfers pool account onto the destination account
+	// A network internal instruction for the collateral engine to move funds from the pending transfers pool account into the destination account
 	TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE TransferType = 23
-	// Market is closed, accounts are cleared
+	// Market-related accounts emptied because market has closed
 	TransferType_TRANSFER_TYPE_CLEAR_ACCOUNT TransferType = 24
-	// Restore a balance from a checkpoint
+	// Balances restored after network restart
 	TransferType_TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE TransferType = 25
 )
 
