@@ -1,8 +1,7 @@
 Feature: Position resolution case 5 lognormal risk model
 
     Background:
-
-    And the log normal risk model named "lognormal-risk-model-fish":
+    Given the log normal risk model named "lognormal-risk-model-fish":
       | risk aversion | tau  | mu | r     | sigma |
       | 0.001         | 0.01 | 0  | 0.0   | 1.2   |
       #calculated risk factor long: 0.336895684; risk factor short: 0.4878731
@@ -20,8 +19,9 @@ Feature: Position resolution case 5 lognormal risk model
       | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none | default-eth-for-future  |            2            |
 
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
     Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book
 
@@ -52,13 +52,13 @@ Feature: Position resolution case 5 lognormal risk model
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
 # insurance pool generation - setup orderbook
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 29000  | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 100    | 140   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
 
 # insurance pool generation - trade
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | designatedLooser | ETH/DEC19 | buy  | 29000  | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
@@ -83,12 +83,12 @@ Feature: Position resolution case 5 lognormal risk model
     Then the parties cancel the following orders:
       | party           | reference      |
       | buySideProvider | buy-provider-1 |
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party           | market id | side | volume   | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC19 | buy  | 29000    | 20    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
 # insurance pool generation - set new mark price (and trigger closeout)
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 100    | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 100    | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
