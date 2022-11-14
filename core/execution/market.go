@@ -288,6 +288,7 @@ func NewMarket(
 	stateVarEngine StateVarEngine,
 	marketActivityTracker *MarketActivityTracker,
 	assetDetails *assets.Asset,
+	peggedOrderNotify func(int64),
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, ErrEmptyMarketID
@@ -306,7 +307,7 @@ func NewMarket(
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
-	book := matching.NewCachedOrderBook(log, matchingConfig, mkt.ID, as.InAuction())
+	book := matching.NewCachedOrderBook(log, matchingConfig, mkt.ID, as.InAuction(), peggedOrderNotify)
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 
 	riskEngine := risk.NewEngine(log,

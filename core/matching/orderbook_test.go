@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
@@ -36,6 +37,8 @@ type aggressiveOrderScenario struct {
 	expectedPassiveOrdersAffected []types.Order
 	expectedTrades                []types.Trade
 }
+
+func peggedOrderCounterForTest(int64) {}
 
 type tstOB struct {
 	ob  *matching.CachedOrderBook
@@ -55,7 +58,7 @@ func getTestOrderBook(t *testing.T, market string) *tstOB {
 	tob := tstOB{
 		log: logging.NewTestLogger(),
 	}
-	tob.ob = matching.NewCachedOrderBook(tob.log, matching.NewDefaultConfig(), market, false)
+	tob.ob = matching.NewCachedOrderBook(tob.log, matching.NewDefaultConfig(), market, false, peggedOrderCounterForTest)
 
 	tob.ob.LogRemovedOrdersDebug = true
 	return &tob
@@ -3431,9 +3434,13 @@ func TestOrderBook_PeggedOrders(t *testing.T) {
 	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
+	require.Equal(t, uint64(0), book.ob.GetPeggedOrdersCount())
+
 	// We need some orders on the book to get a valid bestbis/bestask/mid price
 	makeOrder(t, book, market, "PriceSetterBuy", types.SideBuy, 100, "party01", 1)
 	makeOrder(t, book, market, "PriceSetterSell", types.SideSell, 101, "party01", 1)
+
+	require.Equal(t, uint64(0), book.ob.GetPeggedOrdersCount())
 
 	bestask, err := book.ob.GetBestAskPrice()
 	assert.NoError(t, err)
@@ -3442,12 +3449,15 @@ func TestOrderBook_PeggedOrders(t *testing.T) {
 	assert.Equal(t, bestask.Uint64(), uint64(101))
 	assert.Equal(t, bestbid.Uint64(), uint64(100))
 
-	bp1 := getOrder(t, market, "BuyPeg1", types.SideBuy, 100, "party01", 5)
+	orderID := crypto.RandomHash()
+	bp1 := getOrder(t, market, orderID, types.SideBuy, 100, "party01", 5)
 	bp1.PeggedOrder = &types.PeggedOrder{
 		Reference: types.PeggedReferenceMid,
 		Offset:    num.NewUint(3),
 	}
 	book.ob.SubmitOrder(bp1)
+
+	require.Equal(t, uint64(1), book.ob.GetPeggedOrdersCount())
 
 	sp1 := getOrder(t, market, "SellPeg1", types.SideSell, 100, "party01", 5)
 	sp1.PeggedOrder = &types.PeggedOrder{
@@ -3456,9 +3466,15 @@ func TestOrderBook_PeggedOrders(t *testing.T) {
 	}
 	book.ob.SubmitOrder(sp1)
 
+	// wash trade, doesn't go through so still expect 1
+	require.Equal(t, uint64(1), book.ob.GetPeggedOrdersCount())
+
 	// Leave auction and uncross the book
 	cancels := book.ob.EnterAuction()
 	assert.Equal(t, len(cancels), 0)
+
+	book.ob.CancelOrder(bp1)
+	require.Equal(t, uint64(0), book.ob.GetPeggedOrdersCount())
 }
 
 func TestOrderBook_BidAndAskPresentAfterAuction(t *testing.T) {

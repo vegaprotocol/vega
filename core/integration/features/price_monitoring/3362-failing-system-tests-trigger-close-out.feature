@@ -15,6 +15,7 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
+      | limits.markets.maxPeggedOrders | 1500  |
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
   Scenario: Replicate test called test_TriggerWithMarketOrder

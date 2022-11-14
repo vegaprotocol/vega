@@ -8,6 +8,7 @@ Feature: Test market depth events for pegged orders
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
+      | limits.markets.maxPeggedOrders | 1500  |
 
   Scenario: Ensure the expected order events for pegged orders are produced when mid price changes
 # setup accounts

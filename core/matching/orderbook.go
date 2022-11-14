@@ -59,8 +59,10 @@ type OrderBook struct {
 
 	// we keep track here of which type of orders are in the orderbook so we can quickly
 	// find an order of a certain type. These get updated when orders are added or removed from the book.
-	peggedOrders     map[string]struct{}
-	lpOrdersPerParty map[string]map[string]struct{}
+	peggedOrders      map[string]struct{}
+	lpOrdersPerParty  map[string]map[string]struct{}
+	peggedOrdersCount uint64
+	peggedCountNotify func(int64)
 }
 
 // CumulativeVolumeLevel represents the cumulative volume at a price level for both bid and ask.
@@ -78,7 +80,7 @@ func (b *OrderBook) Hash() []byte {
 }
 
 // NewOrderBook create an order book with a given name.
-func NewOrderBook(log *logging.Logger, config Config, marketID string, auction bool) *OrderBook {
+func NewOrderBook(log *logging.Logger, config Config, marketID string, auction bool, peggedCountNotify func(int64)) *OrderBook {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -101,7 +103,9 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string, auction b
 				MarketID: marketID,
 			},
 		},
-		peggedOrders: map[string]struct{}{},
+		peggedOrders:      map[string]struct{}{},
+		peggedOrdersCount: 0,
+		peggedCountNotify: peggedCountNotify,
 	}
 }
 
@@ -120,6 +124,10 @@ func (b *OrderBook) ReloadConf(cfg Config) {
 	b.cfgMu.Lock()
 	b.Config = cfg
 	b.cfgMu.Unlock()
+}
+
+func (b *OrderBook) GetPeggedOrdersCount() uint64 {
+	return b.peggedOrdersCount
 }
 
 // GetCloseoutPrice returns the exit price which would be achieved for a given
@@ -1096,6 +1104,10 @@ func (b *OrderBook) GetActivePeggedOrderIDs() []string {
 
 // remove removes the given order from all the lookup map.
 func (b *OrderBook) remove(o *types.Order) {
+	if _, ok := b.peggedOrders[o.ID]; ok && !b.ordersByID[o.ID].IsLiquidityOrder() {
+		b.peggedOrdersCount--
+		b.peggedCountNotify(-1)
+	}
 	delete(b.ordersByID, o.ID)
 	delete(b.ordersPerParty[o.Party], o.ID)
 	delete(b.peggedOrders, o.ID)
@@ -1115,6 +1127,10 @@ func (b *OrderBook) add(o *types.Order) {
 
 	if o.PeggedOrder != nil {
 		b.peggedOrders[o.ID] = struct{}{}
+		if !o.IsLiquidityOrder() {
+			b.peggedOrdersCount++
+			b.peggedCountNotify(1)
+		}
 	}
 
 	if !o.IsLiquidityOrder() {
@@ -1137,4 +1153,6 @@ func (b *OrderBook) cleanup() {
 	b.lpOrdersPerParty = map[string]map[string]struct{}{}
 	b.indicativePriceAndVolume = nil
 	b.peggedOrders = map[string]struct{}{}
+	b.peggedCountNotify(-int64(b.peggedOrdersCount))
+	b.peggedOrdersCount = 0
 }

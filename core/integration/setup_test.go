@@ -206,6 +206,10 @@ func newExecutionTestSetup() *executionTestSetup {
 			Param:   netparams.TransferMinTransferQuantumMultiple,
 			Watcher: execsetup.banking.OnMinTransferQuantumMultiple,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MaxPeggedOrders,
+			Watcher: execsetup.executionEngine.OnMaxPeggedOrderUpdate,
+		},
 	)
 	return execsetup
 }
