@@ -12,8 +12,9 @@ Feature: Price monitoring test for issue 2668
       | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | data source config          |
       | ETH/DEC20 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 300   |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 300   |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: Upper bound breached
     Given the parties deposit on asset's general account the following amount:
@@ -38,7 +39,7 @@ Feature: Price monitoring test for issue 2668
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 5670000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 5670000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -47,7 +48,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 4850000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 4850000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -56,7 +57,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 6630000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 6630000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -65,7 +66,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 6640000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 6640000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -117,7 +118,7 @@ Feature: Price monitoring test for issue 2668
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 5670000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 5670000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -126,7 +127,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 4850000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 4850000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -135,7 +136,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 6630000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 6630000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -144,7 +145,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 4840000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 4840000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -192,7 +193,7 @@ Feature: Price monitoring test for issue 2668
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 567   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 567   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -201,7 +202,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 485   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 485   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -210,7 +211,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 663   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 663   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -219,7 +220,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 665   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 665   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |

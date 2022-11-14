@@ -13,9 +13,10 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | data source config          |
       | ETH/DEC20 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
-      | limits.markets.maxPeggedOrders | 1500  |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | limits.markets.maxPeggedOrders          | 1500  |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
   Scenario: Replicate test called test_TriggerWithMarketOrder
@@ -50,14 +51,14 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     ## price bounds are 99711 - 99845 - 100156 - 100290
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     |
       | party2 | ETH/DEC20 | sell | 15     | 107500 | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC20 | buy  | 10     | 107100 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     |
       | party3 | ETH/DEC20 | buy  | 10     | 107300 | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC20 | sell | 10     | 107100 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -70,20 +71,20 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "107100" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     |
       | party4 | ETH/DEC20 | buy  | 50     | 107500 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the mark price should be "107100" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     |
       | party3 | ETH/DEC20 | buy  | 70     | 106000 | 0                | TYPE_LIMIT | TIF_GFA |
     And the parties place the following pegged orders:
       | party  | market id | side | volume | pegged reference | offset |
       | party4 | ETH/DEC20 | buy  | 35     | BID              | 1000   |
       | party4 | ETH/DEC20 | sell | 35     | ASK              | 3000   |
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     |
       | party2 | ETH/DEC20 | sell | 80     | 105000 | 0                | TYPE_LIMIT | TIF_GTC |
       | party3 | ETH/DEC20 | buy  | 81     | 106000 | 0                | TYPE_LIMIT | TIF_GFA |
