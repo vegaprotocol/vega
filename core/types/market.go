@@ -790,3 +790,10 @@ func (t Tags) String() string {
 }
 
 func toPtr[T any](t T) *T { return &t }
+
+type MarketCounters struct {
+	PeggedOrderCounter  uint64
+	LPShapeCount        uint64
+	PositionCount       uint64
+	OrderbookLevelCount uint64
+}

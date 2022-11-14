@@ -826,3 +826,12 @@ func (e *Engine) IsPoTInitialised() bool {
 func (e *Engine) UpdateMarketConfig(model risk.Model, monitor PriceMonitor) {
 	e.suppliedEngine.UpdateMarketConfig(model, monitor)
 }
+
+// GetLPShapeCount returns the total number of LP shapes.
+func (e *Engine) GetLPShapeCount() uint64 {
+	var total uint64
+	for _, v := range e.provisions.Slice() {
+		total += uint64(len(v.Buys) + len(v.Sells))
+	}
+	return total
+}
