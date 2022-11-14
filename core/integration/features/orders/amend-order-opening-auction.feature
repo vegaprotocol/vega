@@ -1,14 +1,14 @@
 Feature: Amend orders
 
   Background:
-
-    Given the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
-    And the average block duration is "1"
+    Given the average block duration is "1"
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+    And the following network parameters are set:
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @AmendOA
   Scenario: Amend an order during opening auction, we should leave the auction the next time update
