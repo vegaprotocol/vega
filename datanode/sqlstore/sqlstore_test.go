@@ -17,7 +17,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -28,7 +27,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
-	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -38,13 +36,12 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	testID := uuid.NewV4().String()
-	tempDir, err := ioutil.TempDir("", testID)
+	tempDir, err := os.MkdirTemp("", "datanode")
 	if err != nil {
 		panic(err)
 	}
 	postgresRuntimePath := filepath.Join(tempDir, "sqlstore")
-	defer os.RemoveAll(postgresRuntimePath)
+	defer os.RemoveAll(tempDir)
 
 	databasetest.TestMain(m, func(cfg sqlstore.Config, source *sqlstore.ConnectionSource,
 		postgresLog *bytes.Buffer,

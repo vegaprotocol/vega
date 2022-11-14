@@ -1,6 +1,6 @@
 Feature: check if the realised PnL and unreaslied PnL is calculated according to spec in glossaries: https://github.com/vegaprotocol/specs/blob/master/glossaries/trading-and-protocol-glossary.md
 
-  Scenario: 001, check PnL when traders partially close positions
+  Scenario: 001, check PnL when traders partially close positions, 0007-POSN-011, 0007-POSN-012
 
     Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r | sigma |
@@ -14,7 +14,7 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | horizon | probability | auction extension |
       | 1000    | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
@@ -123,8 +123,8 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | horizon | probability | auction extension |
       | 1000    | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config  |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party0 | USD   | 500000000 |

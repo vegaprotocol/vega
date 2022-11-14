@@ -29,11 +29,13 @@ func (t *tstOB) Finish() {
 	t.log.Sync()
 }
 
+func peggedOrderCounterForTest(int64) {}
+
 func getTestOrderBook(_ *testing.T, market string) *tstOB {
 	tob := tstOB{
 		log: logging.NewTestLogger(),
 	}
-	tob.OrderBook = NewOrderBook(tob.log, NewDefaultConfig(), market, false)
+	tob.OrderBook = NewOrderBook(tob.log, NewDefaultConfig(), market, false, peggedOrderCounterForTest)
 
 	// Turn on all the debug levels so we can cover more lines of code
 	tob.OrderBook.LogPriceLevelsDebug = true

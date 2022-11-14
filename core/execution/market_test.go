@@ -54,6 +54,8 @@ var (
 	MINMOVEDOWN = num.DecimalFromFloat(500)
 )
 
+func peggedOrderCounterForTest(int64) {}
+
 var defaultCollateralAssets = []types.Asset{
 	{
 		ID: "ETH",
@@ -216,6 +218,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	mktEngine, err := execution.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.timeService, tm.broker, mas, statevarEngine, marketActivityTracker, cfgAsset,
+		peggedOrderCounterForTest,
 	)
 	require.NoError(tm.t, err)
 
@@ -420,7 +423,8 @@ func getTestMarket2WithDP(
 
 	mktEngine, err := execution.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, timeService, broker, mas, statevar, marketActivityTracker, cfgAsset)
+		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, timeService, broker, mas, statevar, marketActivityTracker, cfgAsset,
+		peggedOrderCounterForTest)
 	if err != nil {
 		t.Fatalf("couldn't create a market: %v", err)
 	}

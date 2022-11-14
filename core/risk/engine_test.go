@@ -35,6 +35,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func peggedOrderCounterForTest(int64) {}
+
 type MLEvent interface {
 	events.Event
 	MarginLevels() proto.MarginLevels
@@ -335,7 +337,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 
 	// instantiate the book then fill it with the orders
 
-	book := matching.NewOrderBook(log, conf.Execution.Matching, marketID, false)
+	book := matching.NewOrderBook(log, conf.Execution.Matching, marketID, false, peggedOrderCounterForTest)
 
 	for _, v := range ordersInBook {
 		o := &types.Order{
@@ -440,7 +442,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	as.EXPECT().InAuction().AnyTimes().Return(false)
 	// instantiate the book then fill it with the orders
 
-	book := matching.NewOrderBook(log, conf.Execution.Matching, marketID, false)
+	book := matching.NewOrderBook(log, conf.Execution.Matching, marketID, false, peggedOrderCounterForTest)
 
 	for _, v := range ordersInBook {
 		o := &types.Order{
@@ -544,7 +546,7 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 
 	// instantiate the book then fill it with the orders
 
-	book := matching.NewOrderBook(log, conf.Execution.Matching, marketID, false)
+	book := matching.NewOrderBook(log, conf.Execution.Matching, marketID, false, peggedOrderCounterForTest)
 
 	for _, v := range ordersInBook {
 		o := &types.Order{
