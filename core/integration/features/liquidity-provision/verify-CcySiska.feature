@@ -1,6 +1,6 @@
 Feature: check the impact from change of market parameter: market.liquidity.stakeToCcySiskas
 
-  Scenario: 001, market.liquidity.stakeToCcySiskas=2, 0044-LIME-004
+  Scenario: 001, market.liquidity.stakeToCcySiskas=2, 0044-LIME-004, 0007-POSN-010
 
     Given time is updated to "2020-11-30T00:00:00Z"
 
