@@ -158,9 +158,13 @@ const (
 	// limits.
 	LimitsProposeMarketEnabledFrom = "limits.markets.proposeEnabledFrom"
 	LimitsProposeAssetEnabledFrom  = "limits.assets.proposeEnabledFrom"
+
+	// network wide limits.
+	MaxPeggedOrders = "limits.markets.maxPeggedOrders"
 )
 
 var AllKeys = map[string]struct{}{
+	MaxPeggedOrders:                                          {},
 	RewardMarketCreationQuantumMultiple:                      {},
 	MarketMarginScalingFactors:                               {},
 	MarketFeeFactorsMakerFee:                                 {},

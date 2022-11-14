@@ -110,7 +110,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	toS := map[string][]byte{}
 
 	expectedHashes := map[string]string{
-		"parameters:market-id":        "d663375fd6843a0807d17b10ad8425a6ba45c8c2dd6339f400c5b2426f900c13",
+		"parameters:market-id":        "68f1ddc356a5db96ca0e76cac0711973a121c136fb988b11a4cc195fd7795a16",
 		"pendingProvisions:market-id": "6cc4d407a2ea45e37e27993eb6f94134b3f906d080777d94bf99551aa82dc461",
 		"provisions:market-id":        "7c76902e145d0eaf0abb83382575c027097abdb418364c351e2ad085e1c69c3e",
 		"liquiditySupplied:market-id": "3276bba2a77778ba710ec29e3a6e59212452dbda69eaac8f9160930d1270da1d",

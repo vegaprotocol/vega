@@ -7,6 +7,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | market.stake.target.scalingFactor             | 1     |
             | market.liquidity.bondPenaltyParameter         | 0.2   |
             | market.liquidity.targetstake.triggering.ratio | 0.1   |
+            | limits.markets.maxPeggedOrders                | 1500  |
         And the following assets are registered:
             | id  | decimal places |
             | ETH | 5              |

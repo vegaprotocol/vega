@@ -8,6 +8,7 @@ Feature: Leave a monitoring auction, enter a liquidity auction
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
+      | limits.markets.maxPeggedOrders | 1500  |
 
   Scenario:
     Given the parties deposit on asset's general account the following amount:

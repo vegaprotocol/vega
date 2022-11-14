@@ -28,10 +28,10 @@ type CachedOrderBook struct {
 }
 
 func NewCachedOrderBook(
-	log *logging.Logger, config Config, market string, auction bool,
+	log *logging.Logger, config Config, market string, auction bool, peggedCounterNotify func(int64),
 ) *CachedOrderBook {
 	return &CachedOrderBook{
-		OrderBook: NewOrderBook(log, config, market, auction),
+		OrderBook: NewOrderBook(log, config, market, auction, peggedCounterNotify),
 		cache:     NewBookCache(),
 	}
 }

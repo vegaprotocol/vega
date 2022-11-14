@@ -38,9 +38,9 @@ func DecodeTxNoValidation(payload []byte) (*Tx, error) {
 		return nil, fmt.Errorf("unable to unmarshal transaction: %w", err)
 	}
 
-	inputData := &commandspb.InputData{}
-	if err := proto.Unmarshal(tx.InputData, inputData); err != nil {
-		return nil, fmt.Errorf("unable to unmarshal input data: %w", err)
+	inputData, err := commands.CheckInputData(tx.InputData)
+	if err := err.ErrorOrNil(); err != nil {
+		return nil, err
 	}
 
 	return &Tx{

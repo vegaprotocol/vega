@@ -140,7 +140,7 @@ func NewEngine(config Config,
 
 		// parameters
 		stakeToObligationFactor: num.DecimalFromInt64(1),
-		maxShapesSize:           100, // set it to the same default than the netparams
+		maxShapesSize:           5, // set it to the same default than the netparams
 		maxFee:                  num.DecimalFromInt64(1),
 		priceFactor:             priceFactor,
 		// provisions related state

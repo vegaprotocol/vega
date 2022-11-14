@@ -108,6 +108,9 @@ type Engine struct {
 
 	// Map of all active snapshot providers that the execution engine has generated
 	generatedProviders map[string]struct{}
+
+	maxPeggedOrders        uint64
+	totalPeggedOrdersCount int64
 }
 
 type netParamsValues struct {
@@ -395,6 +398,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.stateVarEngine,
 		e.marketActivityTracker,
 		ad,
+		e.peggedOrderCountUpdated,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -497,6 +501,14 @@ func (e *Engine) removeMarket(mktID string) {
 	}
 }
 
+func (e *Engine) peggedOrderCountUpdated(added int64) {
+	e.totalPeggedOrdersCount += added
+}
+
+func (e *Engine) canSubmitPeggedOrder() bool {
+	return uint64(e.totalPeggedOrdersCount) < e.maxPeggedOrders
+}
+
 // SubmitOrder checks the incoming order and submits it to a Vega market.
 func (e *Engine) SubmitOrder(
 	ctx context.Context,
@@ -517,6 +529,10 @@ func (e *Engine) SubmitOrder(
 	mkt, ok := e.markets[submission.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
+	}
+
+	if submission.PeggedOrder != nil && !e.canSubmitPeggedOrder() {
+		return nil, &types.ErrTooManyPeggedOrders
 	}
 
 	metrics.OrderGaugeAdd(1, submission.MarketID)
@@ -1047,6 +1063,16 @@ func (e *Engine) OnMarketCreationQuantumMultipleUpdate(ctx context.Context, d nu
 		)
 	}
 	e.npv.marketCreationQuantumMultiple = d
+	return nil
+}
+
+func (e *Engine) OnMaxPeggedOrderUpdate(ctx context.Context, max *num.Uint) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update max pegged orders",
+			logging.Uint64("max-pegged-orders", max.Uint64()),
+		)
+	}
+	e.maxPeggedOrders = max.Uint64()
 	return nil
 }
 
