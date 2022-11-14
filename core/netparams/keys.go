@@ -165,7 +165,7 @@ const (
 
 	// network wide limits.
 	MaxPeggedOrders = "limits.markets.maxPeggedOrders"
-	// MTM interval
+	// MTM interval.
 	MarkPriceUpdateMaximumFrequency = "network.markPriceUpdateMaximumFrequency"
 )
 
