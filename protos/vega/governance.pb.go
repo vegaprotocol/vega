@@ -211,7 +211,6 @@ func (ProposalError) EnumDescriptor() ([]byte, []int) {
 //   - Passed -> Enacted.
 //   - Passed -> Failed.
 //   - Declined
-//
 // Rejected
 // Proposal can enter Failed state from any other state
 type Proposal_State int32
@@ -446,7 +445,6 @@ type InstrumentConfiguration struct {
 	// Product specification
 	//
 	// Types that are assignable to Product:
-	//
 	//	*InstrumentConfiguration_Future
 	Product isInstrumentConfiguration_Product `protobuf_oneof:"product"`
 }
@@ -541,7 +539,6 @@ type NewMarketConfiguration struct {
 	// New market risk model parameters
 	//
 	// Types that are assignable to RiskParameters:
-	//
 	//	*NewMarketConfiguration_Simple
 	//	*NewMarketConfiguration_LogNormal
 	RiskParameters isNewMarketConfiguration_RiskParameters `protobuf_oneof:"risk_parameters"`
@@ -786,7 +783,6 @@ type UpdateMarketConfiguration struct {
 	// Updated market risk model parameters
 	//
 	// Types that are assignable to RiskParameters:
-	//
 	//	*UpdateMarketConfiguration_Simple
 	//	*UpdateMarketConfiguration_LogNormal
 	RiskParameters isUpdateMarketConfiguration_RiskParameters `protobuf_oneof:"risk_parameters"`
@@ -902,7 +898,6 @@ type UpdateInstrumentConfiguration struct {
 	// Product specification
 	//
 	// Types that are assignable to Product:
-	//
 	//	*UpdateInstrumentConfiguration_Future
 	Product isUpdateInstrumentConfiguration_Product `protobuf_oneof:"product"`
 }
@@ -1270,7 +1265,6 @@ type ProposalTerms struct {
 	// Changes being proposed
 	//
 	// Types that are assignable to Change:
-	//
 	//	*ProposalTerms_UpdateMarket
 	//	*ProposalTerms_NewMarket
 	//	*ProposalTerms_UpdateNetworkParameter

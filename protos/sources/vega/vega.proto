@@ -925,6 +925,8 @@ message MarketData {
   repeated LiquidityProviderFeeShare liquidity_provider_fee_share = 26;
   // The current state of the market
   Market.State market_state = 27;
+  // next MTM timestamp
+  int64 next_mark_to_market = 28;
 }
 
 // The equity like share of liquidity fee for each liquidity provider
