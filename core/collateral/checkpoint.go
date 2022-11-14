@@ -129,7 +129,7 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 			continue
 		}
 		switch acc.Type {
-		case types.AccountTypeMargin, types.AccountTypeGeneral, types.AccountTypeBond,
+		case types.AccountTypeMargin, types.AccountTypeGeneral, types.AccountTypeBond, types.AccountTypeFeesLiquidity,
 			types.AccountTypeInsurance, types.AccountTypeGlobalReward,
 			types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward,
 			types.AccountTypeMarketProposerReward, types.AccountTypeFeesInfrastructure, types.AccountTypePendingTransfers:
