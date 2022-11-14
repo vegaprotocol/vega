@@ -714,3 +714,30 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
       | 949        | TRADING_MODE_CONTINUOUS | 6643         | 10000          | 70            | 10000              |
+
+
+    # Place another trade and observe that it gets picked up by the market value proxy
+    Then the parties place the following orders:
+      | party  | market id | side  | volume | price | resulting trades | type        | tif     |
+      | party2 | ETH/MAR22 | buy   | 10     | 1000  | 2                | TYPE_MARKET | TIF_FOK |
+
+    Then the network moves ahead "100" blocks
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
+      | 951        | TRADING_MODE_CONTINUOUS | 6657         | 10000          | 70            | 85590              |
+
+    # Increase the window length to 40 min
+    Then the following network parameters are set:
+      | name                                                | value |
+      | market.value.windowLength                           | 40m  |
+
+    # Move beyond 30min (previous window length) and observe that trades are still picked up by market value proxy
+    Then the network moves ahead "1000" blocks
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
+      | 951        | TRADING_MODE_CONTINUOUS | 6657         | 10000          | 70            | 10374              |
+
+    Then the network moves ahead "100" blocks
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
+      | 951        | TRADING_MODE_CONTINUOUS | 6657         | 10000          | 70            | 10000              |
