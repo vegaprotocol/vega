@@ -106,8 +106,8 @@ Feature: Test closeout type 1: margin >= cost of closeout
     Then the mark price should be "100" for the market "ETH/DEC19"  
     
    # TODO: these calculations, due to MTM changes are not entirely accurate
-   # slippage is calculated from the order book before the trade happens, which is (105+110*99)/100-100=9.95 , round down to 9
-   # party1 maintenance margin should be: position_vol* slippage + vol * riskfactor * markprice= 100*9 + 100*0.48787313795861700*100=5779
+   # slippage is calculated from the order book before the trade happens, which is (105+115*99)/100-100=14
+   # party1 maintenance margin should be: position_vol* slippage + vol * riskfactor * markprice= 100*14 + 100*0.48787313795861700*100=6278.73 rounded up to 6279
     And the parties should have the following margin levels:
       | party   | market id  | maintenance | search | initial | release |
       | party1  | ETH/DEC19  | 6279        | 12558  | 15697   | 18837   |
