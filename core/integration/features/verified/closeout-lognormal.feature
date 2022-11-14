@@ -16,8 +16,9 @@ Feature: Closeout scenarios
       | ETH/DEC19 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future |
       | ETH/DEC20 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | default-basic    | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: 2 parties get close-out at the same time. Distressed position gets taken over by LP, distressed order gets canceled (0005-COLL-002; 0012-POSR-001; 0012-POSR-002; 0012-POSR-004; 0012-POSR-005)
     # setup accounts, we are trying to closeout trader3 first and then trader2
@@ -50,7 +51,7 @@ Feature: Closeout scenarios
     And the mark price should be "10" for the market "ETH/DEC19"
 
     # setup trader2 position to be ready to takeover trader3's position once trader3 is closed out
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | trader2 | ETH/DEC19 | buy  | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTC | buy-order-3 |
     Then the order book should have the following volumes for market "ETH/DEC19":
@@ -73,7 +74,7 @@ Feature: Closeout scenarios
       | trader2 | USD   | ETH/DEC19 | 642    | 1358    |
 
     # setup trader3 position and close it out
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | trader3 | ETH/DEC19 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | buy-position-31 |
 
@@ -102,7 +103,7 @@ Feature: Closeout scenarios
       | auxiliary1 | -10    | 0              | 0            |
       | auxiliary2 | 10     | 0              | 0            |
     #setup trader3 position and close it out
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party      | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | auxiliary2 | ETH/DEC19 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
 
@@ -133,7 +134,8 @@ Feature: Closeout scenarios
       | auxiliary2 | 0      | 0              | 900          |
       | trader2    | 0      | 0              | 0            |
       | trader3    | 0      | 0              | -90          |
-      | lprov      | 10     | 550            | -461         |
+      | lprov      | 10     | 500            | -411         |
+      #| lprov      | 10     | 550            | -461         |
     And the mark price should be "100" for the market "ETH/DEC19"
 
 Scenario: Position becomes distressed upon exiting an auction (0012-POSR-007)

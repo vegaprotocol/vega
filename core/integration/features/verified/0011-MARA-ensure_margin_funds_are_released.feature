@@ -1,10 +1,12 @@
 Feature: Test margins releases on position = 0
 
   Background:
-
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: No margin left for fok order as first order (0011-MARA-003)
     Given the parties deposit on asset's general account the following amount:
@@ -40,7 +42,7 @@ Feature: Test margins releases on position = 0
       | party1 | party1-1 |
       | party2 | party2-1 |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | partyGuy | ETH/DEC19 | buy  | 13     | 15000 | 0                | TYPE_LIMIT | TIF_FOK | ref-1     |
     Then the parties should have the following account balances:
@@ -81,7 +83,7 @@ Feature: Test margins releases on position = 0
       | party1 | party1-1 |
       | party2 | party2-1 |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | partyGuy | ETH/DEC19 | buy  | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following account balances:
@@ -89,7 +91,7 @@ Feature: Test margins releases on position = 0
       | partyGuy | BTC   | ETH/DEC19 | 980    | 999999020 |
 
    # now we place an order which would wash trade and see
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | partyGuy | ETH/DEC19 | sell | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
@@ -132,7 +134,7 @@ Feature: Test margins releases on position = 0
       | party1 | party1-1  |
       | party2 | party2-1  |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | partyGuy | ETH/DEC19 | buy  | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
@@ -182,7 +184,7 @@ Feature: Test margins releases on position = 0
       | party1 | party1-1 |
       | party2 | party2-1 |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | partyGuy | ETH/DEC19 | buy  | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
@@ -191,7 +193,7 @@ Feature: Test margins releases on position = 0
       | partyGuy | BTC   | ETH/DEC19 | 980    | 999999020 |
 
     # now we place an order which would wash trade and see
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | partyGuy | ETH/DEC19 | sell | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 

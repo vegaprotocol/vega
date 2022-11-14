@@ -3,6 +3,9 @@ Feature: Target stake
     Given the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 10          | -10           | 0.1                    |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
     # Market risk parameters and assets don't really matter.
     # We need to track open interest i.e. sum of all long positions across the parties and how they change over time
     And the log normal risk model named "log-normal-risk-model-1":
@@ -94,7 +97,7 @@ Feature: Target stake
     Then the network moves ahead "1" blocks
 
     # Trader 3 closes out 20
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_3  | ETH/DEC21 | sell | 20     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_1    |
 
@@ -111,7 +114,7 @@ Feature: Target stake
     # target_stake = 90 x 40 x 1.5 x 0.1 = 540
     And the target stake should be "540" for the market "ETH/DEC21"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_3  | ETH/DEC21 | sell | 10     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_1    |
 
@@ -135,7 +138,7 @@ Feature: Target stake
     And the target stake should be "405" for the market "ETH/DEC21"
     And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | tt_1  | ETH/DEC21 | sell | 10     | 90    | 1                | TYPE_LIMIT | TIF_GTC |
     # target stake is: 90 x 20 x 1.5 x 0.1 = 270 as now the max OI within the window is 20
@@ -144,7 +147,7 @@ Feature: Target stake
       | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 270          | 2000           | 20            |
     And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
     
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | tt_2  | ETH/DEC21 | sell | 20     | 90    | 1                | TYPE_LIMIT | TIF_GTC |
     # OI is now 0, but target stake remains unchanged as max OI of 20 is still within the window 

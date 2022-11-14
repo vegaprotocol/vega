@@ -36,6 +36,9 @@ Feature: test risk model parameter sigma
       | party1 | USD   | 5000000000                  |
       | party2 | USD   | 5000000000                  |
       | party3 | USD   | 5000000000                  |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: 001, test market ETH/MAR53(sigma=50),
     And the following network parameters are set:

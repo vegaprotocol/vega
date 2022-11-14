@@ -8,6 +8,7 @@ Feature: Test liquidity monitoring
       | market.liquidity.targetstake.triggering.ratio | 1     |
       | network.floatingPointUpdates.delay            | 5s    |
       | market.auction.minimumDuration                | 1     |
+      | network.markPriceUpdateMaximumFrequency       | 0s    |
     And the average block duration is "2"
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |

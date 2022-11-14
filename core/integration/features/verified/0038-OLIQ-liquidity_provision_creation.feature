@@ -3,16 +3,17 @@ Feature: Test LP orders
   Scenario: 001, create liquidity provisions (0038-OLIQ-additional-tests)
   Background:
 
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
     Given the parties deposit on asset's general account the following amount:
-      | party           | asset | amount    |
-      | party1          | ETH   | 100000000 |
+      | party            | asset | amount    |
+      | party1           | ETH   | 100000000 |
       | sellSideProvider | ETH   | 100000000 |
       | buySideProvider  | ETH   | 100000000 |
       | auxiliary        | ETH   | 100000000 |
@@ -78,8 +79,9 @@ Feature: Test LP orders
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |decimal places | position decimal places |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |   1           |  2                      |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount    |
       | party1           | ETH   | 100000000000 |

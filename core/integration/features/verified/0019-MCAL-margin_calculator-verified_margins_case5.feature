@@ -2,13 +2,13 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
   # https://drive.google.com/drive/folders/1BCOKaEb7LZYAKoiPfXfaqwM4BNicPpF-
 
   Background:
-
+    Given the following network parameters are set:
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
-    And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
     And the parties deposit on asset's general account the following amount:
       | party     | asset | amount       |
       | party1    | ETH   | 980000000    |
@@ -56,7 +56,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
     # no margin account created for party1, just general account
     And "party1" should have one account per asset
     # placing test order
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 13     | 9000000 | 3                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And "party1" should have general account balance of "698400040" for asset "ETH"
@@ -85,7 +85,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | buySideMM  | buy4      |
       | sellSideMM | sell2     |
       | sellSideMM | sell3     |
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | buySideMM  | ETH/DEC19 | buy  | 45     | 7000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 50     | 7500000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -103,7 +103,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 300
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 50     | 30000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 27     | 30000000 | 4                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -125,7 +125,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | party1 | -13    | -270200000     | 0            |
 
     # ENTER SEARCH LEVEL (& DEPLEAT GENERAL ACCOUNT)
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 11     | 50000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 50     | 50000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -137,7 +137,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | party1 | -13    | -530200000     | 0            |
 
     # FORCED CLOSEOUT
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 21     | 80000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 11     | 80000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-2     |
