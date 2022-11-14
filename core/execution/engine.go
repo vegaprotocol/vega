@@ -147,7 +147,7 @@ func defaultNetParamsValues() netParamsValues {
 		minProbabilityOfTradingLPOrders: num.DecimalFromInt64(-1),
 		minLpStakeQuantumMultiple:       num.DecimalFromInt64(-1),
 		marketCreationQuantumMultiple:   num.DecimalFromInt64(-1),
-		markPriceUpdateMaximumFrequency: time.Duration(0), // ??
+		markPriceUpdateMaximumFrequency: time.Duration(5 * time.Second), // default is 5 seconds, should come from net params though
 	}
 }
 

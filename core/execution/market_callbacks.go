@@ -109,6 +109,9 @@ func (m *Market) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d tim
 }
 
 func (m *Market) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.Duration) {
-	m.nextMTM = m.nextMTM.Add(-m.mtmDelta).Add(d)
+	if !m.nextMTM.IsZero() {
+		m.nextMTM = m.nextMTM.Add(-m.mtmDelta)
+	}
+	m.nextMTM = m.nextMTM.Add(d)
 	m.mtmDelta = d
 }
