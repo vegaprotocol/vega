@@ -2447,7 +2447,14 @@
           ],
           "properties": {
             "permissions": {
-              "type": "object"
+              "type": "object",
+              "patternProperties": {
+                ".": {
+                  "schema": {
+                    "$ref": "#/components/schemas/permissions_summary"
+                  }
+                }
+              }
             }
           }
         }
