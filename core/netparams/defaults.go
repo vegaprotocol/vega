@@ -221,7 +221,9 @@ func defaultNetParams() map[string]value {
 	// add additional cross net param rules
 	m[MarketAuctionMinimumDuration].AddRules(DurationDependentLT(MarketAuctionMaximumDuration, m[MarketAuctionMaximumDuration].(*Duration)))
 	m[MarketAuctionMaximumDuration].AddRules(DurationDependentGT(MarketAuctionMinimumDuration, m[MarketAuctionMinimumDuration].(*Duration)))
-	m[MarkPriceUpdateMaximumFrequency].AddRules(DurationGTE(time.Duration(0)))
+	// could just do 24 * 3600 * time.Second, but this is easier to read
+	maxFreq, _ := time.ParseDuration("24h")
+	m[MarkPriceUpdateMaximumFrequency].AddRules(DurationGTE(time.Duration(0)), DurationLTE(maxFreq))
 	return m
 }
 
