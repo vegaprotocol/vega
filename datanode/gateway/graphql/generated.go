@@ -74,7 +74,6 @@ type ResolverRoot interface {
 	MarketData() MarketDataResolver
 	MarketDepth() MarketDepthResolver
 	MarketDepthUpdate() MarketDepthUpdateResolver
-	MarketTimestamps() MarketTimestampsResolver
 	NewAsset() NewAssetResolver
 	NewFreeform() NewFreeformResolver
 	NewMarket() NewMarketResolver
@@ -84,7 +83,6 @@ type ResolverRoot interface {
 	ObservableMarketData() ObservableMarketDataResolver
 	ObservableMarketDepth() ObservableMarketDepthResolver
 	ObservableMarketDepthUpdate() ObservableMarketDepthUpdateResolver
-	OneOffTransfer() OneOffTransferResolver
 	OracleData() OracleDataResolver
 	OracleSpec() OracleSpecResolver
 	Order() OrderResolver
@@ -1319,10 +1317,10 @@ type ComplexityRoot struct {
 		Erc20MultiSigSignerRemovedBundles  func(childComplexity int, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) int
 		Erc20SetAssetLimitsBundle          func(childComplexity int, proposalID string) int
 		Erc20WithdrawalApproval            func(childComplexity int, withdrawalID string) int
-		EstimateOrder                      func(childComplexity int, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *string, typeArg vega.Order_Type) int
+		EstimateOrder                      func(childComplexity int, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *int64, typeArg vega.Order_Type) int
 		EthereumKeyRotations               func(childComplexity int, nodeID *string) int
-		GetMarketDataHistoryByID           func(childComplexity int, id string, start *int, end *int, skip *int, first *int, last *int) int
-		GetMarketDataHistoryConnectionByID func(childComplexity int, id string, start *int, end *int, pagination *v2.Pagination) int
+		GetMarketDataHistoryByID           func(childComplexity int, id string, start *int64, end *int64, skip *int, first *int, last *int) int
+		GetMarketDataHistoryConnectionByID func(childComplexity int, id string, start *int64, end *int64, pagination *v2.Pagination) int
 		KeyRotations                       func(childComplexity int, id *string) int
 		KeyRotationsConnection             func(childComplexity int, id *string, pagination *v2.Pagination) int
 		LastBlockHeight                    func(childComplexity int) int
@@ -1790,7 +1788,7 @@ type AccountUpdateResolver interface {
 	AssetID(ctx context.Context, obj *v2.AccountBalance) (string, error)
 }
 type AggregatedLedgerEntriesResolver interface {
-	VegaTime(ctx context.Context, obj *v2.AggregatedLedgerEntries) (string, error)
+	VegaTime(ctx context.Context, obj *v2.AggregatedLedgerEntries) (int64, error)
 
 	TransferType(ctx context.Context, obj *v2.AggregatedLedgerEntries) (*string, error)
 }
@@ -1809,12 +1807,12 @@ type AssetResolver interface {
 	MarketProposerRewardAccount(ctx context.Context, obj *vega.Asset) (*v2.AccountBalance, error)
 }
 type AuctionEventResolver interface {
-	AuctionStart(ctx context.Context, obj *v1.AuctionEvent) (string, error)
-	AuctionEnd(ctx context.Context, obj *v1.AuctionEvent) (string, error)
+	AuctionStart(ctx context.Context, obj *v1.AuctionEvent) (int64, error)
+	AuctionEnd(ctx context.Context, obj *v1.AuctionEvent) (int64, error)
 }
 type CandleResolver interface {
-	PeriodStart(ctx context.Context, obj *v2.Candle) (string, error)
-	LastUpdateInPeriod(ctx context.Context, obj *v2.Candle) (string, error)
+	PeriodStart(ctx context.Context, obj *v2.Candle) (int64, error)
+	LastUpdateInPeriod(ctx context.Context, obj *v2.Candle) (int64, error)
 
 	Volume(ctx context.Context, obj *v2.Candle) (string, error)
 }
@@ -1830,9 +1828,6 @@ type DepositResolver interface {
 	Party(ctx context.Context, obj *vega.Deposit) (*vega.Party, error)
 
 	Asset(ctx context.Context, obj *vega.Deposit) (*vega.Asset, error)
-
-	CreatedTimestamp(ctx context.Context, obj *vega.Deposit) (string, error)
-	CreditedTimestamp(ctx context.Context, obj *vega.Deposit) (*string, error)
 }
 type EpochResolver interface {
 	ID(ctx context.Context, obj *vega.Epoch) (string, error)
@@ -1842,9 +1837,9 @@ type EpochResolver interface {
 	DelegationsConnection(ctx context.Context, obj *vega.Epoch, partyID *string, nodeID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error)
 }
 type EpochTimestampsResolver interface {
-	Start(ctx context.Context, obj *vega.EpochTimestamps) (*string, error)
-	Expiry(ctx context.Context, obj *vega.EpochTimestamps) (*string, error)
-	End(ctx context.Context, obj *vega.EpochTimestamps) (*string, error)
+	Start(ctx context.Context, obj *vega.EpochTimestamps) (*int64, error)
+	Expiry(ctx context.Context, obj *vega.EpochTimestamps) (*int64, error)
+	End(ctx context.Context, obj *vega.EpochTimestamps) (*int64, error)
 }
 type EthereumKeyRotationResolver interface {
 	BlockHeight(ctx context.Context, obj *v1.EthereumKeyRotation) (string, error)
@@ -1875,16 +1870,12 @@ type LiquidityOrderReferenceResolver interface {
 }
 type LiquidityProvisionResolver interface {
 	Party(ctx context.Context, obj *vega.LiquidityProvision) (*vega.Party, error)
-	CreatedAt(ctx context.Context, obj *vega.LiquidityProvision) (string, error)
-	UpdatedAt(ctx context.Context, obj *vega.LiquidityProvision) (*string, error)
+
 	Market(ctx context.Context, obj *vega.LiquidityProvision) (*vega.Market, error)
 
 	Version(ctx context.Context, obj *vega.LiquidityProvision) (string, error)
 }
 type LiquidityProvisionUpdateResolver interface {
-	CreatedAt(ctx context.Context, obj *vega.LiquidityProvision) (string, error)
-	UpdatedAt(ctx context.Context, obj *vega.LiquidityProvision) (*string, error)
-
 	Version(ctx context.Context, obj *vega.LiquidityProvision) (string, error)
 }
 type MarginLevelsResolver interface {
@@ -1894,15 +1885,11 @@ type MarginLevelsResolver interface {
 	MaintenanceLevel(ctx context.Context, obj *vega.MarginLevels) (string, error)
 
 	InitialLevel(ctx context.Context, obj *vega.MarginLevels) (string, error)
-
-	Timestamp(ctx context.Context, obj *vega.MarginLevels) (string, error)
 }
 type MarginLevelsUpdateResolver interface {
 	MaintenanceLevel(ctx context.Context, obj *vega.MarginLevels) (string, error)
 
 	InitialLevel(ctx context.Context, obj *vega.MarginLevels) (string, error)
-
-	Timestamp(ctx context.Context, obj *vega.MarginLevels) (string, error)
 }
 type MarketResolver interface {
 	DecimalPlaces(ctx context.Context, obj *vega.Market) (int, error)
@@ -1937,7 +1924,6 @@ type MarketDataResolver interface {
 
 	BestStaticOfferVolume(ctx context.Context, obj *vega.MarketData) (string, error)
 
-	Timestamp(ctx context.Context, obj *vega.MarketData) (string, error)
 	OpenInterest(ctx context.Context, obj *vega.MarketData) (string, error)
 	AuctionEnd(ctx context.Context, obj *vega.MarketData) (*string, error)
 	AuctionStart(ctx context.Context, obj *vega.MarketData) (*string, error)
@@ -1960,12 +1946,6 @@ type MarketDepthUpdateResolver interface {
 
 	SequenceNumber(ctx context.Context, obj *vega.MarketDepthUpdate) (string, error)
 	PreviousSequenceNumber(ctx context.Context, obj *vega.MarketDepthUpdate) (string, error)
-}
-type MarketTimestampsResolver interface {
-	Proposed(ctx context.Context, obj *vega.MarketTimestamps) (*string, error)
-	Pending(ctx context.Context, obj *vega.MarketTimestamps) (*string, error)
-	Open(ctx context.Context, obj *vega.MarketTimestamps) (*string, error)
-	Close(ctx context.Context, obj *vega.MarketTimestamps) (*string, error)
 }
 type NewAssetResolver interface {
 	Name(ctx context.Context, obj *vega.NewAsset) (string, error)
@@ -2003,7 +1983,6 @@ type ObservableMarketDataResolver interface {
 
 	BestStaticOfferVolume(ctx context.Context, obj *vega.MarketData) (string, error)
 
-	Timestamp(ctx context.Context, obj *vega.MarketData) (string, error)
 	OpenInterest(ctx context.Context, obj *vega.MarketData) (string, error)
 	AuctionEnd(ctx context.Context, obj *vega.MarketData) (*string, error)
 	AuctionStart(ctx context.Context, obj *vega.MarketData) (*string, error)
@@ -2022,9 +2001,6 @@ type ObservableMarketDepthUpdateResolver interface {
 	SequenceNumber(ctx context.Context, obj *vega.MarketDepthUpdate) (string, error)
 	PreviousSequenceNumber(ctx context.Context, obj *vega.MarketDepthUpdate) (string, error)
 }
-type OneOffTransferResolver interface {
-	DeliverOn(ctx context.Context, obj *v1.OneOffTransfer) (*string, error)
-}
 type OracleDataResolver interface {
 	ExternalData(ctx context.Context, obj *vega.OracleData) (*ExternalData, error)
 }
@@ -2037,15 +2013,12 @@ type OrderResolver interface {
 	Size(ctx context.Context, obj *vega.Order) (string, error)
 	Remaining(ctx context.Context, obj *vega.Order) (string, error)
 	Party(ctx context.Context, obj *vega.Order) (*vega.Party, error)
-	CreatedAt(ctx context.Context, obj *vega.Order) (string, error)
-	ExpiresAt(ctx context.Context, obj *vega.Order) (*string, error)
 
 	Trades(ctx context.Context, obj *vega.Order) ([]*vega.Trade, error)
 	TradesConnection(ctx context.Context, obj *vega.Order, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error)
 
 	RejectionReason(ctx context.Context, obj *vega.Order) (*vega.OrderError, error)
 	Version(ctx context.Context, obj *vega.Order) (string, error)
-	UpdatedAt(ctx context.Context, obj *vega.Order) (*string, error)
 
 	LiquidityProvision(ctx context.Context, obj *vega.Order) (*vega.LiquidityProvision, error)
 }
@@ -2053,12 +2026,8 @@ type OrderUpdateResolver interface {
 	Size(ctx context.Context, obj *vega.Order) (string, error)
 	Remaining(ctx context.Context, obj *vega.Order) (string, error)
 
-	CreatedAt(ctx context.Context, obj *vega.Order) (string, error)
-	ExpiresAt(ctx context.Context, obj *vega.Order) (*string, error)
-
 	RejectionReason(ctx context.Context, obj *vega.Order) (*vega.OrderError, error)
 	Version(ctx context.Context, obj *vega.Order) (string, error)
-	UpdatedAt(ctx context.Context, obj *vega.Order) (*string, error)
 }
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *vega.Party, skip *int, first *int, last *int) ([]*vega.Order, error)
@@ -2101,12 +2070,9 @@ type PositionResolver interface {
 
 	Margins(ctx context.Context, obj *vega.Position) ([]*vega.MarginLevels, error)
 	MarginsConnection(ctx context.Context, obj *vega.Position, pagination *v2.Pagination) (*v2.MarginConnection, error)
-	UpdatedAt(ctx context.Context, obj *vega.Position) (*string, error)
 }
 type PositionUpdateResolver interface {
 	OpenVolume(ctx context.Context, obj *vega.Position) (string, error)
-
-	UpdatedAt(ctx context.Context, obj *vega.Position) (*string, error)
 }
 type PriceLevelResolver interface {
 	Volume(ctx context.Context, obj *vega.PriceLevel) (string, error)
@@ -2117,7 +2083,7 @@ type ProposalResolver interface {
 	Reference(ctx context.Context, obj *vega.GovernanceData) (string, error)
 	Party(ctx context.Context, obj *vega.GovernanceData) (*vega.Party, error)
 	State(ctx context.Context, obj *vega.GovernanceData) (vega.Proposal_State, error)
-	Datetime(ctx context.Context, obj *vega.GovernanceData) (string, error)
+	Datetime(ctx context.Context, obj *vega.GovernanceData) (int64, error)
 	Rationale(ctx context.Context, obj *vega.GovernanceData) (*vega.ProposalRationale, error)
 	Terms(ctx context.Context, obj *vega.GovernanceData) (*vega.ProposalTerms, error)
 	Votes(ctx context.Context, obj *vega.GovernanceData) (*ProposalVotes, error)
@@ -2129,9 +2095,9 @@ type ProposalResolver interface {
 	RequiredLpParticipation(ctx context.Context, obj *vega.GovernanceData) (*string, error)
 }
 type ProposalTermsResolver interface {
-	ClosingDatetime(ctx context.Context, obj *vega.ProposalTerms) (string, error)
-	EnactmentDatetime(ctx context.Context, obj *vega.ProposalTerms) (*string, error)
-	ValidationDatetime(ctx context.Context, obj *vega.ProposalTerms) (*string, error)
+	ClosingDatetime(ctx context.Context, obj *vega.ProposalTerms) (int64, error)
+	EnactmentDatetime(ctx context.Context, obj *vega.ProposalTerms) (*int64, error)
+	ValidationDatetime(ctx context.Context, obj *vega.ProposalTerms) (*int64, error)
 	Change(ctx context.Context, obj *vega.ProposalTerms) (ProposalChange, error)
 }
 type ProtocolUpgradeProposalResolver interface {
@@ -2149,10 +2115,10 @@ type QueryResolver interface {
 	Erc20MultiSigSignerRemovedBundles(ctx context.Context, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerRemovedConnection, error)
 	Erc20SetAssetLimitsBundle(ctx context.Context, proposalID string) (*ERC20SetAssetLimitsBundle, error)
 	Erc20WithdrawalApproval(ctx context.Context, withdrawalID string) (*Erc20WithdrawalApproval, error)
-	EstimateOrder(ctx context.Context, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *string, typeArg vega.Order_Type) (*OrderEstimate, error)
+	EstimateOrder(ctx context.Context, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *int64, typeArg vega.Order_Type) (*OrderEstimate, error)
 	EthereumKeyRotations(ctx context.Context, nodeID *string) (*v2.EthereumKeyRotationsConnection, error)
-	GetMarketDataHistoryByID(ctx context.Context, id string, start *int, end *int, skip *int, first *int, last *int) ([]*vega.MarketData, error)
-	GetMarketDataHistoryConnectionByID(ctx context.Context, id string, start *int, end *int, pagination *v2.Pagination) (*v2.MarketDataConnection, error)
+	GetMarketDataHistoryByID(ctx context.Context, id string, start *int64, end *int64, skip *int, first *int, last *int) ([]*vega.MarketData, error)
+	GetMarketDataHistoryConnectionByID(ctx context.Context, id string, start *int64, end *int64, pagination *v2.Pagination) (*v2.MarketDataConnection, error)
 	BalanceChanges(ctx context.Context, filter *v2.AccountFilter, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedBalanceConnection, error)
 	LedgerEntries(ctx context.Context, filter *v2.LedgerEntryFilter, groupOptions *GroupOptions, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedLedgerEntriesConnection, error)
 	KeyRotations(ctx context.Context, id *string) ([]*v1.KeyRotation, error)
@@ -2217,8 +2183,6 @@ type RewardResolver interface {
 	RewardType(ctx context.Context, obj *vega.Reward) (vega.AccountType, error)
 	Party(ctx context.Context, obj *vega.Reward) (*vega.Party, error)
 	Epoch(ctx context.Context, obj *vega.Reward) (*vega.Epoch, error)
-
-	ReceivedAt(ctx context.Context, obj *vega.Reward) (string, error)
 }
 type RewardPerAssetDetailResolver interface {
 	Asset(ctx context.Context, obj *vega.RewardSummary) (*vega.Asset, error)
@@ -2233,17 +2197,18 @@ type RewardSummaryResolver interface {
 	RewardsConnection(ctx context.Context, obj *vega.RewardSummary, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
 }
 type StakeLinkingResolver interface {
-	Timestamp(ctx context.Context, obj *v1.StakeLinking) (string, error)
+	Timestamp(ctx context.Context, obj *v1.StakeLinking) (int64, error)
 	Party(ctx context.Context, obj *v1.StakeLinking) (*vega.Party, error)
-
-	FinalizedAt(ctx context.Context, obj *v1.StakeLinking) (*string, error)
 }
 type StatisticsResolver interface {
 	BlockHeight(ctx context.Context, obj *v13.Statistics) (string, error)
 
 	BacklogLength(ctx context.Context, obj *v13.Statistics) (string, error)
 	TotalPeers(ctx context.Context, obj *v13.Statistics) (string, error)
+	GenesisTime(ctx context.Context, obj *v13.Statistics) (int64, error)
+	CurrentTime(ctx context.Context, obj *v13.Statistics) (int64, error)
 
+	VegaTime(ctx context.Context, obj *v13.Statistics) (int64, error)
 	Status(ctx context.Context, obj *v13.Statistics) (string, error)
 	TxPerBlock(ctx context.Context, obj *v13.Statistics) (string, error)
 	AverageTxBytes(ctx context.Context, obj *v13.Statistics) (string, error)
@@ -2286,7 +2251,7 @@ type TradeResolver interface {
 	Seller(ctx context.Context, obj *vega.Trade) (*vega.Party, error)
 
 	Size(ctx context.Context, obj *vega.Trade) (string, error)
-	CreatedAt(ctx context.Context, obj *vega.Trade) (string, error)
+	CreatedAt(ctx context.Context, obj *vega.Trade) (int64, error)
 
 	BuyerFee(ctx context.Context, obj *vega.Trade) (*TradeFee, error)
 	SellerFee(ctx context.Context, obj *vega.Trade) (*TradeFee, error)
@@ -2298,7 +2263,7 @@ type TradeUpdateResolver interface {
 	SellerID(ctx context.Context, obj *vega.Trade) (string, error)
 
 	Size(ctx context.Context, obj *vega.Trade) (string, error)
-	CreatedAt(ctx context.Context, obj *vega.Trade) (string, error)
+	CreatedAt(ctx context.Context, obj *vega.Trade) (int64, error)
 
 	BuyerFee(ctx context.Context, obj *vega.Trade) (*TradeFee, error)
 	SellerFee(ctx context.Context, obj *vega.Trade) (*TradeFee, error)
@@ -2311,7 +2276,6 @@ type TransactionResultResolver interface {
 type TransferResolver interface {
 	Asset(ctx context.Context, obj *v1.Transfer) (*vega.Asset, error)
 
-	Timestamp(ctx context.Context, obj *v1.Transfer) (string, error)
 	Kind(ctx context.Context, obj *v1.Transfer) (TransferKind, error)
 }
 type UpdateAssetResolver interface {
@@ -2337,7 +2301,7 @@ type UpdateNetworkParameterResolver interface {
 }
 type VoteResolver interface {
 	Party(ctx context.Context, obj *vega.Vote) (*vega.Party, error)
-	Datetime(ctx context.Context, obj *vega.Vote) (string, error)
+	Datetime(ctx context.Context, obj *vega.Vote) (int64, error)
 
 	GovernanceTokenBalance(ctx context.Context, obj *vega.Vote) (string, error)
 	GovernanceTokenWeight(ctx context.Context, obj *vega.Vote) (string, error)
@@ -2348,9 +2312,6 @@ type WithdrawalResolver interface {
 
 	Asset(ctx context.Context, obj *vega.Withdrawal) (*vega.Asset, error)
 
-	Expiry(ctx context.Context, obj *vega.Withdrawal) (string, error)
-	CreatedTimestamp(ctx context.Context, obj *vega.Withdrawal) (string, error)
-	WithdrawnTimestamp(ctx context.Context, obj *vega.Withdrawal) (*string, error)
 	TxHash(ctx context.Context, obj *vega.Withdrawal) (*string, error)
 	Details(ctx context.Context, obj *vega.Withdrawal) (WithdrawalDetails, error)
 }
@@ -7489,7 +7450,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.EstimateOrder(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(vega.Side), args["timeInForce"].(vega.Order_TimeInForce), args["expiration"].(*string), args["type"].(vega.Order_Type)), true
+		return e.complexity.Query.EstimateOrder(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(vega.Side), args["timeInForce"].(vega.Order_TimeInForce), args["expiration"].(*int64), args["type"].(vega.Order_Type)), true
 
 	case "Query.ethereumKeyRotations":
 		if e.complexity.Query.EthereumKeyRotations == nil {
@@ -7513,7 +7474,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.GetMarketDataHistoryByID(childComplexity, args["id"].(string), args["start"].(*int), args["end"].(*int), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+		return e.complexity.Query.GetMarketDataHistoryByID(childComplexity, args["id"].(string), args["start"].(*int64), args["end"].(*int64), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "Query.getMarketDataHistoryConnectionByID":
 		if e.complexity.Query.GetMarketDataHistoryConnectionByID == nil {
@@ -7525,7 +7486,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.GetMarketDataHistoryConnectionByID(childComplexity, args["id"].(string), args["start"].(*int), args["end"].(*int), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.GetMarketDataHistoryConnectionByID(childComplexity, args["id"].(string), args["start"].(*int64), args["end"].(*int64), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.keyRotations":
 		if e.complexity.Query.KeyRotations == nil {
@@ -11265,10 +11226,10 @@ func (ec *executionContext) field_Query_estimateOrder_args(ctx context.Context, 
 		}
 	}
 	args["timeInForce"] = arg5
-	var arg6 *string
+	var arg6 *int64
 	if tmp, ok := rawArgs["expiration"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expiration"))
-		arg6, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg6, err = ec.unmarshalOTimestamp2ᚖint64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -11313,19 +11274,19 @@ func (ec *executionContext) field_Query_getMarketDataHistoryByID_args(ctx contex
 		}
 	}
 	args["id"] = arg0
-	var arg1 *int
+	var arg1 *int64
 	if tmp, ok := rawArgs["start"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("start"))
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		arg1, err = ec.unmarshalOTimestamp2ᚖint64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["start"] = arg1
-	var arg2 *int
+	var arg2 *int64
 	if tmp, ok := rawArgs["end"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("end"))
-		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		arg2, err = ec.unmarshalOTimestamp2ᚖint64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -11373,19 +11334,19 @@ func (ec *executionContext) field_Query_getMarketDataHistoryConnectionByID_args(
 		}
 	}
 	args["id"] = arg0
-	var arg1 *int
+	var arg1 *int64
 	if tmp, ok := rawArgs["start"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("start"))
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		arg1, err = ec.unmarshalOTimestamp2ᚖint64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["start"] = arg1
-	var arg2 *int
+	var arg2 *int64
 	if tmp, ok := rawArgs["end"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("end"))
-		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		arg2, err = ec.unmarshalOTimestamp2ᚖint64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -14419,9 +14380,9 @@ func (ec *executionContext) _AggregatedLedgerEntries_vegaTime(ctx context.Contex
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_AggregatedLedgerEntries_vegaTime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14431,7 +14392,7 @@ func (ec *executionContext) fieldContext_AggregatedLedgerEntries_vegaTime(ctx co
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -15980,9 +15941,9 @@ func (ec *executionContext) _AuctionEvent_auctionStart(ctx context.Context, fiel
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_AuctionEvent_auctionStart(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15992,7 +15953,7 @@ func (ec *executionContext) fieldContext_AuctionEvent_auctionStart(ctx context.C
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -16024,9 +15985,9 @@ func (ec *executionContext) _AuctionEvent_auctionEnd(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_AuctionEvent_auctionEnd(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16036,7 +15997,7 @@ func (ec *executionContext) fieldContext_AuctionEvent_auctionEnd(ctx context.Con
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -16373,9 +16334,9 @@ func (ec *executionContext) _Candle_periodStart(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Candle_periodStart(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16385,7 +16346,7 @@ func (ec *executionContext) fieldContext_Candle_periodStart(ctx context.Context,
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -16417,9 +16378,9 @@ func (ec *executionContext) _Candle_lastUpdateInPeriod(ctx context.Context, fiel
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Candle_lastUpdateInPeriod(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16429,7 +16390,7 @@ func (ec *executionContext) fieldContext_Candle_lastUpdateInPeriod(ctx context.C
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -17145,9 +17106,9 @@ func (ec *executionContext) _Data_broadcastAt(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Data_broadcastAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17157,7 +17118,7 @@ func (ec *executionContext) fieldContext_Data_broadcastAt(ctx context.Context, f
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -17365,9 +17326,9 @@ func (ec *executionContext) _DataSourceSpec_createdAt(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_DataSourceSpec_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17377,7 +17338,7 @@ func (ec *executionContext) fieldContext_DataSourceSpec_createdAt(ctx context.Co
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -17406,9 +17367,9 @@ func (ec *executionContext) _DataSourceSpec_updatedAt(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_DataSourceSpec_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17418,7 +17379,7 @@ func (ec *executionContext) fieldContext_DataSourceSpec_updatedAt(ctx context.Co
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -18545,7 +18506,7 @@ func (ec *executionContext) _Deposit_createdTimestamp(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Deposit().CreatedTimestamp(rctx, obj)
+		return obj.CreatedTimestamp, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18557,19 +18518,19 @@ func (ec *executionContext) _Deposit_createdTimestamp(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Deposit_createdTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Deposit",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -18589,7 +18550,7 @@ func (ec *executionContext) _Deposit_creditedTimestamp(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Deposit().CreditedTimestamp(rctx, obj)
+		return obj.CreditedTimestamp, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18598,19 +18559,19 @@ func (ec *executionContext) _Deposit_creditedTimestamp(ctx context.Context, fiel
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Deposit_creditedTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Deposit",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -19368,9 +19329,9 @@ func (ec *executionContext) _ERC20MultiSigSignerAddedBundle_timestamp(ctx contex
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ERC20MultiSigSignerAddedBundle_timestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19380,7 +19341,7 @@ func (ec *executionContext) fieldContext_ERC20MultiSigSignerAddedBundle_timestam
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -19832,9 +19793,9 @@ func (ec *executionContext) _ERC20MultiSigSignerRemovedBundle_timestamp(ctx cont
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ERC20MultiSigSignerRemovedBundle_timestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19844,7 +19805,7 @@ func (ec *executionContext) fieldContext_ERC20MultiSigSignerRemovedBundle_timest
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -21012,9 +20973,9 @@ func (ec *executionContext) _EpochParticipation_offline(ctx context.Context, fie
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EpochParticipation_offline(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -21024,7 +20985,7 @@ func (ec *executionContext) fieldContext_EpochParticipation_offline(ctx context.
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -21053,9 +21014,9 @@ func (ec *executionContext) _EpochParticipation_online(ctx context.Context, fiel
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EpochParticipation_online(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -21065,7 +21026,7 @@ func (ec *executionContext) fieldContext_EpochParticipation_online(ctx context.C
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -21135,9 +21096,9 @@ func (ec *executionContext) _EpochTimestamps_start(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EpochTimestamps_start(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -21147,7 +21108,7 @@ func (ec *executionContext) fieldContext_EpochTimestamps_start(ctx context.Conte
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -21176,9 +21137,9 @@ func (ec *executionContext) _EpochTimestamps_expiry(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EpochTimestamps_expiry(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -21188,7 +21149,7 @@ func (ec *executionContext) fieldContext_EpochTimestamps_expiry(ctx context.Cont
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -21217,9 +21178,9 @@ func (ec *executionContext) _EpochTimestamps_end(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EpochTimestamps_end(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -21229,7 +21190,7 @@ func (ec *executionContext) fieldContext_EpochTimestamps_end(ctx context.Context
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -21525,9 +21486,9 @@ func (ec *executionContext) _Erc20WithdrawalApproval_expiry(ctx context.Context,
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Erc20WithdrawalApproval_expiry(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -21537,7 +21498,7 @@ func (ec *executionContext) fieldContext_Erc20WithdrawalApproval_expiry(ctx cont
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -21701,9 +21662,9 @@ func (ec *executionContext) _Erc20WithdrawalApproval_creation(ctx context.Contex
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Erc20WithdrawalApproval_creation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -21713,7 +21674,7 @@ func (ec *executionContext) fieldContext_Erc20WithdrawalApproval_creation(ctx co
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -24423,9 +24384,9 @@ func (ec *executionContext) _LedgerEntry_timestamp(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_LedgerEntry_timestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -24435,7 +24396,7 @@ func (ec *executionContext) fieldContext_LedgerEntry_timestamp(ctx context.Conte
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -25157,7 +25118,7 @@ func (ec *executionContext) _LiquidityProvision_createdAt(ctx context.Context, f
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.LiquidityProvision().CreatedAt(rctx, obj)
+		return obj.CreatedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25169,19 +25130,19 @@ func (ec *executionContext) _LiquidityProvision_createdAt(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_LiquidityProvision_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LiquidityProvision",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -25201,7 +25162,7 @@ func (ec *executionContext) _LiquidityProvision_updatedAt(ctx context.Context, f
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.LiquidityProvision().UpdatedAt(rctx, obj)
+		return obj.UpdatedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25210,19 +25171,19 @@ func (ec *executionContext) _LiquidityProvision_updatedAt(ctx context.Context, f
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_LiquidityProvision_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LiquidityProvision",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -25738,7 +25699,7 @@ func (ec *executionContext) _LiquidityProvisionUpdate_createdAt(ctx context.Cont
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.LiquidityProvisionUpdate().CreatedAt(rctx, obj)
+		return obj.CreatedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25750,19 +25711,19 @@ func (ec *executionContext) _LiquidityProvisionUpdate_createdAt(ctx context.Cont
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_LiquidityProvisionUpdate_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LiquidityProvisionUpdate",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -25782,7 +25743,7 @@ func (ec *executionContext) _LiquidityProvisionUpdate_updatedAt(ctx context.Cont
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.LiquidityProvisionUpdate().UpdatedAt(rctx, obj)
+		return obj.UpdatedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25791,19 +25752,19 @@ func (ec *executionContext) _LiquidityProvisionUpdate_updatedAt(ctx context.Cont
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_LiquidityProvisionUpdate_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LiquidityProvisionUpdate",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -27504,7 +27465,7 @@ func (ec *executionContext) _MarginLevels_timestamp(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MarginLevels().Timestamp(rctx, obj)
+		return obj.Timestamp, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -27516,19 +27477,19 @@ func (ec *executionContext) _MarginLevels_timestamp(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MarginLevels_timestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MarginLevels",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -27856,7 +27817,7 @@ func (ec *executionContext) _MarginLevelsUpdate_timestamp(ctx context.Context, f
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MarginLevelsUpdate().Timestamp(rctx, obj)
+		return obj.Timestamp, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -27868,19 +27829,19 @@ func (ec *executionContext) _MarginLevelsUpdate_timestamp(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MarginLevelsUpdate_timestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MarginLevelsUpdate",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -30000,7 +29961,7 @@ func (ec *executionContext) _MarketData_timestamp(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MarketData().Timestamp(rctx, obj)
+		return obj.Timestamp, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -30012,19 +29973,19 @@ func (ec *executionContext) _MarketData_timestamp(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MarketData_timestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MarketData",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -32080,7 +32041,7 @@ func (ec *executionContext) _MarketTimestamps_proposed(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MarketTimestamps().Proposed(rctx, obj)
+		return obj.Proposed, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -32089,19 +32050,19 @@ func (ec *executionContext) _MarketTimestamps_proposed(ctx context.Context, fiel
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MarketTimestamps_proposed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MarketTimestamps",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -32121,7 +32082,7 @@ func (ec *executionContext) _MarketTimestamps_pending(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MarketTimestamps().Pending(rctx, obj)
+		return obj.Pending, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -32130,19 +32091,19 @@ func (ec *executionContext) _MarketTimestamps_pending(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MarketTimestamps_pending(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MarketTimestamps",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -32162,7 +32123,7 @@ func (ec *executionContext) _MarketTimestamps_open(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MarketTimestamps().Open(rctx, obj)
+		return obj.Open, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -32171,19 +32132,19 @@ func (ec *executionContext) _MarketTimestamps_open(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MarketTimestamps_open(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MarketTimestamps",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -32203,7 +32164,7 @@ func (ec *executionContext) _MarketTimestamps_close(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MarketTimestamps().Close(rctx, obj)
+		return obj.Close, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -32212,19 +32173,19 @@ func (ec *executionContext) _MarketTimestamps_close(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MarketTimestamps_close(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MarketTimestamps",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -35649,7 +35610,7 @@ func (ec *executionContext) _ObservableMarketData_timestamp(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.ObservableMarketData().Timestamp(rctx, obj)
+		return obj.Timestamp, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35661,19 +35622,19 @@ func (ec *executionContext) _ObservableMarketData_timestamp(ctx context.Context,
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ObservableMarketData_timestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ObservableMarketData",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -36777,7 +36738,7 @@ func (ec *executionContext) _OneOffTransfer_deliverOn(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.OneOffTransfer().DeliverOn(rctx, obj)
+		return obj.DeliverOn, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -36786,19 +36747,19 @@ func (ec *executionContext) _OneOffTransfer_deliverOn(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_OneOffTransfer_deliverOn(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "OneOffTransfer",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -37827,7 +37788,7 @@ func (ec *executionContext) _Order_createdAt(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Order().CreatedAt(rctx, obj)
+		return obj.CreatedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -37839,19 +37800,19 @@ func (ec *executionContext) _Order_createdAt(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Order_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Order",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -37871,7 +37832,7 @@ func (ec *executionContext) _Order_expiresAt(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Order().ExpiresAt(rctx, obj)
+		return obj.ExpiresAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -37880,19 +37841,19 @@ func (ec *executionContext) _Order_expiresAt(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Order_expiresAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Order",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -38257,7 +38218,7 @@ func (ec *executionContext) _Order_updatedAt(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Order().UpdatedAt(rctx, obj)
+		return obj.UpdatedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -38266,19 +38227,19 @@ func (ec *executionContext) _Order_updatedAt(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Order_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Order",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -39147,7 +39108,7 @@ func (ec *executionContext) _OrderUpdate_createdAt(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.OrderUpdate().CreatedAt(rctx, obj)
+		return obj.CreatedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -39159,19 +39120,19 @@ func (ec *executionContext) _OrderUpdate_createdAt(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_OrderUpdate_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "OrderUpdate",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -39191,7 +39152,7 @@ func (ec *executionContext) _OrderUpdate_expiresAt(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.OrderUpdate().ExpiresAt(rctx, obj)
+		return obj.ExpiresAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -39200,19 +39161,19 @@ func (ec *executionContext) _OrderUpdate_expiresAt(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_OrderUpdate_expiresAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "OrderUpdate",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -39446,7 +39407,7 @@ func (ec *executionContext) _OrderUpdate_updatedAt(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.OrderUpdate().UpdatedAt(rctx, obj)
+		return obj.UpdatedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -39455,19 +39416,19 @@ func (ec *executionContext) _OrderUpdate_updatedAt(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_OrderUpdate_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "OrderUpdate",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -42547,7 +42508,7 @@ func (ec *executionContext) _Position_updatedAt(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Position().UpdatedAt(rctx, obj)
+		return obj.UpdatedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -42556,19 +42517,19 @@ func (ec *executionContext) _Position_updatedAt(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Position_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Position",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -43231,7 +43192,7 @@ func (ec *executionContext) _PositionUpdate_updatedAt(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PositionUpdate().UpdatedAt(rctx, obj)
+		return obj.UpdatedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -43240,19 +43201,19 @@ func (ec *executionContext) _PositionUpdate_updatedAt(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PositionUpdate_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PositionUpdate",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -44234,9 +44195,9 @@ func (ec *executionContext) _Proposal_datetime(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Proposal_datetime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -44246,7 +44207,7 @@ func (ec *executionContext) fieldContext_Proposal_datetime(ctx context.Context, 
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -44890,9 +44851,9 @@ func (ec *executionContext) _ProposalTerms_closingDatetime(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ProposalTerms_closingDatetime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -44902,7 +44863,7 @@ func (ec *executionContext) fieldContext_ProposalTerms_closingDatetime(ctx conte
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -44931,9 +44892,9 @@ func (ec *executionContext) _ProposalTerms_enactmentDatetime(ctx context.Context
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ProposalTerms_enactmentDatetime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -44943,7 +44904,7 @@ func (ec *executionContext) fieldContext_ProposalTerms_enactmentDatetime(ctx con
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -44972,9 +44933,9 @@ func (ec *executionContext) _ProposalTerms_validationDatetime(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ProposalTerms_validationDatetime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -44984,7 +44945,7 @@ func (ec *executionContext) fieldContext_ProposalTerms_validationDatetime(ctx co
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -46969,7 +46930,7 @@ func (ec *executionContext) _Query_estimateOrder(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().EstimateOrder(rctx, fc.Args["marketId"].(string), fc.Args["partyId"].(string), fc.Args["price"].(*string), fc.Args["size"].(string), fc.Args["side"].(vega.Side), fc.Args["timeInForce"].(vega.Order_TimeInForce), fc.Args["expiration"].(*string), fc.Args["type"].(vega.Order_Type))
+		return ec.resolvers.Query().EstimateOrder(rctx, fc.Args["marketId"].(string), fc.Args["partyId"].(string), fc.Args["price"].(*string), fc.Args["size"].(string), fc.Args["side"].(vega.Side), fc.Args["timeInForce"].(vega.Order_TimeInForce), fc.Args["expiration"].(*int64), fc.Args["type"].(vega.Order_Type))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -47093,7 +47054,7 @@ func (ec *executionContext) _Query_getMarketDataHistoryByID(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetMarketDataHistoryByID(rctx, fc.Args["id"].(string), fc.Args["start"].(*int), fc.Args["end"].(*int), fc.Args["skip"].(*int), fc.Args["first"].(*int), fc.Args["last"].(*int))
+		return ec.resolvers.Query().GetMarketDataHistoryByID(rctx, fc.Args["id"].(string), fc.Args["start"].(*int64), fc.Args["end"].(*int64), fc.Args["skip"].(*int), fc.Args["first"].(*int), fc.Args["last"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -47203,7 +47164,7 @@ func (ec *executionContext) _Query_getMarketDataHistoryConnectionByID(ctx contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetMarketDataHistoryConnectionByID(rctx, fc.Args["id"].(string), fc.Args["start"].(*int), fc.Args["end"].(*int), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().GetMarketDataHistoryConnectionByID(rctx, fc.Args["id"].(string), fc.Args["start"].(*int64), fc.Args["end"].(*int64), fc.Args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -51612,7 +51573,7 @@ func (ec *executionContext) _Reward_receivedAt(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Reward().ReceivedAt(rctx, obj)
+		return obj.ReceivedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -51624,19 +51585,19 @@ func (ec *executionContext) _Reward_receivedAt(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Reward_receivedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Reward",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -53687,9 +53648,9 @@ func (ec *executionContext) _StakeLinking_timestamp(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_StakeLinking_timestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -53699,7 +53660,7 @@ func (ec *executionContext) fieldContext_StakeLinking_timestamp(ctx context.Cont
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -53913,7 +53874,7 @@ func (ec *executionContext) _StakeLinking_finalizedAt(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.StakeLinking().FinalizedAt(rctx, obj)
+		return obj.FinalizedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -53922,19 +53883,19 @@ func (ec *executionContext) _StakeLinking_finalizedAt(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_StakeLinking_finalizedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StakeLinking",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -54486,7 +54447,7 @@ func (ec *executionContext) _Statistics_genesisTime(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.GenesisTime, nil
+		return ec.resolvers.Statistics().GenesisTime(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -54498,19 +54459,19 @@ func (ec *executionContext) _Statistics_genesisTime(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Statistics_genesisTime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Statistics",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -54530,7 +54491,7 @@ func (ec *executionContext) _Statistics_currentTime(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.CurrentTime, nil
+		return ec.resolvers.Statistics().CurrentTime(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -54542,19 +54503,19 @@ func (ec *executionContext) _Statistics_currentTime(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Statistics_currentTime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Statistics",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -54618,7 +54579,7 @@ func (ec *executionContext) _Statistics_vegaTime(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.VegaTime, nil
+		return ec.resolvers.Statistics().VegaTime(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -54630,19 +54591,19 @@ func (ec *executionContext) _Statistics_vegaTime(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Statistics_vegaTime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Statistics",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -56843,9 +56804,9 @@ func (ec *executionContext) _TimeUpdate_timestamp(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TimeUpdate_timestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -56855,7 +56816,7 @@ func (ec *executionContext) fieldContext_TimeUpdate_timestamp(ctx context.Contex
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -57602,9 +57563,9 @@ func (ec *executionContext) _Trade_createdAt(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Trade_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -57614,7 +57575,7 @@ func (ec *executionContext) fieldContext_Trade_createdAt(ctx context.Context, fi
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -58716,9 +58677,9 @@ func (ec *executionContext) _TradeUpdate_createdAt(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TradeUpdate_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -58728,7 +58689,7 @@ func (ec *executionContext) fieldContext_TradeUpdate_createdAt(ctx context.Conte
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -59613,7 +59574,7 @@ func (ec *executionContext) _Transfer_timestamp(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Transfer().Timestamp(rctx, obj)
+		return obj.Timestamp, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -59625,19 +59586,19 @@ func (ec *executionContext) _Transfer_timestamp(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Transfer_timestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Transfer",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -61351,9 +61312,9 @@ func (ec *executionContext) _Vote_datetime(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Vote_datetime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -61363,7 +61324,7 @@ func (ec *executionContext) fieldContext_Vote_datetime(ctx context.Context, fiel
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -62112,7 +62073,7 @@ func (ec *executionContext) _Withdrawal_expiry(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Withdrawal().Expiry(rctx, obj)
+		return obj.Expiry, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -62124,19 +62085,19 @@ func (ec *executionContext) _Withdrawal_expiry(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Withdrawal_expiry(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Withdrawal",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -62156,7 +62117,7 @@ func (ec *executionContext) _Withdrawal_createdTimestamp(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Withdrawal().CreatedTimestamp(rctx, obj)
+		return obj.CreatedTimestamp, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -62168,19 +62129,19 @@ func (ec *executionContext) _Withdrawal_createdTimestamp(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Withdrawal_createdTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Withdrawal",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -62200,7 +62161,7 @@ func (ec *executionContext) _Withdrawal_withdrawnTimestamp(ctx context.Context, 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Withdrawal().WithdrawnTimestamp(rctx, obj)
+		return obj.WithdrawnTimestamp, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -62209,19 +62170,19 @@ func (ec *executionContext) _Withdrawal_withdrawnTimestamp(ctx context.Context, 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Withdrawal_withdrawnTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Withdrawal",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -66945,42 +66906,16 @@ func (ec *executionContext) _Deposit(ctx context.Context, sel ast.SelectionSet, 
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdTimestamp":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Deposit_createdTimestamp(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._Deposit_createdTimestamp(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "creditedTimestamp":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Deposit_creditedTimestamp(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._Deposit_creditedTimestamp(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "txHash":
 
 			out.Values[i] = ec._Deposit_txHash(ctx, field, obj)
@@ -69014,42 +68949,16 @@ func (ec *executionContext) _LiquidityProvision(ctx context.Context, sel ast.Sel
 
 			})
 		case "createdAt":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._LiquidityProvision_createdAt(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._LiquidityProvision_createdAt(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "updatedAt":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._LiquidityProvision_updatedAt(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._LiquidityProvision_updatedAt(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "market":
 			field := field
 
@@ -69162,42 +69071,16 @@ func (ec *executionContext) _LiquidityProvisionUpdate(ctx context.Context, sel a
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._LiquidityProvisionUpdate_createdAt(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._LiquidityProvisionUpdate_createdAt(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "updatedAt":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._LiquidityProvisionUpdate_updatedAt(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._LiquidityProvisionUpdate_updatedAt(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "marketID":
 
 			out.Values[i] = ec._LiquidityProvisionUpdate_marketID(ctx, field, obj)
@@ -69682,25 +69565,12 @@ func (ec *executionContext) _MarginLevels(ctx context.Context, sel ast.Selection
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "timestamp":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MarginLevels_timestamp(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._MarginLevels_timestamp(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -69798,25 +69668,12 @@ func (ec *executionContext) _MarginLevelsUpdate(ctx context.Context, sel ast.Sel
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "timestamp":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MarginLevelsUpdate_timestamp(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._MarginLevelsUpdate_timestamp(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -70397,25 +70254,12 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "timestamp":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MarketData_timestamp(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._MarketData_timestamp(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "openInterest":
 			field := field
 
@@ -71028,73 +70872,21 @@ func (ec *executionContext) _MarketTimestamps(ctx context.Context, sel ast.Selec
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MarketTimestamps")
 		case "proposed":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MarketTimestamps_proposed(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._MarketTimestamps_proposed(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "pending":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MarketTimestamps_pending(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._MarketTimestamps_pending(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "open":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MarketTimestamps_open(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._MarketTimestamps_open(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "close":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MarketTimestamps_close(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._MarketTimestamps_close(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -72151,25 +71943,12 @@ func (ec *executionContext) _ObservableMarketData(ctx context.Context, sel ast.S
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "timestamp":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._ObservableMarketData_timestamp(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._ObservableMarketData_timestamp(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "openInterest":
 			field := field
 
@@ -72502,22 +72281,9 @@ func (ec *executionContext) _OneOffTransfer(ctx context.Context, sel ast.Selecti
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("OneOffTransfer")
 		case "deliverOn":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._OneOffTransfer_deliverOn(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._OneOffTransfer_deliverOn(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -72884,42 +72650,16 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 
 			})
 		case "createdAt":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Order_createdAt(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._Order_createdAt(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "expiresAt":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Order_expiresAt(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._Order_expiresAt(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "status":
 
 			out.Values[i] = ec._Order_status(ctx, field, obj)
@@ -73010,22 +72750,9 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 
 			})
 		case "updatedAt":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Order_updatedAt(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._Order_updatedAt(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "peggedOrder":
 
 			out.Values[i] = ec._Order_peggedOrder(ctx, field, obj)
@@ -73254,42 +72981,16 @@ func (ec *executionContext) _OrderUpdate(ctx context.Context, sel ast.SelectionS
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._OrderUpdate_createdAt(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._OrderUpdate_createdAt(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "expiresAt":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._OrderUpdate_expiresAt(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._OrderUpdate_expiresAt(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "status":
 
 			out.Values[i] = ec._OrderUpdate_status(ctx, field, obj)
@@ -73346,22 +73047,9 @@ func (ec *executionContext) _OrderUpdate(ctx context.Context, sel ast.SelectionS
 
 			})
 		case "updatedAt":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._OrderUpdate_updatedAt(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._OrderUpdate_updatedAt(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "peggedOrder":
 
 			out.Values[i] = ec._OrderUpdate_peggedOrder(ctx, field, obj)
@@ -74233,22 +73921,9 @@ func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet,
 
 			})
 		case "updatedAt":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Position_updatedAt(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._Position_updatedAt(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -74436,22 +74111,9 @@ func (ec *executionContext) _PositionUpdate(ctx context.Context, sel ast.Selecti
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PositionUpdate_updatedAt(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._PositionUpdate_updatedAt(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -77205,25 +76867,12 @@ func (ec *executionContext) _Reward(ctx context.Context, sel ast.SelectionSet, o
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "receivedAt":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Reward_receivedAt(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._Reward_receivedAt(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -77945,22 +77594,9 @@ func (ec *executionContext) _StakeLinking(ctx context.Context, sel ast.Selection
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "finalizedAt":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._StakeLinking_finalizedAt(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._StakeLinking_finalizedAt(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "txHash":
 
 			out.Values[i] = ec._StakeLinking_txHash(ctx, field, obj)
@@ -78159,19 +77795,45 @@ func (ec *executionContext) _Statistics(ctx context.Context, sel ast.SelectionSe
 
 			})
 		case "genesisTime":
+			field := field
 
-			out.Values[i] = ec._Statistics_genesisTime(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Statistics_genesisTime(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "currentTime":
+			field := field
 
-			out.Values[i] = ec._Statistics_currentTime(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Statistics_currentTime(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "upTime":
 
 			out.Values[i] = ec._Statistics_upTime(ctx, field, obj)
@@ -78180,12 +77842,25 @@ func (ec *executionContext) _Statistics(ctx context.Context, sel ast.SelectionSe
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "vegaTime":
+			field := field
 
-			out.Values[i] = ec._Statistics_vegaTime(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Statistics_vegaTime(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "status":
 			field := field
 
@@ -79424,25 +79099,12 @@ func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet,
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "timestamp":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Transfer_timestamp(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._Transfer_timestamp(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "kind":
 			field := field
 
@@ -80366,62 +80028,23 @@ func (ec *executionContext) _Withdrawal(ctx context.Context, sel ast.SelectionSe
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "expiry":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Withdrawal_expiry(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._Withdrawal_expiry(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "createdTimestamp":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Withdrawal_createdTimestamp(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._Withdrawal_createdTimestamp(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "withdrawnTimestamp":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Withdrawal_withdrawnTimestamp(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._Withdrawal_withdrawnTimestamp(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "txHash":
 			field := field
 
@@ -87873,6 +87496,16 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	res := graphql.MarshalID(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOTimestamp2int64(ctx context.Context, v interface{}) (int64, error) {
+	res, err := marshallers.UnmarshalTimestamp(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOTimestamp2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	res := marshallers.MarshalTimestamp(v)
 	return res
 }
 

@@ -68,11 +68,11 @@ type Subscription {
   ): Delegation!
 
   "Subscribe to liquidity provisioning data"
-    liquidityProvisions(
-        "The party ID to subscribe for, empty if all"
-        partyId: ID
-        "The market ID to subscribe for, empty if all"
-        marketId: ID
+  liquidityProvisions(
+    "The party ID to subscribe for, empty if all"
+    partyId: ID
+    "The market ID to subscribe for, empty if all"
+    marketId: ID
   ): [LiquidityProvisionUpdate!]
 
   "Subscribe to the margin changes"
@@ -168,7 +168,7 @@ type MarginLevels {
   """
   collateralReleaseLevel: String!
   "RFC3339Nano time from at which this margin level was relevant"
-  timestamp: String!
+  timestamp: Timestamp!
 }
 
 "Margins for a given a party"
@@ -191,7 +191,7 @@ type MarginLevelsUpdate {
   """
   collateralReleaseLevel: String!
   "RFC3339Nano time from at which this margin level was relevant"
-  timestamp: String!
+  timestamp: Timestamp!
 }
 
 "Live data of a Market"
@@ -221,7 +221,7 @@ type MarketData {
   "The arithmetic average of the best static bid price and best static offer price"
   staticMidPrice: String!
   "RFC3339Nano time at which this market price was relevant"
-  timestamp: String!
+  timestamp: Timestamp!
   "The sum of the size of all positions greater than 0."
   openInterest: String!
   "RFC3339Nano time at which the auction will stop (null if not in auction mode)"
@@ -281,7 +281,7 @@ type ObservableMarketData {
   "The arithmetic average of the best static bid price and best static offer price"
   staticMidPrice: String!
   "RFC3339Nano time at which this market price was relevant"
-  timestamp: String!
+  timestamp: Timestamp!
   "The sum of the size of all positions greater than 0"
   openInterest: String!
   "RFC3339Nano time at which the auction will stop (null if not in auction mode)"
@@ -315,13 +315,13 @@ type ObservableMarketData {
 "Timestamps for when the market changes state"
 type MarketTimestamps {
   "Time when the market is first proposed"
-  proposed: String
+  proposed: Timestamp
   "Time when the market has been voted in and waiting to be created"
-  pending: String
+  pending: Timestamp
   "Time when the market is open and ready to accept trades"
-  open: String
+  open: Timestamp
   "Time when the market is closed"
-  close: String
+  close: Timestamp
 }
 
 "The equity like share of liquidity fee for each liquidity provider"
@@ -460,7 +460,7 @@ type Query {
     "TimeInForce of the order"
     timeInForce: OrderTimeInForce!
     "Expiration of the the order"
-    expiration: String
+    expiration: Timestamp
     "Type of the order"
     type: OrderType!
   ): OrderEstimate!
@@ -476,13 +476,13 @@ type Query {
     If both the start and end date is not provided, only the latest snapshot will be returned.
     If only the start date is provided, all market data for the market from the start date forward will be returned.
     """
-    start: Int
+    start: Timestamp
     """
     Optional end date time for the historic data query.
     If both the start and end date is not provided, only the latest snapshot will be returned.
     If only the end date is provided, all market data for the market up to and including the end date will be returned.
     """
-    end: Int
+    end: Timestamp
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -499,13 +499,13 @@ type Query {
     If both the start and end date is not provided, only the latest snapshot will be returned.
     If only the start date is provided, all market data for the market from the start date forward will be returned.
     """
-    start: Int
+    start: Timestamp
     """
     Optional end date time for the historic data query.
     If both the start and end date is not provided, only the latest snapshot will be returned.
     If only the end date is provided, all market data for the market up to and including the end date will be returned.
     """
-    end: Int
+    end: Timestamp
     "Optional Pagination"
     pagination: Pagination): MarketDataConnection
 
@@ -820,7 +820,7 @@ type Transfer {
   status: TransferStatus!
 
   "The time at which the transfer was submitted"
-  timestamp: String!
+  timestamp: Timestamp!
 
   "The type of transfer being made, i.e. a one-off or recurring transfer"
   kind: TransferKind!
@@ -834,7 +834,7 @@ union TransferKind = OneOffTransfer | RecurringTransfer
 "The specific details for a one-off transfer"
 type OneOffTransfer {
   "An optional time when the transfer should be delivered"
-  deliverOn: String
+  deliverOn: Timestamp
 }
 
 "The specific details for a recurring transfer"
@@ -885,11 +885,11 @@ enum NodeStatus {
 "Describes in both human readable and block time when an epoch spans."
 type EpochTimestamps {
   "RFC3339 timestamp - Vega time of epoch start, null if not started"
-  start: String
+  start: Timestamp
   "RFC3339 timestamp - Vega time of epoch expiry"
-  expiry: String
+  expiry: Timestamp
   "RFC3339 timestamp - Vega time of epoch end, null if not ended"
-  end: String
+  end: Timestamp
 
   # @TODO - blocks support
   # "Height of first block in the epoch, null if not started"
@@ -998,10 +998,10 @@ type EpochParticipation {
   epoch: Epoch
 
   "RFC3339 timestamp"
-  offline: String
+  offline: Timestamp
 
   "RFC3339 timestamp"
-  online: String
+  online: Timestamp
 
   "Total amount rewarded for participation in the given epoch"
   totalRewards: Float
@@ -1284,16 +1284,16 @@ type Statistics {
   totalPeers: String!
 
   "RFC3339Nano genesis time of the chain"
-  genesisTime: String!
+  genesisTime: Timestamp!
 
   "RFC3339Nano current time (real)"
-  currentTime: String!
+  currentTime: Timestamp!
 
   "RFC3339Nano uptime of the node"
   upTime: String!
 
   "RFC3339Nano current time of the chain (decided through consensus)"
-  vegaTime: String!
+  vegaTime: Timestamp!
 
   "Status of the Vega application connection with the chain"
   status: String!
@@ -1452,9 +1452,9 @@ type DataSourceSpec {
   "ID is a hash generated from the DataSourceSpec data."
   id: ID!
   "RFC3339Nano creation date time"
-  createdAt: String!
+  createdAt: Timestamp!
   "RFC3339Nano last updated timestamp"
-  updatedAt: String
+  updatedAt: Timestamp
 
   data: DataSourceDefinition!
 
@@ -1592,7 +1592,7 @@ type Data {
   with a matching data spec.
   It has no value when the source data does not match any data spec.
   """
-  broadcastAt:  String!
+  broadcastAt: Timestamp!
 }
 
 type ExternalData {
@@ -2011,10 +2011,10 @@ type PriceLevel {
 "Candle stick representation of trading"
 type Candle {
   "RFC3339Nano formatted date and time for the candle start time"
-  periodStart: String!
+  periodStart: Timestamp!
 
   "RFC3339Nano formatted date and time for the candle end time, or last updated time if the candle is still open"
-  lastUpdateInPeriod: String!
+  lastUpdateInPeriod: Timestamp!
 
   "High price (uint64)"
   high: String!
@@ -2296,7 +2296,7 @@ type StakeLinking {
   "Type of linking: link|unlink"
   type: StakeLinkingType!
   "The time at which the request happened on ethereum"
-  timestamp: String!
+  timestamp: Timestamp!
   "The party initiating the stake linking"
   party: Party!
   "The amount linked or unlinked"
@@ -2304,7 +2304,7 @@ type StakeLinking {
   "The status of the linking"
   status: StakeLinkingStatus!
   "The time at which the stake linking was fully processed by the Vega network, null until defined"
-  finalizedAt: String
+  finalizedAt: Timestamp
   "The transaction hash (ethereum) which initiated the link/unlink"
   txHash: String!
 }
@@ -2341,7 +2341,7 @@ type Position {
   marginsConnection(pagination: Pagination): MarginConnection
 
   "RFC3339Nano time the position was updated"
-  updatedAt: String
+  updatedAt: Timestamp
 }
 
 """
@@ -2370,7 +2370,7 @@ type PositionUpdate {
   averageEntryPrice: String!
 
   "RFC3339Nano time the position was updated"
-  updatedAt: String
+  updatedAt: Timestamp
 }
 
 "An order in Vega, if active it will be on the order book for the market"
@@ -2400,10 +2400,10 @@ type Order {
   party: Party!
 
   "RFC3339Nano formatted date and time for when the order was created (timestamp)"
-  createdAt: String!
+  createdAt: Timestamp!
 
   "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
-  expiresAt: String
+  expiresAt: Timestamp
 
   "The status of an order, for example 'Active'"
   status: OrderStatus!
@@ -2431,7 +2431,7 @@ type Order {
   version: String!
 
   "RFC3339Nano time the order was altered"
-  updatedAt: String
+  updatedAt: Timestamp
 
   "PeggedOrder contains the details about a pegged order"
   peggedOrder: PeggedOrder
@@ -2467,10 +2467,10 @@ type OrderUpdate {
   partyId: ID!
 
   "RFC3339Nano formatted date and time for when the order was created (timestamp)"
-  createdAt: String!
+  createdAt: Timestamp!
 
   "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
-  expiresAt: String
+  expiresAt: Timestamp
 
   "The status of an order, for example 'Active'"
   status: OrderStatus!
@@ -2488,7 +2488,7 @@ type OrderUpdate {
   version: String!
 
   "RFC3339Nano time the order was altered"
-  updatedAt: String
+  updatedAt: Timestamp
 
   "PeggedOrder contains the details about a pegged order"
   peggedOrder: PeggedOrder
@@ -2539,7 +2539,7 @@ type Trade {
   size: String!
 
   "RFC3339Nano time for when the trade occurred"
-  createdAt: String!
+  createdAt: Timestamp!
 
   "The type of trade"
   type: TradeType!
@@ -2587,7 +2587,7 @@ type TradeUpdate {
   size: String!
 
   "RFC3339Nano time for when the trade occurred"
-  createdAt: String!
+  createdAt: Timestamp!
 
   "The type of trade"
   type: TradeType!
@@ -2689,7 +2689,7 @@ type Erc20WithdrawalApproval {
   "The amount to be withdrawn"
   amount: String!
   "Timestamp in seconds for expiry of the approval"
-  expiry: String!
+  expiry: Timestamp!
   "The nonce to be used in the request"
   nonce: String!
   """
@@ -2700,7 +2700,7 @@ type Erc20WithdrawalApproval {
   "The target address which will receive the funds"
   targetAddress: String!
   "Timestamp at which the withdrawal was created"
-  creation: String!
+  creation: Timestamp!
 }
 
 "Response for the signature bundle to add a particular validator to the signer list of the multisig contract"
@@ -2722,7 +2722,7 @@ type ERC20MultiSigSignerAddedBundle {
   "The nonce used in the signing operation"
   nonce: String!
   "Unix-nano timestamp for when the validator was added"
-  timestamp: String!
+  timestamp: Timestamp!
   "The bundle of signatures from current validators to sign in the new signer"
   signatures: String!
   "The epoch in which the validator was added"
@@ -2750,7 +2750,7 @@ type ERC20MultiSigSignerRemovedBundle {
   "The nonce used in the signing operation"
   nonce: String!
   "Unix-nano timestamp for when the validator was added"
-  timestamp: String!
+  timestamp: Timestamp!
   "The bundle of signatures from current validators to sign in the new signer"
   signatures: String!
   "The epoch in which the validator was removed"
@@ -2806,11 +2806,11 @@ type Withdrawal {
   "A reference the foreign chain can use to refer to when processing the withdrawal"
   ref: String!
   "RFC3339Nano time until the withdrawal will be invalid"
-  expiry: String!
+  expiry: Timestamp!
   "RFC3339Nano time at which the withdrawal was created"
-  createdTimestamp: String!
+  createdTimestamp: Timestamp!
   "RFC3339Nano time at which the withdrawal was finalised"
-  withdrawnTimestamp: String
+  withdrawnTimestamp: Timestamp
   "Hash of the transaction on the foreign chain"
   txHash: String
   "Foreign chain specific details about the withdrawal"
@@ -2848,9 +2848,9 @@ type Deposit {
   "The current status of the deposit"
   status: DepositStatus!
   "RFC3339Nano time at which the deposit was created"
-  createdTimestamp: String!
+  createdTimestamp: Timestamp!
   "RFC3339Nano time at which the deposit was finalised"
-  creditedTimestamp: String
+  creditedTimestamp: Timestamp
   "Hash of the transaction on the foreign chain"
   txHash: String
 }
@@ -3341,7 +3341,7 @@ type DataSourceSpecConfiguration {
   list.
   """
   signers: [Signer!]
- 
+
   """
   filters describes which source data are considered of interest or not for
   the product (or the risk model).
@@ -3490,16 +3490,16 @@ type ProposalTerms {
   RFC3339Nano time and date when voting closes for this proposal.
   Constrained by "minClose" and "maxClose" network parameters.
   """
-  closingDatetime: String!
+  closingDatetime: Timestamp!
   """
   RFC3339Nano time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
   Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
   Note: Optional as free form proposals do not require it.
   """
-  enactmentDatetime: String
+  enactmentDatetime: Timestamp
 
   "RFC3339Nano time and when node validation of the proposal stops, accepted only with new asset proposals"
-  validationDatetime: String
+  validationDatetime: Timestamp
 
   "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
   change: ProposalChange!
@@ -3557,7 +3557,7 @@ type Proposal {
   "State of the proposal"
   state: ProposalState!
   "RFC3339Nano time and date when the proposal reached Vega network"
-  datetime: String!
+  datetime: Timestamp!
   "Rationale behind the proposal"
   rationale: ProposalRationale!
   "Terms of the proposal"
@@ -3613,7 +3613,7 @@ type Vote {
   party: Party!
 
   "RFC3339Nano time and date when the vote reached Vega network"
-  datetime: String!
+  datetime: Timestamp!
 
   "The ID of the proposal this vote applies to"
   proposalId: ID!
@@ -3637,7 +3637,7 @@ type ProposalVote {
 
 type TimeUpdate {
   "RFC3339Nano time of new block time"
-  timestamp: String!
+  timestamp: Timestamp!
 }
 
 type MarketEvent {
@@ -3664,7 +3664,7 @@ type LedgerEntry {
   "Type of ledger entry"
   type: String!
   "RFC3339Nano time at which the transfer was made"
-  timestamp: String!
+  timestamp: Timestamp!
 }
 
 type TransferResponse {
@@ -3743,9 +3743,9 @@ type AuctionEvent {
   "Event related to opening auction"
   openingAuction: Boolean!
   "RFC3339Nano start time of auction"
-  auctionStart: String!
+  auctionStart: Timestamp!
   "RFC3339Nano optional end time of auction"
-  auctionEnd: String!
+  auctionEnd: Timestamp!
   "What triggered the auction"
   trigger: AuctionTrigger!
   "What, if anything, extended the ongoing auction"
@@ -3916,9 +3916,9 @@ type LiquidityProvision {
   "The party making this commitment"
   party: Party!
   "When the liquidity provision was initially created (formatted RFC3339)"
-  createdAt: String!
+  createdAt: Timestamp!
   "RFC3339Nano time of when the liquidity provision was updated"
-  updatedAt: String
+  updatedAt: Timestamp
   "Market for the order"
   market: Market!
   "Specified as a unit-less number that represents the amount of settlement asset of the market."
@@ -3944,9 +3944,9 @@ type LiquidityProvisionUpdate {
   "The party making this commitment"
   partyID: ID!
   "When the liquidity provision was initially created (formatted RFC3339)"
-  createdAt: String!
+  createdAt: Timestamp!
   "RFC3339Nano time of when the liquidity provision was updated"
-  updatedAt: String
+  updatedAt: Timestamp
   "Market for the order"
   marketID: ID!
   "Specified as a unit-less number that represents the amount of settlement asset of the market."
@@ -3982,7 +3982,7 @@ type Reward {
   "Percentage out of the total distributed reward"
   percentageOfTotal: String!
   "Time at which the rewards was received"
-  receivedAt: String!
+  receivedAt: Timestamp!
 }
 
 type RewardSummary {
@@ -4025,7 +4025,7 @@ scalar Timestamp
 
 type AggregatedLedgerEntries {
   "RFC3339Nano time from at which this ledger entries records were relevant"
-  vegaTime: String!
+  vegaTime: Timestamp!
   "Net amount of ledger entries for the accounts specified in the filter at this time"
   quantity: String!
   "Party identifier, if query was grouped by party - else null"
