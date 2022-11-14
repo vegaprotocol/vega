@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const expectedSizeOnDiskWithNoGc = 56000
+const expectedSizeOnDiskWithNoGc = 119000
 
 func TestRemoveWithNoEligibleSegments(t *testing.T) {
 	chainID := uuid.NewV4().String()
@@ -52,7 +52,7 @@ func TestPartialRemoveOfOldSegments(t *testing.T) {
 	dirSize, err := dirSize(dehistoryHome)
 	require.NoError(t, err)
 
-	assertRoughlyEqual(t, 41000, dirSize)
+	assertRoughlyEqual(t, 103000, dirSize)
 
 	segments, err := s.ListAllHistorySegmentsOldestFirst()
 	require.NoError(t, err)
@@ -74,7 +74,7 @@ func TestRemoveAllOldSegments(t *testing.T) {
 	dirSize, err := dirSize(dehistoryHome)
 	require.NoError(t, err)
 
-	assertRoughlyEqual(t, 22000, dirSize)
+	assertRoughlyEqual(t, 51000, dirSize)
 
 	segments, err := s.ListAllHistorySegmentsOldestFirst()
 	require.NoError(t, err)
