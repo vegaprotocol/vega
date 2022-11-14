@@ -24,8 +24,9 @@ Feature: Test settlement at expiry time from internal oracle
     And the settlement data decimals for the oracle named "ethDec21Oracle" is given in "0" decimal places
     
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |

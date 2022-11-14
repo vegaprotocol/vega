@@ -30,6 +30,7 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 1     |
       | market.liquidity.providers.fee.distributionTimeStep | 10s   |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
 
     Given the average block duration is "2"
 
