@@ -269,6 +269,7 @@ type Market struct {
 	settlementDataInMarket *num.Uint
 	nextMTM                time.Time
 	mtmDelta               time.Duration
+	hasTraded              bool
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -728,14 +729,17 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	// MTM if enough time has elapsed, we are not in auction, and we have a non-zero mark price.
 	// we MTM in leaveAuction before deploying LP orders like we did before, but we do update nextMTM there
 	if mp := m.getCurrentMarkPrice(); mp != nil && !mp.IsZero() && !m.nextMTM.After(t) && !m.as.InAuction() {
-		m.nextMTM = t.Add(m.mtmDelta)                 // add delta here
-		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
-		dummy := &types.Order{
-			ID:            m.idgen.NextID(),
-			Price:         mp.Clone(),
-			OriginalPrice: mcmp,
+		m.nextMTM = t.Add(m.mtmDelta) // add delta here
+		if m.hasTraded {
+			mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
+			dummy := &types.Order{
+				ID:            m.idgen.NextID(),
+				Price:         mp.Clone(),
+				OriginalPrice: mcmp,
+			}
+			m.confirmMTM(ctx, dummy, nil)
+			m.hasTraded = false // trades have been settled
 		}
-		m.confirmMTM(ctx, dummy, nil)
 	}
 
 	// check auction, if any. If we leave auction, MTM is performed in this call
@@ -1630,6 +1634,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	}
 	// Calculate and set current mark price
 	m.setMarkPrice(conf.Trades[len(conf.Trades)-1])
+	m.hasTraded = true
 
 	// Insert all trades resulted from the executed order
 	tradeEvts := make([]events.Event, 0, len(conf.Trades))
