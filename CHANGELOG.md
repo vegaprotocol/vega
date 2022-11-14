@@ -11,6 +11,7 @@
 ### 🛠 Improvements
 - [6795]https://github.com/vegaprotocol/vega/issues/6795 - max gas implementation
 - [6641](https://github.com/vegaprotocol/vega/issues/6641) - network wide limits
+- [6640](https://github.com/vegaprotocol/vega/issues/6640) - Mark to market to happen every N seconds.
 
 ### 🐛 Fixes
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
@@ -42,7 +43,6 @@
 - [6668](https://github.com/vegaprotocol/vega/issues/6668) - Add indexes to trades by buyer/seller
 - [6628](https://github.com/vegaprotocol/vega/issues/6628) - Improve node health check in the wallet
 - [6711](https://github.com/vegaprotocol/vega/issues/6711) - `Anti-whale ersatz` validators reward stake scores
-- [6640](https://github.com/vegaprotocol/vega/issues/6640) - Mark to market to happen every N seconds.
 
 ### 🐛 Fixes
 - [6701](https://github.com/vegaprotocol/vega/issues/6701) - Fix `GraphQL` `API` not returning `x-vega-*` headers

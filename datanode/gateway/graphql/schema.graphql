@@ -252,7 +252,7 @@ type MarketData {
   marketValueProxy: String!
   "The equity like share of liquidity fee for each liquidity provider"
   liquidityProviderFeeShare: [LiquidityProviderFeeShare!]
-  "RFC3339Nano time indicating when the next time positions will be marked to market"
+  "RFC3339Nano time indicating the next time positions will be marked to market"
   nextMarkToMarket: String!
 }
 
@@ -312,7 +312,7 @@ type ObservableMarketData {
   marketValueProxy: String!
   "The equity like share of liquidity fee for each liquidity provider"
   liquidityProviderFeeShare: [ObservableLiquidityProviderFeeShare!]
-  "RFC3339Nano time indicating when the next time positions will be marked to market"
+  "RFC3339Nano time indicating the next time positions will be marked to market"
   nextMarkToMarket: String!
 }
 
