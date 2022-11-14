@@ -115,6 +115,7 @@ func New(
 			stats.GetVersion(),
 			svcs.protocolUpgradeEngine,
 			svcs.codec,
+			svcs.gastimator,
 		),
 		log:         log,
 		confWatcher: confWatcher,

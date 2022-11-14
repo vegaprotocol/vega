@@ -423,3 +423,14 @@ func I64MaxAbs(vals ...int64) int64 {
 	}
 	return r
 }
+
+// GetOpenPositionCount returns the number of open positions in the market.
+func (e *Engine) GetOpenPositionCount() uint64 {
+	var total uint64
+	for _, mp := range e.positionsCpy {
+		if mp.Size() != 0 {
+			total++
+		}
+	}
+	return total
+}
