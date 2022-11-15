@@ -15,11 +15,12 @@ package sqlsubscribers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"github.com/pkg/errors"
 )
 
 type EpochUpdateEvent interface {
@@ -58,7 +59,7 @@ func (es *Epoch) Push(ctx context.Context, evt events.Event) error {
 
 func (es *Epoch) consume(ctx context.Context, event EpochUpdateEvent) error {
 	epochUpdateEvent := event.Proto()
-	epoch := entities.EpochFromProto(epochUpdateEvent, entities.TxHash(event.TxHash()))
+	epoch := entities.EpochFromProto(epochUpdateEvent, entities.TxHash(event.TxHash()), event.BlockNr())
 	epoch.VegaTime = es.vegaTime
 
 	return errors.Wrap(es.store.Add(ctx, epoch), "error adding epoch update")

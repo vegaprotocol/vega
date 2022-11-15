@@ -14,6 +14,7 @@ package gql
 
 import (
 	"context"
+	"strconv"
 
 	"code.vegaprotocol.io/vega/libs/ptr"
 	proto "code.vegaprotocol.io/vega/protos/vega"
@@ -43,4 +44,17 @@ func (r *epochTimestampsResolver) Expiry(ctx context.Context, obj *proto.EpochTi
 		t = ptr.From(obj.ExpiryTime)
 	}
 	return t, nil
+}
+
+func (r *epochTimestampsResolver) FirstBlock(_ context.Context, obj *proto.EpochTimestamps) (string, error) {
+	return strconv.FormatUint(obj.FirstBlock, 10), nil
+}
+
+func (r *epochTimestampsResolver) LastBlock(_ context.Context, obj *proto.EpochTimestamps) (*string, error) {
+	var ret *string
+	if obj.LastBlock > 0 {
+		lastBlock := strconv.FormatUint(obj.LastBlock, 10)
+		ret = &lastBlock
+	}
+	return ret, nil
 }
