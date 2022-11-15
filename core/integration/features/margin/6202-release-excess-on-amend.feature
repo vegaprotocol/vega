@@ -12,7 +12,7 @@ Feature: test margin during amending orders
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
@@ -25,24 +25,24 @@ Feature: test margin during amending orders
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-   @ExcessAmend
-   Scenario: 001, reduce order size, 0011-MARA-004
+  @ExcessAmend
+  Scenario: 001, reduce order size, 0011-MARA-004
 
-   Given the following network parameters are set:
+    Given the following network parameters are set:
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
 
-   And the average block duration is "1"
+    And the average block duration is "1"
 
-   And the parties submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | buy  | BID              | 500        | 20    | amendment  |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
 
-      And the parties place the following orders:
+    And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | party1 | ETH/MAR22 | buy  | 20     | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | party2 | ETH/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
@@ -59,29 +59,32 @@ Feature: test margin during amending orders
 
     # check the requried balances
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general  | bond  |
-      | party1 | USD   | ETH/MAR22 | 36514  | 99963486 | 0     |
-      | party4 | USD   | ETH/MAR22 | 179268 | 99820732 | 0     |
-      # | party1 | USD   | ETH/MAR22 | 19218  | 99980782 | 0     |
-      # | party4 | USD   | ETH/MAR22 | 85366  | 99914634 | 0     |
+      | party  | asset | market id | margin | general  | bond |
+      | party1 | USD   | ETH/MAR22 | 36514  | 99963486 | 0    |
+      | party4 | USD   | ETH/MAR22 | 179268 | 99820732 | 0    |
+    # | party1 | USD   | ETH/MAR22 | 19218  | 99980782 | 0     |
+    # | party4 | USD   | ETH/MAR22 | 85366  | 99914634 | 0     |
+
+    #margin for party4: 20*1000*3.5569036=71139
+
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/MAR22 | 30429       | 33471  | 36514   | 79114   |
       | party4 | ETH/MAR22 | 149391      | 164329 | 179268  | 209146  |
-      # | party1 | ETH/MAR22 | 16015       | 17616  | 19218   | 22421   |
-      # | party4 | ETH/MAR22 | 71139       | 78252  | 85366   | 99594   |
+    # | party1 | ETH/MAR22 | 16015       | 17616  | 19218   | 22421   |
+    # | party4 | ETH/MAR22 | 71139       | 78252  | 85366   | 99594   |
 
-      Then the parties amend the following orders:
-      | party  | reference   | price | size delta | tif     | 
-      | party1 | buy-ref-1   | 900   | -18        | TIF_GTC | 
-      | party4 | sell-ref-4  | 1100  | 20         | TIF_GTC | 
+    Then the parties amend the following orders:
+      | party  | reference  | price | size delta | tif     |
+      | party1 | buy-ref-1  | 900   | -18        | TIF_GTC |
+      | party4 | sell-ref-4 | 1100  | 20         | TIF_GTC |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond |
       | party1 | USD   | ETH/MAR22 | 1922   | 99998078 | 0    |
       | party4 | USD   | ETH/MAR22 | 179268 | 99820732 | 0    |
-      # | party4 | USD   | ETH/MAR22 | 170732 | 99829268 | 0    |
+    # | party4 | USD   | ETH/MAR22 | 170732 | 99829268 | 0    |
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
@@ -89,12 +92,12 @@ Feature: test margin during amending orders
       | party4 | ETH/MAR22 | 142277      | 156504 | 170732  | 199187  |
 
     And the parties cancel the following orders:
-      | party | reference   |
-      | party1| buy-ref-1   |
-      | party4| sell-ref-4  |
+      | party  | reference  |
+      | party1 | buy-ref-1  |
+      | party4 | sell-ref-4 |
 
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general   | bond  |
-      | party1 | USD   | ETH/MAR22 | 0      | 100000000 | 0     |
-      | party4 | USD   | ETH/MAR22 | 0      | 100000000 | 0     |
+      | party  | asset | market id | margin | general   | bond |
+      | party1 | USD   | ETH/MAR22 | 0      | 100000000 | 0    |
+      | party4 | USD   | ETH/MAR22 | 0      | 100000000 | 0    |
 
