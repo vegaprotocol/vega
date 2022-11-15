@@ -64,8 +64,6 @@ const (
 	LedgerMovementTypeLoss = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_LOSS)
 	// Win.
 	LedgerMovementTypeWin = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_WIN)
-	// Close.
-	LedgerMovementTypeClose = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_CLOSE)
 	// Mark to market loss.
 	LedgerMovementTypeMTMLoss = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MTM_LOSS)
 	// Mark to market win.
@@ -92,8 +90,6 @@ const (
 	LedgerMovementTypeBondLow = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_BOND_LOW)
 	// Bond too high.
 	LedgerMovementTypeBondHigh = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_BOND_HIGH)
-	// Lock amount for withdraw.
-	LedgerMovementTypeWithdrawLock = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_WITHDRAW_LOCK)
 	// Actual withdraw from system.
 	LedgerMovementTypeWithdraw = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_WITHDRAW)
 	// Deposit funds.

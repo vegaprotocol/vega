@@ -9,10 +9,12 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [6795]https://github.com/vegaprotocol/vega/issues/6795 - max gas implementation
 - [6641](https://github.com/vegaprotocol/vega/issues/6641) - network wide limits
 
 ### 🐛 Fixes
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
+- [6799](https://github.com/vegaprotocol/vega/issues/6799) - Move LP fees in transit to the network treasury
 
 
 ## 0.62.1

@@ -1106,3 +1106,17 @@ func (e *Engine) GetAsset(assetID string) (types.Asset, bool) {
 	}
 	return *a.ToAssetType(), true
 }
+
+// GetMarketCounters returns the per-market counts used for gas estimation.
+func (e *Engine) GetMarketCounters() map[string]*types.MarketCounters {
+	counters := map[string]*types.MarketCounters{}
+	for k, m := range e.markets {
+		counters[k] = &types.MarketCounters{
+			PeggedOrderCounter:  m.GetTotalPeggedOrderCount(),
+			OrderbookLevelCount: m.GetTotalOrderBookLevelCount(),
+			PositionCount:       m.GetTotalOpenPositionCount(),
+			LPShapeCount:        m.GetTotalLPShapeCount(),
+		}
+	}
+	return counters
+}

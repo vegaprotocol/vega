@@ -48,8 +48,11 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
+	tmtypes1 "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmtypesint "github.com/tendermint/tendermint/types"
 )
+
+const AppVersion = 1
 
 var (
 	ErrPublicKeyCannotSubmitTransactionWithNoBalance  = errors.New("public key cannot submit transaction without balance")
@@ -171,6 +174,7 @@ type App struct {
 	stateVar               StateVarEngine
 	protocolUpgradeService ProtocolUpgradeService
 	erc20MultiSigTopology  ERC20MultiSigTopology
+	gastimator             *Gastimator
 
 	nilPow  bool
 	nilSpam bool
@@ -212,6 +216,7 @@ func NewApp(
 	version string, // we need the version for snapshot reload
 	protocolUpgradeService ProtocolUpgradeService,
 	codec abci.Codec,
+	gastimator *Gastimator,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -255,6 +260,7 @@ func NewApp(
 		blockchainClient:       blockchainClient,
 		erc20MultiSigTopology:  erc20MultiSigTopology,
 		protocolUpgradeService: protocolUpgradeService,
+		gastimator:             gastimator,
 	}
 
 	// setup handlers
@@ -510,7 +516,7 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 			logging.String("hash", hex.EncodeToString(app.lastBlockAppHash)),
 		)
 		return tmtypes.ResponseInfo{
-			AppVersion:       1,
+			AppVersion:       AppVersion,
 			Version:          app.version,
 			LastBlockHeight:  height,
 			LastBlockAppHash: app.lastBlockAppHash,
@@ -526,7 +532,7 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	}
 
 	resp := tmtypes.ResponseInfo{
-		AppVersion: 1,
+		AppVersion: AppVersion,
 		Version:    app.version,
 	}
 
@@ -718,10 +724,20 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 	app.stateVar.OnBlockEnd(app.blockCtx)
 
 	powerUpdates := app.top.GetValidatorPowerUpdates()
+	resp = tmtypes.ResponseEndBlock{}
 	if len(powerUpdates) > 0 {
-		resp = tmtypes.ResponseEndBlock{
-			ValidatorUpdates: powerUpdates,
-		}
+		resp.ValidatorUpdates = powerUpdates
+	}
+
+	// update max gas based on the network parameter
+	resp.ConsensusParamUpdates = &tmtypes.ConsensusParams{
+		Block: &tmtypes.BlockParams{
+			MaxGas:   int64(app.gastimator.OnBlockEnd()),
+			MaxBytes: tmtypesint.DefaultBlockParams().MaxBytes,
+		},
+		Version: &tmtypes1.VersionParams{
+			AppVersion: AppVersion,
+		},
 	}
 
 	return ctx, resp
@@ -931,8 +947,17 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	// FIXME(): temporary disable all rate limiting
 	_, isval := app.limitPubkey(tx.PubKeyHex())
 
+	gasWanted, err := app.gastimator.CalcGasWantedForTx(tx)
+	if err != nil { // this error means the transaction couldn't be parsed
+		app.log.Error("error getting gas estimate", logging.Error(err))
+		resp.Code = blockchain.AbciTxnValidationFailure
+		resp.Data = []byte(err.Error())
+		return ctx, resp
+	}
+
+	resp.GasWanted = int64(gasWanted)
 	if app.log.IsDebug() {
-		app.log.Debug("transaction passed checkTx", logging.String("tid", tx.GetPoWTID()), logging.String("command", tx.Command().String()))
+		app.log.Debug("transaction passed checkTx", logging.String("tid", tx.GetPoWTID()), logging.String("command", tx.Command().String()), logging.Int64("gas-wanted", resp.GasWanted), logging.Int64("max-gas", int64(app.gastimator.GetMaxGas())))
 	}
 
 	if isval {
