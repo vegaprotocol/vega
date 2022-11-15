@@ -2700,7 +2700,7 @@ type Erc20WithdrawalApproval {
   "The target address which will receive the funds"
   targetAddress: String!
   "Timestamp at which the withdrawal was created"
-  creation: Timestamp!
+  creation: String!
 }
 
 "Response for the signature bundle to add a particular validator to the signer list of the multisig contract"
@@ -2722,7 +2722,7 @@ type ERC20MultiSigSignerAddedBundle {
   "The nonce used in the signing operation"
   nonce: String!
   "Unix-nano timestamp for when the validator was added"
-  timestamp: Timestamp!
+  timestamp: String!
   "The bundle of signatures from current validators to sign in the new signer"
   signatures: String!
   "The epoch in which the validator was added"
@@ -2750,7 +2750,7 @@ type ERC20MultiSigSignerRemovedBundle {
   "The nonce used in the signing operation"
   nonce: String!
   "Unix-nano timestamp for when the validator was added"
-  timestamp: Timestamp!
+  timestamp: String!
   "The bundle of signatures from current validators to sign in the new signer"
   signatures: String!
   "The epoch in which the validator was removed"

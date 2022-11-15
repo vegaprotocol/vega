@@ -404,8 +404,8 @@ func (r *VegaResolverRoot) AggregatedLedgerEntries() AggregatedLedgerEntriesReso
 	return (*aggregatedLedgerEntriesResolver)(r)
 }
 
-func (r *aggregatedLedgerEntriesResolver) VegaTime(ctx context.Context, obj *v2.AggregatedLedgerEntries) (string, error) {
-	return strconv.FormatInt(obj.Timestamp, 10), nil
+func (r *aggregatedLedgerEntriesResolver) VegaTime(ctx context.Context, obj *v2.AggregatedLedgerEntries) (int64, error) {
+	return obj.Timestamp, nil
 }
 
 func (r *aggregatedLedgerEntriesResolver) TransferType(ctx context.Context, obj *v2.AggregatedLedgerEntries) (*string, error) {
@@ -659,7 +659,7 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 	return &Erc20WithdrawalApproval{
 		AssetSource:   res.AssetSource,
 		Amount:        res.Amount,
-		Expiry:        strconv.FormatInt(res.Expiry, 10),
+		Expiry:        res.Expiry,
 		Nonce:         res.Nonce,
 		Signatures:    res.Signatures,
 		TargetAddress: res.TargetAddress,
@@ -859,14 +859,7 @@ func (r *myQueryResolver) EstimateOrder(
 
 	// GTT must have an expiration value
 	if order.TimeInForce == types.Order_TIME_IN_FORCE_GTT && expiration != nil {
-		var expiresAt time.Time
-		expiresAt = vegatime.UnixNano(*expiration)
-		if err != nil {
-			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
-		}
-
-		// move to pure timestamps or convert an RFC format shortly
-		order.ExpiresAt = expiresAt.UnixNano()
+		order.ExpiresAt = vegatime.UnixNano(*expiration).UnixNano()
 	}
 
 	req := v2.EstimateFeeRequest{

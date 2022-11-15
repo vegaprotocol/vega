@@ -210,7 +210,7 @@ type ERC20MultiSigSignerAddedBundle struct {
 	// The nonce used in the signing operation
 	Nonce string `json:"nonce"`
 	// Unix-nano timestamp for when the validator was added
-	Timestamp int64 `json:"timestamp"`
+	Timestamp string `json:"timestamp"`
 	// The bundle of signatures from current validators to sign in the new signer
 	Signatures string `json:"signatures"`
 	// The epoch in which the validator was added
@@ -236,7 +236,7 @@ type ERC20MultiSigSignerRemovedBundle struct {
 	// The nonce used in the signing operation
 	Nonce string `json:"nonce"`
 	// Unix-nano timestamp for when the validator was added
-	Timestamp int64 `json:"timestamp"`
+	Timestamp string `json:"timestamp"`
 	// The bundle of signatures from current validators to sign in the new signer
 	Signatures string `json:"signatures"`
 	// The epoch in which the validator was removed
@@ -319,7 +319,7 @@ type Erc20WithdrawalApproval struct {
 	// The target address which will receive the funds
 	TargetAddress string `json:"targetAddress"`
 	// Timestamp at which the withdrawal was created
-	Creation int64 `json:"creation"`
+	Creation string `json:"creation"`
 }
 
 // Specific details for an erc20 withdrawal

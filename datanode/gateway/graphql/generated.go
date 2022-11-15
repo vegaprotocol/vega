@@ -19329,9 +19329,9 @@ func (ec *executionContext) _ERC20MultiSigSignerAddedBundle_timestamp(ctx contex
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ERC20MultiSigSignerAddedBundle_timestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19341,7 +19341,7 @@ func (ec *executionContext) fieldContext_ERC20MultiSigSignerAddedBundle_timestam
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Timestamp does not have child fields")
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -19793,9 +19793,9 @@ func (ec *executionContext) _ERC20MultiSigSignerRemovedBundle_timestamp(ctx cont
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ERC20MultiSigSignerRemovedBundle_timestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19805,7 +19805,7 @@ func (ec *executionContext) fieldContext_ERC20MultiSigSignerRemovedBundle_timest
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Timestamp does not have child fields")
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -21662,9 +21662,9 @@ func (ec *executionContext) _Erc20WithdrawalApproval_creation(ctx context.Contex
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Erc20WithdrawalApproval_creation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -21674,7 +21674,7 @@ func (ec *executionContext) fieldContext_Erc20WithdrawalApproval_creation(ctx co
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Timestamp does not have child fields")
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil

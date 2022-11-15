@@ -65,7 +65,7 @@ func (r *proposalResolver) State(_ context.Context, data *types.GovernanceData) 
 
 func (r *proposalResolver) Datetime(_ context.Context, data *types.GovernanceData) (int64, error) {
 	if data == nil || data.Proposal == nil {
-		return "", ErrInvalidProposal
+		return 0, ErrInvalidProposal
 	}
 	return data.Proposal.Timestamp, nil
 }
