@@ -145,7 +145,7 @@ func TestPosition(t *testing.T) {
 
 	t.Run("GetBadMarketAndParty", func(t *testing.T) {
 		_, err := ps.GetByMarketAndParty(ctx, market2.ID.String(), "ffff")
-		assert.ErrorIs(t, err, sqlstore.ErrPositionNotFound)
+		assert.ErrorIs(t, err, entities.ErrNotFound)
 	})
 }
 
