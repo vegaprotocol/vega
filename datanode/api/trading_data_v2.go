@@ -1914,7 +1914,11 @@ func (t *tradingDataServiceV2) ListVotes(ctx context.Context, in *v2.ListVotesRe
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	votes, pageInfo, err := t.governanceService.GetByPartyConnection(ctx, in.PartyId, pagination)
+	if in.PartyId == nil && in.ProposalId == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing party or proposal id"))
+	}
+
+	votes, pageInfo, err := t.governanceService.GetConnection(ctx, in.ProposalId, in.PartyId, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
