@@ -2479,6 +2479,27 @@ func (r *myQueryResolver) GetMarketDataHistoryByID(ctx context.Context, id strin
 	return r.getMarketDataHistoryByID(ctx, id, start, end, pagination)
 }
 
+func makeAPIV2Pagination(skip, first, last *int) *v2.OffsetPagination {
+	var (
+		offset, limit uint64
+		descending    bool
+	)
+	if skip != nil {
+		offset = uint64(*skip)
+	}
+	if last != nil {
+		limit = uint64(*last)
+		descending = true
+	} else if first != nil {
+		limit = uint64(*first)
+	}
+	return &v2.OffsetPagination{
+		Skip:       offset,
+		Limit:      limit,
+		Descending: descending,
+	}
+}
+
 func (r *myQueryResolver) getMarketData(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) ([]*types.MarketData, error) {
 	resp, err := r.tradingDataClientV2.GetMarketDataHistoryByID(ctx, req)
 	if err != nil {
