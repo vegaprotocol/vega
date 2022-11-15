@@ -11,6 +11,7 @@
 ### 🛠 Improvements
 - [6795](https://github.com/vegaprotocol/vega/issues/6795 - max gas implementation
 - [6641](https://github.com/vegaprotocol/vega/issues/6641) - network wide limits
+- [6792](https://github.com/vegaprotocol/vega/issues/6792) - Better handling of panics when moving time with `nullchain`, add endpoint to query whether `nullchain` is replaying
 
 ### 🐛 Fixes
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
