@@ -3,17 +3,23 @@
 ## Unreleased 0.63.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6716](https://github.com/vegaprotocol/vega/issues/6716) - Use timestamp on all times fields
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [6795](https://github.com/vegaprotocol/vega/issues/6795) - max gas implementation
 - [6641](https://github.com/vegaprotocol/vega/issues/6641) - network wide limits
+- [6731](https://github.com/vegaprotocol/vega/issues/6731) - standardize on 'network' and '' for network party and no market identifiers
+- [6792](https://github.com/vegaprotocol/vega/issues/6792) - Better handling of panics when moving time with `nullchain`, add endpoint to query whether `nullchain` is replaying
+- [6753](https://github.com/vegaprotocol/vega/issues/6753) - Filter votes per party and/or proposal
+
 
 ### 🐛 Fixes
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
-
+- [6799](https://github.com/vegaprotocol/vega/issues/6799) - Move LP fees in transit to the network treasury
+- [6824](https://github.com/vegaprotocol/vega/issues/6824) - Respect `VEGA_HOME` for embedded `postgres` log location
 
 ## 0.62.1
 

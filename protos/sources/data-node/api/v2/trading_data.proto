@@ -87,9 +87,9 @@ service TradingDataService {
     // An account is defined a 4-tuple of (asset_id, type, party_id, market_id).
     // - Every account has associated asset and type.
     // - Certain account types (for example, the global reward pool) do not have an associated party.
-    //   These are denoted by the special party identifier '*'
+    //   These are denoted by the special party identifier 'network'
     // - Certain account types do not have an associated market (for example general party accounts)
-    //   These are denoted by the special market identifier '!'
+    //   These are denoted by the special market identifier '' (the empty string)
     //
     // `ListBalanceChangesRequest` will return a list of
     // `(vega_time, asset_id, account_type, party_id, market_id, balance)`
@@ -1072,11 +1072,13 @@ message CandleDataConnection {
 // -- Votes --
 // Request for Votes
 message ListVotesRequest {
-    // Party of which the votes are requested
-    string party_id = 1;
+  // Party of which the votes are requested
+  optional string party_id = 1;
+  // A proposal id for which top list proposal for
+  optional string proposal_id = 2;
 
-    // Optional pagination control
-    optional Pagination pagination = 2;
+  // Optional pagination control
+  optional Pagination pagination = 3;
 }
 
 // Response for Votes

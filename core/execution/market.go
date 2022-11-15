@@ -3326,3 +3326,23 @@ func (m *Market) getReferencePrice() *num.Uint {
 	}
 	return ip
 }
+
+// GetTotalOrderBookLevelCount returns the total number of levels in the order book.
+func (m *Market) GetTotalOrderBookLevelCount() uint64 {
+	return m.matching.GetOrderBookLevelCount()
+}
+
+// GetTotalPeggedOrderCount returns the total number of pegged orders.
+func (m *Market) GetTotalPeggedOrderCount() uint64 {
+	return m.matching.GetPeggedOrdersCount()
+}
+
+// GetTotalOpenPositionCount returns the total number of open positions.
+func (m *Market) GetTotalOpenPositionCount() uint64 {
+	return m.position.GetOpenPositionCount()
+}
+
+// GetTotalLPShapeCount returns the total number of LP shapes.
+func (m *Market) GetTotalLPShapeCount() uint64 {
+	return m.liquidity.GetLPShapeCount()
+}

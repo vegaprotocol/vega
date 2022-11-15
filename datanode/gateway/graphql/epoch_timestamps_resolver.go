@@ -14,34 +14,33 @@ package gql
 
 import (
 	"context"
-	"time"
 
-	"code.vegaprotocol.io/vega/datanode/vegatime"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type epochTimestampsResolver VegaResolverRoot
 
-func (r *epochTimestampsResolver) Start(ctx context.Context, obj *proto.EpochTimestamps) (*string, error) {
-	var t string
+func (r *epochTimestampsResolver) Start(ctx context.Context, obj *proto.EpochTimestamps) (*int64, error) {
+	var t *int64
 	if obj.StartTime > 0 {
-		t = vegatime.UnixNano(obj.StartTime).Format(time.RFC3339)
+		t = ptr.From(obj.StartTime)
 	}
-	return &t, nil
+	return t, nil
 }
 
-func (r *epochTimestampsResolver) End(ctx context.Context, obj *proto.EpochTimestamps) (*string, error) {
-	var t string
+func (r *epochTimestampsResolver) End(ctx context.Context, obj *proto.EpochTimestamps) (*int64, error) {
+	var t *int64
 	if obj.EndTime > 0 {
-		t = vegatime.UnixNano(obj.EndTime).Format(time.RFC3339)
+		t = ptr.From(obj.EndTime)
 	}
-	return &t, nil
+	return t, nil
 }
 
-func (r *epochTimestampsResolver) Expiry(ctx context.Context, obj *proto.EpochTimestamps) (*string, error) {
-	var t string
+func (r *epochTimestampsResolver) Expiry(ctx context.Context, obj *proto.EpochTimestamps) (*int64, error) {
+	var t *int64
 	if obj.ExpiryTime > 0 {
-		t = vegatime.UnixNano(obj.ExpiryTime).Format(time.RFC3339)
+		t = ptr.From(obj.ExpiryTime)
 	}
-	return &t, nil
+	return t, nil
 }
