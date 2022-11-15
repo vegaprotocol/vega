@@ -69,8 +69,9 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		logging.String("version-hash", l.VersionHash))
 
 	if l.conf.SQLStore.UseEmbedded {
+		logDir := l.vegaPaths.StatePathFor(paths.DataNodeLogsHome)
 		postgresLogger := &lumberjack.Logger{
-			Filename: paths.StatePath(filepath.Join(paths.DataNodeLogsHome.String(), "embedded-postgres.log")).String(),
+			Filename: filepath.Join(logDir, "embedded-postgres.log"),
 			MaxSize:  l.conf.SQLStore.LogRotationConfig.MaxSize,
 			MaxAge:   l.conf.SQLStore.LogRotationConfig.MaxAge,
 			Compress: true,

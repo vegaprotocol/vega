@@ -15,7 +15,7 @@
 ### 🐛 Fixes
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
 - [6799](https://github.com/vegaprotocol/vega/issues/6799) - Move LP fees in transit to the network treasury
-
+- [6824](https://github.com/vegaprotocol/vega/issues/6824) - Respect `VEGA_HOME` for embedded `postgres` log location
 
 ## 0.62.1
 
