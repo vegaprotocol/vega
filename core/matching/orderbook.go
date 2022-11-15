@@ -126,6 +126,11 @@ func (b *OrderBook) ReloadConf(cfg Config) {
 	b.cfgMu.Unlock()
 }
 
+// GetOrderBookLevelCount returns the number of levels in the book.
+func (b *OrderBook) GetOrderBookLevelCount() uint64 {
+	return uint64(len(b.buy.levels) + len(b.sell.levels))
+}
+
 func (b *OrderBook) GetPeggedOrdersCount() uint64 {
 	return b.peggedOrdersCount
 }

@@ -702,57 +702,54 @@ message FinancialAmount {
 
 // Transfers can occur between parties on Vega, these are the types that indicate why a transfer took place
 enum TransferType {
+  reserved 3, 17;
   // Default value, always invalid
   TRANSFER_TYPE_UNSPECIFIED = 0;
-  // Loss
+  // Funds deducted after final settlement loss
   TRANSFER_TYPE_LOSS = 1;
-  // Win
+  // Funds added to general account after final settlement gain
   TRANSFER_TYPE_WIN = 2;
-  // Close
-  TRANSFER_TYPE_CLOSE = 3;
-  // Mark to market loss
+  // Funds deducted from margin account after mark to market loss
   TRANSFER_TYPE_MTM_LOSS = 4;
-  // Mark to market win
+  // Funds added to margin account after mark to market gain
   TRANSFER_TYPE_MTM_WIN = 5;
-  // Margin too low
+  // Funds transferred from general account to meet margin requirement
   TRANSFER_TYPE_MARGIN_LOW = 6;
-  // Margin too high
+  // Excess margin amount returned to general account
   TRANSFER_TYPE_MARGIN_HIGH = 7;
-  // Margin was confiscated
+  // Margin confiscated from margin account to fulfil closeout
   TRANSFER_TYPE_MARGIN_CONFISCATED = 8;
-  // Pay maker fee
+  // Maker fee paid from general account
   TRANSFER_TYPE_MAKER_FEE_PAY = 9;
-  // Receive maker fee
+  // Maker fee received into general account
   TRANSFER_TYPE_MAKER_FEE_RECEIVE = 10;
-  // Pay infrastructure fee
+  // Infrastructure fee paid from general account
   TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY = 11;
-  // Receive infrastructure fee
+  // Infrastructure fee received into general account
   TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE = 12;
-  // Pay liquidity fee
+  // Liquidity fee paid from general account
   TRANSFER_TYPE_LIQUIDITY_FEE_PAY = 13;
-  // Receive liquidity fee
+  // Liquidity fee received into general account
   TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE = 14;
-  // Bond too low
+  // Bond account funded from general account to meet required bond amount
   TRANSFER_TYPE_BOND_LOW = 15;
-  // Bond too high
+  // Bond returned to general account after liquidity commitment was reduced
   TRANSFER_TYPE_BOND_HIGH = 16;
-  // Lock amount for withdraw
-  TRANSFER_TYPE_WITHDRAW_LOCK = 17;
-  // Actual withdraw from system
+  // Funds withdrawn from general account
   TRANSFER_TYPE_WITHDRAW = 18;
-  // Deposit funds
+  // Funds deposited to general account 
   TRANSFER_TYPE_DEPOSIT = 19;
-  // Bond slashing
+  // Bond account penalised when liquidity commitment not met
   TRANSFER_TYPE_BOND_SLASHING = 20;
-  // Stake reward
+  // Staking reward received
   TRANSFER_TYPE_STAKE_REWARD = 21;
-  // A network internal instruction for the collateral engine to move funds from a user account onto the pending transfers pool
+  // A network internal instruction for the collateral engine to move funds from a user's general account into the pending transfers pool
   TRANSFER_TYPE_TRANSFER_FUNDS_SEND = 22;
-  // A network internal instruction for the collateral engine to move funds from the pending transfers pool account onto the destination account
+  // A network internal instruction for the collateral engine to move funds from the pending transfers pool account into the destination account
   TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE = 23;
-  // Market is closed, accounts are cleared
+  // Market-related accounts emptied because market has closed
   TRANSFER_TYPE_CLEAR_ACCOUNT = 24;
-  // Restore a balance from a checkpoint
+  // Balances restored after network restart
   TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE = 25;
 }
 

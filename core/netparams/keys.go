@@ -159,12 +159,17 @@ const (
 	LimitsProposeMarketEnabledFrom = "limits.markets.proposeEnabledFrom"
 	LimitsProposeAssetEnabledFrom  = "limits.assets.proposeEnabledFrom"
 
+	MaxGasPerBlock = "network.transactions.maxgasperblock"
+	DefaultGas     = "network.transaction.defaultgas"
+
 	// network wide limits.
 	MaxPeggedOrders = "limits.markets.maxPeggedOrders"
 )
 
 var AllKeys = map[string]struct{}{
 	MaxPeggedOrders:                                          {},
+	MaxGasPerBlock:                                           {},
+	DefaultGas:                                               {},
 	RewardMarketCreationQuantumMultiple:                      {},
 	MarketMarginScalingFactors:                               {},
 	MarketFeeFactorsMakerFee:                                 {},

@@ -211,8 +211,9 @@ func defaultNetParams() map[string]value {
 		LimitsProposeAssetEnabledFrom:  NewString(checkOptionalRFC3339Date).Mutable(true).MustUpdate(""), // none by default
 
 		SpamProtectionMaxBatchSize: NewUint(UintGTE(num.NewUint(2)), UintLTE(num.NewUint(200))).Mutable(true).MustUpdate("15"),
-
-		MaxPeggedOrders: NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("1500"),
+		MaxGasPerBlock:             NewUint(UintGTE(num.NewUint(100)), UintLTE(num.NewUint(10000000))).Mutable(true).MustUpdate("100000"),
+		DefaultGas:                 NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(99))).Mutable(true).MustUpdate("1"),
+		MaxPeggedOrders:            NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("1500"),
 	}
 
 	// add additional cross net param rules
