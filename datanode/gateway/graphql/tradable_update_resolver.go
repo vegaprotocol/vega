@@ -4,7 +4,6 @@ import (
 	"context"
 	"strconv"
 
-	"code.vegaprotocol.io/vega/datanode/vegatime"
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -14,8 +13,8 @@ func (r *tradeUpdateResolver) Size(ctx context.Context, obj *types.Trade) (strin
 	return strconv.FormatUint(obj.Size, 10), nil
 }
 
-func (r *tradeUpdateResolver) CreatedAt(ctx context.Context, obj *types.Trade) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
+func (r *tradeUpdateResolver) CreatedAt(ctx context.Context, obj *types.Trade) (int64, error) {
+	return obj.Timestamp, nil
 }
 
 func (r *tradeUpdateResolver) BuyerID(ctx context.Context, obj *types.Trade) (string, error) {

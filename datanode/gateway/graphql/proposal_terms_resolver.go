@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -23,24 +24,22 @@ var ErrUnsupportedProposalTermsChanges = errors.New("unsupported proposal terms 
 
 type proposalTermsResolver VegaResolverRoot
 
-func (r *proposalTermsResolver) ClosingDatetime(ctx context.Context, obj *types.ProposalTerms) (string, error) {
-	return secondsTSToDatetime(obj.ClosingTimestamp), nil
+func (r *proposalTermsResolver) ClosingDatetime(ctx context.Context, obj *types.ProposalTerms) (int64, error) {
+	return obj.ClosingTimestamp, nil
 }
 
-func (r *proposalTermsResolver) EnactmentDatetime(ctx context.Context, obj *types.ProposalTerms) (*string, error) {
-	var dt *string
+func (r *proposalTermsResolver) EnactmentDatetime(ctx context.Context, obj *types.ProposalTerms) (*int64, error) {
+	var dt *int64
 	if obj.EnactmentTimestamp != 0 {
-		tmpdt := secondsTSToDatetime(obj.EnactmentTimestamp)
-		dt = &tmpdt
+		dt = ptr.From(obj.EnactmentTimestamp)
 	}
 	return dt, nil
 }
 
-func (r *proposalTermsResolver) ValidationDatetime(ctx context.Context, obj *types.ProposalTerms) (*string, error) {
-	var dt *string
+func (r *proposalTermsResolver) ValidationDatetime(ctx context.Context, obj *types.ProposalTerms) (*int64, error) {
+	var dt *int64
 	if obj.ValidationTimestamp != 0 {
-		tmpdt := secondsTSToDatetime(obj.ValidationTimestamp)
-		dt = &tmpdt
+		dt = ptr.From(obj.ValidationTimestamp)
 	}
 	return dt, nil
 }

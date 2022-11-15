@@ -15,7 +15,6 @@ package gql
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/datanode/vegatime"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -25,8 +24,8 @@ func (r *voteResolver) Party(_ context.Context, obj *proto.Vote) (*proto.Party, 
 	return &proto.Party{Id: obj.PartyId}, nil
 }
 
-func (r *voteResolver) Datetime(_ context.Context, obj *proto.Vote) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
+func (r *voteResolver) Datetime(_ context.Context, obj *proto.Vote) (int64, error) {
+	return obj.Timestamp, nil
 }
 
 func (r *voteResolver) GovernanceTokenBalance(_ context.Context, obj *proto.Vote) (string, error) {
