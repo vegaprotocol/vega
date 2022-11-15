@@ -22,6 +22,8 @@
 - [6799](https://github.com/vegaprotocol/vega/issues/6799) - Move LP fees in transit to the network treasury
 - [6824](https://github.com/vegaprotocol/vega/issues/6824) - Respect `VEGA_HOME` for embedded `postgres` log location
 - [6843](https://github.com/vegaprotocol/vega/issues/6843) - Fix Visor runner keys
+- [6826](https://github.com/vegaprotocol/vega/issues/6826) - Update `spam.pow.numberOfPastBlocks` range values
+
 
 ## 0.62.1
 
