@@ -222,7 +222,7 @@ func (r *myMarketResolver) Accounts(ctx context.Context, market *types.Market, p
 
 	accounts := make([]*v2.AccountBalance, len(res.Accounts.Edges))
 	for i, edge := range res.Accounts.Edges {
-		accounts[i] = edge.Account
+		accounts[i] = edge.Node
 	}
 	return accounts, nil
 }

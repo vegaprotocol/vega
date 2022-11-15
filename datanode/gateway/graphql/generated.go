@@ -47,7 +47,6 @@ type Config struct {
 type ResolverRoot interface {
 	AccountBalance() AccountBalanceResolver
 	AccountDetails() AccountDetailsResolver
-	AccountEdge() AccountEdgeResolver
 	AccountEvent() AccountEventResolver
 	AccountUpdate() AccountUpdateResolver
 	AggregatedLedgerEntries() AggregatedLedgerEntriesResolver
@@ -494,8 +493,8 @@ type ComplexityRoot struct {
 	}
 
 	EthereumKeyRotationEdge struct {
-		Cursor              func(childComplexity int) int
-		EthereumKeyRotation func(childComplexity int) int
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	EthereumKeyRotationsConnection struct {
@@ -1776,9 +1775,6 @@ type AccountBalanceResolver interface {
 }
 type AccountDetailsResolver interface {
 	PartyID(ctx context.Context, obj *vega.AccountDetails) (*string, error)
-}
-type AccountEdgeResolver interface {
-	Node(ctx context.Context, obj *v2.AccountEdge) (*v2.AccountBalance, error)
 }
 type AccountEventResolver interface {
 	Asset(ctx context.Context, obj *vega.Account) (*vega.Asset, error)
@@ -3755,12 +3751,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EthereumKeyRotationEdge.Cursor(childComplexity), true
 
-	case "EthereumKeyRotationEdge.ethereumKeyRotation":
-		if e.complexity.EthereumKeyRotationEdge.EthereumKeyRotation == nil {
+	case "EthereumKeyRotationEdge.node":
+		if e.complexity.EthereumKeyRotationEdge.Node == nil {
 			break
 		}
 
-		return e.complexity.EthereumKeyRotationEdge.EthereumKeyRotation(childComplexity), true
+		return e.complexity.EthereumKeyRotationEdge.Node(childComplexity), true
 
 	case "EthereumKeyRotationsConnection.edges":
 		if e.complexity.EthereumKeyRotationsConnection.Edges == nil {
@@ -13221,7 +13217,7 @@ func (ec *executionContext) _AccountEdge_node(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.AccountEdge().Node(rctx, obj)
+		return obj.Node, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13242,8 +13238,8 @@ func (ec *executionContext) fieldContext_AccountEdge_node(ctx context.Context, f
 	fc = &graphql.FieldContext{
 		Object:     "AccountEdge",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "balance":
@@ -22027,8 +22023,8 @@ func (ec *executionContext) fieldContext_EthereumKeyRotation_blockHeight(ctx con
 	return fc, nil
 }
 
-func (ec *executionContext) _EthereumKeyRotationEdge_ethereumKeyRotation(ctx context.Context, field graphql.CollectedField, obj *v2.EthereumKeyRotationEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EthereumKeyRotationEdge_ethereumKeyRotation(ctx, field)
+func (ec *executionContext) _EthereumKeyRotationEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.EthereumKeyRotationEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthereumKeyRotationEdge_node(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -22041,7 +22037,7 @@ func (ec *executionContext) _EthereumKeyRotationEdge_ethereumKeyRotation(ctx con
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EthereumKeyRotation, nil
+		return obj.Node, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22058,7 +22054,7 @@ func (ec *executionContext) _EthereumKeyRotationEdge_ethereumKeyRotation(ctx con
 	return ec.marshalNEthereumKeyRotation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐEthereumKeyRotation(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EthereumKeyRotationEdge_ethereumKeyRotation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EthereumKeyRotationEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EthereumKeyRotationEdge",
 		Field:      field,
@@ -22161,8 +22157,8 @@ func (ec *executionContext) fieldContext_EthereumKeyRotationsConnection_edges(ct
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "ethereumKeyRotation":
-				return ec.fieldContext_EthereumKeyRotationEdge_ethereumKeyRotation(ctx, field)
+			case "node":
+				return ec.fieldContext_EthereumKeyRotationEdge_node(ctx, field)
 			case "cursor":
 				return ec.fieldContext_EthereumKeyRotationEdge_cursor(ctx, field)
 			}
@@ -65208,31 +65204,18 @@ func (ec *executionContext) _AccountEdge(ctx context.Context, sel ast.SelectionS
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("AccountEdge")
 		case "node":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._AccountEdge_node(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._AccountEdge_node(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "cursor":
 
 			out.Values[i] = ec._AccountEdge_cursor(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -68019,9 +68002,9 @@ func (ec *executionContext) _EthereumKeyRotationEdge(ctx context.Context, sel as
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("EthereumKeyRotationEdge")
-		case "ethereumKeyRotation":
+		case "node":
 
-			out.Values[i] = ec._EthereumKeyRotationEdge_ethereumKeyRotation(ctx, field, obj)
+			out.Values[i] = ec._EthereumKeyRotationEdge_node(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -80848,10 +80831,6 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
-
-func (ec *executionContext) marshalNAccountBalance2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountBalance(ctx context.Context, sel ast.SelectionSet, v v2.AccountBalance) graphql.Marshaler {
-	return ec._AccountBalance(ctx, sel, &v)
-}
 
 func (ec *executionContext) marshalNAccountBalance2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountBalance(ctx context.Context, sel ast.SelectionSet, v *v2.AccountBalance) graphql.Marshaler {
 	if v == nil {

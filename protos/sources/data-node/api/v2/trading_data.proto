@@ -501,7 +501,7 @@ message AccountsConnection {
 
 message AccountEdge {
     // The actual account object
-    AccountBalance account = 1;
+    AccountBalance node = 1;
     // A cursor which can be used to fetch further pages with reference to this account
     string cursor = 2;
 }
@@ -2034,7 +2034,7 @@ message EthereumKeyRotationsConnection {
 }
 
 message EthereumKeyRotationEdge {
-    vega.events.v1.EthereumKeyRotation ethereum_key_rotation = 1;
+    vega.events.v1.EthereumKeyRotation node = 1;
     string cursor = 2;
 }
 

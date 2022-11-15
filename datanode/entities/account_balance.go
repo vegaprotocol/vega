@@ -50,8 +50,8 @@ func (ab *AccountBalance) ToProto() *v2.AccountBalance {
 
 func (ab AccountBalance) ToProtoEdge(_ ...any) (*v2.AccountEdge, error) {
 	return &v2.AccountEdge{
-		Account: ab.ToProto(),
-		Cursor:  ab.Cursor().Encode(),
+		Node:   ab.ToProto(),
+		Cursor: ab.Cursor().Encode(),
 	}, nil
 }
 

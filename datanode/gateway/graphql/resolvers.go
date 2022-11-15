@@ -177,10 +177,6 @@ func (r *VegaResolverRoot) AccountDetails() AccountDetailsResolver {
 	return (*myAccountDetailsResolver)(r)
 }
 
-func (r *VegaResolverRoot) AccountEdge() AccountEdgeResolver {
-	return (*myAccountEdgeResolver)(r)
-}
-
 // Proposal returns the proposal resolver.
 func (r *VegaResolverRoot) Proposal() ProposalResolver {
 	return (*proposalResolver)(r)
@@ -1888,7 +1884,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 
 	accounts := make([]*v2.AccountBalance, len(res.Accounts.Edges))
 	for i, edge := range res.Accounts.Edges {
-		accounts[i] = edge.Account
+		accounts[i] = edge.Node
 	}
 	return accounts, nil
 }
