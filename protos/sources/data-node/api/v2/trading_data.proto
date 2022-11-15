@@ -1072,11 +1072,13 @@ message CandleDataConnection {
 // -- Votes --
 // Request for Votes
 message ListVotesRequest {
-    // Party of which the votes are requested
-    string party_id = 1;
+  // Party of which the votes are requested
+  optional string party_id = 1;
+  // A proposal id for which top list proposal for
+  optional string proposal_id = 2;
 
-    // Optional pagination control
-    optional Pagination pagination = 2;
+  // Optional pagination control
+  optional Pagination pagination = 3;
 }
 
 // Response for Votes

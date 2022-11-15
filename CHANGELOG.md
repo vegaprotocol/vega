@@ -13,6 +13,7 @@
 - [6641](https://github.com/vegaprotocol/vega/issues/6641) - network wide limits
 - [6731](https://github.com/vegaprotocol/vega/issues/6731) - standardize on 'network' and '' for network party and no market identifiers
 - [6792](https://github.com/vegaprotocol/vega/issues/6792) - Better handling of panics when moving time with `nullchain`, add endpoint to query whether `nullchain` is replaying
+- [6753](https://github.com/vegaprotocol/vega/issues/6753) - Filter votes per party and/or proposal
 
 
 ### 🐛 Fixes
