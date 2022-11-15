@@ -93,7 +93,7 @@ func (bs *Blocks) GetLastBlock(ctx context.Context) (entities.Block, error) {
 	}
 	defer metrics.StartSQLQuery("Blocks", "GetLastBlock")()
 
-	lastBlock, err := GetLastBlockUsingConnection(ctx, bs.Connection)
+	lastBlock, err := bs.getLastBlockUsingConnection(ctx, bs.Connection)
 	// FIXME(woot?): why do we set that before checking for error, that would clearly fuckup the cache or something innit?
 	bs.lastBlock = lastBlock
 	if err != nil {
@@ -112,7 +112,7 @@ func (bs *Blocks) setLastBlock(b entities.Block) {
 func (bs *Blocks) GetOldestHistoryBlock(ctx context.Context) (entities.Block, error) {
 	defer metrics.StartSQLQuery("Blocks", "GetOldestHistoryBlock")()
 
-	return GetOldestHistoryBlockUsingConnection(ctx, bs.Connection)
+	return bs.getOldestHistoryBlockUsingConnection(ctx, bs.Connection)
 }
 
 func (bs *Blocks) getOldestHistoryBlockUsingConnection(ctx context.Context, connection Connection) (entities.Block, error) {
@@ -137,7 +137,7 @@ func GetOldestHistoryBlockUsingConnection(ctx context.Context, connection Connec
 	return *block, nil
 }
 
-func (bs *Blocks) GetLastBlockUsingConnection(ctx context.Context, connection Connection) (*entities.Block, error) {
+func (bs *Blocks) getLastBlockUsingConnection(ctx context.Context, connection Connection) (*entities.Block, error) {
 	block := &entities.Block{}
 	if err := pgxscan.Get(ctx, connection, block,
 		`SELECT vega_time, height, hash

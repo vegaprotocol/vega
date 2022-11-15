@@ -23,13 +23,11 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 )
 
-var (
-	positionsOrdering = TableOrdering{
-		ColumnOrdering{Name: "vega_time", Sorting: ASC},
-		ColumnOrdering{Name: "party_id", Sorting: ASC},
-		ColumnOrdering{Name: "market_id", Sorting: ASC},
-	}
-)
+var positionsOrdering = TableOrdering{
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "party_id", Sorting: ASC},
+	ColumnOrdering{Name: "market_id", Sorting: ASC},
+}
 
 type Positions struct {
 	*ConnectionSource

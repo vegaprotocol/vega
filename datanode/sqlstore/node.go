@@ -23,11 +23,9 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 )
 
-var (
-	nodeOrdering = TableOrdering{
-		ColumnOrdering{Name: "id", Sorting: ASC},
-	}
-)
+var nodeOrdering = TableOrdering{
+	ColumnOrdering{Name: "id", Sorting: ASC},
+}
 
 type Node struct {
 	*ConnectionSource

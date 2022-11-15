@@ -77,7 +77,6 @@ func (np *NetworkParameters) GetByKey(ctx context.Context, key string) (entities
 	query := `SELECT * FROM network_parameters_current where key = $1`
 	defer metrics.StartSQLQuery("NetworkParameters", "GetByKey")()
 	err := pgxscan.Get(ctx, np.Connection, &parameter, query, key)
-
 	if err != nil {
 		return entities.NetworkParameter{}, np.wrapE(err)
 	}
