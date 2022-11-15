@@ -91,6 +91,11 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time
 			pr.Amount, err)
 	}
 
+	marketID := pr.Market
+	if marketID == "!" {
+		marketID = ""
+	}
+
 	reward := Reward{
 		PartyID:        PartyID(pr.Party),
 		AssetID:        AssetID(pr.Asset),
@@ -98,7 +103,7 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time
 		Amount:         amount,
 		PercentOfTotal: percentOfTotal,
 		Timestamp:      NanosToPostgresTimestamp(pr.Timestamp),
-		MarketID:       MarketID(pr.Market),
+		MarketID:       MarketID(marketID),
 		RewardType:     pr.RewardType,
 		TxHash:         txHash,
 		VegaTime:       vegaTime,

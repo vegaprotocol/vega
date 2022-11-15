@@ -19,13 +19,6 @@ import (
 	"code.vegaprotocol.io/vega/protos/vega"
 )
 
-const (
-	noMarketStr     string = "!"
-	noMarketByte    byte   = '!'
-	systemOwnerStr  string = "*"
-	systemOwnerByte byte   = '*'
-)
-
 type (
 	_Account  struct{}
 	AccountID = ID[_Account]
@@ -46,10 +39,21 @@ func (a Account) String() string {
 }
 
 func AccountFromProto(va *vega.Account, txHash TxHash) (Account, error) {
+	// In account proto messages, network party is '*' and no market is '!'
+	partyID := va.Owner
+	if partyID == "*" {
+		partyID = "network"
+	}
+
+	marketID := va.MarketId
+	if marketID == "!" {
+		marketID = ""
+	}
+
 	account := Account{
-		PartyID:  PartyID(va.Owner),
+		PartyID:  PartyID(partyID),
 		AssetID:  AssetID(va.Asset),
-		MarketID: MarketID(va.MarketId),
+		MarketID: MarketID(marketID),
 		Type:     va.Type,
 		TxHash:   txHash,
 	}
@@ -57,7 +61,7 @@ func AccountFromProto(va *vega.Account, txHash TxHash) (Account, error) {
 }
 
 func AccountProtoFromDetails(ad *vega.AccountDetails, txHash TxHash) (Account, error) {
-	marketID, partyID := noMarketStr, systemOwnerStr
+	marketID, partyID := "", "network"
 	if ad.MarketId != nil {
 		marketID = *ad.MarketId
 	}
