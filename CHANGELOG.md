@@ -14,6 +14,7 @@
 
 ### 🐛 Fixes
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
+- [6799](https://github.com/vegaprotocol/vega/issues/6799) - Move LP fees in transit to the network treasury
 - [6725](https://github.com/vegaprotocol/vega/issues/6725) - Fix inconsistent use of node field on `GraphQL` connection edges
 
 

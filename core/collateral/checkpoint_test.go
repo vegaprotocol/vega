@@ -113,3 +113,123 @@ func TestCheckPointLoadingWithAlias(t *testing.T) {
 	_, err = e.GetPartyGeneralAccount("*ACCOUNT_TYPE_GLOBAL_REWARD", "VEGA")
 	require.Error(t, err)
 }
+
+type feesTransfer struct {
+	totalFeesAmountsPerParty map[string]*num.Uint
+	transfers                []*types.Transfer
+}
+
+func (f *feesTransfer) TotalFeesAmountPerParty() map[string]*num.Uint {
+	ret := make(map[string]*num.Uint, len(f.totalFeesAmountsPerParty))
+	for k, v := range f.totalFeesAmountsPerParty {
+		ret[k] = v.Clone()
+	}
+	return ret
+}
+func (f *feesTransfer) Transfers() []*types.Transfer { return f.transfers }
+
+// TestCheckPointWithUndistributedLPFees takes a checkpoint with undistributed balance in the lp fees account of a market and verifies that it goes
+// back to the network treasury of the asset as takes a checkpoint.
+func TestCheckPointWithUndistributedLPFees(t *testing.T) {
+	e := newCheckpointTestEngine(t)
+	defer e.ctrl.Finish()
+
+	e.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	asset1 := types.Asset{
+		ID: "MYASSET1",
+		Details: &types.AssetDetails{
+			Symbol: "MYASSET1",
+		},
+	}
+	err := e.EnableAsset(context.Background(), asset1)
+	require.NoError(t, err)
+
+	asset2 := types.Asset{
+		ID: "MYASSET2",
+		Details: &types.AssetDetails{
+			Symbol: "MYASSET2",
+		},
+	}
+	err = e.EnableAsset(context.Background(), asset2)
+	e.EnableAsset(context.Background(), asset2)
+	require.NoError(t, err)
+
+	// create necessary accounts
+	_, _, err = e.CreateMarketAccounts(context.Background(), "market1", "MYASSET1")
+	require.NoError(t, err)
+
+	_, _, err = e.CreateMarketAccounts(context.Background(), "market2", "MYASSET1")
+	require.NoError(t, err)
+
+	_, _, err = e.CreateMarketAccounts(context.Background(), "market3", "MYASSET2")
+	require.NoError(t, err)
+
+	_, err = e.CreatePartyGeneralAccount(context.Background(), "zohar", "MYASSET1")
+	require.NoError(t, err)
+
+	_, err = e.CreatePartyGeneralAccount(context.Background(), "zohar", "MYASSET2")
+	require.NoError(t, err)
+
+	marginAccount1, err := e.CreatePartyMarginAccount(context.Background(), "zohar", "market1", "MYASSET1")
+	require.NoError(t, err)
+	e.IncrementBalance(context.Background(), marginAccount1, num.NewUint(500000))
+
+	marginAccount2, err := e.CreatePartyMarginAccount(context.Background(), "zohar", "market2", "MYASSET1")
+	require.NoError(t, err)
+	e.IncrementBalance(context.Background(), marginAccount2, num.NewUint(500000))
+
+	marginAccount3, err := e.CreatePartyMarginAccount(context.Background(), "zohar", "market3", "MYASSET2")
+	require.NoError(t, err)
+	e.IncrementBalance(context.Background(), marginAccount3, num.NewUint(500000))
+
+	// setup some balance on the LP fee pay account for MYASSET1/market1
+	lpTransfers := &types.Transfer{
+		Owner: "zohar",
+		Amount: &types.FinancialAmount{
+			Asset:  "MYASSET1",
+			Amount: num.NewUint(2000),
+		},
+		Type: types.TransferTypeLiquidityFeePay,
+	}
+	_, err = e.TransferFees(context.Background(), "market1", "MYASSET1", &feesTransfer{transfers: []*types.Transfer{lpTransfers}})
+	require.NoError(t, err)
+
+	// setup some balance on the LP fee pay account for MYASSET1/market2
+	lpTransfers = &types.Transfer{
+		Owner: "zohar",
+		Amount: &types.FinancialAmount{
+			Asset:  "MYASSET1",
+			Amount: num.NewUint(3000),
+		},
+		Type: types.TransferTypeLiquidityFeePay,
+	}
+	_, err = e.TransferFees(context.Background(), "market2", "MYASSET1", &feesTransfer{transfers: []*types.Transfer{lpTransfers}})
+	require.NoError(t, err)
+
+	// setup some balance on the LP fee pay account for MYASSET1/market1
+	lpTransfers = &types.Transfer{
+		Owner: "zohar",
+		Amount: &types.FinancialAmount{
+			Asset:  "MYASSET2",
+			Amount: num.NewUint(7000),
+		},
+		Type: types.TransferTypeLiquidityFeePay,
+	}
+	_, err = e.TransferFees(context.Background(), "market3", "MYASSET2", &feesTransfer{transfers: []*types.Transfer{lpTransfers}})
+	require.NoError(t, err)
+
+	// take a checkpoint, at this point we expect the funds to be dropped into the network treasury of the asset2.
+	ret, err := e.Checkpoint()
+	require.NoError(t, err)
+
+	e.Load(context.Background(), ret)
+
+	netTreasury1, err := e.GetGlobalRewardAccount("MYASSET1")
+	require.NoError(t, err)
+	require.Equal(t, "5000", netTreasury1.Balance.String())
+
+	netTreasury2, err := e.GetGlobalRewardAccount("MYASSET2")
+	require.NoError(t, err)
+	require.Equal(t, "7000", netTreasury2.Balance.String())
+}
