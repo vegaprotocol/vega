@@ -14,6 +14,7 @@
 
 ### 🐛 Fixes
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
+- [6725](https://github.com/vegaprotocol/vega/issues/6725) - Fix inconsistent use of node field on `GraphQL` connection edges
 
 
 ## 0.62.1
