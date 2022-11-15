@@ -9,8 +9,9 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [6795](https://github.com/vegaprotocol/vega/issues/6795 - max gas implementation
+- [6795](https://github.com/vegaprotocol/vega/issues/6795) - max gas implementation
 - [6641](https://github.com/vegaprotocol/vega/issues/6641) - network wide limits
+- [6731](https://github.com/vegaprotocol/vega/issues/6731) - standardize on 'network' and '' for network party and no market identifiers
 
 ### 🐛 Fixes
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
