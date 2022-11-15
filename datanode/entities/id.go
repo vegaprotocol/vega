@@ -25,25 +25,21 @@ var ErrInvalidID = errors.New("not a valid hex ID (or well known exception)")
 type ID[T any] string
 
 var wellKnownIds = map[string]string{
-	"VOTE":         "00",
-	systemOwnerStr: "01",
-	noMarketStr:    "02",
-	"network":      "03",
-	"XYZalpha":     "04",
-	"XYZbeta":      "05",
-	"XYZdelta":     "06",
-	"XYZepsilon":   "07",
-	"XYZgamma":     "08",
-	"fBTC":         "09",
-	"fDAI":         "0a",
-	"fEURO":        "0b",
-	"fUSDC":        "0c",
+	"VOTE":       "00",
+	"network":    "03",
+	"XYZalpha":   "04",
+	"XYZbeta":    "05",
+	"XYZdelta":   "06",
+	"XYZepsilon": "07",
+	"XYZgamma":   "08",
+	"fBTC":       "09",
+	"fDAI":       "0a",
+	"fEURO":      "0b",
+	"fUSDC":      "0c",
 }
 
 var wellKnownIdsReversed = map[string]string{
 	"00": "VOTE",
-	"01": systemOwnerStr,
-	"02": noMarketStr,
 	"03": "network",
 	"04": "XYZalpha",
 	"05": "XYZbeta",
