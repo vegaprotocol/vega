@@ -171,7 +171,7 @@ func (v *Visor) Run(ctx context.Context) error {
 				v.log.Info("Preparing upgrade")
 
 				if err := binRunner.Stop(); err != nil {
-					// Force to kill if fails grateful stop fails
+					v.log.Info("failed to stop binaries, resorting to force kill", logging.Error(err))
 					if err := binRunner.Kill(); err != nil {
 						return fmt.Errorf("failed to force kill the running processes: %w", err)
 					}
