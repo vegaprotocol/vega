@@ -32,6 +32,7 @@ type Replayer struct {
 	app     ApplicationService
 	rFile   *os.File
 	current *blockData
+	stop    chan struct{}
 }
 
 func NewNullChainReplayer(app ApplicationService, cfg blockchain.ReplayConfig, log *logging.Logger) (*Replayer, error) {
@@ -53,6 +54,7 @@ func NewNullChainReplayer(app ApplicationService, cfg blockchain.ReplayConfig, l
 		app:   app,
 		rFile: f,
 		log:   log,
+		stop:  make(chan struct{}, 1),
 	}, nil
 }
 
@@ -60,43 +62,32 @@ func (r *Replayer) InitChain(req abci.RequestInitChain) (resp abci.ResponseInitC
 	return r.app.InitChain(req)
 }
 
-func (r *Replayer) BeginBlock(req abci.RequestBeginBlock) (resp abci.ResponseBeginBlock) {
-	r.current = &blockData{
-		Height: req.Header.Height,
-		Time:   req.Header.Time.UnixNano(),
-		Txs:    [][]byte{},
-	}
-	return r.app.BeginBlock(req)
-}
-
-func (r *Replayer) EndBlock(req abci.RequestEndBlock) (resp abci.ResponseEndBlock) {
-	return r.app.EndBlock(req)
-}
-
-func (r *Replayer) Commit() (resp abci.ResponseCommit) {
-	resp = r.app.Commit()
-	r.current.AppHash = resp.Data
-	r.write(r.current)
-	r.current = nil
-	return
-}
-
-func (r *Replayer) DeliverTx(req abci.RequestDeliverTx) (resp abci.ResponseDeliverTx) {
-	r.current.Txs = append(r.current.Txs, req.Tx)
-	return r.app.DeliverTx(req)
-}
-
-func (r *Replayer) Info(req abci.RequestInfo) (resp abci.ResponseInfo) {
-	return r.app.Info(req)
-}
-
 func (r *Replayer) Stop() error {
-	if r.current != nil {
-		// a panic must've occurred while processing a block because we didn't make it to commit
-		// save what we have
-		r.write(r.current)
-	}
+	r.stop <- struct{}{}
+	close(r.stop)
 	return r.rFile.Close()
+}
+
+// startBlock saves in memory all the transactions in the block, we do not write until saveBlock us called
+// with a potential appHash.
+func (r *Replayer) startBlock(height, now int64, txs []*abci.RequestDeliverTx) {
+	r.current = &blockData{
+		Height: height,
+		Time:   now,
+	}
+	for _, tx := range txs {
+		r.current.Txs = append(r.current.Txs, tx.Tx)
+	}
+}
+
+// saveBlock writes to the replay file the details of the current block adding the appHash to it.
+// If a panic occurred appHash may be empty.
+func (r *Replayer) saveBlock(appHash []byte) {
+	r.current.AppHash = appHash
+	if err := r.write(); err != nil {
+		r.log.Panic("unable to write block to file", logging.Int64("block-height", r.current.Height))
+	}
+	r.current = nil
 }
 
 // replayChain sends all the recorded per-block transactions into the protocol returning the block-height and block-time it reached
@@ -109,6 +100,13 @@ func (r *Replayer) replayChain(appHeight int64, chainID string) (int64, time.Tim
 	var replayedHeight int64
 	var replayedTime time.Time
 	for s.Scan() {
+		select {
+		case <-r.stop:
+			r.log.Info("core is shutting down, nullchain replaying stopped", logging.Int64("block-height", replayedHeight))
+			return replayedHeight, replayedTime, nil
+		default:
+		}
+
 		var data blockData
 		if err := json.Unmarshal(s.Bytes(), &data); err != nil {
 			return replayedHeight, replayedTime, err
@@ -165,10 +163,10 @@ func (r *Replayer) replayChain(appHeight int64, chainID string) (int64, time.Tim
 	return replayedHeight, replayedTime, nil
 }
 
-func (r *Replayer) write(bd *blockData) error {
+func (r *Replayer) write() error {
 	b, err := json.Marshal(r.current)
 	if err != nil {
-		return fmt.Errorf("unable to record block %d: %w", bd.Height, err)
+		return fmt.Errorf("unable to record block %d: %w", r.current.Height, err)
 	}
 
 	// write each marshalled json block on a new line, its crude, but lets worry about perf if perf becomes a problem.
