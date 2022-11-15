@@ -278,10 +278,6 @@ func (r *VegaResolverRoot) Vote() VoteResolver {
 	return (*voteResolver)(r)
 }
 
-func (r *VegaResolverRoot) MarketTimestamps() MarketTimestampsResolver {
-	return (*marketTimestampsResolver)(r)
-}
-
 func (r *VegaResolverRoot) NodeData() NodeDataResolver {
 	return (*nodeDataResolver)(r)
 }
@@ -347,10 +343,6 @@ func (r *VegaResolverRoot) Transfer() TransferResolver {
 	return (*transferResolver)(r)
 }
 
-func (r *VegaResolverRoot) OneOffTransfer() OneOffTransferResolver {
-	return (*oneoffTransferResolver)(r)
-}
-
 func (r *VegaResolverRoot) RecurringTransfer() RecurringTransferResolver {
 	return (*recurringTransferResolver)(r)
 }
@@ -408,8 +400,8 @@ func (r *VegaResolverRoot) AggregatedLedgerEntries() AggregatedLedgerEntriesReso
 	return (*aggregatedLedgerEntriesResolver)(r)
 }
 
-func (r *aggregatedLedgerEntriesResolver) VegaTime(ctx context.Context, obj *v2.AggregatedLedgerEntries) (string, error) {
-	return strconv.FormatInt(obj.Timestamp, 10), nil
+func (r *aggregatedLedgerEntriesResolver) VegaTime(ctx context.Context, obj *v2.AggregatedLedgerEntries) (int64, error) {
+	return obj.Timestamp, nil
 }
 
 func (r *aggregatedLedgerEntriesResolver) TransferType(ctx context.Context, obj *v2.AggregatedLedgerEntries) (*string, error) {
@@ -663,7 +655,7 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 	return &Erc20WithdrawalApproval{
 		AssetSource:   res.AssetSource,
 		Amount:        res.Amount,
-		Expiry:        strconv.FormatInt(res.Expiry, 10),
+		Expiry:        res.Expiry,
 		Nonce:         res.Nonce,
 		Signatures:    res.Signatures,
 		TargetAddress: res.TargetAddress,
@@ -832,7 +824,8 @@ func (r *myQueryResolver) EstimateOrder(
 	size string,
 	side vega.Side,
 	timeInForce vega.Order_TimeInForce,
-	expiration *string, ty vega.Order_Type,
+	expiration *int64,
+	ty vega.Order_Type,
 ) (*OrderEstimate, error) {
 	order := &types.Order{}
 
@@ -862,14 +855,7 @@ func (r *myQueryResolver) EstimateOrder(
 
 	// GTT must have an expiration value
 	if order.TimeInForce == types.Order_TIME_IN_FORCE_GTT && expiration != nil {
-		var expiresAt time.Time
-		expiresAt, err = vegatime.Parse(*expiration)
-		if err != nil {
-			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
-		}
-
-		// move to pure timestamps or convert an RFC format shortly
-		order.ExpiresAt = expiresAt.UnixNano()
+		order.ExpiresAt = vegatime.UnixNano(*expiration).UnixNano()
 	}
 
 	req := v2.EstimateFeeRequest{
@@ -2085,10 +2071,6 @@ func (r *myMarginLevelsUpdateResolver) MaintenanceLevel(_ context.Context, m *ty
 	return m.MaintenanceMargin, nil
 }
 
-func (r *myMarginLevelsUpdateResolver) Timestamp(_ context.Context, m *types.MarginLevels) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(m.Timestamp)), nil
-}
-
 // BEGIN: MarginLevels Resolver
 
 type myMarginLevelsResolver VegaResolverRoot
@@ -2133,10 +2115,6 @@ func (r *myMarginLevelsResolver) MaintenanceLevel(_ context.Context, m *types.Ma
 	return m.MaintenanceMargin, nil
 }
 
-func (r *myMarginLevelsResolver) Timestamp(_ context.Context, m *types.MarginLevels) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(m.Timestamp)), nil
-}
-
 // END: MarginLevels Resolver
 
 type myOrderUpdateResolver VegaResolverRoot
@@ -2153,14 +2131,14 @@ func (r *myOrderUpdateResolver) Remaining(ctx context.Context, obj *types.Order)
 	return strconv.FormatUint(obj.Remaining, 10), nil
 }
 
-func (r *myOrderUpdateResolver) CreatedAt(ctx context.Context, obj *types.Order) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
+func (r *myOrderUpdateResolver) CreatedAt(ctx context.Context, obj *types.Order) (int64, error) {
+	return obj.CreatedAt, nil
 }
 
-func (r *myOrderUpdateResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*string, error) {
-	var updatedAt *string
+func (r *myOrderUpdateResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*int64, error) {
+	var updatedAt *int64
 	if obj.UpdatedAt > 0 {
-		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
+		t := obj.UpdatedAt
 		updatedAt = &t
 	}
 	return updatedAt, nil
@@ -2206,14 +2184,14 @@ func (r *myOrderResolver) Remaining(ctx context.Context, obj *types.Order) (stri
 	return strconv.FormatUint(obj.Remaining, 10), nil
 }
 
-func (r *myOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
+func (r *myOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (int64, error) {
+	return obj.CreatedAt, nil
 }
 
-func (r *myOrderResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*string, error) {
-	var updatedAt *string
+func (r *myOrderResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*int64, error) {
+	var updatedAt *int64
 	if obj.UpdatedAt > 0 {
-		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
+		t := obj.UpdatedAt
 		updatedAt = &t
 	}
 	return updatedAt, nil
@@ -2312,8 +2290,8 @@ func (r *myTradeResolver) Size(ctx context.Context, obj *types.Trade) (string, e
 	return strconv.FormatUint(obj.Size, 10), nil
 }
 
-func (r *myTradeResolver) CreatedAt(ctx context.Context, obj *types.Trade) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
+func (r *myTradeResolver) CreatedAt(ctx context.Context, obj *types.Trade) (int64, error) {
+	return obj.Timestamp, nil
 }
 
 func (r *myTradeResolver) Buyer(ctx context.Context, obj *types.Trade) (*types.Party, error) {
@@ -2392,12 +2370,12 @@ func (r *myTradeResolver) SellerFee(ctx context.Context, obj *types.Trade) (*Tra
 
 type myCandleResolver VegaResolverRoot
 
-func (r *myCandleResolver) PeriodStart(_ context.Context, obj *v2.Candle) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.Start)), nil
+func (r *myCandleResolver) PeriodStart(_ context.Context, obj *v2.Candle) (int64, error) {
+	return obj.Start, nil
 }
 
-func (r *myCandleResolver) LastUpdateInPeriod(_ context.Context, obj *v2.Candle) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.LastUpdate)), nil
+func (r *myCandleResolver) LastUpdateInPeriod(_ context.Context, obj *v2.Candle) (int64, error) {
+	return obj.LastUpdate, nil
 }
 
 func (r *myCandleResolver) Volume(_ context.Context, obj *v2.Candle) (string, error) {
@@ -3180,22 +3158,10 @@ func getParty(ctx context.Context, log *logging.Logger, client TradingDataServic
 // Market Data Resolvers
 
 // GetMarketDataHistoryByID returns all the market data information for a given market between the dates specified.
-func (r *myQueryResolver) GetMarketDataHistoryByID(ctx context.Context, id string, start, end, skip, first, last *int) ([]*types.MarketData, error) {
-	var startTime, endTime *int64
-
-	if start != nil {
-		s := int64(*start)
-		startTime = &s
-	}
-
-	if end != nil {
-		e := int64(*end)
-		endTime = &e
-	}
-
+func (r *myQueryResolver) GetMarketDataHistoryByID(ctx context.Context, id string, start, end *int64, skip, first, last *int) ([]*types.MarketData, error) {
 	pagination := makeAPIV2Pagination(skip, first, last)
 
-	return r.getMarketDataHistoryByID(ctx, id, startTime, endTime, pagination)
+	return r.getMarketDataHistoryByID(ctx, id, start, end, pagination)
 }
 
 func (r *myQueryResolver) getMarketData(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) ([]*types.MarketData, error) {
@@ -3240,23 +3206,11 @@ func (r *myQueryResolver) getMarketDataHistoryByID(ctx context.Context, id strin
 	return r.getMarketData(ctx, &req)
 }
 
-func (r *myQueryResolver) GetMarketDataHistoryConnectionByID(ctx context.Context, marketID string, start *int, end *int, pagination *v2.Pagination) (*v2.MarketDataConnection, error) {
-	var startTime, endTime *int64
-
-	if start != nil {
-		s := int64(*start)
-		startTime = &s
-	}
-
-	if end != nil {
-		e := int64(*end)
-		endTime = &e
-	}
-
+func (r *myQueryResolver) GetMarketDataHistoryConnectionByID(ctx context.Context, marketID string, start, end *int64, pagination *v2.Pagination) (*v2.MarketDataConnection, error) {
 	req := v2.GetMarketDataHistoryByIDRequest{
 		MarketId:       marketID,
-		StartTimestamp: startTime,
-		EndTimestamp:   endTime,
+		StartTimestamp: start,
+		EndTimestamp:   end,
 		Pagination:     pagination,
 	}
 

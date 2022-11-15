@@ -68,13 +68,3 @@ func (r *recurringTransferResolver) DispatchStrategy(ctx context.Context, obj *e
 	}
 	return nil, nil
 }
-
-type oneoffTransferResolver VegaResolverRoot
-
-func (r *oneoffTransferResolver) DeliverOn(ctx context.Context, obj *eventspb.OneOffTransfer) (*string, error) {
-	if obj.DeliverOn > 0 {
-		t := vegatime.Format(vegatime.UnixNano(obj.DeliverOn))
-		return &t, nil
-	}
-	return nil, nil
-}

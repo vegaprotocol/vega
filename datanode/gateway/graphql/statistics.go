@@ -16,10 +16,35 @@ import (
 	"context"
 	"strconv"
 
+	"code.vegaprotocol.io/vega/core/vegatime"
 	vega "code.vegaprotocol.io/vega/protos/vega/api/v1"
 )
 
 type statisticsResolver VegaResolverRoot
+
+func (s *statisticsResolver) CurrentTime(ctx context.Context, obj *vega.Statistics) (int64, error) {
+	t, err := vegatime.Parse(obj.CurrentTime)
+	if err != nil {
+		return 0, err
+	}
+	return t.UnixNano(), nil
+}
+
+func (s *statisticsResolver) GenesisTime(ctx context.Context, obj *vega.Statistics) (int64, error) {
+	t, err := vegatime.Parse(obj.GenesisTime)
+	if err != nil {
+		return 0, err
+	}
+	return t.UnixNano(), nil
+}
+
+func (s *statisticsResolver) VegaTime(ctx context.Context, obj *vega.Statistics) (int64, error) {
+	t, err := vegatime.Parse(obj.VegaTime)
+	if err != nil {
+		return 0, err
+	}
+	return t.UnixNano(), nil
+}
 
 func (s *statisticsResolver) BlockHeight(ctx context.Context, obj *vega.Statistics) (string, error) {
 	return strconv.FormatUint(obj.BlockHeight, 10), nil

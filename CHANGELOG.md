@@ -3,19 +3,19 @@
 ## Unreleased 0.63.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6716](https://github.com/vegaprotocol/vega/issues/6716) - Use timestamp on all times fields
+- [6725](https://github.com/vegaprotocol/vega/issues/6725) - Fix inconsistent use of node field on `GraphQL` connection edges
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [6795]https://github.com/vegaprotocol/vega/issues/6795 - max gas implementation
+- [6795](https://github.com/vegaprotocol/vega/issues/6795 - max gas implementation
 - [6641](https://github.com/vegaprotocol/vega/issues/6641) - network wide limits
 
 ### 🐛 Fixes
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
 - [6799](https://github.com/vegaprotocol/vega/issues/6799) - Move LP fees in transit to the network treasury
-- [6725](https://github.com/vegaprotocol/vega/issues/6725) - Fix inconsistent use of node field on `GraphQL` connection edges
 
 
 ## 0.62.1

@@ -10,12 +10,9 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-//go:build tools
-// +build tools
-
 package tools
 
 import (
-	_ "github.com/99designs/gqlgen"
-	_ "github.com/99designs/gqlgen/graphql/introspection"
+	_ "github.com/99designs/gqlgen/graphql" // this presumably does something useful
+	_ "github.com/urfave/cli/v2"
 )

@@ -77,6 +77,7 @@ require (
 	github.com/soheilhy/cmux v0.1.4
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20220101234140-673ab2c3ae75
 	github.com/tyler-smith/go-bip39 v1.1.0
+	github.com/urfave/cli/v2 v2.10.2
 	github.com/vegaprotocol/go-slip10 v0.1.0
 	github.com/vektah/gqlparser/v2 v2.5.1
 	golang.org/x/sync v0.0.0-20220929204114-8fcdb60fdcc0

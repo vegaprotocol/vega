@@ -15,7 +15,7 @@ package gql
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/datanode/vegatime"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	dnapiproto "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	vgproto "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -23,20 +23,19 @@ import (
 
 type stakeLinkingResolver VegaResolverRoot
 
-func (s *stakeLinkingResolver) Timestamp(ctx context.Context, obj *eventspb.StakeLinking) (string, error) {
-	return vegatime.Format(vegatime.Unix(obj.Ts, 0)), nil
+func (s *stakeLinkingResolver) Timestamp(ctx context.Context, obj *eventspb.StakeLinking) (int64, error) {
+	return obj.Ts, nil
 }
 
 func (s *stakeLinkingResolver) Party(ctx context.Context, obj *eventspb.StakeLinking) (*vgproto.Party, error) {
 	return &vgproto.Party{Id: obj.Party}, nil
 }
 
-func (s *stakeLinkingResolver) FinalizedAt(ctx context.Context, obj *eventspb.StakeLinking) (*string, error) {
+func (s *stakeLinkingResolver) FinalizedAt(ctx context.Context, obj *eventspb.StakeLinking) (*int64, error) {
 	if obj.FinalizedAt == 0 {
 		return nil, nil
 	}
-	fa := vegatime.Format(vegatime.UnixNano(obj.FinalizedAt))
-	return &fa, nil
+	return ptr.From(obj.FinalizedAt), nil
 }
 
 type partyStakeResolver VegaResolverRoot
