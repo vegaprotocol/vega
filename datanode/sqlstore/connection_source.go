@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"sync"
 
+	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 
@@ -163,6 +164,22 @@ func (s *ConnectionSource) Commit(ctx context.Context) error {
 
 func (s *ConnectionSource) Close() {
 	s.pool.Close()
+}
+
+func (s *ConnectionSource) wrapE(err error) error {
+	if err != nil && s.log.GetLevel() <= logging.DebugLevel {
+		s.log.Debug("unable to find resource",
+			logging.Error(err),
+		)
+	}
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		return entities.ErrNotFound
+	case errors.Is(err, entities.ErrInvalidID):
+		return entities.ErrInvalidID
+	default:
+		return err
+	}
 }
 
 func registerNumericType(poolConfig *pgxpool.Config) {

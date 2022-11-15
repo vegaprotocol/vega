@@ -94,7 +94,7 @@ func (os *Orders) GetOrder(ctx context.Context, orderIDStr string, version *int3
 		err = pgxscan.Get(ctx, os.Connection, &order, query, orderID)
 	}
 
-	return order, err
+	return order, os.wrapE(err)
 }
 
 // GetByMarket returns the last update of the all the orders in a particular market.

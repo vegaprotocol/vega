@@ -1993,10 +1993,27 @@ func (t *tradingDataServiceV2) GetOrder(ctx context.Context, req *v2.GetOrderReq
 
 	order, err := t.orderService.GetOrder(ctx, req.OrderId, req.Version)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, intoAPIError(err)
 	}
 
 	return &v2.GetOrderResponse{Order: order.ToProto()}, nil
+}
+
+func intoAPIError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	switch {
+	case errors.Is(err, entities.ErrNotFound):
+		return apiError(codes.NotFound, err)
+	case errors.Is(err, entities.ErrInvalidID):
+		return apiError(codes.InvalidArgument, err)
+	default:
+		// could handle more errors like context cancelled,
+		// deadling exceeded, but let's see later
+		return apiError(codes.Internal, err)
+	}
 }
 
 func (t *tradingDataServiceV2) ListOrders(ctx context.Context, in *v2.ListOrdersRequest) (*v2.ListOrdersResponse, error) {
