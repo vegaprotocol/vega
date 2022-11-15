@@ -15,22 +15,21 @@ package gql
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/datanode/vegatime"
 	vega "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type auctionEventResolver VegaResolverRoot
 
-func (r *auctionEventResolver) AuctionStart(ctx context.Context, obj *eventspb.AuctionEvent) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.Start)), nil
+func (r *auctionEventResolver) AuctionStart(ctx context.Context, obj *eventspb.AuctionEvent) (int64, error) {
+	return obj.Start, nil
 }
 
-func (r *auctionEventResolver) AuctionEnd(ctx context.Context, obj *eventspb.AuctionEvent) (string, error) {
+func (r *auctionEventResolver) AuctionEnd(ctx context.Context, obj *eventspb.AuctionEvent) (int64, error) {
 	if obj.End > 0 {
-		return vegatime.Format(vegatime.UnixNano(obj.End)), nil
+		return obj.End, nil
 	}
-	return "", nil
+	return 0, nil
 }
 
 func (r *auctionEventResolver) ExtensionTrigger(ctx context.Context, obj *eventspb.AuctionEvent) (*vega.AuctionTrigger, error) {

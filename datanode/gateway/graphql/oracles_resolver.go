@@ -16,7 +16,7 @@ import (
 	"context"
 	"strconv"
 
-	utils "code.vegaprotocol.io/vega/libs/ptr"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -66,7 +66,7 @@ func (o *oracleDataResolver) ExternalData(_ context.Context, obj *vegapb.OracleD
 	ed.Data.Signers = resolveSigners(oed.Data.Signers)
 	ed.Data.Data = oed.Data.Data
 	ed.Data.MatchedSpecIds = oed.Data.MatchedSpecIds
-	ed.Data.BroadcastAt = strconv.FormatInt(oed.Data.BroadcastAt, 10)
+	ed.Data.BroadcastAt = oed.Data.BroadcastAt
 
 	return
 }
@@ -115,8 +115,10 @@ func resolveDataSourceSpec(d *vegapb.DataSourceSpec) (ds *DataSourceSpec) {
 	}
 
 	ds.ID = d.GetId()
-	ds.CreatedAt = strconv.FormatInt(d.CreatedAt, 10)
-	ds.UpdatedAt = utils.From(strconv.FormatInt(d.UpdatedAt, 10))
+	ds.CreatedAt = d.CreatedAt
+	if d.UpdatedAt != 0 {
+		ds.UpdatedAt = ptr.From(d.UpdatedAt)
+	}
 	ds.Status = DataSourceSpecStatus(strconv.FormatInt(int64(d.Status), 10))
 
 	if d.Data != nil {

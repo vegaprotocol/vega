@@ -3,13 +3,13 @@
 ## Unreleased 0.63.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6716](https://github.com/vegaprotocol/vega/issues/6716) - Use timestamp on all times fields
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [6795]https://github.com/vegaprotocol/vega/issues/6795 - max gas implementation
+- [6795](https://github.com/vegaprotocol/vega/issues/6795 - max gas implementation
 - [6641](https://github.com/vegaprotocol/vega/issues/6641) - network wide limits
 
 ### 🐛 Fixes
