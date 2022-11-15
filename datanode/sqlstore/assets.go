@@ -103,7 +103,7 @@ func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error
 	if err == nil {
 		as.cache[id] = a
 	}
-	return a, err
+	return a, as.wrapE(err)
 }
 
 func (as *Assets) GetAll(ctx context.Context) ([]entities.Asset, error) {

@@ -322,7 +322,7 @@ func VerifyChainID(chainID string, chainService *service.Chain) error {
 
 	currentChainID, err := chainService.GetChainID()
 	if err != nil {
-		if errors.Is(err, entities.ErrChainNotFound) {
+		if errors.Is(err, entities.ErrNotFound) {
 			return ErrChainNotFound
 		}
 

@@ -1302,20 +1302,10 @@ func (t *tradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v
 
 func (t *tradingDataServiceV2) GetParty(ctx context.Context, req *v2.GetPartyRequest) (*v2.GetPartyResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetParty")()
-	out := v2.GetPartyResponse{}
 
 	party, err := t.partyService.GetByID(ctx, req.PartyId)
-
-	if errors.Is(err, sqlstore.ErrPartyNotFound) {
-		return &out, nil
-	}
-
-	if errors.Is(err, sqlstore.ErrInvalidPartyID) {
-		return &out, apiError(codes.InvalidArgument, ErrPartyServiceGetByID, err)
-	}
-
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrPartyServiceGetByID, err)
+		return nil, intoAPIError(err)
 	}
 
 	return &v2.GetPartyResponse{
@@ -1836,10 +1826,8 @@ func (t *tradingDataServiceV2) GetGovernanceData(ctx context.Context, req *v2.Ge
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("proposal id or reference required"))
 	}
 
-	if errors.Is(err, sqlstore.ErrProposalNotFound) {
-		return nil, apiError(codes.NotFound, ErrMissingProposalID, err)
-	} else if err != nil {
-		return nil, apiError(codes.Internal, ErrNotMapped, err)
+	if err != nil {
+		return nil, intoAPIError(err)
 	}
 
 	gd, err := t.proposalToGovernanceData(ctx, proposal)

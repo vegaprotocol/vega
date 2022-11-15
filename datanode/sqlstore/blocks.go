@@ -70,19 +70,18 @@ func (bs *Blocks) GetAll() ([]entities.Block, error) {
 }
 
 func (bs *Blocks) GetAtHeight(ctx context.Context, height int64) (entities.Block, error) {
+	defer metrics.StartSQLQuery("Blocks", "GetAtHeight")()
+
 	// Check if it's in our cache first
 	block, err := bs.GetLastBlock(ctx)
 	if err == nil && block.Height == height {
 		return block, nil
 	}
 
-	// Else query the database
-	defer metrics.StartSQLQuery("Blocks", "GetAtHeight")()
-	err = pgxscan.Get(context.Background(), bs.Connection, &block,
+	return block, bs.wrapE(pgxscan.Get(context.Background(), bs.Connection, &block,
 		`SELECT vega_time, height, hash
 		FROM blocks
-		WHERE height=$1`, height)
-	return block, err
+		WHERE height=$1`, height))
 }
 
 // GetLastBlock return the last block or ErrNoLastBlock if no block is found.
@@ -95,6 +94,7 @@ func (bs *Blocks) GetLastBlock(ctx context.Context) (entities.Block, error) {
 	defer metrics.StartSQLQuery("Blocks", "GetLastBlock")()
 
 	lastBlock, err := GetLastBlockUsingConnection(ctx, bs.Connection)
+	// FIXME(woot?): why do we set that before checking for error, that would clearly fuckup the cache or something innit?
 	bs.lastBlock = lastBlock
 	if err != nil {
 		return entities.Block{}, err
@@ -115,6 +115,16 @@ func (bs *Blocks) GetOldestHistoryBlock(ctx context.Context) (entities.Block, er
 	return GetOldestHistoryBlockUsingConnection(ctx, bs.Connection)
 }
 
+func (bs *Blocks) getOldestHistoryBlockUsingConnection(ctx context.Context, connection Connection) (entities.Block, error) {
+	block := &entities.Block{}
+	if err := pgxscan.Get(ctx, connection, block, `SELECT vega_time, height, hash
+		FROM blocks order by height asc limit 1`); err != nil {
+		return entities.Block{}, bs.wrapE(err)
+	}
+
+	return *block, nil
+}
+
 func GetOldestHistoryBlockUsingConnection(ctx context.Context, connection Connection) (entities.Block, error) {
 	block := &entities.Block{}
 	err := pgxscan.Get(ctx, connection, block, `SELECT vega_time, height, hash
@@ -124,11 +134,18 @@ func GetOldestHistoryBlockUsingConnection(ctx context.Context, connection Connec
 		return entities.Block{}, ErrNoHistoryBlock
 	}
 
-	if err != nil {
-		return entities.Block{}, err
+	return *block, nil
+}
+
+func (bs *Blocks) GetLastBlockUsingConnection(ctx context.Context, connection Connection) (*entities.Block, error) {
+	block := &entities.Block{}
+	if err := pgxscan.Get(ctx, connection, block,
+		`SELECT vega_time, height, hash
+		FROM last_block`); err != nil {
+		return nil, bs.wrapE(err)
 	}
 
-	return *block, nil
+	return block, nil
 }
 
 func GetLastBlockUsingConnection(ctx context.Context, connection Connection) (*entities.Block, error) {

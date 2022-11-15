@@ -14,7 +14,6 @@ package sqlstore
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -25,8 +24,7 @@ import (
 )
 
 var (
-	ErrNodeNotFound = errors.New("node not found")
-	nodeOrdering    = TableOrdering{
+	nodeOrdering = TableOrdering{
 		ColumnOrdering{Name: "id", Sorting: ASC},
 	}
 )
@@ -269,8 +267,7 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 
 	nodeData := entities.NodeData{}
 
-	err := pgxscan.Get(ctx, store.Connection, &nodeData, query)
-	return nodeData, err
+	return nodeData, store.wrapE(pgxscan.Get(ctx, store.Connection, &nodeData, query))
 }
 
 func (store *Node) GetNodes(ctx context.Context, epochSeq uint64, pagination entities.CursorPagination) ([]entities.Node, entities.PageInfo, error) {
@@ -451,9 +448,5 @@ func (store *Node) GetNodeByID(ctx context.Context, nodeID string, epochSeq uint
 		AND nodes.id=$2
 	`
 
-	err := pgxscan.Get(ctx, store.Connection, &node, query, epochSeq, id)
-	if pgxscan.NotFound(err) {
-		return node, fmt.Errorf("'%v': %w", nodeID, ErrNodeNotFound)
-	}
-	return node, err
+	return node, store.wrapE(pgxscan.Get(ctx, store.Connection, &node, query, epochSeq, id))
 }

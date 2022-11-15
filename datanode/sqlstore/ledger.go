@@ -73,11 +73,11 @@ func (ls *Ledger) GetByLedgerEntryTime(ledgerEntryTime time.Time) (entities.Ledg
 	defer metrics.StartSQLQuery("Ledger", "GetByID")()
 	le := entities.LedgerEntry{}
 	ctx := context.Background()
-	err := pgxscan.Get(ctx, ls.Connection, &le,
+
+	return le, ls.wrapE(pgxscan.Get(ctx, ls.Connection, &le,
 		`SELECT ledger_entry_time, quantity, tx_hash, vega_time, transfer_time, type
 		 FROM ledger WHERE ledger_entry_time =$1`,
-		ledgerEntryTime)
-	return le, err
+		ledgerEntryTime))
 }
 
 func (ls *Ledger) GetAll() ([]entities.LedgerEntry, error) {

@@ -17,16 +17,10 @@ import (
 	"fmt"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	"github.com/pkg/errors"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"github.com/georgysavva/scany/pgxscan"
-)
-
-var (
-	ErrPartyNotFound  = errors.New("party not found")
-	ErrInvalidPartyID = errors.New("invalid hex id")
 )
 
 var partiesOrdering = TableOrdering{
@@ -73,20 +67,11 @@ func (ps *Parties) Add(ctx context.Context, p entities.Party) error {
 func (ps *Parties) GetByID(ctx context.Context, id string) (entities.Party, error) {
 	a := entities.Party{}
 	defer metrics.StartSQLQuery("Parties", "GetByID")()
-	err := pgxscan.Get(ctx, ps.Connection, &a,
+
+	return a, ps.wrapE(pgxscan.Get(ctx, ps.Connection, &a,
 		`SELECT id, tx_hash, vega_time
 		 FROM parties WHERE id=$1`,
-		entities.PartyID(id))
-
-	if pgxscan.NotFound(err) {
-		return a, fmt.Errorf("'%v': %w", id, ErrPartyNotFound)
-	}
-
-	if errors.Is(err, entities.ErrInvalidID) {
-		return a, fmt.Errorf("'%v': %w", id, ErrInvalidPartyID)
-	}
-
-	return a, err
+		entities.PartyID(id)))
 }
 
 func (ps *Parties) GetAll(ctx context.Context) ([]entities.Party, error) {

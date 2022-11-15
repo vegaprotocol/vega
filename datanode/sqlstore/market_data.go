@@ -94,15 +94,13 @@ func (md *MarketData) Flush(ctx context.Context) ([]*entities.MarketData, error)
 }
 
 func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (entities.MarketData, error) {
+	defer metrics.StartSQLQuery("MarketData", "GetMarketDataByID")()
 	md.log.Debug("Retrieving market data from Postgres", logging.String("market-id", marketID))
 
 	var marketData entities.MarketData
 	query := "select * from market_data_snapshot where market = $1"
 
-	defer metrics.StartSQLQuery("MarketData", "GetMarketDataByID")()
-	err := pgxscan.Get(ctx, md.Connection, &marketData, query, entities.MarketID(marketID))
-
-	return marketData, err
+	return marketData, md.wrapE(pgxscan.Get(ctx, md.Connection, &marketData, query, entities.MarketID(marketID)))
 }
 
 func (md *MarketData) GetMarketsData(ctx context.Context) ([]entities.MarketData, error) {

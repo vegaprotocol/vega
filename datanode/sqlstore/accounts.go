@@ -90,11 +90,13 @@ func (as *Accounts) GetByID(id entities.AccountID) (entities.Account, error) {
 	a := entities.Account{}
 	ctx := context.Background()
 	defer metrics.StartSQLQuery("Accounts", "GetByID")()
-	err := pgxscan.Get(ctx, as.Connection, &a,
-		`SELECT id, party_id, asset_id, market_id, type, tx_hash, vega_time
+	return a, as.wrapE(
+		pgxscan.Get(ctx, as.Connection, &a,
+			`SELECT id, party_id, asset_id, market_id, type, tx_hash, vega_time
 		 FROM accounts WHERE id=$1`,
-		id)
-	return a, err
+			id,
+		),
+	)
 }
 
 func (as *Accounts) GetAll() ([]entities.Account, error) {

@@ -14,7 +14,6 @@ package sqlstore
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
@@ -25,8 +24,7 @@ import (
 )
 
 var (
-	ErrPositionNotFound = errors.New("party not found")
-	positionsOrdering   = TableOrdering{
+	positionsOrdering = TableOrdering{
 		ColumnOrdering{Name: "vega_time", Sorting: ASC},
 		ColumnOrdering{Name: "party_id", Sorting: ASC},
 		ColumnOrdering{Name: "market_id", Sorting: ASC},
@@ -69,15 +67,9 @@ func (ps *Positions) GetByMarketAndParty(ctx context.Context,
 	)
 
 	defer metrics.StartSQLQuery("Positions", "GetByMarketAndParty")()
-	err := pgxscan.Get(ctx, ps.Connection, &position,
+	return position, ps.wrapE(pgxscan.Get(ctx, ps.Connection, &position,
 		`SELECT * FROM positions_current WHERE market_id=$1 AND party_id=$2`,
-		marketID, partyID)
-
-	if pgxscan.NotFound(err) {
-		return position, fmt.Errorf("'%v/%v': %w", marketID, partyID, ErrPositionNotFound)
-	}
-
-	return position, err
+		marketID, partyID))
 }
 
 func (ps *Positions) GetByMarket(ctx context.Context, marketID string) ([]entities.Position, error) {

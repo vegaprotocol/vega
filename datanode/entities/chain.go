@@ -17,7 +17,6 @@ import (
 )
 
 var (
-	ErrChainNotFound   = errors.New("chain not found")
 	ErrChainAlreadySet = errors.New("chain already set")
 )
 
