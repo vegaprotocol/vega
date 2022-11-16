@@ -1958,23 +1958,6 @@ func (t *tradingDataServiceV2) GetOrder(ctx context.Context, req *v2.GetOrderReq
 	return &v2.GetOrderResponse{Order: order.ToProto()}, nil
 }
 
-func intoAPIError(err error) error {
-	if err == nil {
-		return nil
-	}
-
-	switch {
-	case errors.Is(err, entities.ErrNotFound):
-		return apiError(codes.NotFound, err)
-	case errors.Is(err, entities.ErrInvalidID):
-		return apiError(codes.InvalidArgument, err)
-	default:
-		// could handle more errors like context cancelled,
-		// deadling exceeded, but let's see later
-		return apiError(codes.Internal, err)
-	}
-}
-
 func (t *tradingDataServiceV2) formatE(err error) error {
 	if err == nil {
 		return nil
