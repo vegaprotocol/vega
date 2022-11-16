@@ -16,19 +16,19 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/examples/nullchain/config"
 	"github.com/pkg/errors"
+	"google.golang.org/grpc"
 
-	datanode "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	"code.vegaprotocol.io/vega/core/examples/nullchain/config"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
-	"google.golang.org/grpc"
 )
 
 type Connection struct {
 	conn     *grpc.ClientConn
 	core     api.CoreServiceClient
-	datanode datanode.TradingDataServiceClient
+	datanode v2.TradingDataServiceClient
 	timeout  time.Duration
 }
 
@@ -41,7 +41,7 @@ func NewConnection() (*Connection, error) {
 	return &Connection{
 		conn:     conn,
 		core:     api.NewCoreServiceClient(conn),
-		datanode: datanode.NewTradingDataServiceClient(conn),
+		datanode: v2.NewTradingDataServiceClient(conn),
 		timeout:  5 * time.Second,
 	}, nil
 }
@@ -78,7 +78,7 @@ func (c *Connection) VegaTime() (time.Time, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 
-	gvtReq := &datanode.GetVegaTimeRequest{}
+	gvtReq := &v2.GetVegaTimeRequest{}
 	response, err := c.datanode.GetVegaTime(ctx, gvtReq)
 	if err != nil {
 		return time.Time{}, errors.WithStack(err)
@@ -92,24 +92,29 @@ func (c *Connection) GetProposalsByParty(party *Party) ([]*vega.GovernanceData, 
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 
-	r, err := c.datanode.GetProposalsByParty(ctx,
-		&datanode.GetProposalsByPartyRequest{
-			PartyId: party.pubkey,
+	r, err := c.datanode.ListGovernanceData(ctx,
+		&v2.ListGovernanceDataRequest{
+			ProposerPartyId: &party.pubkey,
 		})
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return r.Data, nil
+	var proposals []*vega.GovernanceData
+	for _, gd := range r.GetConnection().GetEdges() {
+		proposals = append(proposals, gd.GetNode())
+	}
+
+	return proposals, nil
 }
 
 func (c *Connection) GetProposalByReference(ref string) (*vega.Proposal, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 
-	r, err := c.datanode.GetProposalByReference(ctx,
-		&datanode.GetProposalByReferenceRequest{
-			Reference: ref,
+	r, err := c.datanode.GetGovernanceData(ctx,
+		&v2.GetGovernanceDataRequest{
+			Reference: &ref,
 		})
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -119,10 +124,15 @@ func (c *Connection) GetProposalByReference(ref string) (*vega.Proposal, error) 
 }
 
 func (c *Connection) GetMarkets() ([]*vega.Market, error) {
-	markets, err := c.datanode.Markets(context.Background(), &datanode.MarketsRequest{})
+	r, err := c.datanode.ListMarkets(context.Background(), &v2.ListMarketsRequest{})
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return markets.Markets, nil
+	var markets []*vega.Market
+	for _, m := range r.GetMarkets().GetEdges() {
+		markets = append(markets, m.GetNode())
+	}
+
+	return markets, nil
 }

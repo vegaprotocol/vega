@@ -16,12 +16,12 @@ import "testing"
 
 func TestTransfers(t *testing.T) {
 	queries := map[string]string{
-		"Transfers": "{ transfers(pubkey : \"test\", isFrom : false, isTo: false){id,from,fromAccountType,to,toAccountType,amount,reference, status,asset{id}}}",
+		"Transfers": "{ transfersConnection(direction : To){ edges{ node{ id from fromAccountType to toAccountType amount reference status asset{ id } } } } }",
 	}
 
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
-			assertGraphQLQueriesReturnSame[struct{ Transfers []Transfer }](t, query)
+			assertGraphQLQueriesReturnSame(t, query)
 		})
 	}
 }
