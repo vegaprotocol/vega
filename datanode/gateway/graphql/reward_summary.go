@@ -26,10 +26,6 @@ func (r *rewardSummaryResolver) Asset(ctx context.Context, obj *vega.RewardSumma
 	return r.r.getAssetByID(ctx, obj.AssetId)
 }
 
-func (r *rewardSummaryResolver) Rewards(ctx context.Context, obj *vega.RewardSummary, skip, first, last *int) ([]*vega.Reward, error) {
-	return r.r.allRewards(ctx, obj.PartyId, obj.AssetId, skip, first, last)
-}
-
 func (r *rewardSummaryResolver) RewardsConnection(ctx context.Context, summary *vega.RewardSummary, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error) {
 	req := v2.ListRewardsRequest{
 		PartyId:    summary.PartyId,

@@ -1,0 +1,1183 @@
+{
+	"TestName": "TestMarkets_MarketDepth",
+	"Query": "{ marketsConnection{ edges { node { id, depth{ sequenceNumber buy{ price volume numberOfOrders} sell{ price volume numberOfOrders} lastTrade{ id buyer{id} seller{id} price size } } } } } }",
+	"Result": {
+		"marketsConnection": {
+			"edges": [
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": null,
+							"sell": null,
+							"sequenceNumber": "0"
+						},
+						"id": "162397c1072a83001c4c6b98a414987b7b7412f25a2d1c9b94a4cf4709e1149a"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": [
+								{
+									"numberOfOrders": "1",
+									"price": "90000000",
+									"volume": "500000"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "89900000",
+									"volume": "183856109"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "10000000",
+									"volume": "100000"
+								}
+							],
+							"lastTrade": {
+								"buyer": {
+									"id": "366e565cecc6217f36f4000615df4ac08cba9e4c22c4e476c7ede12784285e73"
+								},
+								"id": "1c33a64e6f54cda99a37016a922b7bf328d93e659b16ec2b36ddc24fb1c962fe",
+								"price": "100100000",
+								"seller": {
+									"id": "462016d080484ef59862e55b61e9fa9c4d7d9796b09a74b6741da5bbedeead4f"
+								},
+								"size": "500000"
+							},
+							"sell": [
+								{
+									"numberOfOrders": "1",
+									"price": "120000000",
+									"volume": "500000"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "120100000",
+									"volume": "135719016"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "10000000000",
+									"volume": "100000"
+								}
+							],
+							"sequenceNumber": "1667897246390629023"
+						},
+						"id": "a612587a48a615ba3182868cd2e193b2661983cb41d8e7afa21c74d5821897a2"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": [
+								{
+									"numberOfOrders": "1",
+									"price": "100000",
+									"volume": "100000"
+								}
+							],
+							"lastTrade": {
+								"buyer": {
+									"id": "366e565cecc6217f36f4000615df4ac08cba9e4c22c4e476c7ede12784285e73"
+								},
+								"id": "e0466c90ed284ef66fd8b1206c07fa5baed5864b8b4cdea1c52c61663cf0656d",
+								"price": "100000000",
+								"seller": {
+									"id": "462016d080484ef59862e55b61e9fa9c4d7d9796b09a74b6741da5bbedeead4f"
+								},
+								"size": "100000"
+							},
+							"sell": [
+								{
+									"numberOfOrders": "1",
+									"price": "1000000000",
+									"volume": "100000"
+								}
+							],
+							"sequenceNumber": "1667897575282262035"
+						},
+						"id": "6067f86da2134e56b82f2900ab9b83a97f3daf7cb16fb211c39e87f63a9853c7"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": [
+								{
+									"numberOfOrders": "1",
+									"price": "100000",
+									"volume": "100000"
+								}
+							],
+							"lastTrade": {
+								"buyer": {
+									"id": "366e565cecc6217f36f4000615df4ac08cba9e4c22c4e476c7ede12784285e73"
+								},
+								"id": "422cedb0b656ffa0eca1737533a2505e6e47379d94b8c29e21fc3589cd351bb9",
+								"price": "100000000",
+								"seller": {
+									"id": "462016d080484ef59862e55b61e9fa9c4d7d9796b09a74b6741da5bbedeead4f"
+								},
+								"size": "100000"
+							},
+							"sell": [
+								{
+									"numberOfOrders": "1",
+									"price": "1000000000",
+									"volume": "100000"
+								}
+							],
+							"sequenceNumber": "1667897834691743044"
+						},
+						"id": "0deaa2062da090d5b165dc22a8ed748744268ab2aca801dc5e9915b69a2198ef"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": [
+								{
+									"numberOfOrders": "1",
+									"price": "90000000",
+									"volume": "500000"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "89900000",
+									"volume": "183856109"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "10000000",
+									"volume": "100000"
+								}
+							],
+							"lastTrade": {
+								"buyer": {
+									"id": "57ad47739268254207c51c528bff9b1218e3a53f9d5b4e38e6e9afbf98c1e3e8"
+								},
+								"id": "c16984bab72635c16ce80a60559cdbc09fd77f46ecae77bc27c3fa0f2310e638",
+								"price": "100000000",
+								"seller": {
+									"id": "50a5ea65a6ca4c66fb377390a1e1f4ceb70a2378aaccf86c2eee50834a96a61f"
+								},
+								"size": "100000"
+							},
+							"sell": [
+								{
+									"numberOfOrders": "1",
+									"price": "120000000",
+									"volume": "500000"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "120100000",
+									"volume": "135719016"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "10000000000",
+									"volume": "100000"
+								}
+							],
+							"sequenceNumber": "1667898229610115052"
+						},
+						"id": "de20aeb7cd22fb71702f603ae0e0cafe32fcebf0c6c8ce7cfd4c9c7aa41f7d04"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": null,
+							"sell": null,
+							"sequenceNumber": "1667900052453368020"
+						},
+						"id": "c6721a3034b19790c9f3618248c2c9b352f9e47d1c0f7f1d0febad52798044f4"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": [
+								{
+									"numberOfOrders": "1",
+									"price": "90000000",
+									"volume": "400000"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "89900000",
+									"volume": "183856109"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "10000000",
+									"volume": "100000"
+								}
+							],
+							"lastTrade": {
+								"buyer": {
+									"id": "fdca651fb2ec384aa6f9465b2dd2d4397407e8f5794c840d61c98f50bebb77c4"
+								},
+								"id": "24fba3bb2bd62e274c661c3fe9523611c1be8930039fdb2b5a4bdb4d0c740c13",
+								"price": "94900000",
+								"seller": {
+									"id": "cc0f29bba6d318e9b2772f2c3aca0e427c23dd7206f8bd10be903318347f7d21"
+								},
+								"size": "100000"
+							},
+							"sell": [
+								{
+									"numberOfOrders": "1",
+									"price": "120000000",
+									"volume": "200000"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "120100000",
+									"volume": "135719016"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "10000000000",
+									"volume": "100000"
+								}
+							],
+							"sequenceNumber": "1667900239033482093"
+						},
+						"id": "70a3df066de2098a63519ae66072a8c26a21be9c950ab850a516290de9f1b244"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": [
+								{
+									"numberOfOrders": "1",
+									"price": "90000000",
+									"volume": "500000"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "89900000",
+									"volume": "183856109"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "10000000",
+									"volume": "100000"
+								}
+							],
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "9f6b47ee43737f744fe3e84c44ca1f523381a8523bf48ea1cfd13a60664fde0e",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": [
+								{
+									"numberOfOrders": "1",
+									"price": "120000000",
+									"volume": "500000"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "120100000",
+									"volume": "135719016"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "10000000000",
+									"volume": "100000"
+								}
+							],
+							"sequenceNumber": "1667899619836662026"
+						},
+						"id": "625c0922eeb6fba74c5fe82f10dd460cb8c6e0e6b35d1f575a29456c972230cf"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": [
+								{
+									"numberOfOrders": "1",
+									"price": "90000000",
+									"volume": "500000"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "89900000",
+									"volume": "183856109"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "10000000",
+									"volume": "100000"
+								}
+							],
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "116f2ea2a14763396c3c64988551f3c7c99778d036c65dd5087675f38750ed40",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": [
+								{
+									"numberOfOrders": "1",
+									"price": "120000000",
+									"volume": "500000"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "120100000",
+									"volume": "135719016"
+								},
+								{
+									"numberOfOrders": "1",
+									"price": "10000000000",
+									"volume": "100000"
+								}
+							],
+							"sequenceNumber": "1667899601529429025"
+						},
+						"id": "a2aa9de3d9deffd9bb3d9bff1c9fe5e00b255f9140d1b97cb6dcd56a59278d5d"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "2f747c7f895a0b49ec757760b699fa3c2c6e279f88c8905c1afb2dffc1355ea5",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899874799878038"
+						},
+						"id": "4c3def402473719214131430f905534fa25d06e8152e82cbea1a059e63351174"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "4e352b6efdb3165a4cfccc0e00300e4e717ce9ecb900c32d9db6f28e4f4ae17d",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899813834617038"
+						},
+						"id": "1894530899e87003889a139718950c218529b7c67b008b4ec815b23f92805eea"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "9e3a15597eb8507f2cc7aab5436f88f3618813555d4e5eb27b5bb41c8767110d",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899752926689038"
+						},
+						"id": "74beaf7257e43c8f8443d413fccd8d092608b5926aa6e78bb17747de18cb359d"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "be2e11ed60acc59af80da9a4ab51c2aeb0303914a97a172deb93fafe0604bcc0",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899691872941038"
+						},
+						"id": "47831ba264f9075387a885823ee00f66776eb39661c9c8c9b74b9eddd03d4f42"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "68631d9b077d6d2b71a3eef60b0b94569aa54864a2d0252c53fc929ebad296e6",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899577073857036"
+						},
+						"id": "6d5be5173bb643bdeb2921986a1ecb5f91a28109631babb9212031838d46d124"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "f096563960d726cc16df8e1c38ac134aae8f3072860b7487ef8bf47d7f800eda",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899540987422036"
+						},
+						"id": "06be6ca2fb0629b183136e2195d3a8a0cb49768faf2df8a60480a2d5cb7901f1"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "992c72011e558b215126c15245f9ec4ec1a7525909a82371be6270abd14aea93",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899479584019104"
+						},
+						"id": "659aca3537054a82b3d1af1fe81c405d4a9b4b4d94676e063d947b8c6c73c968"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "fbcca5e60b99866ad3664b9d2fc42f3c8a0791542d6950d14b5b72cd562c16bb",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899479584019155"
+						},
+						"id": "210f764b1310288cd15ce1697749121642e48f278d0e2a71bf2736f20d3afb69"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "1384338384fe3c733fcde2289821e6dd3222e409b6d79568de475187a46160e4",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899479584019129"
+						},
+						"id": "ebf4d62ed1a7f38b675c6355d9c1920cd3fff3b0b2d20785058a1fe2b15366de"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "1f2f6eaedeaffb6f4f7ab149691717f80589ef4309784b2c43e2b94b0251b852",
+								"price": "90000000",
+								"seller": {
+									"id": "75d504bf644dce08e6949d8956bd409dfbeeb6c780cea44a3deb9214e6123fc8"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899479584019078"
+						},
+						"id": "d96eee2a1947886fb2d9571fc51059c1c58bf39b4e303ecb1694b2aa0c30b44d"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "98719bcb35ff26bd2b16eb200c4e631986d7ced727729384b8026a530212027e",
+								"price": "90000000",
+								"seller": {
+									"id": "75d504bf644dce08e6949d8956bd409dfbeeb6c780cea44a3deb9214e6123fc8"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899479584019046"
+						},
+						"id": "b92cefff4ceedd6dc766cbba13656e5fbd0d50723540636950ba79865ddcc65e"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "4ce82a961d697c4236a90049df3c089b16db8c62da787a2a10dd2f2307ea2e32",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899385212651039"
+						},
+						"id": "33a1801e41a5c69e1e91affcb8444b8c4c8c5d12d97d9f242a6541d6ee5f6ed3"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "3e9cc8caac3f5425742ab6831865bea36a3ab081e13e527b70f81f5de27d6ab1",
+								"price": "90000000",
+								"seller": {
+									"id": "75d504bf644dce08e6949d8956bd409dfbeeb6c780cea44a3deb9214e6123fc8"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899154200245078"
+						},
+						"id": "932ffd1da9e295590f41923f7b2e0bc9d12f5ab882b9513c7a77ae026241242a"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "99c9cfc2d107611d763374de300ca269d2f68da1a59caf5c5d9f1a98a9570904"
+								},
+								"id": "e173f1704ce13f4d61269ad440c475df0906e5ae031f5573bcfb7202eafe90c6",
+								"price": "100000000",
+								"seller": {
+									"id": "75d504bf644dce08e6949d8956bd409dfbeeb6c780cea44a3deb9214e6123fc8"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899154200245045"
+						},
+						"id": "52451b3a827e21c6cbfa021af0491c1130015ffac90329500d4d8f482d2bf927"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "5092259d9af86dc649ca4a74fb6eafb74175c59f8fc8e54662f0d2289377ad9b",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899097248129039"
+						},
+						"id": "75d65ecb4f19c06e68b03f76c9abb04dfc3555b13b264e971d313249feccae7f"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "545c2e965c9ea61a942af37b6f15bbfcb7feb16b35dd914e486fda26f82eaac6",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899079041088039"
+						},
+						"id": "866a85e287046b855952dc1cabff2b9a33cd0b2f3895014cbbc45444024d3e48"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "9be3ea5e248f49c948428dd1d51e966a76e6694958bf6e5717cf6ef59602d2d4",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667899067870295037"
+						},
+						"id": "97501650e5977c4852b6da07b94ccd085dc7158a462e1766d5754bd2ba3c8068"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "14f29293d80f7a6daba1e53a1ef2f13c6ad7732d9ddec5f1156a5a8fd7ba8e88",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898991175743039"
+						},
+						"id": "210a23f8613c89af4c36d1c67c3c1ca199faaf7b48078acb6324717ff0d75027"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "199a60b021aeae39ce2dea32a00050572ff2795e4d24c2627c6d8b1598dfb875",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898957429884044"
+						},
+						"id": "e96ce4f99707a7825a46d41648f53d5da4c157b4a9b6c1f1d51731532f3221b5"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "1ec36eb874d0232239a838cdd581ea5827d83a22866c306fd23295f27c1d2f23",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898881942147036"
+						},
+						"id": "527b8f3885321e4ae85ca8506b6cdbf1e43bc2b66c145e5b58775317cde86297"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "3be4a4b8bec614c5759290c7db0442cd34d467946dc6a4204de168b540ebb717",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898856407644036"
+						},
+						"id": "87b05e95bfc2801e568fde2679611d9b69de3266d14f4063dc18ffd12c14d5a4"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "b645c201581149c90f132fbb1576cb9618bb2d9b378c02feaf28af2984e501e8"
+								},
+								"id": "5d42a421d80c8f015c4f0bb3120d5e933aca3b3d4270bf8953697a64072919d9",
+								"price": "100046",
+								"seller": {
+									"id": "7cb61570c22fde4356a09af7207379c0bd424637987f8a03fbf0f8e6ecc29175"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898832097901043"
+						},
+						"id": "011f1acc103c31cf9222fe12d00f7dd4d5c50b7d2b3dfae592e2a59e4c318c40"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "4943abd8725e47301def88966e0df31472236ed6a8e96ac5da8ba642773f5949"
+								},
+								"id": "aab12bd8604f91aa6eb1dfc052f6fc2ed0a8b843db6d0f36681ffece79482a50",
+								"price": "10004568",
+								"seller": {
+									"id": "9f37dbd8054e920b295320edde33a2149195a175c65e3b5a9051b574853e6036"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898805807062058"
+						},
+						"id": "b3c285cbdc892b50c8dfabc09a98a0562c1d04f652f049ea26872d6c8c103551"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "a922e612b617fe9df73629276dbf6fa69882bdc4810422ed9062768bb12843a8",
+								"price": "97600000",
+								"seller": {
+									"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb"
+								},
+								"size": "500000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898779192864036"
+						},
+						"id": "739e0a602305f55484601b23abff525030a7531f46cb2c5fbda2c78f96bfb95f"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "c312142436d5e6384b44a723632438e4deab339491a94bec10943bc06d80242f",
+								"price": "90000000",
+								"seller": {
+									"id": "94e2c009c8f95515d2dbecd2a6fef72aec55b016467cf542f4819e4e50498b45"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898754205258043"
+						},
+						"id": "538b3d41ba96a46ca073af7549912395753ec09810e85ce0a7630a0a5f18c49e"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "deb4f67e21331006f9751a2dab72ac70e651aea64e7e18af86dd6d6fa39c8cda",
+								"price": "90000000",
+								"seller": {
+									"id": "e58a4abdf35a9bc9d09b27a8b336f0c1e89e7f6b996a18f77311d943d8480d7b"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898693824779043"
+						},
+						"id": "1e3395ff90a9cd3e6dc655116cc16e1bc9c329501c88f40facd6dc3e99d05ae0"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "db88e382c4992dd008ea18b8a6a9eed35a881279879165db5e8808511f60d230",
+								"price": "90000000",
+								"seller": {
+									"id": "12a9215ee5006c20f539e89b17bd67c5575e956b7cc3c66632b86a806cb6ad76"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898644140696079"
+						},
+						"id": "0f2d4d795e802240894581b345c2baa25cdad27c0f8ea10a2841eb40b9675a71"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "6e75c5a95b204818a0ed76dc06773a278e5b2c3342e97ad764745a470be41567"
+								},
+								"id": "24fc289303bac302eb7b71abef82779ab4d4bf38257705d9baf64b2128fa740b",
+								"price": "100000000",
+								"seller": {
+									"id": "12a9215ee5006c20f539e89b17bd67c5575e956b7cc3c66632b86a806cb6ad76"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898644140696046"
+						},
+						"id": "fbdcf37f37751447ce1cca85ed4e86a6f58e059dd0cf8181fb5642416c1edb66"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "a88a272a98326812eeb2ef94c31e037849e914756887ef0e81dd6d567637089b",
+								"price": "90000000",
+								"seller": {
+									"id": "f789b1edc77f036717802c60eeff6b0264bf9655a21001a10a7fe7f77e3cf043"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898597148583043"
+						},
+						"id": "982e50d022af5b2da9388130678a794017829e2087d6676a53912579cc3aa13e"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "adadb10e45da9d281018186f0d52ad2e871a80c58b46a002491067df554c3297"
+								},
+								"id": "846de302a35f5fa19d2152d930977e34d5925bcc208eba656f48e46d679de3ae",
+								"price": "100000000",
+								"seller": {
+									"id": "f789b1edc77f036717802c60eeff6b0264bf9655a21001a10a7fe7f77e3cf043"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898596432124061"
+						},
+						"id": "e35a0e2c8737d15784623e5504bd722efd2c1f22cd54948629d3bb270669cd20"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "8628301b05b7fe317eeb147b303ce86959e2ac8713fec5eb406eeeeb8c7699b1",
+								"price": "90000000",
+								"seller": {
+									"id": "4e7265692abf3579d6c92cbee349cfdd122f2f1c797d9f67843193bc73d87148"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898549686470043"
+						},
+						"id": "ad85f8df402c96e82c5ac2fd4571639b09b9a6f9926d135d90ed41b6279be5a6"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "98b3afec8a8527bdd373ee58b24f15c6d6b9163aa7e7a6fed6639bf90a7ffdbc",
+								"price": "90000000",
+								"seller": {
+									"id": "8b25bc49cac8ead5b19e3ecb05dc15df9ce9842be65ebd9016b8d8315cfb2a0d"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898512270063043"
+						},
+						"id": "627125d9f60ee847d5ad31dc35e3e3156167bf8bb8265dd24a2b23e2508ebebe"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "778248c04e094db42f7d460f0cddc32c4a4e5128ef3ace2ed2ded74021d1ebb6",
+								"price": "90000000",
+								"seller": {
+									"id": "554b66d37db7bbaf5ec3c7b8b475b4860a4d94f285594fb661128e96a9f03299"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898476158072043"
+						},
+						"id": "1efc8147aa12101ac82b4f2ab40a465c9bee82f234cf4bc06285649b9d08d983"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "ff52c4a43a0f328817366e0cf7289ca4dfc9ed47c2f053d132e6646a8d9ca54f",
+								"price": "90000000",
+								"seller": {
+									"id": "857d5fd169f7d30a422849112b144e5cd3613a61f664960a9ab23989fadd653d"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898439463569043"
+						},
+						"id": "c52efece1a48c27e1af872624ebab9e4154c8f48a58ac4382afa46743e7b9d41"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "445b253d7cc0ef953b11e46f6d6676c822c85f977f2a8ed0f58248ec76a85814",
+								"price": "90000000",
+								"seller": {
+									"id": "02e1578379cbff4e83038acdb800eeeb9f71b5bd45251b787fa908cb6096665e"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898403461763043"
+						},
+						"id": "a027099269ba375bd6fbe208b6b196f65ad1f9d63979d765fe3e33e77bde11e4"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "2dd64b2ba1a38762fbcfe6b2c9f38fff2a0fa137e57db2eedb20bd472833de12",
+								"price": "90000000",
+								"seller": {
+									"id": "f91639407be86445bdf50f213d9f4835f28bc06cc48eee9d1339aada429e1a39"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898367227461043"
+						},
+						"id": "3c3f313d8d7e0001ce1d15eae515b2d1597cb8444954bbc7c5fbe915497430b6"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0"
+								},
+								"id": "3b8fbd2c6f455d0e256d32a8d1c2824c8598680a1a3a23c4a2c2ea7bc2672fd1",
+								"price": "90000000",
+								"seller": {
+									"id": "46bc3378cdcfdf0ccf9854cf2774e69a344db5589fa83a69e0d63b84dc30cb19"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898330225143043"
+						},
+						"id": "4ff258ac39c4291c85af052c5c7a1e2bd51a6b9c016497c6b52dca023df94b88"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "3fcd176c2f9b8eeba51d624b7f5e0c594f2b5eb72b464f7603556e729923c901"
+								},
+								"id": "5f9aa2a27fcfe249f105fe04d7bb4cf82f052bb0a5d7e28d686676fb1132d187",
+								"price": "100000000",
+								"seller": {
+									"id": "5177f7f78ce959c3345eb28dfd7f518df8bd3fa810ce6ff16c7696cbe91470fb"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898289357742043"
+						},
+						"id": "6044636f22c644be52edf7d2d95fd5247deffdfbbdc138cee4e8ef145e5584a7"
+					}
+				},
+				{
+					"node": {
+						"depth": {
+							"buy": null,
+							"lastTrade": {
+								"buyer": {
+									"id": "5739a438ab147921d2b57d1415b9a2db59a01a834374c7a71468b385282c442b"
+								},
+								"id": "5b063a795f66ad01062755b1430b9119a963921d3e17adf2098735411e2c727d",
+								"price": "100000000",
+								"seller": {
+									"id": "99b039de0040c455fa0fb848b0fafa535c61234ce415865cf5a8ca045285f6f6"
+								},
+								"size": "100000"
+							},
+							"sell": null,
+							"sequenceNumber": "1667898256844415050"
+						},
+						"id": "32d8179f8ce6965e751bd0745bfdf20bb4916546e50c080a5571fe6c3a834f4e"
+					}
+				}
+			]
+		}
+	},
+	"Duration": 16357084
+}

@@ -1,1 +1,1519 @@
-{"TestName":"TestGovernance_Proposals","Query":"{ proposals{ id, reference, party { id }, state, datetime, rejectionReason, errorDetails } }","Result":{"Proposals":[{"Id":"00d021abbf62cd220a59c0208df3aff0e24926c1df544e23068fb419012cfa8d","Reference":"EE4B8B60FA","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:43:41.092467Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"0422d5fc1b6d024abe3de8eeb0f2fae1ad51aba8a3936a8fcae17d98cc40f08f","Reference":"B9A87D5036","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:35:29.089924Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"05710e5753ffcb19120a4d5ea42c865bd1ccde297f84584845e9ed4df59f48e1","Reference":"0075E25CF8","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Declined","Datetime":"2022-03-24T15:57:06.064491Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"MajorityThresholdNotReached"},{"Id":"077204316dd6d4c62d59bcdae682dd9fa7e14a05b40bef56b9845d9bfc254ef6","Reference":"A0CE4346DF","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:06:35.70748Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"0ac6b3d8c90a66f52f01e337d126ac30210b119261cd110300bb9efa6192dc82","Reference":"76E4596B71","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:40:52.387503Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"0e7ac36482f5f2c636f16cff4c594d303b83a20ce101fcc18cee12e1ac59d5d4","Reference":"4B028D05DB","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:18:13.616362Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"10456d754648223992825274719f6f29ed9e95efc0260dfbcdef583cb3c071f0","Reference":"EBFC97B774","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:32:31.03417Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"1962f1ef2b467729705ccefcec04ac478f8019a0f6e28e826e79019113ed45ce","Reference":"E1C2A55B4D","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:24:39.085247Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"1ce4df649efe99dad7f8713360526b05309b7ca3173cf3e6ba8b31a1dd4748d1","Reference":"F7D73F1658","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Declined","Datetime":"2022-03-24T15:54:31.946162Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"MajorityThresholdNotReached"},{"Id":"22fd95d88417410a9b451e7289052d5d0bcfda3b84c34492857d39dbe2a51811","Reference":"8249C57377B2498","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Declined","Datetime":"2022-03-24T15:42:57.683513Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"MajorityThresholdNotReached"},{"Id":"2462ede98d997d5b92c5c36ee6f61c4e86ac49b2db966f7c016b8122791ce1b6","Reference":"61E29F1DCC","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:46:24.55997Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"293d35b7b819225bcc2e2c242cd86dda420c89b29921a495231e1afe18f760c9","Reference":"CF4DF4D858","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:31:37.367616Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"2deb11aa32419d84e1790c2775d27e08d23de092edead505f11a36a425b61930","Reference":"B457C1FCC2","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Declined","Datetime":"2022-03-24T15:50:41.739893Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"MajorityThresholdNotReached"},{"Id":"2fb2dae02087d7020682ae8fe042e7b673d80cae6fd3735b0057f1d036522718","Reference":"58DC1E376F","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Declined","Datetime":"2022-03-24T15:56:09.42407Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"ParticipationThresholdNotReached"},{"Id":"3353cb91858efb127b55fe4d37e7eea3a6c4eeb96e79db0068306e9d0d80b105","Reference":"FCBEAF4B16","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:59:23.690397Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"33d91ae4d093040bf69f2d0c72106ba56841307b09965acc41a317e9ab19dc95","Reference":"079A95DE3FBB4A0","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:42:48.292868Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"3434e73ac8b28670dd393d5729e769a7d582c22adc77377e13d6971636c34f92","Reference":"2AB9EDFB8D","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:25:48.124627Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"3885fffa7fbf0933d8290e06ca1287bf4281cb517fcb710352fffc5c85ea455f","Reference":"1DB4FECC1B","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Declined","Datetime":"2022-03-24T15:48:36.578244Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"ParticipationThresholdNotReached"},{"Id":"39a909cb0e6055cf320036ea90df637ed6ce1e17f2dcfff7cd7b6b0028fc2609","Reference":"E69A0B5B29","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:42:34.269118Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"3a3bdb9325061341eb75758d64039858ad15b8a444744f56498c13c3f5adaebe","Reference":"3940C27E46","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:54:13.417393Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"3cee0ae00c0b61a6a36a8b37b00c19c01b86fc64ab270d57ca1e43304c597bc0","Reference":"386EB0BF85","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:31:20.526505Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"4127b6e3e00a780b1741becca2cd1db41c79b20e5b8d68983d9586461c08fbcb","Reference":"ECE8EDAAF5","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:41:25.785037Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"41c805b53f6e3b577364f08518fce2a9903345301c432fa989a0548b95e0c7b4","Reference":"97DAB13BA3","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:45:21.794458Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"451d6ee62860db49f801750ea904193ecf88faae47889a51eae0c0cc56c458c6","Reference":"C9F9AC5D25","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:00:15.326296Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"4bb32a07ef69db4fadad8fd8212c9e76ea63b4ae2860043a4e6e73ac795dc787","Reference":"7262FB5942","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Rejected","Datetime":"2022-03-24T15:51:04.041419Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"EnactTimeTooLate"},{"Id":"50a154b84deec817ccccb1618cc429e4657ee596de4de94fc46e853cfa718ac6","Reference":"7D3FCCE531","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Declined","Datetime":"2022-03-24T15:51:05.460334Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"ParticipationThresholdNotReached"},{"Id":"50cdd52e8d390cbb2c22694e9076c74ba17776c579efe94d6b42e54c4e50f268","Reference":"A3F0D0C40C","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Rejected","Datetime":"2022-03-24T16:07:55.418701Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"OpeningAuctionDurationTooSmall"},{"Id":"5218cafbb29bb969a6116cb8fa45b20288be1551811980c266b66859da3f2bbd","Reference":"C3FCDD60F5","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:07:38.426495Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"5251590258c7fdfe8f800db4c3cf198e5c99f0f4936d79e48714410c3979d23d","Reference":"D7B496DBB3","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Declined","Datetime":"2022-03-24T15:45:54.440683Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"MajorityThresholdNotReached"},{"Id":"52842a99ad7956c2bdf69532ac8d620e605d1b7b48a638980f9303b7c7cf590d","Reference":"F1BDBE07BA","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:47:20.869706Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"5652bfd024691024824b4d3cd8697157c036cc1fc0732e9ade84fe862a3aa3a1","Reference":"EF1A3246C4","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Rejected","Datetime":"2022-03-24T15:55:05.054351Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"CloseTimeTooSoon"},{"Id":"5bca5ac25a4f3ab6fc002bbaacfb1f1345a042b5de2eb98659fb9a03fd524076","Reference":"E7F61F8F0D","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:28:35.826653Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"60dafbf723d66cb247bc7a8a8f70dce5d5776e84d22d12b6b1334fdc3f9e94e9","Reference":"B49D265EA8","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:34:45.015332Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"63d28a326fc25c8b9ab848c40d57d660a56e914cdda448836b2d3418202ae3fa","Reference":"EF1A3246C4","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Rejected","Datetime":"2022-03-24T15:55:06.257317Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"CloseTimeTooSoon"},{"Id":"69ca46759bd393abd237ee7610d67070a13f3acdd7b31857d25ca319f7183a62","Reference":"EB03E609DE","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:32:14.059545Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"6a9b9c89acb76c56a04e9be812c673cb2077c15ed451e0721c57fccbee48af2f","Reference":"BE3ECC928689436","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:43:06.784745Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"6f7933f18dc7a44c569f0c7f2f580b0b9805aaa28770a6cd133d889e4952e932","Reference":"3F3C68BDE5","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:39:57.426727Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"7408aa4f5dd0164376a521d59b1db095682ea2e7d2f8bd96e225c43f2ab1db0d","Reference":"2228F29FF8","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:38:54.885661Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"7508fc0eae4c878831707493dc91b5d105e1b213cdd31b68229651242f990379","Reference":"D085C4D85B","Party":{"Id":"b972afddf0c38937bf40d5da434b9a90ddfbdb4aae5180ccc9ab47ed6716fa2b","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:49:08.165213Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"758d27d80297b7987457fa468fad91526f49c9536e05ee1e5f57426929cc91c9","Reference":"5121943BAF","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:40:51.731797Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"759bd97f509e318032a4d3e3c45e6d86dbe33e2ac15972a6c7f1c805f56c5b1a","Reference":"E484E7ADC2","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:57:38.802829Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"778a32664862de41276c009815844a59d4baee1f627b3608a410a77d41652fa3","Reference":"89CC328436","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Declined","Datetime":"2022-03-24T15:45:38.887158Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"MajorityThresholdNotReached"},{"Id":"80c9028108c799a54cb7e7ee07c6ff86416c75c47bebe5a24729f425d15b0acc","Reference":"907BF6CEA16644C","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:43:25.09752Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa","Reference":"9C4C736D8EA2485","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:25:18.986213Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"8c6fee051f3e4da654beaed8f5c009e57cb56430ed57d1a902629954ba815b41","Reference":"CD710FD308154CB","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:43:16.104919Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"9004a0b623c5b56fc64a34bde0d784efb904f9e003a8acfb70925a9c399bd67a","Reference":"1CFE1B561C","Party":{"Id":"e5f0ff60cbc980cf13666d4237331b2293fd5c59a12445511164e9245cc4a5e9","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Rejected","Datetime":"2022-03-24T15:45:19.070826Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"InsufficientTokens"},{"Id":"90d70f96c62eea15f4ce776f95bbc5e58a8b466e117b5af3f8cbf844b277ff2b","Reference":"BC3EB00E64","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:35:29.43329Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"9163f22338c25adf4003312f96d2ce059c75d08d0d825fe67905b117f0ed74f2","Reference":"219C15474D","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:08:29.47147Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"946b8007bab457c7d1542aeca08a374eec8834106f22093c765ed7ddebbe9f7f","Reference":"E14E361CAF","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:41:59.891679Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"96717ec9fd5910da2d0783dd2dbbb26d539f4256f8f65cce794e3bf1d364312a","Reference":"2A154B42AF","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:29:46.118109Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"9b25f3c445901419717e3f9d6fc994bb80e25e48ce923d347b417df2efda9a96","Reference":"A2D1BF61D0","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:40:07.424355Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"9c6a5d38b3e514d8a0d81fcb517ed7e5ac9fef1efbd732fe04287ecd57df1a7a","Reference":"6B8F925905","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:45:57.803668Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"a5517c72d6c1ebf7f1e2b3aa7f951e418a4e5372298bf72f4e20878ff8ebaf88","Reference":"A7BB209BA5","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:47:04.214429Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"a619fabe42c8e1b8983a7b473f685d4ab7b872038a6293c2b340c51c0b329c5d","Reference":"A83056AFB4","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:41:42.798543Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"a9ed413dbb2e818e7a1eca1ba7b58fd00323f63da8719b9ab3c7d657824e6d36","Reference":"0A9994D3E8","Party":{"Id":"293ad67daa2eb2f6b9bf37a1c3a46babd3a9d6bd30c514aaf40eaedb4e96cba1","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:53:26.690094Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"ac5c66747f35c8fc5bce449951d93ce5d71cc8c8f704c90a8d4f97b19413a578","Reference":"6C5E24FD82","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:44:50.849201Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"ac6c0a5457c00c217aa5c3fac158f5597e1c923a59b44d54c6a08599ffb02134","Reference":"EAF43A67DB","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Declined","Datetime":"2022-03-24T15:45:20.382969Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"ParticipationThresholdNotReached"},{"Id":"b5c1fded0296e1410bd1211f0b4918c8347e3d46292ce9fdadfc8c19cfe3cd05","Reference":"61E29F1DCC","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Declined","Datetime":"2022-03-24T15:46:48.006089Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"ParticipationThresholdNotReached"},{"Id":"b71d13ed110f75bca98b18bd2ade5e500b96f0bbfdf932673e59c566a3f72e61","Reference":"F374AC7287724F2","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Open","Datetime":"2022-03-24T15:43:05.461736Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"bc94ededdd4db2c907cb16085dabb3ef69f45906388e3554096408f86c97954f","Reference":"5A7364C0A3","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:48:51.138193Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"c2c7e40f8a40d09376b811ea4dd2eedc0e7f82e1121fb5b2efe2f5b52af0d824","Reference":"CC93CFC805","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:41:08.798148Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"c33bd34f67a7ce9b65816469fb9fc0155ab86d35326179a83540144f1fd4478e","Reference":"54AB618FAB","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:51:47.515481Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"c35e70f9289d0475ce1af9a1b7fcdb7fe4630f5c7e918e5ef051d0d8b284f39a","Reference":"1A7C829116","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:48:13.048009Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"c59ecb2560da2ddbd72899d06dd1f57a17a6cd8c76b837bb6652095e795f5ce1","Reference":"734A339AA2","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Declined","Datetime":"2022-03-24T15:55:06.257317Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"ParticipationThresholdNotReached"},{"Id":"c9596330927f18fd3410be45e0ea67f2e0d049676e3c23f4de87b929c61d0400","Reference":"5A43853848","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:33:00.885355Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"ca6bf6fcbf6e008772c26fd91eab00d0011f95e8fa7bfbbee559ef90b03a23e8","Reference":"982B544F5A","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:39:50.426961Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"cb502e025e15288cbb6157606f86bfc80bcee2aa38d0b94e6e660c7c69175684","Reference":"010344721B","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:30:52.867036Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"cbe26c5e8b33cb951130ab393d763057122b7d811c0069b394ab506e5a545f0f","Reference":"D085C4D85B","Party":{"Id":"b972afddf0c38937bf40d5da434b9a90ddfbdb4aae5180ccc9ab47ed6716fa2b","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Declined","Datetime":"2022-03-24T15:49:31.398657Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"ParticipationThresholdNotReached"},{"Id":"cd7ef1f44bca838dfaad1c137c18c250e3c0daa561075195e86cf6612a1a0126","Reference":"8AAF0CA300","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:40:34.75001Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"d01ffd79f2da024980ba5918bdd746052a26c51a06e12803a0929a0b8a1c1731","Reference":"4380F4CE82","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:44:28.020952Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"d0aa21fbda01058ecf594eb972584d10cc592fe0eee488bbf5325dc558399b63","Reference":"E56E53E707","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:50:07.169423Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"d6e1e1573225b3331204b3a75a7204259abb163f4249c7ca577fbc9f52713d2c","Reference":"B251FE9125","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:48:11.645253Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"d94f50f06b61f002a01cbe3f869d2beea198750592b1af6799604956aebab477","Reference":"5E37AB1AD6","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:07:56.834435Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"dfc850884f6be44e11cedc0a74f9f77ae3bc858f8574bf1730ba09f082d48cf8","Reference":"E868C38EDB","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:58:30.761873Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"e6aa6405d22c42bc97ff2ac60265d4f9b420ee699a9bf47b6b589d92c721d0a3","Reference":"BB7391490A","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:47:03.704978Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"ec5d096f4f4b41694b30b461c0f9b661f8cb55d122e334bfe8a84158f5d54683","Reference":"24AE993F3F","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Declined","Datetime":"2022-03-24T15:54:51.845909Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"ParticipationThresholdNotReached"},{"Id":"ee0794dd925f2ac5b5d88c1a1a9d419b325badce20a77a06c3447f61358e090d","Reference":"DECB4A65A8","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T16:34:44.154892Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"ef22314f35a2f302e4bf431efea825d6eb1fe9193d0ecdebbd97c9b53370f373","Reference":"646AB5870A","Party":{"Id":"0adae1c64c98f5caf6f3ce54d79740a66654b000b9da7e6ddcb964d9f40c0e82","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:39:33.451012Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"f000e5595bb7b0db0e812cab846e2ac98706bad8d7d7347399509838b1037099","Reference":"A34F19F674","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Enacted","Datetime":"2022-03-24T15:46:08.575236Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},{"Id":"fd0c46d6b110be038af354abb07a28f4275dddb554f0d609dcd803e80be50525","Reference":"A3BCE6CBB2","Party":{"Id":"7b4921b6eae5d3ec5f9b6fb8aa0138ba9bb37f190d218d97f8ec7f2ea3a9425e","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"Declined","Datetime":"2022-03-24T15:47:46.986174Z","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":"MajorityThresholdNotReached"}]},"Duration":105121967}
+{
+	"TestName": "TestGovernance_Proposals",
+	"Query": "{ proposalsConnection{ edges { node { id, reference, party { id }, state, datetime, rejectionReason, errorDetails } } } }",
+	"Result": {
+		"proposalsConnection": {
+			"edges": [
+				{
+					"node": {
+						"datetime": "2022-11-08T08:44:33.116993Z",
+						"errorDetails": null,
+						"id": "2785d7ca0416be486abb606c9081e4700f03fd4930778e1cfc249bdb5c6fa930",
+						"party": {
+							"id": "51d94132a09a041c34d87c01f087aacfc94cc509de15c484fea123c54a19a204"
+						},
+						"reference": "D845D43052",
+						"rejectionReason": null,
+						"state": "STATE_OPEN"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:44:27.071096Z",
+						"errorDetails": null,
+						"id": "4d22d34607445e93052156b78ca6c1cfad4d4f9ce613338c9929f4174b20f05b",
+						"party": {
+							"id": "51d94132a09a041c34d87c01f087aacfc94cc509de15c484fea123c54a19a204"
+						},
+						"reference": "19F455DED4",
+						"rejectionReason": null,
+						"state": "STATE_OPEN"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:42:27.575267Z",
+						"errorDetails": null,
+						"id": "48de51651ef5c14c73c6a420976a9e8c62efad74ced2c16219b93e4eb3b3d41e",
+						"party": {
+							"id": "51d94132a09a041c34d87c01f087aacfc94cc509de15c484fea123c54a19a204"
+						},
+						"reference": "00DEAA0102",
+						"rejectionReason": null,
+						"state": "STATE_OPEN"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:37:20.271465Z",
+						"errorDetails": null,
+						"id": "e4f3f80d89a793f527854783e6ac132cebff5e06a0c2d38a93b48fa2caf04863",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "FB3B617987",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:36:36.973361Z",
+						"errorDetails": null,
+						"id": "5743f15d8f1a63da52d4cb2b9b02e56c7867fd921fb9a496b49553aca2299aa8",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "40EC09A931",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:36:19.687361Z",
+						"errorDetails": null,
+						"id": "f7b377bdc516e96e5b94cf0d83a2a5de4dc7da2817461cd816ef7a3a9118c17e",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "B4481D2301",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:36:02.338006Z",
+						"errorDetails": null,
+						"id": "873933a8a0cffe0a023f152671ab017503e85d695ff15783b5a4359b2bb36adf",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "D74ECF7ACD",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:35:41.973999Z",
+						"errorDetails": null,
+						"id": "561d4c5afe1dace7e384255eadc0e5e65d1979011ec603d798b0e07e5ff068c7",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "CD8015F1C8",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:35:25.994557Z",
+						"errorDetails": null,
+						"id": "bc8dd7d99a18e5086d8562530de0f7c0e20df01677ed307f5f1c74e5b499791c",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "BD8CCDF215",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:35:10.884539Z",
+						"errorDetails": null,
+						"id": "bddc9a2a4a745795320b2e117ff100a4029e016bc80f4a55639a61cba3b50e19",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "A14B11F96B",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:33:57.515772Z",
+						"errorDetails": null,
+						"id": "c6721a3034b19790c9f3618248c2c9b352f9e47d1c0f7f1d0febad52798044f4",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "9AA25BA3D3",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:33:04.274154Z",
+						"errorDetails": null,
+						"id": "f629b0979ef0bd2ed3f856a4bf3aa5a7b776a20478c7405c55177d6a653485fa",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "4105F7C36D",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:32:24.83484Z",
+						"errorDetails": null,
+						"id": "70a3df066de2098a63519ae66072a8c26a21be9c950ab850a516290de9f1b244",
+						"party": {
+							"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+						},
+						"reference": "CDB56B5A45",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:31:42.255875Z",
+						"errorDetails": null,
+						"id": "45d11aa933ccf1dfd7e7569fc4372e364e6f48df2afbdde0d8a3aec105344f8e",
+						"party": {
+							"id": "c84470154b135e71c1a6b83059e381b7d746b76a13a9951c9caefa60ffaa3b04"
+						},
+						"reference": "05AE625EA5",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:30:14.891617Z",
+						"errorDetails": null,
+						"id": "4c3def402473719214131430f905534fa25d06e8152e82cbea1a059e63351174",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "4403531D45",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:29:13.887465Z",
+						"errorDetails": null,
+						"id": "1894530899e87003889a139718950c218529b7c67b008b4ec815b23f92805eea",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "41CD23CA83",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:28:12.492146Z",
+						"errorDetails": null,
+						"id": "74beaf7257e43c8f8443d413fccd8d092608b5926aa6e78bb17747de18cb359d",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "8F2DB20482",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:27:11.707742Z",
+						"errorDetails": null,
+						"id": "47831ba264f9075387a885823ee00f66776eb39661c9c8c9b74b9eddd03d4f42",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "91538F7C41",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:26:42.67953Z",
+						"errorDetails": null,
+						"id": "625c0922eeb6fba74c5fe82f10dd460cb8c6e0e6b35d1f575a29456c972230cf",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "0D430808E3",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:26:24.312924Z",
+						"errorDetails": null,
+						"id": "a2aa9de3d9deffd9bb3d9bff1c9fe5e00b255f9140d1b97cb6dcd56a59278d5d",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "58A141F500",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:25:47.63243Z",
+						"errorDetails": null,
+						"id": "6d5be5173bb643bdeb2921986a1ecb5f91a28109631babb9212031838d46d124",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "C32FEE5D98",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:25:01.206395Z",
+						"errorDetails": null,
+						"id": "06be6ca2fb0629b183136e2195d3a8a0cb49768faf2df8a60480a2d5cb7901f1",
+						"party": {
+							"id": "c84470154b135e71c1a6b83059e381b7d746b76a13a9951c9caefa60ffaa3b04"
+						},
+						"reference": "7ECA26D2C6",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:24:20.665137Z",
+						"errorDetails": null,
+						"id": "210f764b1310288cd15ce1697749121642e48f278d0e2a71bf2736f20d3afb69",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "32820D7119",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:23:36.59511Z",
+						"errorDetails": null,
+						"id": "ebf4d62ed1a7f38b675c6355d9c1920cd3fff3b0b2d20785058a1fe2b15366de",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "09ED56D992",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:23:11.547222Z",
+						"errorDetails": "data source spec termination time before enactment",
+						"id": "16391ff57291616991936c912637f809bbae701a3042e1d18ea422fcda175ae1",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "1CCCBA47A8",
+						"rejectionReason": "PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:22:23.233542Z",
+						"errorDetails": null,
+						"id": "2a13d9ac751bc53defdbf392a08b10a39402a1bdde2c4e01d981034b9a3f1579",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "F78CA623A5",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:22:06.265248Z",
+						"errorDetails": null,
+						"id": "33a1801e41a5c69e1e91affcb8444b8c4c8c5d12d97d9f242a6541d6ee5f6ed3",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "04DC977392",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:21:45.792447Z",
+						"errorDetails": null,
+						"id": "3b4cd2c2eb86c8b4368edf3d5f452ee17fafb63b29308da7321daa246743bf16",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "13AE272DAD",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:21:27.824046Z",
+						"errorDetails": null,
+						"id": "659aca3537054a82b3d1af1fe81c405d4a9b4b4d94676e063d947b8c6c73c968",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "C2DD7518C0",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:20:26.91368Z",
+						"errorDetails": null,
+						"id": "d96eee2a1947886fb2d9571fc51059c1c58bf39b4e303ecb1694b2aa0c30b44d",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "FF79873A3A",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:19:15.696933Z",
+						"errorDetails": null,
+						"id": "b92cefff4ceedd6dc766cbba13656e5fbd0d50723540636950ba79865ddcc65e",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "BEE9DB1B96",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:18:43.290415Z",
+						"errorDetails": null,
+						"id": "932ffd1da9e295590f41923f7b2e0bc9d12f5ab882b9513c7a77ae026241242a",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "1380BA2025",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:18:23.635313Z",
+						"errorDetails": null,
+						"id": "52451b3a827e21c6cbfa021af0491c1130015ffac90329500d4d8f482d2bf927",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "54C44CAB32",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:17:59.756624Z",
+						"errorDetails": null,
+						"id": "75d65ecb4f19c06e68b03f76c9abb04dfc3555b13b264e971d313249feccae7f",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "E352990126",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:17:05.483259Z",
+						"errorDetails": null,
+						"id": "866a85e287046b855952dc1cabff2b9a33cd0b2f3895014cbbc45444024d3e48",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "25401595E0",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:16:47.662939Z",
+						"errorDetails": null,
+						"id": "97501650e5977c4852b6da07b94ccd085dc7158a462e1766d5754bd2ba3c8068",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "89510413C8",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:16:13.53533Z",
+						"errorDetails": null,
+						"id": "210a23f8613c89af4c36d1c67c3c1ca199faaf7b48078acb6324717ff0d75027",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "35B039F737",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:15:18.23247Z",
+						"errorDetails": null,
+						"id": "e96ce4f99707a7825a46d41648f53d5da4c157b4a9b6c1f1d51731532f3221b5",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "EC42D993F8",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:14:22.421431Z",
+						"errorDetails": null,
+						"id": "527b8f3885321e4ae85ca8506b6cdbf1e43bc2b66c145e5b58775317cde86297",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "1067E2DDE7",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:13:58.126703Z",
+						"errorDetails": null,
+						"id": "87b05e95bfc2801e568fde2679611d9b69de3266d14f4063dc18ffd12c14d5a4",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "0EC183B50E",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:13:31.399019Z",
+						"errorDetails": null,
+						"id": "011f1acc103c31cf9222fe12d00f7dd4d5c50b7d2b3dfae592e2a59e4c318c40",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "D06D606E37",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:13:05.589345Z",
+						"errorDetails": null,
+						"id": "b3c285cbdc892b50c8dfabc09a98a0562c1d04f652f049ea26872d6c8c103551",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "70FB6D0A10",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:12:41.190233Z",
+						"errorDetails": null,
+						"id": "739e0a602305f55484601b23abff525030a7531f46cb2c5fbda2c78f96bfb95f",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "33623C81FA",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:12:09.943473Z",
+						"errorDetails": null,
+						"id": "829bfe932abf94baee6d91865410aca3fd639720d48e660a03555589b44727c9",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "8597470797",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:11:39.175812Z",
+						"errorDetails": null,
+						"id": "538b3d41ba96a46ca073af7549912395753ec09810e85ce0a7630a0a5f18c49e",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "4C34783CF4",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:11:08.832407Z",
+						"errorDetails": null,
+						"id": "9c982564cff3369d9b470b290439bdd5f9385ce5953e34f3fdf4bccf93ef970f",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "160017E2D7",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:10:49.336638Z",
+						"errorDetails": null,
+						"id": "1e3395ff90a9cd3e6dc655116cc16e1bc9c329501c88f40facd6dc3e99d05ae0",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "463AEEE053",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:10:23.676572Z",
+						"errorDetails": null,
+						"id": "0f2d4d795e802240894581b345c2baa25cdad27c0f8ea10a2841eb40b9675a71",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "3AB42786C8",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:10:04.180534Z",
+						"errorDetails": null,
+						"id": "fbdcf37f37751447ce1cca85ed4e86a6f58e059dd0cf8181fb5642416c1edb66",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "614788D5BB",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:09:35.424922Z",
+						"errorDetails": null,
+						"id": "982e50d022af5b2da9388130678a794017829e2087d6676a53912579cc3aa13e",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "AC7AC90FE3",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:09:15.755736Z",
+						"errorDetails": null,
+						"id": "e35a0e2c8737d15784623e5504bd722efd2c1f22cd54948629d3bb270669cd20",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "ECBB3C0429",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:08:39.019785Z",
+						"errorDetails": null,
+						"id": "ad85f8df402c96e82c5ac2fd4571639b09b9a6f9926d135d90ed41b6279be5a6",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "CBB9C7AF99",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:08:02.29546Z",
+						"errorDetails": null,
+						"id": "627125d9f60ee847d5ad31dc35e3e3156167bf8bb8265dd24a2b23e2508ebebe",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "B6094B2518",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:07:25.222714Z",
+						"errorDetails": null,
+						"id": "1efc8147aa12101ac82b4f2ab40a465c9bee82f234cf4bc06285649b9d08d983",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "E164C5CEB1",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:06:49.13118Z",
+						"errorDetails": null,
+						"id": "c52efece1a48c27e1af872624ebab9e4154c8f48a58ac4382afa46743e7b9d41",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "B5D2234A09",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:06:13.764442Z",
+						"errorDetails": null,
+						"id": "a027099269ba375bd6fbe208b6b196f65ad1f9d63979d765fe3e33e77bde11e4",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "03938FDAD9",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:05:36.273866Z",
+						"errorDetails": null,
+						"id": "3c3f313d8d7e0001ce1d15eae515b2d1597cb8444954bbc7c5fbe915497430b6",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "21A9CC76F0",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:04:59.952743Z",
+						"errorDetails": null,
+						"id": "4ff258ac39c4291c85af052c5c7a1e2bd51a6b9c016497c6b52dca023df94b88",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "0F607E0F23",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:04:22.907603Z",
+						"errorDetails": null,
+						"id": "6044636f22c644be52edf7d2d95fd5247deffdfbbdc138cee4e8ef145e5584a7",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "892BA0EEDE",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:03:50.352773Z",
+						"errorDetails": null,
+						"id": "32d8179f8ce6965e751bd0745bfdf20bb4916546e50c080a5571fe6c3a834f4e",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "610BD9CFBB",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:03:19.514994Z",
+						"errorDetails": null,
+						"id": "de20aeb7cd22fb71702f603ae0e0cafe32fcebf0c6c8ce7cfd4c9c7aa41f7d04",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "9DA44EA593",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:02:46.822622Z",
+						"errorDetails": "erc20 address already in use",
+						"id": "8383df951d162da5939d67b3a49eb153d4f77546eb58c43a316a3dac09259910",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "D33C3A6FF3",
+						"rejectionReason": "PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:02:31.88539Z",
+						"errorDetails": null,
+						"id": "f821cf3188ebf0b38b293869ee83014ffc3167227b0d62bc206eb0dc8de6666b",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "E0924B9077",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:02:00.212353Z",
+						"errorDetails": null,
+						"id": "e7992c821cd759786be5e9e11d35c35eee69701c7bc2aa5058f308db9b3bf35f",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "9A07D72832",
+						"rejectionReason": "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:01:47.877289Z",
+						"errorDetails": null,
+						"id": "5e39a2390c2a56ab899bb0b8076aa99acd3e29c103177138ffcdc8f4f1cd04f9",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "FC8A52C036",
+						"rejectionReason": "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T09:00:24.987588Z",
+						"errorDetails": null,
+						"id": "b775c642226bba19b61acbd17e0e8c29cbea01e608bcbeed31260179bbc024c8",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "9256DF2457",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:59:13.876552Z",
+						"errorDetails": null,
+						"id": "5a615c0fa27bb0aba364b09a5af2a5c1f05d5a0769b3bab6b98311e9194d1208",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "97D9621416",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:59:03.392375Z",
+						"errorDetails": "proposal closing time too soon, expected \u003e 2022-11-08 08:59:08.39237568 +0000 UTC, got 2022-11-08 08:59:04 +0000 UTC",
+						"id": "6853118e862988c6203b9e8f0177cbf4d89ec3235b529db85fdca5ae55ce18b9",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "F999D7260B",
+						"rejectionReason": "PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:58:47.913584Z",
+						"errorDetails": null,
+						"id": "20d14cd4f3a67810c895e862e583adb42d42a35bacd06add0836de798cf43467",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "D1C2415505",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:58:47.204757Z",
+						"errorDetails": "proposal validation timestamp invalid",
+						"id": "e385712cd4b360392c845f9c8d67ded0e654146a50db79fcd6a852d49d8955d1",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "2E44AE7DB9",
+						"rejectionReason": "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:58:35.269433Z",
+						"errorDetails": null,
+						"id": "620654a7b9c7914495a93002034ca90aa6b337fa1ff6c6c9d3f51c14ec310d44",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "7224AC8AA0",
+						"rejectionReason": "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:58:21.913203Z",
+						"errorDetails": null,
+						"id": "1db787e5f0e761c477234f053ea766d4c427267340544ac42c4f1bbb2e3dfa23",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "364702D3E5",
+						"rejectionReason": "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:58:09.990998Z",
+						"errorDetails": null,
+						"id": "0f60547967b175eb1f1163b918f3b40d73cde94b8956860dc0abff81a8c229db",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "DAFAD394A8",
+						"rejectionReason": "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:57:58.773892Z",
+						"errorDetails": null,
+						"id": "46fa9a5a7850eb7761bb01930a2718e119f4fec873e813dcca3443c55a155009",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "AA839CCAA2",
+						"rejectionReason": "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:57:42.560631Z",
+						"errorDetails": null,
+						"id": "d8c29d479e6539a02a9cedacbe5dd84034fbbc3e862decfd81cb1bf4a944623f",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "92CA992771",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:56:57.546565Z",
+						"errorDetails": null,
+						"id": "0deaa2062da090d5b165dc22a8ed748744268ab2aca801dc5e9915b69a2198ef",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "2CCF5EC403",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:55:37.696889Z",
+						"errorDetails": null,
+						"id": "2ffb845534519881b0e94edda7ee4567965cb0fb4f8c0e4dcf0049ae47a94e19",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "5FAB8686DA",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:55:02.398464Z",
+						"errorDetails": null,
+						"id": "71ed1adfb73c79a658663f05a71f09f773b4f19869bef9e18e5163f34366faa9",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "9993C09102",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:54:00.898611Z",
+						"errorDetails": null,
+						"id": "e51e465052cfaf5f7f51e5b338213531a1f1b4271bc171474f9d0ea923252086",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "6AA0D87972",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:53:20.539759Z",
+						"errorDetails": null,
+						"id": "8e9ad69580968668a30ff2f4625bc10828aa2a69839240c4eea8cdda4fb48c1b",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "9061B0FA28",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:53:02.065867Z",
+						"errorDetails": null,
+						"id": "fd33cf01126a58d950161dcdea1d2026dc9bea6f2e8f4db54d151d852ad82388",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "F0DD810EB5",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:52:38.240996Z",
+						"errorDetails": null,
+						"id": "6067f86da2134e56b82f2900ab9b83a97f3daf7cb16fb211c39e87f63a9853c7",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "72E1809AF0",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:51:00.660688Z",
+						"errorDetails": null,
+						"id": "41da6d9faa63f968015de2fdea769045414cbf2497809a6950a9b3abcd735d0a",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "DAA421F004",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:50:32.952319Z",
+						"errorDetails": null,
+						"id": "5afeec63fc8c991817a7c4d15e5e2bc0e0db9f5d4b8588b8e7e5c31f19923cf0",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "A2092A6092",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:49:59.779898Z",
+						"errorDetails": null,
+						"id": "d112e8ec08a8c55bc2e23bfa6f82f67f6b0918a0f69111e8e1a3b4a4cc12883a",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "34E358E26E",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:49:37.181463Z",
+						"errorDetails": "erc20 address already in use",
+						"id": "5781675641430fb305a77aa02094853c8635a721b01ec18e9b49a47aedf32963",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "3F66D33AD7",
+						"rejectionReason": "PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:48:57.010349Z",
+						"errorDetails": "erc20 address already in use",
+						"id": "43fa701bea8e7e7546141973800a11782162e4a6e62e4f134b8ce795215f1a6a",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "2311CE5A32",
+						"rejectionReason": "PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE",
+						"state": "STATE_REJECTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:48:22.295054Z",
+						"errorDetails": null,
+						"id": "50a1f81f9dd693babe3aee035051dd5b0b8eeecda4c370c04937c92c8a103fa8",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "9AFD03428F",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:47:32.383493Z",
+						"errorDetails": null,
+						"id": "b81fbe84f16898324516bc6afabd3eaab8137b05ad152ba6010ff3f5d3ed6e2a",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "659AF6E4BD",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:47:02.579678Z",
+						"errorDetails": null,
+						"id": "dda10bbd8b2c9f9c27ec0faf3ba5e0fd4b03081d2ccf00b1afe451cdebf2beff",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "59C322F264",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:46:23.832888Z",
+						"errorDetails": null,
+						"id": "9b3889b863760fce4805150d8b77ecf0f3f8813d4daef5637f887752c807a505",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "2146ABCB86",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:45:50.77209Z",
+						"errorDetails": null,
+						"id": "8e76c477bfb0b8b3164dcc309b7cb9b32a0e4198a899a65fbdbd0cd27a0dde8c",
+						"party": {
+							"id": "51d94132a09a041c34d87c01f087aacfc94cc509de15c484fea123c54a19a204"
+						},
+						"reference": "72CCC156FE",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:45:03.045841Z",
+						"errorDetails": null,
+						"id": "a612587a48a615ba3182868cd2e193b2661983cb41d8e7afa21c74d5821897a2",
+						"party": {
+							"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+						},
+						"reference": "35044F7DE8",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:44:21.637738Z",
+						"errorDetails": null,
+						"id": "8aae4be5b878e7f3353b04a7084b299061a529d21d8860bab2a8ff0e03c9ec85",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "CB114F2C1A",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:44:15.264749Z",
+						"errorDetails": null,
+						"id": "37c040533a4df1d68bbcb0e1dc2fafc961cdc40627cd8cc8b7d204fde2d3cbc3",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "74B903C9D6",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:44:09.076404Z",
+						"errorDetails": null,
+						"id": "a3dd1be1fd843cbe3461b273486d7e8004887688639f5296527398160444de85",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "3D46202944",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:44:03.011824Z",
+						"errorDetails": null,
+						"id": "cfd0ac1846e15f50b3255efaab20b682a1889594c652c0604fad0d1a38c2f627",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "0C00880306",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:43:56.917335Z",
+						"errorDetails": null,
+						"id": "0cc66e6bf0062f5014afda499728da979de287dd26454d3181e02d711180df37",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "DA3056DB51",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:43:42.337647Z",
+						"errorDetails": null,
+						"id": "162397c1072a83001c4c6b98a414987b7b7412f25a2d1c9b94a4cf4709e1149a",
+						"party": {
+							"id": "45d1adec55094c7d9bf1ef9974338cb0cf0db922e35cfccd32bd3ae0863f945b"
+						},
+						"reference": "7DCE5FAE42",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:42:58.896386Z",
+						"errorDetails": null,
+						"id": "7a43e14bdd3ae2f05613cb0ad59bca493dc8cd0a79cd95535e403c32637f4f60",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "6205EF17E9",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:51.876304Z",
+						"errorDetails": null,
+						"id": "93884bc59d09bec81c614cbfddcb94433e49935bd4a6eeeb61a0c0d0265cd2aa",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "8DA24B622D",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:45.722346Z",
+						"errorDetails": null,
+						"id": "5a23f61df3feef09b48a31fff7710d006cbe69b9a9aff4117824653ab616964d",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "1E14CC1F78",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:39.558949Z",
+						"errorDetails": null,
+						"id": "63880cae33125002b9f6601eb691e47aec7cb653a9e6c1545292acebc1309062",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "1A6E140FEF",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:33.549583Z",
+						"errorDetails": null,
+						"id": "75c3b031975927b2d5180c64115b89457f1d71b908831374bc6072cc7008f9f2",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "19B2B0AED7",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:27.279164Z",
+						"errorDetails": null,
+						"id": "ce9dcc857ad86932b636ddda1105b10c8368443bae4f3148b8d504cd626e67d2",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "17ED1DF15D",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:21.222065Z",
+						"errorDetails": null,
+						"id": "e624e09a4a01f9510519b4c5d3de24e0037aa73b04a7919b4b25f7b696b5f5a5",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "18ABF134EF",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:15.350036Z",
+						"errorDetails": null,
+						"id": "7971e5aa6349eb326d9faa3a3bc75d4a01cd0e5fe26a210a755170f795abf8ae",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "6D4DDE44F0",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:09.015874Z",
+						"errorDetails": null,
+						"id": "3bdc87420ecea6c6f9f9c8a0a40a0420f01b033df6b36ce6a93caf8355052439",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "D077E0B437",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:41:03.043306Z",
+						"errorDetails": null,
+						"id": "13e42422949992d0480dd8fe5434cb86510f90b07f4d4f0d2ca5968111ab5177",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "CD1C2739BE",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:40:56.985788Z",
+						"errorDetails": null,
+						"id": "280e88d572f0fa77bcc36624035450e8c303b56bbc19b0ac86c2f05a9a38c717",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "540221D70C",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:40:50.82289Z",
+						"errorDetails": null,
+						"id": "5c533642c94e03176259446afa8ad913e315ac223b1ef77fe6163712db21caa1",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "666199F294",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:40:44.862899Z",
+						"errorDetails": null,
+						"id": "5ce4b0a1364c82429ba1d3bfe164a01fe85ceb69206b5d441a19b285b22b8de2",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "BAE13E8ED7",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:40:38.571914Z",
+						"errorDetails": null,
+						"id": "45f148aa80cba0b9c301c5e2e949a5afe54bc5922916f0b1c5abe85f30609f4e",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "04D3599A2B",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:40:32.503694Z",
+						"errorDetails": null,
+						"id": "c4c9f3f113f3d33166d2365240e330ac1f315b4a86ae6e5990d208a9f0e3c691",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "72A8B94710",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:40:26.247635Z",
+						"errorDetails": null,
+						"id": "679ab34d5d2dc96037571d6661d1add767de675c47fe91e20d2c8d12f45c4168",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "1BED1E300B",
+						"rejectionReason": "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+						"state": "STATE_DECLINED"
+					}
+				},
+				{
+					"node": {
+						"datetime": "2022-11-08T08:39:58.263384Z",
+						"errorDetails": null,
+						"id": "1e742dff5284512a23dab7ecc8a5b6e369df8db06ecbc910a715fffc59b3a717",
+						"party": {
+							"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+						},
+						"reference": "24A48C4447",
+						"rejectionReason": null,
+						"state": "STATE_ENACTED"
+					}
+				}
+			]
+		}
+	},
+	"Duration": 38515375
+}

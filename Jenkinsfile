@@ -341,12 +341,21 @@ pipeline {
                         }
                     }
                 }
-                stage('vega/integration tests') {
+                stage('core/integration tests') {
                     options { retry(3) }
                     steps {
                         dir('vega/core/integration') {
-                            sh 'godog build -o integration.test && ./integration.test --format=junit:vega-integration-report.xml'
-                            junit checksName: 'Integration Tests', testResults: 'vega-integration-report.xml'
+                            sh 'godog build -o core_integration.test && ./core_integration.test --format=junit:core-integration-report.xml'
+                            junit checksName: 'Core Integration Tests', testResults: 'core-integration-report.xml'
+                        }
+                    }
+                }
+                stage('datanode/integration tests') {
+                    options { retry(3) }
+                    steps {
+                        dir('vega/datanode/integration') {
+                            sh 'go test -integration -v ./... 2>&1 | tee integration-test-results.txt && cat integration-test-results.txt | go-junit-report > datanode-integration-test-report.xml'
+                            junit checksName: 'Datanode Integration Tests', testResults: 'datanode-integration-test-report.xml'
                         }
                     }
                 }

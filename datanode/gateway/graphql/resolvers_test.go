@@ -17,6 +17,11 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	gql "code.vegaprotocol.io/vega/datanode/gateway/graphql"
@@ -25,11 +30,6 @@ import (
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
-	"google.golang.org/grpc"
-
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
@@ -184,13 +184,13 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 	})
 
 	name := "BTC/DEC19"
-	vMarkets, err := root.Query().Markets(ctx, &name)
+	vMarkets, err := root.Query().MarketsConnection(ctx, &name, nil)
 	assert.Nil(t, err)
 	assert.NotNil(t, vMarkets)
-	assert.Len(t, vMarkets, 1)
+	assert.Len(t, vMarkets.Edges, 1)
 
 	name = "ETH/USD18"
-	vMarkets, err = root.Query().Markets(ctx, &name)
+	vMarkets, err = root.Query().MarketsConnection(ctx, &name, nil)
 	assert.Error(t, err)
 	assert.Nil(t, vMarkets)
 
@@ -301,13 +301,11 @@ func buildTestResolverRoot(t *testing.T) *testResolver {
 	log := logging.NewTestLogger()
 	conf := gateway.NewDefaultConfig()
 	coreProxyClient := mocks.NewMockCoreProxyServiceClient(ctrl)
-	tradingDataClient := mocks.NewMockTradingDataServiceClient(ctrl)
 	tradingDataClientV2 := mocks.NewMockTradingDataServiceClientV2(ctrl)
 	resolver := gql.NewResolverRoot(
 		log,
 		conf,
 		coreProxyClient,
-		tradingDataClient,
 		tradingDataClientV2,
 	)
 	return &testResolver{

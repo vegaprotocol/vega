@@ -15,36 +15,11 @@ package gql
 import (
 	"context"
 
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type nodeResolver VegaResolverRoot
-
-// Deprecated: Use DelegationsConnection instead.
-func (r *nodeResolver) Delegations(
-	ctx context.Context,
-	obj *proto.Node,
-	partyID *string,
-	skip, first, last *int,
-) ([]*proto.Delegation, error) {
-	req := &protoapi.DelegationsRequest{
-		NodeId:     obj.Id,
-		Pagination: makePagination(skip, first, last),
-	}
-
-	if partyID != nil && *partyID != "" {
-		req.Party = *partyID
-	}
-
-	resp, err := r.tradingDataClient.Delegations(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Delegations, nil
-}
 
 func (r *nodeResolver) RankingScore(ctx context.Context, obj *proto.Node) (proto.RankingScore, error) {
 	return *obj.RankingScore, nil
