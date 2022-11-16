@@ -1995,7 +1995,7 @@ func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*Pro
 
 func (r *myPartyResolver) VotesConnection(ctx context.Context, party *types.Party, pagination *v2.Pagination) (*ProposalVoteConnection, error) {
 	req := v2.ListVotesRequest{
-		PartyId:    party.Id,
+		PartyId:    &party.Id,
 		Pagination: pagination,
 	}
 
