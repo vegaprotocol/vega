@@ -64,7 +64,6 @@ func TheLiquidityProvisionsShouldHaveTheFollowingStates(broker *stubs.BrokerStub
 			println("helllllooooo", sellShape, err.Error())
 			return errLiquidityProvisionEventNotFound()
 		}
-
 	}
 	return nil
 }
@@ -78,7 +77,8 @@ func parseLiquidityProvisionStatesTable(table *godog.Table) []RowWrapper {
 		"status",
 	}, []string{
 		"buy shape",
-		"sell shape"})
+		"sell shape",
+	})
 }
 
 func errLiquidityProvisionEventNotFound() error {
