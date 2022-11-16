@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/gateway"
@@ -28,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	vega "code.vegaprotocol.io/vega/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -35,9 +37,11 @@ import (
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 	"golang.org/x/crypto/acme/autocert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -178,6 +182,36 @@ func (g *GraphServer) Start() error {
 		return
 	})
 
+	errMiddleware := handler.ErrorPresenter(func(ctx context.Context, e error) *gqlerror.Error {
+		if e == nil {
+			return nil
+		}
+
+		st, ok := status.FromError(errors.Unwrap(e))
+		if !ok {
+			fmt.Printf("%v\n", e)
+			return graphql.DefaultErrorPresenter(ctx, e)
+		}
+
+		errsStr := []string{}
+		for _, v := range st.Details() {
+			v, ok := v.(*vega.ErrorDetail)
+			if !ok {
+				continue
+			}
+			errsStr = append(errsStr, v.Message)
+		}
+
+		ge := graphql.DefaultErrorPresenter(
+			ctx, errors.New(strings.Join(errsStr, ", ")))
+		ge.Extensions = map[string]interface{}{
+			"code": st.Code(),
+			"type": st.Code().String(),
+		}
+
+		return ge
+	})
+
 	handlr := http.NewServeMux()
 
 	if g.GraphQLPlaygroundEnabled {
@@ -189,6 +223,7 @@ func (g *GraphServer) Start() error {
 		handler.WebsocketUpgrader(up),
 		loggingMiddleware,
 		headersMiddleware,
+		errMiddleware,
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
 			g.log.Warn("Recovering from error on graphQL handler",
 				logging.String("error", fmt.Sprintf("%s", err)))

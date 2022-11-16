@@ -14,14 +14,10 @@ package gql
 
 import (
 	"context"
-	"errors"
-	"strings"
 
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
-	vega "code.vegaprotocol.io/vega/protos/vega"
-	"google.golang.org/grpc/status"
 )
 
 type allResolver struct {
@@ -49,31 +45,10 @@ func (r *allResolver) getOrderByID(ctx context.Context, id string, version *int)
 	}
 	order, err := r.clt2.GetOrder(ctx, orderReq)
 	if err != nil {
-		return nil, formatGRPCError(err)
+		return nil, err
 	}
 
 	return order.Order, nil
-}
-
-func formatGRPCError(err error) error {
-	if err == nil {
-		return nil
-	}
-	st, ok := status.FromError(err)
-	if !ok {
-		return err
-	}
-
-	errsStr := []string{}
-	for _, v := range st.Details() {
-		v, ok := v.(*vega.ErrorDetail)
-		if !ok {
-			continue
-		}
-		errsStr = append(errsStr, v.Message)
-	}
-
-	return errors.New(strings.Join(errsStr, ", "))
 }
 
 func (r *allResolver) getAssetByID(ctx context.Context, id string) (*types.Asset, error) {

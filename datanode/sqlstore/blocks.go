@@ -26,8 +26,6 @@ import (
 )
 
 var (
-	ErrNoHistoryBlock    = errors.New("No history block")
-	ErrNoLastBlock       = errors.New("No last block")
 	ErrBlockWaitTimedout = errors.New("Timed out waiting for TimeUpdate event")
 	BlockWaitTimeout     = 5 * time.Second
 )
@@ -131,7 +129,7 @@ func GetOldestHistoryBlockUsingConnection(ctx context.Context, connection Connec
 		FROM blocks order by height asc limit 1`)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return entities.Block{}, ErrNoHistoryBlock
+		return entities.Block{}, entities.ErrNotFound
 	}
 
 	return *block, nil
@@ -155,7 +153,7 @@ func GetLastBlockUsingConnection(ctx context.Context, connection Connection) (*e
 		FROM last_block`)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, ErrNoLastBlock
+		return nil, entities.ErrNotFound
 	}
 
 	return block, err

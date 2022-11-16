@@ -167,11 +167,6 @@ func (s *ConnectionSource) Close() {
 }
 
 func (s *ConnectionSource) wrapE(err error) error {
-	if err != nil && s.log.GetLevel() <= logging.DebugLevel {
-		s.log.Debug("unable to find resource",
-			logging.Error(err),
-		)
-	}
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
 		return entities.ErrNotFound
