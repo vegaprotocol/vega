@@ -94,11 +94,6 @@ func (os *Orders) GetOrder(ctx context.Context, orderIDStr string, version *int3
 		err = pgxscan.Get(ctx, os.Connection, &order, query, orderID)
 	}
 
-	// TODO: remove once "NotFound" errors are mapped appropriately
-	if pgxscan.NotFound(err) {
-		return order, nil
-	}
-
 	return order, err
 }
 

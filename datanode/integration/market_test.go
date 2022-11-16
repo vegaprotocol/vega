@@ -37,7 +37,7 @@ func TestMarkets(t *testing.T) {
 		"Candles5Minute":      "{ marketsConnection{ edges { node { id, candlesConnection(since : \"2000-01-01T00:00:00Z\",interval : INTERVAL_I5M)  { edges { node { periodStart, lastUpdateInPeriod, high, low, open, close, volume } } } } } } }",
 		"Candles15Minute":     "{ marketsConnection{ edges { node { id, candlesConnection(since : \"2000-01-01T00:00:00Z\",interval : INTERVAL_I15M)  { edges { node { periodStart, lastUpdateInPeriod, high, low, open, close, volume } } } } } } }",
 		"RiskFactor":          "{ marketsConnection{ edges { node { riskFactors { market, short, long } } } } }",
-		"LiquidityProvisions": "{ marketsConnection{ edges { node { id, liquidityProvisionsConnection { edges { node { id, party { id }, createdAt, updatedAt, market { id }, commitmentAmount, fee, sells { order { id }, liquidityOrder { reference } }, buys { order { id }, liquidityOrder { reference } }, version, status, reference } } } } } } }",
+		"LiquidityProvisions": "{ marketsConnection{ edges { node { id, liquidityProvisionsConnection { edges { node { id, party { id }, createdAt, updatedAt, market { id }, commitmentAmount, fee, sells { liquidityOrder { reference } }, buys { liquidityOrder { reference } }, version, status, reference } } } } } } }",
 		"Accounts":            "{ marketsConnection{ edges { node { id, accountsConnection { edges { node { balance, asset {id}, type, market {id} } } } } } } }",
 		"MarketDepth":         "{ marketsConnection{ edges { node { id, depth{ sequenceNumber buy{ price volume numberOfOrders} sell{ price volume numberOfOrders} lastTrade{ id buyer{id} seller{id} price size } } } } } }",
 	}
