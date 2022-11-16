@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
@@ -20,6 +20,14 @@ var (
 )
 
 type TraceIDKey struct{}
+
+func (s *Service) CheckHealthV2(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	s.log.Debug("New request",
+		logging.String("url", r.URL.String()),
+	)
+
+	w.WriteHeader(http.StatusOK)
+}
 
 type ListMethodsV2Response struct {
 	RegisteredMethods []string `json:"registeredMethods"`
@@ -97,9 +105,11 @@ func (s *Service) HandleRequestV2(w http.ResponseWriter, r *http.Request, _ http
 }
 
 func (s *Service) unmarshallRequest(traceID string, r *http.Request) (*jsonrpc.Request, *jsonrpc.ErrorDetails) {
-	defer r.Body.Close()
+	defer func() {
+		_ = r.Body.Close()
+	}()
 
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, jsonrpc.NewParseError(ErrCouldNotReadRequestBody)
 	}

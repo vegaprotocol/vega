@@ -15,7 +15,7 @@
 - [6731](https://github.com/vegaprotocol/vega/issues/6731) - standardize on 'network' and '' for network party and no market identifiers
 - [6792](https://github.com/vegaprotocol/vega/issues/6792) - Better handling of panics when moving time with `nullchain`, add endpoint to query whether `nullchain` is replaying
 - [6753](https://github.com/vegaprotocol/vega/issues/6753) - Filter votes per party and/or proposal
-
+- [6642](https://github.com/vegaprotocol/vega/issues/6642) - Add methods to manage the wallet service and its connections on wallet API version 2
 
 ### 🐛 Fixes
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations

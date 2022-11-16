@@ -3,20 +3,22 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+	coreversion "code.vegaprotocol.io/vega/version"
 )
 
 const (
 	// Network error codes are errors that comes from the network itself and its
-	// nodes.
+	// nodes. It ranges from 1000 to 1999, included.
 
 	// ErrorCodeNodeRequestFailed refers to the inability of the program to
 	// talk to the network nodes.
 	ErrorCodeNodeRequestFailed jsonrpc.ErrorCode = 1000
 
 	// Application error codes are programmatic errors that comes from the API
-	// itself and its "business" rules. It ranges from 1000 to 1999, included.
+	// itself and its "business" rules. It ranges from 2000 to 2999, included.
 
 	// ErrorCodeRequestNotPermitted refers a request made by a third-party application
 	// that is not permitted to do. This error is related to the permissions'
@@ -28,8 +30,18 @@ const (
 	// missing to ensure correct handling of a request.
 	ErrorCodeRequestHasBeenCanceledByApplication jsonrpc.ErrorCode = 2001
 
+	// ErrorCodeIncompatibilityBetweenNetworkAndSoftware refers to a
+	// software that relies on a specific version of the network but the
+	// network it tried to connect to is not the one expected.
+	ErrorCodeIncompatibilityBetweenNetworkAndSoftware jsonrpc.ErrorCode = 2002
+
+	// ErrorCodeServicePortAlreadyBound refers to a service that attempt to run
+	// on a port that is already bound. The user should try to shutdown the
+	// software using that port, or update the configuration to use another port.
+	ErrorCodeServicePortAlreadyBound jsonrpc.ErrorCode = 2003
+
 	// User error codes are errors that results from the user. It ranges
-	// from 2000 to 2999, included.
+	// from 3000 to 3999, included.
 
 	// ErrorCodeConnectionHasBeenClosed refers to an interruption of the service triggered
 	// by the user.
@@ -163,6 +175,14 @@ func userRejectionError() *jsonrpc.ErrorDetails {
 
 func applicationCancellationError(err error) *jsonrpc.ErrorDetails {
 	return applicationError(ErrorCodeRequestHasBeenCanceledByApplication, err)
+}
+
+func incompatibilityBetweenSoftwareAndNetworkError(networkVersion string) *jsonrpc.ErrorDetails {
+	return applicationError(ErrorCodeIncompatibilityBetweenNetworkAndSoftware, fmt.Errorf("this software is not compatible with this network as the network is running version %s but this software expects the version %s", networkVersion, coreversion.Get()))
+}
+
+func servicePortAlreadyBound(err error) *jsonrpc.ErrorDetails {
+	return applicationError(ErrorCodeServicePortAlreadyBound, err)
 }
 
 func internalError(err error) *jsonrpc.ErrorDetails {
