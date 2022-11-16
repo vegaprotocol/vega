@@ -856,19 +856,36 @@ type Epoch {
   ): DelegationsConnection
 }
 
+type NodeSet {
+  "Total number of nodes in the nodeset"
+  total: Int!
+
+  "Number of nodes in the nodeset which has a performance score of 0 at the end of the last epoch"
+  inactive: Int!
+
+  "Total number of nodes allowed in the nodeset"
+  maximum: Int
+}
+
 "Summary of data across all nodes"
 type NodeData {
   "Total staked amount across all nodes"
   stakedTotal: String!
 
-  "Total number of nodes"
+  "Total number of nodes across all nodesets"
   totalNodes: Int!
 
-  "Number of inactive nodes"
+  "Total number of nodes which had a performance score of 0 at the end of the last epoch"
   inactiveNodes: Int!
 
-  "Number of nodes validating"
-  validatingNodes: Int!
+  "Details on the set of Tendermint nodes in the network"
+  tendermintNodes: NodeSet
+  
+  "Details on the set of Erstaz nodes in the network"
+  ersatzNodes: NodeSet
+
+  "Details on the set of Pending nodes in the network"
+  pendingNodes: NodeSet
 
   # @TODO allow to query based on number of epochs uptime(epochs: Int)
   "Total uptime for all epochs across all nodes. Or specify a number of epochs"

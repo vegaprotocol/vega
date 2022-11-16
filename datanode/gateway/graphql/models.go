@@ -432,6 +432,15 @@ type MarketTick struct {
 
 func (MarketTick) IsEvent() {}
 
+type NodeSet struct {
+	// Total number of nodes in the nodeset
+	Total int `json:"total"`
+	// Number of nodes in the nodeset which has a performance score of 0 at the end of the last epoch
+	Inactive int `json:"inactive"`
+	// Total number of nodes allowed in the nodeset
+	Maximum *int `json:"maximum"`
+}
+
 // The equity like share of liquidity fee for each liquidity provider
 type ObservableLiquidityProviderFeeShare struct {
 	// The liquidity provider party ID

@@ -187,8 +187,8 @@ func (store *Node) UpdateEthereumAddress(ctx context.Context, kr entities.Ethere
 	return err
 }
 
-func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
-	defer metrics.StartSQLQuery("Node", "GetNodeData")()
+func (store *Node) GetNodeData(ctx context.Context, epochSeq uint64) (entities.NodeData, error) {
+	defer metrics.StartSQLQuery("Node", "GetNetworkData")()
 	query := `
 		WITH
 			uptime AS (
@@ -199,8 +199,7 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 				FROM
 					epochs
 				WHERE
-		-- 			Only include epochs that have elapsed
-					end_time IS NOT NULL
+					id <= $1
 			),
 
 			staked AS (
@@ -211,61 +210,44 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 					delegations
 				WHERE
 					-- Select the current epoch
-					epoch_id = (SELECT MAX(id) FROM epochs)
-			),
-			/* partitioned by node_id find the join/leave announcement with the biggest epoch that is also less or equal to the target epoch */
-			join_event AS (
-				SELECT
-					node_id, added
-				FROM
-					(
-						SELECT
-							node_id, added, epoch_seq, Row_Number()
-						OVER(PARTITION BY node_id order BY epoch_seq desc)
-						AS
-							row_number
-						FROM
-							nodes_announced
-						WHERE
-							epoch_seq <= (SELECT MAX(id) FROM epochs)
-					) AS a
-				WHERE
-					row_number = 1 AND added = true
-			),
-
-			node_totals AS (
-		-- 		Currently there's no mechanism for changing the node status
-		-- 		and it's unclear what exactly an inactive node is
-				SELECT
-					COUNT(1) filter (where nodes.status = 'NODE_STATUS_VALIDATOR' and ranking_scores.status = 'VALIDATOR_NODE_STATUS_TENDERMINT') AS validating_nodes,
-					COUNT(1) filter (where nodes.status = 'NODE_STATUS_VALIDATOR' and ranking_scores.status <> 'VALIDATOR_NODE_STATUS_TENDERMINT') AS inactive_nodes,
-					COUNT(1) filter (where nodes.status <> 'NODE_STATUS_UNSPECIFIED') 	AS total_nodes,
-					ROW_NUMBER() OVER () AS id
-				FROM
-					nodes
-        LEFT JOIN ranking_scores ON ranking_scores.node_id = nodes.id AND
-                  ranking_scores.epoch_seq = (SELECT max(epoch_seq) FROM ranking_scores WHERE node_id = nodes.id)
-        WHERE EXISTS (
-					SELECT *
-					FROM join_event WHERE node_id = nodes.id
-				)
+					epoch_id = $1
 			)
 		SELECT
 			staked.total AS staked_total,
-			coalesce(uptime.total, 0) AS uptime,
-			node_totals.validating_nodes,
-			node_totals.inactive_nodes,
-			node_totals.total_nodes
+			coalesce(uptime.total, 0) AS uptime
 
-		FROM node_totals
-		--  These joins are "fake" as to extract all the individual values as one row
-		JOIN staked ON node_totals.id = staked.id
+		FROM staked
+		--  This join is "fake" as to extract all the individual values as one row
 		JOIN uptime ON uptime.id = staked.id;
 	`
 
 	nodeData := entities.NodeData{}
+	err := pgxscan.Get(ctx, store.Connection, &nodeData, query, epochSeq)
+	if err != nil {
+		return nodeData, store.wrapE(err)
+	}
 
-	return nodeData, store.wrapE(pgxscan.Get(ctx, store.Connection, &nodeData, query))
+	// now we fill in the more complicated bits about node sets
+	nodes, _, err := store.GetNodes(ctx, epochSeq, entities.DefaultCursorPagination(true))
+	if err != nil {
+		return nodeData, err
+	}
+
+	nodeSets := map[entities.ValidatorNodeStatus]*entities.NodeSet{
+		entities.ValidatorNodeStatusTendermint: &nodeData.TendermintNodes,
+		entities.ValidatorNodeStatusErsatz:     &nodeData.ErsatzNodes,
+		entities.ValidatorNodeStatusPending:    &nodeData.PendingNodes,
+	}
+	for _, n := range nodes {
+		status := n.RankingScore.Status
+		nodeData.TotalNodes += 1
+		nodeSets[status].Total += 1
+		if n.RankingScore.PerformanceScore.IsZero() {
+			nodeSets[status].Inactive += 1
+			nodeData.InactiveNodes += 1
+		}
+	}
+	return nodeData, err
 }
 
 func (store *Node) GetNodes(ctx context.Context, epochSeq uint64, pagination entities.CursorPagination) ([]entities.Node, entities.PageInfo, error) {

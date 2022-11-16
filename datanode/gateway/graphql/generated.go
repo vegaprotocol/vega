@@ -888,16 +888,24 @@ type ComplexityRoot struct {
 	}
 
 	NodeData struct {
+		ErsatzNodes     func(childComplexity int) int
 		InactiveNodes   func(childComplexity int) int
+		PendingNodes    func(childComplexity int) int
 		StakedTotal     func(childComplexity int) int
+		TendermintNodes func(childComplexity int) int
 		TotalNodes      func(childComplexity int) int
 		Uptime          func(childComplexity int) int
-		ValidatingNodes func(childComplexity int) int
 	}
 
 	NodeEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	NodeSet struct {
+		Inactive func(childComplexity int) int
+		Maximum  func(childComplexity int) int
+		Total    func(childComplexity int) int
 	}
 
 	NodeSignature struct {
@@ -1907,6 +1915,9 @@ type NodeResolver interface {
 	DelegationsConnection(ctx context.Context, obj *vega.Node, partyID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error)
 }
 type NodeDataResolver interface {
+	TendermintNodes(ctx context.Context, obj *vega.NodeData) (*NodeSet, error)
+	ErsatzNodes(ctx context.Context, obj *vega.NodeData) (*NodeSet, error)
+	PendingNodes(ctx context.Context, obj *vega.NodeData) (*NodeSet, error)
 	Uptime(ctx context.Context, obj *vega.NodeData) (float64, error)
 }
 type NodeSignatureResolver interface {
@@ -5297,6 +5308,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Node.TmPubKey(childComplexity), true
 
+	case "NodeData.ersatzNodes":
+		if e.complexity.NodeData.ErsatzNodes == nil {
+			break
+		}
+
+		return e.complexity.NodeData.ErsatzNodes(childComplexity), true
+
 	case "NodeData.inactiveNodes":
 		if e.complexity.NodeData.InactiveNodes == nil {
 			break
@@ -5304,12 +5322,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NodeData.InactiveNodes(childComplexity), true
 
+	case "NodeData.pendingNodes":
+		if e.complexity.NodeData.PendingNodes == nil {
+			break
+		}
+
+		return e.complexity.NodeData.PendingNodes(childComplexity), true
+
 	case "NodeData.stakedTotal":
 		if e.complexity.NodeData.StakedTotal == nil {
 			break
 		}
 
 		return e.complexity.NodeData.StakedTotal(childComplexity), true
+
+	case "NodeData.tendermintNodes":
+		if e.complexity.NodeData.TendermintNodes == nil {
+			break
+		}
+
+		return e.complexity.NodeData.TendermintNodes(childComplexity), true
 
 	case "NodeData.totalNodes":
 		if e.complexity.NodeData.TotalNodes == nil {
@@ -5325,13 +5357,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NodeData.Uptime(childComplexity), true
 
-	case "NodeData.validatingNodes":
-		if e.complexity.NodeData.ValidatingNodes == nil {
-			break
-		}
-
-		return e.complexity.NodeData.ValidatingNodes(childComplexity), true
-
 	case "NodeEdge.cursor":
 		if e.complexity.NodeEdge.Cursor == nil {
 			break
@@ -5345,6 +5370,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NodeEdge.Node(childComplexity), true
+
+	case "NodeSet.inactive":
+		if e.complexity.NodeSet.Inactive == nil {
+			break
+		}
+
+		return e.complexity.NodeSet.Inactive(childComplexity), true
+
+	case "NodeSet.maximum":
+		if e.complexity.NodeSet.Maximum == nil {
+			break
+		}
+
+		return e.complexity.NodeSet.Maximum(childComplexity), true
+
+	case "NodeSet.total":
+		if e.complexity.NodeSet.Total == nil {
+			break
+		}
+
+		return e.complexity.NodeSet.Total(childComplexity), true
 
 	case "NodeSignature.id":
 		if e.complexity.NodeSignature.Id == nil {
@@ -32169,8 +32215,8 @@ func (ec *executionContext) fieldContext_NodeData_inactiveNodes(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _NodeData_validatingNodes(ctx context.Context, field graphql.CollectedField, obj *vega.NodeData) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_NodeData_validatingNodes(ctx, field)
+func (ec *executionContext) _NodeData_tendermintNodes(ctx context.Context, field graphql.CollectedField, obj *vega.NodeData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeData_tendermintNodes(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -32183,31 +32229,134 @@ func (ec *executionContext) _NodeData_validatingNodes(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ValidatingNodes, nil
+		return ec.resolvers.NodeData().TendermintNodes(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(uint32)
+	res := resTmp.(*NodeSet)
 	fc.Result = res
-	return ec.marshalNInt2uint32(ctx, field.Selections, res)
+	return ec.marshalONodeSet2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeSet(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_NodeData_validatingNodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_NodeData_tendermintNodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "NodeData",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "total":
+				return ec.fieldContext_NodeSet_total(ctx, field)
+			case "inactive":
+				return ec.fieldContext_NodeSet_inactive(ctx, field)
+			case "maximum":
+				return ec.fieldContext_NodeSet_maximum(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeSet", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeData_ersatzNodes(ctx context.Context, field graphql.CollectedField, obj *vega.NodeData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeData_ersatzNodes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NodeData().ErsatzNodes(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*NodeSet)
+	fc.Result = res
+	return ec.marshalONodeSet2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeSet(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeData_ersatzNodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeData",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "total":
+				return ec.fieldContext_NodeSet_total(ctx, field)
+			case "inactive":
+				return ec.fieldContext_NodeSet_inactive(ctx, field)
+			case "maximum":
+				return ec.fieldContext_NodeSet_maximum(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeSet", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeData_pendingNodes(ctx context.Context, field graphql.CollectedField, obj *vega.NodeData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeData_pendingNodes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NodeData().PendingNodes(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*NodeSet)
+	fc.Result = res
+	return ec.marshalONodeSet2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeSet(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeData_pendingNodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeData",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "total":
+				return ec.fieldContext_NodeSet_total(ctx, field)
+			case "inactive":
+				return ec.fieldContext_NodeSet_inactive(ctx, field)
+			case "maximum":
+				return ec.fieldContext_NodeSet_maximum(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeSet", field.Name)
 		},
 	}
 	return fc, nil
@@ -32376,6 +32525,135 @@ func (ec *executionContext) fieldContext_NodeEdge_cursor(ctx context.Context, fi
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeSet_total(ctx context.Context, field graphql.CollectedField, obj *NodeSet) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeSet_total(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeSet_total(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeSet",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeSet_inactive(ctx context.Context, field graphql.CollectedField, obj *NodeSet) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeSet_inactive(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Inactive, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeSet_inactive(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeSet",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeSet_maximum(ctx context.Context, field graphql.CollectedField, obj *NodeSet) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeSet_maximum(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Maximum, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeSet_maximum(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeSet",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -44547,8 +44825,12 @@ func (ec *executionContext) fieldContext_Query_nodeData(ctx context.Context, fie
 				return ec.fieldContext_NodeData_totalNodes(ctx, field)
 			case "inactiveNodes":
 				return ec.fieldContext_NodeData_inactiveNodes(ctx, field)
-			case "validatingNodes":
-				return ec.fieldContext_NodeData_validatingNodes(ctx, field)
+			case "tendermintNodes":
+				return ec.fieldContext_NodeData_tendermintNodes(ctx, field)
+			case "ersatzNodes":
+				return ec.fieldContext_NodeData_ersatzNodes(ctx, field)
+			case "pendingNodes":
+				return ec.fieldContext_NodeData_pendingNodes(ctx, field)
 			case "uptime":
 				return ec.fieldContext_NodeData_uptime(ctx, field)
 			}
@@ -66203,13 +66485,57 @@ func (ec *executionContext) _NodeData(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "validatingNodes":
+		case "tendermintNodes":
+			field := field
 
-			out.Values[i] = ec._NodeData_validatingNodes(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NodeData_tendermintNodes(ctx, field, obj)
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "ersatzNodes":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NodeData_ersatzNodes(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "pendingNodes":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NodeData_pendingNodes(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "uptime":
 			field := field
 
@@ -66265,6 +66591,45 @@ func (ec *executionContext) _NodeEdge(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var nodeSetImplementors = []string{"NodeSet"}
+
+func (ec *executionContext) _NodeSet(ctx context.Context, sel ast.SelectionSet, obj *NodeSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, nodeSetImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NodeSet")
+		case "total":
+
+			out.Values[i] = ec._NodeSet_total(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "inactive":
+
+			out.Values[i] = ec._NodeSet_inactive(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "maximum":
+
+			out.Values[i] = ec._NodeSet_maximum(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -79090,6 +79455,13 @@ func (ec *executionContext) marshalONodeEdge2ᚖcodeᚗvegaprotocolᚗioᚋvega�
 		return graphql.Null
 	}
 	return ec._NodeEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalONodeSet2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeSet(ctx context.Context, sel ast.SelectionSet, v *NodeSet) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._NodeSet(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalONodeSignatureKind2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureKind(ctx context.Context, v interface{}) (v11.NodeSignatureKind, error) {

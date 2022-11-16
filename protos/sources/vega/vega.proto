@@ -1226,17 +1226,31 @@ message Node {
   string avatar_url = 18;
 }
 
+message NodeSet {
+  // Total number of nodes in the nodeset
+  uint32 total = 1;
+  // Number of nodes in the nodeset which had a performance score of 0 at the end of the last epoch
+  uint32 inactive = 2;
+  // Total number of nodes allowed in the nodeset
+  optional uint32 maximum = 3;
+
+}
+
 message NodeData {
   // Total staked amount across all nodes
   string staked_total = 1;
-  // Total number of nodes
+  // Total number of nodes across all nodesets
   uint32 total_nodes = 2;
-  // Number of inactive nodes
+  // Total number of nodes which had a performance score of 0 at the end of the last epoch
   uint32 inactive_nodes = 3;
-  // Number of nodes validating
-  uint32 validating_nodes = 4;
+  // Details on the set of Tendermint nodes in the network
+  NodeSet tendermint_nodes = 4;
+  // Details on the set of Erstaz nodes in the network
+  NodeSet ersatz_nodes = 5;
+  // Details on the set of Pending nodes in the network
+  NodeSet pending_nodes = 6;
   // Total uptime for all epochs across all nodes
-  float uptime = 5;
+  float uptime = 7;
 }
 
 message Delegation {

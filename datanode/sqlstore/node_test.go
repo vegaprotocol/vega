@@ -51,20 +51,12 @@ func addNodeAnnounced(t *testing.T, ps *sqlstore.Node, nodeID entities.NodeID, a
 	require.NoError(t, err)
 }
 
-func addRankingScore(t *testing.T, ps *sqlstore.Node, block entities.Block, node entities.Node, epoch uint64) entities.RankingScore {
+func addRankingScore(t *testing.T, ps *sqlstore.Node, node entities.Node, r entities.RankingScore) entities.RankingScore {
 	t.Helper()
-	r := entities.RankingScore{
-		StakeScore:       decimal.NewFromFloat(0.5),
-		PerformanceScore: decimal.NewFromFloat(0.25),
-		PreviousStatus:   entities.ValidatorNodeStatusErsatz,
-		Status:           entities.ValidatorNodeStatusTendermint,
-		EpochSeq:         epoch,
-		VegaTime:         block.VegaTime,
-	}
 
 	aux := entities.RankingScoreAux{
 		NodeID:   node.ID,
-		EpochSeq: epoch,
+		EpochSeq: r.EpochSeq,
 	}
 
 	err := ps.UpsertRanking(context.Background(), &r, &aux)
@@ -110,7 +102,15 @@ func TestGetNodes(t *testing.T) {
 	node1 := addTestNode(t, ns, block, helpers.GenerateID())
 	addNodeAnnounced(t, ns, node1.ID, true, 0, now)
 	addNodeAnnounced(t, ns, node1.ID, false, 7, now)
-	addRankingScore(t, ns, block, node1, 3)
+	addRankingScore(t, ns, node1,
+		entities.RankingScore{
+			StakeScore:       decimal.NewFromFloat(0.5),
+			PerformanceScore: decimal.NewFromFloat(0.25),
+			PreviousStatus:   entities.ValidatorNodeStatusErsatz,
+			Status:           entities.ValidatorNodeStatusTendermint,
+			EpochSeq:         3,
+			VegaTime:         block.VegaTime,
+		})
 
 	// get all nodes
 	found, _, err := ns.GetNodes(ctx, 3, entities.CursorPagination{})
@@ -192,6 +192,38 @@ func TestGetNodeData(t *testing.T) {
 	addTestDelegation(t, ds, party1, node2, 3, block, 2)
 	addTestDelegation(t, ds, party1, node2, 4, block, 3)
 
+	// node1 is an ersatz for epochs 2 and 3, with a 0 perf score in 3
+	addRankingScore(t, ns, node1,
+		entities.RankingScore{
+			StakeScore:       decimal.NewFromFloat(0.5),
+			PerformanceScore: decimal.NewFromFloat(0.25),
+			PreviousStatus:   entities.ValidatorNodeStatusErsatz,
+			Status:           entities.ValidatorNodeStatusErsatz,
+			EpochSeq:         2,
+			VegaTime:         block.VegaTime,
+		})
+	addRankingScore(t, ns, node1,
+		entities.RankingScore{
+			StakeScore:       decimal.NewFromFloat(0.5),
+			PerformanceScore: decimal.Zero,
+			PreviousStatus:   entities.ValidatorNodeStatusErsatz,
+			Status:           entities.ValidatorNodeStatusErsatz,
+			EpochSeq:         3,
+			VegaTime:         block.VegaTime,
+		})
+
+	// node 2 is always a happy tendermint node
+	for i := 0; i < 5; i++ {
+		addRankingScore(t, ns, node2, entities.RankingScore{
+			StakeScore:       decimal.NewFromFloat(0.5),
+			PerformanceScore: decimal.NewFromFloat(0.25),
+			PreviousStatus:   entities.ValidatorNodeStatusTendermint,
+			Status:           entities.ValidatorNodeStatusTendermint,
+			EpochSeq:         uint64(i),
+			VegaTime:         block.VegaTime,
+		})
+	}
+
 	// The node1 will exist int the epochs [2,3]
 	addNodeAnnounced(t, ns, node1.ID, true, 2, time.Now())
 	addNodeAnnounced(t, ns, node1.ID, false, 4, time.Now())
@@ -205,16 +237,33 @@ func TestGetNodeData(t *testing.T) {
 
 	nodes, _, _ := ns.GetNodes(ctx, 3, entities.CursorPagination{})
 	require.Len(t, nodes, 2)
-	nodeData, err := ns.GetNodeData(ctx)
+
+	nodeData, err := ns.GetNodeData(ctx, 2)
 	require.NoError(t, err)
 	require.Equal(t, uint32(2), nodeData.TotalNodes)
+	require.Equal(t, uint32(1), nodeData.TendermintNodes.Total)
+	require.Equal(t, uint32(0), nodeData.TendermintNodes.Inactive)
+	require.Equal(t, uint32(1), nodeData.ErsatzNodes.Total)
+	require.Equal(t, uint32(0), nodeData.ErsatzNodes.Inactive)
+
+	nodeData, err = ns.GetNodeData(ctx, 3)
+	require.NoError(t, err)
+	require.Equal(t, uint32(2), nodeData.TotalNodes)
+	require.Equal(t, uint32(1), nodeData.TendermintNodes.Total)
+	require.Equal(t, uint32(0), nodeData.TendermintNodes.Inactive)
+	require.Equal(t, uint32(1), nodeData.ErsatzNodes.Total)
+	require.Equal(t, uint32(1), nodeData.ErsatzNodes.Inactive)
 
 	// move to epoch 4 and only one should exist
 	now = now.Add(time.Hour)
 	addTestEpoch(t, es, 4, now, now, &now, block)
-	nodeData, err = ns.GetNodeData(ctx)
+	nodeData, err = ns.GetNodeData(ctx, 4)
 	require.NoError(t, err)
 	require.Equal(t, uint32(1), nodeData.TotalNodes)
+	require.Equal(t, uint32(1), nodeData.TendermintNodes.Total)
+	require.Equal(t, uint32(0), nodeData.TendermintNodes.Inactive)
+	require.Equal(t, uint32(0), nodeData.ErsatzNodes.Total)
+	require.Equal(t, uint32(0), nodeData.ErsatzNodes.Inactive)
 }
 
 func assertNodeExistence(ctx context.Context, t *testing.T, ns *sqlstore.Node, nodeID string, epoch uint64, exists bool) {

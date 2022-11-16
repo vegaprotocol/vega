@@ -97,11 +97,19 @@ type RankingScoreAux struct {
 	EpochSeq uint64
 }
 
+type NodeSet struct {
+	Total    uint32
+	Inactive uint32
+	Maximum  uint32
+}
+
 type NodeData struct {
 	StakedTotal     decimal.Decimal
 	TotalNodes      uint32
 	InactiveNodes   uint32
-	ValidatingNodes uint32
+	TendermintNodes NodeSet
+	ErsatzNodes     NodeSet
+	PendingNodes    NodeSet
 	Uptime          float64
 	VegaTime        time.Time
 }
@@ -373,13 +381,21 @@ func (ed *EpochData) UnmarshalJSON(b []byte) error {
 	return protojson.Unmarshal(b, ed)
 }
 
+func (n *NodeSet) ToProto() *vega.NodeSet {
+	return &vega.NodeSet{
+		Total:    n.Total,
+		Inactive: n.Inactive,
+	}
+}
+
 func (n *NodeData) ToProto() *vega.NodeData {
 	return &vega.NodeData{
 		StakedTotal:     n.StakedTotal.String(),
 		TotalNodes:      n.TotalNodes,
-		InactiveNodes:   n.InactiveNodes,
-		ValidatingNodes: n.ValidatingNodes,
 		Uptime:          float32(n.Uptime),
+		TendermintNodes: n.TendermintNodes.ToProto(),
+		ErsatzNodes:     n.ErsatzNodes.ToProto(),
+		PendingNodes:    n.PendingNodes.ToProto(),
 	}
 }
 
