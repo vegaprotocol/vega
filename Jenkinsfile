@@ -97,6 +97,16 @@ pipeline {
             }
         }
 
+        stage('publish to vega-dev-releases') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                startVegaDevRelease vegaVersion: versionHash,
+                    jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH
+            }
+        }
+
         stage('Dependencies') {
             options { retry(3) }
             steps {
@@ -477,16 +487,6 @@ pipeline {
                 DOCKER_IMAGE_TAG_VERSION = "${ env.TAG_NAME ?: versionHash }"
             }
             parallel {
-                stage('publish to vega-dev-releases') {
-                    when {
-                        branch 'develop'
-                    }
-                    options { retry(3) }
-                    steps {
-                        startVegaDevRelease vegaVersion: versionHash,
-                            jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH
-                    }
-                }
                 stage('vega docker image') {
                     when {
                         branch 'develop'
