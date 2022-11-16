@@ -290,7 +290,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	for _, evt := range positions {
 		party := evt.Party()
 		// get the current position, and all (if any) position changes because of trades
-		current := e.getCurrentPosition(party, evt)
+		current, new := e.getCurrentPosition(party, evt)
 		// we don't care if this is a nil value
 		traded, hasTraded = trades[party]
 		tradeset := make([]events.TradeSettlement, 0, len(traded))
@@ -300,7 +300,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		// create (and add position to buffer)
 		evts = append(evts, events.NewSettlePositionEvent(ctx, party, e.market, evt.Price(), tradeset, e.timeService.GetTimeNow().UnixNano(), e.positionFactor))
 		// no changes in position, and the MTM price hasn't changed, we don't need to do anything
-		if !hasTraded && current.price.EQ(markPrice) {
+		if !hasTraded && current.price.EQ(markPrice) && !new {
 			// no changes in position and markPrice hasn't changed -> nothing needs to be marked
 			continue
 		}
@@ -463,17 +463,17 @@ func (e *Engine) settleAll(assetDecimals uint32) ([]*types.Transfer, error) {
 
 // this doesn't need the mutex wrap because it's an internal call and the function that is being
 // called already locks the positions map.
-func (e *Engine) getCurrentPosition(party string, evt events.MarketPosition) *pos {
+func (e *Engine) getCurrentPosition(party string, evt events.MarketPosition) (*pos, bool) {
 	p, ok := e.pos[party]
 	if !ok {
 		p = newPos(evt)
 		e.pos[party] = p
 	}
-	return p
+	return p, !ok
 }
 
 func (e *Engine) AddPosition(party string, evt events.MarketPosition) {
-	_ = e.getCurrentPosition(party, evt)
+	_, _ = e.getCurrentPosition(party, evt)
 }
 
 func (e *Engine) rmPosition(party string) {
