@@ -37,7 +37,7 @@ func (r *allResolver) getOrderByID(ctx context.Context, id string, version *int)
 	v, err := convertVersion(version)
 	if err != nil {
 		r.log.Error("tradingCore client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	orderReq := &v2.GetOrderRequest{
 		OrderId: id,
@@ -83,7 +83,7 @@ func (r *allResolver) getMarketByID(ctx context.Context, id string) (*types.Mark
 	res, err := r.clt2.GetMarket(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	// no error / no market = we did not find it
 	if res.Market == nil {

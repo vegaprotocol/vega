@@ -67,11 +67,12 @@ func (ps *Parties) Add(ctx context.Context, p entities.Party) error {
 func (ps *Parties) GetByID(ctx context.Context, id string) (entities.Party, error) {
 	a := entities.Party{}
 	defer metrics.StartSQLQuery("Parties", "GetByID")()
-
-	return a, ps.wrapE(pgxscan.Get(ctx, ps.Connection, &a,
+	err := pgxscan.Get(ctx, ps.Connection, &a,
 		`SELECT id, tx_hash, vega_time
 		 FROM parties WHERE id=$1`,
-		entities.PartyID(id)))
+		entities.PartyID(id))
+
+	return a, ps.wrapE(err)
 }
 
 func (ps *Parties) GetAll(ctx context.Context) ([]entities.Party, error) {

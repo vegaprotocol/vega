@@ -189,7 +189,6 @@ func (g *GraphServer) Start() error {
 
 		st, ok := status.FromError(errors.Unwrap(e))
 		if !ok {
-			fmt.Printf("%v\n", e)
 			return graphql.DefaultErrorPresenter(ctx, e)
 		}
 
