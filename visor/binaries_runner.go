@@ -122,13 +122,18 @@ func (r *BinariesRunner) runBinary(ctx context.Context, binPath string, args []s
 		}
 	}()
 
+	binKey := binPath
+	if len(args) > 0 {
+		binKey = fmt.Sprintf("%s-%s", binPath, args[0])
+	}
+
 	r.mut.Lock()
-	r.running[binPath] = cmd
+	r.running[binKey] = cmd
 	r.mut.Unlock()
 
 	defer func() {
 		r.mut.Lock()
-		delete(r.running, binPath)
+		delete(r.running, binKey)
 		r.mut.Unlock()
 	}()
 
@@ -179,12 +184,14 @@ func (r *BinariesRunner) signal(signal syscall.Signal) error {
 		r.log.Info("Signaling process",
 			logging.String("binaryName", binName),
 			logging.String("signal", signal.String()),
+			logging.Strings("args", c.Args),
 		)
 
 		err = c.Process.Signal(signal)
 		if err != nil {
 			r.log.Error("Failed to signal running binary",
 				logging.String("binaryPath", c.Path),
+				logging.Strings("args", c.Args),
 				logging.Error(err),
 			)
 		}
