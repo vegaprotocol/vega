@@ -168,3 +168,7 @@ func unexpectedNodeSelectorCall(t *testing.T) api.NodeSelectorBuilder {
 		return nil, nil
 	}
 }
+
+func dummyServiceShutdownSwitch() *api.ServiceShutdownSwitch {
+	return api.NewServiceShutdownSwitch(func(err error) {})
+}
