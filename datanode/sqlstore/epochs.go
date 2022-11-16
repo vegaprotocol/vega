@@ -51,8 +51,8 @@ func (es *Epochs) Add(ctx context.Context, r entities.Epoch) error {
 		 	           expire_time=EXCLUDED.expire_time,
 		               end_time=EXCLUDED.end_time,
 					   tx_hash=EXCLUDED.tx_hash,
-					   first_block = CASE WHEN EXCLUDED.first_block > first_block THEN EXCLUDED.first_block ELSE first_block END,
-					   last_block = CASE WHEN EXCLUDED.last_block > last_block THEN EXCLUDED.last_block ELSE last_block END
+					   first_block = CASE WHEN $7 > 0 THEN EXCLUDED.first_block ELSE epochs.first_block END,
+					   last_block = CASE WHEN $8 is not null THEN EXCLUDED.last_block ELSE epochs.last_block END
 		 ;`,
 		r.ID, r.StartTime, r.ExpireTime, r.EndTime, r.TxHash, r.VegaTime, r.FirstBlock, r.LastBlock)
 	return err

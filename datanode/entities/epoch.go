@@ -27,7 +27,7 @@ type Epoch struct {
 	TxHash     TxHash
 	VegaTime   time.Time
 	FirstBlock int64
-	LastBlock  int64
+	LastBlock  *int64
 }
 
 func (e *Epoch) ToProto() *vega.Epoch {
@@ -37,11 +37,13 @@ func (e *Epoch) ToProto() *vega.Epoch {
 			StartTime:  e.StartTime.UnixNano(),
 			ExpiryTime: e.ExpireTime.UnixNano(),
 			FirstBlock: uint64(e.FirstBlock),
-			LastBlock:  uint64(e.LastBlock),
 		},
 	}
 	if e.EndTime != nil {
 		protoEpoch.Timestamps.EndTime = e.EndTime.UnixNano()
+	}
+	if e.LastBlock != nil {
+		protoEpoch.Timestamps.LastBlock = uint64(*e.LastBlock)
 	}
 	return &protoEpoch
 }
@@ -63,7 +65,9 @@ func EpochFromProto(ee eventspb.EpochEvent, txHash TxHash, blockNr int64) Epoch 
 	case vega.EpochAction_EPOCH_ACTION_START:
 		epoch.FirstBlock = blockNr
 	case vega.EpochAction_EPOCH_ACTION_END:
-		epoch.LastBlock = blockNr
+		if blockNr > 0 {
+			epoch.LastBlock = &blockNr
+		}
 		epoch.VegaTime = NanosToPostgresTimestamp(ee.EndTime)
 	}
 	return epoch

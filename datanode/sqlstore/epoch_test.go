@@ -17,10 +17,11 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 )
 
 func addTestEpoch(t *testing.T, es *sqlstore.Epochs,
@@ -37,6 +38,7 @@ func addTestEpoch(t *testing.T, es *sqlstore.Epochs,
 		ExpireTime: expireTime,
 		EndTime:    endTime,
 		VegaTime:   block.VegaTime,
+		FirstBlock: block.Height,
 	}
 	err := es.Add(context.Background(), r)
 	require.NoError(t, err)

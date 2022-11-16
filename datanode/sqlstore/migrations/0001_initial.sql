@@ -741,7 +741,7 @@ CREATE TABLE epochs(
   end_time     TIMESTAMP WITH TIME ZONE,
   tx_hash      BYTEA                    NOT NULL,
   vega_time    TIMESTAMP WITH TIME ZONE NOT NULL,
-  first_block  BIGINT,
+  first_block  BIGINT                   NOT NULL,
   last_block   BIGINT,
   PRIMARY KEY(id, vega_time)
 );
