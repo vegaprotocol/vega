@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
@@ -42,6 +43,9 @@ func (h *AdminDescribeKey) Handle(ctx context.Context, rawParams jsonrpc.Params)
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet, params.Passphrase)
 	if err != nil {
+		if errors.Is(err, wallet.ErrWrongPassphrase) {
+			return nil, invalidParams(err)
+		}
 		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
 

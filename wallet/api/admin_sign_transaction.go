@@ -3,12 +3,14 @@ package api
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"strings"
 
 	"code.vegaprotocol.io/vega/commands"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/golang/protobuf/proto"
 
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -69,6 +71,9 @@ func (h *AdminSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet, params.Passphrase)
 	if err != nil {
+		if errors.Is(err, wallet.ErrWrongPassphrase) {
+			return nil, invalidParams(err)
+		}
 		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
 
