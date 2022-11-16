@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"fmt"
+	"sort"
 
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
@@ -25,11 +26,11 @@ type Sessions struct {
 // it. If a connection already exists, it's disconnected and a new token is
 // generated.
 func (s *Sessions) ConnectWallet(hostname string, w wallet.Wallet) (string, error) {
-	fingerprint := toFingerprint(hostname, w)
+	fingerprint := toFingerprint(hostname, w.Name())
 	if token, ok := s.fingerprints[fingerprint]; ok {
 		// We already have a connection for that wallet and hostname, we destroy
 		// it.
-		s.DisconnectWallet(token)
+		s.DisconnectWalletWithToken(token)
 	}
 
 	connectedWallet, err := NewConnectedWallet(hostname, w)
@@ -45,17 +46,32 @@ func (s *Sessions) ConnectWallet(hostname string, w wallet.Wallet) (string, erro
 	return token, nil
 }
 
-// DisconnectWallet unloads the connected wallet resources and revokes the token.
+// DisconnectWalletWithToken looks for the connected wallet associated to the
+// token, unloads its resources, and revokes the token.
 // It does not fail. Non-existing token does nothing.
-func (s *Sessions) DisconnectWallet(token string) {
+func (s *Sessions) DisconnectWalletWithToken(token string) {
 	connectedWallet, ok := s.connectedWallets[token]
 	if !ok {
 		return
 	}
 
-	fingerprint := toFingerprint(connectedWallet.Hostname, connectedWallet.Wallet)
+	fingerprint := toFingerprint(connectedWallet.Hostname, connectedWallet.Wallet.Name())
 	delete(s.fingerprints, fingerprint)
 	delete(s.connectedWallets, token)
+}
+
+// DisconnectWallet unloads the connected wallet resources and revokes the token.
+// It does not fail. Non-existing token does nothing.
+func (s *Sessions) DisconnectWallet(hostname, wallet string) {
+	fingerprint := toFingerprint(hostname, wallet)
+	token := s.fingerprints[fingerprint]
+	delete(s.fingerprints, fingerprint)
+	delete(s.connectedWallets, token)
+}
+
+func (s *Sessions) DisconnectAllWallets() {
+	s.connectedWallets = map[string]*ConnectedWallet{}
+	s.fingerprints = map[string]string{}
 }
 
 // GetConnectedWallet retrieves the resources and information of the
@@ -69,11 +85,41 @@ func (s *Sessions) GetConnectedWallet(token string) (*ConnectedWallet, error) {
 	return connectedWallet, nil
 }
 
+// ListConnections lists all the live connections as a list of pairs of
+// hostname/wallet name.
+// The list is sorted, first, by hostname, and, then, by wallet name.
+func (s *Sessions) ListConnections() []Connection {
+	connections := make([]Connection, 0, len(s.connectedWallets))
+	for _, connectedWallet := range s.connectedWallets {
+		connections = append(connections, Connection{
+			Hostname: connectedWallet.Hostname,
+			Wallet:   connectedWallet.Wallet.Name(),
+		})
+	}
+
+	sort.SliceStable(connections, func(i, j int) bool {
+		if connections[i].Hostname == connections[j].Hostname {
+			return connections[i].Wallet < connections[j].Wallet
+		}
+
+		return connections[i].Hostname < connections[j].Hostname
+	})
+
+	return connections
+}
+
 func NewSessions() *Sessions {
 	return &Sessions{
 		fingerprints:     map[string]string{},
 		connectedWallets: map[string]*ConnectedWallet{},
 	}
+}
+
+type Connection struct {
+	// Hostname is the hostname for which the connection is set.
+	Hostname string `json:"hostname"`
+	// Wallet is the wallet selected by the client for this connection.
+	Wallet string `json:"wallet"`
 }
 
 // ConnectedWallet contains the resources and the information of the current
@@ -174,6 +220,6 @@ func NewConnectedWallet(hostname string, w wallet.Wallet) (*ConnectedWallet, err
 	return s, nil
 }
 
-func toFingerprint(hostname string, w wallet.Wallet) string {
-	return vgcrypto.HashStrToHex(hostname + "::" + w.Name())
+func toFingerprint(hostname string, walletName string) string {
+	return vgcrypto.HashStrToHex(hostname + "::" + walletName)
 }
