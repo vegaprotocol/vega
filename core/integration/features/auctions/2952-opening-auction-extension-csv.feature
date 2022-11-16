@@ -8,7 +8,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
     And the markets:
-      | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees           | price monitoring | data source config          |
+      | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees           | price monitoring | data source config     |
       | ETH/DEC20 | ETH        | ETH   | my-simple-risk-model | default-margin-calculator | 1                | my-fees-config | default-none     | default-eth-for-future |
     And the following network parameters are set:
       | name                                    | value |
@@ -51,17 +51,17 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party1 | ETH/DEC20 | buy  | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | post-oa-1 |
       | party3 | ETH/DEC20 | sell | 1      | 10000000 | 1                | TYPE_LIMIT | TIF_GTC | post-oa-2 |
     Then the following trades should be executed:
-      | buyer  | price    | size | seller  |
+      | buyer  | price    | size | seller |
       | party1 | 10000000 | 1    | party3 |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
       | party3 | ETH   | ETH/DEC20 | 1724511 | 995225489 |
     And the following transfers should happen:
-      | from    | to      | from account            | to account                       | market id | amount  | asset |
-      | party3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC20 | 40000   | ETH   |
-      | party3 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 10000   | ETH   |
-      | party3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC20 | 3000000 | ETH   |
-      | market  | party1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC20 | 40000   | ETH   |
+      | from   | to     | from account            | to account                       | market id | amount  | asset |
+      | party3 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC20 | 40000   | ETH   |
+      | party3 |        | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 10000   | ETH   |
+      | party3 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC20 | 3000000 | ETH   |
+      | market | party1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC20 | 40000   | ETH   |
 
     # Amend orders to set slippage to 120
     When the parties amend the following orders:
@@ -74,12 +74,18 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party1 | ETH/DEC20 | sell | 1      | 12000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-2    |
       | party2 | ETH/DEC20 | buy  | 1      | 12000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-3    |
     Then the following transfers should happen:
-      | from   | to      | from account         | to account              | market id | amount  | asset |
-      | party3 | market  | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 275489  | ETH   |
-      | party3 | party3  | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 1949413 | ETH   |
+      | from   | to     | from account         | to account              | market id | amount  | asset |
+      | party3 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 275489  | ETH   |
+      | party3 | party3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 1949413 | ETH   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
       | party3 | ETH   | ETH/DEC20 | 1949413 | 993000587 |
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search  | initial | release |
+      | party3 | ETH/DEC20 | 1624511     | 1786962 | 1949413 | 2274315 |
+
+    #maitenance_margin_party3: 1*(12500000-12000000)+1*12000000*0.09370922348428490000=1624511
+
     # MTM loss + margin low
 
     # Amend orders to set slippage to 140
@@ -87,7 +93,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party  | reference | price    | size delta | tif     |
       | party1 | t1-s-1    | 14500000 | 0          | TIF_GTC |
       | party2 | t2-b-1    | 13500000 | 0          | TIF_GTC |
-      #Then debug detailed orderbook volumes for market "ETH/DEC20"
+    #Then debug detailed orderbook volumes for market "ETH/DEC20"
 
     When the parties place the following orders "1" blocks apart:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -96,7 +102,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     # Check MTM Loss transfer happened
     Then the following transfers should happen:
       | from   | to     | from account         | to account              | market id | amount | asset |
-      | party3 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 |  50587 | ETH   |
+      | party3 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 50587  | ETH   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
       | party3 | ETH   | ETH/DEC20 | 2174316 | 990775684 |
@@ -113,7 +119,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 16000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-4    |
       | party2 | ETH/DEC20 | buy  | 1      | 16000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-5    |
-     # Check MTM Loss transfer happened
+    # Check MTM Loss transfer happened
     Then the following transfers should happen:
       | from   | to     | from account         | to account              | market id | amount  | asset |
       | party3 | market | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 2000000 | ETH   |
@@ -173,7 +179,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 12000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-5    |
       | party2 | ETH/DEC20 | buy  | 1      | 12000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-8    |
-     # Check MTM Loss transfer happened
+    # Check MTM Loss transfer happened
     Then the following transfers should happen:
       | from   | to     | from account            | to account           | market id | amount  | asset |
       | market | party3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 2000000 | ETH   |
@@ -229,8 +235,8 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party  | asset | market id | margin | general   |
       | party3 | ETH   | ETH/DEC20 | 0      | 993900000 |
     And the following transfers should happen:
-      | from    | to      | from account            | to account                       | market id | amount  | asset |
-      | party3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC20 | 40000   | ETH   |
-      | party3 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 10000   | ETH   |
-      | party3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC20 | 3000000 | ETH   |
-      | market  | party1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC20 | 40000   | ETH   |
+      | from   | to     | from account            | to account                       | market id | amount  | asset |
+      | party3 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC20 | 40000   | ETH   |
+      | party3 |        | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 10000   | ETH   |
+      | party3 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC20 | 3000000 | ETH   |
+      | market | party1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC20 | 40000   | ETH   |
