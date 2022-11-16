@@ -41,7 +41,7 @@ type versionCommandOutput struct {
 
 type BinariesRunner struct {
 	mut         sync.RWMutex
-	running     map[string]*exec.Cmd
+	running     map[int]*exec.Cmd
 	binsFolder  string
 	log         *logging.Logger
 	stopTimeout time.Duration
@@ -51,7 +51,7 @@ type BinariesRunner struct {
 func NewBinariesRunner(log *logging.Logger, binsFolder string, stopTimeout time.Duration, rInfo *types.ReleaseInfo) *BinariesRunner {
 	return &BinariesRunner{
 		binsFolder:  binsFolder,
-		running:     map[string]*exec.Cmd{},
+		running:     map[int]*exec.Cmd{},
 		log:         log,
 		stopTimeout: stopTimeout,
 		releaseInfo: rInfo,
@@ -122,18 +122,15 @@ func (r *BinariesRunner) runBinary(ctx context.Context, binPath string, args []s
 		}
 	}()
 
-	binKey := binPath
-	if len(args) > 0 {
-		binKey = fmt.Sprintf("%s-%s", binPath, args[0])
-	}
+	processID := cmd.Process.Pid
 
 	r.mut.Lock()
-	r.running[binKey] = cmd
+	r.running[processID] = cmd
 	r.mut.Unlock()
 
 	defer func() {
 		r.mut.Lock()
-		delete(r.running, binKey)
+		delete(r.running, processID)
 		r.mut.Unlock()
 	}()
 
@@ -180,9 +177,9 @@ func (r *BinariesRunner) signal(signal syscall.Signal) error {
 	defer r.mut.RUnlock()
 
 	var err error
-	for binName, c := range r.running {
+	for _, c := range r.running {
 		r.log.Info("Signaling process",
-			logging.String("binaryName", binName),
+			logging.String("binaryName", c.Path),
 			logging.String("signal", signal.String()),
 			logging.Strings("args", c.Args),
 		)
