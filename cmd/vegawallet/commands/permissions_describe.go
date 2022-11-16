@@ -131,9 +131,9 @@ func PrintDescribePermissionsResult(w io.Writer, resp api.AdminDescribePermissio
 	str.Text("Public keys: ").NextLine()
 	str.Text("  Access mode: ").WarningText(fmt.Sprintf("%v", resp.Permissions.PublicKeys.Access)).NextLine()
 	if len(resp.Permissions.PublicKeys.RestrictedKeys) != 0 {
-		str.Text("  Restricted keys: ")
+		str.Text("  Restricted keys: ").NextLine()
 		for _, k := range resp.Permissions.PublicKeys.RestrictedKeys {
-			str.WarningText(fmt.Sprintf("    - %s", k)).NextLine()
+			str.Text("    - ").WarningText(k).NextLine()
 		}
 	}
 }

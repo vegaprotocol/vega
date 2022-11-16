@@ -1,5 +1,7 @@
 package jsonrpc
 
+import "fmt"
+
 // Result is just a nicer way to describe what's expected to be returned by the
 // handlers.
 type Result interface{}
@@ -68,6 +70,10 @@ type ErrorDetails struct {
 
 func (d ErrorDetails) IsInternalError() bool {
 	return d.Message == "Internal error"
+}
+
+func (d ErrorDetails) Error() string {
+	return fmt.Sprintf("%s (%s %d)", d.Data, d.Message, d.Code)
 }
 
 func NewParseError(data error) *ErrorDetails {

@@ -60,7 +60,7 @@ func Execute(w *Writer) {
 func fprintErrorInteractive(w *Writer, execErr error) {
 	if vgterm.HasTTY() {
 		p := printer.NewInteractivePrinter(w.Out)
-		p.Print(p.String().CrossMark().DangerText(execErr.Error()).NextLine())
+		p.Print(p.String().CrossMark().DangerText("Error: ").DangerText(execErr.Error()).NextLine())
 	} else {
 		_, _ = fmt.Fprintln(w.Err, execErr)
 	}
