@@ -1,6 +1,6 @@
 {
 	"TestName": "TestMarkets",
-	"Query": "{ marketsConnection{ edges { node { id, liquidityProvisionsConnection { edges { node { id, party { id }, createdAt, updatedAt, market { id }, commitmentAmount, fee, sells { order { id }, liquidityOrder { reference } }, buys { order { id }, liquidityOrder { reference } }, version, status, reference } } } } } } }",
+	"Query": "{ marketsConnection{ edges { node { id, liquidityProvisionsConnection { edges { node { id, party { id }, createdAt, updatedAt, market { id }, commitmentAmount, fee, sells { liquidityOrder { reference } }, buys { liquidityOrder { reference } }, version, status, reference } } } } } } }",
 	"Result": {
 		"marketsConnection": {
 			"edges": [
@@ -15,9 +15,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": ""
 												}
 											}
 										],
@@ -36,9 +33,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": ""
 												}
 											}
 										],
@@ -62,9 +56,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "a3069c76a8a135aaa1bbc6857cc00caf58491c30445697f46860d60b55f1abef"
 												}
 											}
 										],
@@ -83,9 +74,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "23c64783dc8744171a194bacac988d6e6634537ac086cf16887f3eca9a643aa5"
 												}
 											}
 										],
@@ -109,9 +97,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "f65eed245f2bcc7e1362bfcac94a101aa4d411d4651432d3b6532e4e6e7c02a8"
 												}
 											}
 										],
@@ -130,9 +115,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "06802df0988c96f98963910b2904b4cfddc1f659c00adbf051cb885b99fc37c5"
 												}
 											}
 										],
@@ -156,9 +138,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "3da9e6e1d40701b2387b34dab73e2804d239e8ac5536c748d0a3d0e3f66d907b"
 												}
 											}
 										],
@@ -177,9 +156,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "5163fc33bdcea2e7dae4edc2384728b7e4641e887c5d87eecce2cb5615762e75"
 												}
 											}
 										],
@@ -203,9 +179,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "76b69151b8ad0f33370acbebbf49098476b84a74ee1fe0e4595074ca16627386"
 												}
 											}
 										],
@@ -224,9 +197,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "ad705ceba290841457ec29b66d02fe5a63ec6667f47bb5d9eae5658b0b754b50"
 												}
 											}
 										],
@@ -250,9 +220,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": ""
 												}
 											}
 										],
@@ -271,9 +238,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": ""
 												}
 											}
 										],
@@ -297,9 +261,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "40fb1503a7bdf03df1f9d67cf5ea1fcd6c66ec7101a5063bd70e47e2970b6060"
 												}
 											}
 										],
@@ -318,9 +279,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "8b346b953edbf7f4e110559ff90a891c1a51d3562d60bb6316b0b4034fd3294a"
 												}
 											}
 										],
@@ -344,9 +302,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "8b4949543bdd36cae4fd4998e3ee4c51bd219ad19c0f324172d49d16bc4ccab3"
 												}
 											}
 										],
@@ -365,9 +320,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "830f225c4432193349fb0040116799d434126053732fb85b4958831624fcc0d3"
 												}
 											}
 										],
@@ -391,9 +343,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "18750de8579f067d316788de3c9b806b76d1116efa29ea96e16434816fb46389"
 												}
 											}
 										],
@@ -412,9 +361,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "a698f757dbfc058a3a4e2aeea5fa91793dce21860040415f5cf2b144fd8d6efc"
 												}
 											}
 										],
@@ -438,9 +384,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "3db4998e7bc8e794143cf9c15dafcc9b98b50bd499c222810419233fda5bacff"
 												}
 											}
 										],
@@ -459,9 +402,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "b25b12bd1fc11d953a45333c130966a9af1242abe81931b1c5d2c69e931aed1b"
 												}
 											}
 										],
@@ -485,9 +425,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "fab05bd56f56c750362cd8bf502bff74a545c1e188494edbecb6daaf3bbed926"
 												}
 											}
 										],
@@ -506,9 +443,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "ef7fc169fc142d42a2fe46152ab5b02fbbdf015f8f70370edf00e3b5029cca55"
 												}
 											}
 										],
@@ -532,9 +466,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "3d5fb7bd199d18dd8c277eb735bfbfc194bd57e5ee6526b71596f30bdaa57cca"
 												}
 											}
 										],
@@ -553,9 +484,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "076205d33f7dd00becdc0a9853bf6baaedde47c0f0da72d340538db31044e016"
 												}
 											}
 										],
@@ -579,9 +507,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "02fe45865029504c4ded847c09da8efb8e32755fb9b815a549c6698cd35e6583"
 												}
 											}
 										],
@@ -600,9 +525,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "5a3acac66073da07218470213ba1936c1943c9bff171e68233c3f4619f985b70"
 												}
 											}
 										],
@@ -626,9 +548,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "87d1262bb5f36f08c8b8b0c2870d85fb5b8dc7427c72738ad35d77d0298d85d8"
 												}
 											}
 										],
@@ -647,9 +566,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "2c230ff87ee069488d0d48c539843c472bee79e8ae1989161f8a48c2b085a9ec"
 												}
 											}
 										],
@@ -673,9 +589,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "a196a85029cf79a8d4bdd9563e1022806c38fc8477f67d0759cc1ca0ded8a52c"
 												}
 											}
 										],
@@ -694,9 +607,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "cd899d807a6eaeda993d2cb336521b49a4a41c7af24434cd214129fbd6285ed6"
 												}
 											}
 										],
@@ -720,9 +630,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "8a1730857e8c0453fe300f2629ef23dac0c59e7b263246816447fe342f8521b8"
 												}
 											}
 										],
@@ -741,9 +648,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "42eb1dfb1b5c7812f9e5ba4aa51d76fb4484d7f556018a6b883468f82113d120"
 												}
 											}
 										],
@@ -767,9 +671,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "056373b5c9148967b9ad680a37df3135b525ccdc5cd59b1a8f628f619aa28ac8"
 												}
 											}
 										],
@@ -788,9 +689,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "378e74fdaff2d48bffd6357722865e5f7b1f57c1fba175eae45735c3ed5cf457"
 												}
 											}
 										],
@@ -814,9 +712,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "cc69044c0a9b50fbb921df9ee7dfa1938592c50bb6beab51d2612ff877261e7d"
 												}
 											}
 										],
@@ -835,9 +730,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "e4647861a86287bcc2b3547b7c8dd86dcf2d6fc5f7a273ffcd111d807c12d390"
 												}
 											}
 										],
@@ -861,9 +753,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "138a2d21b910e2d121082485178444eff6de27b9f495b5c9c86f1e8546d91b65"
 												}
 											}
 										],
@@ -882,9 +771,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "b1c626263cf11464d34de4476db06859fd840cca4fd6d8a9326511e82c20e336"
 												}
 											}
 										],
@@ -908,9 +794,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "2f43bac0cd8782154146761268cc90116566352135156cfc97bc8c1ce1e5e810"
 												}
 											}
 										],
@@ -929,9 +812,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "960e3974d9e3df4941caedeb8990594de41c2d549cf485124e840440d3c273b0"
 												}
 											}
 										],
@@ -955,9 +835,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "92ab7a69d7b048d84d8a1559acac1c9f258f87cb1ed6c6b7c34728def69e2732"
 												}
 											}
 										],
@@ -976,9 +853,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "a69a2655b8ac50d750cf5ef29803a2603ac527239c57d19c8125207e1ab27f93"
 												}
 											}
 										],
@@ -1002,9 +876,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "8532382857b7b806d57060f58993ff62365c1cb8d2c688a43e9cbbd4509dc18a"
 												}
 											}
 										],
@@ -1023,9 +894,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "89a674e0365ef79d3a661e00ee3ebfe5873350f1250badf4501031761ea4be40"
 												}
 											}
 										],
@@ -1049,9 +917,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "142486f7a7e6cc49a54326aec0237214f47a652d5dacc7de980a21914e1280a5"
 												}
 											}
 										],
@@ -1070,9 +935,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "6d207ee6f4b5088d258a4cbebeaeb11273a7dcb7df0763a0ec85a178a999949e"
 												}
 											}
 										],
@@ -1096,9 +958,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "71832a9b7f7e2e8eaf2ce7cd5d6157a5e081b890dc88ba8ba4f405273188ae31"
 												}
 											}
 										],
@@ -1117,9 +976,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "9638918fcde592c9db89a5b906efbeb36ca1769b2bc24f9e24c2a6ba152357f2"
 												}
 											}
 										],
@@ -1143,9 +999,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "6213bad80101da0c8fc078416dbe3bda13aa93c109611b99ec05fa98f2a65d8e"
 												}
 											}
 										],
@@ -1164,9 +1017,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "f1267295d004245f2788f2d4dfce5f92d41bfdc52cab39fef88cba03b9b49753"
 												}
 											}
 										],
@@ -1190,9 +1040,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "eb8c6554eaec3f920fc1a1560fcc82ebe49eb9987cb8f76379add924fca21d2f"
 												}
 											}
 										],
@@ -1211,9 +1058,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "89f5696f3fdcf6ac1c3fdef4573dbb747e1eec73e6e584bddfcfb781f4ade6b4"
 												}
 											}
 										],
@@ -1237,9 +1081,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "b461a2038a551bf18b16f8cdc213723af1758efb037a4185aa8b499bdd171aa9"
 												}
 											}
 										],
@@ -1258,9 +1099,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "3f6a5ad448556639e6e71f5e9627ce10bc34d8bb1fddfcab430ce82e9665ec1f"
 												}
 											}
 										],
@@ -1284,9 +1122,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "2734bab4e381ae046d29b1c406114ff6af46b387271c6dd57e18c0ffc1c8c1cb"
 												}
 											}
 										],
@@ -1305,9 +1140,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "d4ff75e7641ce063db7fcacc96825bf137f790e1cd4809ffad9981b18ab117e6"
 												}
 											}
 										],
@@ -1331,9 +1163,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "6bf7bc3f801d3ec62d63cff8aa8d0d58aab9decaa07cf3736fb4000c09c54920"
 												}
 											}
 										],
@@ -1352,9 +1181,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "b688586a423f12bb43148c43842d12e75c138a73671128d692d51ef8b0ed40f7"
 												}
 											}
 										],
@@ -1378,9 +1204,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "44181bce3405d383d462721684b93bd051923abb02c2e0c584676a790d8cf44d"
 												}
 											}
 										],
@@ -1399,9 +1222,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "13c9b1a1f8988403da3d9b5ada5bb5815a6c116ee7cdca445e23992aa4577640"
 												}
 											}
 										],
@@ -1425,9 +1245,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "0b29ae9f6eff067d250e64f9b2330cfc8a629bb4bbb7c84814ccb49afbd620a1"
 												}
 											}
 										],
@@ -1446,9 +1263,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "2fc4cfcab2ae4fe5899e320dc8133f131ddc0eaac2bd286e7810083e24408f21"
 												}
 											}
 										],
@@ -1472,9 +1286,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "e5f8996244b853fcd1c3329b9f49a615d041ed9c3d90604aaf9fde73cfe42f3a"
 												}
 											}
 										],
@@ -1493,9 +1304,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "2ba3ac029de8c1ad5107f8adf169aae874029e14753df860647853a0edb52ecc"
 												}
 											}
 										],
@@ -1519,9 +1327,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "0ebacbfd4b22c1abf39f65096ad2e239aa00565ba8c7464d39bc749500a1fcad"
 												}
 											}
 										],
@@ -1540,9 +1345,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "2b6620eb6dc91a0f8c43200f16f8c9d5c20da2278422f5b8dc09f649f695de62"
 												}
 											}
 										],
@@ -1566,9 +1368,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "b7d2f0edd5b47afc5556be1bf6a88e7f630fc423529379e9d51e119f27fc5193"
 												}
 											}
 										],
@@ -1587,9 +1386,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "146e7161f41ccf76550b42bca2dd2eb8f425dc9fe6592236414fb7cd1f6384a1"
 												}
 											}
 										],
@@ -1613,9 +1409,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "a3f0177cb3629ccddbbdd2ffbd139fa0ff88bd5d64eb8e7ddd74b926c6ea538a"
 												}
 											}
 										],
@@ -1634,9 +1427,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "4f747f8c9ea5c13ca8828240b74c7fb3c2c51e05cfd43b961974801005ac97ad"
 												}
 											}
 										],
@@ -1660,9 +1450,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "1e1973fa011d5a6c8bb1913d46ac597c81e10614fcef2a9fa3b9823cc858924f"
 												}
 											}
 										],
@@ -1681,9 +1468,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "d78e667e71acbaba707441025de03cb2f58eb990ecf1b3a8a8e6478444eef25e"
 												}
 											}
 										],
@@ -1707,9 +1491,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "a5f6a2d4906f37602a669626bb3851fd94dd878a02c294938035b7b9fb455ef9"
 												}
 											}
 										],
@@ -1728,9 +1509,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "b2307fb23d1186178e6164f1f7844264a7f9dabd3b8c0a11ab847e137f6956ce"
 												}
 											}
 										],
@@ -1754,9 +1532,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "8f08f0e69db04b2ccc434bcc1e6358386b49b858d58927b976cb448e42a9e5ab"
 												}
 											}
 										],
@@ -1775,9 +1550,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "2fe2015f3b8856a9b47ad13eeeaff6698af535bcc2a267f3e336c83c894add7e"
 												}
 											}
 										],
@@ -1801,9 +1573,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "11fec87197a54c93ed7ecd3d879b84b54755cdcf60a55e845662edc7acd94f5b"
 												}
 											}
 										],
@@ -1822,9 +1591,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "e54ab9c03108681c019325e12fe26c4654d6419d110253d9fa4bb222963d8eca"
 												}
 											}
 										],
@@ -1848,9 +1614,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "693381e44e9cab33637ae0dc7bbba01b1be8515b76002bd40bebc33ac0fe208c"
 												}
 											}
 										],
@@ -1869,9 +1632,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "c663971c744de4fe320aaf9aa8373cd971f1acaa991ccdd483320867119a4563"
 												}
 											}
 										],
@@ -1895,9 +1655,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "ef16f78effc1f2c5e0bbe5e2f0d97d3289fd3b632fe964ceeec6e7dc2c577e3a"
 												}
 											}
 										],
@@ -1916,9 +1673,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "119377b9e9ed9e19615b937547d8b5ba4b8b8682f8d4e5b26cc16ba541818f9f"
 												}
 											}
 										],
@@ -1942,9 +1696,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "c3ff3da732c7607a692dc4230aeed27798e86751afe353e2383ebd857266d42b"
 												}
 											}
 										],
@@ -1963,9 +1714,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "9adab70a6bddf0397d5008da9ebe5f697993177b93d703fad688656d7a8720ac"
 												}
 											}
 										],
@@ -1989,9 +1737,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "d563332cfaf3b40ad5d18cbff7016ee017ac037a8ebefe66ba650697b7513ff7"
 												}
 											}
 										],
@@ -2010,9 +1755,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "1f5640008a406e68bea3cc20fc238305f66b1daae1d3798509fbb8954a5bb7e9"
 												}
 											}
 										],
@@ -2036,9 +1778,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "635989e704e71fda21c272258034f00acd2fb207b63cedae4c2c0f96313e9e84"
 												}
 											}
 										],
@@ -2057,9 +1796,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "9b8c5875817133d7fdc4fa6cd40f346aaf7e7a5595062dba7e028db6c3d13661"
 												}
 											}
 										],
@@ -2083,9 +1819,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "993d626446329a9d458d871bab8d294ba62b2dc8a2bf5edb02141e5303eba3f2"
 												}
 											}
 										],
@@ -2104,9 +1837,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "23f0d0513637d9959c1a76d5746a268b675f4e53c48b1f795bb701e43aa20884"
 												}
 											}
 										],
@@ -2130,9 +1860,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "495aa167d8e3824e95030b1d0cd25895421d3f50302deaebb54fc22e0fb443b9"
 												}
 											}
 										],
@@ -2151,9 +1878,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "249e017c4e1cb5fd61574ba1e2b1903a416b0f5a50f850e3583ad1c8233cb996"
 												}
 											}
 										],
@@ -2177,9 +1901,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "5b8591a82ea2041a3d2511fdcbe14f818737ea24aa61d7e499130ab4792110cc"
 												}
 											}
 										],
@@ -2198,9 +1919,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "c436c3541c2efe618ad49d336fd783dfda941d84c5d428095090193470207043"
 												}
 											}
 										],
@@ -2224,9 +1942,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_BID"
-												},
-												"order": {
-													"id": "5295ab0c5d1a7c4547b384e4815367b9b38e6e1c0b80f9312ed0a2a79701d7f3"
 												}
 											}
 										],
@@ -2245,9 +1960,6 @@
 											{
 												"liquidityOrder": {
 													"reference": "PEGGED_REFERENCE_BEST_ASK"
-												},
-												"order": {
-													"id": "2f99982cb22d5eb0c8e003b3b533fe7c3a9500de64ad019e188a19c0b451ce1c"
 												}
 											}
 										],
@@ -2263,5 +1975,5 @@
 			]
 		}
 	},
-	"Duration": 31779208
+	"Duration": 16396000
 }

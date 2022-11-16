@@ -17,7 +17,7 @@
 										"market": {
 											"id": "162397c1072a83001c4c6b98a414987b7b7412f25a2d1c9b94a4cf4709e1149a"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								},
 								{
@@ -29,7 +29,7 @@
 										"market": {
 											"id": "162397c1072a83001c4c6b98a414987b7b7412f25a2d1c9b94a4cf4709e1149a"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								}
 							]
@@ -50,7 +50,7 @@
 										"market": {
 											"id": "a612587a48a615ba3182868cd2e193b2661983cb41d8e7afa21c74d5821897a2"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								},
 								{
@@ -62,7 +62,7 @@
 										"market": {
 											"id": "a612587a48a615ba3182868cd2e193b2661983cb41d8e7afa21c74d5821897a2"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								}
 							]
@@ -83,7 +83,7 @@
 										"market": {
 											"id": "6067f86da2134e56b82f2900ab9b83a97f3daf7cb16fb211c39e87f63a9853c7"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								},
 								{
@@ -95,7 +95,7 @@
 										"market": {
 											"id": "6067f86da2134e56b82f2900ab9b83a97f3daf7cb16fb211c39e87f63a9853c7"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								}
 							]
@@ -149,7 +149,7 @@
 										"market": {
 											"id": "de20aeb7cd22fb71702f603ae0e0cafe32fcebf0c6c8ce7cfd4c9c7aa41f7d04"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								},
 								{
@@ -161,7 +161,7 @@
 										"market": {
 											"id": "de20aeb7cd22fb71702f603ae0e0cafe32fcebf0c6c8ce7cfd4c9c7aa41f7d04"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								}
 							]
@@ -215,7 +215,7 @@
 										"market": {
 											"id": "70a3df066de2098a63519ae66072a8c26a21be9c950ab850a516290de9f1b244"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								},
 								{
@@ -227,7 +227,7 @@
 										"market": {
 											"id": "70a3df066de2098a63519ae66072a8c26a21be9c950ab850a516290de9f1b244"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								}
 							]
@@ -248,7 +248,7 @@
 										"market": {
 											"id": "625c0922eeb6fba74c5fe82f10dd460cb8c6e0e6b35d1f575a29456c972230cf"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								},
 								{
@@ -260,7 +260,7 @@
 										"market": {
 											"id": "625c0922eeb6fba74c5fe82f10dd460cb8c6e0e6b35d1f575a29456c972230cf"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								}
 							]
@@ -314,7 +314,7 @@
 										"market": {
 											"id": "4c3def402473719214131430f905534fa25d06e8152e82cbea1a059e63351174"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								},
 								{
@@ -326,7 +326,7 @@
 										"market": {
 											"id": "4c3def402473719214131430f905534fa25d06e8152e82cbea1a059e63351174"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								}
 							]
@@ -413,7 +413,7 @@
 										"market": {
 											"id": "47831ba264f9075387a885823ee00f66776eb39661c9c8c9b74b9eddd03d4f42"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								},
 								{
@@ -425,7 +425,7 @@
 										"market": {
 											"id": "47831ba264f9075387a885823ee00f66776eb39661c9c8c9b74b9eddd03d4f42"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								}
 							]
@@ -446,7 +446,7 @@
 										"market": {
 											"id": "6d5be5173bb643bdeb2921986a1ecb5f91a28109631babb9212031838d46d124"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								},
 								{
@@ -458,7 +458,7 @@
 										"market": {
 											"id": "6d5be5173bb643bdeb2921986a1ecb5f91a28109631babb9212031838d46d124"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								}
 							]
@@ -611,7 +611,7 @@
 										"market": {
 											"id": "d96eee2a1947886fb2d9571fc51059c1c58bf39b4e303ecb1694b2aa0c30b44d"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								},
 								{
@@ -623,7 +623,7 @@
 										"market": {
 											"id": "d96eee2a1947886fb2d9571fc51059c1c58bf39b4e303ecb1694b2aa0c30b44d"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								}
 							]
@@ -644,7 +644,7 @@
 										"market": {
 											"id": "b92cefff4ceedd6dc766cbba13656e5fbd0d50723540636950ba79865ddcc65e"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								},
 								{
@@ -656,7 +656,7 @@
 										"market": {
 											"id": "b92cefff4ceedd6dc766cbba13656e5fbd0d50723540636950ba79865ddcc65e"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								}
 							]
@@ -677,7 +677,7 @@
 										"market": {
 											"id": "33a1801e41a5c69e1e91affcb8444b8c4c8c5d12d97d9f242a6541d6ee5f6ed3"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								},
 								{
@@ -689,7 +689,7 @@
 										"market": {
 											"id": "33a1801e41a5c69e1e91affcb8444b8c4c8c5d12d97d9f242a6541d6ee5f6ed3"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								}
 							]
@@ -710,7 +710,7 @@
 										"market": {
 											"id": "932ffd1da9e295590f41923f7b2e0bc9d12f5ab882b9513c7a77ae026241242a"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								},
 								{
@@ -722,7 +722,7 @@
 										"market": {
 											"id": "932ffd1da9e295590f41923f7b2e0bc9d12f5ab882b9513c7a77ae026241242a"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								}
 							]
@@ -743,7 +743,7 @@
 										"market": {
 											"id": "52451b3a827e21c6cbfa021af0491c1130015ffac90329500d4d8f482d2bf927"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								},
 								{
@@ -755,7 +755,7 @@
 										"market": {
 											"id": "52451b3a827e21c6cbfa021af0491c1130015ffac90329500d4d8f482d2bf927"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								}
 							]
@@ -809,7 +809,7 @@
 										"market": {
 											"id": "866a85e287046b855952dc1cabff2b9a33cd0b2f3895014cbbc45444024d3e48"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								},
 								{
@@ -821,7 +821,7 @@
 										"market": {
 											"id": "866a85e287046b855952dc1cabff2b9a33cd0b2f3895014cbbc45444024d3e48"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								}
 							]
@@ -842,7 +842,7 @@
 										"market": {
 											"id": "97501650e5977c4852b6da07b94ccd085dc7158a462e1766d5754bd2ba3c8068"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								},
 								{
@@ -854,7 +854,7 @@
 										"market": {
 											"id": "97501650e5977c4852b6da07b94ccd085dc7158a462e1766d5754bd2ba3c8068"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								}
 							]
@@ -908,7 +908,7 @@
 										"market": {
 											"id": "e96ce4f99707a7825a46d41648f53d5da4c157b4a9b6c1f1d51731532f3221b5"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								},
 								{
@@ -920,7 +920,7 @@
 										"market": {
 											"id": "e96ce4f99707a7825a46d41648f53d5da4c157b4a9b6c1f1d51731532f3221b5"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								}
 							]
@@ -941,7 +941,7 @@
 										"market": {
 											"id": "527b8f3885321e4ae85ca8506b6cdbf1e43bc2b66c145e5b58775317cde86297"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								},
 								{
@@ -953,7 +953,7 @@
 										"market": {
 											"id": "527b8f3885321e4ae85ca8506b6cdbf1e43bc2b66c145e5b58775317cde86297"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								}
 							]
@@ -1007,7 +1007,7 @@
 										"market": {
 											"id": "011f1acc103c31cf9222fe12d00f7dd4d5c50b7d2b3dfae592e2a59e4c318c40"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								},
 								{
@@ -1019,7 +1019,7 @@
 										"market": {
 											"id": "011f1acc103c31cf9222fe12d00f7dd4d5c50b7d2b3dfae592e2a59e4c318c40"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								}
 							]
@@ -1040,7 +1040,7 @@
 										"market": {
 											"id": "b3c285cbdc892b50c8dfabc09a98a0562c1d04f652f049ea26872d6c8c103551"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								},
 								{
@@ -1052,7 +1052,7 @@
 										"market": {
 											"id": "b3c285cbdc892b50c8dfabc09a98a0562c1d04f652f049ea26872d6c8c103551"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								}
 							]
@@ -1073,7 +1073,7 @@
 										"market": {
 											"id": "739e0a602305f55484601b23abff525030a7531f46cb2c5fbda2c78f96bfb95f"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								},
 								{
@@ -1085,7 +1085,7 @@
 										"market": {
 											"id": "739e0a602305f55484601b23abff525030a7531f46cb2c5fbda2c78f96bfb95f"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								}
 							]
@@ -1205,7 +1205,7 @@
 										"market": {
 											"id": "fbdcf37f37751447ce1cca85ed4e86a6f58e059dd0cf8181fb5642416c1edb66"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								},
 								{
@@ -1217,7 +1217,7 @@
 										"market": {
 											"id": "fbdcf37f37751447ce1cca85ed4e86a6f58e059dd0cf8181fb5642416c1edb66"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								}
 							]
@@ -1238,7 +1238,7 @@
 										"market": {
 											"id": "982e50d022af5b2da9388130678a794017829e2087d6676a53912579cc3aa13e"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								},
 								{
@@ -1250,7 +1250,7 @@
 										"market": {
 											"id": "982e50d022af5b2da9388130678a794017829e2087d6676a53912579cc3aa13e"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								}
 							]
@@ -1271,7 +1271,7 @@
 										"market": {
 											"id": "e35a0e2c8737d15784623e5504bd722efd2c1f22cd54948629d3bb270669cd20"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								},
 								{
@@ -1283,7 +1283,7 @@
 										"market": {
 											"id": "e35a0e2c8737d15784623e5504bd722efd2c1f22cd54948629d3bb270669cd20"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								}
 							]
@@ -1304,7 +1304,7 @@
 										"market": {
 											"id": "ad85f8df402c96e82c5ac2fd4571639b09b9a6f9926d135d90ed41b6279be5a6"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								},
 								{
@@ -1316,7 +1316,7 @@
 										"market": {
 											"id": "ad85f8df402c96e82c5ac2fd4571639b09b9a6f9926d135d90ed41b6279be5a6"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								}
 							]
@@ -1337,7 +1337,7 @@
 										"market": {
 											"id": "627125d9f60ee847d5ad31dc35e3e3156167bf8bb8265dd24a2b23e2508ebebe"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								},
 								{
@@ -1349,7 +1349,7 @@
 										"market": {
 											"id": "627125d9f60ee847d5ad31dc35e3e3156167bf8bb8265dd24a2b23e2508ebebe"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								}
 							]
@@ -1370,7 +1370,7 @@
 										"market": {
 											"id": "1efc8147aa12101ac82b4f2ab40a465c9bee82f234cf4bc06285649b9d08d983"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								},
 								{
@@ -1382,7 +1382,7 @@
 										"market": {
 											"id": "1efc8147aa12101ac82b4f2ab40a465c9bee82f234cf4bc06285649b9d08d983"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								}
 							]
@@ -1469,7 +1469,7 @@
 										"market": {
 											"id": "3c3f313d8d7e0001ce1d15eae515b2d1597cb8444954bbc7c5fbe915497430b6"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								},
 								{
@@ -1481,7 +1481,7 @@
 										"market": {
 											"id": "3c3f313d8d7e0001ce1d15eae515b2d1597cb8444954bbc7c5fbe915497430b6"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								}
 							]
@@ -1535,7 +1535,7 @@
 										"market": {
 											"id": "6044636f22c644be52edf7d2d95fd5247deffdfbbdc138cee4e8ef145e5584a7"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								},
 								{
@@ -1547,7 +1547,7 @@
 										"market": {
 											"id": "6044636f22c644be52edf7d2d95fd5247deffdfbbdc138cee4e8ef145e5584a7"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								}
 							]
@@ -1568,7 +1568,7 @@
 										"market": {
 											"id": "32d8179f8ce6965e751bd0745bfdf20bb4916546e50c080a5571fe6c3a834f4e"
 										},
-										"type": "ACCOUNT_TYPE_INSURANCE"
+										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
 									}
 								},
 								{
@@ -1580,7 +1580,7 @@
 										"market": {
 											"id": "32d8179f8ce6965e751bd0745bfdf20bb4916546e50c080a5571fe6c3a834f4e"
 										},
-										"type": "ACCOUNT_TYPE_FEES_LIQUIDITY"
+										"type": "ACCOUNT_TYPE_INSURANCE"
 									}
 								}
 							]
@@ -1591,5 +1591,5 @@
 			]
 		}
 	},
-	"Duration": 16153375
+	"Duration": 17212875
 }

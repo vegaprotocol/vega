@@ -10,8 +10,8 @@
 						"proposal": {
 							"id": "162397c1072a83001c4c6b98a414987b7b7412f25a2d1c9b94a4cf4709e1149a",
 							"terms": {
-								"closingDatetime": "2022-11-08T08:43:52Z",
-								"enactmentDatetime": "2022-11-08T08:43:54Z"
+								"closingDatetime": "1970-01-01T00:00:01.667897032Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667897034Z"
 							}
 						}
 					}
@@ -22,8 +22,8 @@
 						"proposal": {
 							"id": "a612587a48a615ba3182868cd2e193b2661983cb41d8e7afa21c74d5821897a2",
 							"terms": {
-								"closingDatetime": "2022-11-08T08:45:12Z",
-								"enactmentDatetime": "2022-11-08T08:45:14Z"
+								"closingDatetime": "1970-01-01T00:00:01.667897112Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667897114Z"
 							}
 						}
 					}
@@ -34,8 +34,8 @@
 						"proposal": {
 							"id": "6067f86da2134e56b82f2900ab9b83a97f3daf7cb16fb211c39e87f63a9853c7",
 							"terms": {
-								"closingDatetime": "2022-11-08T08:52:48Z",
-								"enactmentDatetime": "2022-11-08T08:52:50Z"
+								"closingDatetime": "1970-01-01T00:00:01.667897568Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.66789757Z"
 							}
 						}
 					}
@@ -46,8 +46,8 @@
 						"proposal": {
 							"id": "0deaa2062da090d5b165dc22a8ed748744268ab2aca801dc5e9915b69a2198ef",
 							"terms": {
-								"closingDatetime": "2022-11-08T08:57:07Z",
-								"enactmentDatetime": "2022-11-08T08:57:09Z"
+								"closingDatetime": "1970-01-01T00:00:01.667897827Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667897829Z"
 							}
 						}
 					}
@@ -58,8 +58,8 @@
 						"proposal": {
 							"id": "de20aeb7cd22fb71702f603ae0e0cafe32fcebf0c6c8ce7cfd4c9c7aa41f7d04",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:03:29Z",
-								"enactmentDatetime": "2022-11-08T09:03:31Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898209Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898211Z"
 							}
 						}
 					}
@@ -70,8 +70,8 @@
 						"proposal": {
 							"id": "c6721a3034b19790c9f3618248c2c9b352f9e47d1c0f7f1d0febad52798044f4",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:34:07Z",
-								"enactmentDatetime": "2022-11-08T09:34:09Z"
+								"closingDatetime": "1970-01-01T00:00:01.667900047Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667900049Z"
 							}
 						}
 					}
@@ -82,8 +82,8 @@
 						"proposal": {
 							"id": "70a3df066de2098a63519ae66072a8c26a21be9c950ab850a516290de9f1b244",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:32:34Z",
-								"enactmentDatetime": "2022-11-08T09:32:36Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899954Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899956Z"
 							}
 						}
 					}
@@ -94,8 +94,8 @@
 						"proposal": {
 							"id": "625c0922eeb6fba74c5fe82f10dd460cb8c6e0e6b35d1f575a29456c972230cf",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:26:52Z",
-								"enactmentDatetime": "2022-11-08T09:26:54Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899612Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899614Z"
 							}
 						}
 					}
@@ -106,8 +106,8 @@
 						"proposal": {
 							"id": "a2aa9de3d9deffd9bb3d9bff1c9fe5e00b255f9140d1b97cb6dcd56a59278d5d",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:26:34Z",
-								"enactmentDatetime": "2022-11-08T09:26:36Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899594Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899596Z"
 							}
 						}
 					}
@@ -118,8 +118,8 @@
 						"proposal": {
 							"id": "4c3def402473719214131430f905534fa25d06e8152e82cbea1a059e63351174",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:30:24Z",
-								"enactmentDatetime": "2022-11-08T09:30:26Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899824Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899826Z"
 							}
 						}
 					}
@@ -130,8 +130,8 @@
 						"proposal": {
 							"id": "1894530899e87003889a139718950c218529b7c67b008b4ec815b23f92805eea",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:29:23Z",
-								"enactmentDatetime": "2022-11-08T09:29:25Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899763Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899765Z"
 							}
 						}
 					}
@@ -142,8 +142,8 @@
 						"proposal": {
 							"id": "74beaf7257e43c8f8443d413fccd8d092608b5926aa6e78bb17747de18cb359d",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:28:22Z",
-								"enactmentDatetime": "2022-11-08T09:28:24Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899702Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899704Z"
 							}
 						}
 					}
@@ -154,8 +154,8 @@
 						"proposal": {
 							"id": "47831ba264f9075387a885823ee00f66776eb39661c9c8c9b74b9eddd03d4f42",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:27:21Z",
-								"enactmentDatetime": "2022-11-08T09:27:23Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899641Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899643Z"
 							}
 						}
 					}
@@ -166,8 +166,8 @@
 						"proposal": {
 							"id": "6d5be5173bb643bdeb2921986a1ecb5f91a28109631babb9212031838d46d124",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:25:57Z",
-								"enactmentDatetime": "2022-11-08T09:25:59Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899557Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899559Z"
 							}
 						}
 					}
@@ -178,8 +178,8 @@
 						"proposal": {
 							"id": "06be6ca2fb0629b183136e2195d3a8a0cb49768faf2df8a60480a2d5cb7901f1",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:25:11Z",
-								"enactmentDatetime": "2022-11-08T09:25:13Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899511Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899513Z"
 							}
 						}
 					}
@@ -190,8 +190,8 @@
 						"proposal": {
 							"id": "659aca3537054a82b3d1af1fe81c405d4a9b4b4d94676e063d947b8c6c73c968",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:21:37Z",
-								"enactmentDatetime": "2022-11-08T09:21:39Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899297Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899299Z"
 							}
 						}
 					}
@@ -202,8 +202,8 @@
 						"proposal": {
 							"id": "210f764b1310288cd15ce1697749121642e48f278d0e2a71bf2736f20d3afb69",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:24:30Z",
-								"enactmentDatetime": "2022-11-08T09:24:32Z"
+								"closingDatetime": "1970-01-01T00:00:01.66789947Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899472Z"
 							}
 						}
 					}
@@ -214,8 +214,8 @@
 						"proposal": {
 							"id": "ebf4d62ed1a7f38b675c6355d9c1920cd3fff3b0b2d20785058a1fe2b15366de",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:23:46Z",
-								"enactmentDatetime": "2022-11-08T09:23:48Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899426Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899428Z"
 							}
 						}
 					}
@@ -226,8 +226,8 @@
 						"proposal": {
 							"id": "d96eee2a1947886fb2d9571fc51059c1c58bf39b4e303ecb1694b2aa0c30b44d",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:20:37Z",
-								"enactmentDatetime": "2022-11-08T09:20:39Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899237Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899239Z"
 							}
 						}
 					}
@@ -238,8 +238,8 @@
 						"proposal": {
 							"id": "b92cefff4ceedd6dc766cbba13656e5fbd0d50723540636950ba79865ddcc65e",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:19:25Z",
-								"enactmentDatetime": "2022-11-08T09:19:27Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899165Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899167Z"
 							}
 						}
 					}
@@ -250,8 +250,8 @@
 						"proposal": {
 							"id": "33a1801e41a5c69e1e91affcb8444b8c4c8c5d12d97d9f242a6541d6ee5f6ed3",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:22:15Z",
-								"enactmentDatetime": "2022-11-08T09:22:17Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899335Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899337Z"
 							}
 						}
 					}
@@ -262,8 +262,8 @@
 						"proposal": {
 							"id": "932ffd1da9e295590f41923f7b2e0bc9d12f5ab882b9513c7a77ae026241242a",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:18:53Z",
-								"enactmentDatetime": "2022-11-08T09:18:55Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899133Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899135Z"
 							}
 						}
 					}
@@ -274,8 +274,8 @@
 						"proposal": {
 							"id": "52451b3a827e21c6cbfa021af0491c1130015ffac90329500d4d8f482d2bf927",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:18:33Z",
-								"enactmentDatetime": "2022-11-08T09:18:35Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899113Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899115Z"
 							}
 						}
 					}
@@ -286,8 +286,8 @@
 						"proposal": {
 							"id": "75d65ecb4f19c06e68b03f76c9abb04dfc3555b13b264e971d313249feccae7f",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:18:09Z",
-								"enactmentDatetime": "2022-11-08T09:18:11Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899089Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899091Z"
 							}
 						}
 					}
@@ -298,8 +298,8 @@
 						"proposal": {
 							"id": "866a85e287046b855952dc1cabff2b9a33cd0b2f3895014cbbc45444024d3e48",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:17:15Z",
-								"enactmentDatetime": "2022-11-08T09:17:17Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899035Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899037Z"
 							}
 						}
 					}
@@ -310,8 +310,8 @@
 						"proposal": {
 							"id": "97501650e5977c4852b6da07b94ccd085dc7158a462e1766d5754bd2ba3c8068",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:16:57Z",
-								"enactmentDatetime": "2022-11-08T09:16:59Z"
+								"closingDatetime": "1970-01-01T00:00:01.667899017Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667899019Z"
 							}
 						}
 					}
@@ -322,8 +322,8 @@
 						"proposal": {
 							"id": "210a23f8613c89af4c36d1c67c3c1ca199faaf7b48078acb6324717ff0d75027",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:16:23Z",
-								"enactmentDatetime": "2022-11-08T09:16:25Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898983Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898985Z"
 							}
 						}
 					}
@@ -334,8 +334,8 @@
 						"proposal": {
 							"id": "e96ce4f99707a7825a46d41648f53d5da4c157b4a9b6c1f1d51731532f3221b5",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:15:28Z",
-								"enactmentDatetime": "2022-11-08T09:15:30Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898928Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.66789893Z"
 							}
 						}
 					}
@@ -346,8 +346,8 @@
 						"proposal": {
 							"id": "527b8f3885321e4ae85ca8506b6cdbf1e43bc2b66c145e5b58775317cde86297",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:14:32Z",
-								"enactmentDatetime": "2022-11-08T09:14:34Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898872Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898874Z"
 							}
 						}
 					}
@@ -358,8 +358,8 @@
 						"proposal": {
 							"id": "87b05e95bfc2801e568fde2679611d9b69de3266d14f4063dc18ffd12c14d5a4",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:14:07Z",
-								"enactmentDatetime": "2022-11-08T09:14:09Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898847Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898849Z"
 							}
 						}
 					}
@@ -370,8 +370,8 @@
 						"proposal": {
 							"id": "011f1acc103c31cf9222fe12d00f7dd4d5c50b7d2b3dfae592e2a59e4c318c40",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:13:41Z",
-								"enactmentDatetime": "2022-11-08T09:13:43Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898821Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898823Z"
 							}
 						}
 					}
@@ -382,8 +382,8 @@
 						"proposal": {
 							"id": "b3c285cbdc892b50c8dfabc09a98a0562c1d04f652f049ea26872d6c8c103551",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:13:15Z",
-								"enactmentDatetime": "2022-11-08T09:13:17Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898795Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898797Z"
 							}
 						}
 					}
@@ -394,8 +394,8 @@
 						"proposal": {
 							"id": "739e0a602305f55484601b23abff525030a7531f46cb2c5fbda2c78f96bfb95f",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:12:50Z",
-								"enactmentDatetime": "2022-11-08T09:12:52Z"
+								"closingDatetime": "1970-01-01T00:00:01.66789877Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898772Z"
 							}
 						}
 					}
@@ -406,8 +406,8 @@
 						"proposal": {
 							"id": "538b3d41ba96a46ca073af7549912395753ec09810e85ce0a7630a0a5f18c49e",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:11:49Z",
-								"enactmentDatetime": "2022-11-08T09:11:51Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898709Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898711Z"
 							}
 						}
 					}
@@ -418,8 +418,8 @@
 						"proposal": {
 							"id": "1e3395ff90a9cd3e6dc655116cc16e1bc9c329501c88f40facd6dc3e99d05ae0",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:10:59Z",
-								"enactmentDatetime": "2022-11-08T09:11:01Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898659Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898661Z"
 							}
 						}
 					}
@@ -430,8 +430,8 @@
 						"proposal": {
 							"id": "0f2d4d795e802240894581b345c2baa25cdad27c0f8ea10a2841eb40b9675a71",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:10:33Z",
-								"enactmentDatetime": "2022-11-08T09:10:35Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898633Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898635Z"
 							}
 						}
 					}
@@ -442,8 +442,8 @@
 						"proposal": {
 							"id": "fbdcf37f37751447ce1cca85ed4e86a6f58e059dd0cf8181fb5642416c1edb66",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:10:14Z",
-								"enactmentDatetime": "2022-11-08T09:10:16Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898614Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898616Z"
 							}
 						}
 					}
@@ -454,8 +454,8 @@
 						"proposal": {
 							"id": "982e50d022af5b2da9388130678a794017829e2087d6676a53912579cc3aa13e",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:09:45Z",
-								"enactmentDatetime": "2022-11-08T09:09:47Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898585Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898587Z"
 							}
 						}
 					}
@@ -466,8 +466,8 @@
 						"proposal": {
 							"id": "e35a0e2c8737d15784623e5504bd722efd2c1f22cd54948629d3bb270669cd20",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:09:25Z",
-								"enactmentDatetime": "2022-11-08T09:09:27Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898565Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898567Z"
 							}
 						}
 					}
@@ -478,8 +478,8 @@
 						"proposal": {
 							"id": "ad85f8df402c96e82c5ac2fd4571639b09b9a6f9926d135d90ed41b6279be5a6",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:08:49Z",
-								"enactmentDatetime": "2022-11-08T09:08:51Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898529Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898531Z"
 							}
 						}
 					}
@@ -490,8 +490,8 @@
 						"proposal": {
 							"id": "627125d9f60ee847d5ad31dc35e3e3156167bf8bb8265dd24a2b23e2508ebebe",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:08:12Z",
-								"enactmentDatetime": "2022-11-08T09:08:14Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898492Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898494Z"
 							}
 						}
 					}
@@ -502,8 +502,8 @@
 						"proposal": {
 							"id": "1efc8147aa12101ac82b4f2ab40a465c9bee82f234cf4bc06285649b9d08d983",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:07:35Z",
-								"enactmentDatetime": "2022-11-08T09:07:37Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898455Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898457Z"
 							}
 						}
 					}
@@ -514,8 +514,8 @@
 						"proposal": {
 							"id": "c52efece1a48c27e1af872624ebab9e4154c8f48a58ac4382afa46743e7b9d41",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:06:58Z",
-								"enactmentDatetime": "2022-11-08T09:07:00Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898418Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.66789842Z"
 							}
 						}
 					}
@@ -526,8 +526,8 @@
 						"proposal": {
 							"id": "a027099269ba375bd6fbe208b6b196f65ad1f9d63979d765fe3e33e77bde11e4",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:06:23Z",
-								"enactmentDatetime": "2022-11-08T09:06:25Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898383Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898385Z"
 							}
 						}
 					}
@@ -538,8 +538,8 @@
 						"proposal": {
 							"id": "3c3f313d8d7e0001ce1d15eae515b2d1597cb8444954bbc7c5fbe915497430b6",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:05:46Z",
-								"enactmentDatetime": "2022-11-08T09:05:48Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898346Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898348Z"
 							}
 						}
 					}
@@ -550,8 +550,8 @@
 						"proposal": {
 							"id": "4ff258ac39c4291c85af052c5c7a1e2bd51a6b9c016497c6b52dca023df94b88",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:05:09Z",
-								"enactmentDatetime": "2022-11-08T09:05:11Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898309Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898311Z"
 							}
 						}
 					}
@@ -562,8 +562,8 @@
 						"proposal": {
 							"id": "6044636f22c644be52edf7d2d95fd5247deffdfbbdc138cee4e8ef145e5584a7",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:04:32Z",
-								"enactmentDatetime": "2022-11-08T09:04:34Z"
+								"closingDatetime": "1970-01-01T00:00:01.667898272Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898274Z"
 							}
 						}
 					}
@@ -574,8 +574,8 @@
 						"proposal": {
 							"id": "32d8179f8ce6965e751bd0745bfdf20bb4916546e50c080a5571fe6c3a834f4e",
 							"terms": {
-								"closingDatetime": "2022-11-08T09:04:00Z",
-								"enactmentDatetime": "2022-11-08T09:04:02Z"
+								"closingDatetime": "1970-01-01T00:00:01.66789824Z",
+								"enactmentDatetime": "1970-01-01T00:00:01.667898242Z"
 							}
 						}
 					}
@@ -583,5 +583,5 @@
 			]
 		}
 	},
-	"Duration": 17219250
+	"Duration": 15593084
 }
