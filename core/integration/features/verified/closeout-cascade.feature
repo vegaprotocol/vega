@@ -37,7 +37,7 @@ Feature: Closeout-cascades
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lpprov | ETH/DEC19 | 100000            | 0.001 | sell | ASK              | 100        | 55     | submission |
-      | lp1 | party0 | ETH/DEC19 | 100000            | 0.001 | buy  | BID              | 100        | -55    | submission |
+      | lp1 | party0 | ETH/DEC19 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendment  |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     # trading happens at the end of the open auction period
     Then the parties place the following orders:
@@ -61,6 +61,7 @@ Feature: Closeout-cascades
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
       | trader2 | ETH/DEC19 | 50          | 75     | 100     | 150     |
+    # margin_trader2: 50*10*0.1=50
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
@@ -75,12 +76,17 @@ Feature: Closeout-cascades
       | auxiliary1 | ETH/DEC19 | sell | 50     | 100   | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | auxiliary2 | ETH/DEC19 | buy  | 50     | 10    | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
 
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 1055  | 948    |
+      | sell | 1000  | 10     |
+      | buy  | 50    | 4050   |
+      | buy  | 10    | 50     |
     And the network moves ahead "1" blocks
     Then the mark price should be "100" for the market "ETH/DEC19"
     Then debug transfers
     # trader3 got close-out, trader3's order has been sold to network, and then trader2 bought the order from the network
     # as it had the highest buy price
-
     Then debug trades
     Then debug orders
     # This step currently doesn't work. Looking at the debug order/trade output, the party does get closed out
@@ -91,6 +97,13 @@ Feature: Closeout-cascades
     #| lpprov  |  100  | 50   | network |
 
     And the cumulated balance for all accounts should be worth "3000000002100"
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 1055  | 948    |
+      | sell | 1000  | 10     |
+      | buy  | 50    | 0      |
+      | buy  | 10    | 20050  |
+    Then the mark price should be "100" for the market "ETH/DEC19"
 
     # check that trader3 is closed-out but trader2 is not
     And the parties should have the following margin levels:
@@ -98,6 +111,11 @@ Feature: Closeout-cascades
       #| trader2 | ETH/DEC19 | 3000        | 4500   | 6000    | 9000    |
       | trader2 | ETH/DEC19 | 5000        | 7500   | 10000   | 15000   |
       | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
+    #maintenance_margin_trader2: 50*100*0.1=500
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader2 | BTC   | ETH/DEC19 | 2097   | 0       |
+      | trader3 | BTC   | ETH/DEC19 | 0      | 0       |
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
       | trader2 | 50     | 2500           | -2403        |
