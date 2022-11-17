@@ -261,7 +261,7 @@ func TestGetPriority(t *testing.T) {
 	eet := &ExecEngineTest{marketCounters: marketCounters}
 	gastimator := processor.NewGastimator(eet)
 	for _, c := range command {
-		var expected = uint64(1)
+		expected := uint64(1)
 		if c.IsValidatorCommand() {
 			expected = uint64(10000)
 		} else if c == txn.ProposeCommand || c == txn.VoteCommand {
