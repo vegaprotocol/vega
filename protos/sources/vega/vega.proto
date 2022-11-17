@@ -1231,8 +1231,12 @@ message NodeSet {
   uint32 total = 1;
   // Number of nodes in the nodeset which had a performance score of 0 at the end of the last epoch
   uint32 inactive = 2;
+  // IDs of nodes that were promoted into this nodeset at the start of the epoch
+  repeated string promoted = 3;
+  // IDs of nodes that were demoted into of this nodeset at the start of the epoch
+  repeated string demoted = 4;
   // Total number of nodes allowed in the nodeset
-  optional uint32 maximum = 3;
+  optional uint32 maximum = 5;
 
 }
 

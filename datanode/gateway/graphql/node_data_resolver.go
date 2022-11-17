@@ -24,6 +24,8 @@ type nodeDataResolver VegaResolverRoot
 func toNodeSet(obj *proto.NodeSet) *NodeSet {
 	ns := &NodeSet{
 		Total:    int(obj.Total),
+		Demoted:  obj.Demoted,
+		Promoted: obj.Promoted,
 		Inactive: int(obj.Inactive),
 	}
 	if obj.Maximum != nil {

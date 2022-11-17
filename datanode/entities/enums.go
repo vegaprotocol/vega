@@ -723,6 +723,14 @@ const (
 	ValidatorNodeStatusPending     = ValidatorNodeStatus(vega.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_PENDING)
 )
 
+// ValidatorStatusRanking so we know which direction was a promotion and which was a demotion.
+var ValidatorStatusRanking = map[ValidatorNodeStatus]int{
+	ValidatorNodeStatusUnspecified: 0,
+	ValidatorNodeStatusPending:     1,
+	ValidatorNodeStatusErsatz:      2,
+	ValidatorNodeStatusTendermint:  3,
+}
+
 func (ns ValidatorNodeStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
 	str, ok := vega.ValidatorNodeStatus_name[int32(ns)]
 	if !ok {

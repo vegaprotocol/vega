@@ -240,11 +240,28 @@ func (store *Node) GetNodeData(ctx context.Context, epochSeq uint64) (entities.N
 	}
 	for _, n := range nodes {
 		status := n.RankingScore.Status
-		nodeData.TotalNodes += 1
-		nodeSets[status].Total += 1
+		previousStatus := n.RankingScore.PreviousStatus
+		if status == entities.ValidatorNodeStatusUnspecified {
+			continue
+		}
+		ns := nodeSets[status]
+		nodeData.TotalNodes++
+		ns.Total++
+
+		// but was it active
 		if n.RankingScore.PerformanceScore.IsZero() {
-			nodeSets[status].Inactive += 1
-			nodeData.InactiveNodes += 1
+			ns.Inactive++
+			nodeData.InactiveNodes++
+		}
+
+		// check if the node was promoted or demoted into its set this epoch
+		switch {
+		case entities.ValidatorStatusRanking[status] > entities.ValidatorStatusRanking[previousStatus]:
+			ns.Promoted = append(ns.Promoted, n.ID.String())
+		case entities.ValidatorStatusRanking[status] < entities.ValidatorStatusRanking[previousStatus]:
+			ns.Demoted = append(ns.Promoted, n.ID.String())
+		default:
+			// node stayed in the same set, thats cool
 		}
 	}
 	return nodeData, err

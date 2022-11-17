@@ -100,6 +100,8 @@ type RankingScoreAux struct {
 type NodeSet struct {
 	Total    uint32
 	Inactive uint32
+	Promoted []string
+	Demoted  []string
 	Maximum  uint32
 }
 
@@ -384,6 +386,8 @@ func (ed *EpochData) UnmarshalJSON(b []byte) error {
 func (n *NodeSet) ToProto() *vega.NodeSet {
 	return &vega.NodeSet{
 		Total:    n.Total,
+		Demoted:  n.Demoted,
+		Promoted: n.Promoted,
 		Inactive: n.Inactive,
 	}
 }
@@ -392,6 +396,7 @@ func (n *NodeData) ToProto() *vega.NodeData {
 	return &vega.NodeData{
 		StakedTotal:     n.StakedTotal.String(),
 		TotalNodes:      n.TotalNodes,
+		InactiveNodes:   n.InactiveNodes,
 		Uptime:          float32(n.Uptime),
 		TendermintNodes: n.TendermintNodes.ToProto(),
 		ErsatzNodes:     n.ErsatzNodes.ToProto(),

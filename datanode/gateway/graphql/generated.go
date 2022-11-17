@@ -903,8 +903,10 @@ type ComplexityRoot struct {
 	}
 
 	NodeSet struct {
+		Demoted  func(childComplexity int) int
 		Inactive func(childComplexity int) int
 		Maximum  func(childComplexity int) int
+		Promoted func(childComplexity int) int
 		Total    func(childComplexity int) int
 	}
 
@@ -5371,6 +5373,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NodeEdge.Node(childComplexity), true
 
+	case "NodeSet.demoted":
+		if e.complexity.NodeSet.Demoted == nil {
+			break
+		}
+
+		return e.complexity.NodeSet.Demoted(childComplexity), true
+
 	case "NodeSet.inactive":
 		if e.complexity.NodeSet.Inactive == nil {
 			break
@@ -5384,6 +5393,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NodeSet.Maximum(childComplexity), true
+
+	case "NodeSet.promoted":
+		if e.complexity.NodeSet.Promoted == nil {
+			break
+		}
+
+		return e.complexity.NodeSet.Promoted(childComplexity), true
 
 	case "NodeSet.total":
 		if e.complexity.NodeSet.Total == nil {
@@ -32255,6 +32271,10 @@ func (ec *executionContext) fieldContext_NodeData_tendermintNodes(ctx context.Co
 				return ec.fieldContext_NodeSet_total(ctx, field)
 			case "inactive":
 				return ec.fieldContext_NodeSet_inactive(ctx, field)
+			case "promoted":
+				return ec.fieldContext_NodeSet_promoted(ctx, field)
+			case "demoted":
+				return ec.fieldContext_NodeSet_demoted(ctx, field)
 			case "maximum":
 				return ec.fieldContext_NodeSet_maximum(ctx, field)
 			}
@@ -32304,6 +32324,10 @@ func (ec *executionContext) fieldContext_NodeData_ersatzNodes(ctx context.Contex
 				return ec.fieldContext_NodeSet_total(ctx, field)
 			case "inactive":
 				return ec.fieldContext_NodeSet_inactive(ctx, field)
+			case "promoted":
+				return ec.fieldContext_NodeSet_promoted(ctx, field)
+			case "demoted":
+				return ec.fieldContext_NodeSet_demoted(ctx, field)
 			case "maximum":
 				return ec.fieldContext_NodeSet_maximum(ctx, field)
 			}
@@ -32353,6 +32377,10 @@ func (ec *executionContext) fieldContext_NodeData_pendingNodes(ctx context.Conte
 				return ec.fieldContext_NodeSet_total(ctx, field)
 			case "inactive":
 				return ec.fieldContext_NodeSet_inactive(ctx, field)
+			case "promoted":
+				return ec.fieldContext_NodeSet_promoted(ctx, field)
+			case "demoted":
+				return ec.fieldContext_NodeSet_demoted(ctx, field)
 			case "maximum":
 				return ec.fieldContext_NodeSet_maximum(ctx, field)
 			}
@@ -32613,6 +32641,88 @@ func (ec *executionContext) fieldContext_NodeSet_inactive(ctx context.Context, f
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeSet_promoted(ctx context.Context, field graphql.CollectedField, obj *NodeSet) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeSet_promoted(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Promoted, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeSet_promoted(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeSet",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeSet_demoted(ctx context.Context, field graphql.CollectedField, obj *NodeSet) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeSet_demoted(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Demoted, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeSet_demoted(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeSet",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -66626,6 +66736,14 @@ func (ec *executionContext) _NodeSet(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "promoted":
+
+			out.Values[i] = ec._NodeSet_promoted(ctx, field, obj)
+
+		case "demoted":
+
+			out.Values[i] = ec._NodeSet_demoted(ctx, field, obj)
+
 		case "maximum":
 
 			out.Values[i] = ec._NodeSet_maximum(ctx, field, obj)

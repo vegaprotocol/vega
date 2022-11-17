@@ -863,6 +863,12 @@ type NodeSet {
   "Number of nodes in the nodeset which has a performance score of 0 at the end of the last epoch"
   inactive: Int!
 
+  "IDs of the nodes that were promoted into this nodeset at the start of the epoch"
+  promoted: [String!]
+
+  "IDs of the nodes that were demoted into this nodeset at the start of the epoch"
+  demoted: [String!]
+
   "Total number of nodes allowed in the nodeset"
   maximum: Int
 }

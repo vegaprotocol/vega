@@ -437,6 +437,10 @@ type NodeSet struct {
 	Total int `json:"total"`
 	// Number of nodes in the nodeset which has a performance score of 0 at the end of the last epoch
 	Inactive int `json:"inactive"`
+	// IDs of the nodes that were promoted into this nodeset at the start of the epoch
+	Promoted []string `json:"promoted"`
+	// IDs of the nodes that were demoted into this nodeset at the start of the epoch
+	Demoted []string `json:"demoted"`
 	// Total number of nodes allowed in the nodeset
 	Maximum *int `json:"maximum"`
 }
