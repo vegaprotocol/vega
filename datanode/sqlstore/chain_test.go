@@ -30,7 +30,7 @@ func TestChain(t *testing.T) {
 
 	t.Run("fetching unset chain fails", func(t *testing.T) {
 		_, err := cs.Get(ctx)
-		assert.ErrorIs(t, err, entities.ErrChainNotFound)
+		assert.ErrorIs(t, err, entities.ErrNotFound)
 	})
 
 	t.Run("setting chain", func(t *testing.T) {

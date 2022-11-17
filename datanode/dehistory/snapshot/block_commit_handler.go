@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -41,7 +40,7 @@ func (b *BlockCommitHandler) OnBlockCommitted(ctx context.Context, chainID strin
 	// having to handle recovery scenarios.
 	param, err := b.getNetworkParameter(ctx, netparams.SnapshotIntervalLength)
 	if err != nil {
-		if !errors.Is(err, sqlstore.ErrNoParameterFound) {
+		if !errors.Is(err, entities.ErrNotFound) {
 			b.log.Errorf("failed to get snapshot interval length network parameter:%w", err)
 		}
 	} else {

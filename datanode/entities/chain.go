@@ -16,10 +16,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	ErrChainNotFound   = errors.New("chain not found")
-	ErrChainAlreadySet = errors.New("chain already set")
-)
+var ErrChainAlreadySet = errors.New("chain already set")
 
 type Chain struct {
 	ID string

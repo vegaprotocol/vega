@@ -18,7 +18,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/pkg/errors"
@@ -155,7 +154,7 @@ func (p *Position) getPosition(ctx context.Context, e positionEventBase) entitie
 	pID := entities.PartyID(e.PartyID())
 
 	position, err := p.store.GetByMarketAndParty(ctx, mID.String(), pID.String())
-	if errors.Is(err, sqlstore.ErrPositionNotFound) {
+	if errors.Is(err, entities.ErrNotFound) {
 		return entities.NewEmptyPosition(mID, pID)
 	}
 

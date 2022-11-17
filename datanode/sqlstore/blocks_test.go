@@ -105,7 +105,7 @@ func TestGetOldestHistoryBlockWhenNoHistoryBlocks(t *testing.T) {
 	bs := sqlstore.NewBlocks(connectionSource)
 	// Query the first block
 	_, err := bs.GetOldestHistoryBlock(context.Background())
-	assert.Equal(t, sqlstore.ErrNoHistoryBlock, err)
+	assert.Equal(t, entities.ErrNotFound, err)
 }
 
 func TestGetLastBlockAfterRecovery(t *testing.T) {
@@ -132,5 +132,5 @@ func TestGetLastBlockWhenNoBlocks(t *testing.T) {
 
 	// Query the last block
 	_, err := bs.GetLastBlock(context.Background())
-	assert.Equal(t, sqlstore.ErrNoLastBlock, err)
+	assert.Equal(t, entities.ErrNotFound, err)
 }

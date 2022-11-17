@@ -72,13 +72,18 @@ set
 }
 
 func (os *OracleSpec) GetSpecByID(ctx context.Context, specID string) (*entities.OracleSpec, error) {
+	defer metrics.StartSQLQuery("OracleSpec", "GetByID")()
+
 	var spec entities.DataSourceSpecRaw
 	query := fmt.Sprintf(`%s
 where id = $1
 order by id, vega_time desc`, getOracleSpecsQuery())
 
-	defer metrics.StartSQLQuery("OracleSpec", "GetByID")()
 	err := pgxscan.Get(ctx, os.Connection, &spec, query, entities.SpecID(specID))
+	if err != nil {
+		return nil, os.wrapE(err)
+	}
+
 	return &entities.OracleSpec{
 		ExternalDataSourceSpec: &entities.ExternalDataSourceSpec{
 			Spec: &entities.DataSourceSpec{

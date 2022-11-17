@@ -49,7 +49,7 @@ func (r *myMarketResolver) LiquidityProvisionsConnection(
 	res, err := r.tradingDataClientV2.ListLiquidityProvisions(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	return res.LiquidityProvisions, nil
@@ -62,7 +62,7 @@ func (r *myMarketResolver) Data(ctx context.Context, market *types.Market) (*typ
 	res, err := r.tradingDataClientV2.GetLatestMarketData(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	return res.MarketData, nil
 }
@@ -76,7 +76,7 @@ func (r *myMarketResolver) OrdersConnection(ctx context.Context, market *types.M
 	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	return res.Orders, nil
@@ -90,7 +90,7 @@ func (r *myMarketResolver) TradesConnection(ctx context.Context, market *types.M
 	res, err := r.tradingDataClientV2.ListTrades(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	return res.Trades, nil
 }
@@ -114,7 +114,7 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *types.Market, maxD
 	res, err := r.tradingDataClientV2.GetLatestMarketDepth(ctx, &req)
 	if err != nil {
 		r.log.Error("trading data client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	return &types.MarketDepth{
@@ -149,7 +149,7 @@ func (r *myMarketResolver) AccountsConnection(ctx context.Context, market *types
 			logging.Error(err),
 			logging.String("market-id", market.Id),
 			logging.String("party-id", ptyID))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	return res.Accounts, nil
 }
