@@ -29,11 +29,6 @@ var aggregateLedgerEntriesOrdering = TableOrdering{
 	ColumnOrdering{Name: "vega_time", Sorting: ASC},
 }
 
-type GroupOptions struct {
-	ByAccountField     []entities.AccountField
-	ByLedgerEntryField []entities.LedgerEntryField
-}
-
 type Ledger struct {
 	*ConnectionSource
 	batcher ListBatcher[entities.LedgerEntry]
@@ -103,7 +98,6 @@ func (ls *Ledger) GetAll() ([]entities.LedgerEntry, error) {
 //   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 func (ls *Ledger) Query(
 	filter *entities.LedgerEntryFilter,
-	groupOptions *GroupOptions,
 	dateRange entities.DateRange,
 	pagination entities.CursorPagination,
 ) (*[]entities.AggregatedLedgerEntries, entities.PageInfo, error) {
@@ -128,34 +122,18 @@ func (ls *Ledger) Query(
 		whereDate = fmt.Sprintf("%s vega_time < %s", whereDate, nextBindVar(&args, *dateRange.End))
 	}
 
-	var (
-		groupBy      string
-		groupColumns []string
-	)
-
-	if groupOptions != nil {
-		groupColumns = prepareGroupFields(groupOptions.ByAccountField, groupOptions.ByLedgerEntryField)
-
-		if len(groupColumns) > 0 {
-			for i, col := range groupColumns {
-				if i == 0 {
-					groupBy = fmt.Sprintf(`%s,`, col)
-				} else {
-					groupBy = fmt.Sprintf(`%s%s,`, groupBy, col)
-				}
-			}
-		}
-	}
-
-	dynamicQuery := createDynamicQuery(filterQueries, filter.CloseOnAccountFilters, groupBy)
+	dynamicQuery := createDynamicQuery(filterQueries, filter.CloseOnAccountFilters)
 	queryLedgerEntries := dynamicQuery
 
 	// This pageQuery is the part that gives us the results for the pagination. We will only pass this part of the query
 	// to the PaginateQuery function because the WHERE clause in the query above will cause an incorrect SQL statement
 	// to be generated
-	pageQuery := fmt.Sprintf(`SELECT vega_time, %s quantity
+	pageQuery := fmt.Sprintf(`SELECT
+			vega_time, quantity, transfer_type, asset_id,
+			account_from_market_id, account_from_party_id, account_from_account_type,
+			account_to_market_id, account_to_party_id, account_to_account_type
 		FROM entries
-		%s`, groupBy, whereDate)
+		%s`, whereDate)
 
 	pageQuery, args, err = PaginateQuery[entities.AggregatedLedgerEntriesCursor](
 		pageQuery, args, aggregateLedgerEntriesOrdering, pagination)
@@ -187,17 +165,18 @@ func (ls *Ledger) Query(
 // and the AggregatedLedgerEntries types.
 // Needed to manually transfer to needed data types that are not accepted by the scanner.
 type ledgerEntriesScanned struct {
-	ID       int64
-	VegaTime time.Time
-
+	VegaTime     time.Time
 	Quantity     decimal.Decimal
-	AccountType  types.AccountType
 	TransferType entities.LedgerMovementType
+	AssetID      entities.AssetID
 
-	PartyID   entities.PartyID
-	AssetID   entities.AssetID
-	MarketID  entities.MarketID
-	AccountID entities.AccountID
+	AccountFromPartyID     entities.PartyID
+	AccountToPartyID       entities.PartyID
+	AccountFromAccountType types.AccountType
+	AccountToAccountType   types.AccountType
+
+	AccountFromMarketID entities.MarketID
+	AccountToMarketID   entities.MarketID
 }
 
 func parseScanned(scanned []ledgerEntriesScanned) []entities.AggregatedLedgerEntries {
@@ -205,16 +184,16 @@ func parseScanned(scanned []ledgerEntriesScanned) []entities.AggregatedLedgerEnt
 	if len(scanned) > 0 {
 		for i := range scanned {
 			ledgerEntries = append(ledgerEntries, entities.AggregatedLedgerEntries{
-				VegaTime: scanned[i].VegaTime,
-				Quantity: scanned[i].Quantity,
-				PartyID:  &scanned[i].PartyID,
-				AssetID:  &scanned[i].AssetID,
-				MarketID: &scanned[i].MarketID,
+				VegaTime:            scanned[i].VegaTime,
+				Quantity:            scanned[i].Quantity,
+				AssetID:             &scanned[i].AssetID,
+				SenderPartyID:       &scanned[i].AccountFromPartyID,
+				ReceiverPartyID:     &scanned[i].AccountToPartyID,
+				SenderAccountType:   &scanned[i].AccountFromAccountType,
+				ReceiverAccountType: &scanned[i].AccountToAccountType,
+				SenderMarketID:      &scanned[i].AccountFromMarketID,
+				ReceiverMarketID:    &scanned[i].AccountToMarketID,
 			})
-
-			if scanned[i].AccountType != types.AccountTypeUnspecified {
-				ledgerEntries[i].AccountType = &scanned[i].AccountType
-			}
 
 			tt := scanned[i].TransferType
 			ledgerEntries[i].TransferType = &tt
@@ -230,156 +209,75 @@ func parseScanned(scanned []ledgerEntriesScanned) []entities.AggregatedLedgerEnt
 //   - listing ledger entries with filtering on the receiving account
 //   - listing ledger entries with filtering on the sending AND receiving account
 //   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
-func createDynamicQuery(filterQueries [3]string, closeOnAccountFilters entities.CloseOnLimitOperation, groupBy string) string {
-	tableNameGeneralQuery := "ledger_entries"
-	generalQuery := `
-		%s AS (
-			SELECT ledger.vega_time, ledger.account_from_id, ledger.account_to_id, ledger.quantity, ledger.type AS transfer_type,
-				accounts.id, accounts.asset_id, accounts.market_id, accounts.party_id, accounts.type AS account_type
-			FROM ledger
-			INNER JOIN accounts
-			ON ledger.account_from_id=accounts.id),
-	`
+func createDynamicQuery(filterQueries [3]string, closeOnAccountFilters entities.CloseOnLimitOperation) string {
+	whereClause := ""
 
 	tableNameAccountFromQuery := "ledger_entries_account_from_filter"
-	accountFromQuery := `
+	query := `
 		%s AS (
-			SELECT ledger.vega_time, ledger.account_from_id, ledger.account_to_id, ledger.quantity, ledger.type AS transfer_type,
-				accounts.id, accounts.asset_id, accounts.market_id, accounts.party_id, accounts.type AS account_type
+			SELECT
+				ledger.vega_time AS vega_time, ledger.quantity, ledger.type AS transfer_type,
+				ledger.account_from_id, ledger.account_to_id,
+				account_from.asset_id AS asset_id,
+				account_from.party_id AS account_from_party_id,
+				account_from.market_id AS account_from_market_id,
+				account_from.type AS account_from_account_type,
+				account_to.party_id AS account_to_party_id,
+				account_to.market_id AS account_to_market_id,
+				account_to.type AS account_to_account_type
 			FROM ledger
-			INNER JOIN accounts
-			ON ledger.account_from_id=accounts.id WHERE %s),
+			INNER JOIN accounts AS account_from
+			ON ledger.account_from_id=account_from.id
+			INNER JOIN accounts AS account_to
+			ON ledger.account_to_id=account_to.id),
+
+		entries AS (
+			SELECT vega_time, quantity, transfer_type, asset_id,
+				account_from_market_id, account_from_party_id, account_from_account_type,
+				account_to_market_id, account_to_party_id, account_to_account_type
+			FROM %s
+			%s
+		)
 	`
 
 	tableNameAccountToQuery := "ledger_entries_account_to_filter"
-	accountToQuery := `
-		%s AS (
-			SELECT ledger.vega_time, ledger.account_from_id, ledger.account_to_id, ledger.quantity, ledger.type AS transfer_type,
-				accounts.id, accounts.asset_id, accounts.market_id, accounts.party_id, accounts.type AS account_type
-			FROM ledger
-			INNER JOIN accounts
-			ON ledger.account_to_id=accounts.id WHERE %s),
-	`
-
 	tableNameCloseOnFilterQuery := "ledger_entries_closed_on_account_filters"
-	closeOnAccountFilterQuery := `
-		%s AS (
-			SELECT DISTINCT
-			ledger_entries_account_from_filter.vega_time,
-			ledger_entries_account_from_filter.account_from_id,
-			ledger_entries_account_from_filter.account_to_id,
-			ledger_entries_account_from_filter.quantity,
-			ledger_entries_account_from_filter.transfer_type,
-			ledger_entries_account_from_filter.asset_id,
-			ledger_entries_account_from_filter.market_id,
-			ledger_entries_account_from_filter.party_id,
-			ledger_entries_account_from_filter.account_type,
-			ledger_entries_account_from_filter.account_to_id
-			FROM  %s
-			INNER JOIN %s
-			ON %s.account_to_id=%s.account_to_id
-			),
-`
+	tableNameOpenOnFilterQuery := "ledger_entries_open_on_account_filters"
+	tableNameTransferType := "ledger_entries_transfer_type_filter"
 
-	query := ""
 	tableName := ""
 
-	groupQuery := `
-		entries AS (
-			SELECT SUM(quantity) AS quantity, %s vega_time
-				FROM %s
-				WHERE quantity IS NOT NULL
-				GROUP BY %s vega_time
-				ORDER BY %s vega_time
-			)`
-
 	if filterQueries[0] != "" {
-		query = fmt.Sprintf(accountFromQuery, tableNameAccountFromQuery, filterQueries[0])
 		tableName = tableNameAccountFromQuery
+		whereClause = fmt.Sprintf("WHERE %s", filterQueries[0])
 
 		if filterQueries[1] != "" {
-			accountToQuery = fmt.Sprintf(accountToQuery, tableNameAccountToQuery, filterQueries[1])
-			query = fmt.Sprintf(`%s %s`, query, accountToQuery)
-
 			if closeOnAccountFilters {
-				closeOnAccountFilterQuery = fmt.Sprintf(
-					closeOnAccountFilterQuery,
-					tableNameCloseOnFilterQuery,
-					tableNameAccountFromQuery,
-					tableNameAccountToQuery,
-					tableNameAccountFromQuery,
-					tableNameAccountToQuery,
-				)
-
-				query = fmt.Sprintf(`%s %s`, query, closeOnAccountFilterQuery)
 				tableName = tableNameCloseOnFilterQuery
+				whereClause = fmt.Sprintf("WHERE (%s) AND (%s)", filterQueries[0], filterQueries[1])
 			} else {
-				tableNameUnionAccountQuery := "ledger_entries_union_filter"
-				unionFiltersQuery := `
-		%s AS (
-			SELECT DISTINCT ON (vega_time)
-					vega_time, account_from_id, account_to_id, quantity, transfer_type, asset_id, market_id, party_id, account_type
-				FROM (
-				SELECT DISTINCT ON (vega_time)
-					vega_time, account_from_id, account_to_id, quantity, transfer_type, asset_id, market_id, party_id, account_type
-				FROM  %s
-
-				UNION
-				SELECT DISTINCT ON (vega_time)
-					vega_time, account_from_id, account_to_id, quantity, transfer_type, asset_id, market_id, party_id, account_type
-				FROM %s
-			) AS u
-		),
-`
-
-				unionFiltersQuery = fmt.Sprintf(
-					unionFiltersQuery,
-					tableNameUnionAccountQuery,
-					tableNameAccountFromQuery,
-					tableNameAccountToQuery,
-				)
-
-				query = fmt.Sprintf(`%s %s`, query, unionFiltersQuery)
-				tableName = tableNameUnionAccountQuery
+				tableName = tableNameOpenOnFilterQuery
+				whereClause = fmt.Sprintf("WHERE (%s) OR (%s)", filterQueries[0], filterQueries[1])
 			}
 		}
 	} else {
 		if filterQueries[1] != "" {
-			query = fmt.Sprintf(accountToQuery, tableNameAccountToQuery, filterQueries[1])
 			tableName = tableNameAccountToQuery
+			whereClause = fmt.Sprintf("WHERE %s", filterQueries[1])
 		}
 	}
 
-	// general case: table_name is still "entries"
-	if query == "" {
-		query = fmt.Sprintf(generalQuery, tableNameGeneralQuery)
-		tableName = tableNameGeneralQuery
-	}
-
 	if filterQueries[2] != "" {
-		// Add transferType filtering
-		tableNameTransferType := "ledger_entries_transfer_type_filter"
-		transferTypeQuery := `
-		%s AS (
-			SELECT
-				vega_time, quantity, transfer_type, asset_id, market_id, party_id, account_type
-			FROM %s
-			WHERE %s),
-`
-
-		transferTypeQuery = fmt.Sprintf(
-			transferTypeQuery,
-			tableNameTransferType,
-			tableName,
-			filterQueries[2],
-		)
 		tableName = tableNameTransferType
-
-		query = fmt.Sprintf(`%s %s`, query, transferTypeQuery)
+		if whereClause != "" {
+			whereClause = fmt.Sprintf("%s AND %s", whereClause, filterQueries[2])
+		} else {
+			whereClause = fmt.Sprintf("WHERE %s", filterQueries[2])
+		}
 	}
 
-	groupQuery = fmt.Sprintf(groupQuery, groupBy, tableName, groupBy, groupBy)
-	query = fmt.Sprintf(`WITH %s %s`, query, groupQuery)
+	query = fmt.Sprintf(query, tableName, tableName, whereClause)
+	query = fmt.Sprintf(`WITH %s`, query)
 
 	return query
 }

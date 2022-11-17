@@ -367,15 +367,10 @@ input AccountFilter {
 "Filter for historical entry ledger queries"
 input LedgerEntryFilter {
   CloseOnAccountFilters: Boolean
-  AccountFromFilter: AccountFilter
-  AccountToFilter: AccountFilter
+  SenderAccountFilter: AccountFilter
+  ReceiverAccountFilter: AccountFilter
 
   TransferTypes: [TransferType]
-}
-
-input GroupOptions{
-  ByAccountField: [AccountField]
-  ByLedgerEntryField: [LedgerEntryField]
 }
 
 "Queries allow a caller to read data and filter data via GraphQL."
@@ -519,7 +514,6 @@ type Query {
   "Get ledger entries by asset, market, party, account type, transfer type within the given date range."
   ledgerEntries(
     filter: LedgerEntryFilter,
-    groupOptions: GroupOptions
     dateRange: DateRange,
     pagination: Pagination
   ) : AggregatedLedgerEntriesConnection!
@@ -3775,15 +3769,21 @@ type AggregatedLedgerEntries {
   vegaTime: Timestamp!
   "Net amount of ledger entries for the accounts specified in the filter at this time"
   quantity: String!
-  "Party identifier, if query was grouped by party - else null"
-  partyId: ID
   "Asset identifier, if query was grouped by asset - else null"
   assetId: ID
-  "Market identifier, if query was grouped by market - else null"
-  marketId: ID
-  "Account type, if query was grouped by account type - else null"
-  accountType: AccountType
   transferType: String
+  "Party identifier, if query was grouped by sender party - else null"
+  senderPartyId: ID
+  "Party identifier, if query was grouped by receiver party - else null"
+  receiverPartyId: ID
+  "Market identifier, if query was grouped by sender market - else null"
+  senderMarketId: ID
+  "Market identifier, if query was grouped by receiver market - else null"
+  receiverMarketId: ID
+  "Account type, if query was grouped by sender account type - else null"
+  senderAccountType: AccountType
+  "Account type, if query was grouped by receiver account type - else null"
+  receiverAccountType: AccountType
 }
 
 type AggregatedLedgerEntriesEdge {

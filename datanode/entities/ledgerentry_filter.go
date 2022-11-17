@@ -18,10 +18,10 @@ type LedgerEntryFilter struct {
 	// all match the criteria given in the `AccountFilter` type.
 	// Otherwise will contain entries that have a match the settings in both accounts (sending or receiving) or in one of them.
 	CloseOnAccountFilters CloseOnLimitOperation
-	// AccountFromFilter is a filter which is used to request properties for AccountFrom field.
-	AccountFromFilter AccountFilter
-	// AccountToFilter is a filter which is used to request properties for AccountTo field.
-	AccountToFilter AccountFilter
+	// SenderAccountFilter is a filter which is used to request properties for AccountFrom field.
+	SenderAccountFilter AccountFilter
+	// ReceiverAccountFilter is a filter which is used to request properties for AccountTo field.
+	ReceiverAccountFilter AccountFilter
 
 	// Filter on LedgerMovementType
 	TransferTypes []LedgerMovementType
@@ -33,11 +33,11 @@ func LedgerEntryFilterFromProto(pbFilter *v2.LedgerEntryFilter) (*LedgerEntryFil
 		filter.CloseOnAccountFilters = CloseOnLimitOperation(pbFilter.CloseOnAccountFilters)
 
 		var err error
-		filter.AccountFromFilter, err = AccountFilterFromProto(pbFilter.AccountFromFilter)
+		filter.SenderAccountFilter, err = AccountFilterFromProto(pbFilter.AccountFromFilter)
 		if err != nil {
 			return nil, err
 		}
-		filter.AccountToFilter, err = AccountFilterFromProto(pbFilter.AccountToFilter)
+		filter.ReceiverAccountFilter, err = AccountFilterFromProto(pbFilter.AccountToFilter)
 		if err != nil {
 			return nil, err
 		}

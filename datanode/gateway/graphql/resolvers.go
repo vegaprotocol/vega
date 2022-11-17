@@ -1036,33 +1036,11 @@ func (r *myQueryResolver) BalanceChanges(
 func (r *myQueryResolver) LedgerEntries(
 	ctx context.Context,
 	filter *v2.LedgerEntryFilter,
-	groupOptions *GroupOptions,
 	dateRange *v2.DateRange,
 	pagination *v2.Pagination,
 ) (*v2.AggregatedLedgerEntriesConnection, error) {
 	req := &v2.ListLedgerEntriesRequest{}
 	req.Filter = filter
-
-	groupByAccountField := []v2.AccountField{}
-	groupByLedgerEntryField := []v2.LedgerEntryField{}
-	if groupOptions != nil {
-		if groupOptions.ByAccountField != nil {
-			for _, af := range groupOptions.ByAccountField {
-				groupByAccountField = append(groupByAccountField, *af)
-			}
-		}
-
-		if groupOptions.ByLedgerEntryField != nil {
-			for _, lf := range groupOptions.ByLedgerEntryField {
-				groupByLedgerEntryField = append(groupByLedgerEntryField, *lf)
-			}
-		}
-
-		req.GroupOptions = &v2.GroupOptions{
-			ByAccountField:     groupByAccountField,
-			ByLedgerEntryField: groupByLedgerEntryField,
-		}
-	}
 
 	req.DateRange = dateRange
 	req.Pagination = pagination
