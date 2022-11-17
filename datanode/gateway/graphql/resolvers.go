@@ -168,10 +168,6 @@ func (r *VegaResolverRoot) AccountDetails() AccountDetailsResolver {
 	return (*myAccountDetailsResolver)(r)
 }
 
-func (r *VegaResolverRoot) AccountEdge() AccountEdgeResolver {
-	return (*myAccountEdgeResolver)(r)
-}
-
 // Proposal returns the proposal resolver.
 func (r *VegaResolverRoot) Proposal() ProposalResolver {
 	return (*proposalResolver)(r)

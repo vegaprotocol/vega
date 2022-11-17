@@ -66,8 +66,8 @@ func (kr EthereumKeyRotation) Cursor() *Cursor {
 
 func (kr EthereumKeyRotation) ToProtoEdge(_ ...any) (*v2.EthereumKeyRotationEdge, error) {
 	return &v2.EthereumKeyRotationEdge{
-		EthereumKeyRotation: kr.ToProto(),
-		Cursor:              kr.Cursor().Encode(),
+		Node:   kr.ToProto(),
+		Cursor: kr.Cursor().Encode(),
 	}, nil
 }
 

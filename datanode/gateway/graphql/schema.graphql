@@ -810,7 +810,7 @@ type KeyRotation {
 
 "An Ethereum key rotation record that is returned in a paginated Ethereum key rotation connection"
 type EthereumKeyRotationEdge {
-  ethereumKeyRotation: EthereumKeyRotation!
+  node: EthereumKeyRotation!
   cursor: String
 }
 

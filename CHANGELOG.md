@@ -4,6 +4,7 @@
 
 ### 🚨 Breaking changes
 - [6716](https://github.com/vegaprotocol/vega/issues/6716) - Use timestamp on all times fields
+- [6725](https://github.com/vegaprotocol/vega/issues/6725) - Fix inconsistent use of node field on `GraphQL` connection edges
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
