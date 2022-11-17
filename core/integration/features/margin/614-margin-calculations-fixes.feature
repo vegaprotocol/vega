@@ -65,6 +65,5 @@ Feature: test bugfix 614 for margin calculations
       #| edd     | ETH   | ETH/DEC19 | 3784   | 6216    |
       | barney  | ETH   | ETH/DEC19 | 992    | 8952    |
       #| barney  | ETH   | ETH/DEC19 | 688    | 9256    |
-      | rebecca | ETH   | ETH/DEC19 | 3760   | 6240    |
-      #| rebecca | ETH   | ETH/DEC19 | 5600   | 4400    |
+      | rebecca | ETH   | ETH/DEC19 | 5600   | 4400    |
     And the cumulated balance for all accounts should be worth "3051000"

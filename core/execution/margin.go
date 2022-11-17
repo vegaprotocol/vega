@@ -197,6 +197,27 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 	return []events.Risk{risk}, nil, nil
 }
 
+// checkMarginsOnMTM performs the margin check again when marking to market. This is needed to ensure parties don't end up with wildly inaccurate margin balances.
+func (m *Market) checkMarginsOnMTM(ctx context.Context, positions []events.MarketPosition, order *types.Order) ([]events.Risk, error) {
+	price := m.getMarkPrice(order)
+	asset, _ := m.mkt.GetAsset()
+	mID := m.GetID()
+	riskEvts := make([]events.Risk, 0, len(positions))
+	for _, p := range positions {
+		pos, err := m.collateral.GetPartyMargin(p, asset, mID)
+		if err != nil {
+			return nil, err
+		}
+		risk, _, err := m.risk.UpdateMarginOnNewOrder(ctx, pos, price.Clone())
+		// an error indicates balance is low, we're closing out traders out in the caller already.
+		if risk == nil || err != nil {
+			continue
+		}
+		riskEvts = append(riskEvts, risk)
+	}
+	return riskEvts, nil
+}
+
 func (m *Market) getMarkPrice(o *types.Order) *num.Uint {
 	// during opening auction we don't have a prior mark price, so we use the indicative price instead
 	if m.as.IsOpeningAuction() {

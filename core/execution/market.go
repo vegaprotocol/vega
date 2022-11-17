@@ -1257,23 +1257,34 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 		// all good we can return
 		return
 	}
+	m.releaseExcessMargin(ctx, pos)
+}
 
-	// now check if all buy/sell/size are 0
-	if pos.Buy() != 0 || pos.Sell() != 0 || pos.Size() != 0 || !pos.VWBuy().IsZero() || !pos.VWSell().IsZero() {
-		// position is not 0, nothing to release surely
-		return
-	}
-
+// releaseExcessMargin does what releaseMarginExcess does. Added this function to be able to release
+// all excess margin on MTM without having to call the latter by iterating all positions, and then
+// fetching said position again my party
+func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.MarketPosition) {
 	asset, _ := m.mkt.GetAsset()
-	transfers, err := m.collateral.ClearPartyMarginAccount(
-		ctx, partyID, m.GetID(), asset)
-	if err != nil {
-		m.log.Error("unable to clear party margin account", logging.Error(err))
-		return
+	evts := make([]events.Event, 0, len(positions))
+	for _, pos := range positions {
+		// now check if all buy/sell/size are 0
+		if pos.Buy() != 0 || pos.Sell() != 0 || pos.Size() != 0 || !pos.VWBuy().IsZero() || !pos.VWSell().IsZero() {
+			// position is not 0, nothing to release surely
+			return
+		}
+		partyID := pos.Party()
+
+		transfers, err := m.collateral.ClearPartyMarginAccount(
+			ctx, partyID, m.GetID(), asset)
+		if err != nil {
+			m.log.Error("unable to clear party margin account", logging.Error(err))
+			return
+		}
+		evts = append(evts, events.NewLedgerMovements(
+			ctx, []*types.LedgerMovement{transfers}),
+		)
 	}
-	evt := events.NewLedgerMovements(
-		ctx, []*types.LedgerMovement{transfers})
-	m.broker.Send(evt)
+	m.broker.SendBatch(evts)
 }
 
 // SubmitOrder submits the given order.
@@ -1727,6 +1738,18 @@ func (m *Market) confirmMTM(
 	// force check
 	m.checkForReferenceMoves(
 		ctx, orderUpdates, false)
+	// release excess margin for all positions
+	pos := m.position.Positions()
+	riskEvts, err := m.checkMarginsOnMTM(ctx, pos, order)
+	if err != nil {
+		m.log.Panic("error checking margins?", logging.Error(err))
+	}
+	// transfer margins as we would do in continuous trading, regardless of this call being made
+	// when we're leaving auction
+	m.transferMarginsContinuous(ctx, riskEvts)
+	// closed out parties:
+	// release any excess if needed
+	m.releaseExcessMargin(ctx, pos...)
 }
 
 // updateLiquidityFee computes the current LiquidityProvision fee and updates

@@ -82,11 +82,11 @@ Feature: Closeout-cascades
 
     Then debug trades
     Then debug orders
-    #And the following trades should be executed:
-    #| buyer   | price | size | seller  |
+    And the following trades should be executed:
+      | buyer   | price | size | seller  |
       # looks like we don't see these orders anymore, quite possibly because we don't have the send in handle confirmation
-      #| network |  100  | 50   | trader3 |
-      # | lpprov  |  100  | 50   | network |
+      | network |  100  | 50   | trader3 |
+      | lpprov  |  100  | 50   | network |
 
     And the mark price should be "100" for the market "ETH/DEC19"
 
