@@ -146,13 +146,24 @@ Feature: Test closeout type 1: margin >= cost of closeout
     Then the mark price should be "126" for the market "ETH/DEC19"
     And the insurance pool balance should be "38500" for the market "ETH/DEC19"
 
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 300   | 1      |
+      | sell | 160   | 11250  |
+      | sell | 150   | 900    |
+      | buy  | 126   | 0      |
+      | buy  | 116   | 0      |
+      | buy  | 80    | 1000   |
+      | buy  | 70    | 25715  |
+      | buy  | 20    | 1      |
+
     # Margin account balance not updated following a trade (above search)
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party2 | ETH/DEC19 | 17372       | 34744  | 52116   | 86860   |
     #| party2 | ETH/DEC19 | 13736       | 27472  | 41208   | 68680    |
 
-    # margin_party2: 101*(126-(126+100*116)/101)+101*1*126=13726
+    # margin_party2: 101*(126-80)+101*1*126=17372
 
     # MTM win transfer
     Then the following transfers should happen:
