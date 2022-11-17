@@ -1,0 +1,1622 @@
+{
+	"TestName": "TestParties_StakeLinking",
+	"Query": "{ partiesConnection{ edges { node { stakingSummary { currentStakeAvailable, linkings { edges { node { id, type, timestamp, party { id }, amount, status, finalizedAt, txHash } } } } } } } }",
+	"Result": {
+		"partiesConnection": {
+			"edges": [
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "9749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "9749958450000000000",
+											"finalizedAt": "2022-11-08T09:32:18.096773Z",
+											"id": "6ffdaaad4192c3b7bae5bda9b323e2f7f6ab5f166a502b7dcbc72368cec8e45f",
+											"party": {
+												"id": "850efe459161be4ada14ba6261b2df863e766c0e9b3fcb915e0a115c39d53fbb"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.66789992Z",
+											"txHash": "0x0d6a26a914206b12a529a63a308f968a8eacb2b818a6423779941f079d7933b2",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "9749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "9749958450000000000",
+											"finalizedAt": "2022-11-08T09:32:18.096773Z",
+											"id": "1e34ffe0b0992c22726c2f75a939022f5a544606d54f39577a8e99f0ac89c144",
+											"party": {
+												"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.66789992Z",
+											"txHash": "0x58a120038ef0680c7e20ca34dadcf3cae7a89a461fb6d9067e1a4c0c359f0852",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "9749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "9749958450000000000",
+											"finalizedAt": "2022-11-08T09:24:56.361356Z",
+											"id": "305de8a01c1024a4b703ee298b230a6d8b590daa59596923ea8ac52b09f35195",
+											"party": {
+												"id": "c84470154b135e71c1a6b83059e381b7d746b76a13a9951c9caefa60ffaa3b04"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667899484Z",
+											"txHash": "0x276c2d4075746c3da634feb3638f1455aa155fac5ed40dc3d3367769d310446a",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "9749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "9749958450000000000",
+											"finalizedAt": "2022-11-08T08:46:17.495005Z",
+											"id": "b555a135d6ea38db6e143ea36bcc1b5e21c61a0de1a464ba4c1aa19e86fc427f",
+											"party": {
+												"id": "c16e61a20d63d9314ac3ff33dfbe636d7e0e6566246ed348210060e2d6bcadbc"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.66789717Z",
+											"txHash": "0xbccc3d2b08650194a956438f97ac984adc9f707d5fdf86e1e3a0ff62c6dfc53c",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "9749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "9749958450000000000",
+											"finalizedAt": "2022-11-08T08:46:17.084836Z",
+											"id": "58823df4f6564a761cdcdf9fb6eb19f9004268c95a593e0faaed0ad774d71e93",
+											"party": {
+												"id": "60d57f010c4cbec3e6ada27ee6b2f5c0ae648c82d1cd2615f4bf94dbad284c12"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.66789717Z",
+											"txHash": "0x836a544bf6c63fb166c36882e758b0501728c2d0ddaa36ac6305f9b3b60b21e6",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "9749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "9749958450000000000",
+											"finalizedAt": "2022-11-08T08:44:57.119643Z",
+											"id": "81d2dac23dc6ae3592a4b93baeea7ecfc79722475ceae0e6a82d43c50add3021",
+											"party": {
+												"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667897083Z",
+											"txHash": "0x91cf772898a3ad8333c0b4b8f532666c19a590b8b939cdf36cd1a42bc02e5129",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "9749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "9749958450000000000",
+											"finalizedAt": "2022-11-08T08:44:57.119643Z",
+											"id": "f36f5b479bc7b22bb0ac2d56772b2ed44b86c0885c6a609574c8f68da362f4bd",
+											"party": {
+												"id": "955f1bca8d9680519372c7bdb8e150a7198b347d47806408fbf60e0beb004ad5"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667897083Z",
+											"txHash": "0x9b5c2b27d0850ecb26e60a35b336a66da00b608113739502b35b2f476c804c31",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "9749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "9749958450000000000",
+											"finalizedAt": "2022-11-08T08:43:37.443413Z",
+											"id": "ce92d4c30abf4ea9bc95413388627e3f0ec06253f03385468f822e1f63cdda88",
+											"party": {
+												"id": "45d1adec55094c7d9bf1ef9974338cb0cf0db922e35cfccd32bd3ae0863f945b"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667897002Z",
+											"txHash": "0x18d332a05fe12925910dba680ab5cb75029def6bc2a0342e60e545c0559ff88b",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "9749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "9749958450000000000",
+											"finalizedAt": "2022-11-08T08:42:17.402241Z",
+											"id": "fbb8e6bf2283896b526f83cb8b3028b384e361ac2782992da5810a1ab94c43d8",
+											"party": {
+												"id": "efff07474cf089d2419177362fce0a60ec96e1ad15887a7dfa2a729d21830201"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667896931Z",
+											"txHash": "0xfd5d7cc5ff87c4839265ecb68b891f8861053988aab079aa817fc7cdca31b2ea",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "9749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "9749958450000000000",
+											"finalizedAt": "2022-11-08T08:42:17.402241Z",
+											"id": "27a5bf4c7c3bae1cba6e4ea4a3bd43617d8dcfd7763504fb7d076de2d3c4b1db",
+											"party": {
+												"id": "df491a2bc54e582e14dfb727c7c81e62366bba34341bd7e4b579b374c0647493"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.66789693Z",
+											"txHash": "0xdffaa0136af23ea216b9d6c423b1d84154455a100134fdbeac23d2afb6e4774e",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "10749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "9749958450000000000",
+											"finalizedAt": "2022-11-08T08:42:17.402241Z",
+											"id": "069c6093047be581f1ba473ea012a4515340aa02b36021528f825b28528da021",
+											"party": {
+												"id": "d84eecd8a1a9d3f8269e62f4574b63010180718a89b4fbaa83438bfa2ed494ea"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667896931Z",
+											"txHash": "0x9f739ed2f0b36b97fa0696cc225446a2a74ebbddb833bcfaa0c915e4f39e2cbd",
+											"type": "TYPE_LINK"
+										}
+									},
+									{
+										"node": {
+											"amount": "1000000000000000000",
+											"finalizedAt": "2022-11-08T08:42:57.47042Z",
+											"id": "3416f5ba1e85e1743545f4e58441954965929597d3c9b6b0f5ba8f9afce66c1d",
+											"party": {
+												"id": "d84eecd8a1a9d3f8269e62f4574b63010180718a89b4fbaa83438bfa2ed494ea"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667896957Z",
+											"txHash": "0x08d323571de6d50123be2a4d3fa2a8049755f45f72f39be9ccc0b7c9b46b5a3a",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "9749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "9749958450000000000",
+											"finalizedAt": "2022-11-08T08:42:17.402241Z",
+											"id": "8ef60d7fec955981c967dd2a3c48e415452ce4a199c65f3ecdd6d3c776764bf3",
+											"party": {
+												"id": "d7bb763be6aae9636eb64930b7a5b9d94d318d2f2e0521d61a0126b141f084a4"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.66789693Z",
+											"txHash": "0x4441e2da111fcd21967316370ec11a189b8277e4e3ce1588ca8f9739d3a77930",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "10749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "9749958450000000000",
+											"finalizedAt": "2022-11-08T08:42:17.402241Z",
+											"id": "dcb837150fae04e5ac71e000bcd65586cc12352adedf111a030e970b07e9f2fc",
+											"party": {
+												"id": "bc2e8182f2d8f050bfdaa6a8cb21f8b2990d6c5727e21fde589d093af3dbb035"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667896929Z",
+											"txHash": "0xfa3c09964eb1be7377989a6a4cbf1102289ce4b7ebdd991d69da157007c18c8c",
+											"type": "TYPE_LINK"
+										}
+									},
+									{
+										"node": {
+											"amount": "1000000000000000000",
+											"finalizedAt": "2022-11-08T08:42:57.260127Z",
+											"id": "16c9d49dd57d756b2b577bd37ea2fe7364feeaf0abb83c1467ab2f866414a7cb",
+											"party": {
+												"id": "bc2e8182f2d8f050bfdaa6a8cb21f8b2990d6c5727e21fde589d093af3dbb035"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667896957Z",
+											"txHash": "0xd80c817605ba77ca7ce7d90ab1de2ec67cfd424b8ad092adf7b0082cfdb91481",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "10749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "9749958450000000000",
+											"finalizedAt": "2022-11-08T08:42:17.402241Z",
+											"id": "a54f0e5fe56e4e657eb12eacde4084e8906f416ca601fb8a3921aab25ec751d1",
+											"party": {
+												"id": "8f2397119314a701adedf77b3d855413631428bcba2a2312c2811acff86be611"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667896931Z",
+											"txHash": "0x9af75bedd3c94e27a7a82363479510f2e74b063d6a142c377d68551e24ae12e9",
+											"type": "TYPE_LINK"
+										}
+									},
+									{
+										"node": {
+											"amount": "1000000000000000000",
+											"finalizedAt": "2022-11-08T08:42:57.260127Z",
+											"id": "dbcb3bb34be7a923eff939756a3b15dc7c826e3fc0cb131244587238c6abdfed",
+											"party": {
+												"id": "8f2397119314a701adedf77b3d855413631428bcba2a2312c2811acff86be611"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667896957Z",
+											"txHash": "0xfa8db2ae894c4a546903914e6c2332d54b1509e0063e24746c97517ef734083d",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "8749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "8749958450000000000",
+											"finalizedAt": "2022-11-08T08:42:17.402241Z",
+											"id": "026c9c38193e70ccfccf504a5e84be3e25ac64162d324d95d75c1c0ee05ea6e4",
+											"party": {
+												"id": "0631de0451cca178a98e51f24b7676862bbb827e74a38d1875984e55fa12f67e"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667896931Z",
+											"txHash": "0x002f035ecebbb77f4e7190edb540f23996fdada2526d9467e1d68d182e191787",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "8749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "8749958450000000000",
+											"finalizedAt": "2022-11-08T08:42:16.809007Z",
+											"id": "835a7be5fbfd861ea2006150fdafcb53245ca8508fcb43ba121ef1b2adadc1d3",
+											"party": {
+												"id": "6ece28ada42cfe804484d6d5fa0f972f00ee9fe8f3b672d37aa2a3d6960422dd"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667896931Z",
+											"txHash": "0x304de091a9c17499ff682d1e3b239feb0a9fb1e32b305e35612e109588967e0f",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "10749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "9749958450000000000",
+											"finalizedAt": "2022-11-08T08:42:16.809007Z",
+											"id": "c40a5b16dcf91cce9b4fc5b8f9b42efdf25358b5cac72510540927f638c4a114",
+											"party": {
+												"id": "51d94132a09a041c34d87c01f087aacfc94cc509de15c484fea123c54a19a204"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667896929Z",
+											"txHash": "0x75bd11094f6e26403837172217367cdbf71f06a305f1a830b42d9edd962c9ce6",
+											"type": "TYPE_LINK"
+										}
+									},
+									{
+										"node": {
+											"amount": "1000000000000000000",
+											"finalizedAt": "2022-11-08T08:42:57.47042Z",
+											"id": "421f8bf53192099a9c76042e02d01b43e6951eb72ffbf4d6507b97bed3a5ea2a",
+											"party": {
+												"id": "51d94132a09a041c34d87c01f087aacfc94cc509de15c484fea123c54a19a204"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667896957Z",
+											"txHash": "0x9822c0cf1273b1e060802a801b214f63a4d5438ed096775f0782c9b42dbeb520",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "1000000000000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "1000000000000000000",
+											"finalizedAt": "2022-11-08T08:42:16.809007Z",
+											"id": "a97b74f748cb502b3b28d3888ef29adb3cfc4c7b68c7caba91a3f750be4278da",
+											"party": {
+												"id": "22f4b90cc0092d4294f252a0a73c9f94e050586a280f6e9d7e9d831492ac2e38"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667896931Z",
+											"txHash": "0x6548f6023ef199cbb87d4aa9380adac9fb4977dc69828a1d660dbd1d200b80ce",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "0",
+							"linkings": {
+								"edges": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "9749958450000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "9749958450000000000",
+											"finalizedAt": "2022-11-08T08:39:57.078814Z",
+											"id": "8b29e31322c908d0cfee39b55f568789c6cf0628df073111a0ac39bb4aafac8a",
+											"party": {
+												"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667896786Z",
+											"txHash": "0xd65a8b42f6e792fb9908ff7125096277d8f0db310157b7bc5f89e733ba205510",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "1000000000000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "1000000000000000000",
+											"finalizedAt": "2022-11-08T08:39:37.097417Z",
+											"id": "62018fa0e0fb1a222d19d5e40d9f3660161b3966191368be347de54d8dc7728c",
+											"party": {
+												"id": "cea6239c89c68d79d00def44074b81fb7649763c5254845fb528de4fafd6109b"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667896757Z",
+											"txHash": "0x7706db883a8c345c1a6a1efe9b5b77b0c293e81d9eda3d88f2e7688f3ba5571a",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"stakingSummary": {
+							"currentStakeAvailable": "1000000000000000000",
+							"linkings": {
+								"edges": [
+									{
+										"node": {
+											"amount": "1000000000000000000",
+											"finalizedAt": "2022-11-08T08:39:37.097417Z",
+											"id": "fbeeee75cc7586de3329c6b43e0ab1631c05477803e29a08fc29bfa80ce02da3",
+											"party": {
+												"id": "423ad165557dbcc5198427f4e86e6b2a91d908ed7123768404b76552918ea458"
+											},
+											"status": "STATUS_ACCEPTED",
+											"timestamp": "1970-01-01T00:00:01.667896756Z",
+											"txHash": "0x418ec6a6f730a9e7c6104bd7ac5999e6c70d0062f7b1f1fb112300277e559b2a",
+											"type": "TYPE_LINK"
+										}
+									}
+								]
+							}
+						}
+					}
+				}
+			]
+		}
+	},
+	"Duration": 19102833
+}

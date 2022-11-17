@@ -383,9 +383,6 @@ type Query {
   "An asset which is used in the vega network"
   asset("ID of the asset" id: ID!): Asset
 
-  "The list of all assets in use in the Vega network"
-  assets: [Asset!] @deprecated(reason: "Use assetsConnection instead")
-
   "The list of all assets in use in the Vega network or the specified asset if ID is provided"
   assetsConnection(id: ID, pagination: Pagination): AssetsConnection
 
@@ -528,9 +525,6 @@ type Query {
   ) : AggregatedLedgerEntriesConnection!
 
   "Query for historic key rotations"
-  keyRotations(id: ID): [KeyRotation!] @deprecated(reason: "use keyRotationsConnection instead")
-
-  "Query for historic key rotations"
   keyRotationsConnection(id: ID, pagination: Pagination): KeyRotationConnection!
 
   "The last block process by the blockchain"
@@ -538,9 +532,6 @@ type Query {
 
   "An instrument that is trading on the Vega network"
   market("Optional ID of a market" id: ID!): Market
-
-  "One or more instruments that are trading on the VEGA network"
-  markets("ID of the market" id: ID): [Market!] @deprecated(reason: "Use marketsConnection instead")
 
   "One or more instruments that are trading on the Vega network"
   marketsConnection(
@@ -563,34 +554,7 @@ type Query {
   ): NetworkParameter
 
   "Return the full list of network parameters"
-  networkParameters: [NetworkParameter!] @deprecated(reason: "Use networkParametersConnection instead")
-
-  "Return the full list of network parameters"
   networkParametersConnection(pagination: Pagination): NetworkParametersConnection!
-
-  "Governance proposals that aim to update Vega network parameters"
-  networkParametersProposals(
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
-
-  "Governance proposals that aim to create new assets in Vega"
-  newAssetProposals(
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
-
-  "Freeform governance proposals, which can be voted on but do not change the behaviour of the system, and can be used to gauge community sentiment in Vega"
-  newFreeformProposals(
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
-
-  "Governance proposals that aim to create new markets"
-  newMarketProposals(
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
   "Specific node in network"
   node("required ID of node" id: ID!): Node
@@ -599,30 +563,10 @@ type Query {
   nodeData: NodeData
 
   "All known network nodes"
-  nodes: [Node!] @deprecated(reason: "use nodesConnection instead")
-
-  "All known network nodes"
   nodesConnection(pagination: Pagination): NodesConnection!
 
   "Return a list of aggregated node signature for a given resource ID"
-  nodeSignatures(resourceId: ID!): [NodeSignature!] @deprecated(reason: "Use nodeSignaturesConnection instead")
-
-  "Return a list of aggregated node signature for a given resource ID"
   nodeSignaturesConnection(resourceId: ID!, pagination: Pagination): NodeSignaturesConnection
-
-  "All registered oracle specs"
-  oracleData(
-    "Pagination"
-    pagination: OffsetPagination
-  ): [OracleData!] @deprecated(reason: "Use oracleDataConnection instead")
-
-  "All oracle data for a given oracle spec ID"
-  oracleDataBySpec(
-    "ID for an oracle spec"
-    oracleSpecId: ID!
-    "Pagination"
-    pagination: OffsetPagination
-  ): [OracleData!] @deprecated(reason: "Use oracleDataBySpecConnection instead")
 
   "All oracle data for a given oracle spec ID"
   oracleDataBySpecConnection(
@@ -640,12 +584,6 @@ type Query {
 
   "An oracle spec for a given oracle spec ID"
   oracleSpec("ID for an oracle spec" oracleSpecId: ID!): OracleSpec
-
-  "All registered oracle specs"
-  oracleSpecs(
-    "Pagination"
-    pagination: OffsetPagination
-  ): [OracleSpec!] @deprecated(reason: "Use oracleSpecsConnection instead")
 
   "All registered oracle specs"
   oracleSpecsConnection(
@@ -666,28 +604,12 @@ type Query {
   orderByReference("Reference for an order" reference: String!): Order!
 
   "Order versions (created via amendments if any) found by orderID"
-  orderVersions(
-    "ID for an order"
-    orderId: ID!
-
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Order!] @deprecated(reason: "Use orderVersionsConnection instead")
-
-  "Order versions (created via amendments if any) found by orderID"
   orderVersionsConnection(
     "ID for an order"
     orderId: ID
     "Pagination information"
     pagination: Pagination
   ): OrderConnection
-
-  "One or more entities that are trading on the Vega network"
-  parties("Optional ID of a party" id: ID): [Party!] @deprecated(reason: "Use partiesConnection instead.")
 
   "One or more entities that are trading on the Vega network"
   partiesConnection(
@@ -709,12 +631,6 @@ type Query {
   ): Proposal
 
   "All governance proposals in the Vega network"
-  proposals(
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
-
-  "All governance proposals in the Vega network"
   proposalsConnection(
     "Optional type of proposal to retrieve data for"
     proposalType: ProposalType
@@ -730,26 +646,8 @@ type Query {
   "List protocol upgrade proposals, optionally filtering on status or approver"
   protocolUpgradeProposals(inState: ProtocolUpgradeProposalStatus, approvedBy: String, pagination: Pagination): ProtocolUpgradeProposalConnection
 
-  "Governance proposals that aim to update existing markets"
-  updateMarketProposals(
-    "Optionally, select proposals for a specific market. Leave out for all"
-    marketId: ID
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
-
   "Get statistics about the Vega node"
   statistics: Statistics!
-
-  "Get a list of all transfers for a public key"
-  transfers(
-    "The pubkey to look for"
-    pubkey: String!
-    "Is the pubkey on the sending part of the transfer"
-    isFrom: Boolean
-    "Is the pubkey in the receiving part of the transfer"
-    isTo: Boolean
-  ): [Transfer!] @deprecated(reason: "Use transfersConnection instead")
 
   "Get a list of all transfers for a public key"
   transfersConnection(
@@ -945,23 +843,7 @@ type Epoch {
   timestamps: EpochTimestamps!
 
   "Validators that participated in this epoch"
-  validators: [Node!]! @deprecated(reason: "Use validatorsConnection instead")
-
-  "Validators that participated in this epoch"
   validatorsConnection(pagination: Pagination): NodesConnection
-
-  "Delegations data for this epoch"
-  delegations(
-    "Optional party ID to filter on"
-    partyId: ID
-    "Optional node ID to filter on"
-    nodeId: ID
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int): [Delegation!]! @deprecated(reason: "Use delegationsConnection instead")
 
   "Delegations data for this epoch"
   delegationsConnection(
@@ -1063,16 +945,6 @@ type Node {
 
   "Validator status of the node"
   status: NodeStatus!
-
-  "All delegation for a node by a given party if specified, or all delegations."
-  delegations(
-    partyId: ID,
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
 
   "All delegation for a node by a given party if specified, or all delegations."
   delegationsConnection(
@@ -1810,16 +1682,6 @@ type Market {
   proposal: Proposal
 
   "Orders on a market"
-  orders(
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Order!] @deprecated(reason: "Use the 'ordersConnection' field instead")
-
-  "Orders on a market"
   ordersConnection(
     "Date range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
@@ -1828,28 +1690,12 @@ type Market {
   ): OrderConnection
 
   "Get account for a party or market"
-  accounts(
-    "ID of the party to get the margin account for"
-    partyId: ID
-  ): [AccountBalance!] @deprecated(reason: "Use the accountsConnection instead")
-
-  "Get account for a party or market"
   accountsConnection(
     "ID of the party to get the margin account for"
     partyId: ID
     "Pagination information"
     pagination: Pagination
   ): AccountsConnection
-
-  "Trades on a market"
-  trades(
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Trade!] @deprecated(reason: "Use tradesConnection for cursor based pagination instead")
 
   tradesConnection(
     "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
@@ -1878,12 +1724,6 @@ type Market {
 
   "marketData for the given market"
   data: MarketData
-
-  "The list of the liquidity provision commitments for this market"
-  liquidityProvisions(
-    "An optional party ID"
-    partyId: ID
-  ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
 
   "The list of the liquidity provision commitments for this market"
    liquidityProvisionsConnection(
@@ -2038,34 +1878,12 @@ type Party {
   id: ID!
 
   "Orders relating to a party"
-  orders(
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Order!] @deprecated(reason: "Use ordersConnection instead")
-
-  "Orders relating to a party"
   ordersConnection(
     "Date range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange
     "Pagination information"
     pagination: Pagination
   ): OrderConnection
-
-  "Trades relating to a party (specifically where party is either buyer OR seller)"
-  trades(
-    "ID of the market you want to get trades for"
-    marketId: ID
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Trade!] @deprecated(reason: "Use tradesConnection for cursor based pagination instead")
 
   tradesConnection(
     "ID of the market you want to get trades for"
@@ -2075,16 +1893,6 @@ type Party {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-
-  "Collateral accounts relating to a party"
-  accounts(
-    "Market ID - specify what market accounts for the party to return"
-    marketId: ID
-    "Asset ID"
-    assetId: ID
-    "Filter accounts by type (General account, margin account, etc...)"
-    type: AccountType
-  ): [AccountBalance!] @deprecated(reason: "Use accountsConnection instead")
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2099,16 +1907,7 @@ type Party {
   ): AccountsConnection
 
   "Trading positions relating to a party"
-  positions: [Position!] @deprecated(reason: "Use the 'positionsConnection' field instead")
-
-  "Trading positions relating to a party"
   positionsConnection(market: ID, pagination: Pagination): PositionConnection
-
-  "Margin Levels"
-  margins(
-    "market ID off the margin to get, nil if all markets"
-    marketId: ID
-  ): [MarginLevels!] @deprecated(reason: "Use marginsConnection instead")
 
   "Margin levels for a market"
   marginsConnection(
@@ -2117,11 +1916,6 @@ type Party {
     "Optional Pagination information"
     pagination: Pagination
   ): MarginConnection
-
-  proposals(
-    "Select only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal] @deprecated(reason: "Use proposalsConnection instead")
 
   "All governance proposals in the Vega network"
   proposalsConnection(
@@ -2133,16 +1927,11 @@ type Party {
     pagination: Pagination
   ): ProposalsConnection
 
-  votes: [ProposalVote] @deprecated(reason: "Use votesConnection instead")
-
   "All votes on proposals in the Vega network by the given party"
   votesConnection(
     "Optional Pagination information"
     pagination: Pagination
   ): ProposalVoteConnection
-
-  "The list of all withdrawals initiated by the party"
-  withdrawals: [Withdrawal!] @deprecated(reason: "Use withdrawalsConnection instead")
 
   "The list of all withdrawals initiated by the party"
   withdrawalsConnection(
@@ -2153,9 +1942,6 @@ type Party {
   ): WithdrawalsConnection
 
   "The list of all deposits for a party by the party"
-  deposits: [Deposit!] @deprecated(reason: "Use depositsConnection instead")
-
-  "The list of all deposits for a party by the party"
   depositsConnection(
     "Date range to retrieve deposits from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
@@ -2163,34 +1949,15 @@ type Party {
     pagination: Pagination
   ): DepositsConnection
 
-  "The list of the liquidity provision commitment from this party"
-  liquidityProvisions(
-    "An optional market"
-    market: String
+  "The list of the liquidity provision commitment for this party"
+  liquidityProvisionsConnection(
+    "An optional market ID"
+    marketId: ID
     "An optional reference"
     reference: String
-  ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
-
-   "The list of the liquidity provision commitment for this party"
-     liquidityProvisionsConnection(
-       "An optional market ID"
-       marketId: ID
-       "An optional reference"
-       reference: String
-       "Optional Pagination information"
-       pagination: Pagination
-    ): LiquidityProvisionsConnection
-
-  # All delegations for a party to a given node if node is specified, or all delegations if not
-  delegations(
-    "Optional node ID"
-    nodeId: ID
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
+    "Optional Pagination information"
+    pagination: Pagination
+  ): LiquidityProvisionsConnection
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegationsConnection(
@@ -2201,22 +1968,7 @@ type Party {
   ): DelegationsConnection
 
   "The staking information for this Party"
-  stake: PartyStake! @deprecated(reason: "Use stakingSummary instead")
-
-  "The staking information for this Party"
   stakingSummary(pagination: Pagination): StakingSummary!
-
-  "Return individual reward information"
-  rewards(
-    "An optional asset ID"
-    assetId: ID
-    "Pagination skip element"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Reward] @deprecated(reason: "Use rewardsConnection instead")
 
   "Rewards information for the party"
   rewardsConnection(
@@ -2231,9 +1983,6 @@ type Party {
     "An asset ID (optional)"
     assetId: ID
   ): [RewardSummary]
-
-  "Return reward information"
-  rewardDetails: [RewardPerAssetDetail] @deprecated(reason: "Use rewardSummaries or rewards instead.")
 
   "All transfers for a public key"
   transfersConnection(
@@ -2335,9 +2084,6 @@ type Position {
   averageEntryPrice: String!
 
   "Margins of the party for the given position"
-  margins: [MarginLevels!] @deprecated(reason: "Use marginsConnection instead")
-
-  "Margins of the party for the given position"
   marginsConnection(pagination: Pagination): MarginConnection
 
   "RFC3339Nano time the position was updated"
@@ -2410,9 +2156,6 @@ type Order {
 
   "The external reference (if available) for the order"
   reference: String!
-
-  "Trades relating to this order"
-  trades: [Trade!] @deprecated(reason: "Use tradesConnection instead")
 
   "Trades relating to this order"
   tradesConnection(
@@ -3990,14 +3733,6 @@ type RewardSummary {
   asset: Asset!
   "Total quantity of rewards awarded in this asset"
   amount: String!
-  "List of individual reward payouts, ordered by epoch"
-  rewards (
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int): [Reward] @deprecated(reason: "Use rewardsConnection instead")
 
   "List of individual reward payouts, ordered by epoch"
   rewardsConnection(
@@ -4006,18 +3741,6 @@ type RewardSummary {
     "Cursor pagination information"
     pagination: Pagination
   ): RewardsConnection
-}
-
-"RewardPerAssetDetail is deprecated, use RewardSummmary instead "
-type RewardPerAssetDetail {
-  "Asset in which the reward was paid"
-  asset: Asset!
-  "ID of asset in which the reward was paid"
-  assetId: ID! @deprecated(reason: "Use asset{ID} instead")
-  "A list of rewards received for this asset"
-  rewards: [Reward]
-  "The total amount of rewards received for this asset."
-  totalAmount: String!
 }
 
 "RFC3339Nano value for time"

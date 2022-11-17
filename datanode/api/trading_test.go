@@ -29,7 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/logging"
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
@@ -45,20 +45,15 @@ import (
 
 const connBufSize = 1024 * 1024
 
-type GRPCServer interface {
-	Start()
-	Stop()
-}
-
 func waitForNode(ctx context.Context, t *testing.T, conn *grpc.ClientConn) {
 	t.Helper()
 	const maxSleep = 2000 // milliseconds
 
-	c := protoapi.NewTradingDataServiceClient(conn)
+	c := v2.NewTradingDataServiceClient(conn)
 
 	sleepTime := 10 // milliseconds
 	for sleepTime < maxSleep {
-		_, err := c.Markets(ctx, &protoapi.MarketsRequest{})
+		_, err := c.Ping(ctx, &v2.PingRequest{})
 		if err == nil {
 			return
 		}
@@ -87,7 +82,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 
 	mockCoreServiceClient = mocks.NewMockCoreServiceClient(mockCtrl)
 
-	mockCoreServiceClient.EXPECT().GetState().Return(connectivity.Ready).Times(2)
+	mockCoreServiceClient.EXPECT().GetState().Return(connectivity.Ready).AnyTimes()
 
 	mockDeHistoryService := mocks.NewMockDeHistoryService(mockCtrl)
 
