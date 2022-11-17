@@ -5835,7 +5835,7 @@ func (x *Node) GetAvatarUrl() string {
 	return ""
 }
 
-// Details on the collection of nodes for particular validator status
+// Details on the collection of nodes for a particular validator status
 type NodeSet struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5933,7 +5933,7 @@ type NodeData struct {
 	InactiveNodes uint32 `protobuf:"varint,3,opt,name=inactive_nodes,json=inactiveNodes,proto3" json:"inactive_nodes,omitempty"`
 	// Details on the set of consensus nodes in the network
 	TendermintNodes *NodeSet `protobuf:"bytes,4,opt,name=tendermint_nodes,json=tendermintNodes,proto3" json:"tendermint_nodes,omitempty"`
-	// Details on the set of erstaz (standby) nodes in the network
+	// Details on the set of ersatz (standby) nodes in the network
 	ErsatzNodes *NodeSet `protobuf:"bytes,5,opt,name=ersatz_nodes,json=ersatzNodes,proto3" json:"ersatz_nodes,omitempty"`
 	// Details on the set of pending nodes in the network
 	PendingNodes *NodeSet `protobuf:"bytes,6,opt,name=pending_nodes,json=pendingNodes,proto3" json:"pending_nodes,omitempty"`
