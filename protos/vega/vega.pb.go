@@ -5846,7 +5846,7 @@ type NodeSet struct {
 	Inactive uint32 `protobuf:"varint,2,opt,name=inactive,proto3" json:"inactive,omitempty"`
 	// IDs of nodes that were promoted into this nodeset at the start of the epoch
 	Promoted []string `protobuf:"bytes,3,rep,name=promoted,proto3" json:"promoted,omitempty"`
-	// IDs of nodes that were demoted into of this nodeset at the start of the epoch
+	// IDs of nodes that were demoted into this nodeset at the start of the epoch
 	Demoted []string `protobuf:"bytes,4,rep,name=demoted,proto3" json:"demoted,omitempty"`
 	// Total number of nodes allowed in the nodeset
 	Maximum *uint32 `protobuf:"varint,5,opt,name=maximum,proto3,oneof" json:"maximum,omitempty"`

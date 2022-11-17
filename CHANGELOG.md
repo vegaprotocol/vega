@@ -5,7 +5,6 @@
 ### 🚨 Breaking changes
 - [6716](https://github.com/vegaprotocol/vega/issues/6716) - Use timestamp on all times fields
 - [6725](https://github.com/vegaprotocol/vega/issues/6725) - Fix inconsistent use of node field on `GraphQL` connection edges
-- [6746](https://github.com/vegaprotocol/vega/issues/6746) - The `NodeData` is now returns information about the nodes in each nodeset
 - [6746](https://github.com/vegaprotocol/vega/issues/6746) - The `validating_nodes` has been removed from `NodeData` and replaced with details of each node set
 
 ### 🗑️ Deprecation
