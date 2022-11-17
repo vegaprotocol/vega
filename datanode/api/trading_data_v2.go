@@ -2171,13 +2171,45 @@ func (t *tradingDataServiceV2) marketExistsForID(ctx context.Context, marketID s
 func (t *tradingDataServiceV2) GetNetworkData(ctx context.Context, _ *v2.GetNetworkDataRequest) (*v2.GetNetworkDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNetworkDataV2")()
 
-	nodeData, err := t.nodeService.GetNodeData(ctx)
+	epoch, err := t.epochService.GetCurrent(ctx)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	// get the node-y bits
+	networkData, err := t.nodeService.GetNodeData(ctx, uint64(epoch.ID))
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+	data := networkData.ToProto()
+
+	// now use network parameters to calculate the maximum nodes allowed in each nodeSet
+	np, err := t.networkParameterService.GetByKey(ctx, "network.validators.tendermint.number")
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	maxTendermint, err := strconv.ParseUint(np.Value, 10, 32)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	np, err = t.networkParameterService.GetByKey(ctx, "network.validators.ersatz.multipleOfTendermintValidators")
 	if err != nil {
 		return nil, t.formatE(err)
 	}
 
+	ersatzFactor, err := strconv.ParseFloat(np.Value, 32)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	data.TendermintNodes.Maximum = ptr.From(uint32(maxTendermint))
+	data.ErsatzNodes.Maximum = ptr.From(uint32(float64(maxTendermint) * ersatzFactor))
+
+	// we're done
 	return &v2.GetNetworkDataResponse{
-		NodeData: nodeData.ToProto(),
+		NodeData: data,
 	}, nil
 }
 
