@@ -17,6 +17,9 @@ const (
 	lpShapeCostFactor = uint64(100)
 	positionFactor    = uint64(1)
 	levelFactor       = 0.1
+	high              = 10000
+	medium            = 100
+	low               = 1
 )
 
 type ExecEngine interface {
@@ -24,10 +27,11 @@ type ExecEngine interface {
 }
 
 type Gastimator struct {
-	maxGas         uint64
-	defaultGas     uint64
-	exec           ExecEngine
-	marketCounters map[string]*types.MarketCounters
+	minBlockCapacity uint64
+	maxGas           uint64
+	defaultGas       uint64
+	exec             ExecEngine
+	marketCounters   map[string]*types.MarketCounters
 }
 
 func NewGastimator(exec ExecEngine) *Gastimator {
@@ -41,6 +45,12 @@ func NewGastimator(exec ExecEngine) *Gastimator {
 func (g *Gastimator) OnBlockEnd() uint64 {
 	g.marketCounters = g.exec.GetMarketCounters()
 	return g.maxGas
+}
+
+// OnMaxGasUpdate updates the max gas from the network parameter.
+func (g *Gastimator) OnMinBlockCapacityUpdate(ctx context.Context, minBlockCapacity *num.Uint) error {
+	g.minBlockCapacity = minBlockCapacity.Uint64()
+	return nil
 }
 
 // OnMaxGasUpdate updates the max gas from the network parameter.
@@ -58,6 +68,19 @@ func (g *Gastimator) OnDefaultGasUpdate(ctx context.Context, def *num.Uint) erro
 // GetMaxGas returns the current value of max gas.
 func (g *Gastimator) GetMaxGas() uint64 {
 	return g.maxGas
+}
+
+func (g *Gastimator) GetPriority(tx abci.Tx) uint64 {
+	switch tx.Command() {
+	case txn.ProposeCommand,
+		txn.VoteCommand:
+		return medium
+	default:
+		if tx.Command().IsValidatorCommand() {
+			return high
+		}
+		return low
+	}
 }
 
 func (g *Gastimator) CalcGasWantedForTx(tx abci.Tx) (uint64, error) {
@@ -79,7 +102,13 @@ func (g *Gastimator) CalcGasWantedForTx(tx abci.Tx) (uint64, error) {
 		if err := tx.Unmarshal(s); err != nil {
 			return g.maxGas + 1, err
 		}
-		return g.cancelOrderGastimate(s.MarketId), nil
+		// if it is a cancel for one market
+		if len(s.MarketId) > 0 && len(s.OrderId) > 0 {
+			return g.cancelOrderGastimate(s.MarketId), nil
+		}
+		// if it is a cancel for all markets
+		return g.defaultGas, nil
+
 	case txn.LiquidityProvisionCommand:
 		s := &commandspb.LiquidityProvisionSubmission{}
 		if err := tx.Unmarshal(s); err != nil {
@@ -160,7 +189,7 @@ func (g *Gastimator) orderGastimate(marketID string) uint64 {
 				lpShapeCostFactor*marketCounters.LPShapeCount+
 				positionFactor*marketCounters.PositionCount+
 				uint64(levelFactor*float64(marketCounters.OrderbookLevelCount))),
-			float64(g.maxGas-1)))
+			math.Max(1.0, float64(g.maxGas/g.minBlockCapacity-1))))
 	}
 	return g.defaultGas
 }
@@ -176,7 +205,7 @@ func (g *Gastimator) cancelOrderGastimate(marketID string) uint64 {
 				pegCostFactor*marketCounters.PeggedOrderCounter+
 				lpShapeCostFactor*marketCounters.LPShapeCount+
 				uint64(0.1*float64(marketCounters.OrderbookLevelCount))),
-			float64(g.maxGas-1)))
+			math.Max(1.0, float64(g.maxGas/g.minBlockCapacity-1))))
 	}
 	return g.defaultGas
 }
@@ -194,7 +223,7 @@ func (g *Gastimator) lpGastimate(marketID string) uint64 {
 				lpShapeCostFactor*marketCounters.LPShapeCount+
 				positionFactor*marketCounters.PositionCount+
 				uint64(levelFactor*float64(marketCounters.OrderbookLevelCount))),
-			float64(g.maxGas-1)))
+			math.Max(1.0, float64(g.maxGas/g.minBlockCapacity-1))))
 	}
 	return g.defaultGas
 }
