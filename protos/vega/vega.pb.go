@@ -5835,20 +5835,21 @@ func (x *Node) GetAvatarUrl() string {
 	return ""
 }
 
+// Details on the collection of nodes for particular validator status
 type NodeSet struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Total number of nodes in the nodeset
+	// Total number of nodes in the node set
 	Total uint32 `protobuf:"varint,1,opt,name=total,proto3" json:"total,omitempty"`
-	// Number of nodes in the nodeset which had a performance score of 0 at the end of the last epoch
+	// Number of nodes in the node set that had a performance score of 0 at the end of the last epoch
 	Inactive uint32 `protobuf:"varint,2,opt,name=inactive,proto3" json:"inactive,omitempty"`
-	// IDs of nodes that were promoted into this nodeset at the start of the epoch
+	// IDs of nodes that were promoted into this node set at the start of the epoch
 	Promoted []string `protobuf:"bytes,3,rep,name=promoted,proto3" json:"promoted,omitempty"`
-	// IDs of nodes that were demoted into this nodeset at the start of the epoch
+	// IDs of nodes that were demoted into this node set at the start of the epoch
 	Demoted []string `protobuf:"bytes,4,rep,name=demoted,proto3" json:"demoted,omitempty"`
-	// Total number of nodes allowed in the nodeset
+	// Total number of nodes allowed in the node set
 	Maximum *uint32 `protobuf:"varint,5,opt,name=maximum,proto3,oneof" json:"maximum,omitempty"`
 }
 
@@ -5926,15 +5927,15 @@ type NodeData struct {
 
 	// Total staked amount across all nodes
 	StakedTotal string `protobuf:"bytes,1,opt,name=staked_total,json=stakedTotal,proto3" json:"staked_total,omitempty"`
-	// Total number of nodes across all nodesets
+	// Total number of nodes across all node sets
 	TotalNodes uint32 `protobuf:"varint,2,opt,name=total_nodes,json=totalNodes,proto3" json:"total_nodes,omitempty"`
-	// Total number of nodes which had a performance score of 0 at the end of the last epoch
+	// Total number of nodes that had a performance score of 0 at the end of the last epoch
 	InactiveNodes uint32 `protobuf:"varint,3,opt,name=inactive_nodes,json=inactiveNodes,proto3" json:"inactive_nodes,omitempty"`
-	// Details on the set of Tendermint nodes in the network
+	// Details on the set of consensus nodes in the network
 	TendermintNodes *NodeSet `protobuf:"bytes,4,opt,name=tendermint_nodes,json=tendermintNodes,proto3" json:"tendermint_nodes,omitempty"`
-	// Details on the set of Erstaz nodes in the network
+	// Details on the set of erstaz (standby) nodes in the network
 	ErsatzNodes *NodeSet `protobuf:"bytes,5,opt,name=ersatz_nodes,json=ersatzNodes,proto3" json:"ersatz_nodes,omitempty"`
-	// Details on the set of Pending nodes in the network
+	// Details on the set of pending nodes in the network
 	PendingNodes *NodeSet `protobuf:"bytes,6,opt,name=pending_nodes,json=pendingNodes,proto3" json:"pending_nodes,omitempty"`
 	// Total uptime for all epochs across all nodes
 	Uptime float32 `protobuf:"fixed32,7,opt,name=uptime,proto3" json:"uptime,omitempty"`

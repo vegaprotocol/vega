@@ -432,16 +432,17 @@ type MarketTick struct {
 
 func (MarketTick) IsEvent() {}
 
+// Details on the collection of nodes for particular validator status
 type NodeSet struct {
-	// Total number of nodes in the nodeset
+	// Total number of nodes in the node set
 	Total int `json:"total"`
-	// Number of nodes in the nodeset which has a performance score of 0 at the end of the last epoch
+	// Number of nodes in the node set that had a performance score of 0 at the end of the last epoch
 	Inactive int `json:"inactive"`
-	// IDs of the nodes that were promoted into this nodeset at the start of the epoch
+	// IDs of the nodes that were promoted into this node set at the start of the epoch
 	Promoted []string `json:"promoted"`
-	// IDs of the nodes that were demoted into this nodeset at the start of the epoch
+	// IDs of the nodes that were demoted into this node set at the start of the epoch
 	Demoted []string `json:"demoted"`
-	// Total number of nodes allowed in the nodeset
+	// Total number of nodes allowed in the node set
 	Maximum *int `json:"maximum"`
 }
 

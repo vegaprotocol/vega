@@ -1226,16 +1226,17 @@ message Node {
   string avatar_url = 18;
 }
 
+// Details on the collection of nodes for a particular validator status
 message NodeSet {
-  // Total number of nodes in the nodeset
+  // Total number of nodes in the node set
   uint32 total = 1;
-  // Number of nodes in the nodeset which had a performance score of 0 at the end of the last epoch
+  // Number of nodes in the node set that had a performance score of 0 at the end of the last epoch
   uint32 inactive = 2;
-  // IDs of nodes that were promoted into this nodeset at the start of the epoch
+  // IDs of nodes that were promoted into this node set at the start of the epoch
   repeated string promoted = 3;
-  // IDs of nodes that were demoted into this nodeset at the start of the epoch
+  // IDs of nodes that were demoted into this node set at the start of the epoch
   repeated string demoted = 4;
-  // Total number of nodes allowed in the nodeset
+  // Total number of nodes allowed in the node set
   optional uint32 maximum = 5;
 
 }
@@ -1243,15 +1244,15 @@ message NodeSet {
 message NodeData {
   // Total staked amount across all nodes
   string staked_total = 1;
-  // Total number of nodes across all nodesets
+  // Total number of nodes across all node sets
   uint32 total_nodes = 2;
-  // Total number of nodes which had a performance score of 0 at the end of the last epoch
+  // Total number of nodes that had a performance score of 0 at the end of the last epoch
   uint32 inactive_nodes = 3;
-  // Details on the set of Tendermint nodes in the network
+  // Details on the set of consensus nodes in the network
   NodeSet tendermint_nodes = 4;
-  // Details on the set of Erstaz nodes in the network
+  // Details on the set of ersatz (standby) nodes in the network
   NodeSet ersatz_nodes = 5;
-  // Details on the set of Pending nodes in the network
+  // Details on the set of pending nodes in the network
   NodeSet pending_nodes = 6;
   // Total uptime for all epochs across all nodes
   float uptime = 7;

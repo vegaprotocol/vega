@@ -256,9 +256,9 @@ func (store *Node) GetNodeData(ctx context.Context, epochSeq uint64) (entities.N
 
 		// check if the node was promoted or demoted into its set this epoch
 		switch {
-		case entities.ValidatorStatusRanking[status] > entities.ValidatorStatusRanking[previousStatus]:
+		case uint32(status) < uint32(previousStatus):
 			ns.Promoted = append(ns.Promoted, n.ID.String())
-		case entities.ValidatorStatusRanking[status] < entities.ValidatorStatusRanking[previousStatus]:
+		case uint32(status) > uint32(previousStatus):
 			ns.Demoted = append(ns.Promoted, n.ID.String())
 		default:
 			// node stayed in the same set, thats cool

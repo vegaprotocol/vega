@@ -2199,13 +2199,13 @@ func (t *tradingDataServiceV2) GetNetworkData(ctx context.Context, _ *v2.GetNetw
 		return nil, t.formatE(err)
 	}
 
-	erstazFactor, err := strconv.ParseFloat(np.Value, 32)
+	ersatzFactor, err := strconv.ParseFloat(np.Value, 32)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
 
 	data.TendermintNodes.Maximum = ptr.From(uint32(maxTendermint))
-	data.ErsatzNodes.Maximum = ptr.From(uint32(float64(maxTendermint) * erstazFactor))
+	data.ErsatzNodes.Maximum = ptr.From(uint32(float64(maxTendermint) * ersatzFactor))
 
 	// we're done
 	return &v2.GetNetworkDataResponse{

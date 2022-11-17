@@ -32252,11 +32252,14 @@ func (ec *executionContext) _NodeData_tendermintNodes(ctx context.Context, field
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*NodeSet)
 	fc.Result = res
-	return ec.marshalONodeSet2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeSet(ctx, field.Selections, res)
+	return ec.marshalNNodeSet2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeSet(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_NodeData_tendermintNodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -66605,6 +66608,9 @@ func (ec *executionContext) _NodeData(ctx context.Context, sel ast.SelectionSet,
 					}
 				}()
 				res = ec._NodeData_tendermintNodes(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -76318,6 +76324,20 @@ func (ec *executionContext) marshalNNode2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋpr
 		return graphql.Null
 	}
 	return ec._Node(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNNodeSet2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeSet(ctx context.Context, sel ast.SelectionSet, v NodeSet) graphql.Marshaler {
+	return ec._NodeSet(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNNodeSet2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeSet(ctx context.Context, sel ast.SelectionSet, v *NodeSet) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._NodeSet(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNNodeSignature2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignature(ctx context.Context, sel ast.SelectionSet, v *v11.NodeSignature) graphql.Marshaler {

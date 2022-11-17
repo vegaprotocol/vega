@@ -51,9 +51,15 @@ func (r *nodeDataResolver) TendermintNodes(ctx context.Context, obj *proto.NodeD
 }
 
 func (r *nodeDataResolver) ErsatzNodes(ctx context.Context, obj *proto.NodeData) (*NodeSet, error) {
+	if obj.ErsatzNodes == nil || obj.ErsatzNodes.Total == 0 {
+		return nil, nil
+	}
 	return toNodeSet(obj.ErsatzNodes), nil
 }
 
 func (r *nodeDataResolver) PendingNodes(ctx context.Context, obj *proto.NodeData) (*NodeSet, error) {
+	if obj.PendingNodes == nil || obj.PendingNodes.Total == 0 {
+		return nil, nil
+	}
 	return toNodeSet(obj.PendingNodes), nil
 }
