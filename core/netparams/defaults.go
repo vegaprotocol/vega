@@ -41,6 +41,7 @@ var (
 	// Uints.
 	gteU0  = UintGTE(num.UintZero())
 	gteU1  = UintGTE(num.NewUint(1))
+	gteU5  = UintGTE(num.NewUint(5))
 	ltMaxU = UintLT(num.MaxUint())
 
 	// Ints.
@@ -201,7 +202,7 @@ func defaultNetParams() map[string]value {
 		TransferMaxCommandsPerEpoch:        NewInt(gteI0).Mutable(true).MustUpdate("20"),
 
 		// pow
-		SpamPoWNumberOfPastBlocks:   NewUint(gteU1, UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("100"),
+		SpamPoWNumberOfPastBlocks:   NewUint(gteU5, UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("100"),
 		SpamPoWDifficulty:           NewUint(gteU0, UintLTE(num.NewUint(256))).Mutable(true).MustUpdate("15"),
 		SpamPoWHashFunction:         NewString(checks.SpamPoWHashFunction([]string{crypto.Sha3})).Mutable(true).MustUpdate(crypto.Sha3),
 		SpamPoWNumberOfTxPerBlock:   NewUint(gteU1).Mutable(true).MustUpdate("2"),
