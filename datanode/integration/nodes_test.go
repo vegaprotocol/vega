@@ -28,7 +28,7 @@ func TestNodes(t *testing.T) {
 
 func TestNodeData(t *testing.T) {
 	queries := map[string]string{
-		"NodeData": "{ nodeData { stakedTotal, totalNodes, inactiveNodes, validatingNodes, uptime } }",
+		"NodeData": "{ nodeData { stakedTotal, totalNodes, inactiveNodes, tendermintNodes {total, inactive, maximum }, ersatzNodes {total, inactive, maximum }, pendingNodes {total, inactive}, uptime } }",
 	}
 
 	for name, query := range queries {
