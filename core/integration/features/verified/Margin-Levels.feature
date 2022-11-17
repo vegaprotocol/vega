@@ -14,7 +14,7 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | 1.5           | 2              | 3              |
 
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring | data source config          |
+      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring | data source config     |
       | ETH/DEC19 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future |
       | ETH/DEC20 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
@@ -87,21 +87,28 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | trader2  | 40     | 0              | 0            |
       | trader20 | 40     | 0              | 0            |
 
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 1055  | 223    |
+      | sell | 1000  | 10     |
+      | buy  | 5     | 40005  |
+
     # check margin initial level
     # trader2 and trader20 have open position of 40 now
     And the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
       | trader2  | ETH/DEC19 | 3402        | 5103   | 6804    | 10206   |
       | trader20 | ETH/DEC20 | 3402        | 4082   | 5103    | 6804    |
-      #| trader2  | ETH/DEC19 | 1602        | 2403   | 3204    | 4806    |
-      #| trader20 | ETH/DEC20 | 1602        | 1922   | 2403    | 3204    |
+    #| trader2  | ETH/DEC19 | 1602        | 2403   | 3204    | 4806    |
+    #| trader20 | ETH/DEC20 | 1602        | 1922   | 2403    | 3204    |
+    #maintenance_margin_trader2: 40*(50-5)+40*50*0.801225765=3402
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader2  | USD   | ETH/DEC19 | 6804   | 3196    |
       #| trader2  | USD   | ETH/DEC19 | 3204   | 5796    |
       | trader20 | USD   | ETH/DEC20 | 5103   | 4897    |
-      #| trader20 | USD   | ETH/DEC20 | 2403   | 6597    |
+    #| trader20 | USD   | ETH/DEC20 | 2403   | 6597    |
 
     # move mark price from 50 to 20, MTM, hence cash flow beween margin and general account for trader2 and trader20
     When the parties place the following orders with ticks:
@@ -121,14 +128,14 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | trader2  | ETH/DEC19 | 1241        | 1861   | 2482    | 3723    |
       #| trader2  | ETH/DEC19 | 641         | 961    | 1282    | 1923    |
       | trader20 | ETH/DEC20 | 1241        | 1489   | 1861    | 2482    |
-      #| trader20 | ETH/DEC20 | 641         | 769    | 961     | 1282    |
+    #| trader20 | ETH/DEC20 | 641         | 769    | 961     | 1282    |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader2  | USD   | ETH/DEC19 | 2482   | 6318    |
       #| trader2  | USD   | ETH/DEC19 | 1282   | 6518    |
       | trader20 | USD   | ETH/DEC20 | 1861   | 6939    |
-      #| trader20 | USD   | ETH/DEC20 | 1203   | 6597    |
+    #| trader20 | USD   | ETH/DEC20 | 1203   | 6597    |
 
     # check margin release level
     # MTM process will reduce (50-20)*40=1200 from general account
@@ -169,23 +176,23 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | trader2  | 0      | 0              | -10000       |
       #| trader2  | -20    | 0              | 0            |
       | trader20 | 0      | 0              | -10000       |
-      #| trader20 | -20    | 0              | 0            |
+#| trader20 | -20    | 0              | 0            |
 
-      #And the parties should have the following margin levels:
-      #| party    | market id | maintenance | search | initial | release |
-      #| trader2  | ETH/DEC19 | 4657        | 6985   | 9314    | 13971   |
-      #| trader20 | ETH/DEC20 | 4657        | 5588   | 6985    | 9314    |
+#And the parties should have the following margin levels:
+#| party    | market id | maintenance | search | initial | release |
+#| trader2  | ETH/DEC19 | 4657        | 6985   | 9314    | 13971   |
+#| trader20 | ETH/DEC20 | 4657        | 5588   | 6985    | 9314    |
 
-    # With the different MTM approach, these traders now get closed out
-    # check margin search level
-    #mentainance level before new open position: margin_trader2 = 20*50*3.55690359157934000=3557
-    #initial level: margin_trader2 = 20*50*3.55690359157934000*2=7114 which is more than search level, so margin account is set at 7114
-    #mentainance level before new open position: margin_trader20 = 20*50*3.55690359157934000=3557
-    #initial level: margin_trader20 = 20*50*3.55690359157934000*1.5=5336 which is less than search level and higher than maintenance
+# With the different MTM approach, these traders now get closed out
+# check margin search level
+#mentainance level before new open position: margin_trader2 = 20*50*3.55690359157934000=3557
+#initial level: margin_trader2 = 20*50*3.55690359157934000*2=7114 which is more than search level, so margin account is set at 7114
+#mentainance level before new open position: margin_trader20 = 20*50*3.55690359157934000=3557
+#initial level: margin_trader20 = 20*50*3.55690359157934000*1.5=5336 which is less than search level and higher than maintenance
 
-    #Then the parties should have the following account balances:
-    #  | party    | asset | market id | margin | general |
-    #  | trader2  | USD   | ETH/DEC19 | 7114   | 1886    |
-    #  | trader20 | USD   | ETH/DEC20 | 6985   | 2015    |
+#Then the parties should have the following account balances:
+#  | party    | asset | market id | margin | general |
+#  | trader2  | USD   | ETH/DEC19 | 7114   | 1886    |
+#  | trader20 | USD   | ETH/DEC20 | 6985   | 2015    |
 
 
