@@ -216,6 +216,8 @@ func defaultNetParams() map[string]value {
 		DefaultGas:                 NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(99))).Mutable(true).MustUpdate("1"),
 		MinBlockCapacity:           NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("32"),
 		MaxPeggedOrders:            NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("1500"),
+
+		MarkPriceUpdateMaximumFrequency: NewDuration().Mutable(true).MustUpdate("5s"),
 	}
 
 	// add additional cross net param rules

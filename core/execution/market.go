@@ -267,6 +267,8 @@ type Market struct {
 	assetDP               uint32
 
 	settlementDataInMarket *num.Uint
+	nextMTM                time.Time
+	mtmDelta               time.Duration
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -405,6 +407,7 @@ func NewMarket(
 		priceFactor:               priceFactor,
 		minLPStakeQuantumMultiple: num.MustDecimalFromString("1"),
 		positionFactor:            positionFactor,
+		nextMTM:                   time.Now(), // placeholder, we will set this accordingly
 	}
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
@@ -570,6 +573,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		PriceMonitoringBounds:     bounds,
 		MarketValueProxy:          m.lastMarketValueProxy.BigInt().String(),
 		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps),
+		NextMTM:                   m.nextMTM.UnixNano(),
 	}
 }
 
@@ -723,6 +727,11 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 
 	// check auction, if any
 	m.checkAuction(ctx, t)
+	// should we MTM regardless of auction state?
+	if !m.nextMTM.After(t) {
+		m.nextMTM = t.Add(m.mtmDelta) // add delta here
+		m.confirmMTMNoOrder(ctx)
+	}
 	timer.EngineTimeCounterAdd()
 
 	m.updateMarketValueProxy()
@@ -1054,11 +1063,11 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	// we'll fall back to the a network order at the new mark price (mid-price)
 	cmp := m.getCurrentMarkPrice()
 	mcmp := num.UintZero().Div(cmp, m.priceFactor) // create the market representation of the price
-	m.confirmMTM(ctx, &types.Order{
-		ID:            m.idgen.NextID(),
-		Price:         cmp,
-		OriginalPrice: mcmp,
-	})
+	// m.confirmMTM(ctx, &types.Order{
+	// ID:            m.idgen.NextID(),
+	// Price:         cmp,
+	// OriginalPrice: mcmp,
+	// })
 
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.Left(ctx, now)
@@ -1631,9 +1640,9 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		m.marketActivityTracker.AddValueTraded(m.mkt.ID, tradedValue)
 		m.broker.SendBatch(tradeEvts)
 
-		if !end {
-			orderUpdates = m.confirmMTM(ctx, conf.Order)
-		}
+		// if !end {
+		// orderUpdates = m.confirmMTM(ctx, conf.Order)
+		// }
 	} else {
 		// we had no trade, but still want to register this position in the settlement
 		// engine I guess
@@ -1673,6 +1682,48 @@ func (m *Market) confirmMTM(
 		if len(closed) > 0 {
 			orderUpdates, err = m.resolveClosedOutParties(
 				ctx, closed, ptr.From(order.ID))
+			if err != nil {
+				m.log.Error("unable to closed out parties",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
+		}
+		m.updateLiquidityFee(ctx)
+	}
+
+	return orderUpdates
+}
+
+func (m *Market) confirmMTMNoOrder(ctx context.Context) {
+	markPrice := m.getCurrentMarkPrice()
+	evts := m.position.UpdateMarkPrice(markPrice)
+	settle := m.settlement.SettleMTM(ctx, markPrice, evts)
+	mcmp := num.UintZero().Div(markPrice, m.priceFactor) // create the market representation of the price
+	dummy := types.Order{
+		ID:            m.idgen.NextID(),
+		Price:         markPrice.Clone(),
+		OriginalPrice: mcmp,
+	}
+
+	// Only process collateral and risk once per order, not for every trade
+	margins := m.collateralAndRisk(ctx, settle)
+	if len(margins) > 0 {
+		transfers, closed, bondPenalties, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
+		if err == nil && len(transfers) > 0 {
+			evt := events.NewLedgerMovements(ctx, transfers)
+			m.broker.Send(evt)
+		}
+		if len(bondPenalties) > 0 {
+			transfers, err := m.bondSlashing(ctx, bondPenalties...)
+			if err != nil {
+				m.log.Error("Failed to perform bond slashing",
+					logging.Error(err))
+			}
+			m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+		}
+		if len(closed) > 0 {
+			orderUpdates, err = m.resolveClosedOutParties(
+				ctx, closed, ptr.From(dummy.ID))
 			if err != nil {
 				m.log.Error("unable to closed out parties",
 					logging.String("market-id", m.GetID()),

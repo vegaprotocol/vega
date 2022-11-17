@@ -165,6 +165,8 @@ const (
 
 	// network wide limits.
 	MaxPeggedOrders = "limits.markets.maxPeggedOrders"
+	// MTM interval
+	MarkPriceUpdateMaximumFrequency = "network.markPriceUpdateMaximumFrequency"
 )
 
 var AllKeys = map[string]struct{}{
