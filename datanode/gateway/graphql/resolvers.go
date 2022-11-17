@@ -756,7 +756,7 @@ func (r *myQueryResolver) EstimateOrder(
 	resp, err := r.tradingDataClientV2.EstimateFee(ctx, &req)
 	if err != nil {
 		r.log.Error("Failed to get fee estimates using rpc client in graphQL resolver", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	// calclate the fee total amount
@@ -792,7 +792,7 @@ func (r *myQueryResolver) EstimateOrder(
 	respm, err := r.tradingDataClientV2.EstimateMargin(ctx, &reqm)
 	if err != nil {
 		r.log.Error("Failed to get margin estimates using rpc client in graphQL resolver", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	return &OrderEstimate{
@@ -858,7 +858,7 @@ func (r *myQueryResolver) OrderVersionsConnection(ctx context.Context, orderID *
 	resp, err := r.tradingDataClientV2.ListOrderVersions(ctx, req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	return resp.Orders, nil
 }
@@ -870,7 +870,7 @@ func (r *myQueryResolver) OrderByReference(ctx context.Context, reference string
 	res, err := r.tradingDataClientV2.ListOrders(ctx, req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	if len(res.Orders.Edges) == 0 {
@@ -1202,7 +1202,7 @@ func (r *myPartyResolver) LiquidityProvisionsConnection(
 	res, err := r.tradingDataClientV2.ListLiquidityProvisions(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	return res.LiquidityProvisions, nil
@@ -1230,7 +1230,7 @@ func (r *myPartyResolver) MarginsConnection(ctx context.Context, party *types.Pa
 	res, err := r.tradingDataClientV2.ListMarginLevels(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	return res.MarginLevels, nil
@@ -1248,7 +1248,7 @@ func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Par
 	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	return res.Orders, nil
 }
@@ -1264,7 +1264,7 @@ func (r *myPartyResolver) TradesConnection(ctx context.Context, party *types.Par
 	res, err := r.tradingDataClientV2.ListTrades(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	return res.Trades, nil
 }
@@ -1289,7 +1289,7 @@ func (r *myPartyResolver) PositionsConnection(ctx context.Context, party *types.
 	res, err := r.tradingDataClientV2.ListPositions(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	return res.Positions, nil
@@ -1342,7 +1342,7 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *types.P
 			logging.String("market-id", mktID),
 			logging.String("asset", asst),
 			logging.String("type", accTy.String()))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	return res.Accounts, nil
@@ -1371,7 +1371,7 @@ func (r *myPartyResolver) VotesConnection(ctx context.Context, party *types.Part
 	res, err := r.tradingDataClientV2.ListVotes(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	edges := make([]*ProposalVoteEdge, 0, len(res.Votes.Edges))
@@ -1435,7 +1435,7 @@ func (r *myMarginLevelsResolver) Party(ctx context.Context, m *types.MarginLevel
 	res, err := r.tradingDataClientV2.GetParty(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	return res.Party, nil
 }
@@ -1562,7 +1562,7 @@ func (r *myOrderResolver) TradesConnection(ctx context.Context, ord *types.Order
 	res, err := r.tradingDataClientV2.ListTrades(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	return res.Trades, nil
 }
@@ -1593,7 +1593,7 @@ func (r *myOrderResolver) LiquidityProvision(ctx context.Context, obj *types.Ord
 	res, err := r.tradingDataClientV2.ListLiquidityProvisions(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	if len(res.LiquidityProvisions.Edges) <= 0 {
@@ -1636,7 +1636,7 @@ func (r *myTradeResolver) Buyer(ctx context.Context, obj *types.Trade) (*types.P
 	res, err := r.tradingDataClientV2.GetParty(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	return res.Party, nil
 }
@@ -1652,7 +1652,7 @@ func (r *myTradeResolver) Seller(ctx context.Context, obj *types.Trade) (*types.
 	res, err := r.tradingDataClientV2.GetParty(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	return res.Party, nil
 }
@@ -1804,7 +1804,7 @@ func (r *myPositionResolver) MarginsConnection(ctx context.Context, pos *types.P
 	res, err := r.tradingDataClientV2.ListMarginLevels(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	return res.MarginLevels, nil
@@ -1823,7 +1823,7 @@ func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID 
 	}
 	stream, err := r.tradingDataClientV2.ObserveDelegations(ctx, req)
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	ch := make(chan *types.Delegation)
@@ -1856,7 +1856,7 @@ func (r *mySubscriptionResolver) Rewards(ctx context.Context, assetID, party *st
 	}
 	stream, err := r.tradingDataClientV2.ObserveRewards(ctx, req)
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	ch := make(chan *types.Reward)
@@ -1889,7 +1889,7 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 	}
 	stream, err := r.tradingDataClientV2.ObserveMarginLevels(ctx, req)
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	ch := make(chan *types.MarginLevels)
@@ -1946,7 +1946,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 	}
 	stream, err := r.tradingDataClientV2.ObserveAccounts(ctx, req)
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	c := make(chan []*v2.AccountBalance)
@@ -1986,7 +1986,7 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 	}
 	stream, err := r.tradingDataClientV2.ObserveOrders(ctx, req)
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	c := make(chan []*types.Order)
@@ -2024,7 +2024,7 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	}
 	stream, err := r.tradingDataClientV2.ObserveTrades(ctx, req)
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	c := make(chan []*types.Trade)
@@ -2057,7 +2057,7 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 	}
 	stream, err := r.tradingDataClientV2.ObservePositions(ctx, req)
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	c := make(chan []*types.Position)
@@ -2094,7 +2094,7 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 		MarketId: market,
 	})
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	candleID := ""
@@ -2120,7 +2120,7 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 	}
 	stream, err := r.tradingDataClientV2.ObserveCandleData(ctx, req)
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	c := make(chan *v2.Candle)
@@ -2161,7 +2161,7 @@ func isStreamClosed(err error, log *logging.Logger) bool {
 func (r *mySubscriptionResolver) subscribeAllProposals(ctx context.Context) (<-chan *types.GovernanceData, error) {
 	stream, err := r.tradingDataClientV2.ObserveGovernance(ctx, &v2.ObserveGovernanceRequest{})
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	output := make(chan *types.GovernanceData)
 	go func() {
@@ -2181,7 +2181,7 @@ func (r *mySubscriptionResolver) subscribePartyProposals(ctx context.Context, pa
 		PartyId: &partyID,
 	})
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	output := make(chan *types.GovernanceData)
 	go func() {
@@ -2209,7 +2209,7 @@ func (r *mySubscriptionResolver) subscribeProposalVotes(ctx context.Context, pro
 		ProposalId: &proposalID,
 	})
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	go func() {
 		defer func() {
@@ -2233,7 +2233,7 @@ func (r *mySubscriptionResolver) subscribePartyVotes(ctx context.Context, partyI
 		PartyId: &partyID,
 	})
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	go func() {
 		defer func() {
@@ -2289,12 +2289,12 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 	// build the bidirectional stream connection
 	stream, err := r.tradingDataClientV2.ObserveEventBus(ctx, msgSize)
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	// send our initial message to initialize the connection
 	if err := stream.Send(&req); err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	// we no longer buffer this channel. Client receives batch, then we request the next batch
@@ -2363,7 +2363,7 @@ func (r *mySubscriptionResolver) LiquidityProvisions(ctx context.Context, partyI
 	}
 	stream, err := r.tradingDataClientV2.ObserveLiquidityProvisions(ctx, req)
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	c := make(chan []*types.LiquidityProvision)
@@ -2454,14 +2454,13 @@ func (r *myAccountEventResolver) Asset(ctx context.Context, obj *vega.Account) (
 
 // END: Account Resolver
 
-func getParty(ctx context.Context, log *logging.Logger, client TradingDataServiceClientV2, id string) (*types.Party, error) {
+func getParty(ctx context.Context, _ *logging.Logger, client TradingDataServiceClientV2, id string) (*types.Party, error) {
 	if len(id) == 0 {
 		return nil, nil
 	}
 	res, err := client.GetParty(ctx, &v2.GetPartyRequest{PartyId: id})
 	if err != nil {
-		log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	return res.Party, nil
 }
@@ -2549,7 +2548,7 @@ func (r *myQueryResolver) GetMarketDataHistoryConnectionByID(ctx context.Context
 	resp, err := r.tradingDataClientV2.GetMarketDataHistoryByID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	return resp.GetMarketData(), nil

@@ -19,14 +19,11 @@ import (
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
-	"github.com/pkg/errors"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
-
-var ErrProposalNotFound = errors.New("proposal not found")
 
 type Proposals struct {
 	*ConnectionSource
@@ -84,24 +81,15 @@ func (ps *Proposals) GetByID(ctx context.Context, id string) (entities.Proposal,
 	defer metrics.StartSQLQuery("Proposals", "GetByID")()
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE id=$1`
-	err := pgxscan.Get(ctx, ps.Connection, &p, query, entities.ProposalID(id))
-	if pgxscan.NotFound(err) {
-		return p, fmt.Errorf("'%v': %w", id, ErrProposalNotFound)
-	}
 
-	return p, err
+	return p, ps.wrapE(pgxscan.Get(ctx, ps.Connection, &p, query, entities.ProposalID(id)))
 }
 
 func (ps *Proposals) GetByReference(ctx context.Context, ref string) (entities.Proposal, error) {
 	defer metrics.StartSQLQuery("Proposals", "GetByReference")()
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE reference=$1 LIMIT 1`
-	err := pgxscan.Get(ctx, ps.Connection, &p, query, ref)
-	if pgxscan.NotFound(err) {
-		return p, fmt.Errorf("'%v': %w", ref, ErrProposalNotFound)
-	}
-
-	return p, err
+	return p, ps.wrapE(pgxscan.Get(ctx, ps.Connection, &p, query, ref))
 }
 
 func getOpenStateProposalsQuery(inState *entities.ProposalState, conditions []string, pagination entities.CursorPagination,

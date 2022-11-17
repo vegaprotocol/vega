@@ -14,13 +14,11 @@ package sqlstore
 
 import (
 	"context"
-	"errors"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
 )
 
 type Chain struct {
@@ -38,13 +36,7 @@ func (c *Chain) Get(ctx context.Context) (entities.Chain, error) {
 	chain := entities.Chain{}
 
 	query := `SELECT id from chain`
-	err := pgxscan.Get(ctx, c.Connection, &chain, query)
-
-	if errors.Is(err, pgx.ErrNoRows) {
-		return entities.Chain{}, entities.ErrChainNotFound
-	}
-
-	return chain, err
+	return chain, c.wrapE(pgxscan.Get(ctx, c.Connection, &chain, query))
 }
 
 func (c *Chain) Set(ctx context.Context, chain entities.Chain) error {

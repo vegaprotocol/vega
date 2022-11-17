@@ -14,7 +14,6 @@ package sqlstore
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 
@@ -22,7 +21,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/jackc/pgx/v4"
 )
 
 type NetworkParameters struct {
@@ -34,8 +32,6 @@ type NetworkParameters struct {
 var networkParameterOrdering = TableOrdering{
 	ColumnOrdering{Name: "key", Sorting: ASC},
 }
-
-var ErrNoParameterFound = errors.New("no parameter found")
 
 func NewNetworkParameters(connectionSource *ConnectionSource) *NetworkParameters {
 	p := &NetworkParameters{
@@ -81,13 +77,8 @@ func (np *NetworkParameters) GetByKey(ctx context.Context, key string) (entities
 	query := `SELECT * FROM network_parameters_current where key = $1`
 	defer metrics.StartSQLQuery("NetworkParameters", "GetByKey")()
 	err := pgxscan.Get(ctx, np.Connection, &parameter, query, key)
-
-	if errors.Is(err, pgx.ErrNoRows) {
-		return entities.NetworkParameter{}, ErrNoParameterFound
-	}
-
 	if err != nil {
-		return entities.NetworkParameter{}, fmt.Errorf("failed to get network parameter value for key:%s", err)
+		return entities.NetworkParameter{}, np.wrapE(err)
 	}
 
 	np.cache[parameter.Key] = parameter

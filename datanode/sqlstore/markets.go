@@ -104,7 +104,7 @@ order by id, vega_time desc
 		m.cache[marketID] = market
 	}
 
-	return market, err
+	return market, m.wrapE(err)
 }
 
 func (m *Markets) GetAll(ctx context.Context, pagination entities.OffsetPagination) ([]entities.Market, error) {

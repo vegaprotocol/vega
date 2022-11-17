@@ -129,7 +129,7 @@ func (r *myMarketDataResolver) Commitments(ctx context.Context, m *types.MarketD
 	res, err := r.tradingDataClientV2.ListLiquidityProvisions(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	// now we split all the sells and buys
@@ -304,7 +304,7 @@ func (r *myMarketDepthResolver) LastTrade(ctx context.Context, md *types.MarketD
 	res, err := r.tradingDataClientV2.GetLastTrade(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	return res.Trade, nil
 }
@@ -328,7 +328,7 @@ func (r *myObservableMarketDepthResolver) LastTrade(ctx context.Context, md *typ
 	res, err := r.tradingDataClientV2.GetLastTrade(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	return &MarketDepthTrade{ID: res.Trade.Id, Price: res.Trade.Price, Size: strconv.FormatUint(res.Trade.Size, 10)}, nil
 }
@@ -373,7 +373,7 @@ func (r *mySubscriptionResolver) MarketsDepth(ctx context.Context, marketIds []s
 	}
 	stream, err := r.tradingDataClientV2.ObserveMarketsDepth(ctx, req)
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthResponse](r.log, "marketsDepth", stream,
@@ -388,7 +388,7 @@ func (r *mySubscriptionResolver) MarketsDepthUpdate(ctx context.Context, marketI
 	}
 	stream, err := r.tradingDataClientV2.ObserveMarketsDepthUpdates(ctx, req)
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthUpdatesResponse](r.log, "marketsDepthUpdate", stream,
@@ -403,7 +403,7 @@ func (r *mySubscriptionResolver) MarketsData(ctx context.Context, marketIds []st
 	}
 	stream, err := r.tradingDataClientV2.ObserveMarketsData(ctx, req)
 	if err != nil {
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDataResponse](r.log, "marketsdata", stream,

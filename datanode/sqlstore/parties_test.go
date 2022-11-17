@@ -69,7 +69,7 @@ func TestParty(t *testing.T) {
 
 	// Check we get the right error if we ask for a non-existent party
 	_, err = ps.GetByID(ctx, "beef")
-	assert.ErrorIs(t, err, sqlstore.ErrPartyNotFound)
+	assert.ErrorIs(t, err, entities.ErrNotFound)
 }
 
 func setupPartyTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Parties, func(t *testing.T)) {
