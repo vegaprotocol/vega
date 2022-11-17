@@ -31,7 +31,7 @@ Feature: test for issue 1920
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "1000" for the market "ETH/DEC19"
 
-    When the parties place the following orders with ticks:
+    When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK | ref-1     |
 

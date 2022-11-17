@@ -1740,10 +1740,8 @@ func (m *Market) confirmMTM(
 		ctx, orderUpdates, false)
 	// release excess margin for all positions
 	pos := m.position.Positions()
-	err := m.recheckMargin(ctx, pos)
-	if err != nil {
-		m.log.Panic("error checking margins?", logging.Error(err))
-	}
+	// we can safely ignore the error here
+	_ = m.recheckMargin(ctx, pos)
 	// release any excess if needed
 	m.releaseExcessMargin(ctx, pos...)
 }

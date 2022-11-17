@@ -23,6 +23,7 @@ Feature: Position resolution case 5 lognormal risk model
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
+    @MTMDelta
     Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book (0007-POSN-013)
 
 # setup accounts
@@ -73,8 +74,10 @@ Feature: Position resolution case 5 lognormal risk model
 
 
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin        | general | bond |
-      | lpprov | USD   | ETH/DEC19 | 1000000000000 | 0       | 0    |
+      | party  | asset | market id | margin | general       | bond |
+      | lpprov | USD   | ETH/DEC19 | 0      | 1000000000000 | 0    |
+      #| party  | asset | market id | margin        | general | bond |
+      #| lpprov | USD   | ETH/DEC19 | 1000000000000 | 0       | 0    |
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin  | general |

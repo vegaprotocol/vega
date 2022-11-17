@@ -63,8 +63,8 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | party            | asset | market id | margin  | general   |
       | aux1             | USD   | ETH/DEC19 | 1350    | 999998650 |
       | aux2             | USD   | ETH/DEC19 | 960     | 999999040 |
-      | sellSideProvider | USD   | ETH/DEC19 | 2700000 | 997300000 |
-      | buySideProvider  | USD   | ETH/DEC19 | 540000  | 999460000 |
+      | sellSideProvider | USD   | ETH/DEC19 | 600000  | 999400000 |
+      | buySideProvider  | USD   | ETH/DEC19 | 300000  | 999700000 |
     # margin_sellSideProvider: 1000*100*2*3=600000
     # margin_buySideProvider: 1000*100*1*3=300000
 
@@ -187,8 +187,8 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | party3           | USD   | ETH/DEC19 | 600    | 29387     |
       | aux1             | USD   | ETH/DEC19 | 1324   | 999998650 |
       | aux2             | USD   | ETH/DEC19 | 986    | 999999040 |
-      | sellSideProvider | USD   | ETH/DEC19 | 758400 | 999244000 |
-      | buySideProvider  | USD   | ETH/DEC19 | 540000 | 999460000 |
+      | sellSideProvider | USD   | ETH/DEC19 | 602400 | 999400000 |
+      | buySideProvider  | USD   | ETH/DEC19 | 300000 | 999700000 |
 
     # margin_sellSideProvider: 1000*126*2*3=756000
     # margin_buySideProvider: 1000*126*1*3=378000
