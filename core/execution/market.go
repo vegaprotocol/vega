@@ -1262,7 +1262,7 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 
 // releaseExcessMargin does what releaseMarginExcess does. Added this function to be able to release
 // all excess margin on MTM without having to call the latter by iterating all positions, and then
-// fetching said position again my party
+// fetching said position again my party.
 func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.MarketPosition) {
 	asset, _ := m.mkt.GetAsset()
 	evts := make([]events.Event, 0, len(positions))
