@@ -25,6 +25,7 @@
 - [6824](https://github.com/vegaprotocol/vega/issues/6824) - Respect `VEGA_HOME` for embedded `postgres` log location
 - [6843](https://github.com/vegaprotocol/vega/issues/6843) - Fix Visor runner keys
 - [6826](https://github.com/vegaprotocol/vega/issues/6826) - Update `spam.pow.numberOfPastBlocks` range values
+- [6332](https://github.com/vegaprotocol/vega/issues/6332) - Standardise `graphql` responses
 
 
 ## 0.62.1

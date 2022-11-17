@@ -59,7 +59,7 @@ func (c *Chain) GetChainID() (string, error) {
 
 	ctx := context.Background()
 	chain, err := c.store.Get(ctx)
-	if errors.Is(err, entities.ErrChainNotFound) {
+	if errors.Is(err, entities.ErrNotFound) {
 		return "", nil
 	}
 

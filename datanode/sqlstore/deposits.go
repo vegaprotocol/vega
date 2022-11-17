@@ -76,8 +76,8 @@ func (d *Deposits) GetByID(ctx context.Context, depositID string) (entities.Depo
 		order by id, party_id, vega_time desc`
 
 	defer metrics.StartSQLQuery("Deposits", "GetByID")()
-	err := pgxscan.Get(ctx, d.Connection, &deposit, query, entities.DepositID(depositID))
-	return deposit, err
+	return deposit, d.wrapE(pgxscan.Get(
+		ctx, d.Connection, &deposit, query, entities.DepositID(depositID)))
 }
 
 func (d *Deposits) GetByParty(ctx context.Context, party string, openOnly bool, pagination entities.Pagination, dateRange entities.DateRange) (

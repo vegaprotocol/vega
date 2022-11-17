@@ -156,7 +156,7 @@ func GetOldestHistoryBlockAndLastBlock(ctx context.Context, connConfig sqlstore.
 
 		historyBlock, err := sqlstore.GetOldestHistoryBlockUsingConnection(ctx, conn)
 		if err != nil {
-			if !errors.Is(err, sqlstore.ErrNoHistoryBlock) {
+			if !errors.Is(err, entities.ErrNotFound) {
 				return nil, nil, fmt.Errorf("failed to get oldest history block:%w", err)
 			}
 		} else {
@@ -165,7 +165,7 @@ func GetOldestHistoryBlockAndLastBlock(ctx context.Context, connConfig sqlstore.
 
 		block, err := sqlstore.GetLastBlockUsingConnection(ctx, conn)
 		if err != nil {
-			if !errors.Is(err, sqlstore.ErrNoLastBlock) {
+			if !errors.Is(err, entities.ErrNotFound) {
 				return nil, nil, fmt.Errorf("failed to get last block:%w", err)
 			}
 		} else {
@@ -322,7 +322,7 @@ func VerifyChainID(chainID string, chainService *service.Chain) error {
 
 	currentChainID, err := chainService.GetChainID()
 	if err != nil {
-		if errors.Is(err, entities.ErrChainNotFound) {
+		if errors.Is(err, entities.ErrNotFound) {
 			return ErrChainNotFound
 		}
 

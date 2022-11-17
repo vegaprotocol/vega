@@ -232,7 +232,7 @@ func assertNodeExistence(ctx context.Context, t *testing.T, ns *sqlstore.Node, n
 	}
 
 	if !exists {
-		require.ErrorIs(t, err, sqlstore.ErrNodeNotFound)
+		require.ErrorIs(t, err, entities.ErrNotFound)
 		require.False(t, found)
 		return
 	}

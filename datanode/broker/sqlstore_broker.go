@@ -22,7 +22,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/service"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/pkg/errors"
 )
@@ -142,7 +141,7 @@ func (b *SQLStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 
 	if err == nil {
 		b.log.Infof("waiting for first unprocessed block, last processed block height: %d", lastProcessedBlock.Height)
-	} else if errors.Is(err, sqlstore.ErrNoLastBlock) {
+	} else if errors.Is(err, entities.ErrNotFound) {
 		lastProcessedBlock = entities.Block{
 			VegaTime: time.Time{},
 			// TODO: This is making the assumption that the first block will be height 1. This is not necessarily true.
