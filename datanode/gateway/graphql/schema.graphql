@@ -1396,6 +1396,11 @@ type PropertyKey {
   name: String
   "The type of the property."
   type: PropertyKeyType!
+  """
+  An optional decimal place to be applied on the provided value.
+  Valid only for PropertyType of type DECIMAL, INTEGER.
+  """
+  numberDecimalPlaces: Int
 }
 
 """

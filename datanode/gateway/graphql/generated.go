@@ -1183,8 +1183,9 @@ type ComplexityRoot struct {
 	}
 
 	PropertyKey struct {
-		Name func(childComplexity int) int
-		Type func(childComplexity int) int
+		Name                func(childComplexity int) int
+		NumberDecimalPlaces func(childComplexity int) int
+		Type                func(childComplexity int) int
 	}
 
 	Proposal struct {
@@ -6636,6 +6637,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PropertyKey.Name(childComplexity), true
+
+	case "PropertyKey.numberDecimalPlaces":
+		if e.complexity.PropertyKey.NumberDecimalPlaces == nil {
+			break
+		}
+
+		return e.complexity.PropertyKey.NumberDecimalPlaces(childComplexity), true
 
 	case "PropertyKey.type":
 		if e.complexity.PropertyKey.Type == nil {
@@ -20915,6 +20923,8 @@ func (ec *executionContext) fieldContext_Filter_key(ctx context.Context, field g
 				return ec.fieldContext_PropertyKey_name(ctx, field)
 			case "type":
 				return ec.fieldContext_PropertyKey_type(ctx, field)
+			case "numberDecimalPlaces":
+				return ec.fieldContext_PropertyKey_numberDecimalPlaces(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PropertyKey", field.Name)
 		},
@@ -40630,6 +40640,47 @@ func (ec *executionContext) fieldContext_PropertyKey_type(ctx context.Context, f
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type PropertyKeyType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PropertyKey_numberDecimalPlaces(ctx context.Context, field graphql.CollectedField, obj *v13.PropertyKey) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PropertyKey_numberDecimalPlaces(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NumberDecimalPlaces, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*uint32)
+	fc.Result = res
+	return ec.marshalOInt2ᚖuint32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PropertyKey_numberDecimalPlaces(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PropertyKey",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -68818,6 +68869,10 @@ func (ec *executionContext) _PropertyKey(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "numberDecimalPlaces":
+
+			out.Values[i] = ec._PropertyKey_numberDecimalPlaces(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -78419,6 +78474,69 @@ func (ec *executionContext) marshalOInt2ᚖint32(ctx context.Context, sel ast.Se
 	}
 	res := graphql.MarshalInt32(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖuint32(ctx context.Context, v interface{}) (*uint32, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := marshallers.UnmarshalUint32(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖuint32(ctx context.Context, sel ast.SelectionSet, v *uint32) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := marshallers.MarshalUint32(*v)
+	return res
+}
+
+func (ec *executionContext) marshalOKeyRotation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐKeyRotationᚄ(ctx context.Context, sel ast.SelectionSet, v []*v1.KeyRotation) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNKeyRotation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐKeyRotation(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOKeyRotationEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐKeyRotationEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.KeyRotationEdge) graphql.Marshaler {

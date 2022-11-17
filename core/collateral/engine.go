@@ -597,9 +597,9 @@ func (e *Engine) CheckLeftOverBalance(ctx context.Context, settle *types.Account
 	return nil, nil
 }
 
-// FinalSettlement will process the list of transfer instructed by other engines
+// FinalSettlement will process the list of transfers instructed by other engines
 // This func currently only expects TransferType_{LOSS,WIN} transfers
-// other transfer types have dedicated funcs (MartToMarket, MarginUpdate).
+// other transfer types have dedicated funcs (MarkToMarket, MarginUpdate).
 func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer) ([]*types.LedgerMovement, error) {
 	// stop immediately if there aren't any transfers, channels are closed
 	if len(transfers) == 0 {

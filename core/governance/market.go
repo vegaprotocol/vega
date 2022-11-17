@@ -53,7 +53,9 @@ var (
 func assignProduct(
 	source *types.InstrumentConfiguration,
 	target *types.Instrument,
+	decimals uint64,
 ) (proto.ProposalError, error) {
+
 	switch product := source.Product.(type) {
 	case *types.InstrumentConfigurationFuture:
 		if product.Future == nil {
@@ -72,16 +74,19 @@ func assignProduct(
 			return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecBinding
 		}
 
+		settlData.SetFilterDecimals(decimals)
+		tterm.SetFilterDecimals(decimals)
 		target.Product = &types.InstrumentFuture{
 			Future: &types.Future{
 				SettlementAsset:                     product.Future.SettlementAsset,
 				QuoteName:                           product.Future.QuoteName,
-				DataSourceSpecForSettlementData:     product.Future.DataSourceSpecForSettlementData.ToDataSourceSpec(),
-				DataSourceSpecForTradingTermination: product.Future.DataSourceSpecForTradingTermination.ToDataSourceSpec(),
+				DataSourceSpecForSettlementData:     settlData.ToDataSourceSpec(),
+				DataSourceSpecForTradingTermination: tterm.ToDataSourceSpec(),
 				SettlementDataDecimals:              product.Future.SettlementDataDecimalPlaces,
 				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
 			},
 		}
+
 	default:
 		return types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
@@ -91,6 +96,7 @@ func assignProduct(
 func createInstrument(
 	input *types.InstrumentConfiguration,
 	tags []string,
+	decimals uint64,
 ) (*types.Instrument, types.ProposalError, error) {
 	result := &types.Instrument{
 		Name: input.Name,
@@ -100,7 +106,7 @@ func createInstrument(
 		},
 	}
 
-	if perr, err := assignProduct(input, result); err != nil {
+	if perr, err := assignProduct(input, result, decimals); err != nil {
 		return nil, perr, err
 	}
 	return result, types.ProposalErrorUnspecified, nil
@@ -130,7 +136,7 @@ func buildMarketFromProposal(
 	netp NetParams,
 	openingAuctionDuration time.Duration,
 ) (*types.Market, types.ProposalError, error) {
-	instrument, perr, err := createInstrument(definition.Changes.Instrument, definition.Changes.Metadata)
+	instrument, perr, err := createInstrument(definition.Changes.Instrument, definition.Changes.Metadata, definition.Changes.DecimalPlaces)
 	if err != nil {
 		return nil, perr, err
 	}

@@ -1940,7 +1940,6 @@ github.com/urfave/cli/v2 v2.0.0/go.mod h1:SE9GqnLQmjVa0iPEY0f1w3ygNIYcIJ0OKPMoW2
 github.com/urfave/cli/v2 v2.3.0/go.mod h1:LJmUH05zAU44vOAcrfzZQKsZbVcdbOG8rtL3/XcUArI=
 github.com/urfave/cli/v2 v2.8.1/go.mod h1:Z41J9TPoffeoqP0Iza0YbAhGvymRdZAd2uPmZ5JxRdY=
 github.com/urfave/cli/v2 v2.10.2 h1:x3p8awjp/2arX+Nl/G2040AZpOCHS/eMJJ1/a+mye4Y=
-github.com/urfave/cli/v2 v2.10.2/go.mod h1:f8iq5LtQ/bLxafbdBSLPPNsgaW0l/2fYYEHhAyPlwvo=
 github.com/vegaprotocol/decimal v1.3.1-uint256 h1:Aj//9joGGuz+dAKo6W/r9Rt1HUXYrjH7oerdCg1q/So=
 github.com/vegaprotocol/decimal v1.3.1-uint256/go.mod h1:+mRbjtsnpvm5Qw6aiLEf3I6SHICNB4nhMTmH9y8hMtg=
 github.com/vegaprotocol/embedded-postgres v1.13.1-0.20221110101551-88cf95986ea4 h1:lV/yvVeaStIauy/dScUSv9yQYkuwa75GYJDH/znXKhw=

@@ -64,9 +64,9 @@ func (s *DataSourceDefinitionInternalx) String() string {
 	return ""
 }
 
-func (s *DataSourceDefinitionInternalx) ToDataSourceSpec() *DataSourceSpec {
-	return nil
-}
+//func (s *DataSourceDefinitionInternalx) ToDataSourceSpec() *DataSourceSpec {
+//	return nil
+//}
 
 type DataSourceDefinitionExternalx struct {
 	External *DataSourceDefinitionExternal
@@ -122,9 +122,9 @@ func (s *DataSourceDefinitionExternalx) String() string {
 	return ""
 }
 
-func (s *DataSourceDefinitionExternalx) ToDataSourceSpec() *DataSourceSpec {
-	return nil
-}
+//func (s *DataSourceDefinitionExternalx) ToDataSourceSpec() *DataSourceSpec {
+//	return nil
+//}
 
 type dataSourceType interface {
 	isDataSourceType()
@@ -331,6 +331,36 @@ func (s *DataSourceDefinition) UpdateFilters(filters []*DataSourceSpecFilter) {
 						SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
 							Oracle: &vegapb.DataSourceSpecConfiguration{
 								Filters: DataSourceSpecFilters(filters).IntoProto(),
+								Signers: dsn.External.GetOracle().Signers,
+							},
+						},
+					},
+				},
+			}
+		}
+	}
+
+	dsd := DataSourceDefinitionFromProto(ds)
+	*s = *dsd
+}
+
+func (s *DataSourceDefinition) SetFilterDecimals(d uint64) {
+	ds := &vegapb.DataSourceDefinition{}
+
+	if s.SourceType != nil {
+		switch dsn := s.SourceType.oneOfProto().(type) {
+		case *vegapb.DataSourceDefinition_External:
+			filters := dsn.External.GetOracle().Filters
+			for i, _ := range filters {
+				filters[i].Key.NumberDecimalPlaces = uint32(d)
+			}
+
+			ds = &vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_External{
+					External: &vegapb.DataSourceDefinitionExternal{
+						SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
+							Oracle: &vegapb.DataSourceSpecConfiguration{
+								Filters: filters,
 								Signers: dsn.External.GetOracle().Signers,
 							},
 						},

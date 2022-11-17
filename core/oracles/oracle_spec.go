@@ -60,9 +60,10 @@ type OracleSpec struct {
 }
 
 type filter struct {
-	propertyName string
-	propertyType datapb.PropertyKey_Type
-	conditions   []condition
+	propertyName     string
+	propertyType     datapb.PropertyKey_Type
+	numberOfDecimals uint32
+	conditions       []condition
 }
 
 type condition func(string) (bool, error)
@@ -111,9 +112,10 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 
 		if !ok {
 			typedFilters[f.Key.Name] = &filter{
-				propertyName: f.Key.Name,
-				propertyType: f.Key.Type,
-				conditions:   conditions,
+				propertyName:     f.Key.Name,
+				propertyType:     f.Key.Type,
+				numberOfDecimals: f.Key.NumberDecimalPlaces,
+				conditions:       conditions,
 			}
 			continue
 		}
