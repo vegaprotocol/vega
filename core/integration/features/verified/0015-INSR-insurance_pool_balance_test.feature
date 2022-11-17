@@ -59,6 +59,15 @@ Feature: Test closeout type 1: margin >= cost of closeout
     And the mark price should be "100" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
+    Then the parties should have the following account balances:
+      | party            | asset | market id | margin  | general   |
+      | aux1             | USD   | ETH/DEC19 | 1350    | 999998650 |
+      | aux2             | USD   | ETH/DEC19 | 960     | 999999040 |
+      | sellSideProvider | USD   | ETH/DEC19 | 2700000 | 997300000 |
+      | buySideProvider  | USD   | ETH/DEC19 | 540000  | 999460000 |
+    # margin_sellSideProvider: 1000*100*2*3=600000
+    # margin_buySideProvider: 1000*100*1*3=300000
+
     # party 1 place an order + we check margins
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -169,6 +178,9 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | aux2             | USD   | ETH/DEC19 | 986    | 999999040 |
       | sellSideProvider | USD   | ETH/DEC19 | 758400 | 999244000 |
       | buySideProvider  | USD   | ETH/DEC19 | 540000 | 999460000 |
+
+    # margin_sellSideProvider: 1000*126*2*3=756000
+    # margin_buySideProvider: 1000*126*1*3=378000
     Then the parties should have the following margin levels:
       #check margin account and margin level
       | party  | market id | maintenance | search | initial | release |
