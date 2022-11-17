@@ -7,6 +7,7 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
+      | network.markPriceUpdateMaximumFrequency       | 0s    |
 
     And the following assets are registered:
       | id  | decimal places |
@@ -85,6 +86,7 @@ Scenario: 002, horizon set to 360000 in price monitoring model.  0032-PRIM-001, 
       | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
+      | network.markPriceUpdateMaximumFrequency       | 0s    |
 
     And the following assets are registered:
       | id  | decimal places |
@@ -165,6 +167,7 @@ Scenario: 003, horizon set to 360000 in price monitoring model.  0032-PRIM-001, 
       | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
+      | network.markPriceUpdateMaximumFrequency       | 0s    |
 
     And the following assets are registered:
       | id  | decimal places |

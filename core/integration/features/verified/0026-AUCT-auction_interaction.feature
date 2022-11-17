@@ -13,6 +13,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | market.liquidity.targetstake.triggering.ratio | 0     |
       | network.floatingPointUpdates.delay            | 5s    |
       | market.auction.minimumDuration                | 10    |
+      | network.markPriceUpdateMaximumFrequency       | 0s    |
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
@@ -68,7 +69,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 4000           | 10            |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC21 | buy  | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -273,7 +274,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | AuctionEvent                       |
       | MarketUpdatedEvent                 |
     # LP repricing, checking, and cancelling emits a ton of events
-    And a total of "105" events should be emitted
+    And a total of "100" events should be emitted
 
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -371,7 +372,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | 11     | 38             | 0            |
+      | party1 | 1      | 0              | 0            |
+      #| party1 | 11     | 38             | 0            |
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1010       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1111         | 2000           | 11            |
@@ -409,6 +411,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl |
       | party1   | 1      | 0              | 0            |
+      #| party1 | 11     | 38             | 0            |
 
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
@@ -425,13 +428,14 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | 11     | 38             | 0            |
+      | party1 | 1      | 0              | 0            |
+      #| party1 | 11     | 38             | 0            |
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1010       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1111         | 2000           | 11            |
 
     # replenish best ask
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | sell | 1      | 1009  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -471,7 +475,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                                       |
       | party2 | ETH/DEC21 | sell | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC | no-reject |                                                             |
       | party1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GFN | reject-me | OrderError: non-persistent order trades out of price bounds |
@@ -525,13 +529,13 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | trading mode                    | auction trigger           | horizon | min bound | max bound |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 100     | 992       | 1011      |
     # submit the order during auction so we can cancel it later on
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/DEC21 | buy  | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-1 |
       | party2 | ETH/DEC21 | sell | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-2 |
 
     When the network moves ahead "10" blocks
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -605,11 +609,11 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
 
     When the network moves ahead "1" blocks
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/DEC21 | buy  | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-1 |
       | party2 | ETH/DEC21 | sell | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-2 |
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -634,7 +638,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | trading mode                    | auction trigger           | extension trigger     |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_PRICE |
 
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -688,7 +692,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 2000           | 10            |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC21 | buy  | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -740,7 +744,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
     # Triggering liquidity monitoring auction
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/DEC21 | buy  | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | trigger-l-1 |
       | party2 | ETH/DEC21 | sell | 10     | 1010  | 1                | TYPE_LIMIT | TIF_GTC | trigger-l-2 |
@@ -750,7 +754,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | trading mode                    | auction trigger           | extension trigger           |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_UNSPECIFIED |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/DEC21 | buy  | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-1 |
       | party2 | ETH/DEC21 | sell | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-2 |
@@ -773,7 +777,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_UNSPECIFIED | 100     | 995       | 1015      | 2020         | 2080           | 20            |
 
     # Now we place some orders that are outside the price range to trigger price auction
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -797,7 +801,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       #| lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
 
     # increase open interest
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |

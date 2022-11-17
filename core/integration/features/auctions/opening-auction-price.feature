@@ -99,7 +99,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party2 | ETH/DEC19 | 16000       | 17600  | 19200   | 22400   |
-      | party7 | ETH/DEC19 | 0           | 0      | 0       | 0       |
+      #| party7 | ETH/DEC19 | 0           | 0      | 0       | 0       |
     Then debug transfers
     Then the following transfers should happen:
       | from   | to     | from account        | to account           | market id | amount | asset |

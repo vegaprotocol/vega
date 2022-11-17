@@ -12,6 +12,7 @@ Background:
       | reward.staking.delegation.competitionLevel        |  1.1   |
       | reward.staking.delegation.minValidators           |  5     |
       | reward.staking.delegation.optimalStakeMultiplier  |  5.0   |
+      | network.markPriceUpdateMaximumFrequency           | 0s     |
 
 
     Given time is updated to "2021-08-26T00:00:00Z"

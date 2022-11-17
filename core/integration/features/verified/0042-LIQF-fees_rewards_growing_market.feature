@@ -21,6 +21,7 @@ Feature:
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
 
  
   @VirtStake

@@ -3,7 +3,7 @@ Feature: Close potential positions
   Scenario: Cancel all order from party with only potential position release all margins
   Background:
 
-    And the log normal risk model named "lognormal-risk-model-fish":
+    Given the log normal risk model named "lognormal-risk-model-fish":
       | risk aversion | tau  | mu | r     | sigma |
       | 0.001         | 0.01 | 0  | 0.0   | 1.2   |
       #calculated risk factor long: 0.336895684; risk factor short: 0.4878731
@@ -21,8 +21,9 @@ Feature: Close potential positions
       | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none | default-eth-for-future |
 
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
 # setup accounts
     Given the initial insurance pool balance is "15000" for the markets:
@@ -58,7 +59,7 @@ Feature: Close potential positions
 
    # party1 maintenance margin: position*(mark_price*risk_factor_short+slippage_per_unit) + OrderVolume x Order_price x risk_factor_short  = 100 x 100 x 0.4878731  is about 4879
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | party1           | ETH/DEC19 | sell | 100    | 120   | 0                | TYPE_LIMIT | TIF_GTC | party1-s-1      |
 
@@ -73,7 +74,7 @@ Feature: Close potential positions
       | party1 | ETH/DEC19 | 4879        | 5854   | 7318    | 9758     |
 
   # party1 place more order volume 300
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | party1           | ETH/DEC19 | sell | 300    | 120   | 0                | TYPE_LIMIT | TIF_GTC | party1-s-2      |
 
@@ -95,7 +96,7 @@ Feature: Close potential positions
     And the mark price should be "100" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1   | ETH/DEC19 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
       | aux2   | ETH/DEC19 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_GTC | ref-5     |
@@ -146,7 +147,7 @@ Feature: Close potential positions
       | party1 | ETH/DEC19 | 21467       | 25760  | 32200   | 42934    |
 
     ### then we place new orders and get a trade
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1   | ETH/DEC19 | sell | 1      | 130   | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
       | aux2   | ETH/DEC19 | buy  | 1      | 130   | 1                | TYPE_LIMIT | TIF_GTC | ref-5     |

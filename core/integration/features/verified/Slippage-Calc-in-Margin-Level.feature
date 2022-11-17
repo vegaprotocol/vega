@@ -1,8 +1,7 @@
 Feature: Test closeout type 1: margin >= cost of closeout
 
   Background:
-
-    And the log normal risk model named "lognormal-risk-model-1":
+    Given the log normal risk model named "lognormal-risk-model-1":
       | risk aversion | tau  | mu | r     | sigma |
       | 0.001         | 0.01 | 0  | 0.0   | 1.2   |
       # risk factor short: 0.48787313795861700
@@ -19,8 +18,9 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | id        | quote name | asset | risk model             | margin calculator   | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | USD        | USD   | lognormal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
     And the average block duration is "1"
 
@@ -105,16 +105,17 @@ Feature: Test closeout type 1: margin >= cost of closeout
     When the network moves ahead "1" blocks
     Then the mark price should be "100" for the market "ETH/DEC19"  
     
+   # TODO: these calculations, due to MTM changes are not entirely accurate
    # slippage is calculated from the order book before the trade happens, which is (105+110*99)/100-100=9.95 , round down to 9
    # party1 maintenance margin should be: position_vol* slippage + vol * riskfactor * markprice= 100*9 + 100*0.48787313795861700*100=5779
     And the parties should have the following margin levels:
       | party   | market id  | maintenance | search | initial | release |
-      | party1  | ETH/DEC19  | 5779        | 11558  | 14447   | 17337   |
+      | party1  | ETH/DEC19  | 6279        | 12558  | 15697   | 18837   |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general  |
-      | party1 | USD   | ETH/DEC19 | 12197     | 17803    |
+      | party1 | USD   | ETH/DEC19 | 15697     | 14303    |
     
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party2 | ETH/DEC19 | buy  | 500    | 126   | 3                | TYPE_LIMIT | TIF_GTC | ref-1-xxx |
   
@@ -122,7 +123,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
 
     Then the parties should have the following account balances:
       | party     | asset | market id | margin    | general     |
-      | party1    | USD   | ETH/DEC19 | 15370     |  12030      |
+      | party1    | USD   | ETH/DEC19 | 19370     |  8030       |
       
 
 

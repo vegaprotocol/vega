@@ -160,7 +160,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
 
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 2      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | buy  | 1      | 1000000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -325,7 +325,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the cumulated balance for all accounts should be worth "20023600000000"
 
     # Close positions by aux parties
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price    | resulting trades | type       | tif     |
       | aux1  | ETH/DEC19 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 1      | 1000000  | 1                | TYPE_LIMIT | TIF_GTC |
@@ -411,7 +411,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the cumulated balance for all accounts should be worth "10021300000000"
 
     # Close positions by aux parties
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume |    price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC19 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 1      | 1000000  | 1                | TYPE_LIMIT | TIF_GTC |
@@ -478,7 +478,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 2      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | buy  | 2      | 1000000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -540,7 +540,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC21 | sell | 1      | 100000  | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
       | party2 | ETH/DEC21 | buy  | 1      | 100000  | 1                | TYPE_LIMIT | TIF_GTC | ref-6     |
@@ -554,12 +554,13 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
-      | party1 | ETH   | ETH/DEC21 | 13200000 | 987300000 |
+      | party1 | ETH   | ETH/DEC21 | 25200000 | 975300000 |
+      #| party1 | ETH   | ETH/DEC21 | 13200000 | 987300000 |
       | party2 | ETH   | ETH/DEC21 | 37200000 | 60300000  |
 
     And then the network moves ahead "10" blocks
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC21 | sell | 1      | 110100  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
       | party2 | ETH/DEC21 | buy  | 1      | 110100  | 0                | TYPE_LIMIT | TIF_GTC | ref-8     |

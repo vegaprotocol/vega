@@ -10,6 +10,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | market.liquidityProvision.shapes.maxSize            | 10    |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
 
   Scenario: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size(0034-PROB-001);Probability of trading decreases away from the mid-price (0034-PROB-005). Tested with varying decimal places.
 

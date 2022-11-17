@@ -22,6 +22,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
       | market.stake.target.scalingFactor                   | 1      |
       | market.liquidity.targetstake.triggering.ratio       | 0      |
       | market.liquidity.providers.fee.distributionTimeStep | 720h   |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
 
     Given the average block duration is "2"
 
@@ -94,14 +95,14 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     And the liquidity fee factor should be "0.001" for the market "ETH/MAR22"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | party2 | ETH/MAR22 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
-      | lp1    | USD   | ETH/MAR22 | 12522  | 999976749 | 10000 |
+      | lp1    | USD   | ETH/MAR22 | 11787  | 999977484 | 10000 |
       | party1 | USD   | ETH/MAR22 | 1800   | 99998202  | 0     |
       | party2 | USD   | ETH/MAR22 | 1812   | 99998875  | 0     |
 
@@ -117,7 +118,8 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general   |
-      | lp1   | USD   | ETH/MAR22 | 12522  | 999976749 |
+      #| lp1   | USD   | ETH/MAR22 | 12522  | 999976749 |
+      | lp1   | USD   | ETH/MAR22 | 11787  | 999977484 |
 
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
@@ -132,7 +134,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
     Then time is updated to "2019-11-30T00:20:05Z"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | buy  | 40     | 1100  | 1                | TYPE_LIMIT | TIF_GTC | party1-buy  |
       | party2 | ETH/MAR22 | sell | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell |
@@ -147,7 +149,8 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general   |
-      | lp1   | USD   | ETH/MAR22 | 13257  | 999976755 |
+      | lp1   | USD   | ETH/MAR22 | 14381  | 999975631 |
+      #| lp1   | USD   | ETH/MAR22 | 13257  | 999976755 |
 
     # lp fee got cumulated since the distribution period is large
     And the accumulated liquidity fees should be "35" for the market "ETH/MAR22"
@@ -163,4 +166,5 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general   |
-      | lp1   | USD   | ETH/MAR22 | 13257  | 999976790 |
+      | lp1   | USD   | ETH/MAR22 | 14381  | 999975666 |
+      #| lp1   | USD   | ETH/MAR22 | 13257  | 999976790 |

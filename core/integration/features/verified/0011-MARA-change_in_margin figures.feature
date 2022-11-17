@@ -1,10 +1,12 @@
 Feature: Test party accounts
 
   Background:
-
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: a party place a new order in the system, margin are calculated (0011-MARA-001, 0011-MARA-002)
     Given the parties deposit on asset's general account the following amount:
@@ -40,7 +42,7 @@ Feature: Test party accounts
       | party1 | party1-1  |
       | party2 | party2-1  |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | partyGuy | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following margin levels:
@@ -99,7 +101,7 @@ Feature: Test party accounts
       | party1 | party1-1 |
       | party2 | party2-1 |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | type       | tif     | reference | error               |
       | partyGuy | ETH/DEC19 | sell | 1      | 1000  | TYPE_LIMIT | TIF_GTC | party1-1  | margin check failed |
     Then the following orders should be rejected:

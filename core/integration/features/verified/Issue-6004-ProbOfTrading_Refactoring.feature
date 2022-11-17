@@ -28,12 +28,13 @@ Feature: test probability of trading used in LP vol when best bid/ask is changin
       | market.liquidity.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | market.liquidity.stakeToCcySiskas             | 1.0   |
+      | network.markPriceUpdateMaximumFrequency       | 0s    |
 
    And the average block duration is "1"
 
    Scenario: 001, LP price at 0, check what's happening with LP volume; 0038-OLIQ-002
 
-   And the parties submit the following liquidity provision:
+   Given the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | sell | ASK              | 500        | 1      | submission |
       | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | buy  | BID              | 500        | 1      | amendment  |
@@ -94,7 +95,7 @@ Feature: test probability of trading used in LP vol when best bid/ask is changin
 
   Scenario: 002, market starts with a low best bid price 1 (ProbTrading is large), and then best bid goes to 899; test of the new ProbTrading is reasonable, and LP is not distressed; 0038-OLIQ-002 
 
-    And the parties submit the following liquidity provision:
+    Given the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | sell | ASK              | 500        | 1      | submission |
       | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | buy  | BID              | 500        | 1      | amendment  |

@@ -119,6 +119,9 @@ Feature: test risk model parameter ranges
       | party1 | USD   | 50000000000000 |
       | party2 | USD   | 50000000000000 |
       | party3 | USD   | 50000000000000 |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: 001, test different value of risk parameters within defined ranges in different market, AC: 0018-RSKM-001
 

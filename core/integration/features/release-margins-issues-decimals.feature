@@ -11,6 +11,9 @@ Feature: Test margin release on order cancel
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @MarginRelease
   Scenario: a party place a new order in the system, margin are updated, the order is closed, margin is 0ed (0003-MTMK-0013)
@@ -45,7 +48,7 @@ Feature: Test margin release on order cancel
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "1000" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | partyGuy | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
@@ -101,7 +104,7 @@ Feature: Test margin release on order cancel
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "1000" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | partyGuy | ETH/DEC19 | sell | 1      |     0 | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
 
@@ -118,7 +121,7 @@ Feature: Test margin release on order cancel
       | party    | volume | unrealised pnl | realised pnl |
       | partyGuy | -1     | 0              | 0            |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | partyGuy | ETH/DEC19 | buy  | 1      |  1005 | 0                | TYPE_LIMIT  | TIF_GTC | ref-2     |
 
@@ -126,7 +129,7 @@ Feature: Test margin release on order cancel
       | party    | market id | maintenance | search | initial | release |
       | partyGuy | ETH/DEC19 | 119000      | 130900 | 142800  | 166600  |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | party1   | ETH/DEC19 | sell  | 1     |  1005 | 1                | TYPE_LIMIT  | TIF_GTC | ref-2     |
 
@@ -172,7 +175,7 @@ Feature: Test margin release on order cancel
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "1000" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | partyGuy | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
@@ -184,7 +187,7 @@ Feature: Test margin release on order cancel
       | party    | asset | market id | margin | general |
       | partyGuy | ETH   | ETH/DEC19 | 120000 | 0       |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1   | ETH/DEC19 | sell | 1      | 500   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2   | ETH/DEC19 | buy  | 1      | 500   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -229,7 +232,7 @@ Feature: Test margin release on order cancel
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "1000" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party        | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | partyGuy     | ETH/DEC19 | sell | 1      | 9999  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | partyGuyGood | ETH/DEC19 | sell | 1      | 10000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -238,7 +241,7 @@ Feature: Test margin release on order cancel
       | party    | market id | maintenance | search | initial | release |
       | partyGuy | ETH/DEC19 | 100000      | 110000 | 120000  | 140000  |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party        | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | partyGuyGood | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party2-2 |
       | party1       | ETH/DEC19 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party1-2 |
@@ -250,11 +253,11 @@ Feature: Test margin release on order cancel
     And the parties should have the following account balances:
       | party        | asset | market id | margin  | general   |
       | partyGuy     | ETH   | ETH/DEC19 | 120000  | 0         |
-      | partyGuyGood | ETH   | ETH/DEC19 | 252000  | 999748000 |
+      | partyGuyGood | ETH   | ETH/DEC19 | 1320000 | 998680000 |
 
     # this will trade with party guy
     # which is going to get him distressed
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party2   | ETH/DEC19 | buy  | 1      | 9999  | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
