@@ -27,7 +27,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
@@ -53,7 +52,6 @@ type GraphServer struct {
 	vegaPaths paths.Paths
 
 	coreProxyClient     CoreProxyServiceClient
-	tradingDataClient   protoapi.TradingDataServiceClient
 	tradingDataClientV2 v2.TradingDataServiceClient
 	srv                 *http.Server
 	rl                  *gateway.SubscriptionRateLimiter
@@ -75,7 +73,6 @@ func New(
 	if err != nil {
 		return nil, err
 	}
-	tradingDataClient := protoapi.NewTradingDataServiceClient(&clientConn{tdconn})
 	tradingDataClientV2 := v2.NewTradingDataServiceClient(&clientConn{tdconn})
 
 	tconn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
@@ -90,7 +87,6 @@ func New(
 		Config:              config,
 		vegaPaths:           vegaPaths,
 		coreProxyClient:     tradingClient,
-		tradingDataClient:   tradingDataClient,
 		tradingDataClientV2: tradingDataClientV2,
 		rl: gateway.NewSubscriptionRateLimiter(
 			log, config.MaxSubscriptionPerClient),
@@ -151,7 +147,6 @@ func (g *GraphServer) Start() error {
 		g.log,
 		g.Config,
 		g.coreProxyClient,
-		g.tradingDataClient,
 		g.tradingDataClientV2,
 	)
 	config := Config{

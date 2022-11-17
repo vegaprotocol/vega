@@ -439,7 +439,7 @@ type NodeForward interface {
 	LastBlockHeightAndHash(context.Context) (*api.LastBlockHeightResponse, int, error)
 }
 
-func NewService(log *zap.Logger, net *network.Network, apiV2 *jsonrpc.API, h WalletHandler, a Auth, n NodeForward, policy Policy) (*Service, error) {
+func NewService(log *zap.Logger, net *network.Network, apiV2 *jsonrpc.API, h WalletHandler, a Auth, n NodeForward, policy Policy) *Service {
 	s := &Service{
 		Router:      httprouter.New(),
 		log:         log,
@@ -483,10 +483,11 @@ func NewService(log *zap.Logger, net *network.Network, apiV2 *jsonrpc.API, h Wal
 
 	// We don't use the `Service.handle() method to favour the improved logging
 	// inside the handler.
+	s.Handle(http.MethodGet, "/api/v2/health", s.CheckHealthV2)
 	s.Handle(http.MethodGet, "/api/v2/methods", s.ListMethodsV2)
 	s.Handle(http.MethodPost, "/api/v2/requests", s.HandleRequestV2)
 
-	return s, nil
+	return s
 }
 
 func (s *Service) Start() error {

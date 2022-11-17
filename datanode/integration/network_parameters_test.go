@@ -16,12 +16,12 @@ import "testing"
 
 func TestNetParams(t *testing.T) {
 	queries := map[string]string{
-		"Network Parameters": "{ networkParameters{ key, value } }",
+		"Network Parameters": "{ networkParametersConnection{ edges { node { key, value } } } }",
 	}
 
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
-			assertGraphQLQueriesReturnSame[struct{ NetworkParameters []NetworkParameter }](t, query)
+			assertGraphQLQueriesReturnSame(t, query)
 		})
 	}
 }

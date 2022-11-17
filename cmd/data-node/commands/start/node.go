@@ -20,14 +20,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
-
-	"code.vegaprotocol.io/vega/datanode/dehistory"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
+	"golang.org/x/sync/errgroup"
 
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/config"
+	"code.vegaprotocol.io/vega/datanode/dehistory"
+	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/gateway/server"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
@@ -35,8 +35,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-
-	"golang.org/x/sync/errgroup"
 )
 
 // NodeCommand use to implement 'node' command.
@@ -88,6 +86,11 @@ func (l *NodeCommand) Run(cfgwatchr *config.Watcher, vegaPaths paths.Paths, args
 	}
 
 	return nil
+}
+
+// Stop is for graceful shutdown.
+func (l *NodeCommand) Stop() {
+	l.cancel()
 }
 
 // runNode is the entry of node command.

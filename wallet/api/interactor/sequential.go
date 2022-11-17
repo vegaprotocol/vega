@@ -294,7 +294,7 @@ func (i *SequentialInteractor) RequestTransactionReviewForSigning(ctx context.Co
 	return approval.Approved, nil
 }
 
-func (i *SequentialInteractor) waitForResponse(ctx context.Context, traceID string, name InteractionName) (Interaction, error) {
+func (i *SequentialInteractor) waitForResponse(ctx context.Context, traceID string, expectedResponseName InteractionName) (Interaction, error) {
 	var response Interaction
 	running := true
 	for running {
@@ -317,8 +317,8 @@ func (i *SequentialInteractor) waitForResponse(ctx context.Context, traceID stri
 		return Interaction{}, api.ErrUserCanceledTheRequest
 	}
 
-	if response.Name != name {
-		return Interaction{}, WrongResponseTypeError(name, response.Name)
+	if response.Name != expectedResponseName {
+		return Interaction{}, WrongResponseTypeError(expectedResponseName, response.Name)
 	}
 
 	return response, nil

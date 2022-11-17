@@ -71,6 +71,20 @@
           }
         }
       }
+    },
+    "/v2/health": {
+      "get": {
+        "summary": "Tells whether the service is up and running or not.",
+        "description": "If the service is running, this endpoint returns 200, otherwise the endpoint will be unreachable.",
+        "responses": {
+          "200": {
+            "description": "The service is alive."
+          },
+          "500": {
+            "description": "Something failed internally. Nothing can be done about it."
+          }
+        }
+      }
     }
   },
   "components": {
