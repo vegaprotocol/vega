@@ -1740,14 +1740,10 @@ func (m *Market) confirmMTM(
 		ctx, orderUpdates, false)
 	// release excess margin for all positions
 	pos := m.position.Positions()
-	riskEvts, err := m.checkMarginsOnMTM(ctx, pos, order)
+	err := m.recheckMargin(ctx, pos)
 	if err != nil {
 		m.log.Panic("error checking margins?", logging.Error(err))
 	}
-	// transfer margins as we would do in continuous trading, regardless of this call being made
-	// when we're leaving auction
-	m.transferMarginsContinuous(ctx, riskEvts)
-	// closed out parties:
 	// release any excess if needed
 	m.releaseExcessMargin(ctx, pos...)
 }
