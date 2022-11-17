@@ -147,6 +147,9 @@ func (e *Engine) UnregisterOrder(ctx context.Context, order *types.Order) *Marke
 			logging.Order(*order))
 	}
 	pos.UnregisterOrder(e.log, order)
+	if pos.Closed() {
+		e.remove(pos)
+	}
 	e.broker.Send(events.NewPositionStateEvent(ctx, pos, order.MarketID))
 	return pos
 }
@@ -162,6 +165,9 @@ func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.
 	}
 
 	pos.AmendOrder(e.log, originalOrder, newOrder)
+	if pos.Closed() {
+		e.remove(pos)
+	}
 	e.broker.Send(events.NewPositionStateEvent(ctx, pos, originalOrder.MarketID))
 	return pos
 }
@@ -215,6 +221,9 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events
 	pos.size += size
 
 	e.broker.Send(events.NewPositionStateEvent(ctx, pos, trade.MarketID))
+	if pos.Closed() {
+		e.remove(pos)
+	}
 	cpy := pos.Clone()
 	return []events.MarketPosition{*cpy}
 }
@@ -257,6 +266,13 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade) []events.Market
 	// Update potential positions. Potential positions decrease for both buyer and seller.
 	buyer.buy -= int64(trade.Size)
 	seller.sell -= int64(trade.Size)
+
+	if buyer.Closed() {
+		e.remove(buyer)
+	}
+	if seller.Closed() {
+		e.remove(seller)
+	}
 
 	ret := []events.MarketPosition{
 		*buyer.Clone(),
@@ -406,6 +422,30 @@ func (e *Engine) Parties() []string {
 	return parties
 }
 
+// GetOpenPositionCount returns the number of open positions in the market.
+func (e *Engine) GetOpenPositionCount() uint64 {
+	var total uint64
+	for _, mp := range e.positionsCpy {
+		if mp.Size() != 0 {
+			total++
+		}
+	}
+	return total
+}
+
+func (e *Engine) remove(p *MarketPosition) {
+	// delete from the map first
+	delete(e.positions, p.partyID)
+
+	// remove from the slice
+	for i := range e.positionsCpy {
+		if e.positionsCpy[i].Party() == p.partyID {
+			e.positionsCpy = append(e.positionsCpy[:i], e.positionsCpy[i+1:]...)
+			break
+		}
+	}
+}
+
 // I64MaxAbs - get max value based on absolute values of int64 vals
 // keep this function, perhaps we can reuse it in a numutil package
 // once we have to deal with decimals etc...
@@ -422,15 +462,4 @@ func I64MaxAbs(vals ...int64) int64 {
 		}
 	}
 	return r
-}
-
-// GetOpenPositionCount returns the number of open positions in the market.
-func (e *Engine) GetOpenPositionCount() uint64 {
-	var total uint64
-	for _, mp := range e.positionsCpy {
-		if mp.Size() != 0 {
-			total++
-		}
-	}
-	return total
 }

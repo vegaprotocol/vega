@@ -195,6 +195,7 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 		trade              types.Trade
 		expectedSizePartyA int64
 		expectedSizePartyB int64
+		expectedPositions  int
 	}{
 		{
 			trade: types.Trade{
@@ -211,6 +212,7 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 			},
 			expectedSizePartyA: +10,
 			expectedSizePartyB: -10,
+			expectedPositions:  2,
 		},
 		// inverse buyer and seller, so it should reduce both position of 5
 		{
@@ -228,6 +230,7 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 			},
 			expectedSizePartyA: 0,
 			expectedSizePartyB: 0,
+			expectedPositions:  0,
 		},
 	}
 
@@ -236,7 +239,7 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
 		positions := engine.Update(context.Background(), &c.trade)
 		pos := engine.Positions()
-		assert.Equal(t, 2, len(pos))
+		assert.Equal(t, c.expectedPositions, len(pos))
 		assert.Equal(t, 2, len(positions))
 
 		// check size of positions
@@ -410,7 +413,7 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 			expectedSizePartyA: 0,
 			expectedSizePartyB: -10,
 			expectedSizePartyC: 10,
-			posSize:            3,
+			posSize:            2,
 		},
 		// last trade between A and B again, re-open A, decrease B
 		{
