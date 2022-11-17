@@ -1,1 +1,15 @@
-{"TestName":"TestEpochs_CurrentEpoch","Query":"{ epoch{ id timestamps{ start, expiry, end } } }","Result":{"Epoch":{"ID":"2090","Timestamps":{"Start":"2022-03-24T18:06:01Z","End":"","Expiry":"2022-03-24T18:06:06Z"},"Delegations":null}},"Duration":11684682}
+{
+	"TestName": "TestEpochs_CurrentEpoch",
+	"Query": "{ epoch{ id timestamps{ start, expiry, end } } }",
+	"Result": {
+		"epoch": {
+			"id": "619",
+			"timestamps": {
+				"end": null,
+				"expiry": "2022-11-08T09:37:46.392383Z",
+				"start": "2022-11-08T09:37:41.392383Z"
+			}
+		}
+	},
+	"Duration": 1832334
+}

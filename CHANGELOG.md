@@ -14,13 +14,14 @@
 - [6731](https://github.com/vegaprotocol/vega/issues/6731) - standardize on 'network' and '' for network party and no market identifiers
 - [6792](https://github.com/vegaprotocol/vega/issues/6792) - Better handling of panics when moving time with `nullchain`, add endpoint to query whether `nullchain` is replaying
 - [6753](https://github.com/vegaprotocol/vega/issues/6753) - Filter votes per party and/or proposal
-
+- [6642](https://github.com/vegaprotocol/vega/issues/6642) - Add methods to manage the wallet service and its connections on wallet API version 2
 
 ### 🐛 Fixes
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
 - [6766](https://github.com/vegaprotocol/vega/issues/6766) - Handle relative vega home path being passed in `postgres` snapshots
 - [6799](https://github.com/vegaprotocol/vega/issues/6799) - Move LP fees in transit to the network treasury
 - [6824](https://github.com/vegaprotocol/vega/issues/6824) - Respect `VEGA_HOME` for embedded `postgres` log location
+- [6843](https://github.com/vegaprotocol/vega/issues/6843) - Fix Visor runner keys
 
 ## 0.62.1
 
@@ -71,6 +72,7 @@
 ## 0.61.0
 
 ### 🚨 Breaking changes
+- [5674](https://github.com/vegaprotocol/vega/issues/5674) - Remove `V1` data node `API`
 - [5714](https://github.com/vegaprotocol/vega/issues/5714) - Update data sourcing types
 
 ### 🛠 Improvements

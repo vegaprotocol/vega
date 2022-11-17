@@ -18,11 +18,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/georgysavva/scany/pgxscan"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	"github.com/georgysavva/scany/pgxscan"
 )
 
 const (
@@ -45,7 +46,7 @@ var ordersOrdering = TableOrdering{
 	ColumnOrdering{Name: "seq_num", Sorting: ASC},
 }
 
-func NewOrders(connectionSource *ConnectionSource, logger *logging.Logger) *Orders {
+func NewOrders(connectionSource *ConnectionSource, _ *logging.Logger) *Orders {
 	a := &Orders{
 		ConnectionSource: connectionSource,
 		batcher: NewMapBatcher[entities.OrderKey, entities.Order](
@@ -92,6 +93,7 @@ func (os *Orders) GetOrder(ctx context.Context, orderIDStr string, version *int3
 		query := fmt.Sprintf("SELECT %s FROM orders_current WHERE id=$1", sqlOrderColumns)
 		err = pgxscan.Get(ctx, os.Connection, &order, query, orderID)
 	}
+
 	return order, err
 }
 

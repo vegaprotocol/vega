@@ -16,12 +16,12 @@ import "testing"
 
 func TestBalances(t *testing.T) {
 	queries := map[string]string{
-		"Positions": `{ parties{ id accounts { type asset{ id } market{ id } balance } } }`,
+		"Positions": `{ partiesConnection{ edges { node { id accountsConnection { edges { node { type asset{ id } market{ id } balance } } } } } } }`,
 	}
 
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
-			assertGraphQLQueriesReturnSame[struct{ Parties []Party }](t, query)
+			assertGraphQLQueriesReturnSame(t, query)
 		})
 	}
 }
