@@ -216,6 +216,8 @@ func defaultNetParams() map[string]value {
 		DefaultGas:                 NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(99))).Mutable(true).MustUpdate("1"),
 		MinBlockCapacity:           NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("32"),
 		MaxPeggedOrders:            NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("1500"),
+
+		MarkPriceUpdateMaximumFrequency: NewDuration().Mutable(true).MustUpdate("5s"),
 	}
 
 	// add additional cross net param rules
@@ -225,6 +227,10 @@ func defaultNetParams() map[string]value {
 	// ensure that MinBlockCapacity <= 2*
 	m[MaxGasPerBlock].AddRules(UintDependentGTE(MinBlockCapacity, m[MinBlockCapacity].(*Uint), num.MustDecimalFromString("2")))
 	m[MinBlockCapacity].AddRules(UintDependentLTE(MaxGasPerBlock, m[MaxGasPerBlock].(*Uint), num.MustDecimalFromString("0.5")))
+	m[MarkPriceUpdateMaximumFrequency].AddRules(DurationGTE(time.Duration(0)))
+	// could just do 24 * 3600 * time.Second, but this is easier to read
+	maxFreq, _ := time.ParseDuration("24h")
+	m[MarkPriceUpdateMaximumFrequency].AddRules(DurationGTE(time.Duration(0)), DurationLTE(maxFreq))
 	return m
 }
 

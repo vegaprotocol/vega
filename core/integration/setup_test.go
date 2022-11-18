@@ -210,6 +210,10 @@ func newExecutionTestSetup() *executionTestSetup {
 			Param:   netparams.MaxPeggedOrders,
 			Watcher: execsetup.executionEngine.OnMaxPeggedOrderUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MarkPriceUpdateMaximumFrequency,
+			Watcher: execsetup.executionEngine.OnMarkPriceUpdateMaximumFrequency,
+		},
 	)
 	return execsetup
 }

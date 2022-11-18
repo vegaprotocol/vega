@@ -198,6 +198,7 @@ func (m *Market) getState() *types.ExecMarket {
 		LongRiskFactor:             rf.Long,
 		FeeSplitter:                m.feeSplitter.GetState(),
 		SettlementData:             sp,
+		NextMTM:                    m.nextMTM.UnixNano(),
 	}
 
 	return em

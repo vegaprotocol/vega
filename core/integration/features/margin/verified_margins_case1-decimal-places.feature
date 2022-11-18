@@ -20,6 +20,9 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
       | aux        | ETH   | 100000000000000 |
       | aux2       | ETH   | 100000000000000 |
       | lpprov     | ETH   | 100000000000000 |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
@@ -37,14 +40,14 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     
     # setting mark price
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
 
     # setting order book
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 100    | 25000000 | 0                | TYPE_LIMIT | TIF_GTC | _sell1    |
       | sellSideMM | ETH/DEC19 | sell | 11     | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | _sell2    |
@@ -59,7 +62,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
     # no margin account created for party1, just general account
     And "party1" should have one account per asset
     # placing test order
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And "party1" should have general account balance of "99611199999980" for asset "ETH"
@@ -88,7 +91,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
       | buySideMM | buy1      |
       | buySideMM | buy2      |
       | buySideMM | buy3      |
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | buySideMM | ETH/DEC19 | buy  | 1      | 19000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM | ETH/DEC19 | buy  | 3      | 18000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -107,7 +110,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 200
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 1      | 20000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 20000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -127,7 +130,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
       | party1 | 13     | 83600000000    | 0            |
 
     # FULL CLOSEOUT BY TRADER
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 13     | 16500000 | 3                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And the parties should have the following margin levels:

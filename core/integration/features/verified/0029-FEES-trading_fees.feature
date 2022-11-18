@@ -1,5 +1,10 @@
 Feature: Fees calculations
 
+  Background:
+    Given the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
+
   Scenario: S001, Testing fees in continuous trading with one trade and no liquidity providers (0029-FEES-001)
 
     Given the fees configuration named "fees-config-1":
@@ -42,7 +47,7 @@ Feature: Fees calculations
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -53,7 +58,7 @@ Feature: Fees calculations
     And the accumulated infrastructure fees should be "0" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader4 | ETH/DEC21 | sell | 4      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
 
@@ -132,7 +137,7 @@ Feature: Fees calculations
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3b | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -145,7 +150,7 @@ Feature: Fees calculations
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
     And the accumulated infrastructure fees should be "0" for the asset "ETH"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader4 | ETH/DEC21 | sell | 4      | 1002  | 2                | TYPE_LIMIT | TIF_GTC |
 
@@ -248,7 +253,7 @@ Feature: Fees calculations
       | buy  | 910   | 210    |
       | sell | 1090  | 184    |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3b | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -256,8 +261,10 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 480    | 9531    |
-      | trader3b | ETH   | ETH/DEC21 | 240    | 9766    |
+      | trader3a | ETH   | ETH/DEC21 | 690    | 9321    |
+      #| trader3a | ETH   | ETH/DEC21 | 480    | 9531    |
+      | trader3b | ETH   | ETH/DEC21 | 339    | 9667    |
+      #| trader3b | ETH   | ETH/DEC21 | 240    | 9766    |
 
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
@@ -299,9 +306,12 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 480    | 9531    |
-      | trader3b | ETH   | ETH/DEC21 | 240    | 9766    |
-      | trader4  | ETH   | ETH/DEC21 | 679    | 9291    |
+      | trader3a | ETH   | ETH/DEC21 | 690    | 9321    |
+      | trader3b | ETH   | ETH/DEC21 | 339    | 9667    |
+      | trader4  | ETH   | ETH/DEC21 | 480    | 9490    |
+      #| trader3a | ETH   | ETH/DEC21 | 480    | 9531    |
+      #| trader3b | ETH   | ETH/DEC21 | 240    | 9766    |
+      #| trader4  | ETH   | ETH/DEC21 | 679    | 9291    |
 
     And the accumulated infrastructure fees should be "8" for the asset "ETH"
     And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
@@ -317,11 +327,11 @@ Feature: Fees calculations
       | name                                                | value |
       | market.liquidity.providers.fee.distributionTimeStep | 1s    |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader4 | ETH/DEC21 | sell | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 1      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
 
@@ -389,7 +399,7 @@ Feature: Fees calculations
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3b | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -439,7 +449,7 @@ Feature: Fees calculations
       | trader4  | ETH   | ETH/DEC21 | 621    | 604     |
 
    # Placing second set of orders
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3a | ETH/DEC21 | buy  | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader3a-buy-1 |
       | trader4  | ETH/DEC21 | sell | 4      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
@@ -475,8 +485,10 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1344   | 8673    |
-      | trader4  | ETH   | ETH/DEC21 | 1108   | 109     |
+      | trader3a | ETH   | ETH/DEC21 | 1159   | 8862    |
+      | trader4  | ETH   | ETH/DEC21 | 1102   | 109     |
+      #| trader3a | ETH   | ETH/DEC21 | 1344   | 8673    |
+      #| trader4  | ETH   | ETH/DEC21 | 1108   | 109     |
 
   Scenario: S006, Testing fees in continuous trading with insufficient balance in their general account but margin covers the fees (0029-FEES-008)
 
@@ -521,7 +533,7 @@ Feature: Fees calculations
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC21 | buy  | 100    | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader4 | ETH/DEC21 | sell | 100    | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
@@ -544,7 +556,7 @@ Feature: Fees calculations
       | party   | market id | maintenance | search | initial | release |
       | trader4 | ETH/DEC21 | 17820       | 19602  | 21384   | 24948   |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3 | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | trader3-buy-1  |
       | trader4 | ETH/DEC21 | sell | 1      | 1002  | 1                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
@@ -607,7 +619,7 @@ Feature: Fees calculations
         | mark price | trading mode            |
         | 1000       | TRADING_MODE_CONTINUOUS |
 
-      When the parties place the following orders:
+      When the parties place the following orders with ticks:
         | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
         | trader3 | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | trader3-buy-1  |
         | trader4 | ETH/DEC21 | sell | 1      | 1002  | 1                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
@@ -681,7 +693,7 @@ Feature: Fees calculations
       | buy  | 910   | 119    |
       | sell | 1090  | 184    |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3 | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | trader3-buy-1  |
       | trader4 | ETH/DEC21 | sell | 1      | 1002  | 1                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
@@ -708,7 +720,8 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 240    | 9999766 |
+      | trader3 | ETH   | ETH/DEC21 | 339    | 9999667 |
+      #| trader3 | ETH   | ETH/DEC21 | 240    | 9999766 |
       | trader4 | ETH   | ETH/DEC21 | 0      | 0       |
 
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
@@ -784,7 +797,7 @@ Feature: Fees calculations
 
     #Scenario:S010, Triggering Liquidity auction (0029-FEES-006)
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader4  | ETH/DEC21 | sell | 3      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
@@ -805,7 +818,7 @@ Feature: Fees calculations
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
 
     # now place orders during auction
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader4  | ETH/DEC21 | sell | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -842,7 +855,7 @@ Feature: Fees calculations
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1002       | TRADING_MODE_CONTINUOUS | 1       | 903       | 1101      | 1402         | 10000          | 7             |
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader4  | ETH/DEC21 | sell | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -934,7 +947,7 @@ Feature: Fees calculations
 
     # Scenario: S012, Triggering Liquidity auction (0029-FEES-006)
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | tradera3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | tradera4 | ETH/DEC21 | sell | 3      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
@@ -948,7 +961,7 @@ Feature: Fees calculations
       | trading mode                    | auction trigger           |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader4  | ETH/DEC21 | sell | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -1047,7 +1060,7 @@ Feature: Fees calculations
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1002       | TRADING_MODE_CONTINUOUS | 1       | 903       | 1101      | 200          | 10000          | 1             |
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader4  | ETH/DEC21 | sell | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -1432,13 +1445,13 @@ Feature: Fees calculations
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the mark price should be "180" for the market "ETH/DEC21"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | aux1  | ETH/DEC21 | sell | 150    | 200   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | aux2  | ETH/DEC21 | buy  | 50     | 190   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
       | aux2  | ETH/DEC21 | buy  | 350    | 180   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader3a | ETH/DEC21 | sell | 100    | 180   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader3b | ETH/DEC21 | sell | 300    | 180   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -1458,11 +1471,11 @@ Feature: Fees calculations
       | party | reference       |
       | aux1  | sell-provider-1 |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | aux1  | ETH/DEC21 | sell | 500    | 350   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
 
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1  | ETH/DEC21 | sell | 1      | 300   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | aux2  | ETH/DEC21 | buy  | 1      | 300   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -1528,13 +1541,13 @@ Feature: Fees calculations
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the mark price should be "180" for the market "ETH/DEC21"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | aux1  | ETH/DEC21 | sell | 150    | 200   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | aux2  | ETH/DEC21 | buy  | 50     | 190   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
       | aux2  | ETH/DEC21 | buy  | 350    | 180   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader3a | ETH/DEC21 | sell | 100    | 180   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader3b | ETH/DEC21 | sell | 300    | 180   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -1554,11 +1567,11 @@ Feature: Fees calculations
       | party | reference       |
       | aux1  | sell-provider-1 |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | aux1  | ETH/DEC21 | sell | 500    | 350   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
 
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1  | ETH/DEC21 | sell | 1      | 300   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | aux2  | ETH/DEC21 | buy  | 1      | 300   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -1650,7 +1663,7 @@ Feature: Fees calculations
       | buy  | 990   | 20     |
       | sell | 1010  | 20     |
 
-     Then the parties place the following orders:
+     Then the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 10     | 990   | 0                | TYPE_LIMIT | TIF_GTC |
       # | trader4  | ETH/DEC21 | sell | 30     | 990   | 1                | TYPE_LIMIT | TIF_GTC |
@@ -1667,18 +1680,20 @@ Feature: Fees calculations
       | sell | 910   | 0      |
       | sell | 1045  | 20     |
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader4  | ETH/DEC21 | sell | 30     | 990   | 2                | TYPE_LIMIT | TIF_GTC |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general    |  bond    |
-      | aux1     | ETH   | ETH/DEC21 | 10080  | 99979313   |  10000   |
+      | aux1     | ETH   | ETH/DEC21 | 9370   | 99980023   |  10000   |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
-      | trader4  | ETH   | ETH/DEC21 | 5580   | 94875   |
+      | trader3a | ETH   | ETH/DEC21 | 2400   | 97650   |
+      #| trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
+      | trader4  | ETH   | ETH/DEC21 | 4300   | 96155   |
+      #| trader4  | ETH   | ETH/DEC21 | 5580   | 94875   |
 
 
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
@@ -1712,8 +1727,10 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
-      | trader4  | ETH   | ETH/DEC21 | 5580   | 94875   |
+      | trader3a | ETH   | ETH/DEC21 | 2400   | 97650   |
+      #| trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
+      | trader4  | ETH   | ETH/DEC21 | 4300   | 96155   |
+      #| trader4  | ETH   | ETH/DEC21 | 5580   | 94875   |
 
     # And the accumulated infrastructure fee should be "20" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "31" for the market "ETH/DEC21"
@@ -1767,7 +1784,7 @@ Feature: Fees calculations
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -1784,7 +1801,7 @@ Feature: Fees calculations
       | market.fee.factors.makerFee          | 0.05  |
       | market.fee.factors.infrastructureFee | 0.02  |
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader4 | ETH/DEC21 | sell | 4      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
 

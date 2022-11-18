@@ -50,6 +50,12 @@ func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *godo
 			if err := netParams.Update(ctx, netparams.MarketTargetStakeTimeWindow, str); err != nil {
 				return err
 			}
+		case netparams.MarkPriceUpdateMaximumFrequency:
+			f := row.MustDurationStr("value")
+			str := f.String()
+			if err := netParams.Update(ctx, netparams.MarkPriceUpdateMaximumFrequency, str); err != nil {
+				return err
+			}
 		default:
 			value := row.MustStr("value")
 			if err := netParams.Update(ctx, name, value); err != nil {

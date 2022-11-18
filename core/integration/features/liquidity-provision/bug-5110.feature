@@ -11,8 +11,9 @@ Feature: Test LP orders
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          | position decimal places | decimal places |
       | ETH/DEC19 | ETH        | ETH   | log-normal-risk-model-1     | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |            5            |     5          |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: create liquidity provisions
     Given the parties deposit on asset's general account the following amount:
@@ -39,7 +40,7 @@ Feature: Test LP orders
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price       | resulting trades | type       | tif     | reference  |
       | party2 | ETH/DEC19 | buy  | 500000 | 100100000   | 0                | TYPE_LIMIT | TIF_GTC |     b1     |
       | party3 | ETH/DEC19 | sell | 500000 | 95100000    | 1                | TYPE_LIMIT | TIF_GTC |     s1     |
@@ -55,7 +56,7 @@ Feature: Test LP orders
 
     Then the liquidity provisions should have the following states:
       | id  | party   | market    | commitment amount | status        |
-      | lp1 | party1 | ETH/DEC19  | 390500000000       | STATUS_ACTIVE |
+      | lp1 | party1 | ETH/DEC19  | 390500000000      | STATUS_ACTIVE |
 
     Then debug orders
 
