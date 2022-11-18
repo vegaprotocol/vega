@@ -228,6 +228,9 @@ func defaultNetParams() map[string]value {
 	m[MaxGasPerBlock].AddRules(UintDependentGTE(MinBlockCapacity, m[MinBlockCapacity].(*Uint), num.MustDecimalFromString("2")))
 	m[MinBlockCapacity].AddRules(UintDependentLTE(MaxGasPerBlock, m[MaxGasPerBlock].(*Uint), num.MustDecimalFromString("0.5")))
 	m[MarkPriceUpdateMaximumFrequency].AddRules(DurationGTE(time.Duration(0)))
+	// could just do 24 * 3600 * time.Second, but this is easier to read
+	maxFreq, _ := time.ParseDuration("24h")
+	m[MarkPriceUpdateMaximumFrequency].AddRules(DurationGTE(time.Duration(0)), DurationLTE(maxFreq))
 	return m
 }
 
