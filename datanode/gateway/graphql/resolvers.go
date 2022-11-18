@@ -357,6 +357,42 @@ func (r *VegaResolverRoot) ProtocolUpgradeProposal() ProtocolUpgradeProposalReso
 	return (*protocolUpgradeProposalResolver)(r)
 }
 
+func (r *VegaResolverRoot) LedgerEntryFilter() LedgerEntryFilterResolver {
+	return (*ledgerEntryFilterResolver)(r)
+}
+
+type ledgerEntryFilterResolver VegaResolverRoot
+
+func (r *ledgerEntryFilterResolver) SenderAccountFilter(ctx context.Context, obj *v2.LedgerEntryFilter, data *v2.AccountFilter) error {
+	if data != nil {
+		obj.AccountFromFilter = data
+		_, err := r.tradingDataClientV2.ListLedgerEntries(
+			ctx,
+			&v2.ListLedgerEntriesRequest{
+				Filter: obj,
+			})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *ledgerEntryFilterResolver) ReceiverAccountFilter(ctx context.Context, obj *v2.LedgerEntryFilter, data *v2.AccountFilter) error {
+	if data != nil {
+		obj.AccountToFilter = data
+		_, err := r.tradingDataClientV2.ListLedgerEntries(
+			ctx,
+			&v2.ListLedgerEntriesRequest{
+				Filter: obj,
+			})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(ctx context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -377,6 +413,10 @@ type accountUpdateResolver VegaResolverRoot
 
 func (r *accountUpdateResolver) AssetID(ctx context.Context, obj *v2.AccountBalance) (string, error) {
 	return obj.Asset, nil
+}
+
+func (r *accountUpdateResolver) PartyID(ctx context.Context, obj *v2.AccountBalance) (string, error) {
+	return obj.Owner, nil
 }
 
 // AggregatedLedgerEntriesResolver resolver.

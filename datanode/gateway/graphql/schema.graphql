@@ -885,7 +885,7 @@ type NodeData {
 
   "Details on the set of consensus nodes in the network"
   tendermintNodes: NodeSet!
-  
+
   "Details on the set of ersatz (standby) nodes in the network"
   ersatzNodes: NodeSet
 
@@ -2445,6 +2445,8 @@ type AccountUpdate {
   type: AccountType!
   "Market id (only relevant to margin accounts)"
   marketId: ID
+  "The party owning the accounbt"
+  partyId: ID!
 }
 
 "All the data related to the approval of a withdrawal from the network"
