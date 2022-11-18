@@ -227,6 +227,7 @@ func defaultNetParams() map[string]value {
 	// ensure that MinBlockCapacity <= 2*
 	m[MaxGasPerBlock].AddRules(UintDependentGTE(MinBlockCapacity, m[MinBlockCapacity].(*Uint), num.MustDecimalFromString("2")))
 	m[MinBlockCapacity].AddRules(UintDependentLTE(MaxGasPerBlock, m[MaxGasPerBlock].(*Uint), num.MustDecimalFromString("0.5")))
+	m[MarkPriceUpdateMaximumFrequency].AddRules(DurationGTE(time.Duration(0)))
 	return m
 }
 

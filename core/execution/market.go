@@ -407,7 +407,7 @@ func NewMarket(
 		priceFactor:               priceFactor,
 		minLPStakeQuantumMultiple: num.MustDecimalFromString("1"),
 		positionFactor:            positionFactor,
-		nextMTM:                   time.Now(), // placeholder, we will set this accordingly
+		nextMTM:                   time.Time{}, // default to zero time
 	}
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
@@ -727,6 +727,9 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 
 	// check auction, if any
 	m.checkAuction(ctx, t)
+	if m.nextMTM.IsZero() {
+		m.nextMTM = t.Add(m.mtmDelta)
+	}
 	// MTM if we have to (ie time passed, not in auction, and we have a mark price)
 	if mp := m.getCurrentMarkPrice(); mp != nil && !mp.IsZero() && !m.nextMTM.After(t) && !m.as.InAuction() {
 		m.nextMTM = t.Add(m.mtmDelta)                 // add delta here
@@ -1703,6 +1706,7 @@ func (m *Market) confirmMTM(
 		m.checkForReferenceMoves(
 			ctx, orderUpdates, false)
 	}
+	fmt.Println("Performed MTM settlement")
 }
 
 // updateLiquidityFee computes the current LiquidityProvision fee and updates
