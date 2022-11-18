@@ -17,9 +17,11 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/netparams"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type A struct {
@@ -170,4 +172,20 @@ func TestJSONVPriceMonitoringParameters(t *testing.T) {
 	expectedErrorMsg = "triggers.auction_extension must be greater than `0`, got `0`"
 	err = j.Validate(invalidPmJSONString)
 	assert.EqualError(t, err, expectedErrorMsg)
+}
+
+func TestDependent(t *testing.T) {
+	u1 := netparams.NewUint(netparams.UintGTE(num.NewUint(1)), netparams.UintLTE(num.NewUint(1000))).Mutable(true).MustUpdate("500")
+	u2 := netparams.NewUint(netparams.UintGTE(num.NewUint(1)), netparams.UintLTE(num.NewUint(1000))).Mutable(true).MustUpdate("100")
+	// we want to enforce u1 >= 2x u2
+	u1.AddRules(netparams.UintDependentGTE("u2", u2, num.MustDecimalFromString("2")))
+	u2.AddRules(netparams.UintDependentLTE("u1", u1, num.MustDecimalFromString("0.5")))
+
+	// try to update u1 to less than 2 * u2
+	require.Equal(t, "expect >= 200 (u2 * 2) got 100", u1.Update("100").Error())
+	require.NoError(t, u1.Update("200"))
+
+	// try to update u2 to more than 0.5 u1
+	require.Equal(t, "expect <= 100 (u1 * 0.5) got 101", u2.Update("101").Error())
+	require.NoError(t, u2.Update("99"))
 }

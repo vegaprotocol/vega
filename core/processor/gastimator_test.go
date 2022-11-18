@@ -66,6 +66,7 @@ func testOrderSubmitAmendAndLP(t *testing.T, tx *testTx) {
 	gastimator := processor.NewGastimator(eet)
 	gastimator.OnMaxGasUpdate(context.Background(), num.NewUint(1234))
 	gastimator.OnDefaultGasUpdate(context.Background(), num.NewUint(1))
+	gastimator.OnMinBlockCapacityUpdate(context.Background(), num.NewUint(1))
 
 	// there's nothing yet for the market so expect default counters
 	count, err := gastimator.CalcGasWantedForTx(tx)
@@ -114,7 +115,7 @@ func testOrderSubmitAmendAndLP(t *testing.T, tx *testTx) {
 func TestCancelOrder(t *testing.T) {
 	tx := &testTx{
 		command:      txn.CancelOrderCommand,
-		unmarshaller: unmarshalCancelOrder(&commandspb.OrderCancellation{MarketId: "1"}),
+		unmarshaller: unmarshalCancelOrder(&commandspb.OrderCancellation{MarketId: "1", OrderId: "1"}),
 	}
 
 	marketCounters := map[string]*types.MarketCounters{}
@@ -122,6 +123,7 @@ func TestCancelOrder(t *testing.T) {
 	gastimator := processor.NewGastimator(eet)
 	gastimator.OnMaxGasUpdate(context.Background(), num.NewUint(1234))
 	gastimator.OnDefaultGasUpdate(context.Background(), num.NewUint(1))
+	gastimator.OnMinBlockCapacityUpdate(context.Background(), num.NewUint(1))
 
 	// there's nothing yet for the market so expect default counters
 	count, err := gastimator.CalcGasWantedForTx(tx)
@@ -182,6 +184,7 @@ func TestBatch(t *testing.T) {
 	gastimator := processor.NewGastimator(eet)
 	gastimator.OnMaxGasUpdate(context.Background(), num.NewUint(10000))
 	gastimator.OnDefaultGasUpdate(context.Background(), num.NewUint(1))
+	gastimator.OnMinBlockCapacityUpdate(context.Background(), num.NewUint(1))
 
 	// there's nothing yet for any market so expect defaultgas * 3 + 4 * defaultgas = 7 * defaultgas
 	count, err := gastimator.CalcGasWantedForTx(tx)
@@ -224,6 +227,48 @@ func TestBatch(t *testing.T) {
 	count, err = gastimator.CalcGasWantedForTx(tx)
 	require.NoError(t, err)
 	require.Equal(t, uint64(9999), count)
+}
+
+func TestGetPriority(t *testing.T) {
+	command := []txn.Command{
+		txn.SubmitOrderCommand,
+		txn.CancelOrderCommand,
+		txn.AmendOrderCommand,
+		txn.WithdrawCommand,
+		txn.ProposeCommand,
+		txn.VoteCommand,
+		txn.AnnounceNodeCommand,
+		txn.NodeVoteCommand,
+		txn.NodeSignatureCommand,
+		txn.LiquidityProvisionCommand,
+		txn.CancelLiquidityProvisionCommand,
+		txn.AmendLiquidityProvisionCommand,
+		txn.ChainEventCommand,
+		txn.SubmitOracleDataCommand,
+		txn.DelegateCommand,
+		txn.UndelegateCommand,
+		txn.RotateKeySubmissionCommand,
+		txn.StateVariableProposalCommand,
+		txn.TransferFundsCommand,
+		txn.CancelTransferFundsCommand,
+		txn.ValidatorHeartbeatCommand,
+		txn.RotateEthereumKeySubmissionCommand,
+		txn.ProtocolUpgradeCommand,
+		txn.IssueSignatures,
+		txn.BatchMarketInstructions,
+	}
+	marketCounters := map[string]*types.MarketCounters{}
+	eet := &ExecEngineTest{marketCounters: marketCounters}
+	gastimator := processor.NewGastimator(eet)
+	for _, c := range command {
+		expected := uint64(1)
+		if c.IsValidatorCommand() {
+			expected = uint64(10000)
+		} else if c == txn.ProposeCommand || c == txn.VoteCommand {
+			expected = uint64(100)
+		}
+		require.Equal(t, expected, gastimator.GetPriority(&testTx{command: c}), c)
+	}
 }
 
 type ExecEngineTest struct {
