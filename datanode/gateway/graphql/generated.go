@@ -114,6 +114,7 @@ type ResolverRoot interface {
 	Vote() VoteResolver
 	Withdrawal() WithdrawalResolver
 	DateRange() DateRangeResolver
+	LedgerEntryFilter() LedgerEntryFilterResolver
 }
 
 type DirectiveRoot struct {
@@ -152,6 +153,7 @@ type ComplexityRoot struct {
 		AssetID  func(childComplexity int) int
 		Balance  func(childComplexity int) int
 		MarketId func(childComplexity int) int
+		PartyID  func(childComplexity int) int
 		Type     func(childComplexity int) int
 	}
 
@@ -1746,6 +1748,8 @@ type AccountEventResolver interface {
 }
 type AccountUpdateResolver interface {
 	AssetID(ctx context.Context, obj *v2.AccountBalance) (string, error)
+
+	PartyID(ctx context.Context, obj *v2.AccountBalance) (string, error)
 }
 type AggregatedLedgerEntriesResolver interface {
 	VegaTime(ctx context.Context, obj *v2.AggregatedLedgerEntries) (int64, error)
@@ -2239,6 +2243,10 @@ type DateRangeResolver interface {
 	Start(ctx context.Context, obj *v2.DateRange, data *int64) error
 	End(ctx context.Context, obj *v2.DateRange, data *int64) error
 }
+type LedgerEntryFilterResolver interface {
+	SenderAccountFilter(ctx context.Context, obj *v2.LedgerEntryFilter, data *v2.AccountFilter) error
+	ReceiverAccountFilter(ctx context.Context, obj *v2.LedgerEntryFilter, data *v2.AccountFilter) error
+}
 
 type executableSchema struct {
 	resolvers  ResolverRoot
@@ -2387,6 +2395,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AccountUpdate.MarketId(childComplexity), true
+
+	case "AccountUpdate.partyId":
+		if e.complexity.AccountUpdate.PartyID == nil {
+			break
+		}
+
+		return e.complexity.AccountUpdate.PartyID(childComplexity), true
 
 	case "AccountUpdate.type":
 		if e.complexity.AccountUpdate.Type == nil {
@@ -12481,6 +12496,50 @@ func (ec *executionContext) fieldContext_AccountUpdate_marketId(ctx context.Cont
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountUpdate_partyId(ctx context.Context, field graphql.CollectedField, obj *v2.AccountBalance) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AccountUpdate_partyId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AccountUpdate().PartyID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AccountUpdate_partyId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountUpdate",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ID does not have child fields")
 		},
@@ -50973,6 +51032,8 @@ func (ec *executionContext) fieldContext_Subscription_accounts(ctx context.Conte
 				return ec.fieldContext_AccountUpdate_type(ctx, field)
 			case "marketId":
 				return ec.fieldContext_AccountUpdate_marketId(ctx, field)
+			case "partyId":
+				return ec.fieldContext_AccountUpdate_partyId(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AccountUpdate", field.Name)
 		},
@@ -59791,7 +59852,7 @@ func (ec *executionContext) unmarshalInputLedgerEntryFilter(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"CloseOnAccountFilters", "AccountFromFilter", "AccountToFilter", "TransferTypes"}
+	fieldsInOrder := [...]string{"CloseOnAccountFilters", "SenderAccountFilter", "ReceiverAccountFilter", "TransferTypes"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -59806,20 +59867,26 @@ func (ec *executionContext) unmarshalInputLedgerEntryFilter(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
-		case "AccountFromFilter":
+		case "SenderAccountFilter":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AccountFromFilter"))
-			it.AccountFromFilter, err = ec.unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("SenderAccountFilter"))
+			data, err := ec.unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "AccountToFilter":
+			if err = ec.resolvers.LedgerEntryFilter().SenderAccountFilter(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "ReceiverAccountFilter":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AccountToFilter"))
-			it.AccountToFilter, err = ec.unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ReceiverAccountFilter"))
+			data, err := ec.unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, v)
 			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.LedgerEntryFilter().ReceiverAccountFilter(ctx, &it, data); err != nil {
 				return it, err
 			}
 		case "TransferTypes":
@@ -60731,6 +60798,26 @@ func (ec *executionContext) _AccountUpdate(ctx context.Context, sel ast.Selectio
 
 			out.Values[i] = ec._AccountUpdate_marketId(ctx, field, obj)
 
+		case "partyId":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AccountUpdate_partyId(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
