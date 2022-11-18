@@ -816,9 +816,6 @@ func (e *Engine) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d tim
 }
 
 func (e *Engine) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.Duration) error {
-	// we make sure to update both the copy and the actual markets for snapshots
-	// although we can most likely just update the market because we're already ensuring the nextMTM value
-	// is set correctly when getting state
 	for _, mkt := range e.markets {
 		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, d)
 	}
