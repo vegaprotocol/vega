@@ -1,18 +1,32 @@
 # Changelog
 
-## Unreleased 0.63.0
+## Unreleased 0.64.0
 
 ### 🚨 Breaking changes
-- [6716](https://github.com/vegaprotocol/vega/issues/6716) - Use timestamp on all times fields
-- [6887](https://github.com/vegaprotocol/vega/issues/6716) - `client.get_permissions` and `client.request_permissions` have been removed from Wallet service V2 with permissions now asked during `client.list_keys`
-- [6725](https://github.com/vegaprotocol/vega/issues/6725) - Fix inconsistent use of node field on `GraphQL` connection edges
-- [6746](https://github.com/vegaprotocol/vega/issues/6746) - The `validating_nodes` has been removed from `NodeData` and replaced with details of each node set
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.63.0
+
+### 🚨 Breaking changes
+- [6898](https://github.com/vegaprotocol/vega/issues/6795) - allow `-snapshot.load-from-block-height=` to apply to `statesync` snapshots
+- [6716](https://github.com/vegaprotocol/vega/issues/6716) - Use timestamp on all times fields
+- [6887](https://github.com/vegaprotocol/vega/issues/6716) - `client.get_permissions` and `client.request_permissions` have been removed from Wallet service V2 with permissions now asked during `client.list_keys`
+- [6725](https://github.com/vegaprotocol/vega/issues/6725) - Fix inconsistent use of node field on `GraphQL` connection edges
+- [6746](https://github.com/vegaprotocol/vega/issues/6746) - The `validating_nodes` has been removed from `NodeData` and replaced with details of each node set
+
+### 🛠 Improvements
 - [6898](https://github.com/vegaprotocol/vega/issues/6898) - allow `-snapshot.load-from-block-height=` to apply to `statesync` snapshots
+- [6871](https://github.com/vegaprotocol/vega/issues/6871) - Assure integration test framework throws an error when no watchers specified for a network parameter being set/updated
 - [6795](https://github.com/vegaprotocol/vega/issues/6795) - max gas implementation
 - [6641](https://github.com/vegaprotocol/vega/issues/6641) - network wide limits
 - [6731](https://github.com/vegaprotocol/vega/issues/6731) - standardize on 'network' and '' for network party and no market identifiers
@@ -40,6 +54,7 @@
 - [6964](https://github.com/vegaprotocol/vega/issues/6964) - Add support for long living tokens with expiry
 - [6991](https://github.com/vegaprotocol/vega/issues/6991) - Expose error field in explorer API
 - [5769](https://github.com/vegaprotocol/vega/issues/5769) - Automatically resolve the host name in the client wallet API
+- [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position
 
 ### 🐛 Fixes
 - [6924](https://github.com/vegaprotocol/vega/issues/6924) - Fix deterministic sorting when nodes have equal scores and we have to choose who is in the signer set
@@ -72,6 +87,7 @@
 - [6977](https://github.com/vegaprotocol/vega/issues/6977) - Prior to final settlement, perform MTM on unsettled trades.
 - [6569](https://github.com/vegaprotocol/vega/issues/6569) - Fix margin calculations during auctions.
 - [7001](https://github.com/vegaprotocol/vega/issues/7001) - Set mark price on final settlement.
+
 
 ## 0.62.1
 
