@@ -144,3 +144,7 @@ func (s *SubmitOrderError) Unwrap() error { return s.Err }
 func errOrderEventsNotFound(party, marketID string, side types.Side, size, price uint64) error {
 	return fmt.Errorf("no matching order event found %v, %v, %v, %v, %v", party, marketID, side.String(), size, price)
 }
+
+func errNoWatchersSpecified(netparam string) error {
+	return fmt.Errorf("no watchers specified for network parmameter `%v`", netparam)
+}
