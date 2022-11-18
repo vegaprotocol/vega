@@ -80,7 +80,7 @@ func (e *Engine) AmendLiquidityProvision(
 	// update version
 	lp.Version++
 
-	e.setShapesReferencesOnLiquidityProvision(lp, lpa.Buys, lpa.Sells, idGen)
+	e.setShapesReferencesOnLiquidityProvision(ctx, lp, lpa.Buys, lpa.Sells, idGen)
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 	e.provisions.Set(party, lp)
 	return cancels, nil
