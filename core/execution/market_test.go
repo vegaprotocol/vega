@@ -6412,6 +6412,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 				found = append(found, evt.LedgerMovements()...)
 			}
 		}
+		// fmt.Printf("%#v\n", found[1].Entries[0].Type)
 		// a single transfer response is required
 		require.Len(t, found, 1)
 		require.Len(t, found[0].Entries, 1)

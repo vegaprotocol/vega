@@ -43,6 +43,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
+	"golang.org/x/exp/maps"
 )
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network.
@@ -743,6 +744,37 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 			m.confirmMTM(ctx, dummy, nil)
 			m.hasTraded = false // trades have been settled
 		}
+
+		// now we can remove
+		parties := maps.Keys(m.parties)
+		sort.Strings(parties)
+
+		asset, _ := m.mkt.GetAsset()
+		evts := []*types.LedgerMovement{}
+		for _, p := range parties {
+			// if the party doesn't have a potential position anymore?
+			// and it's not an LP (they could just be undeployed)
+			if _, ok := m.position.GetPositionByPartyID(p); !ok && !m.liquidity.IsLiquidityProvider(p) {
+				mvts, err := m.collateral.ClearPartyMarginAccount(
+					ctx, p, m.GetID(), asset)
+				if err != nil {
+					m.log.Warn("could not clear party margin account",
+						logging.PartyID(p),
+						logging.MarketID(m.GetID()),
+						logging.Error(err))
+				}
+
+				if mvts != nil {
+					evts = append(evts, mvts)
+				}
+
+				delete(m.parties, p)
+			}
+		}
+
+		if len(evts) > 0 {
+			m.broker.Send(events.NewLedgerMovements(ctx, evts))
+		}
 	}
 
 	// check auction, if any. If we leave auction, MTM is performed in this call
@@ -1284,9 +1316,12 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 			m.log.Error("unable to clear party margin account", logging.Error(err))
 			return
 		}
-		evts = append(evts, events.NewLedgerMovements(
-			ctx, []*types.LedgerMovement{transfers}),
-		)
+
+		if transfers != nil {
+			evts = append(evts, events.NewLedgerMovements(
+				ctx, []*types.LedgerMovement{transfers}),
+			)
+		}
 	}
 	m.broker.SendBatch(evts)
 }
