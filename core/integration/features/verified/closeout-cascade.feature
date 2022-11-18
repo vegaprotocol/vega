@@ -37,7 +37,7 @@ Feature: Closeout-cascades
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lpprov | ETH/DEC19 | 100000            | 0.001 | sell | ASK              | 100        | 55     | submission |
-      | lp1 | party0 | ETH/DEC19 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendment  |
+      | lp1 | lpprov | ETH/DEC19 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendment  |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     # trading happens at the end of the open auction period
     Then the parties place the following orders:
