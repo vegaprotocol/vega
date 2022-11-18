@@ -6,8 +6,8 @@ Feature: Confirm automatic adjustments to LP orders as specified in 0038-OLIQ
         | risk aversion | tau  | mu | r     | sigma |
         | 0.001         | 0.01 | 0  | 0.0   | 2     |
       And the price monitoring named "price-monitoring-1":
-        | horizon | probability | auction extension |
-        | 1000000       | 0.999999999999999  | 300               |
+        | horizon | probability       | auction extension |
+        | 1000000 | 0.999999999999999 | 300               |
       And the margin calculator named "margin-calculator-1":
         | search factor | initial factor | release factor |
         | 1.2           | 1.5            | 2              |
