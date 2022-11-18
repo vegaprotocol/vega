@@ -30,6 +30,7 @@
 - [6843](https://github.com/vegaprotocol/vega/issues/6843) - Fix Visor runner keys
 - [6826](https://github.com/vegaprotocol/vega/issues/6826) - Update `spam.pow.numberOfPastBlocks` range values
 - [6332](https://github.com/vegaprotocol/vega/issues/6332) - Standardise `graphql` responses
+- [6862](https://github.com/vegaprotocol/vega/issues/6862) - Add party in account update
 
 
 ## 0.62.1
