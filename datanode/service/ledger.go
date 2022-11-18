@@ -16,7 +16,6 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/utils"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -25,11 +24,11 @@ import (
 type ledgerStore interface {
 	Flush(ctx context.Context) ([]entities.LedgerEntry, error)
 	Add(le entities.LedgerEntry) error
-	Query(filter *entities.LedgerEntryFilter, groupOptions *sqlstore.GroupOptions, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedLedgerEntries, entities.PageInfo, error)
+	Query(filter *entities.LedgerEntryFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedLedgerEntries, entities.PageInfo, error)
 }
 
 type LedgerEntriesStore interface {
-	Query(filter *entities.LedgerEntryFilter, groupOptions *sqlstore.GroupOptions, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedLedgerEntries, entities.PageInfo, error)
+	Query(filter *entities.LedgerEntryFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedLedgerEntries, entities.PageInfo, error)
 }
 
 type Ledger struct {
@@ -80,13 +79,11 @@ func (l *Ledger) GetSubscribersCount() int32 {
 
 func (l *Ledger) Query(
 	filter *entities.LedgerEntryFilter,
-	groupOptions *sqlstore.GroupOptions,
 	dateRange entities.DateRange,
 	pagination entities.CursorPagination,
 ) (*[]entities.AggregatedLedgerEntries, entities.PageInfo, error) {
 	return l.store.Query(
 		filter,
-		groupOptions,
 		dateRange,
 		pagination)
 }

@@ -27,7 +27,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/service"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -220,41 +219,15 @@ func (t *tradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.Li
 		return nil, fmt.Errorf("could not parse ledger entry filter: %w", err)
 	}
 
-	groupOptions := &sqlstore.GroupOptions{}
-	if req.GroupOptions != nil {
-		groupByAccountField := []entities.AccountField{}
-		for _, field := range req.GroupOptions.ByAccountField {
-			field, err := entities.AccountFieldFromProto(field)
-			if err != nil {
-				return nil, fmt.Errorf("could not parse account from group options: %w", err)
-			}
-			groupByAccountField = append(groupByAccountField, field)
-		}
-
-		groupByLedgerEntryField := []entities.LedgerEntryField{}
-		for _, field := range req.GroupOptions.ByLedgerEntryField {
-			field, err := entities.LedgerEntryFieldFromProto(field)
-			if err != nil {
-				return nil, fmt.Errorf("could not parse ledger entry from group options: %w", err)
-			}
-			groupByLedgerEntryField = append(groupByLedgerEntryField, field)
-		}
-
-		groupOptions = &sqlstore.GroupOptions{
-			ByAccountField:     groupByAccountField,
-			ByLedgerEntryField: groupByLedgerEntryField,
-		}
-	}
-
 	dateRange := entities.DateRangeFromProto(req.DateRange)
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid cursor: %w", err))
 	}
 
-	entries, pageInfo, err := t.ledgerService.Query(leFilter, groupOptions, dateRange, pagination)
+	entries, pageInfo, err := t.ledgerService.Query(leFilter, dateRange, pagination)
 	if err != nil {
-		return nil, fmt.Errorf("could not query ledger entries: %w", err)
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("could not query ledger entries: %w", err))
 	}
 
 	edges, err := makeEdges[*v2.AggregatedLedgerEntriesEdge](*entries)

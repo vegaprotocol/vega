@@ -350,11 +350,6 @@ type ExternalDataSourceSpec struct {
 	Spec *DataSourceSpec `json:"spec"`
 }
 
-type GroupOptions struct {
-	ByAccountField     []*v2.AccountField     `json:"ByAccountField"`
-	ByLedgerEntryField []*v2.LedgerEntryField `json:"ByLedgerEntryField"`
-}
-
 type LedgerEntry struct {
 	// Account from which the asset was taken
 	AccountFromID *vega.AccountDetails `json:"accountFromId"`

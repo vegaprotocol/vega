@@ -715,30 +715,30 @@ message AggregatedLedgerEntries {
     int64 timestamp = 2;
     // The amount of ledger entries for the set of requested accounts at the time above
     string quantity = 3;
-    // If grouping by party, the party ID
-    optional string party_id = 4;
-    // If grouping by asset, the asset ID
+    // If filtering by transfer type, the transfer type
+    vega.TransferType transfer_type = 4;
+    // If filtering by asset, the asset ID
     optional string asset_id = 5;
-    // If grouping by market, the market ID
-    optional string market_id = 6;
-    // If grouping by transfer type, the transfer type
-    vega.TransferType transfer_type = 7;
-    // If grouping by account type, the acount type
-    vega.AccountType account_type = 8;
-}
-
-message GroupOptions {
-    repeated AccountField by_account_field = 1;
-    repeated LedgerEntryField by_ledger_entry_field = 2;
+    // The type of account sent from
+    vega.AccountType sender_account_type = 6;
+    // The type of account received to
+    vega.AccountType receiver_account_type = 7;
+    // If filtering by sender party, the party ID
+    optional string sender_party_id = 8;
+    // If filtering by receiver party, the party ID
+    optional string receiver_party_id = 9;
+    // If filtering by sender market, the market ID
+    optional string sender_market_id = 10;
+    // If filtering by receiver market, the market ID
+    optional string receiver_market_id = 11;
 }
 
 // -- LedgerEntries --
 message ListLedgerEntriesRequest {
     // Limit the ledger entries considered according to the filter supplied
     LedgerEntryFilter filter = 1;
-    GroupOptions group_options = 2;
-    optional Pagination pagination = 3;
-    optional DateRange date_range = 4;
+    optional Pagination pagination = 2;
+    optional DateRange date_range = 3;
 }
 
 message ListLedgerEntriesResponse {
