@@ -29,6 +29,8 @@ Feature: Test liquidity provider reward distribution
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
+      | network.markPriceUpdateMaximumFrequency             | 1s    |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
 
   Given the average block duration is "2"
 
@@ -36,7 +38,7 @@ Feature: Test liquidity provider reward distribution
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
-      | lp1     | ETH   | 1000000000 |
+      | lp1    | ETH   | 1000000000 |
       | party1 | ETH   | 100000000  |
       | party2 | ETH   | 100000000  |
 
@@ -57,7 +59,7 @@ Feature: Test liquidity provider reward distribution
     Then the opening auction period ends for market "ETH/DEC21"
 
     And the following trades should be executed:
-      | buyer   | price | size | seller  |
+      | buyer  | price | size | seller  |
       | party1 | 1000  | 10   | party2 |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
@@ -78,7 +80,7 @@ Feature: Test liquidity provider reward distribution
 
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
       | party1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | party2 | ETH/DEC21 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-buy  |

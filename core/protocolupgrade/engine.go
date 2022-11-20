@@ -154,6 +154,7 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 		logging.String("validatorPubKey", pk),
 		logging.Uint64("upgradeBlockHeight", upgradeBlockHeight),
 		logging.String("vegaReleaseTag", vegaReleaseTag),
+		logging.String("currentVersion", e.currentVersion),
 	)
 
 	if err := e.IsValidProposal(ctx, pk, upgradeBlockHeight, vegaReleaseTag); err != nil {

@@ -128,6 +128,7 @@ type netParamsValues struct {
 	minProbabilityOfTradingLPOrders num.Decimal
 	minLpStakeQuantumMultiple       num.Decimal
 	marketCreationQuantumMultiple   num.Decimal
+	markPriceUpdateMaximumFrequency time.Duration
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -146,6 +147,7 @@ func defaultNetParamsValues() netParamsValues {
 		minProbabilityOfTradingLPOrders: num.DecimalFromInt64(-1),
 		minLpStakeQuantumMultiple:       num.DecimalFromInt64(-1),
 		marketCreationQuantumMultiple:   num.DecimalFromInt64(-1),
+		markPriceUpdateMaximumFrequency: 5 * time.Second, // default is 5 seconds, should come from net params though
 	}
 }
 
@@ -477,6 +479,9 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 	if !e.npv.maxLiquidityFee.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(e.npv.maxLiquidityFee)
 	}
+	if e.npv.markPriceUpdateMaximumFrequency > 0 {
+		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, e.npv.markPriceUpdateMaximumFrequency)
+	}
 	return nil
 }
 
@@ -807,6 +812,14 @@ func (e *Engine) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d tim
 		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, d)
 	}
 	e.npv.auctionMinDuration = d
+	return nil
+}
+
+func (e *Engine) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.Duration) error {
+	for _, mkt := range e.markets {
+		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, d)
+	}
+	e.npv.markPriceUpdateMaximumFrequency = d
 	return nil
 }
 

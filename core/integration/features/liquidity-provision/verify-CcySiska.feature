@@ -4,7 +4,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
 
     Given time is updated to "2020-11-30T00:00:00Z"
 
-    Given the log normal risk model named "log-normal-risk-model-1":
+    And the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
     And the oracle spec for settlement data filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
@@ -30,13 +30,14 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
 
-    Given the following network parameters are set:
+    And the following network parameters are set:
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | market.liquidity.stakeToCcySiskas             | 2     |
+      | network.markPriceUpdateMaximumFrequency       | 0s    |
 
     And the average block duration is "1"
 
@@ -45,7 +46,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | sell | ASK              | 500        | 20     | submission |
       | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | buy  | BID              | 500        | 20     | amendment  |
 
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | party1 | ETH/MAR22 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -92,7 +93,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party1 | USD   | ETH/MAR22 | 53265    | 99946735  |
       | party2 | USD   | ETH/MAR22 | 225250   | 99774750  |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | buy  | 2      | 1014  | 2                | TYPE_LIMIT | TIF_GTC | buy-p1-2  |
 
@@ -139,6 +140,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | market.liquidity.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | market.liquidity.stakeToCcySiskas             | 0.5   |
+      | network.markPriceUpdateMaximumFrequency       | 0s    |
 
     And the average block duration is "1"
 
@@ -194,7 +196,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party1 | USD   | ETH/MAR22 | 53265    | 99946735  |
       | party2 | USD   | ETH/MAR22 | 225250   | 99774750  |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | buy  | 2      | 1014  | 2                | TYPE_LIMIT | TIF_GTC | buy-p1-2  |
 
@@ -241,6 +243,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | market.liquidity.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | market.liquidity.stakeToCcySiskas             | 0     |
+      | network.markPriceUpdateMaximumFrequency       | 0s    |
 
     And the average block duration is "1"
 
@@ -294,7 +297,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party1 | USD   | ETH/MAR22 | 53265  | 99946735 |
       | party2 | USD   | ETH/MAR22 | 225250 | 99774750 |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | buy  | 2      | 1014  | 1                | TYPE_LIMIT | TIF_GTC | buy-p1-2  |
 
@@ -342,6 +345,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | market.liquidity.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | market.liquidity.stakeToCcySiskas             | 0     |
+      | network.markPriceUpdateMaximumFrequency       | 0s    |
 
     And the average block duration is "1"
 
@@ -399,7 +403,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party1 | USD   | ETH/MAR22 | 53265  | 99946735 |
       | party2 | USD   | ETH/MAR22 | 225250 | 99774750 |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | buy  | 1      | 1014  | 1                | TYPE_LIMIT | TIF_GTC | buy-p1-2  |
 

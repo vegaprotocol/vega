@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path/filepath"
 
 	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot/mutex"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
@@ -26,6 +27,19 @@ func NewSnapshotService(log *logging.Logger, config Config, connConfig sqlstore.
 	snapshotsCopyFromPath string,
 	snapshotsCopyToPath string,
 ) (*Service, error) {
+	var err error
+	// As these paths are passed to postgres, they need to be absolute as it will likely have
+	// a different current working directory than the datanode process. Note; if postgres is
+	// containerized, it is up to the container launcher to ensure that the snapshotsCopy{From|To}Path
+	// is accessible with the same path inside and outside the container.
+	if snapshotsCopyFromPath, err = filepath.Abs(snapshotsCopyFromPath); err != nil {
+		return nil, err
+	}
+
+	if snapshotsCopyToPath, err = filepath.Abs(snapshotsCopyToPath); err != nil {
+		return nil, err
+	}
+
 	s := &Service{
 		log:                   log,
 		config:                config,
@@ -35,7 +49,7 @@ func NewSnapshotService(log *logging.Logger, config Config, connConfig sqlstore.
 		snapshotsCopyToPath:   snapshotsCopyToPath,
 	}
 
-	err := os.MkdirAll(s.snapshotsCopyToPath, fs.ModePerm)
+	err = os.MkdirAll(s.snapshotsCopyToPath, fs.ModePerm)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create the snapshots dir %s: %w", s.snapshotsCopyToPath, err)
 	}

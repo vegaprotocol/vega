@@ -6,6 +6,7 @@ Feature: test negative PDP (position decimal places)
             | market.stake.target.scalingFactor             | 1     |
             | market.liquidity.bondPenaltyParameter         | 0.2   |
             | market.liquidity.targetstake.triggering.ratio | 0.1   |
+            | network.markPriceUpdateMaximumFrequency       | 0s    |
         And the following assets are registered:
             | id  | decimal places |
             | ETH | 5              |
@@ -127,7 +128,7 @@ Feature: test negative PDP (position decimal places)
             | buy  | 9     | 1      |
             | buy  | 8     | 1211   |
 
-        And the parties place the following orders:
+        And the parties place the following orders with ticks:
             | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
             | party3 | USD/DEC22 | sell | 1      | 9     | 1                | TYPE_LIMIT | TIF_GTC | buy-ref-3 |
 

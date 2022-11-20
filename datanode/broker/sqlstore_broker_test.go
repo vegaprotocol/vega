@@ -24,7 +24,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/service"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 	eventsv1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -485,7 +484,7 @@ func (t *testBlockStore) GetLastBlock(ctx context.Context) (entities.Block, erro
 	defer t.blockLock.Unlock()
 
 	if t.lastBlock == nil {
-		return entities.Block{}, sqlstore.ErrNoLastBlock
+		return entities.Block{}, entities.ErrNotFound
 	}
 
 	return *t.lastBlock, nil

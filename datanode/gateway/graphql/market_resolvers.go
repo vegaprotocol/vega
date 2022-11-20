@@ -17,37 +17,12 @@ import (
 	"errors"
 
 	"code.vegaprotocol.io/vega/logging"
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	vega "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type myMarketResolver VegaResolverRoot
-
-// Deprecated: Use LiquidityProvisionsConnection instead.
-func (r *myMarketResolver) LiquidityProvisions(
-	ctx context.Context,
-	market *types.Market,
-	party *string,
-) ([]*types.LiquidityProvision, error) {
-	var pid string
-	if party != nil {
-		pid = *party
-	}
-
-	req := protoapi.LiquidityProvisionsRequest{
-		Party:  pid,
-		Market: market.Id,
-	}
-	res, err := r.tradingDataClient.LiquidityProvisions(ctx, &req)
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-
-	return res.LiquidityProvisions, nil
-}
 
 func (r *myMarketResolver) LiquidityProvisionsConnection(
 	ctx context.Context,
@@ -74,7 +49,7 @@ func (r *myMarketResolver) LiquidityProvisionsConnection(
 	res, err := r.tradingDataClientV2.ListLiquidityProvisions(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	return res.LiquidityProvisions, nil
@@ -87,26 +62,9 @@ func (r *myMarketResolver) Data(ctx context.Context, market *types.Market) (*typ
 	res, err := r.tradingDataClientV2.GetLatestMarketData(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	return res.MarketData, nil
-}
-
-// Deprecated: Use OrdersConnection instead.
-func (r *myMarketResolver) Orders(ctx context.Context, market *types.Market,
-	skip, first, last *int,
-) ([]*types.Order, error) {
-	p := makePagination(skip, first, last)
-	req := protoapi.OrdersByMarketRequest{
-		MarketId:   market.Id,
-		Pagination: p,
-	}
-	res, err := r.tradingDataClient.OrdersByMarket(ctx, &req)
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-	return res.Orders, nil
 }
 
 func (r *myMarketResolver) OrdersConnection(ctx context.Context, market *types.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.OrderConnection, error) {
@@ -118,28 +76,10 @@ func (r *myMarketResolver) OrdersConnection(ctx context.Context, market *types.M
 	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	return res.Orders, nil
-}
-
-// Deprecated: Use TradesConnection instead.
-func (r *myMarketResolver) Trades(ctx context.Context, market *types.Market,
-	skip, first, last *int,
-) ([]*types.Trade, error) {
-	p := makePagination(skip, first, last)
-	req := protoapi.TradesByMarketRequest{
-		MarketId:   market.Id,
-		Pagination: p,
-	}
-	res, err := r.tradingDataClient.TradesByMarket(ctx, &req)
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-
-	return res.Trades, nil
 }
 
 func (r *myMarketResolver) TradesConnection(ctx context.Context, market *types.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error) {
@@ -150,7 +90,7 @@ func (r *myMarketResolver) TradesConnection(ctx context.Context, market *types.M
 	res, err := r.tradingDataClientV2.ListTrades(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	return res.Trades, nil
 }
@@ -174,7 +114,7 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *types.Market, maxD
 	res, err := r.tradingDataClientV2.GetLatestMarketDepth(ctx, &req)
 	if err != nil {
 		r.log.Error("trading data client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 
 	return &types.MarketDepth{
@@ -183,48 +123,6 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *types.Market, maxD
 		Sell:           res.Sell,
 		SequenceNumber: res.SequenceNumber,
 	}, nil
-}
-
-// Accounts ...
-// if partyID specified get margin account for the given market
-// if nil return the insurance pool & Fee Liquidty accounts for the market.
-// Deprecated: use AccountsConnection instead.
-func (r *myMarketResolver) Accounts(ctx context.Context, market *types.Market, partyID *string) ([]*v2.AccountBalance, error) {
-	filter := v2.AccountFilter{MarketIds: []string{market.Id}}
-	ptyID := ""
-
-	if partyID != nil {
-		// get margin account for a party
-		ptyID = *partyID
-		filter.PartyIds = []string{ptyID}
-		filter.AccountTypes = []types.AccountType{types.AccountType_ACCOUNT_TYPE_MARGIN}
-	} else {
-		filter.AccountTypes = []types.AccountType{
-			types.AccountType_ACCOUNT_TYPE_INSURANCE,
-			types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY,
-		}
-	}
-
-	req := v2.ListAccountsRequest{Filter: &filter}
-
-	res, err := r.tradingDataClientV2.ListAccounts(ctx, &req)
-	if err != nil {
-		r.log.Error("unable to get market accounts",
-			logging.Error(err),
-			logging.String("market-id", market.Id),
-			logging.String("party-id", ptyID))
-		return []*v2.AccountBalance{}, customErrorFromStatus(err)
-	}
-
-	if len(res.Accounts.Edges) == 0 {
-		return []*v2.AccountBalance{}, nil
-	}
-
-	accounts := make([]*v2.AccountBalance, len(res.Accounts.Edges))
-	for i, edge := range res.Accounts.Edges {
-		accounts[i] = edge.Account
-	}
-	return accounts, nil
 }
 
 func (r *myMarketResolver) AccountsConnection(ctx context.Context, market *types.Market, partyID *string, pagination *v2.Pagination) (*v2.AccountsConnection, error) {
@@ -251,7 +149,7 @@ func (r *myMarketResolver) AccountsConnection(ctx context.Context, market *types
 			logging.Error(err),
 			logging.String("market-id", market.Id),
 			logging.String("party-id", ptyID))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	return res.Accounts, nil
 }

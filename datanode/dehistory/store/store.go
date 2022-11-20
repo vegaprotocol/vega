@@ -3,7 +3,7 @@ package store
 import (
 	"bytes"
 	"context"
-	"crypto/ed25519"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -955,17 +955,10 @@ func createIdentityFromSeed(seed []byte) (config.Identity, error) {
 	var sk crypto.PrivKey
 	var pk crypto.PubKey
 
-	for len(seed) < ed25519.SeedSize {
-		seed = append(seed, seed...)
-	}
+	// Everything > 32 bytes is ignored in GenerateEd25519Key so do a little pre hashing
+	seedHash := sha256.Sum256(seed)
 
-	if len(seed) < ed25519.SeedSize {
-		return config.Identity{},
-			fmt.Errorf("failed to create identity seed from node address, seed length %d is less than minimum seed size %d",
-				len(seed), ed25519.SeedSize)
-	}
-
-	priv, pub, err := crypto.GenerateEd25519Key(bytes.NewReader(seed))
+	priv, pub, err := crypto.GenerateEd25519Key(bytes.NewReader(seedHash[:]))
 	if err != nil {
 		return ident, err
 	}

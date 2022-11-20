@@ -16,14 +16,14 @@ import "testing"
 
 func TestEpochs(t *testing.T) {
 	queries := map[string]string{
-		"CurrentEpoch":    `{ epoch{ id timestamps{ start, expiry, end } } }`,
-		"EpochDelgations": `{ epoch{ delegations { node { id }, party {id}, amount} } }`,
-		"SpecificEpoch":   `{ epoch(id:"10") { id timestamps{ start, expiry, end } } }`,
+		"CurrentEpoch":     `{ epoch{ id timestamps{ start, expiry, end } } }`,
+		"EpochDelegations": `{ epoch{ delegationsConnection { edges { node { node { id }, party {id}, amount } } } } }`,
+		"SpecificEpoch":    `{ epoch(id:"10") { id timestamps{ start, expiry, end } } }`,
 	}
 
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
-			assertGraphQLQueriesReturnSame[struct{ Epoch Epoch }](t, query)
+			assertGraphQLQueriesReturnSame(t, query)
 		})
 	}
 }

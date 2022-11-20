@@ -17,6 +17,7 @@ Background:
       | market.stake.target.scalingFactor                   | 1        |
       | market.liquidity.targetstake.triggering.ratio       | 0        |
       | market.liquidity.providers.fee.distributionTimeStep | 0s       |
+      | network.markPriceUpdateMaximumFrequency             | 0s       |
 
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
@@ -175,7 +176,7 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/DEC21"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/DEC22"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
     | party1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell1 |
     | party2 | ETH/DEC21 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | party2-buy1  |
@@ -196,14 +197,14 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
       | party2 | 1030  | 5    | party1 |
 
     Then "party1" should have general account balance of "599978284" for asset "ETH"
-    Then "party2" should have general account balance of "599995595" for asset "ETH"
-    Then "lp1" should have general account balance of "5999972359" for asset "ETH"
-    Then "lp2" should have general account balance of "5999992769" for asset "ETH"
+    Then "party2" should have general account balance of "599995115" for asset "ETH"
+    Then "lp1" should have general account balance of "5999973192" for asset "ETH"
+    Then "lp2" should have general account balance of "5999993014" for asset "ETH"
 
-    Then "party1" should have general account balance of "299983699" for asset "BTC"
-    Then "party2" should have general account balance of "299992320" for asset "BTC"
-    Then "lp1" should have general account balance of "2999979127" for asset "BTC"
-    Then "lp2" should have general account balance of "2999994255" for asset "BTC"
+    Then "party1" should have general account balance of "299986254" for asset "BTC"
+    Then "party2" should have general account balance of "299984316" for asset "BTC"
+    Then "lp1" should have general account balance of "2999979830" for asset "BTC"
+    Then "lp2" should have general account balance of "2999994373" for asset "BTC"
 
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks

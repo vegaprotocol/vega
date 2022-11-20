@@ -1,7 +1,11 @@
 Feature: check if the realised PnL and unreaslied PnL is calculated according to spec in glossaries: https://github.com/vegaprotocol/specs/blob/master/glossaries/trading-and-protocol-glossary.md
 
-  Scenario: 001, check PnL when traders partially close positions, 0007-POSN-011, 0007-POSN-012
+  Background:
+    Given the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
+  Scenario: 001, check PnL when traders partially close positions, 0007-POSN-011, 0007-POSN-012
     Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
@@ -72,7 +76,7 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | party1 | 50     | 0              | 0            |
       | party2 | -50    | 0              | 0            |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | sell | 5      | 1005  | 0                | TYPE_LIMIT | TIF_GTC | buy-p1-2  |
       | party2 | ETH/MAR22 | buy  | 5      | 1005  | 1                | TYPE_LIMIT | TIF_GTC | sell-p2-2 |
@@ -82,7 +86,7 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | party1 | 45     | 225            | 25           |
       | party2 | -45    | -225           | -25          |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | sell | 5      | 995   | 0                | TYPE_LIMIT | TIF_GTC | buy-p1-3  |
       | party2 | ETH/MAR22 | buy  | 5      | 995   | 1                | TYPE_LIMIT | TIF_GTC | sell-p2-3 |
@@ -92,7 +96,7 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | party1 | 40     | -200           | 0            |
       | party2 | -40    | 200            | 0            |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | sell | 2      | 1009  | 0                | TYPE_LIMIT | TIF_GTC | buy-p1-4  |
       | party2 | ETH/MAR22 | buy  | 2      | 1009  | 1                | TYPE_LIMIT | TIF_GTC | sell-p2-4 |
@@ -181,7 +185,7 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | party1 | 50     | 0              | 0            |
       | party2 | -50    | 0              | 0            |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | sell | 5      | 1005  | 0                | TYPE_LIMIT | TIF_GTC | buy-p1-2  |
       | party2 | ETH/MAR22 | buy  | 5      | 1005  | 1                | TYPE_LIMIT | TIF_GTC | sell-p2-2 |
@@ -191,7 +195,7 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | party1 | 45     | 225            | 25           |
       | party2 | -45    | -225           | -25          |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | sell | 5      | 995   | 0                | TYPE_LIMIT | TIF_GTC | buy-p1-3  |
       | party2 | ETH/MAR22 | buy  | 5      | 995   | 1                | TYPE_LIMIT | TIF_GTC | sell-p2-3 |
@@ -202,7 +206,7 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | party2 | -40    | 200            | 0            |
 
     # party1 and party2 close their position
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | sell | 40     | 1009  | 0                | TYPE_LIMIT | TIF_GTC | buy-p1-4  |
       | party2 | ETH/MAR22 | buy  | 40     | 1009  | 1                | TYPE_LIMIT | TIF_GTC | sell-p2-4 |
@@ -214,7 +218,7 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | party2 | 0      | 0              | -360         |
 
     # party1 and party2 open their position
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | sell | 5      | 1003  | 0                | TYPE_LIMIT | TIF_GTC | buy-p1-5  |
       | party2 | ETH/MAR22 | buy  | 5      | 1003  | 1                | TYPE_LIMIT | TIF_GTC | sell-p2-5 |
@@ -265,8 +269,3 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | party  | asset | market id | margin | general   |
       | party1 | USD   | ETH/MAR22 | 0      | 100001375 |
       | party2 | USD   | ETH/MAR22 | 0      | 99998625  |
-
-
-
-
-

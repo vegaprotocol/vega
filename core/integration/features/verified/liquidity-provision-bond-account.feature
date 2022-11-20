@@ -20,6 +20,9 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | party1 | USD   | 100000000 |
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
    Scenario: 001, LP gets distressed during continuous trading, no DPD setting (0044-LIME-002, 0035-LIQM-004)
 
@@ -170,7 +173,8 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | party  | market id | maintenance | search | initial | release |
       | party0 | ETH/MAR22 | 355691      | 391260 | 426829  | 497967  |
       | party1 | ETH/MAR22 | 10159       | 11174  | 12190   | 14222   |
-      | party2 | ETH/MAR22 | 221129      | 243241 | 265354  | 309580  |
+      | party2 | ETH/MAR22 | 220629      | 242691 | 264754  | 308880  |
+      #| party2 | ETH/MAR22 | 221129      | 243241 | 265354  | 309580  |
 
 #documented behaviour why margin account has higher value than margin initial level:
 #When an LP submits a new order, we recalculate the margin requirements as we do for any order. At this point, we don't care if the party is an LP or not. We work out the margin requirements assuming whatever position the party holds stays the same. If the margin requirement increases, we try and top up the margin balance to the initial margin level. If this means dipping in to the bond account, we slash the bond account and apply a penalty.

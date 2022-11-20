@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"time"
 
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
@@ -44,15 +43,6 @@ func KeyRotationFromProto(kr *eventspb.KeyRotation, txHash TxHash, vegaTime time
 
 func (kr *KeyRotation) ToProto() *eventspb.KeyRotation {
 	return &eventspb.KeyRotation{
-		NodeId:      kr.NodeID.String(),
-		OldPubKey:   kr.OldPubKey.String(),
-		NewPubKey:   kr.NewPubKey.String(),
-		BlockHeight: kr.BlockHeight,
-	}
-}
-
-func (kr *KeyRotation) ToProtoV1() *protoapi.KeyRotation {
-	return &protoapi.KeyRotation{
 		NodeId:      kr.NodeID.String(),
 		OldPubKey:   kr.OldPubKey.String(),
 		NewPubKey:   kr.NewPubKey.String(),

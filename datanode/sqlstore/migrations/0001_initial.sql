@@ -175,6 +175,10 @@ create table ledger
 );
 SELECT create_hypertable('ledger', 'ledger_entry_time', chunk_time_interval => INTERVAL '1 day');
 
+CREATE INDEX ON ledger (account_from_id, vega_time DESC) where vega_time='infinity';
+CREATE INDEX ON ledger (account_to_id, vega_time DESC) where vega_time='infinity';
+CREATE INDEX ON ledger (type, vega_time DESC) where vega_time='infinity';
+
 DROP TABLE IF EXISTS orders_history;
 
 CREATE TABLE orders (

@@ -3,7 +3,7 @@ Feature: Verify the order size is correctly cumulated.
 # Numbers come from 0038-liquidity-provision-order-type.xlsx
 
   Background:
-    And the log normal risk model named "my-log-normal-risk-model":
+    Given the log normal risk model named "my-log-normal-risk-model":
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.001         | 0.00000190128526884174 | 0  | 0.016 | 2.5   |
     And the markets:
@@ -12,6 +12,7 @@ Feature: Verify the order size is correctly cumulated.
     And the following network parameters are set:
       | name                                                | value |
       | market.liquidityProvision.shapes.maxSize            | 10    |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
 
   Scenario: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size (0038-OLIQ-003, 0038-OLIQ-004, 0038-OLIQ-005)
 

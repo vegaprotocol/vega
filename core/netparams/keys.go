@@ -159,17 +159,21 @@ const (
 	LimitsProposeMarketEnabledFrom = "limits.markets.proposeEnabledFrom"
 	LimitsProposeAssetEnabledFrom  = "limits.assets.proposeEnabledFrom"
 
-	MaxGasPerBlock = "network.transactions.maxgasperblock"
-	DefaultGas     = "network.transaction.defaultgas"
+	MaxGasPerBlock   = "network.transactions.maxgasperblock"
+	DefaultGas       = "network.transaction.defaultgas"
+	MinBlockCapacity = "network.transactions.minBlockCapacity"
 
 	// network wide limits.
 	MaxPeggedOrders = "limits.markets.maxPeggedOrders"
+	// MTM interval.
+	MarkPriceUpdateMaximumFrequency = "network.markPriceUpdateMaximumFrequency"
 )
 
 var AllKeys = map[string]struct{}{
 	MaxPeggedOrders:                                          {},
 	MaxGasPerBlock:                                           {},
 	DefaultGas:                                               {},
+	MinBlockCapacity:                                         {},
 	RewardMarketCreationQuantumMultiple:                      {},
 	MarketMarginScalingFactors:                               {},
 	MarketFeeFactorsMakerFee:                                 {},
@@ -278,4 +282,5 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalUpdateAssetMinProposerBalance:          {},
 	GovernanceProposalUpdateAssetMinVoterBalance:             {},
 	SpamProtectionMaxBatchSize:                               {},
+	MarkPriceUpdateMaximumFrequency:                          {},
 }

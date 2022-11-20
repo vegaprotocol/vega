@@ -65,7 +65,7 @@ func TestNetParams(t *testing.T) {
 		assert.Equal(t, "baz", param.Value)
 
 		_, err = netParamStore.GetByKey(ctx, "foo1")
-		assert.Equal(t, sqlstore.ErrNoParameterFound, err)
+		assert.Equal(t, entities.ErrNotFound, err)
 	})
 }
 

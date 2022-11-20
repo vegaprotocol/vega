@@ -15,6 +15,7 @@ package gql
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/vegatime"
 	vega "code.vegaprotocol.io/vega/protos/vega/api/v1"
@@ -103,7 +104,7 @@ func (s *statisticsResolver) TotalTrades(ctx context.Context, obj *vega.Statisti
 }
 
 func (s *statisticsResolver) BlockDuration(ctx context.Context, obj *vega.Statistics) (string, error) {
-	return strconv.FormatUint(obj.BlockDuration, 10), nil
+	return time.Duration(obj.BlockDuration).String(), nil
 }
 
 func (s *statisticsResolver) Status(ctx context.Context, obj *vega.Statistics) (string, error) {

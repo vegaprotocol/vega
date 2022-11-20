@@ -1,5 +1,10 @@
 Feature: check the impact from change of market parameter: market.liquidity.probabilityOfTrading.tau.scaling
 
+  Background:
+    Given the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
+
   Scenario: 001, market.liquidity.probabilityOfTrading.tau.scaling=10, 0034-PROB-006
 
     Given time is updated to "2020-11-30T00:00:00Z"
@@ -87,7 +92,7 @@ Feature: check the impact from change of market parameter: market.liquidity.prob
       | party1 | USD   | ETH/MAR22 | 53265    | 99946735  |
       | party2 | USD   | ETH/MAR22 | 225250   | 99774750  |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | buy  | 2      | 1014  | 2                | TYPE_LIMIT | TIF_GTC | buy-p1-2  |
 
@@ -184,7 +189,7 @@ Feature: check the impact from change of market parameter: market.liquidity.prob
       | party1 | USD   | ETH/MAR22 | 53265    | 99946735  |
       | party2 | USD   | ETH/MAR22 | 225250   | 99774750  |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | buy  | 2      | 1014  | 2                | TYPE_LIMIT | TIF_GTC | buy-p1-2  |
 
@@ -280,7 +285,7 @@ Feature: check the impact from change of market parameter: market.liquidity.prob
       | party1 | USD   | ETH/MAR22 | 53265    | 99946735  |
       | party2 | USD   | ETH/MAR22 | 225250   | 99774750  |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | buy  | 2      | 1014  | 2                | TYPE_LIMIT | TIF_GTC | buy-p1-2  |
 
@@ -380,7 +385,7 @@ Feature: check the impact from change of market parameter: market.liquidity.prob
       | party1 | USD   | ETH/MAR22 | 53265    | 99946735  |
       | party2 | USD   | ETH/MAR22 | 225250   | 99774750  |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/MAR22 | buy  | 2      | 1014  | 2                | TYPE_LIMIT | TIF_GTC | buy-p1-2  |
 

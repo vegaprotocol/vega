@@ -13,8 +13,9 @@ Feature: Price monitoring test using simple risk model
       | id        | quote name | asset | auction duration | risk model           | margin calculator         | fees         | price monitoring    | data source config          |
       | ETH/DEC20 | ETH        | ETH   | 240              | my-simple-risk-model | default-margin-calculator | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 240   |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 240   |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: Persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction.
     Given the parties deposit on asset's general account the following amount:

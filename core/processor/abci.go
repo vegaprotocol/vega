@@ -956,8 +956,9 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	}
 
 	resp.GasWanted = int64(gasWanted)
+	resp.Priority = int64(app.gastimator.GetPriority(tx))
 	if app.log.IsDebug() {
-		app.log.Debug("transaction passed checkTx", logging.String("tid", tx.GetPoWTID()), logging.String("command", tx.Command().String()), logging.Int64("gas-wanted", resp.GasWanted), logging.Int64("max-gas", int64(app.gastimator.GetMaxGas())))
+		app.log.Debug("transaction passed checkTx", logging.String("tid", tx.GetPoWTID()), logging.String("command", tx.Command().String()), logging.Int64("priority", resp.Priority), logging.Int64("gas-wanted", resp.GasWanted), logging.Int64("max-gas", int64(app.gastimator.GetMaxGas())))
 	}
 
 	if isval {

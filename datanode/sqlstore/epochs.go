@@ -14,7 +14,6 @@ package sqlstore
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/georgysavva/scany/pgxscan"
 
@@ -71,11 +70,7 @@ func (es *Epochs) Get(ctx context.Context, ID int64) (entities.Epoch, error) {
 	query := `SELECT DISTINCT ON (id) * FROM epochs WHERE id=$1 ORDER BY id, vega_time desc;`
 
 	epoch := entities.Epoch{}
-	err := pgxscan.Get(ctx, es.Connection, &epoch, query, ID)
-	if err != nil {
-		return entities.Epoch{}, fmt.Errorf("querying epochs: %w", err)
-	}
-	return epoch, nil
+	return epoch, es.wrapE(pgxscan.Get(ctx, es.Connection, &epoch, query, ID))
 }
 
 func (es *Epochs) GetCurrent(ctx context.Context) (entities.Epoch, error) {
@@ -83,9 +78,5 @@ func (es *Epochs) GetCurrent(ctx context.Context) (entities.Epoch, error) {
 
 	epoch := entities.Epoch{}
 	defer metrics.StartSQLQuery("Epochs", "GetCurrent")()
-	err := pgxscan.Get(ctx, es.Connection, &epoch, query)
-	if err != nil {
-		return entities.Epoch{}, fmt.Errorf("querying epochs: %w", err)
-	}
-	return epoch, nil
+	return epoch, es.wrapE(pgxscan.Get(ctx, es.Connection, &epoch, query))
 }

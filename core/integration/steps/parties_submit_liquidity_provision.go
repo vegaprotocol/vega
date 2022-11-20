@@ -34,6 +34,7 @@ type LPUpdate struct {
 	Buys             []*types.LiquidityOrder
 	Reference        string
 	LpType           string
+	Err              string
 }
 
 func PartyCancelsTheirLiquidityProvision(exec Execution, marketID, party string) error {
@@ -72,6 +73,7 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				Buys:             []*types.LiquidityOrder{},
 				Reference:        ref,
 				LpType:           row.LpType(),
+				Err:              row.Error(),
 			}
 			parties[id] = row.Party()
 			lps[id] = lp

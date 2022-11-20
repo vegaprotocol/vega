@@ -435,6 +435,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 
 	watchers := []netparams.WatchParam{
 		{
+			Param:   netparams.MinBlockCapacity,
+			Watcher: svcs.gastimator.OnMinBlockCapacityUpdate,
+		},
+		{
 			Param:   netparams.MaxGasPerBlock,
 			Watcher: svcs.gastimator.OnMaxGasUpdate,
 		},
@@ -661,6 +665,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.LimitsProposeAssetEnabledFrom,
 			Watcher: svcs.limits.OnLimitsProposeAssetEnabledFromUpdate,
+		},
+		{
+			Param:   netparams.MarkPriceUpdateMaximumFrequency,
+			Watcher: svcs.executionEngine.OnMarkPriceUpdateMaximumFrequency,
 		},
 	}
 

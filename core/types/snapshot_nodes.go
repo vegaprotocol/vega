@@ -309,6 +309,7 @@ type ExecMarket struct {
 	RiskFactorConsensusReached bool
 	FeeSplitter                *FeeSplitter
 	SettlementData             *num.Uint
+	NextMTM                    int64
 }
 
 type PriceMonitor struct {
@@ -2808,6 +2809,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		RiskFactorConsensusReached: em.RiskFactorConsensusReached,
 		FeeSplitter:                FeeSplitterFromProto(em.FeeSplitter),
 		SettlementData:             sp,
+		NextMTM:                    em.NextMarkToMarket,
 	}
 	for _, o := range em.ExpiringOrders {
 		or, _ := OrderFromProto(o)
@@ -2841,6 +2843,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		RiskFactorConsensusReached: e.RiskFactorConsensusReached,
 		FeeSplitter:                e.FeeSplitter.IntoProto(),
 		SettlementData:             sp,
+		NextMarkToMarket:           e.NextMTM,
 	}
 	for _, o := range e.ExpiringOrders {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())

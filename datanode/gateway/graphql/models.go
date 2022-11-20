@@ -350,11 +350,6 @@ type ExternalDataSourceSpec struct {
 	Spec *DataSourceSpec `json:"spec"`
 }
 
-type GroupOptions struct {
-	ByAccountField     []*v2.AccountField     `json:"ByAccountField"`
-	ByLedgerEntryField []*v2.LedgerEntryField `json:"ByLedgerEntryField"`
-}
-
 type LedgerEntry struct {
 	// Account from which the asset was taken
 	AccountFromID *vega.AccountDetails `json:"accountFromId"`
@@ -431,6 +426,20 @@ type MarketTick struct {
 }
 
 func (MarketTick) IsEvent() {}
+
+// Details on the collection of nodes for particular validator status
+type NodeSet struct {
+	// Total number of nodes in the node set
+	Total int `json:"total"`
+	// Number of nodes in the node set that had a performance score of 0 at the end of the last epoch
+	Inactive int `json:"inactive"`
+	// IDs of the nodes that were promoted into this node set at the start of the epoch
+	Promoted []string `json:"promoted"`
+	// IDs of the nodes that were demoted into this node set at the start of the epoch
+	Demoted []string `json:"demoted"`
+	// Total number of nodes allowed in the node set
+	Maximum *int `json:"maximum"`
+}
 
 // The equity like share of liquidity fee for each liquidity provider
 type ObservableLiquidityProviderFeeShare struct {

@@ -27,7 +27,7 @@ func (h *ClientDisconnectWallet) Handle(_ context.Context, rawParams jsonrpc.Par
 		return nil, invalidParams(err)
 	}
 
-	h.sessions.DisconnectWallet(params.Token)
+	h.sessions.DisconnectWalletWithToken(params.Token)
 
 	return nil, nil
 }

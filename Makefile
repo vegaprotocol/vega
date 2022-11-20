@@ -21,7 +21,7 @@ integrationtest: ## run integration tests, showing ledger movements and full sce
 
 .PHONY: gqlgen
 gqlgen:
-	cd datanode/gateway/graphql && go run github.com/99designs/gqlgen --config=gqlgen.yml
+	cd datanode/gateway/graphql && go run github.com/99designs/gqlgen@v0.17.20 --config=gqlgen.yml
 
 .PHONY: race
 race: ## Run data race detector

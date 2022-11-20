@@ -1085,6 +1085,28 @@ func UintGTE(i *num.Uint) func(*num.Uint) error {
 	}
 }
 
+// ensure that the value is >= the other value x factor.
+func UintDependentGTE(otherName string, other *Uint, factor num.Decimal) UintRule {
+	return func(val *num.Uint) error {
+		lowerBound, _ := num.UintFromDecimal(other.value.ToDecimal().Mul(factor))
+		if val.GTE(lowerBound) {
+			return nil
+		}
+		return fmt.Errorf("expect >= %v (%s * %s) got %v", lowerBound, otherName, factor.String(), val)
+	}
+}
+
+// ensure that the value is <= the other value x factor.
+func UintDependentLTE(otherName string, other *Uint, factor num.Decimal) UintRule {
+	return func(val *num.Uint) error {
+		upperBound, _ := num.UintFromDecimal(other.value.ToDecimal().Mul(factor))
+		if val.LTE(upperBound) {
+			return nil
+		}
+		return fmt.Errorf("expect <= %v (%s * %s) got %v", upperBound, otherName, factor.String(), val)
+	}
+}
+
 func UintGT(i *num.Uint) func(*num.Uint) error {
 	icopy := i.Clone()
 	return func(val *num.Uint) error {

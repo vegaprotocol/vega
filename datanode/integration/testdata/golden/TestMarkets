@@ -1,0 +1,1979 @@
+{
+	"TestName": "TestMarkets",
+	"Query": "{ marketsConnection{ edges { node { id, liquidityProvisionsConnection { edges { node { id, party { id }, createdAt, updatedAt, market { id }, commitmentAmount, fee, sells { liquidityOrder { reference } }, buys { liquidityOrder { reference } }, version, status, reference } } } } } } }",
+	"Result": {
+		"marketsConnection": {
+			"edges": [
+				{
+					"node": {
+						"id": "162397c1072a83001c4c6b98a414987b7b7412f25a2d1c9b94a4cf4709e1149a",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000",
+										"createdAt": "2022-11-08T08:43:55.796631Z",
+										"fee": "0.3",
+										"id": "38f95145937be2ab0a3e2f9f29ec26a554347240eedd6d24eed0c0ba18f1c6dc",
+										"market": {
+											"id": "162397c1072a83001c4c6b98a414987b7b7412f25a2d1c9b94a4cf4709e1149a"
+										},
+										"party": {
+											"id": "45d1adec55094c7d9bf1ef9974338cb0cf0db922e35cfccd32bd3ae0863f945b"
+										},
+										"reference": "23651F09FC",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_PENDING",
+										"updatedAt": "2022-11-08T08:43:55.796631Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "a612587a48a615ba3182868cd2e193b2661983cb41d8e7afa21c74d5821897a2",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T08:45:15.734487Z",
+										"fee": "0.3",
+										"id": "97f31e81da27a0d48c3859abca303008a274a9bb0b6a302db4d22c2ab2fecfed",
+										"market": {
+											"id": "a612587a48a615ba3182868cd2e193b2661983cb41d8e7afa21c74d5821897a2"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "7E8E348CE5",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_ACTIVE",
+										"updatedAt": "2022-11-08T08:45:15.734487Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6067f86da2134e56b82f2900ab9b83a97f3daf7cb16fb211c39e87f63a9853c7",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T08:52:51.749924Z",
+										"fee": "0.3",
+										"id": "1365fbabf3f029599d07f1f587fadad409f0f74c714d748bd5de811e8a23aa93",
+										"market": {
+											"id": "6067f86da2134e56b82f2900ab9b83a97f3daf7cb16fb211c39e87f63a9853c7"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "C2B1B9EAE1",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_CANCELLED",
+										"updatedAt": "2022-11-08T08:52:51.749924Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "0deaa2062da090d5b165dc22a8ed748744268ab2aca801dc5e9915b69a2198ef",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T08:57:11.039805Z",
+										"fee": "0.3",
+										"id": "64cd4c1ac0eae66ff3b1bb9f837fe6886464c7698009676c1d2eb256d1528651",
+										"market": {
+											"id": "0deaa2062da090d5b165dc22a8ed748744268ab2aca801dc5e9915b69a2198ef"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "D5F61BEEC2",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_CANCELLED",
+										"updatedAt": "2022-11-08T08:57:11.039805Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "de20aeb7cd22fb71702f603ae0e0cafe32fcebf0c6c8ce7cfd4c9c7aa41f7d04",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:03:32.944833Z",
+										"fee": "0.3",
+										"id": "77307b767aa57287b4cf673f1f7faf9143536807789014a691fb292abcf324bf",
+										"market": {
+											"id": "de20aeb7cd22fb71702f603ae0e0cafe32fcebf0c6c8ce7cfd4c9c7aa41f7d04"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "BF7120EF9A",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_ACTIVE",
+										"updatedAt": "2022-11-08T09:03:32.944833Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "c6721a3034b19790c9f3618248c2c9b352f9e47d1c0f7f1d0febad52798044f4",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:34:10.944784Z",
+										"fee": "0.3",
+										"id": "43540dbfff0c9071a81de00eb7c2da0bca8a5ed74058047dc27085b3fd3a8289",
+										"market": {
+											"id": "c6721a3034b19790c9f3618248c2c9b352f9e47d1c0f7f1d0febad52798044f4"
+										},
+										"party": {
+											"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+										},
+										"reference": "D60565BB86",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_PENDING",
+										"updatedAt": "2022-11-08T09:34:10.944784Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "70a3df066de2098a63519ae66072a8c26a21be9c950ab850a516290de9f1b244",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:32:37.873696Z",
+										"fee": "0.3",
+										"id": "14fb81456a639173e1fc5cddc1e7d7fdfe5fd35dfa2ece493f17a71eb35ffc02",
+										"market": {
+											"id": "70a3df066de2098a63519ae66072a8c26a21be9c950ab850a516290de9f1b244"
+										},
+										"party": {
+											"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a"
+										},
+										"reference": "0668AEA7FE",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_ACTIVE",
+										"updatedAt": "2022-11-08T09:32:37.873696Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "625c0922eeb6fba74c5fe82f10dd460cb8c6e0e6b35d1f575a29456c972230cf",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:26:55.814144Z",
+										"fee": "0.3",
+										"id": "165dd76b7fb47bceaf0b309bdceaa0c16ebed6593b98e2529f081760d4e2635e",
+										"market": {
+											"id": "625c0922eeb6fba74c5fe82f10dd460cb8c6e0e6b35d1f575a29456c972230cf"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "825365B654",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_ACTIVE",
+										"updatedAt": "2022-11-08T09:26:55.814144Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "a2aa9de3d9deffd9bb3d9bff1c9fe5e00b255f9140d1b97cb6dcd56a59278d5d",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:26:37.918066Z",
+										"fee": "0.3",
+										"id": "b7341455c3853ec72a5c0e0659e9da1b34168122a1a7ec144d168caef573284d",
+										"market": {
+											"id": "a2aa9de3d9deffd9bb3d9bff1c9fe5e00b255f9140d1b97cb6dcd56a59278d5d"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "A441DC48C7",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_ACTIVE",
+										"updatedAt": "2022-11-08T09:26:37.918066Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "4c3def402473719214131430f905534fa25d06e8152e82cbea1a059e63351174",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:30:28.018151Z",
+										"fee": "0.3",
+										"id": "0ab8be78e5a3fe8f30bff34136fbc6f957ca86dcbccffb682ae02c99b38f5717",
+										"market": {
+											"id": "4c3def402473719214131430f905534fa25d06e8152e82cbea1a059e63351174"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "D60A3EF152",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:30:28.018151Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "1894530899e87003889a139718950c218529b7c67b008b4ec815b23f92805eea",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:29:27.081782Z",
+										"fee": "0.3",
+										"id": "93e9850b6f2abc7dd7859fe983befa5d4b80840816dfbfe8eaf78817395ecd2c",
+										"market": {
+											"id": "1894530899e87003889a139718950c218529b7c67b008b4ec815b23f92805eea"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "C7EAA9B47F",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:29:27.081782Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "74beaf7257e43c8f8443d413fccd8d092608b5926aa6e78bb17747de18cb359d",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:28:25.847634Z",
+										"fee": "0.3",
+										"id": "54b8218fd06488eec20745f48b128b1c4b7836e3f39c0506cb6d9d2f78b8bc42",
+										"market": {
+											"id": "74beaf7257e43c8f8443d413fccd8d092608b5926aa6e78bb17747de18cb359d"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "22FC6161D0",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:28:25.847634Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "47831ba264f9075387a885823ee00f66776eb39661c9c8c9b74b9eddd03d4f42",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:27:24.916163Z",
+										"fee": "0.3",
+										"id": "c557898fadceeec25fd8ebd0324cf127478cc343ca8ca38a9704b3dd4fb17d5a",
+										"market": {
+											"id": "47831ba264f9075387a885823ee00f66776eb39661c9c8c9b74b9eddd03d4f42"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "22F3845B4D",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:27:24.916163Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6d5be5173bb643bdeb2921986a1ecb5f91a28109631babb9212031838d46d124",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:26:01.319715Z",
+										"fee": "0.3",
+										"id": "1291b318a2a2b76d7fbfe0b0970c9a2750c793843222866cb70515fad7c4b88c",
+										"market": {
+											"id": "6d5be5173bb643bdeb2921986a1ecb5f91a28109631babb9212031838d46d124"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "9184665897",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:26:01.319715Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "06be6ca2fb0629b183136e2195d3a8a0cb49768faf2df8a60480a2d5cb7901f1",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:25:15.127556Z",
+										"fee": "0.3",
+										"id": "a52d29329fa63a359432dd213bfef862864a4470017c8035465879f1146b3558",
+										"market": {
+											"id": "06be6ca2fb0629b183136e2195d3a8a0cb49768faf2df8a60480a2d5cb7901f1"
+										},
+										"party": {
+											"id": "c84470154b135e71c1a6b83059e381b7d746b76a13a9951c9caefa60ffaa3b04"
+										},
+										"reference": "073EF21D04",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:25:15.127556Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "659aca3537054a82b3d1af1fe81c405d4a9b4b4d94676e063d947b8c6c73c968",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:21:41.031226Z",
+										"fee": "0.3",
+										"id": "cc11c97adaa6cc4ec892a9f004977906e1e0a5460b37a424539172c4191bf4ac",
+										"market": {
+											"id": "659aca3537054a82b3d1af1fe81c405d4a9b4b4d94676e063d947b8c6c73c968"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "891CE9047D",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:21:41.031226Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "210f764b1310288cd15ce1697749121642e48f278d0e2a71bf2736f20d3afb69",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:24:34.010628Z",
+										"fee": "0.3",
+										"id": "39b5df6508f0a21869e48e8ff3d2886500a16fecab12ff667a00fb7a274d9eb3",
+										"market": {
+											"id": "210f764b1310288cd15ce1697749121642e48f278d0e2a71bf2736f20d3afb69"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "44343D37BC",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:24:34.010628Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "ebf4d62ed1a7f38b675c6355d9c1920cd3fff3b0b2d20785058a1fe2b15366de",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:23:50.067148Z",
+										"fee": "0.3",
+										"id": "c9e576ace12724217bf953bd16f5e6cc65ffdf203ccd0691b674e19ca19a26bf",
+										"market": {
+											"id": "ebf4d62ed1a7f38b675c6355d9c1920cd3fff3b0b2d20785058a1fe2b15366de"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "495EFC6142",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:23:50.067148Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "d96eee2a1947886fb2d9571fc51059c1c58bf39b4e303ecb1694b2aa0c30b44d",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:20:40.99029Z",
+										"fee": "0.3",
+										"id": "2f1df34a2ddedb78b6f9939faa30680d27e2cf525285ca5211c2ba2d7df3e608",
+										"market": {
+											"id": "d96eee2a1947886fb2d9571fc51059c1c58bf39b4e303ecb1694b2aa0c30b44d"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "C0755F1619",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:20:40.99029Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "b92cefff4ceedd6dc766cbba13656e5fbd0d50723540636950ba79865ddcc65e",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:19:28.923857Z",
+										"fee": "0.3",
+										"id": "6af445a21c807f50d3c32383a4bd649783ed7d17043d8e79460746313426465f",
+										"market": {
+											"id": "b92cefff4ceedd6dc766cbba13656e5fbd0d50723540636950ba79865ddcc65e"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "EE1526732D",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:19:28.923857Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "33a1801e41a5c69e1e91affcb8444b8c4c8c5d12d97d9f242a6541d6ee5f6ed3",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:22:19.096136Z",
+										"fee": "0.3",
+										"id": "6c93b9244933d420b348d6c4dcf0daa999877e91c6d4348bba71842bb6a45f11",
+										"market": {
+											"id": "33a1801e41a5c69e1e91affcb8444b8c4c8c5d12d97d9f242a6541d6ee5f6ed3"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "DA1C98CCBD",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:22:19.096136Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "932ffd1da9e295590f41923f7b2e0bc9d12f5ab882b9513c7a77ae026241242a",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:18:56.634144Z",
+										"fee": "0.3",
+										"id": "61ae3484fc8d82b59a210b4cb1763e1996670d06de320fb950c058b7b9e03ed0",
+										"market": {
+											"id": "932ffd1da9e295590f41923f7b2e0bc9d12f5ab882b9513c7a77ae026241242a"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "E9BBF71886",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:18:56.634144Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "52451b3a827e21c6cbfa021af0491c1130015ffac90329500d4d8f482d2bf927",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:18:37.074569Z",
+										"fee": "0.3",
+										"id": "477d9fb323e4dacf3e4d6e52dcf590ea82f835b7f39a1a106fc083adf262fe5e",
+										"market": {
+											"id": "52451b3a827e21c6cbfa021af0491c1130015ffac90329500d4d8f482d2bf927"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "27FD4A3758",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:18:37.074569Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "75d65ecb4f19c06e68b03f76c9abb04dfc3555b13b264e971d313249feccae7f",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:18:12.853168Z",
+										"fee": "0.3",
+										"id": "83d8cd9125a8e8b7070150b0d4d252d3e21988ba41d129b58ba46a8b16d8564d",
+										"market": {
+											"id": "75d65ecb4f19c06e68b03f76c9abb04dfc3555b13b264e971d313249feccae7f"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "6036B4DD0A",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:18:12.853168Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "866a85e287046b855952dc1cabff2b9a33cd0b2f3895014cbbc45444024d3e48",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:17:18.742843Z",
+										"fee": "0.3",
+										"id": "b786e00c105c74a0679ebbef6a2a33669ebdeffcda0617d82a7a6263904a2234",
+										"market": {
+											"id": "866a85e287046b855952dc1cabff2b9a33cd0b2f3895014cbbc45444024d3e48"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "E1ECAB4D91",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:17:18.742843Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "97501650e5977c4852b6da07b94ccd085dc7158a462e1766d5754bd2ba3c8068",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:17:00.86738Z",
+										"fee": "0.3",
+										"id": "6b00920222cadf2db4cd5ccbc3f9d565cde2d0a3cfeb9e272f47a1fd8eee5b2a",
+										"market": {
+											"id": "97501650e5977c4852b6da07b94ccd085dc7158a462e1766d5754bd2ba3c8068"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "2FD1A6EA62",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:17:00.86738Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "210a23f8613c89af4c36d1c67c3c1ca199faaf7b48078acb6324717ff0d75027",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:16:26.838675Z",
+										"fee": "0.3",
+										"id": "bf09891e1b884f1ab1a05ca151a0288ea970c72da000cbcacac0a4414d080140",
+										"market": {
+											"id": "210a23f8613c89af4c36d1c67c3c1ca199faaf7b48078acb6324717ff0d75027"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "9D9BA90C9F",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:16:26.838675Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "e96ce4f99707a7825a46d41648f53d5da4c157b4a9b6c1f1d51731532f3221b5",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:15:31.900148Z",
+										"fee": "0.3",
+										"id": "71a3f354f689c9fe67b03ba4db53aa2ac3e5e00c81b3460c479b7b9e6a2f48ea",
+										"market": {
+											"id": "e96ce4f99707a7825a46d41648f53d5da4c157b4a9b6c1f1d51731532f3221b5"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "AC8ED0045A",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:15:31.900148Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "527b8f3885321e4ae85ca8506b6cdbf1e43bc2b66c145e5b58775317cde86297",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:14:36.120939Z",
+										"fee": "0.3",
+										"id": "d95c1c31a6ceb178388776212bbfdc5f91e4f6bbea9bd76331f164329317f0db",
+										"market": {
+											"id": "527b8f3885321e4ae85ca8506b6cdbf1e43bc2b66c145e5b58775317cde86297"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "5472A52388",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:14:36.120939Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "87b05e95bfc2801e568fde2679611d9b69de3266d14f4063dc18ffd12c14d5a4",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:14:11.065441Z",
+										"fee": "0.3",
+										"id": "ecaa6ca10e7ceedf834ef3d9ba65a2c8bbc77eeea81ff4ea6e313a4a3fa0af3e",
+										"market": {
+											"id": "87b05e95bfc2801e568fde2679611d9b69de3266d14f4063dc18ffd12c14d5a4"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "6C26C35314",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:14:11.065441Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "011f1acc103c31cf9222fe12d00f7dd4d5c50b7d2b3dfae592e2a59e4c318c40",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:13:44.915462Z",
+										"fee": "0.3",
+										"id": "084d86d3031c3b245ad90fde2775c74d9f93fe79e1f6a8449c60c974cde91cd9",
+										"market": {
+											"id": "011f1acc103c31cf9222fe12d00f7dd4d5c50b7d2b3dfae592e2a59e4c318c40"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "913B5837A9",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:13:44.915462Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "b3c285cbdc892b50c8dfabc09a98a0562c1d04f652f049ea26872d6c8c103551",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:13:19.257754Z",
+										"fee": "0.3",
+										"id": "a5c0624516841d4fd37524d75a459d5427a3b39032bedec82ed973f064ff2caf",
+										"market": {
+											"id": "b3c285cbdc892b50c8dfabc09a98a0562c1d04f652f049ea26872d6c8c103551"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "136B99755C",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:13:19.257754Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "739e0a602305f55484601b23abff525030a7531f46cb2c5fbda2c78f96bfb95f",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:12:53.777751Z",
+										"fee": "0.3",
+										"id": "c1152cdd6595788dd77cbd6d0367ffb379c67cd104128c4459dca19a7eeede81",
+										"market": {
+											"id": "739e0a602305f55484601b23abff525030a7531f46cb2c5fbda2c78f96bfb95f"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "51A7FF3190",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:12:53.777751Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "538b3d41ba96a46ca073af7549912395753ec09810e85ce0a7630a0a5f18c49e",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:11:53.022749Z",
+										"fee": "0.3",
+										"id": "0e670dd3aa1f64e7f3e5601e459b821993242faa08e24c40f956afbac933ff4a",
+										"market": {
+											"id": "538b3d41ba96a46ca073af7549912395753ec09810e85ce0a7630a0a5f18c49e"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "07ABAFAF0D",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:11:53.022749Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "1e3395ff90a9cd3e6dc655116cc16e1bc9c329501c88f40facd6dc3e99d05ae0",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:11:02.746937Z",
+										"fee": "0.3",
+										"id": "f2ff526cdd66076249cd561938ee1a0150ae402ac855c7ab25b250b23f518b28",
+										"market": {
+											"id": "1e3395ff90a9cd3e6dc655116cc16e1bc9c329501c88f40facd6dc3e99d05ae0"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "6E277A081F",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:11:02.746937Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "0f2d4d795e802240894581b345c2baa25cdad27c0f8ea10a2841eb40b9675a71",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:10:36.938316Z",
+										"fee": "0.3",
+										"id": "cfea366e0e14da2da8156dcf4f3431363d8a530d10ad696e688078eecdb9d0d0",
+										"market": {
+											"id": "0f2d4d795e802240894581b345c2baa25cdad27c0f8ea10a2841eb40b9675a71"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "0308E3B63D",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:10:36.938316Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "fbdcf37f37751447ce1cca85ed4e86a6f58e059dd0cf8181fb5642416c1edb66",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:10:17.861482Z",
+										"fee": "0.3",
+										"id": "31bad12e48e32652031616b001eef10c3c1524862dd92c50a10ecc495993ac0a",
+										"market": {
+											"id": "fbdcf37f37751447ce1cca85ed4e86a6f58e059dd0cf8181fb5642416c1edb66"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "A3E6003B68",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:10:17.861482Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "982e50d022af5b2da9388130678a794017829e2087d6676a53912579cc3aa13e",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:09:48.890495Z",
+										"fee": "0.3",
+										"id": "e665a759c6d8860da00ada678e593265f09c61d67ce57ef2b7226ed5241a5ba9",
+										"market": {
+											"id": "982e50d022af5b2da9388130678a794017829e2087d6676a53912579cc3aa13e"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "1210CAC25F",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:09:48.890495Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "e35a0e2c8737d15784623e5504bd722efd2c1f22cd54948629d3bb270669cd20",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:09:28.924756Z",
+										"fee": "0.3",
+										"id": "50f86c1950e7a6983793c15c2894d20ca02dbe8cc6450c8abd50847b4b89b463",
+										"market": {
+											"id": "e35a0e2c8737d15784623e5504bd722efd2c1f22cd54948629d3bb270669cd20"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "4A44A52A3B",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:09:28.924756Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "ad85f8df402c96e82c5ac2fd4571639b09b9a6f9926d135d90ed41b6279be5a6",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:08:53.398927Z",
+										"fee": "0.3",
+										"id": "0ab222a8a6c7fcc33786bfb0d4ad9fc291da2ab70d3f59266adad7bea6c7681f",
+										"market": {
+											"id": "ad85f8df402c96e82c5ac2fd4571639b09b9a6f9926d135d90ed41b6279be5a6"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "66F7CEC1D3",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:08:53.398927Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "627125d9f60ee847d5ad31dc35e3e3156167bf8bb8265dd24a2b23e2508ebebe",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:08:15.807394Z",
+										"fee": "0.3",
+										"id": "6730cc196c220305ccfa543907071919b2307cc5c4ec4f8169e24a450ea5fed3",
+										"market": {
+											"id": "627125d9f60ee847d5ad31dc35e3e3156167bf8bb8265dd24a2b23e2508ebebe"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "240A0566D6",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:08:15.807394Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "1efc8147aa12101ac82b4f2ab40a465c9bee82f234cf4bc06285649b9d08d983",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:07:39.350156Z",
+										"fee": "0.3",
+										"id": "e8dae3be7e4edd709da0cd9e3b05c3cad0287f0e311b6846036f6d0b315c4bdf",
+										"market": {
+											"id": "1efc8147aa12101ac82b4f2ab40a465c9bee82f234cf4bc06285649b9d08d983"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "E845CDEB21",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:07:39.350156Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "c52efece1a48c27e1af872624ebab9e4154c8f48a58ac4382afa46743e7b9d41",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:07:01.880401Z",
+										"fee": "0.3",
+										"id": "e34d06f57232eed5b95251bd4a65e433cbf93bd4829927d4dacd2bdc0fbd460e",
+										"market": {
+											"id": "c52efece1a48c27e1af872624ebab9e4154c8f48a58ac4382afa46743e7b9d41"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "3603726313",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:07:01.880401Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "a027099269ba375bd6fbe208b6b196f65ad1f9d63979d765fe3e33e77bde11e4",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:06:26.855588Z",
+										"fee": "0.3",
+										"id": "4a4d9325e160118c4d2a86f8275f81a00864c8b7b282a76119ad2f490087699b",
+										"market": {
+											"id": "a027099269ba375bd6fbe208b6b196f65ad1f9d63979d765fe3e33e77bde11e4"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "F8D1635DFE",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:06:26.855588Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "3c3f313d8d7e0001ce1d15eae515b2d1597cb8444954bbc7c5fbe915497430b6",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:05:50.236194Z",
+										"fee": "0.3",
+										"id": "c4325ea62dc91159d2ba3594456b396668d593bac5e7348acfac26ca022331a9",
+										"market": {
+											"id": "3c3f313d8d7e0001ce1d15eae515b2d1597cb8444954bbc7c5fbe915497430b6"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "EA9FE043C9",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:05:50.236194Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "4ff258ac39c4291c85af052c5c7a1e2bd51a6b9c016497c6b52dca023df94b88",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:05:12.925259Z",
+										"fee": "0.3",
+										"id": "3d59f0d19eac6e7667fe37d915ec9cf23cd5faf96dddb2b346bfc254b05843ea",
+										"market": {
+											"id": "4ff258ac39c4291c85af052c5c7a1e2bd51a6b9c016497c6b52dca023df94b88"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "33DF8249F1",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:05:12.925259Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6044636f22c644be52edf7d2d95fd5247deffdfbbdc138cee4e8ef145e5584a7",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:04:36.44495Z",
+										"fee": "0.3",
+										"id": "6e2b9c1dfdd142b9bff30c53a9ba7113333e5a929cd39fb2051342a20cead9fb",
+										"market": {
+											"id": "6044636f22c644be52edf7d2d95fd5247deffdfbbdc138cee4e8ef145e5584a7"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "1A5BF5ECBC",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:04:36.44495Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "32d8179f8ce6965e751bd0745bfdf20bb4916546e50c080a5571fe6c3a834f4e",
+						"liquidityProvisionsConnection": {
+							"edges": [
+								{
+									"node": {
+										"buys": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_BID"
+												}
+											}
+										],
+										"commitmentAmount": "3905000000000000000000000",
+										"createdAt": "2022-11-08T09:04:04.126905Z",
+										"fee": "0.3",
+										"id": "c1431989aa66c2cf93079ba1255d0cdf60b3cee5801ed74a12c5bef837a31db9",
+										"market": {
+											"id": "32d8179f8ce6965e751bd0745bfdf20bb4916546e50c080a5571fe6c3a834f4e"
+										},
+										"party": {
+											"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44"
+										},
+										"reference": "45B061EDD9",
+										"sells": [
+											{
+												"liquidityOrder": {
+													"reference": "PEGGED_REFERENCE_BEST_ASK"
+												}
+											}
+										],
+										"status": "STATUS_STOPPED",
+										"updatedAt": "2022-11-08T09:04:04.126905Z",
+										"version": "1"
+									}
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	},
+	"Duration": 16396000
+}

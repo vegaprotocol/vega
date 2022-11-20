@@ -922,6 +922,8 @@ message MarketData {
   repeated LiquidityProviderFeeShare liquidity_provider_fee_share = 26;
   // The current state of the market
   Market.State market_state = 27;
+  // next MTM timestamp
+  int64 next_mark_to_market = 28;
 }
 
 // The equity like share of liquidity fee for each liquidity provider
@@ -1226,17 +1228,36 @@ message Node {
   string avatar_url = 18;
 }
 
+// Details on the collection of nodes for a particular validator status
+message NodeSet {
+  // Total number of nodes in the node set
+  uint32 total = 1;
+  // Number of nodes in the node set that had a performance score of 0 at the end of the last epoch
+  uint32 inactive = 2;
+  // IDs of nodes that were promoted into this node set at the start of the epoch
+  repeated string promoted = 3;
+  // IDs of nodes that were demoted into this node set at the start of the epoch
+  repeated string demoted = 4;
+  // Total number of nodes allowed in the node set
+  optional uint32 maximum = 5;
+
+}
+
 message NodeData {
   // Total staked amount across all nodes
   string staked_total = 1;
-  // Total number of nodes
+  // Total number of nodes across all node sets
   uint32 total_nodes = 2;
-  // Number of inactive nodes
+  // Total number of nodes that had a performance score of 0 at the end of the last epoch
   uint32 inactive_nodes = 3;
-  // Number of nodes validating
-  uint32 validating_nodes = 4;
+  // Details on the set of consensus nodes in the network
+  NodeSet tendermint_nodes = 4;
+  // Details on the set of ersatz (standby) nodes in the network
+  NodeSet ersatz_nodes = 5;
+  // Details on the set of pending nodes in the network
+  NodeSet pending_nodes = 6;
   // Total uptime for all epochs across all nodes
-  float uptime = 5;
+  float uptime = 7;
 }
 
 message Delegation {

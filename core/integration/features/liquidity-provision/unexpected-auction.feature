@@ -11,9 +11,10 @@ Feature: Replicate unexpected margin issues.
       | id        | quote name | asset | risk model         | margin calculator         | auction duration | fees         | price monitoring | data source config          | decimal places |
       | DAI/DEC22 | DAI        | DAI   | dai-lognormal-risk | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 5              |
     And the following network parameters are set:
-      | name                              | value |
-      | market.auction.minimumDuration    | 1     |
-      | market.stake.target.scalingFactor | 10    |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | market.stake.target.scalingFactor       | 10    |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @Lewis
   Scenario: Attempt to recreate margin drain for LP
@@ -61,7 +62,7 @@ Feature: Replicate unexpected margin issues.
     Then debug detailed orderbook volumes for market "DAI/DEC22"
     And clear transfer response events
     
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
       | party3 | DAI/DEC22 | sell | 1      | 3500000020 | 0                | TYPE_LIMIT | TIF_GTC | party3-3  |
       | party2 | DAI/DEC22 | buy  | 1      | 3500000020 | 1                | TYPE_LIMIT | TIF_GTC | party2-3  |
@@ -71,7 +72,7 @@ Feature: Replicate unexpected margin issues.
     Then debug detailed orderbook volumes for market "DAI/DEC22"
     And clear transfer response events
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
       | party2 | DAI/DEC22 | buy  | 1      | 3500000015 | 0                | TYPE_LIMIT | TIF_GTC | p2-1      |
       | party3 | DAI/DEC22 | buy  | 1      | 3500000000 | 0                | TYPE_LIMIT | TIF_GTC | p3-1      |
@@ -91,7 +92,7 @@ Feature: Replicate unexpected margin issues.
       | id  | party  | market    | commitment amount | status        |
       | lp1 | party1 | DAI/DEC22 | 20000000000       | STATUS_ACTIVE |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     |
       | party1 | DAI/DEC22 | buy  | 1      | 3500000020 | 1                | TYPE_LIMIT | TIF_GTC |
     Then the mark price should be "3500000020" for the market "DAI/DEC22"

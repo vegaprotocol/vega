@@ -24,6 +24,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
 
     # block duration of 2 seconds
     And the average block duration is "2"
@@ -98,14 +99,15 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the liquidity fee factor should be "0.001" for the market "ETH/MAR22"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | party2 | ETH/MAR22 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
-      | lp1    | USD   | ETH/MAR22 | 12522  | 999976749 | 10000 |
+      | lp1    | USD   | ETH/MAR22 | 11787  | 999977484 | 10000 |
+      #| lp1    | USD   | ETH/MAR22 | 12522  | 999976749 | 10000 |
       | party1 | USD   | ETH/MAR22 | 1800   | 99998202  | 0     |
       | party2 | USD   | ETH/MAR22 | 1812   | 99998875  | 0     |
 
@@ -908,7 +910,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party1 | pa1-b1    | 1050  | 0          | TIF_GTC |
       | party2 | pa2-s1    | 1250  | 0          | TIF_GTC |
 
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 30     | 1150  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/MAR22 | sell | 30     | 1150  | 1                | TYPE_LIMIT | TIF_GTC |
@@ -923,7 +925,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 6780   | 0       | 220  |
+      | lp1   | USD   | ETH/MAR22 | 6924   | 0       | 76   |
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
@@ -949,7 +951,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party1 | pa1-b1    | 1200  | 0          | TIF_GTC |
       | party2 | pa2-s1    | 1400  | 0          | TIF_GTC |
 
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 30     | 1300  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/MAR22 | sell | 30     | 1300  | 1                | TYPE_LIMIT | TIF_GTC |

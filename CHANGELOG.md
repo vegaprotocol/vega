@@ -4,6 +4,8 @@
 
 ### 🚨 Breaking changes
 - [6716](https://github.com/vegaprotocol/vega/issues/6716) - Use timestamp on all times fields
+- [6725](https://github.com/vegaprotocol/vega/issues/6725) - Fix inconsistent use of node field on `GraphQL` connection edges
+- [6746](https://github.com/vegaprotocol/vega/issues/6746) - The `validating_nodes` has been removed from `NodeData` and replaced with details of each node set
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -14,12 +16,22 @@
 - [6731](https://github.com/vegaprotocol/vega/issues/6731) - standardize on 'network' and '' for network party and no market identifiers
 - [6792](https://github.com/vegaprotocol/vega/issues/6792) - Better handling of panics when moving time with `nullchain`, add endpoint to query whether `nullchain` is replaying
 - [6753](https://github.com/vegaprotocol/vega/issues/6753) - Filter votes per party and/or proposal
-
+- [6832](https://github.com/vegaprotocol/vega/issues/6832) - Add signature to transaction information returned by block explorer API
+- [6642](https://github.com/vegaprotocol/vega/issues/6642) - Add methods to manage the wallet service and its connections on wallet API version 2
+- [6853](https://github.com/vegaprotocol/vega/issues/6853) - Max gas and priority improvements
+- [6640](https://github.com/vegaprotocol/vega/issues/6640) - Mark to market to happen every N seconds.
 
 ### 🐛 Fixes
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
+- [6766](https://github.com/vegaprotocol/vega/issues/6766) - Handle relative vega home path being passed in `postgres` snapshots
 - [6799](https://github.com/vegaprotocol/vega/issues/6799) - Move LP fees in transit to the network treasury
+- [6781](https://github.com/vegaprotocol/vega/issues/6781) - Fix bug where only first 32 characters of the `IPFS` identity seed were used.
 - [6824](https://github.com/vegaprotocol/vega/issues/6824) - Respect `VEGA_HOME` for embedded `postgres` log location
+- [6843](https://github.com/vegaprotocol/vega/issues/6843) - Fix Visor runner keys
+- [6826](https://github.com/vegaprotocol/vega/issues/6826) - Update `spam.pow.numberOfPastBlocks` range values
+- [6332](https://github.com/vegaprotocol/vega/issues/6332) - Standardise `graphql` responses
+- [6862](https://github.com/vegaprotocol/vega/issues/6862) - Add party in account update
+
 
 ## 0.62.1
 
@@ -70,6 +82,7 @@
 ## 0.61.0
 
 ### 🚨 Breaking changes
+- [5674](https://github.com/vegaprotocol/vega/issues/5674) - Remove `V1` data node `API`
 - [5714](https://github.com/vegaprotocol/vega/issues/5714) - Update data sourcing types
 
 ### 🛠 Improvements

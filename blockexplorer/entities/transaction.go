@@ -33,7 +33,7 @@ type TxResultRow struct {
 	CreatedAt time.Time `db:"created_at"`
 	TxHash    string    `db:"tx_hash"`
 	TxResult  []byte    `db:"tx_result"`
-	Submitter string    `\db:"submitter"`
+	Submitter string    `db:"submitter"`
 }
 
 func (t *TxResultRow) ToProto() (*pb.Transaction, error) {
@@ -66,6 +66,7 @@ func (t *TxResultRow) ToProto() (*pb.Transaction, error) {
 		Hash:      t.TxHash,
 		Cursor:    cursor.String(),
 		Command:   &command,
+		Signature: cTx.Signature,
 	}, nil
 }
 

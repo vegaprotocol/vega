@@ -41,6 +41,7 @@ var (
 	// Uints.
 	gteU0  = UintGTE(num.UintZero())
 	gteU1  = UintGTE(num.NewUint(1))
+	gteU5  = UintGTE(num.NewUint(5))
 	ltMaxU = UintLT(num.MaxUint())
 
 	// Ints.
@@ -201,7 +202,7 @@ func defaultNetParams() map[string]value {
 		TransferMaxCommandsPerEpoch:        NewInt(gteI0).Mutable(true).MustUpdate("20"),
 
 		// pow
-		SpamPoWNumberOfPastBlocks:   NewUint(gteU1, UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("100"),
+		SpamPoWNumberOfPastBlocks:   NewUint(gteU5, UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("100"),
 		SpamPoWDifficulty:           NewUint(gteU0, UintLTE(num.NewUint(256))).Mutable(true).MustUpdate("15"),
 		SpamPoWHashFunction:         NewString(checks.SpamPoWHashFunction([]string{crypto.Sha3})).Mutable(true).MustUpdate(crypto.Sha3),
 		SpamPoWNumberOfTxPerBlock:   NewUint(gteU1).Mutable(true).MustUpdate("2"),
@@ -211,14 +212,25 @@ func defaultNetParams() map[string]value {
 		LimitsProposeAssetEnabledFrom:  NewString(checkOptionalRFC3339Date).Mutable(true).MustUpdate(""), // none by default
 
 		SpamProtectionMaxBatchSize: NewUint(UintGTE(num.NewUint(2)), UintLTE(num.NewUint(200))).Mutable(true).MustUpdate("15"),
-		MaxGasPerBlock:             NewUint(UintGTE(num.NewUint(100)), UintLTE(num.NewUint(10000000))).Mutable(true).MustUpdate("100000"),
+		MaxGasPerBlock:             NewUint(UintGTE(num.NewUint(100)), UintLTE(num.NewUint(10000000))).Mutable(true).MustUpdate("500000"),
 		DefaultGas:                 NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(99))).Mutable(true).MustUpdate("1"),
+		MinBlockCapacity:           NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("32"),
 		MaxPeggedOrders:            NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("1500"),
+
+		MarkPriceUpdateMaximumFrequency: NewDuration().Mutable(true).MustUpdate("5s"),
 	}
 
 	// add additional cross net param rules
 	m[MarketAuctionMinimumDuration].AddRules(DurationDependentLT(MarketAuctionMaximumDuration, m[MarketAuctionMaximumDuration].(*Duration)))
 	m[MarketAuctionMaximumDuration].AddRules(DurationDependentGT(MarketAuctionMinimumDuration, m[MarketAuctionMinimumDuration].(*Duration)))
+
+	// ensure that MinBlockCapacity <= 2*
+	m[MaxGasPerBlock].AddRules(UintDependentGTE(MinBlockCapacity, m[MinBlockCapacity].(*Uint), num.MustDecimalFromString("2")))
+	m[MinBlockCapacity].AddRules(UintDependentLTE(MaxGasPerBlock, m[MaxGasPerBlock].(*Uint), num.MustDecimalFromString("0.5")))
+	m[MarkPriceUpdateMaximumFrequency].AddRules(DurationGTE(time.Duration(0)))
+	// could just do 24 * 3600 * time.Second, but this is easier to read
+	maxFreq, _ := time.ParseDuration("24h")
+	m[MarkPriceUpdateMaximumFrequency].AddRules(DurationGTE(time.Duration(0)), DurationLTE(maxFreq))
 	return m
 }
 

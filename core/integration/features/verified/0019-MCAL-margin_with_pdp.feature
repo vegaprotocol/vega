@@ -2,6 +2,10 @@ Feature: Test party accounts margins with fractional orders - the test is identi
 
   Background:
 
+    Given the following network parameters are set:
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          | position decimal places |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |          2              |
@@ -42,7 +46,7 @@ Feature: Test party accounts margins with fractional orders - the test is identi
       | party1 | party1-1  |
       | party2 | party2-1  |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | partyGuy | ETH/DEC19 | sell | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following margin levels:
@@ -79,7 +83,7 @@ Feature: Test party accounts margins with fractional orders - the test is identi
       | party1 | party1-1  |
       | party2 | party2-1  |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | type       | tif     | reference | error               |
       | partyGuy | ETH/DEC19 | sell | 100    | 1000  | TYPE_LIMIT | TIF_GTC | party1-1  | margin check failed |
     Then the following orders should be rejected:

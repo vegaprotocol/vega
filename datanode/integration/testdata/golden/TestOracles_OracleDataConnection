@@ -1,0 +1,1586 @@
+{
+	"TestName": "TestOracles_OracleDataConnection",
+	"Query": "{ oracleSpecsConnection { edges { node { dataConnection { edges { node { externalData { data { matchedSpecIds broadcastAt } } } } } } } } }",
+	"Result": {
+		"oracleSpecsConnection": {
+			"edges": [
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:07:08.457205Z",
+												"matchedSpecIds": [
+													"fe60f8c8906cff3dc44e75aa05083a80297765c92bbdf838593441a65529f2d3"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:26:17.073857Z",
+												"matchedSpecIds": [
+													"fdc348a84805bff3768c87f49cfaa23fe869f8c296810856b10559a05a53f695"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:31:14.19544Z",
+												"matchedSpecIds": [
+													"f6203c106f89f3b00365b83a89c4e1347010f990bd80d92ba19fbd5363b41476"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:04:16.844415Z",
+												"matchedSpecIds": [
+													"f5791b93f723a7d5be70cb9853da55e1493a3aa967c688bfa49a730547912ad5"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:04:48.484964Z",
+												"matchedSpecIds": [
+													"f2b2a1622286005fe9aef76c96a522ba1d0f9ef7721865c0a56a9eb8025e5422"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:11:22.957578Z",
+												"matchedSpecIds": [
+													"ecae82ae4cdf4ecabda80b25cddf9ac8087938c467021533f77a11b4c12b513e"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:10:43.398974Z",
+												"matchedSpecIds": [
+													"e9f35963f86285506c05722e0f6e029f681a44b903e40ff28ac28e62bf8c1936"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:17:47.141236Z",
+												"matchedSpecIds": [
+													"e85efa3252f3c3b284b79bc66b909d3242dbfd48ea731b002af83b19a651b7e6"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:09:55.266689Z",
+												"matchedSpecIds": [
+													"e13a2a8107525d9d748338f70d10d2c9418a1c87a16581fc7a681fb6ea885485"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:10:44.140696Z",
+												"matchedSpecIds": [
+													"2462cf7c68cb53af470a0cdacf10cc6a147a27e929ec8676728a48ed981f0a01",
+													"dfe877692ba63cab28fc5050d32bf681db3a2da6440f7f4c70ce1e7709e18ea8"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:08:21.441551Z",
+												"matchedSpecIds": [
+													"da8308d6256cf4b675ebc62442493918b06cdd1b08c7fddd8cc142f8a6a27589"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:21:27.095572Z",
+												"matchedSpecIds": [
+													"d15d673083dcf774138508986f4cfc66653c7c4438aa89fa29767b88a1872ae9"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:12:34.205258Z",
+												"matchedSpecIds": [
+													"cdc863ffb690f99009e6a5a32a234ea0f9897589887326e6f1433c230f0bcc90"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:07:19.463569Z",
+												"matchedSpecIds": [
+													"cbfee7b592b77642248f06fe6f8b203fa16a7eca0c789401e9fe270dea33da3c"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:15:57.429884Z",
+												"matchedSpecIds": [
+													"cb40f90e6ecfc39b42058bff3c9c1cc742284ca7c2668beb44553ce20eae547b"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:14:40.667281Z",
+												"matchedSpecIds": [
+													"c867992e525316c768cf8ff13b013d90cbcf5ba6bffbbfb69a1b9ae064f41f48"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:25:29.753469Z",
+												"matchedSpecIds": [
+													"c4675a1f168c492ea107b1490b4b92afbaa000447f29ed07f19f64ee7da6662a"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:25:40.987422Z",
+												"matchedSpecIds": [
+													"bd6901749bd29047a38963e23d1c1f492c9dc2b6e1fe71be10245387f1879b1d"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:14:41.942147Z",
+												"matchedSpecIds": [
+													"bc2cc3e2919b05c3333590c71008756d8f2dae655b506949a5e93646440682ef"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:18:17.248129Z",
+												"matchedSpecIds": [
+													"ba3bc75dd917aa7b389e2edad7334e4befc97602e68b015cfef89b551d3c247f",
+													"15a892e1be452f8ab4d5f867f741b1c0e366b9339c7560590f351d0f61227567"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:13:25.139329Z",
+												"matchedSpecIds": [
+													"b7139dee70a974e9fbed13c3d9543e537b70ae0e11ed2d05f12f6fe81ef89e31"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:09:09.68647Z",
+												"matchedSpecIds": [
+													"aedc6227959d0a66e4c10b813a65fe5688e0034d77bc202dab049332c539bdb0"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:30:13.187321Z",
+												"matchedSpecIds": [
+													"a569fb45a6cbb9acaa8b467827f290e1d25fb2307d52b895e0de05ef1c71854f"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:12:59.192864Z",
+												"matchedSpecIds": [
+													"a22e74e545bedf24337a27506f4d5d6446dd6e606d59f0c19ecb5acadfdbd052"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:13:51.48682Z",
+												"matchedSpecIds": [
+													"a1f38424e280853d19e139d11803137c5abd73da71f87e763ebe4ad7e842a2c0"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:07:45.322131Z",
+												"matchedSpecIds": [
+													"a13498e6a1001ecc8530c42d1a7133f5ef917e1d8fe93943dcaad682e9d66292"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:16:31.175743Z",
+												"matchedSpecIds": [
+													"a0b3ea4d9b782b9e9c1d32691030d6433eeda2c3a1c00075ad137428b5a60956",
+													"2c4955ba58fca480b0dc6e9f0c5545cd3c22dc28e053d2768a9d3f4685fe794a"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:05:56.171301Z",
+												"matchedSpecIds": [
+													"9ff16f6f67cdfda2ce658c2cf9e41ee1a46a11a9e7671b43179e7f5d84374050"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:29:12.926689Z",
+												"matchedSpecIds": [
+													"8ed8d9e9564ddd33f0cfe5382a4767c092eb89ba922c218eee05c5a121b1c27b"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:06:07.227461Z",
+												"matchedSpecIds": [
+													"8b9d680c80963f5cf9deece37d075a00180f3963495c90db316ad60b71ce7313"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:09:57.148583Z",
+												"matchedSpecIds": [
+													"885efddb33f7c28d570fb6eca35f0ed03874f6dd54236b89432db054521c2b08"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:05:19.548991Z",
+												"matchedSpecIds": [
+													"865e0e905835a6e15929c0c23e45ca3bd732aa61c121a92813cb20816eeee4d0"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:07:56.158072Z",
+												"matchedSpecIds": [
+													"80c86f9a698003b3a0618eea869a2360702d82d31d1a1ed0cb77eb09c9f35ce7"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:17:59.041088Z",
+												"matchedSpecIds": [
+													"7f320610c85d8c8e247dcf177e4418284a8a1c6ce4f596c141cbd02bbdd1865b",
+													"19f245b51ba45d590ab9741ea5de1671b8fc00c00ceb09e6f8706273844e75e9"
+												]
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:17:47.870295Z",
+												"matchedSpecIds": [
+													"7f320610c85d8c8e247dcf177e4418284a8a1c6ce4f596c141cbd02bbdd1865b"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:27:00.650849Z",
+												"matchedSpecIds": [
+													"792072ba6659430d49112f8bddb04248fa6cc8efb9e5429389fce01118309042"
+												]
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:24:38.971707Z",
+												"matchedSpecIds": [
+													"792072ba6659430d49112f8bddb04248fa6cc8efb9e5429389fce01118309042"
+												]
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:24:04.889707Z",
+												"matchedSpecIds": [
+													"792072ba6659430d49112f8bddb04248fa6cc8efb9e5429389fce01118309042"
+												]
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:19:02.840433Z",
+												"matchedSpecIds": [
+													"792072ba6659430d49112f8bddb04248fa6cc8efb9e5429389fce01118309042"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:08:58.9318Z",
+												"matchedSpecIds": [
+													"766825162a66af9753f14822d3ff040c02136ea0d7f11dcf943de6b1f57778b7"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:14:15.69314Z",
+												"matchedSpecIds": [
+													"6e576c5ce7e4b94d10d6ca692e79caff29dbb98c53270e956af23ae396e0c376"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:13:52.097901Z",
+												"matchedSpecIds": [
+													"6e1f4edb39020ee9b78331cac1b20d7e20867896f1187252ed729f732812c63e"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:05:30.225143Z",
+												"matchedSpecIds": [
+													"65e990bb4cdc67203f5e4bdaf936412f67a29b61e221515be7412f368502b7b3"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:04:16.844415Z",
+												"matchedSpecIds": [
+													"564f08a424ae4dfb49928581f7055ae2362e6ee44673ea6ed9491f21a0ec5cde"
+												]
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:04:16.844415Z",
+												"matchedSpecIds": [
+													"564f08a424ae4dfb49928581f7055ae2362e6ee44673ea6ed9491f21a0ec5cde"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:11:58.819759Z",
+												"matchedSpecIds": [
+													"50f27505cdde083701a1ff64e543b8578ee5c560484602fa775b373db31e4148"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:08:32.270063Z",
+												"matchedSpecIds": [
+													"45de0a688c194c75e105ccfe56f13c79bbf9eef335e67ba59dfc2b77988d32f1"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:14:16.407644Z",
+												"matchedSpecIds": [
+													"45381c372b223d7974636fe0b55a30f2af2596a2d57529ff6474c85b26575a82"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:24:39.584019Z",
+												"matchedSpecIds": [
+													"44be48d5baa0335742104ab9818dff00ef67b22e4d3cc8ffe64d3d3fea410f13",
+													"211865b8826a23c900fc61f2609c5be335f2c46e47f859e015d4d1def2249d58"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:22:05.069852Z",
+												"matchedSpecIds": [
+													"41c121e0211166a35351635c4e12030183548f7f2246154e5ccb839f1503383e"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:20:16.052394Z",
+												"matchedSpecIds": [
+													"40914b7fcf714008259853e95a933f95bea05b7ecd573bb18a45cca518ca0853"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:28:11.260578Z",
+												"matchedSpecIds": [
+													"3fb239b69a3b09bfa9c9da8c9adfb2016cc894e0b77ee28a5d2251c2e07823e5"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:31:14.799878Z",
+												"matchedSpecIds": [
+													"3e99892c78815066d20ea74f92f99b562b0321840fb20be4f7499e522480c58b"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:15:46.801051Z",
+												"matchedSpecIds": [
+													"3c4414ad08954af74bbda922566c0391a71738f33ca84e90baaf6a4749e7e6c0"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:19:13.382401Z",
+												"matchedSpecIds": [
+													"36eb533d5cae5821e715be6758cb45f60837242bd1e8da43aa59f8abdbfe432a"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:26:16.250917Z",
+												"matchedSpecIds": [
+													"36b9e9ef2c00ee3a1284510aadc0e30c421cceff32027474bf9fca496cfd6cec"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:16:31.175743Z",
+												"matchedSpecIds": [
+													"a0b3ea4d9b782b9e9c1d32691030d6433eeda2c3a1c00075ad137428b5a60956",
+													"2c4955ba58fca480b0dc6e9f0c5545cd3c22dc28e053d2768a9d3f4685fe794a"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:13:25.807062Z",
+												"matchedSpecIds": [
+													"2badc6ececdf29b0483e8af1f8313b9a5df3afad31588abb31d1c35d5c83cd0b"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:10:44.140696Z",
+												"matchedSpecIds": [
+													"2462cf7c68cb53af470a0cdacf10cc6a147a27e929ec8676728a48ed981f0a01",
+													"dfe877692ba63cab28fc5050d32bf681db3a2da6440f7f4c70ce1e7709e18ea8"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:24:39.584019Z",
+												"matchedSpecIds": [
+													"44be48d5baa0335742104ab9818dff00ef67b22e4d3cc8ffe64d3d3fea410f13",
+													"211865b8826a23c900fc61f2609c5be335f2c46e47f859e015d4d1def2249d58"
+												]
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:19:14.200245Z",
+												"matchedSpecIds": [
+													"211865b8826a23c900fc61f2609c5be335f2c46e47f859e015d4d1def2249d58"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:12:58.491366Z",
+												"matchedSpecIds": [
+													"20e144dd3e04731c52a9b3216d005842733081cef5e96b2eff9e5f2b7316ccb2"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:09:56.432124Z",
+												"matchedSpecIds": [
+													"20dfece8413dd81dc82b2617cac140fed0dda3bd33ee6cd052862d10c74c982a"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:23:05.212651Z",
+												"matchedSpecIds": [
+													"1d7879d8c7e9a4e03b6e97339e850cb32e52b0f4d835d8411788d07070d56ed0"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:06:32.687265Z",
+												"matchedSpecIds": [
+													"1a36d2c0206d53bd647dbd267356ec35741a664167fb44d170df6acb9e47c7a1"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:17:59.041088Z",
+												"matchedSpecIds": [
+													"7f320610c85d8c8e247dcf177e4418284a8a1c6ce4f596c141cbd02bbdd1865b",
+													"19f245b51ba45d590ab9741ea5de1671b8fc00c00ceb09e6f8706273844e75e9"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:06:43.461763Z",
+												"matchedSpecIds": [
+													"19d222e28cef0573fb6e9784a30137f97407f217dadfb2a41642d165e8374595"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:22:54.153819Z",
+												"matchedSpecIds": [
+													"18a332e48e0ec69fe81e4fa1c2958eae11497168ab5c6338d6fc2f6bff311b31"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:18:17.248129Z",
+												"matchedSpecIds": [
+													"ba3bc75dd917aa7b389e2edad7334e4befc97602e68b015cfef89b551d3c247f",
+													"15a892e1be452f8ab4d5f867f741b1c0e366b9339c7560590f351d0f61227567"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:28:11.872941Z",
+												"matchedSpecIds": [
+													"13f462b131c91788a53418353167c7e90023d3f1038ce8a0a16de3ebe77ba7bf"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:30:13.834617Z",
+												"matchedSpecIds": [
+													"13e06b903419f0eb891b0691ac67da7498149571fe7a884b5273daa4e233509c"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:29:12.02348Z",
+												"matchedSpecIds": [
+													"13c28c144b4bf99a7104155b4bdead8020ba209e74661743f286e62ae554499c"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:11:33.824779Z",
+												"matchedSpecIds": [
+													"13779c98ba377c108aeab807930c5c14a030360f95004ccbab08f440b2369438"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2022-11-08T09:04:49.357742Z",
+												"matchedSpecIds": [
+													"03510473f342141f676a37e9bc67a8677c5a6da0a53da4d56fffdb7909704ae1"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	},
+	"Duration": 13183542
+}
