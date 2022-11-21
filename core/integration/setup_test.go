@@ -334,5 +334,9 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Param:   netparams.MarketMinLpStakeQuantumMultiple,
 			Watcher: e.executionEngine.OnMinLpStakeQuantumMultipleUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MarketMinProbabilityOfTradingForLPOrders,
+			Watcher: e.executionEngine.OnMarketMinProbabilityOfTradingForLPOrdersUpdate,
+		},
 	)
 }

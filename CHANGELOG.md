@@ -1,5 +1,8 @@
 # Changelog
 
+### 🛠 Improvements
+- [6871](https://github.com/vegaprotocol/vega/issues/6871) - Assure integration test framework throws an error when no watchers specified for a network parameter being set/updated
+
 ## Unreleased 0.63.0
 
 ### 🚨 Breaking changes
