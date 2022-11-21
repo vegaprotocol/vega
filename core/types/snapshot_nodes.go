@@ -176,6 +176,21 @@ type PayloadMarketPositions struct {
 	MarketPositions *MarketPositions
 }
 
+type PayloadSettlement struct {
+	SettlementState *SettlementState
+}
+
+type SettlementState struct {
+	*MarketPositions
+	Trades []*SettlementTrade
+}
+
+type SettlementTrade struct {
+	Price, MarketPrice *num.Uint
+	Size, NewSize      int64
+	Party              string
+}
+
 type PayloadMatchingBook struct {
 	MatchingBook *MatchingBook
 }
@@ -753,6 +768,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadProofOfWorkFromProto(dt)
 	case *snapshot.Payload_ProtocolUpgradeProposals:
 		ret.Data = PayloadProtocolUpgradeProposalFromProto(dt)
+	case *snapshot.Payload_SettlementState:
+		ret.Data = PayloadSettlementFromProto(dt)
 	}
 
 	return ret
@@ -885,6 +902,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_ProofOfWork:
 		ret.Data = dt
 	case *snapshot.Payload_ProtocolUpgradeProposals:
+		ret.Data = dt
+	case *snapshot.Payload_SettlementState:
 		ret.Data = dt
 	}
 	return &ret
@@ -1670,6 +1689,76 @@ func (p *PayloadMarketPositions) Key() string {
 
 func (*PayloadMarketPositions) Namespace() SnapshotNamespace {
 	return PositionsSnapshot
+}
+
+func PayloadSettlementFromProto(st *snapshot.Payload_SettlementState) *PayloadSettlement {
+	return &PayloadSettlement{
+		SettlementState: SettlementStateFromProto(st.SettlementState),
+	}
+}
+
+func (p PayloadSettlement) IntoProto() *snapshot.Payload_SettlementState {
+	return &snapshot.Payload_SettlementState{
+		SettlementState: p.SettlementState.IntoProto(),
+	}
+}
+
+func (p PayloadSettlement) Key() string {
+	return p.SettlementState.MarketID
+}
+
+func (*PayloadSettlement) Namespace() SnapshotNamespace {
+	return SettlementSnapshot
+}
+
+func (*PayloadSettlement) isPayload() {}
+
+func (p *PayloadSettlement) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (s SettlementState) IntoProto() *snapshot.SettlementState {
+	trades := make([]*snapshot.SettlementTrade, 0, len(s.Trades))
+	for _, t := range s.Trades {
+		trades = append(trades, t.IntoProto())
+	}
+	return &snapshot.SettlementState{
+		MarketPositions: s.MarketPositions.IntoProto(),
+		Trades:          trades,
+	}
+}
+
+func SettlementStateFromProto(ss *snapshot.SettlementState) *SettlementState {
+	trades := make([]*SettlementTrade, 0, len(ss.Trades))
+	for _, t := range ss.Trades {
+		trades = append(trades, SettlementTradeFromProto(t))
+	}
+	return &SettlementState{
+		MarketPositions: MarketPositionsFromProto(ss.MarketPositions),
+		Trades:          trades,
+	}
+}
+
+func SettlementTradeFromProto(t *snapshot.SettlementTrade) *SettlementTrade {
+	p, _ := num.UintFromString(t.Price, 10)
+	mp, _ := num.UintFromString(t.MarketPrice, 10)
+	return &SettlementTrade{
+		Party:       t.PartyId,
+		Price:       p,
+		MarketPrice: mp,
+		Size:        t.Size,
+		NewSize:     t.NewSize,
+	}
+}
+
+func (s SettlementTrade) IntoProto() *snapshot.SettlementTrade {
+	return &snapshot.SettlementTrade{
+		PartyId:     s.Party,
+		Size:        s.Size,
+		NewSize:     s.NewSize,
+		Price:       s.Price.String(),
+		MarketPrice: s.MarketPrice.String(),
+	}
 }
 
 func PayloadMatchingBookFromProto(pmb *snapshot.Payload_MatchingBook) *PayloadMatchingBook {

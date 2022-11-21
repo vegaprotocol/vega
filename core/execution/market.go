@@ -223,7 +223,7 @@ type Market struct {
 	tradableInstrument *markets.TradableInstrument
 	risk               *risk.Engine
 	position           *positions.SnapshotEngine
-	settlement         *settlement.Engine
+	settlement         *settlement.SnapshotEngine
 	fee                *fee.Engine
 	liquidity          *liquidity.SnapshotEngine
 
@@ -330,7 +330,7 @@ func NewMarket(
 		nil,
 	)
 
-	settleEngine := settlement.New(
+	settleEngine := settlement.NewSnapshotEngine(
 		log,
 		settlementConfig,
 		tradableInstrument.Instrument.Product,
@@ -846,6 +846,18 @@ func (m *Market) closeCancelledMarket(ctx context.Context) error {
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
+	// before we perform the final settlement, in case we have unsettled trades
+	// perform the MTM settlement to settle everything
+	if mp := m.getCurrentMarkPrice(); mp != nil && m.hasTraded {
+		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
+		dummy := &types.Order{
+			ID:            m.idgen.NextID(),
+			Price:         mp.Clone(),
+			OriginalPrice: mcmp,
+		}
+		m.confirmMTM(ctx, dummy, nil)
+	}
+	m.hasTraded = false
 	// market is closed, final settlement
 	// call settlement and stuff
 	positions, err := m.settlement.Settle(t, m.assetDP)

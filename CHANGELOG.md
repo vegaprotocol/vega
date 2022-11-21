@@ -29,6 +29,7 @@
 - [6827](https://github.com/vegaprotocol/vega/issues/6827) - Add `LastTradedPrice` field in market data
 
 ### 🐛 Fixes
+- [6831](https://github.com/vegaprotocol/vega/issues/6831) - Fix settlement state in snapshots and market settlement.
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
 - [6766](https://github.com/vegaprotocol/vega/issues/6766) - Handle relative vega home path being passed in `postgres` snapshots
 - [6885](https://github.com/vegaprotocol/vega/issues/6885) - Don't ignore 'bootstrap peers' `IPFS` configuration setting in `datanode`

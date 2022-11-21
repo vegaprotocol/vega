@@ -90,7 +90,7 @@ func NewMarketFromSnapshot(
 		&types.RiskFactor{Market: mkt.ID, Short: em.ShortRiskFactor, Long: em.LongRiskFactor},
 	)
 
-	settleEngine := settlement.New(
+	settleEngine := settlement.NewSnapshotEngine(
 		log,
 		settlementConfig,
 		tradableInstrument.Instrument.Product,

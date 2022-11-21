@@ -140,6 +140,7 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.ExecutionSnapshot,              // creates the markets, returns matching and positions engines for state providers
 	types.MatchingSnapshot,               // this requires a market
 	types.PositionsSnapshot,              // again, needs a market
+	types.SettlementSnapshot,             // needs the market to exist, too
 	types.LiquiditySnapshot,
 	types.LiquidityTargetSnapshot,
 	types.StakingSnapshot,
