@@ -113,6 +113,10 @@ func (n *RetryingNode) SendTransaction(ctx context.Context, tx *commandspb.Trans
 		return "", err
 	}
 
+	if !resp.Success {
+		return "", fmt.Errorf(fmt.Sprintf("%s (%d)", resp.Data, resp.Code))
+	}
+
 	return resp.TxHash, nil
 }
 
