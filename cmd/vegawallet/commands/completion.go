@@ -10,9 +10,9 @@ var completionLong = `To load completions:
 
 Bash:  To load completions for each session, execute once:
 -----  Linux:
-       $ {{.Software}} completion bash > /etc/bash_completion.d/vegawallet
+       $ {{.Software}} completion bash > /etc/bash_completion.d/{{.Software}}
        MacOS:
-       $ {{.Software}} completion bash > /usr/local/etc/bash_completion.d/vegawallet
+       $ {{.Software}} completion bash > /usr/local/etc/bash_completion.d/{{.Software}}
 
 
 Zsh:   If shell completion is not already enabled in your environment you will need
@@ -20,13 +20,13 @@ Zsh:   If shell completion is not already enabled in your environment you will n
        $ echo "autoload -U compinit; compinit" >> ~/.zshrc
 
        To load completions for each session, execute once:
-       $ {{.Software}} completion zsh > "${fpath[1]}/_vegawallet"
+       $ {{.Software}} completion zsh > "${fpath[1]}/_{{.Software}}"
 
        You will need to start a new shell for this setup to take effect.
 
 
 Fish:  To load completions for each session, execute once:
------  $ {{.Software}} completion fish > ~/.config/fish/completions/vegawallet.fish
+-----  $ {{.Software}} completion fish > ~/.config/fish/completions/{{.Software}}.fish
 `
 
 func NewCmdCompletion(w io.Writer) *cobra.Command {
@@ -36,7 +36,7 @@ func NewCmdCompletion(w io.Writer) *cobra.Command {
 		Long:                  completionLong,
 		DisableFlagsInUseLine: true,
 		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
-		Args:                  cobra.ExactValidArgs(1),
+		Args:                  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 		Run: func(cmd *cobra.Command, args []string) {
 			switch args[0] {
 			case "bash":
