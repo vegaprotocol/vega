@@ -304,6 +304,7 @@ type ExecMarket struct {
 	LastEquityShareDistributed int64
 	EquityShare                *EquityShare
 	CurrentMarkPrice           *num.Uint
+	LastTradedPrice            *num.Uint
 	ShortRiskFactor            num.Decimal
 	LongRiskFactor             num.Decimal
 	RiskFactorConsensusReached bool
@@ -2769,14 +2770,15 @@ func (f FeeSplitter) IntoProto() *snapshot.FeeSplitter {
 
 func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 	var (
-		lastBB, lastBA, lastMB, lastMA, markPrice *num.Uint
-		lastMVP                                   num.Decimal
+		lastBB, lastBA, lastMB, lastMA, markPrice, lastTradedPrice *num.Uint
+		lastMVP                                                    num.Decimal
 	)
 	lastBB, _ = num.UintFromString(em.LastBestBid, 10)
 	lastBA, _ = num.UintFromString(em.LastBestAsk, 10)
 	lastMB, _ = num.UintFromString(em.LastMidBid, 10)
 	lastMA, _ = num.UintFromString(em.LastMidAsk, 10)
 	markPrice, _ = num.UintFromString(em.CurrentMarkPrice, 10)
+	lastTradedPrice, _ = num.UintFromString(em.LastTradedPrice, 10)
 
 	shortRF, _ := num.DecimalFromString(em.RiskFactorShort)
 	longRF, _ := num.DecimalFromString(em.RiskFactorLong)
@@ -2810,6 +2812,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		FeeSplitter:                FeeSplitterFromProto(em.FeeSplitter),
 		SettlementData:             sp,
 		NextMTM:                    em.NextMarkToMarket,
+		LastTradedPrice:            lastTradedPrice,
 	}
 	for _, o := range em.ExpiringOrders {
 		or, _ := OrderFromProto(o)
@@ -2844,6 +2847,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		FeeSplitter:                e.FeeSplitter.IntoProto(),
 		SettlementData:             sp,
 		NextMarkToMarket:           e.NextMTM,
+		LastTradedPrice:            e.LastTradedPrice.String(),
 	}
 	for _, o := range e.ExpiringOrders {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())
