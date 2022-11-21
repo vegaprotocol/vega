@@ -375,13 +375,13 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party1 | 1      | 0              | 0            |
     #| party1 | 11     | 38             | 0            |
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1010       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1111         | 2000           | 11            |
+      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | 1010              | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1111         | 2000           | 11            |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1111         | 2000           | 11            |
+      | mark price | last traded price | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
+      | 1010       | 1010              | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1111         | 2000           | 11            |
 
   Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger liquidity auction (no best ask), the order trades, then provide more orders that ensure a best ask price exists before the end of the block. The market should not enter auction. Same scenario as above until the last "network moves ahead 1 blocks" bit)
     Given the following network parameters are set:
@@ -431,8 +431,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party1 | 1      | 0              | 0            |
     #| party1 | 11     | 38             | 0            |
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1010       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1111         | 2000           | 11            |
+      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | 1010              | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1111         | 2000           | 11            |
 
     # replenish best ask
     When the parties place the following orders with ticks:
@@ -521,8 +521,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/DEC21 | buy  | 10     | 1010  | 3                | TYPE_LIMIT | TIF_GTC | trigger-liq |
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1010       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1414         | 1000           | 14            |
+      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | 1010              | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1414         | 1000           | 14            |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
@@ -600,8 +600,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/DEC21 | buy  | 10     | 1010  | 3                | TYPE_LIMIT | TIF_GTC | trigger-liq |
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1010       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1414         | 1000           | 14            |
+      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | 1010              | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1414         | 1000           | 14            |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:

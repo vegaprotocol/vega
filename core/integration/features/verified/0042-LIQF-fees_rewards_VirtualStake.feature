@@ -338,8 +338,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | lp1 | lp1   | ETH/MAR22 | 5000              | 0.001 | sell | MID              | 2          | 1      | amendment  |
 
     And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 6506         | 7000           | 65            |
+      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 6506         | 7000           | 65            |
 
     #Since lp1 wants to decrease their commitment by delta < 0. Then we update: LP i virtual stake <- LP i virtual stake x (LP i stake + delta)/(LP i stake).
     #grwoth factor for this time window is 0 since there is no fee during auction in the previous timewindow, so taking growth factor into the calculation, lp1 virtual stake stays at 5000, lp2 virtual stake stays at 2000
@@ -369,8 +369,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | lp2 | lp2   | ETH/MAR22 | 1980              | 0.001 | sell | MID              | 2          | 1      | amendment  |
 
     And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 999        | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 6793         | 6980           | 68            |
+      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1001       | 999               | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 6793         | 6980           | 68            |
     # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 999 x 68 x 1 x 0.1
 
     #Since lp1 wants to decrease their commitment by delta < 0. Then we update: LP i virtual stake <- LP i virtual stake x (LP i stake + delta)/(LP i stake).
@@ -602,8 +602,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the accumulated liquidity fees should be "5" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5205         | 9000           | 52            |
+      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5205         | 9000           | 52            |
 
     And the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |

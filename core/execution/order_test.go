@@ -417,7 +417,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Validate that the mark price has been updated
-	assert.True(t, tm.market.GetMarketData().MarkPrice.EQ(num.NewUint(10)))
+	assert.True(t, tm.market.GetMarketData().LastTradedPrice.EQ(num.NewUint(10)))
 }
 
 func TestExpireCancelGTCOrder(t *testing.T) {

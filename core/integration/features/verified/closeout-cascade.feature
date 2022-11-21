@@ -136,11 +136,11 @@ Feature: Closeout-cascades
       | auxiliary2 | ETH/DEC19 | buy  | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1   |
       | auxiliary1 | ETH/DEC19 | sell | 10     | 10    | 1                | TYPE_LIMIT | TIF_GTC | aux-s-1   |
 
-    And the mark price should be "10" for the market "ETH/DEC19"
+    And the mark price should be "100" for the market "ETH/DEC19"
     And then the network moves ahead "10" blocks
+    And the mark price should be "10" for the market "ETH/DEC19"
 
     #trader2 got closed-out
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
       | trader2 | 0      | 0              | -2000        |
-

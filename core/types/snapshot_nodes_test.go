@@ -461,6 +461,7 @@ func getDummyData() *types.Chunk {
 							OpeningAuctionEnded: true,
 						},
 						CurrentMarkPrice: num.NewUint(10),
+						LastTradedPrice:  num.NewUint(10),
 						FeeSplitter: &types.FeeSplitter{
 							TimeWindowStart: time.Now(),
 							TradeValue:      num.NewUint(1000),

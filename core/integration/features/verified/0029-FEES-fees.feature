@@ -17,7 +17,7 @@ Feature: Fees calculations
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
-  
+
 Scenario: Testing fees get collected when amended order trades (0029-FEES-005)
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
@@ -62,8 +62,8 @@ Scenario: Testing fees get collected when amended order trades (0029-FEES-005)
       | trader2 | t2-s4-01  | 1002  | 0          | TIF_GTC |
 
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            |
-      | 1002       | TRADING_MODE_CONTINUOUS |
+      | mark price | last traded price | trading mode            |
+      | 1000       | 1002              | TRADING_MODE_CONTINUOUS |
     And the following trades should be executed:
       | buyer   | price | size | seller  |
       | trader1 | 1002  | 2    | trader2 |
@@ -87,10 +87,3 @@ Scenario: Testing fees get collected when amended order trades (0029-FEES-005)
       | party    | asset | market id | margin | general |
       | trader1  | ETH   | ETH/DEC21 | 480    | 9529    |
       | trader2  | ETH   | ETH/DEC21 | 480    | 9499    |
-
-    
-
-
-
-
-      

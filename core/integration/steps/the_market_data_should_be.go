@@ -57,6 +57,7 @@ func TheMarketDataShouldBe(engine Execution, mID string, data *godog.Table) erro
 		"mid price",
 		"static mid price",
 		"mark price",
+		"last traded price",
 		"timestamp",
 		"open interest",
 		"indicative price",
@@ -393,6 +394,7 @@ func mappedMD(md types.MarketData) *MappedMD {
 	// no need to clone here, the values are already cloned
 	r.uintMap = map[string]**num.Uint{
 		"mark price":              &(r.md.MarkPrice),
+		"last traded price":       &(r.md.LastTradedPrice),
 		"best bid price":          &r.md.BestBidPrice,
 		"best offer price":        &r.md.BestOfferPrice,
 		"best static bid price":   &r.md.BestStaticBidPrice,
