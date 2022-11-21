@@ -180,6 +180,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		},
 	}
 
+	tm.events = nil
 	// Leave the auction
 	newT := now.Add(10001 * time.Second)
 	tm.now = newT
@@ -204,7 +205,6 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 
 	md := tm.market.GetMarketData()
 	require.Equal(t, md.MarketTradingMode, types.MarketTradingModeContinuous, "not in continuous trading")
-	tm.events = nil
 
 	// assure that the order price is within the valid price range so it can trade as expected
 	require.True(t, newOrder.Price.GT(md.PriceMonitoringBounds[0].MinValidPrice))
@@ -230,40 +230,40 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			}
 		}
 
-		// one event is sent, this is a rejected event from
-		// the first order we try to place, the party does
-		// not have enough funds
 		expectedStatus := []struct {
 			status    types.OrderStatus
 			remaining int
 		}{
 			{
-				// this is the first update indicating the order
-				// was matched
+				// initial deployment
 				types.OrderStatusActive,
+				833, // size
+			},
+			{
+				// matched with incoming order and traded 20
+				types.OrderStatusActive,
+				813, // size - 20
+			},
+			{
+				// this is the cancellation
+				types.OrderStatusCancelled,
 				813, // size - 20
 			},
 			{
 				// this is the replacement order created
 				// by engine.
-				types.OrderStatusCancelled,
-				813, // size
-			},
-			{
-				// this is the cancellation
 				types.OrderStatusActive,
-				833, // cancelled
+				833, // size
 			},
 			{
 				// this is quite possibly a duplicate because we're forcing the check
 				// for reference moves
 				types.OrderStatusActive,
-				833, // cancelled
+				833, // size
 			},
 		}
 
 		require.Len(t, found, len(expectedStatus))
-
 		for i, expect := range expectedStatus {
 			got := found[i].Status
 			remaining := int(found[i].Remaining)
