@@ -32,7 +32,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | 2       | 0.999995    | 200               |
       | 1       | 0.999999    | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1     | default-margin-calculator | 10               | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/DEC22 | ETH        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 10               | fees-config-1 | price-monitoring-2 | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
@@ -95,7 +95,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-  Scenario: When trying to exit opening auction liquidity monitoring doesn't get triggered, hence the opening auction uncrosses and market goes into continuous trading mode (0026-AUCT-001, 0026-AUCT-002)
+  Scenario: When trying to exit opening auction liquidity monitoring doesn't get triggered, hence the opening auction uncrosses and market goes into continuous trading mode (0026-AUCT-004)
 
     Given the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -117,7 +117,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 10000          | 10            |
 
-  Scenario: When trying to exit opening auction liquidity monitoring is triggered due to missing best bid, hence the opening auction gets extended (0026-AUCT-001, 0026-AUCT-005)
+  Scenario: When trying to exit opening auction liquidity monitoring is triggered due to missing best bid, hence the opening auction gets extended (0026-AUCT-005)
 
     Given the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -149,7 +149,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 10000          | 10            |
 
-  Scenario: When trying to exit opening auction liquidity monitoring is triggered due to insufficient supplied stake  (0026-AUCT-001,0026-AUCT-004, 0026-AUCT-005)
+  Scenario: When trying to exit opening auction liquidity monitoring is triggered due to insufficient supplied stake  (0026-AUCT-004, 0026-AUCT-005)
 
     Given the following network parameters are set:
       | name                                          | value |
@@ -216,7 +216,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
-  Scenario: Once market is in continuous trading mode: post a persistent order that should trigger liquidity auction (not enough target stake), appropriate event is sent and market in TRADING_MODE_MONITORING_AUCTION (0026-AUCT-001, 0026-AUCT-005, 0035-LIQM-003)
+  Scenario: Once market is in continuous trading mode: post a persistent order that should trigger liquidity auction (not enough target stake), appropriate event is sent and market in TRADING_MODE_MONITORING_AUCTION (0026-AUCT-005, 0035-LIQM-003)
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
@@ -264,15 +264,15 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 3030         | 1000           | 30            |
 
     Then the following events should be emitted:
-      | type                               |
-      | PositionStateEvent                 |
-      | MarginLevelsEvent                  |
-      | AccountEvent                       |
-      | LedgerMovements                    |
-      | LiquidityProvisionEvent            |
-      | OrderEvent                         |
-      | AuctionEvent                       |
-      | MarketUpdatedEvent                 |
+      | type                    |
+      | PositionStateEvent      |
+      | MarginLevelsEvent       |
+      | AccountEvent            |
+      | LedgerMovements         |
+      | LiquidityProvisionEvent |
+      | OrderEvent              |
+      | AuctionEvent            |
+      | MarketUpdatedEvent      |
     # LP repricing, checking, and cancelling emits a ton of events
     And a total of "119" events should be emitted
 
@@ -354,8 +354,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 100          | 2000           | 1             |
 
     Then the parties should have the following profit and loss:
-      | party    | volume | unrealised pnl | realised pnl |
-      | party1   | 1      | 0              | 0            |
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | 1      | 0              | 0            |
 
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
@@ -373,7 +373,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party1 | 1      | 0              | 0            |
-      #| party1 | 11     | 38             | 0            |
+    #| party1 | 11     | 38             | 0            |
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1010       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1111         | 2000           | 11            |
@@ -409,9 +409,9 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 100          | 2000           | 1             |
 
     Then the parties should have the following profit and loss:
-      | party    | volume | unrealised pnl | realised pnl |
-      | party1   | 1      | 0              | 0            |
-      #| party1 | 11     | 38             | 0            |
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | 1      | 0              | 0            |
+    #| party1 | 11     | 38             | 0            |
 
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
@@ -429,7 +429,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party1 | 1      | 0              | 0            |
-      #| party1 | 11     | 38             | 0            |
+    #| party1 | 11     | 38             | 0            |
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1010       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1111         | 2000           | 11            |
@@ -488,7 +488,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
-  Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> leave auction mode (0026-AUCT-001, 0068-MATC-033,0026-AUCT-005)
+  Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> leave auction mode (0068-MATC-033,0026-AUCT-005)
 
     Given the following network parameters are set:
       | name                                          | value |
@@ -569,7 +569,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 100     | 1010      | 1030      | 3468         | 4080           | 34            |
 
-  Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity monitoring -> leave auction mode (0026-AUCT-001, 0068-MATC-033,0026-AUCT-005)
+  Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity monitoring -> leave auction mode (0068-MATC-033,0026-AUCT-005)
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
@@ -665,7 +665,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 4488         | 4488           | 44            |
 
-  Scenario: Once market is in continuous trading mode: enter price monitoring auction -> extend with liquidity monitoring auction -> leave auction mode (0026-AUCT-001, 0068-MATC-033,0026-AUCT-005)
+  Scenario: Once market is in continuous trading mode: enter price monitoring auction -> extend with liquidity monitoring auction -> leave auction mode (0068-MATC-033,0026-AUCT-005)
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
@@ -719,7 +719,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1020       | TRADING_MODE_CONTINUOUS | 100     | 1010      | 1030      | 3060         | 4000           | 30            |
 
-  Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity auction -> leave auction mode (0026-AUCT-001, 0068-MATC-033, 0026-AUCT-005)
+  Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity auction -> leave auction mode (0068-MATC-033, 0026-AUCT-005)
 
     Given the following network parameters are set:
       | name                                          | value |
@@ -795,10 +795,10 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | trading mode                    | auction trigger           | extension trigger     |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_PRICE |
 
-      #Then  the parties submit the following liquidity provision:
-      #| id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      #| lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      #| lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+    #Then  the parties submit the following liquidity provision:
+    #| id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+    #| lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
+    #| lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
 
     # increase open interest
     When the parties place the following orders with ticks:
