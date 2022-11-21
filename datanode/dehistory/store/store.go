@@ -111,8 +111,6 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, d
 		return nil, fmt.Errorf("failed to create index:%w", err)
 	}
 
-	var bootstrapPeers []string
-
 	if len(cfg.IDSeed) == 0 {
 		return nil, fmt.Errorf("the configurations id seed must be set")
 	}
@@ -121,7 +119,7 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, d
 		return nil, fmt.Errorf("chain ID must be set")
 	}
 
-	p.identity, err = createIdentityFromSeed([]byte(cfg.IDSeed))
+	p.identity, err = CreateIdentityFromSeed([]byte(cfg.IDSeed))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ipfs identity from id seed:%w", err)
 	}
@@ -136,7 +134,7 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, d
 	}
 
 	log.Debugf("ipfs swarm port:%d", cfg.SwarmPort)
-	ipfsCfg, err := createIpfsNodeConfiguration(p.log, p.identity, bootstrapPeers,
+	ipfsCfg, err := createIpfsNodeConfiguration(p.log, p.identity, cfg.BootstrapPeers,
 		cfg.SwarmPort, bool(cfg.UseIpfsDefaultPeers))
 
 	log.Debugf("ipfs bootstrap peers:%v", ipfsCfg.Bootstrap)
@@ -667,6 +665,11 @@ func createIpfsNodeConfiguration(log *logging.Logger, identity config.Identity, 
 	useIpfsDefaultPeers bool,
 ) (*config.Config, error) {
 	cfg, err := config.InitWithIdentity(identity)
+
+	// Don't try and do local node discovery with mDNS; we're probably on the internet if running
+	// for real, and in tests we explicitly want to set up our network by specifying bootstrap peers
+	cfg.Discovery.MDNS.Enabled = false
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to initiliase ipfs config:%w", err)
 	}
@@ -949,7 +952,7 @@ func (p *Store) unpinSegment(ctx context.Context, segment SegmentIndexEntry) err
 	return nil
 }
 
-func createIdentityFromSeed(seed []byte) (config.Identity, error) {
+func CreateIdentityFromSeed(seed []byte) (config.Identity, error) {
 	ident := config.Identity{}
 
 	var sk crypto.PrivKey
