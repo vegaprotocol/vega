@@ -849,17 +849,22 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	// before we perform the final settlement, in case we have unsettled trades
 	// perform the MTM settlement to settle everything
 	if mp := m.getCurrentMarkPrice(); mp != nil && m.hasTraded {
-		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
+		var id string
+		// somehow, when settling a closed market, this could be nil - at least in the integration tests
+		if m.idgen != nil {
+			id = m.idgen.NextID()
+		}
 		dummy := &types.Order{
-			ID:            m.idgen.NextID(),
+			ID:            id,
 			Price:         mp.Clone(),
-			OriginalPrice: mcmp,
+			OriginalPrice: mp,
+		}
+		if m.priceFactor != nil {
+			dummy.OriginalPrice = num.UintZero().Div(mp, m.priceFactor)
 		}
 		m.confirmMTM(ctx, dummy, nil)
+		m.hasTraded = false
 	}
-	m.hasTraded = false
-	// market is closed, final settlement
-	// call settlement and stuff
 	positions, err := m.settlement.Settle(t, m.assetDP)
 	if err != nil {
 		m.log.Error("Failed to get settle positions on market closed",
