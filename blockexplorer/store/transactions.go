@@ -106,7 +106,8 @@ func (s *Store) ListTransactions(ctx context.Context,
 	for _, row := range rows {
 		tx, err := row.ToProto()
 		if err != nil {
-			return nil, err
+			s.log.Warn(fmt.Sprintf("unable to decode transaction %s: %v", row.TxHash, err))
+			continue
 		}
 		txs = append(txs, tx)
 	}
