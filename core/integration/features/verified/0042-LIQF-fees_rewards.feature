@@ -703,8 +703,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party2 | ETH/MAR22 | sell  | 10     | 1000  | 2                | TYPE_MARKET | TIF_FOK |
 
     And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
-      | 949        | TRADING_MODE_CONTINUOUS | 6643         | 10000          | 70            | 10000              |
+      | mark price | last traded price | trading mode            | target stake | supplied stake | open interest | market value proxy |
+      | 951        | 949               | TRADING_MODE_CONTINUOUS | 6643         | 10000          | 70            | 10000              |
 
     Then the network moves ahead "1" blocks
     And the market data for the market "ETH/MAR22" should be:

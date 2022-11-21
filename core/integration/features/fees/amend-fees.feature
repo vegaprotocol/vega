@@ -141,8 +141,8 @@ Feature: Fees when amend trades
       | party   | reference | price | size delta | tif     |
       | trader4 | t4-s4-03  | 1001  | 0          | TIF_GTC |
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            |
-      | 1001       | TRADING_MODE_CONTINUOUS |
+      | mark price | last traded price | trading mode            |
+      | 1002       | 1001              | TRADING_MODE_CONTINUOUS |
     And the following trades should be executed:
       | buyer    | price | size | seller  |
       | trader3a | 1001  | 2    | trader4 |
