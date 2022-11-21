@@ -37,7 +37,7 @@ type pos struct {
 	price *num.Uint
 }
 
-// snapWrap wraps MarketPosition to implement the MarketPosition event interface so we can restore snapshots more easily.jk
+// snapWrap wraps MarketPosition to implement the MarketPosition event interface so we can restore snapshots more easily.
 type snapWrap struct {
 	*types.MarketPosition
 }

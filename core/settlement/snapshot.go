@@ -12,7 +12,6 @@ import (
 
 type SnapshotEngine struct {
 	*Engine
-	p       types.Payload
 	stopped bool
 }
 
