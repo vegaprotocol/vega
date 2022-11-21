@@ -118,6 +118,7 @@ func testRetryingNodeLastBlockRetryingWithoutSuccessfulCallsFails(t *testing.T) 
 
 func TestRetryingNode_SendTransaction(t *testing.T) {
 	t.Run("Retrying with one successful call succeeds", testRetryingNodeSendTransactionRetryingWithOneSuccessfulCallSucceeds)
+	t.Run("Retrying with a successful call but unsuccessful transaction fails", testRetryingNodeSendTransactionWithSuccessfulCallBuUnsuccessfulTxFails)
 	t.Run("Retrying without successful calls fails", testRetryingNodeSendTransactionRetryingWithoutSuccessfulCallsFails)
 }
 
@@ -149,7 +150,8 @@ func testRetryingNodeSendTransactionRetryingWithOneSuccessfulCallSucceeds(t *tes
 		Type: apipb.SubmitTransactionRequest_TYPE_SYNC,
 	}
 	expectedResponse := &apipb.SubmitTransactionResponse{
-		TxHash: expectedTxHash,
+		Success: true,
+		TxHash:  expectedTxHash,
 	}
 	adapter := newGRPCAdapterMock(t)
 	adapter.EXPECT().Host().AnyTimes().Return("test-client")
@@ -164,6 +166,54 @@ func testRetryingNodeSendTransactionRetryingWithOneSuccessfulCallSucceeds(t *tes
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, expectedResponse.TxHash, response)
+}
+
+func testRetryingNodeSendTransactionWithSuccessfulCallBuUnsuccessfulTxFails(t *testing.T) {
+	// given
+	ctx := context.Background()
+	log := newTestLogger(t)
+	expectedTxHash := vgrand.RandomStr(10)
+	tx := &commandspb.Transaction{
+		Version:   3,
+		InputData: []byte{},
+		Signature: &commandspb.Signature{
+			Value:   "345678",
+			Algo:    vgrand.RandomStr(5),
+			Version: 2,
+		},
+		From: &commandspb.Transaction_PubKey{
+			PubKey: vgrand.RandomStr(5),
+		},
+		Pow: &commandspb.ProofOfWork{
+			Tid:   vgrand.RandomStr(5),
+			Nonce: 23214,
+		},
+	}
+
+	// setup
+	request := &apipb.SubmitTransactionRequest{
+		Tx:   tx,
+		Type: apipb.SubmitTransactionRequest_TYPE_SYNC,
+	}
+	expectedResponse := &apipb.SubmitTransactionResponse{
+		Success: false,
+		TxHash:  expectedTxHash,
+		Code:    42,
+		Data:    vgrand.RandomStr(10),
+	}
+	adapter := newGRPCAdapterMock(t)
+	adapter.EXPECT().Host().AnyTimes().Return("test-client")
+	unsuccessfulCalls := adapter.EXPECT().SubmitTransaction(ctx, request).Times(2).Return(nil, assert.AnError)
+	successfulCall := adapter.EXPECT().SubmitTransaction(ctx, request).Times(1).Return(expectedResponse, nil)
+	gomock.InOrder(unsuccessfulCalls, successfulCall)
+
+	// when
+	retryingNode := node.BuildRetryingNode(log, adapter, 3)
+	response, err := retryingNode.SendTransaction(ctx, tx, apipb.SubmitTransactionRequest_TYPE_SYNC)
+
+	// then
+	require.EqualError(t, err, fmt.Sprintf("%s (%d)", expectedResponse.Data, expectedResponse.Code))
+	assert.Empty(t, response)
 }
 
 func testRetryingNodeSendTransactionRetryingWithoutSuccessfulCallsFails(t *testing.T) {
