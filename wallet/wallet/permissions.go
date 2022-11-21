@@ -45,6 +45,12 @@ func DefaultPermissions() Permissions {
 	}
 }
 
+func PermissionsWithoutRestrictions() Permissions {
+	return Permissions{
+		PublicKeys: PublicKeysPermissionWithoutRestrictions(),
+	}
+}
+
 type PermissionsSummary map[string]string
 
 type AccessMode string
@@ -98,5 +104,11 @@ func (p PublicKeysPermission) HasRestrictedKeys() bool {
 func NoPublicKeysPermission() PublicKeysPermission {
 	return PublicKeysPermission{
 		Access: NoAccess,
+	}
+}
+
+func PublicKeysPermissionWithoutRestrictions() PublicKeysPermission {
+	return PublicKeysPermission{
+		Access: ReadAccess,
 	}
 }

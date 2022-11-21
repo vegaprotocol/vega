@@ -117,6 +117,7 @@ var (
 	ErrIsolatedWalletPassphraseIsRequired                 = errors.New("the isolated wallet passphrase is required")
 	ErrLastBlockDataOrNetworkIsRequired                   = errors.New("a network or the last block data is required")
 	ErrMessageIsRequired                                  = errors.New("the message is required")
+	ErrMethodWithoutParameters                            = errors.New("this method does not take any parameters")
 	ErrMultipleNetworkSources                             = errors.New("network sources are mutually exclusive")
 	ErrNetworkAlreadyExists                               = errors.New("a network with the same name already exists")
 	ErrNetworkConfigurationDoesNotHaveGRPCNodes           = errors.New("the network does not have gRPC hosts configured")
@@ -156,6 +157,8 @@ var (
 	ErrSpecifyingNetworkAndLastBlockDataIsNotSupported    = errors.New("specifying a network and the last block data is not supported")
 	ErrSpecifyingNetworkAndNodeAddressIsNotSupported      = errors.New("specifying a network and a node address is not supported")
 	ErrSubmissionBlockHeightIsRequired                    = errors.New("the submission block height is required")
+	ErrTokenDoesNotExist                                  = errors.New("the token does not exist")
+	ErrTokenIsRequired                                    = errors.New("the token is required")
 	ErrTransactionFailed                                  = errors.New("the transaction failed")
 	ErrTransactionIsMalformed                             = errors.New("the transaction is malformed")
 	ErrUserCanceledTheRequest                             = errors.New("the user canceled the request")
@@ -164,7 +167,10 @@ var (
 	ErrWalletAlreadyExists                                = errors.New("a wallet with the same name already exists")
 	ErrWalletDoesNotExist                                 = errors.New("the wallet does not exist")
 	ErrWalletIsRequired                                   = errors.New("the wallet is required")
+	ErrWalletNameIsRequired                               = errors.New("the wallet name is required")
+	ErrWalletPassphraseIsRequired                         = errors.New("the wallet passphrase is required")
 	ErrWalletVersionIsRequired                            = errors.New("the wallet version is required")
+	ErrWrongPassphrase                                    = errors.New("wrong passphrase")
 )
 
 func applicationError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {

@@ -103,7 +103,7 @@ func BuildCmdRevokePermissions(w io.Writer, handler RevokePermissionsHandler, rf
 		"Do not ask for confirmation",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/mitchellh/mapstructure"
 )
@@ -17,7 +18,7 @@ type ClientGetPermissionsResult struct {
 }
 
 type ClientGetPermissions struct {
-	sessions *Sessions
+	sessions *session.Sessions
 }
 
 // Handle returns the permissions set on the given hostname.
@@ -59,7 +60,7 @@ func validateGetPermissionsParams(rawParams jsonrpc.Params) (ClientGetPermission
 	return params, nil
 }
 
-func NewGetPermissions(sessions *Sessions) *ClientGetPermissions {
+func NewGetPermissions(sessions *session.Sessions) *ClientGetPermissions {
 	return &ClientGetPermissions{
 		sessions: sessions,
 	}

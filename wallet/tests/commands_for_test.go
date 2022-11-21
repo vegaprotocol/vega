@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"github.com/stretchr/testify/assert"
@@ -37,27 +38,12 @@ func Command(t *testing.T, args []string) error {
 	return nil
 }
 
-type InitResponse struct {
-	RSAKeys struct {
-		PublicKeyFilePath  string `json:"publicKeyFilePath"`
-		PrivateKeyFilePath string `json:"privateKeyFilePath"`
-	} `json:"rsaKeys"`
-	NetworksHome string `json:"networksHome"`
-}
-
-func Init(t *testing.T, args []string) (*InitResponse, error) {
+func Init(t *testing.T, args []string) error {
 	t.Helper()
 	argsWithCmd := []string{"init"}
 	argsWithCmd = append(argsWithCmd, args...)
-	output, err := ExecuteCmd(t, argsWithCmd)
-	if err != nil {
-		return nil, err
-	}
-	resp := &InitResponse{}
-	if err := json.Unmarshal(output, resp); err != nil {
-		t.Fatalf("couldn't unmarshal command output: %v", err)
-	}
-	return resp, nil
+	_, err := ExecuteCmd(t, argsWithCmd)
+	return err
 }
 
 func KeyAnnotate(t *testing.T, args []string) error {
@@ -919,6 +905,74 @@ func WalletList(t *testing.T, args []string) (*ListWalletsResponse, error) {
 func WalletDelete(t *testing.T, args []string) error {
 	t.Helper()
 	argsWithCmd := []string{"delete"}
+	argsWithCmd = append(argsWithCmd, args...)
+	_, err := ExecuteCmd(t, argsWithCmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func InitAPIToken(t *testing.T, args []string) error {
+	t.Helper()
+	argsWithCmd := []string{"api-token", "init"}
+	argsWithCmd = append(argsWithCmd, args...)
+	_, err := ExecuteCmd(t, argsWithCmd)
+	return err
+}
+
+type ListAPITokensResponse struct {
+	Tokens []struct {
+		Description string    `json:"description"`
+		Token       string    `json:"token"`
+		CreatedAt   time.Time `json:"createdAt"`
+	} `json:"tokens"`
+}
+
+func APITokensList(t *testing.T, args []string) (*ListAPITokensResponse, error) {
+	t.Helper()
+	argsWithCmd := []string{"api-token", "list"}
+	argsWithCmd = append(argsWithCmd, args...)
+	output, err := ExecuteCmd(t, argsWithCmd)
+	if err != nil {
+		return nil, err
+	}
+	resp := &ListAPITokensResponse{}
+	if err := json.Unmarshal(output, resp); err != nil {
+		t.Fatalf("couldn't unmarshal command output: %v", err)
+	}
+	return resp, nil
+}
+
+type APITokenGenerateResponse struct {
+	Token string `json:"token"`
+}
+
+func APITokenGenerate(t *testing.T, args []string) (*APITokenGenerateResponse, error) {
+	t.Helper()
+	argsWithCmd := []string{"api-token", "generate"}
+	argsWithCmd = append(argsWithCmd, args...)
+	output, err := ExecuteCmd(t, argsWithCmd)
+	if err != nil {
+		return nil, err
+	}
+	resp := &APITokenGenerateResponse{}
+	if err := json.Unmarshal(output, resp); err != nil {
+		t.Fatalf("couldn't unmarshal command output: %v", err)
+	}
+	return resp, nil
+}
+
+func AssertGenerateAPIToken(t *testing.T, resp *APITokenGenerateResponse) {
+	t.Helper()
+
+	assert.NotNil(t, resp)
+	assert.NotEmpty(t, resp.Token)
+}
+
+func APITokenDelete(t *testing.T, args []string) error {
+	t.Helper()
+	argsWithCmd := []string{"api-token", "delete"}
 	argsWithCmd = append(argsWithCmd, args...)
 	_, err := ExecuteCmd(t, argsWithCmd)
 	if err != nil {

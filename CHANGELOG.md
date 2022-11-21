@@ -31,6 +31,8 @@
 - [6908](https://github.com/vegaprotocol/vega/issues/6871) - Update default retention policy
 - [6827](https://github.com/vegaprotocol/vega/issues/6615) - Add filters to `ordersConnection`
 - [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position 
+- [6819](https://github.com/vegaprotocol/vega/issues/6819) -  Support long-living token in wallet client API
+
 
 ### 🐛 Fixes
 - [6924](https://github.com/vegaprotocol/vega/issues/6924) - Fix deterministic sorting when nodes have equal scores and we have to choose who is in the signer set

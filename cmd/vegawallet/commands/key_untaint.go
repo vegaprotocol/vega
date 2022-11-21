@@ -94,7 +94,7 @@ func BuildCmdUntaintKey(w io.Writer, handler UntaintKeyHandler, rf *RootFlags) *
 		"Path to the file containing the wallet's passphrase",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }

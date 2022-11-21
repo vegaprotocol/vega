@@ -99,7 +99,7 @@ func BuildCmdGenerateKey(w io.Writer, handler GenerateKeyHandler, rf *RootFlags)
 		`Metadata to add to the generated key-pair: "my-key1:my-value1,my-key2:my-value2"`,
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }

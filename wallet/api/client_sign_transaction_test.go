@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
 	nodemock "code.vegaprotocol.io/vega/wallet/api/node/mocks"
 	"code.vegaprotocol.io/vega/wallet/api/node/types"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -21,6 +22,7 @@ func TestSignTransaction(t *testing.T) {
 	t.Run("Signing a transaction with invalid params fails", testSigningTransactionWithInvalidParamsFails)
 	t.Run("Signing a transaction with valid params succeeds", testSigningTransactionWithValidParamsSucceeds)
 	t.Run("Signing a transaction with invalid token fails", testSigningTransactionWithInvalidTokenFails)
+	t.Run("Signing a transaction with a long-living token succeeds", testSigningTransactionWithLongLivingTokenSucceeds)
 	t.Run("Signing a transaction without the needed permissions sign the transaction", testSigningTransactionWithoutNeededPermissionsDoesNotSignTransaction)
 	t.Run("Refusing the signing of a transaction does not sign the transaction", testRefusingSigningOfTransactionDoesNotSignTransaction)
 	t.Run("Cancelling the review does not sign the transaction", testCancellingTheReviewDoesNotSignTransaction)
@@ -160,8 +162,47 @@ func testSigningTransactionWithInvalidTokenFails(t *testing.T) {
 	})
 
 	// then
-	assertInvalidParams(t, errorDetails, api.ErrNoWalletConnected)
+	assertInvalidParams(t, errorDetails, session.ErrNoWalletConnected)
 	assert.Empty(t, result)
+}
+
+func testSigningTransactionWithLongLivingTokenSucceeds(t *testing.T) {
+	// given
+	ctx, traceID := contextWithTraceID()
+	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
+	wallet1, kp := walletWithKey(t)
+	token := vgrand.RandomStr(10)
+
+	// setup
+	handler := newSignTransactionHandler(t)
+	if err := handler.sessions.ConnectWalletForLongLivingConnection(token, wallet1); err != nil {
+		t.Fatalf("could not connect test wallet to a long-living sessions: %v", err)
+	}
+	// -- expected calls
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
+	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
+		BlockHeight:             100,
+		BlockHash:               vgrand.RandomStr(64),
+		ProofOfWorkHashFunction: "sha3_24_rounds",
+		ProofOfWorkDifficulty:   1,
+		ChainID:                 vgrand.RandomStr(5),
+	}, nil)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.TransactionSuccessfullySigned).Times(1)
+	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
+
+	// when
+	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
+		Token:              token,
+		PublicKey:          kp.PublicKey(),
+		EncodedTransaction: encodedTransaction,
+	})
+
+	// then
+	assert.Nil(t, errorDetails)
+	require.NotEmpty(t, result)
+	assert.NotEmpty(t, result.Tx)
 }
 
 func testSigningTransactionWithoutNeededPermissionsDoesNotSignTransaction(t *testing.T) {
@@ -405,7 +446,7 @@ type signTransactionHandler struct {
 	*api.ClientSignTransaction
 	ctrl         *gomock.Controller
 	interactor   *mocks.MockInteractor
-	sessions     *api.Sessions
+	sessions     *session.Sessions
 	nodeSelector *nodemock.MockSelector
 	node         *nodemock.MockNode
 }
@@ -431,7 +472,7 @@ func newSignTransactionHandler(t *testing.T) *signTransactionHandler {
 	nodeSelector := nodemock.NewMockSelector(ctrl)
 	interactor := mocks.NewMockInteractor(ctrl)
 
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 	node := nodemock.NewMockNode(ctrl)
 
 	return &signTransactionHandler{

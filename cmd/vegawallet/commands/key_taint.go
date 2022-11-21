@@ -101,7 +101,7 @@ func BuildCmdTaintKey(w io.Writer, handler TaintKeyHandler, rf *RootFlags) *cobr
 		"Path to the file containing the wallet's passphrase",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }

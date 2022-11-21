@@ -10,6 +10,7 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -188,7 +189,7 @@ func testRequestingPermissionsWithInvalidTokenFails(t *testing.T) {
 	})
 
 	// then
-	assertInvalidParams(t, errorDetails, api.ErrNoWalletConnected)
+	assertInvalidParams(t, errorDetails, session.ErrNoWalletConnected)
 	assert.Empty(t, result)
 }
 
@@ -627,7 +628,7 @@ type requestPermissionsHandler struct {
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
 	interactor  *mocks.MockInteractor
-	sessions    *api.Sessions
+	sessions    *session.Sessions
 }
 
 func (h *requestPermissionsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.ClientRequestPermissionsResult, *jsonrpc.ErrorDetails) {
@@ -651,7 +652,7 @@ func newRequestPermissionsHandler(t *testing.T) *requestPermissionsHandler {
 	walletStore := mocks.NewMockWalletStore(ctrl)
 	interactor := mocks.NewMockInteractor(ctrl)
 
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 
 	return &requestPermissionsHandler{
 		ClientRequestPermissions: api.NewRequestPermissions(walletStore, interactor, sessions),

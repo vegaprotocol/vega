@@ -174,7 +174,7 @@ func BuildCmdCommandSign(w io.Writer, handler SignCommandHandler, rf *RootFlags)
 		"The network the transaction will be sent to",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }

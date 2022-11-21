@@ -8,6 +8,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
+	"code.vegaprotocol.io/vega/wallet/api/mocks"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -91,7 +93,7 @@ func testAdminCloseConnectionWithValidParamsSucceeds(t *testing.T) {
 
 	// setup
 	handler := newCloseConnectionHandler(t)
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 	if _, err := sessions.ConnectWallet(hostname, expectedWallet); err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +119,7 @@ func testAdminCloseConnectionWithValidParamsSucceeds(t *testing.T) {
 
 	// then
 	require.Nil(t, errorDetails)
-	assert.NotContains(t, sessions.ListConnections(), api.Connection{
+	assert.NotContains(t, sessions.ListConnections(), session.Connection{
 		Hostname: hostname,
 		Wallet:   expectedWallet.Name(),
 	})
@@ -135,7 +137,7 @@ func testAdminCloseConnectionOnUnknownNetworkDoesNotFail(t *testing.T) {
 
 	// setup
 	handler := newCloseConnectionHandler(t)
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 	if _, err := sessions.ConnectWallet(hostname, expectedWallet); err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +165,7 @@ func testAdminCloseConnectionOnUnknownNetworkDoesNotFail(t *testing.T) {
 	require.Nil(t, errorDetails)
 	connections := sessions.ListConnections()
 	assert.Len(t, connections, 4)
-	expectedConnections := []api.Connection{
+	expectedConnections := []session.Connection{
 		{Hostname: hostname, Wallet: expectedWallet.Name()},
 		{Hostname: otherHostname, Wallet: expectedWallet.Name()},
 		{Hostname: hostname, Wallet: otherWallet.Name()},
@@ -190,7 +192,7 @@ func testAdminCloseConnectionOnUnknownHostnameDoesNotFail(t *testing.T) {
 
 	// setup
 	handler := newCloseConnectionHandler(t)
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 	if _, err := sessions.ConnectWallet(hostname, expectedWallet); err != nil {
 		t.Fatal(err)
 	}
@@ -217,7 +219,7 @@ func testAdminCloseConnectionOnUnknownHostnameDoesNotFail(t *testing.T) {
 	// then
 	require.Nil(t, errorDetails)
 	connections := sessions.ListConnections()
-	expectedConnections := []api.Connection{
+	expectedConnections := []session.Connection{
 		{Hostname: hostname, Wallet: expectedWallet.Name()},
 		{Hostname: otherHostname, Wallet: expectedWallet.Name()},
 		{Hostname: hostname, Wallet: otherWallet.Name()},
@@ -244,7 +246,7 @@ func testAdminCloseConnectionOnUnknownWalletDoesNotFail(t *testing.T) {
 
 	// setup
 	handler := newCloseConnectionHandler(t)
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 	if _, err := sessions.ConnectWallet(hostname, expectedWallet); err != nil {
 		t.Fatal(err)
 	}
@@ -271,7 +273,7 @@ func testAdminCloseConnectionOnUnknownWalletDoesNotFail(t *testing.T) {
 	// then
 	require.Nil(t, errorDetails)
 	connections := sessions.ListConnections()
-	expectedConnections := []api.Connection{
+	expectedConnections := []session.Connection{
 		{Hostname: hostname, Wallet: expectedWallet.Name()},
 		{Hostname: otherHostname, Wallet: expectedWallet.Name()},
 		{Hostname: hostname, Wallet: otherWallet.Name()},
@@ -290,6 +292,8 @@ type adminCloseConnectionHandler struct {
 	*api.AdminCloseConnection
 	ctrl            *gomock.Controller
 	servicesManager *api.ServicesManager
+	walletStore     *mocks.MockWalletStore
+	tokenStore      *mocks.MockTokenStore
 }
 
 func (h *adminCloseConnectionHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
@@ -305,10 +309,16 @@ func newCloseConnectionHandler(t *testing.T) *adminCloseConnectionHandler {
 
 	ctrl := gomock.NewController(t)
 
-	servicesManager := api.NewServicesManager()
+	walletStore := mocks.NewMockWalletStore(ctrl)
+	tokenStore := mocks.NewMockTokenStore(ctrl)
+	tokenStore.EXPECT().ListTokens().AnyTimes().Return([]session.TokenSummary{}, nil)
+	servicesManager := api.NewServicesManager(tokenStore, walletStore)
+
 	return &adminCloseConnectionHandler{
 		AdminCloseConnection: api.NewAdminCloseConnection(servicesManager),
 		ctrl:                 ctrl,
 		servicesManager:      servicesManager,
+		walletStore:          walletStore,
+		tokenStore:           tokenStore,
 	}
 }

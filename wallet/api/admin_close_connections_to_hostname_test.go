@@ -8,6 +8,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
+	"code.vegaprotocol.io/vega/wallet/api/mocks"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -81,7 +83,7 @@ func testAdminCloseConnectionsToHostnameWithValidParamsSucceeds(t *testing.T) {
 
 	// setup
 	handler := newCloseConnectionsToHostnameHandler(t)
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 	if _, err := sessions.ConnectWallet(hostname, expectedWallet1); err != nil {
 		t.Fatal(err)
 	}
@@ -112,11 +114,11 @@ func testAdminCloseConnectionsToHostnameWithValidParamsSucceeds(t *testing.T) {
 
 	// then
 	require.Nil(t, errorDetails)
-	assert.NotContains(t, sessions.ListConnections(), api.Connection{
+	assert.NotContains(t, sessions.ListConnections(), session.Connection{
 		Hostname: hostname,
 		Wallet:   expectedWallet1.Name(),
 	})
-	assert.NotContains(t, sessions.ListConnections(), api.Connection{
+	assert.NotContains(t, sessions.ListConnections(), session.Connection{
 		Hostname: hostname,
 		Wallet:   expectedWallet2.Name(),
 	})
@@ -134,7 +136,7 @@ func testAdminCloseConnectionsToHostnameOnUnknownNetworkDoesNotFail(t *testing.T
 
 	// setup
 	handler := newCloseConnectionsToHostnameHandler(t)
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 	if _, err := sessions.ConnectWallet(hostname, expectedWallet); err != nil {
 		t.Fatal(err)
 	}
@@ -161,7 +163,7 @@ func testAdminCloseConnectionsToHostnameOnUnknownNetworkDoesNotFail(t *testing.T
 	require.Nil(t, errorDetails)
 	connections := sessions.ListConnections()
 	assert.Len(t, connections, 4)
-	expectedConnections := []api.Connection{
+	expectedConnections := []session.Connection{
 		{Hostname: hostname, Wallet: expectedWallet.Name()},
 		{Hostname: otherHostname, Wallet: expectedWallet.Name()},
 		{Hostname: hostname, Wallet: otherWallet.Name()},
@@ -188,7 +190,7 @@ func testAdminCloseConnectionsToHostnameOnUnknownHostnameDoesNotFail(t *testing.
 
 	// setup
 	handler := newCloseConnectionsToHostnameHandler(t)
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 	if _, err := sessions.ConnectWallet(hostname, expectedWallet); err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +216,7 @@ func testAdminCloseConnectionsToHostnameOnUnknownHostnameDoesNotFail(t *testing.
 	// then
 	require.Nil(t, errorDetails)
 	connections := sessions.ListConnections()
-	expectedConnections := []api.Connection{
+	expectedConnections := []session.Connection{
 		{Hostname: hostname, Wallet: expectedWallet.Name()},
 		{Hostname: otherHostname, Wallet: expectedWallet.Name()},
 		{Hostname: hostname, Wallet: otherWallet.Name()},
@@ -233,6 +235,8 @@ type adminCloseConnectionsToHostnameHandler struct {
 	*api.AdminCloseConnectionsToHostname
 	ctrl            *gomock.Controller
 	servicesManager *api.ServicesManager
+	walletStore     *mocks.MockWalletStore
+	tokenStore      *mocks.MockTokenStore
 }
 
 func (h *adminCloseConnectionsToHostnameHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
@@ -248,10 +252,16 @@ func newCloseConnectionsToHostnameHandler(t *testing.T) *adminCloseConnectionsTo
 
 	ctrl := gomock.NewController(t)
 
-	servicesManager := api.NewServicesManager()
+	walletStore := mocks.NewMockWalletStore(ctrl)
+	tokenStore := mocks.NewMockTokenStore(ctrl)
+	tokenStore.EXPECT().ListTokens().AnyTimes().Return([]session.TokenSummary{}, nil)
+	servicesManager := api.NewServicesManager(tokenStore, walletStore)
+
 	return &adminCloseConnectionsToHostnameHandler{
 		AdminCloseConnectionsToHostname: api.NewAdminCloseConnectionsToHostname(servicesManager),
 		ctrl:                            ctrl,
 		servicesManager:                 servicesManager,
+		walletStore:                     walletStore,
+		tokenStore:                      tokenStore,
 	}
 }

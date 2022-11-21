@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,6 +16,7 @@ func TestDisconnectWallet(t *testing.T) {
 	t.Run("Disconnecting a wallet with invalid params fails", testDisconnectingWalletWithInvalidParamsFails)
 	t.Run("Disconnecting a wallet with valid params succeeds", testDisconnectingWalletWithValidParamsSucceeds)
 	t.Run("Disconnecting a wallet with invalid token succeeds", testDisconnectingWalletWithInvalidTokenSucceeds)
+	t.Run("Disconnecting a wallet with long-living token succeeds", testDisconnectingWalletWithLongLivingTokenSucceeds)
 }
 
 func testDisconnectingWalletWithInvalidParamsFails(t *testing.T) {
@@ -83,10 +85,32 @@ func testDisconnectingWalletWithValidParamsSucceeds(t *testing.T) {
 	assert.Nil(t, result)
 	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
 	assert.Nil(t, connectedWallet)
-	assert.Error(t, api.ErrNoWalletConnected, err)
+	assert.Error(t, session.ErrNoWalletConnected, err)
 }
 
 func testDisconnectingWalletWithInvalidTokenSucceeds(t *testing.T) {
+	// given
+	ctx := context.Background()
+	w, _ := walletWithKey(t)
+	token := vgrand.RandomStr(10)
+
+	// setup
+	handler := newDisconnectWalletHandler(t)
+	if err := handler.sessions.ConnectWalletForLongLivingConnection(token, w); err != nil {
+		t.Fatalf("could not connect test wallet to a long-living sessions: %v", err)
+	}
+
+	// when
+	result, errorDetails := handler.handle(t, ctx, api.ClientDisconnectWalletParams{
+		Token: token,
+	})
+
+	// then
+	assert.Nil(t, result)
+	assertRequestNotPermittedError(t, errorDetails, session.ErrCannotEndLongLivingSessions)
+}
+
+func testDisconnectingWalletWithLongLivingTokenSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 
@@ -105,7 +129,7 @@ func testDisconnectingWalletWithInvalidTokenSucceeds(t *testing.T) {
 
 type disconnectWalletHandler struct {
 	*api.ClientDisconnectWallet
-	sessions *api.Sessions
+	sessions *session.Sessions
 }
 
 func (h *disconnectWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
@@ -117,7 +141,7 @@ func (h *disconnectWalletHandler) handle(t *testing.T, ctx context.Context, para
 func newDisconnectWalletHandler(t *testing.T) *disconnectWalletHandler {
 	t.Helper()
 
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 
 	return &disconnectWalletHandler{
 		ClientDisconnectWallet: api.NewDisconnectWallet(sessions),

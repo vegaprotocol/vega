@@ -7,6 +7,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
+	"code.vegaprotocol.io/vega/wallet/api/mocks"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -67,7 +69,7 @@ func testStoppingNetworkWithValidParamsSucceeds(t *testing.T) {
 
 	// setup
 	handler := newStopServiceHandler(t)
-	if err := handler.servicesManager.RegisterService(name, vgrand.RandomStr(5), api.NewSessions(), dummyServiceShutdownSwitch()); err != nil {
+	if err := handler.servicesManager.RegisterService(name, vgrand.RandomStr(5), session.NewSessions(), dummyServiceShutdownSwitch()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -108,6 +110,8 @@ type stopNetworkHandler struct {
 	*api.AdminStopService
 	ctrl            *gomock.Controller
 	servicesManager *api.ServicesManager
+	walletStore     *mocks.MockWalletStore
+	tokenStore      *mocks.MockTokenStore
 }
 
 func (h *stopNetworkHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
@@ -122,11 +126,17 @@ func newStopServiceHandler(t *testing.T) *stopNetworkHandler {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
-	servicesManager := api.NewServicesManager()
+
+	walletStore := mocks.NewMockWalletStore(ctrl)
+	tokenStore := mocks.NewMockTokenStore(ctrl)
+	tokenStore.EXPECT().ListTokens().AnyTimes().Return([]session.TokenSummary{}, nil)
+	servicesManager := api.NewServicesManager(tokenStore, walletStore)
 
 	return &stopNetworkHandler{
 		AdminStopService: api.NewAdminStopService(servicesManager),
 		ctrl:             ctrl,
 		servicesManager:  servicesManager,
+		walletStore:      walletStore,
+		tokenStore:       tokenStore,
 	}
 }

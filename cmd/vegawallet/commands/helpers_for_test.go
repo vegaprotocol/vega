@@ -8,11 +8,6 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 )
 
-func NewTempDir(t *testing.T) string {
-	t.Helper()
-	return t.TempDir()
-}
-
 func NewPassphraseFile(t *testing.T, path string) (string, string) {
 	t.Helper()
 	passphrase := vgrand.RandomStr(10)

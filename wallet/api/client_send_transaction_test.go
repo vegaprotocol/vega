@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
 	nodemocks "code.vegaprotocol.io/vega/wallet/api/node/mocks"
 	"code.vegaprotocol.io/vega/wallet/api/node/types"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -24,6 +25,7 @@ func TestSendTransaction(t *testing.T) {
 	t.Run("Sending a transaction with invalid params fails", testSendingTransactionWithInvalidParamsFails)
 	t.Run("Sending a transaction with valid params succeeds", testSendingTransactionWithValidParamsSucceeds)
 	t.Run("Sending a transaction with invalid token fails", testSendingTransactionWithInvalidTokenFails)
+	t.Run("Sending a transaction with a long-living token succeeds", testSendingTransactionWithILongLivingTokenSucceeds)
 	t.Run("Sending a transaction without the needed permissions send the transaction", testSendingTransactionWithoutNeededPermissionsDoesNotSendTransaction)
 	t.Run("Refusing the sending of a transaction does not send the transaction", testRefusingSendingOfTransactionDoesNotSendTransaction)
 	t.Run("Cancelling the review does not send the transaction", testCancellingTheReviewDoesNotSendTransaction)
@@ -229,8 +231,50 @@ func testSendingTransactionWithInvalidTokenFails(t *testing.T) {
 	})
 
 	// then
-	assertInvalidParams(t, errorDetails, api.ErrNoWalletConnected)
+	assertInvalidParams(t, errorDetails, session.ErrNoWalletConnected)
 	assert.Empty(t, result)
+}
+
+func testSendingTransactionWithILongLivingTokenSucceeds(t *testing.T) {
+	// given
+	ctx, traceID := contextWithTraceID()
+	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
+	wallet1, kp := walletWithKey(t)
+	token := vgrand.RandomStr(10)
+	txHash := vgrand.RandomStr(64)
+
+	// setup
+	handler := newSendTransactionHandler(t)
+	if err := handler.sessions.ConnectWalletForLongLivingConnection(token, wallet1); err != nil {
+		t.Fatalf("could not connect test wallet to a long-living sessions: %v", err)
+	}
+	// -- expected calls
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
+	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
+		BlockHeight:           100,
+		BlockHash:             vgrand.RandomStr(64),
+		ProofOfWorkDifficulty: 1,
+		ChainID:               "chain-id",
+	}, nil)
+	handler.node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return(txHash, nil)
+	handler.interactor.EXPECT().NotifySuccessfulTransaction(ctx, traceID, txHash, gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
+
+	// when
+	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
+		Token:              token,
+		PublicKey:          kp.PublicKey(),
+		SendingMode:        "TYPE_SYNC",
+		EncodedTransaction: encodedTransaction,
+	})
+
+	// then
+	assert.Nil(t, errorDetails)
+	require.NotEmpty(t, result)
+	assert.Equal(t, txHash, result.TxHash)
+	assert.NotEmpty(t, result.Tx)
 }
 
 func testSendingTransactionWithoutNeededPermissionsDoesNotSendTransaction(t *testing.T) {
@@ -528,7 +572,7 @@ type sendTransactionHandler struct {
 	*api.ClientSendTransaction
 	ctrl         *gomock.Controller
 	interactor   *mocks.MockInteractor
-	sessions     *api.Sessions
+	sessions     *session.Sessions
 	nodeSelector *nodemocks.MockSelector
 	node         *nodemocks.MockNode
 }
@@ -554,7 +598,7 @@ func newSendTransactionHandler(t *testing.T) *sendTransactionHandler {
 	nodeSelector := nodemocks.NewMockSelector(ctrl)
 	interactor := mocks.NewMockInteractor(ctrl)
 
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 	node := nodemocks.NewMockNode(ctrl)
 
 	return &sendTransactionHandler{
