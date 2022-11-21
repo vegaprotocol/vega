@@ -730,7 +730,8 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 
 	// MTM if enough time has elapsed, we are not in auction, and we have a non-zero mark price.
 	// we MTM in leaveAuction before deploying LP orders like we did before, but we do update nextMTM there
-	if mp := m.getLastTradedPrice(); mp != nil && !mp.IsZero() && !m.nextMTM.After(t) && !m.as.InAuction() {
+	mp := m.getLastTradedPrice()
+	if mp != nil && !mp.IsZero() && !m.as.InAuction() && !m.nextMTM.After(t) {
 		m.markPrice = mp.Clone()
 		m.nextMTM = t.Add(m.mtmDelta) // add delta here
 		if m.hasTraded {
@@ -765,6 +766,19 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 
 	m.updateMarketValueProxy()
 	m.updateLiquidityFee(ctx)
+	if m.hasTraded && m.closed && mp != nil {
+		// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
+		// works as expected.
+		m.markPrice = mp.Clone()
+		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
+		dummy := &types.Order{
+			ID:            m.idgen.NextID(),
+			Price:         mp.Clone(),
+			OriginalPrice: mcmp,
+		}
+		m.confirmMTM(ctx, dummy, nil)
+		m.hasTraded = false // trades have been settled
+	}
 	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
 	return m.closed
 }
@@ -846,25 +860,6 @@ func (m *Market) closeCancelledMarket(ctx context.Context) error {
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
-	// before we perform the final settlement, in case we have unsettled trades
-	// perform the MTM settlement to settle everything
-	if mp := m.getCurrentMarkPrice(); mp != nil && m.hasTraded {
-		var id string
-		// somehow, when settling a closed market, this could be nil - at least in the integration tests
-		if m.idgen != nil {
-			id = m.idgen.NextID()
-		}
-		dummy := &types.Order{
-			ID:            id,
-			Price:         mp.Clone(),
-			OriginalPrice: mp,
-		}
-		if m.priceFactor != nil {
-			dummy.OriginalPrice = num.UintZero().Div(mp, m.priceFactor)
-		}
-		m.confirmMTM(ctx, dummy, nil)
-		m.hasTraded = false
-	}
 	positions, err := m.settlement.Settle(t, m.assetDP)
 	if err != nil {
 		m.log.Error("Failed to get settle positions on market closed",
