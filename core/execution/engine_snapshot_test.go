@@ -231,7 +231,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	b, providers, err := engine.GetState(key)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, b)
-	assert.Len(t, providers, 4)
+	assert.Len(t, providers, 5)
 
 	// Turn the bytes back into a payload and restore to a new engine
 	engine2, ctrl := createEngine(t)
@@ -242,7 +242,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	err = proto.Unmarshal(b, snap)
 	assert.NoError(t, err)
 	loadStateProviders, err := engine2.LoadState(ctx, types.PayloadFromProto(snap))
-	assert.Len(t, loadStateProviders, 4)
+	assert.Len(t, loadStateProviders, 5)
 	assert.NoError(t, err)
 
 	providerMap := map[string]map[string]types.StateProvider{}
