@@ -159,19 +159,19 @@ func (p snapWrap) Price() *num.Uint {
 	if p.MarketPosition.Price != nil {
 		return p.MarketPosition.Price.Clone()
 	}
-	return nil
+	return num.UintZero()
 }
 
 func (p snapWrap) VWBuy() *num.Uint {
 	if p.VwBuy != nil {
 		return p.VwBuy.Clone()
 	}
-	return nil
+	return num.UintZero()
 }
 
 func (p snapWrap) VWSell() *num.Uint {
 	if p.VwSell != nil {
 		return p.VwSell.Clone()
 	}
-	return nil
+	return num.UintZero()
 }
