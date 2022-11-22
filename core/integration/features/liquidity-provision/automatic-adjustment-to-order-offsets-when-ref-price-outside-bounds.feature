@@ -95,7 +95,7 @@ Feature: Confirm automatic adjustments to LP orders when reference price is out 
       | buy  | 140   | 10     |
       | buy  | 9     | 0      |
 
-Scenario: 002, If the reference price itself is outside the valid price range (MID below min valid price) the order should get placed at - one tick away from it - when mid is used as a reference. (0038-OLIQ-010)
+  Scenario: 003, If the reference price itself is outside the valid price range (MID below min valid price) the order should get placed at - one tick away from it - when mid is used as a reference. (0038-OLIQ-010)
     Given the parties deposit on asset's general account the following amount:
       | party | asset | amount                 |
       | aux   | USD   | 1000000000000          |
