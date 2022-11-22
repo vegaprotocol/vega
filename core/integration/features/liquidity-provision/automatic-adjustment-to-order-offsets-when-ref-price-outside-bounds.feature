@@ -56,7 +56,7 @@ Feature: Confirm automatic adjustments to LP orders when reference price is out 
       | buy  | 140   | 1296   |
       | buy  | 9     | 0      |
 
-  Scenario: 002, If the reference price itself is outside the valid price range the order should get placed at - one tick away from it - when mid is used as a reference. (0038-OLIQ-010)
+  Scenario: 002, If the reference price itself is outside the valid price range (MID above max valid price) the order should get placed at - one tick away from it - when mid is used as a reference. (0038-OLIQ-010)
     Given the parties deposit on asset's general account the following amount:
       | party | asset | amount                 |
       | aux   | USD   | 1000000000000          |
@@ -88,8 +88,43 @@ Feature: Confirm automatic adjustments to LP orders when reference price is out 
       | sell | 2465  | 0      |
       | sell | 180   | 10     |
       | sell | 161   | 1119   |
-      | sell | 159   | 0      |
+      | buy  | 159   | 0      |
       | buy  | 149   | 1209   |
       | buy  | 140   | 10     |
       | buy  | 9     | 0      |
+
+Scenario: 002, If the reference price itself is outside the valid price range (MID below min valid price) the order should get placed at - one tick away from it - when mid is used as a reference. (0038-OLIQ-010)
+    Given the parties deposit on asset's general account the following amount:
+      | party | asset | amount                 |
+      | aux   | USD   | 1000000000000          |
+      | aux2  | USD   | 1000000000000          |
+      | lp    | USD   | 1000000000000000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 20     | submission |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 20     | submission |
+
+    Then the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux   | ETH/DEC19 | buy  | 10     | 139   | 0                | TYPE_LIMIT | TIF_GTC | bestBid   |
+      | aux2  | ETH/DEC19 | sell | 10     | 151   | 0                | TYPE_LIMIT | TIF_GTC | bestOffer |
+      | aux   | ETH/DEC19 | buy  | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | aux2  | ETH/DEC19 | sell | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |           |
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | auction trigger             | horizon | min bound | max bound |
+      | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 100     | 149       | 151       |
+
+    And the liquidity provisions should have the following states:
+      | id  | party | market    | commitment amount | status        |
+      | lp1 | lp    | ETH/DEC19 | 90000             | STATUS_ACTIVE |
+
+    Then debug detailed orderbook volumes for market "ETH/DEC19"
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 151   | 1203   |
+      | sell | 145   | 0      |
+      | buy  | 144   | 1250   |
+      | buy  | 139   | 10     |
 
