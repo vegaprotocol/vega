@@ -83,6 +83,8 @@ Feature: Confirm automatic adjustments to LP orders when reference price is out 
       | id  | party | market    | commitment amount | status        |
       | lp1 | lp    | ETH/DEC19 | 90000             | STATUS_ACTIVE |
 
+    # MID price is (140+180)/2=160, so expecting LP buy orders at 159 and LP sell orders at 161
+    # TODO: The buy orders get placed at at the min bound though
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 2465  | 0      |
@@ -120,7 +122,8 @@ Scenario: 002, If the reference price itself is outside the valid price range (M
       | id  | party | market    | commitment amount | status        |
       | lp1 | lp    | ETH/DEC19 | 90000             | STATUS_ACTIVE |
 
-    Then debug detailed orderbook volumes for market "ETH/DEC19"
+    # MID price is (139+151)/2=145, so expecting LP buy orders at 144 and LP sell orders at 146
+    # TODO: The sell orders get placed at at the max bound though
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 151   | 1203   |

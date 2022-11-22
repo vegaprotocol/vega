@@ -12,7 +12,7 @@
                 "--godog.format",
                 "pretty",
                 "-test.run",
-                "${workspaceFolder}/integration/features/settlement/settlement_at_expiry.feature"
+                "${workspaceFolder}/core/integration/features/liquidity-provision/automatic-adjustment-to-order-offsets-when-ref-price-outside-bounds.feature:96"
             ]
         },
         {
