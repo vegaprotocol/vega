@@ -576,16 +576,14 @@ func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseLi
 func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.ResponseOfferSnapshot {
 	app.log.Debug("ABCI service OfferSnapshot start")
 	snap, err := types.SnapshotFromTM(req.Snapshot)
-	// invalid hash?
 	if err != nil {
-		// sender provided an invalid snapshot, that's not exactly something we can trust
 		app.log.Error("failed to convert snapshot", logging.Error(err))
 		return tmtypes.ResponseOfferSnapshot{
 			Result: tmtypes.ResponseOfferSnapshot_REJECT_SENDER,
 		}
 	}
-	// @TODO this is a placeholder for the actual check
-	// if this node produced the wrong hash, don't accept... earlier snapshots may still be valid
+
+	// check that our unpacked snapshot's hash matches that which tendermint thinks it sent
 	if !bytes.Equal(snap.Hash, req.AppHash) {
 		app.log.Error("hash mismatch",
 			logging.String("snap.Hash", hex.EncodeToString(snap.Hash)),
@@ -594,6 +592,8 @@ func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.Response
 			Result: tmtypes.ResponseOfferSnapshot_REJECT,
 		}
 	}
+
+	// see what the snapshot engine thinks
 	if err := app.snapshot.ReceiveSnapshot(snap); err != nil {
 		ret := tmtypes.ResponseOfferSnapshot{
 			Result: tmtypes.ResponseOfferSnapshot_REJECT,
@@ -605,7 +605,7 @@ func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.Response
 		app.log.Error("snapshot rejected", logging.Error(err))
 		return ret
 	}
-	// @TODO initialise snapshot engine to restore snapshot?
+
 	return tmtypes.ResponseOfferSnapshot{
 		Result: tmtypes.ResponseOfferSnapshot_ACCEPT,
 	}
