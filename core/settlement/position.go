@@ -88,7 +88,7 @@ func (p *pos) update(evt events.MarketPosition) error {
 	return nil
 }
 
-func (p pos) isEmpty() bool {
+func (p pos) IsEmpty() bool {
 	if p.size != 0 || p.Buy() != 0 || p.Sell() != 0 {
 		return false
 	}
