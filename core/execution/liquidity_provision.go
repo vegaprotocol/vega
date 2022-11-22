@@ -336,6 +336,8 @@ func (m *Market) CancelLiquidityProvision(ctx context.Context, cancel *types.Liq
 		return ErrNotEnoughStake
 	}
 
+	defer m.releaseMarginExcess(ctx, party)
+
 	return m.cancelLiquidityProvision(ctx, party, false)
 }
 

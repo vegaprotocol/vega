@@ -476,6 +476,13 @@ func (e *Engine) AddPosition(party string, evt events.MarketPosition) {
 	_ = e.getCurrentPosition(party, evt)
 }
 
+func (e *Engine) HasPosition(party string) bool {
+	_, okPos := e.pos[party]
+	_, okTrades := e.trades[party]
+
+	return okPos && okTrades
+}
+
 func (e *Engine) rmPosition(party string) {
 	delete(e.pos, party)
 }
