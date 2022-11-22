@@ -39,6 +39,7 @@
 - [6862](https://github.com/vegaprotocol/vega/issues/6862) - Add party in account update
 - [6888](https://github.com/vegaprotocol/vega/issues/6888) - Errors on accepted transaction with an invalid state are correctly handled in the wallet API version 2
 - [6899](https://github.com/vegaprotocol/vega/issues/6899) - Upgrade to tendermint 0.34.24
+- [6894](https://github.com/vegaprotocol/vega/issues/6894) - Finer error code returned to the third-party application
 
 
 ## 0.62.1
