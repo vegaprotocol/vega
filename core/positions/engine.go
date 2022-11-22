@@ -17,6 +17,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"sort"
 	"sync"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -406,6 +407,45 @@ func (e *Engine) Parties() []string {
 	return parties
 }
 
+func (e *Engine) GetClosedPositions() []events.MarketPosition {
+	out := []events.MarketPosition{}
+
+	for _, v := range e.positions {
+		if v.Closed() {
+			e.remove(v)
+			out = append(out, v)
+		}
+	}
+
+	sort.Slice(out, func(i, j int) bool { return out[i].Party() < out[j].Party() })
+
+	return out
+}
+
+// GetOpenPositionCount returns the number of open positions in the market.
+func (e *Engine) GetOpenPositionCount() uint64 {
+	var total uint64
+	for _, mp := range e.positionsCpy {
+		if mp.Size() != 0 {
+			total++
+		}
+	}
+	return total
+}
+
+func (e *Engine) remove(p *MarketPosition) {
+	// delete from the map first
+	delete(e.positions, p.partyID)
+
+	// remove from the slice
+	for i := range e.positionsCpy {
+		if e.positionsCpy[i].Party() == p.partyID {
+			e.positionsCpy = append(e.positionsCpy[:i], e.positionsCpy[i+1:]...)
+			break
+		}
+	}
+}
+
 // I64MaxAbs - get max value based on absolute values of int64 vals
 // keep this function, perhaps we can reuse it in a numutil package
 // once we have to deal with decimals etc...
@@ -422,15 +462,4 @@ func I64MaxAbs(vals ...int64) int64 {
 		}
 	}
 	return r
-}
-
-// GetOpenPositionCount returns the number of open positions in the market.
-func (e *Engine) GetOpenPositionCount() uint64 {
-	var total uint64
-	for _, mp := range e.positionsCpy {
-		if mp.Size() != 0 {
-			total++
-		}
-	}
-	return total
 }

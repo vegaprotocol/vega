@@ -743,6 +743,20 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 			m.confirmMTM(ctx, dummy, nil)
 			m.hasTraded = false // trades have been settled
 		}
+
+		closedWithoutLP := []events.MarketPosition{}
+		closedPositions := m.position.GetClosedPositions()
+		for _, p := range closedPositions {
+			// if the party doesn't have a potential position anymore?
+			// and it's not an LP (they could just be undeployed)
+			if !m.liquidity.IsLiquidityProvider(p.Party()) {
+				closedWithoutLP = append(closedWithoutLP, p)
+			}
+		}
+
+		if len(closedWithoutLP) > 0 {
+			m.releaseExcessMargin(ctx, closedWithoutLP...)
+		}
 	}
 
 	// check auction, if any. If we leave auction, MTM is performed in this call
@@ -1257,9 +1271,10 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 	// if this position went 0
 	pos, ok := m.position.GetPositionByPartyID(partyID)
 	if !ok {
-		// position was never created or party went distressed and don't exist
-		// all good we can return
-		return
+		// the party has closed their position and it's been removed from the
+		// position engine. Let's just create an empty one, so it can be cleared
+		// down the line.
+		pos = positions.NewMarketPosition(partyID)
 	}
 	m.releaseExcessMargin(ctx, pos)
 }
@@ -1271,22 +1286,33 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 	asset, _ := m.mkt.GetAsset()
 	evts := make([]events.Event, 0, len(positions))
 	for _, pos := range positions {
+		// if the party still have a position in the settlement engine,
+		// do not remove them for now
+		if m.settlement.HasPosition(pos.Party()) {
+			continue
+		}
+
 		// now check if all buy/sell/size are 0
 		if pos.Buy() != 0 || pos.Sell() != 0 || pos.Size() != 0 || !pos.VWBuy().IsZero() || !pos.VWSell().IsZero() {
 			// position is not 0, nothing to release surely
-			return
+			continue
 		}
-		partyID := pos.Party()
 
 		transfers, err := m.collateral.ClearPartyMarginAccount(
-			ctx, partyID, m.GetID(), asset)
+			ctx, pos.Party(), m.GetID(), asset)
 		if err != nil {
 			m.log.Error("unable to clear party margin account", logging.Error(err))
 			return
 		}
-		evts = append(evts, events.NewLedgerMovements(
-			ctx, []*types.LedgerMovement{transfers}),
-		)
+
+		if transfers != nil {
+			evts = append(evts, events.NewLedgerMovements(
+				ctx, []*types.LedgerMovement{transfers}),
+			)
+		}
+
+		// we can delete the party from the map here
+		delete(m.parties, pos.Party())
 	}
 	m.broker.SendBatch(evts)
 }

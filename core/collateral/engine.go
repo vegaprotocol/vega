@@ -2374,31 +2374,36 @@ func (e *Engine) ClearPartyMarginAccount(ctx context.Context, party, market, ass
 	if err != nil {
 		return nil, err
 	}
+
+	// preevent returning empty ledger movements
+	if acc.Balance.IsZero() {
+		return nil, nil
+	}
+
 	resp := types.LedgerMovement{
 		Entries: []*types.LedgerEntry{},
 	}
 	now := e.timeService.GetTimeNow().UnixNano()
 
-	if !acc.Balance.IsZero() {
-		genAcc, err := e.GetAccountByID(e.accountID(noMarket, party, asset, types.AccountTypeGeneral))
-		if err != nil {
-			return nil, err
-		}
-
-		resp.Entries = append(resp.Entries, &types.LedgerEntry{
-			FromAccount: acc.ToDetails(),
-			ToAccount:   genAcc.ToDetails(),
-			Amount:      acc.Balance.Clone(),
-			Type:        types.TransferTypeMarginHigh,
-			Timestamp:   now,
-		})
-		if err := e.IncrementBalance(ctx, genAcc.ID, acc.Balance); err != nil {
-			return nil, err
-		}
-		if err := e.UpdateBalance(ctx, acc.ID, acc.Balance.SetUint64(0)); err != nil {
-			return nil, err
-		}
+	genAcc, err := e.GetAccountByID(e.accountID(noMarket, party, asset, types.AccountTypeGeneral))
+	if err != nil {
+		return nil, err
 	}
+
+	resp.Entries = append(resp.Entries, &types.LedgerEntry{
+		FromAccount: acc.ToDetails(),
+		ToAccount:   genAcc.ToDetails(),
+		Amount:      acc.Balance.Clone(),
+		Type:        types.TransferTypeMarginHigh,
+		Timestamp:   now,
+	})
+	if err := e.IncrementBalance(ctx, genAcc.ID, acc.Balance); err != nil {
+		return nil, err
+	}
+	if err := e.UpdateBalance(ctx, acc.ID, acc.Balance.SetUint64(0)); err != nil {
+		return nil, err
+	}
+
 	return &resp, nil
 }
 
