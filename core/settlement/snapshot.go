@@ -101,6 +101,12 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 	}
 	positions := make([]*types.MarketPosition, 0, len(e.pos))
 	for _, p := range e.pos {
+		// we could prune the data here, but the snapshot issue was the result of the market postRestore call.
+		// if _, ok := e.trades[p.party]; !ok && p.isEmpty() {
+		// position data is empty, and party has no unsettled trades
+		// this data can be excluded
+		// continue
+		// }
 		positions = append(positions, &types.MarketPosition{
 			PartyID: p.party,
 			Size:    p.size,
