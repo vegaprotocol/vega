@@ -9,8 +9,8 @@ import (
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/wallet/api/node"
-	"code.vegaprotocol.io/vega/wallet/api/node/adapters"
 	"code.vegaprotocol.io/vega/wallet/api/node/mocks"
+	"code.vegaprotocol.io/vega/wallet/api/node/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,7 +29,7 @@ func testRetryingNodeStatisticsNotRetried(t *testing.T) {
 	// setup
 	adapter := newGRPCAdapterMock(t)
 	adapter.EXPECT().Host().AnyTimes().Return("test-client")
-	adapter.EXPECT().Statistics(ctx).Times(1).Return(adapters.Statistics{}, assert.AnError)
+	adapter.EXPECT().Statistics(ctx).Times(1).Return(types.Statistics{}, assert.AnError)
 
 	// when
 	retryingNode := node.BuildRetryingNode(log, adapter, 3)
@@ -48,7 +48,7 @@ func testRetryingNodeStatisticsSucceeds(t *testing.T) {
 	// setup
 	adapter := newGRPCAdapterMock(t)
 	adapter.EXPECT().Host().AnyTimes().Return("test-client")
-	statistics := adapters.Statistics{
+	statistics := types.Statistics{
 		BlockHash:   vgrand.RandomStr(5),
 		BlockHeight: 123456,
 		ChainID:     vgrand.RandomStr(5),
@@ -76,7 +76,7 @@ func testRetryingNodeLastBlockRetryingWithOneSuccessfulCallSucceeds(t *testing.T
 	log := newTestLogger(t)
 
 	// setup
-	expectedResponse := adapters.LastBlock{
+	expectedResponse := types.LastBlock{
 		BlockHeight:             123,
 		BlockHash:               vgrand.RandomStr(5),
 		ProofOfWorkHashFunction: vgrand.RandomStr(5),
@@ -84,7 +84,7 @@ func testRetryingNodeLastBlockRetryingWithOneSuccessfulCallSucceeds(t *testing.T
 	}
 	adapter := newGRPCAdapterMock(t)
 	adapter.EXPECT().Host().AnyTimes().Return("test-client")
-	unsuccessfulCalls := adapter.EXPECT().LastBlock(ctx).Times(2).Return(adapters.LastBlock{}, assert.AnError)
+	unsuccessfulCalls := adapter.EXPECT().LastBlock(ctx).Times(2).Return(types.LastBlock{}, assert.AnError)
 	successfulCall := adapter.EXPECT().LastBlock(ctx).Times(1).Return(expectedResponse, nil)
 	gomock.InOrder(unsuccessfulCalls, successfulCall)
 
@@ -105,7 +105,7 @@ func testRetryingNodeLastBlockRetryingWithoutSuccessfulCallsFails(t *testing.T) 
 	// setup
 	adapter := newGRPCAdapterMock(t)
 	adapter.EXPECT().Host().AnyTimes().Return("test-client")
-	adapter.EXPECT().LastBlock(ctx).Times(4).Return(adapters.LastBlock{}, assert.AnError)
+	adapter.EXPECT().LastBlock(ctx).Times(4).Return(types.LastBlock{}, assert.AnError)
 
 	// when
 	retryingNode := node.BuildRetryingNode(log, adapter, 3)
@@ -212,7 +212,7 @@ func testRetryingNodeSendTransactionWithSuccessfulCallBuUnsuccessfulTxFails(t *t
 	response, err := retryingNode.SendTransaction(ctx, tx, apipb.SubmitTransactionRequest_TYPE_SYNC)
 
 	// then
-	require.EqualError(t, err, fmt.Sprintf("%s (%d)", expectedResponse.Data, expectedResponse.Code))
+	require.EqualError(t, err, fmt.Sprintf("%s (ABCI code %d)", expectedResponse.Data, expectedResponse.Code))
 	assert.Empty(t, response)
 }
 
