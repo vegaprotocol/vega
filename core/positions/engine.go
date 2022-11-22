@@ -17,6 +17,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"sort"
 	"sync"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -147,9 +148,6 @@ func (e *Engine) UnregisterOrder(ctx context.Context, order *types.Order) *Marke
 			logging.Order(*order))
 	}
 	pos.UnregisterOrder(e.log, order)
-	if pos.Closed() {
-		e.remove(pos)
-	}
 	e.broker.Send(events.NewPositionStateEvent(ctx, pos, order.MarketID))
 	return pos
 }
@@ -165,9 +163,6 @@ func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.
 	}
 
 	pos.AmendOrder(e.log, originalOrder, newOrder)
-	if pos.Closed() {
-		e.remove(pos)
-	}
 	e.broker.Send(events.NewPositionStateEvent(ctx, pos, originalOrder.MarketID))
 	return pos
 }
@@ -221,9 +216,6 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events
 	pos.size += size
 
 	e.broker.Send(events.NewPositionStateEvent(ctx, pos, trade.MarketID))
-	if pos.Closed() {
-		e.remove(pos)
-	}
 	cpy := pos.Clone()
 	return []events.MarketPosition{*cpy}
 }
@@ -266,13 +258,6 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade) []events.Market
 	// Update potential positions. Potential positions decrease for both buyer and seller.
 	buyer.buy -= int64(trade.Size)
 	seller.sell -= int64(trade.Size)
-
-	if buyer.Closed() {
-		e.remove(buyer)
-	}
-	if seller.Closed() {
-		e.remove(seller)
-	}
 
 	ret := []events.MarketPosition{
 		*buyer.Clone(),
@@ -420,6 +405,21 @@ func (e *Engine) Parties() []string {
 		parties = append(parties, v.Party())
 	}
 	return parties
+}
+
+func (e *Engine) GetClosedPositions() []events.MarketPosition {
+	out := []events.MarketPosition{}
+
+	for _, v := range e.positions {
+		if v.Closed() {
+			e.remove(v)
+			out = append(out, v)
+		}
+	}
+
+	sort.Slice(out, func(i, j int) bool { return out[i].Party() < out[j].Party() })
+
+	return out
 }
 
 // GetOpenPositionCount returns the number of open positions in the market.
