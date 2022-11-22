@@ -51,6 +51,12 @@ func (p MarketPosition) Clone() *MarketPosition {
 	return &cpy
 }
 
+func (p *MarketPosition) Closed() bool {
+	// p.size can be negative
+	// p.buy and p.sell can be only positive
+	return p.size == 0 && p.buy+p.sell == 0
+}
+
 func (p *MarketPosition) SetParty(party string) { p.partyID = party }
 
 func (p *MarketPosition) RegisterOrder(order *types.Order) {

@@ -34,7 +34,7 @@ type Config struct {
 	RetryLimit  int               `long:"max-retries" description:"Maximum number of times to try and apply snapshot chunk"`
 	Storage     string            `long:"storage" choice:"GOLevelDB" choice:"memory" description:"Storage type to use"`
 	DBPath      string            `long:"db-path" description:"Path to database"`
-	StartHeight int64             `long:"load-from-block-height" description:"Load from a local snapshot taken at the given block-height. Setting to -1 will load from the latest snapshot if it exists, 0 will force the chain to replay (default: -1)"`
+	StartHeight int64             `long:"load-from-block-height" description:"Load from a snapshot at the given block-height. Setting to -1 will load from the latest snapshot available, 0 will force the chain to replay if not using statesync"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
