@@ -38,6 +38,7 @@
 - [6332](https://github.com/vegaprotocol/vega/issues/6332) - Standardise `graphql` responses
 - [6862](https://github.com/vegaprotocol/vega/issues/6862) - Add party in account update
 - [6888](https://github.com/vegaprotocol/vega/issues/6888) - Errors on accepted transaction with an invalid state are correctly handled in the wallet API version 2
+- [6894](https://github.com/vegaprotocol/vega/issues/6894) - Finer error code returned to the third-party application
 
 
 ## 0.62.1

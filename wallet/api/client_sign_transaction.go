@@ -93,20 +93,20 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	})
 	if err != nil {
 		h.interactor.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not find a healthy node: %w", err))
-		return nil, networkError(ErrNoHealthyNodeAvailable)
+		return nil, nodeCommunicationError(ErrNoHealthyNodeAvailable)
 	}
 
 	h.interactor.Log(ctx, traceID, InfoLog, "Retrieving latest block information...")
 	lastBlockData, err := currentNode.LastBlock(ctx)
 	if err != nil {
 		h.interactor.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get the latest block from the node: %w", err))
-		return nil, networkError(ErrCouldNotGetLastBlockInformation)
+		return nil, nodeCommunicationError(ErrCouldNotGetLastBlockInformation)
 	}
 	h.interactor.Log(ctx, traceID, SuccessLog, "Latest block information has been retrieved.")
 
 	if lastBlockData.ChainID == "" {
 		h.interactor.NotifyError(ctx, traceID, NetworkError, ErrCouldNotGetChainIDFromNode)
-		return nil, networkError(ErrCouldNotGetChainIDFromNode)
+		return nil, nodeCommunicationError(ErrCouldNotGetChainIDFromNode)
 	}
 
 	// Sign the payload.

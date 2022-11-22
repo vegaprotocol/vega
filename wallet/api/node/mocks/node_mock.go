@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	v1 "code.vegaprotocol.io/vega/protos/vega/api/v1"
-	adapters "code.vegaprotocol.io/vega/wallet/api/node/adapters"
+	types "code.vegaprotocol.io/vega/wallet/api/node/types"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -51,10 +51,10 @@ func (mr *MockGRPCAdapterMockRecorder) Host() *gomock.Call {
 }
 
 // LastBlock mocks base method.
-func (m *MockGRPCAdapter) LastBlock(arg0 context.Context) (adapters.LastBlock, error) {
+func (m *MockGRPCAdapter) LastBlock(arg0 context.Context) (types.LastBlock, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LastBlock", arg0)
-	ret0, _ := ret[0].(adapters.LastBlock)
+	ret0, _ := ret[0].(types.LastBlock)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -66,10 +66,10 @@ func (mr *MockGRPCAdapterMockRecorder) LastBlock(arg0 interface{}) *gomock.Call 
 }
 
 // Statistics mocks base method.
-func (m *MockGRPCAdapter) Statistics(arg0 context.Context) (adapters.Statistics, error) {
+func (m *MockGRPCAdapter) Statistics(arg0 context.Context) (types.Statistics, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Statistics", arg0)
-	ret0, _ := ret[0].(adapters.Statistics)
+	ret0, _ := ret[0].(types.Statistics)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -294,7 +294,7 @@ func testAdminSendingTransactionWithFailedSendingFails(t *testing.T) {
 	})
 
 	// then
-	assertNetworkError(t, errorDetails, fmt.Errorf("the transaction failed: %w", assert.AnError))
+	assertNetworkError(t, errorDetails, api.ErrTransactionFailed)
 	assert.Empty(t, result)
 }
 
