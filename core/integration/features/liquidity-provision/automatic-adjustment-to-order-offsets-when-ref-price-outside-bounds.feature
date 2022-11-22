@@ -31,8 +31,8 @@ Feature: Confirm automatic adjustments to LP orders when reference price is out 
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 139    | submission |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 3000   | submission |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 10     | submission |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -49,7 +49,6 @@ Feature: Confirm automatic adjustments to LP orders when reference price is out 
       | id  | party | market    | commitment amount | status        |
       | lp1 | lp    | ETH/DEC19 | 90000             | STATUS_ACTIVE |
 
-    # Observe that given specified pegs we should have an LP buy order placed at a price of 1 and sell order placed at a price of 3160, however, since both of these fall outside of price monitoring bounds the orders gets moved accordingly (0038-OLIQ-009)
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 2465  | 0      |
@@ -66,8 +65,8 @@ Feature: Confirm automatic adjustments to LP orders when reference price is out 
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 139    | submission |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 3000   | submission |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 20     | submission |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 20     | submission |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -84,7 +83,6 @@ Feature: Confirm automatic adjustments to LP orders when reference price is out 
       | id  | party | market    | commitment amount | status        |
       | lp1 | lp    | ETH/DEC19 | 90000             | STATUS_ACTIVE |
 
-    # Observe that given specified pegs we should have an LP buy order placed at a price of 1 and sell order placed at a price of 3160, however, since both of these fall outside of price monitoring bounds the orders gets moved accordingly (0038-OLIQ-009)
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 2465  | 0      |
