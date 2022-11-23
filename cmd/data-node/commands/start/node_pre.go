@@ -237,7 +237,7 @@ func (l *NodeCommand) preRun([]string) (err error) {
 	var protocolUpgradeHandler broker.ProtocolUpgradeHandler
 
 	if l.conf.DeHistory.Enabled {
-		blockCommitHandler := snapshot.NewBlockCommitHandler(l.Log, l.snapshotService.SnapshotData, l.networkParameterService.GetByKey,
+		blockCommitHandler := dehistory.NewBlockCommitHandler(l.Log, l.conf.DeHistory, l.snapshotService.SnapshotData, l.networkParameterService.GetByKey,
 			bool(l.conf.Broker.UseEventFile), l.conf.Broker.FileEventSourceConfig.TimeBetweenBlocks.Duration)
 		onBlockCommittedHandler = blockCommitHandler.OnBlockCommitted
 		protocolUpgradeHandler = dehistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService,
