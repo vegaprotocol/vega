@@ -174,7 +174,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.TheFollowingNetworkParametersAreSet(execsetup.netParams, table)
 	})
 	s.Step(`^time is updated to "([^"]*)"$`, func(rawTime string) error {
-		steps.TimeIsUpdatedTo(execsetup.timeService, rawTime)
+		steps.TimeIsUpdatedTo(execsetup.executionEngine, execsetup.timeService, rawTime)
 		return nil
 	})
 	s.Step(`^the parties cancel the following orders:$`, func(table *godog.Table) error {
@@ -254,10 +254,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	s.Step(`the network moves ahead "([^"]+)" blocks`, func(blocks string) error {
-		return steps.TheNetworkMovesAheadNBlocks(execsetup.block, execsetup.timeService, blocks, execsetup.epochEngine)
+		return steps.TheNetworkMovesAheadNBlocks(execsetup.executionEngine, execsetup.block, execsetup.timeService, blocks, execsetup.epochEngine)
 	})
 	s.Step(`the network moves ahead "([^"]+)" with block duration of "([^"]+)"`, func(total, block string) error {
-		return steps.TheNetworkMovesAheadDurationWithBlocks(execsetup.block, execsetup.timeService, total, block)
+		return steps.TheNetworkMovesAheadDurationWithBlocks(execsetup.executionEngine, execsetup.block, execsetup.timeService, total, block)
 	})
 
 	// Assertion steps

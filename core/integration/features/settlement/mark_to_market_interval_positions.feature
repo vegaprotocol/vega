@@ -121,7 +121,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
-    And the network moves ahead "5" blocks
+    And the network moves ahead "6" blocks
 
     Then the following trades should be executed:
       | buyer           | price | size | seller           |

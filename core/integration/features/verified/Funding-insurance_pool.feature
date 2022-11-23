@@ -104,10 +104,12 @@ Feature: Position resolution case 5 lognormal risk model
       | buySideProvider | ETH/DEC19 | buy  | 290      | 120    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
 # insurance pool generation - set new mark price (and trigger closeout)
+#When the parties place the following orders with ticks:
     When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+    And the network moves ahead "1" blocks
 
     Then the following trades should be executed:
       | buyer           | price | size | seller           |
@@ -128,7 +130,7 @@ Feature: Position resolution case 5 lognormal risk model
       | buySideProvider  |  291   | 5800           | 0            |
       | aux              | 1      | -10            | 0            |
       | aux2             | -1     | 10             | 0            |
-      | lpprov           | 0      | 0              | 0            |
+      #| lpprov           | 0      | 0              | 0            |
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin  | general            |
@@ -180,7 +182,7 @@ Feature: Position resolution case 5 lognormal risk model
       | buySideProvider  | 291    | -20            | 0            |
       | aux              | 0      | 0              | -30          |
       | aux2             | 0      | 0              | 30           |
-      | lpprov           | 0      | 0              | 0            |
+      #| lpprov           | 0      | 0              | 0            |
 
     # MTM: buySideProvider's unrealised pnl has been updated from 34800 to 28980, which is 291*(140-120)=5820=34800-28980,
     # MTM: buySideProvider's margin account has been updated from 81259 to 75439, which is 291*(140-120)=5820

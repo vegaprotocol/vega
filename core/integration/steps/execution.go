@@ -20,6 +20,7 @@ import (
 
 // the interface for execution engine. The execution engine itself will be wrapped
 // so to use it in steps, we'll need to use an interface.
+//nolint:interfacebloat
 type Execution interface {
 	GetMarketData(mktID string) (types.MarketData, error)
 	GetMarketState(mktID string) (types.MarketState, error)
@@ -33,4 +34,5 @@ type Execution interface {
 	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error
 	StartOpeningAuction(ctx context.Context, marketID string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
+	BlockEnd(ctx context.Context)
 }

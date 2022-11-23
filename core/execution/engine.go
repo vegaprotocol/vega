@@ -792,6 +792,12 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	timer.EngineTimeCounterAdd()
 }
 
+func (e *Engine) BlockEnd(ctx context.Context) {
+	for _, mkt := range e.marketsCpy {
+		mkt.blockEnd(ctx)
+	}
+}
+
 func (e *Engine) GetMarketState(mktID string) (types.MarketState, error) {
 	mkt, ok := e.markets[mktID]
 	if !ok {

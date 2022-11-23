@@ -13,11 +13,14 @@
 package steps
 
 import (
+	"context"
+
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 )
 
-func TimeIsUpdatedTo(timeService *stubs.TimeStub, newTime string) {
+func TimeIsUpdatedTo(exec Execution, timeService *stubs.TimeStub, newTime string) {
 	t, err := Time(newTime)
 	panicW("date", err)
 	timeService.SetTime(t)
+	exec.BlockEnd(context.Background())
 }

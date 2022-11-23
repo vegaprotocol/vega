@@ -728,10 +728,54 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 		}
 	}
 
+	// check auction, if any. If we leave auction, MTM is performed in this call
+	inAuction := m.as.InAuction()
+	m.checkAuction(ctx, t)
+	// have we left auction -> if so, hasTraded will be set to true, but should be false
+	// so we avoid triggering a second MTM call.
+	if inAuction && !m.as.InAuction() {
+		m.hasTraded = false
+	}
+	timer.EngineTimeCounterAdd()
+
+	m.updateMarketValueProxy()
+	m.updateLiquidityFee(ctx)
+	if m.hasTraded && m.closed {
+		// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
+		// works as expected.
+		mp := m.getLastTradedPrice()
+		if mp == nil {
+			m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
+			return m.closed
+		}
+		m.markPrice = mp.Clone()
+		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
+		dummy := &types.Order{
+			ID:            m.idgen.NextID(),
+			Price:         mp,
+			OriginalPrice: mcmp,
+		}
+		m.confirmMTM(ctx, dummy, nil)
+		m.hasTraded = false // trades have been settled
+	}
+	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
+	return m.closed
+}
+
+func (m *Market) blockEnd(ctx context.Context) {
 	// MTM if enough time has elapsed, we are not in auction, and we have a non-zero mark price.
 	// we MTM in leaveAuction before deploying LP orders like we did before, but we do update nextMTM there
+	if m.idgen == nil {
+		var tID string
+		ctx, tID = vegacontext.TraceIDFromContext(ctx)
+		m.idgen = idgeneration.New(tID + crypto.HashStrToHex("blockend"+m.GetID()))
+		defer func() {
+			m.idgen = nil
+		}()
+	}
 	mp := m.getLastTradedPrice()
-	if mp != nil && !mp.IsZero() && !m.as.InAuction() && !m.nextMTM.After(t) {
+	t := m.timeService.GetTimeNow()
+	if mp != nil && !mp.IsZero() && !m.as.InAuction() && (m.nextMTM.IsZero() || !m.nextMTM.After(t)) {
 		m.markPrice = mp.Clone()
 		m.nextMTM = t.Add(m.mtmDelta) // add delta here
 		if m.hasTraded {
@@ -759,28 +803,6 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 			m.releaseExcessMargin(ctx, closedWithoutLP...)
 		}
 	}
-
-	// check auction, if any. If we leave auction, MTM is performed in this call
-	m.checkAuction(ctx, t)
-	timer.EngineTimeCounterAdd()
-
-	m.updateMarketValueProxy()
-	m.updateLiquidityFee(ctx)
-	if m.hasTraded && m.closed && mp != nil {
-		// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
-		// works as expected.
-		m.markPrice = mp.Clone()
-		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
-		dummy := &types.Order{
-			ID:            m.idgen.NextID(),
-			Price:         mp.Clone(),
-			OriginalPrice: mcmp,
-		}
-		m.confirmMTM(ctx, dummy, nil)
-		m.hasTraded = false // trades have been settled
-	}
-	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
-	return m.closed
 }
 
 func (m *Market) updateMarketValueProxy() {
