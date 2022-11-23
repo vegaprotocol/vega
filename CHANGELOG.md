@@ -44,7 +44,7 @@
 - [6899](https://github.com/vegaprotocol/vega/issues/6899) - Upgrade to tendermint 0.34.24
 - [6894](https://github.com/vegaprotocol/vega/issues/6894) - Finer error code returned to the third-party application
 - [6849](https://github.com/vegaprotocol/vega/issues/6849) - Ensure the positions are remove from the positions engine when they are closed
-
+- [6767](https://github.com/vegaprotocol/vega/issues/6767) - Protocol upgrade rejected events fail to write in the database
 
 ## 0.62.1
 
