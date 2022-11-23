@@ -494,6 +494,7 @@ func (e *Engine) removeMarket(mktID string) {
 			mkt.matching.StopSnapshots()
 			mkt.position.StopSnapshots()
 			mkt.liquidity.StopSnapshots()
+			mkt.settlement.StopSnapshots()
 			mkt.tsCalc.StopSnapshots()
 
 			copy(e.marketsCpy[i:], e.marketsCpy[i+1:])

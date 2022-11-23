@@ -512,6 +512,7 @@ create table market_data (
     market_value_proxy text,
     liquidity_provider_fee_shares jsonb,
     market_state market_state_type,
+    next_mark_to_market timestamp with time zone,
     PRIMARY KEY (synthetic_time)
 );
 

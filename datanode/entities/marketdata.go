@@ -92,6 +92,8 @@ type MarketData struct {
 	VegaTime time.Time
 	// SeqNum is the order in which the market data was received in the block
 	SeqNum uint64
+	// NextMarkToMarket is the next timestamp when the market wil be marked to market
+	NextMarkToMarket time.Time
 }
 
 type PriceMonitoringTrigger struct {
@@ -196,6 +198,7 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 	if suppliedStake, err = parseDecimal(data.SuppliedStake); err != nil {
 		return nil, err
 	}
+	nextMTM := time.Unix(0, data.NextMarkToMarket)
 
 	marketData := &MarketData{
 		MarkPrice:                  mark,
@@ -225,6 +228,7 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 		MarketValueProxy:           data.MarketValueProxy,
 		LiquidityProviderFeeShares: parseLiquidityProviderFeeShares(data.LiquidityProviderFeeShare),
 		TxHash:                     txHash,
+		NextMarkToMarket:           nextMTM,
 	}
 
 	return marketData, nil
@@ -344,7 +348,8 @@ func (md MarketData) Equal(other MarketData) bool {
 		priceMonitoringBoundsMatches(md.PriceMonitoringBounds, other.PriceMonitoringBounds) &&
 		liquidityProviderFeeShareMatches(md.LiquidityProviderFeeShares, other.LiquidityProviderFeeShares) &&
 		md.TxHash == other.TxHash &&
-		md.MarketState == other.MarketState
+		md.MarketState == other.MarketState &&
+		md.NextMarkToMarket.Equal(other.NextMarkToMarket)
 }
 
 func priceMonitoringBoundsMatches(bounds, other []*PriceMonitoringBound) bool {
@@ -404,6 +409,7 @@ func (md MarketData) ToProto() *types.MarketData {
 		PriceMonitoringBounds:     priceMonitoringBoundsToProto(md.PriceMonitoringBounds),
 		MarketValueProxy:          md.MarketValueProxy,
 		LiquidityProviderFeeShare: liquidityProviderFeeSharesToProto(md.LiquidityProviderFeeShares),
+		NextMarkToMarket:          md.NextMarkToMarket.UnixNano(),
 	}
 
 	return &result
