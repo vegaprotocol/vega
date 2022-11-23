@@ -27,6 +27,7 @@
 - [6880](https://github.com/vegaprotocol/vega/issues/6880) - Omit transactions we can't decode in block explorer transaction list
 - [6640](https://github.com/vegaprotocol/vega/issues/6640) - Mark to market to happen every N seconds.
 - [6827](https://github.com/vegaprotocol/vega/issues/6827) - Add `LastTradedPrice` field in market data
+- [6827](https://github.com/vegaprotocol/vega/issues/6615) - Add filters to `ordersConnection`
 
 ### 🐛 Fixes
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations

@@ -115,6 +115,7 @@ type ResolverRoot interface {
 	Withdrawal() WithdrawalResolver
 	DateRange() DateRangeResolver
 	LedgerEntryFilter() LedgerEntryFilterResolver
+	OrderFilter() OrderFilterResolver
 }
 
 type DirectiveRoot struct {
@@ -720,7 +721,7 @@ type ComplexityRoot struct {
 		LiquidityProvisionsConnection func(childComplexity int, partyID *string, pagination *v2.Pagination) int
 		MarketTimestamps              func(childComplexity int) int
 		OpeningAuction                func(childComplexity int) int
-		OrdersConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
+		OrdersConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter) int
 		PositionDecimalPlaces         func(childComplexity int) int
 		PriceMonitoringSettings       func(childComplexity int) int
 		Proposal                      func(childComplexity int) int
@@ -1096,7 +1097,7 @@ type ComplexityRoot struct {
 		Id                            func(childComplexity int) int
 		LiquidityProvisionsConnection func(childComplexity int, marketID *string, reference *string, pagination *v2.Pagination) int
 		MarginsConnection             func(childComplexity int, marketID *string, pagination *v2.Pagination) int
-		OrdersConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
+		OrdersConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter) int
 		PositionsConnection           func(childComplexity int, market *string, pagination *v2.Pagination) int
 		ProposalsConnection           func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		RewardSummaries               func(childComplexity int, assetID *string) int
@@ -1329,7 +1330,7 @@ type ComplexityRoot struct {
 		OracleSpec                         func(childComplexity int, oracleSpecID string) int
 		OracleSpecsConnection              func(childComplexity int, pagination *v2.Pagination) int
 		OrderByID                          func(childComplexity int, id string, version *int) int
-		OrderByReference                   func(childComplexity int, reference string) int
+		OrderByReference                   func(childComplexity int, reference string, filter *v2.OrderFilter) int
 		OrderVersionsConnection            func(childComplexity int, orderID *string, pagination *v2.Pagination) int
 		PartiesConnection                  func(childComplexity int, id *string, pagination *v2.Pagination) int
 		Party                              func(childComplexity int, id string) int
@@ -1862,7 +1863,7 @@ type MarketResolver interface {
 	LiquidityMonitoringParameters(ctx context.Context, obj *vega.Market) (*LiquidityMonitoringParameters, error)
 
 	Proposal(ctx context.Context, obj *vega.Market) (*vega.GovernanceData, error)
-	OrdersConnection(ctx context.Context, obj *vega.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.OrderConnection, error)
+	OrdersConnection(ctx context.Context, obj *vega.Market, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter) (*v2.OrderConnection, error)
 	AccountsConnection(ctx context.Context, obj *vega.Market, partyID *string, pagination *v2.Pagination) (*v2.AccountsConnection, error)
 	TradesConnection(ctx context.Context, obj *vega.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	Depth(ctx context.Context, obj *vega.Market, maxDepth *int) (*vega.MarketDepth, error)
@@ -1993,7 +1994,7 @@ type OrderUpdateResolver interface {
 	Version(ctx context.Context, obj *vega.Order) (string, error)
 }
 type PartyResolver interface {
-	OrdersConnection(ctx context.Context, obj *vega.Party, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.OrderConnection, error)
+	OrdersConnection(ctx context.Context, obj *vega.Party, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter) (*v2.OrderConnection, error)
 	TradesConnection(ctx context.Context, obj *vega.Party, marketID *string, dataRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	AccountsConnection(ctx context.Context, obj *vega.Party, marketID *string, assetID *string, typeArg *vega.AccountType, pagination *v2.Pagination) (*v2.AccountsConnection, error)
 	PositionsConnection(ctx context.Context, obj *vega.Party, market *string, pagination *v2.Pagination) (*v2.PositionConnection, error)
@@ -2085,7 +2086,7 @@ type QueryResolver interface {
 	OracleSpec(ctx context.Context, oracleSpecID string) (*vega.OracleSpec, error)
 	OracleSpecsConnection(ctx context.Context, pagination *v2.Pagination) (*v2.OracleSpecsConnection, error)
 	OrderByID(ctx context.Context, id string, version *int) (*vega.Order, error)
-	OrderByReference(ctx context.Context, reference string) (*vega.Order, error)
+	OrderByReference(ctx context.Context, reference string, filter *v2.OrderFilter) (*vega.Order, error)
 	OrderVersionsConnection(ctx context.Context, orderID *string, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	PartiesConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.PartyConnection, error)
 	Party(ctx context.Context, id string) (*vega.Party, error)
@@ -2246,6 +2247,11 @@ type DateRangeResolver interface {
 type LedgerEntryFilterResolver interface {
 	SenderAccountFilter(ctx context.Context, obj *v2.LedgerEntryFilter, data *v2.AccountFilter) error
 	ReceiverAccountFilter(ctx context.Context, obj *v2.LedgerEntryFilter, data *v2.AccountFilter) error
+}
+type OrderFilterResolver interface {
+	Status(ctx context.Context, obj *v2.OrderFilter, data []vega.Order_Status) error
+
+	TimeInForce(ctx context.Context, obj *v2.OrderFilter, data []vega.Order_TimeInForce) error
 }
 
 type executableSchema struct {
@@ -4578,7 +4584,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Market.OrdersConnection(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Market.OrdersConnection(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination), args["filter"].(*v2.OrderFilter)), true
 
 	case "Market.positionDecimalPlaces":
 		if e.complexity.Market.PositionDecimalPlaces == nil {
@@ -6315,7 +6321,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.OrdersConnection(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Party.OrdersConnection(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination), args["filter"].(*v2.OrderFilter)), true
 
 	case "Party.positionsConnection":
 		if e.complexity.Party.PositionsConnection == nil {
@@ -7474,7 +7480,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OrderByReference(childComplexity, args["reference"].(string)), true
+		return e.complexity.Query.OrderByReference(childComplexity, args["reference"].(string), args["filter"].(*v2.OrderFilter)), true
 
 	case "Query.orderVersionsConnection":
 		if e.complexity.Query.OrderVersionsConnection == nil {
@@ -9270,6 +9276,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputDateRange,
 		ec.unmarshalInputLedgerEntryFilter,
 		ec.unmarshalInputOffsetPagination,
+		ec.unmarshalInputOrderFilter,
 		ec.unmarshalInputPagination,
 	)
 	first := true
@@ -9526,6 +9533,15 @@ func (ec *executionContext) field_Market_ordersConnection_args(ctx context.Conte
 		}
 	}
 	args["pagination"] = arg1
+	var arg2 *v2.OrderFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg2, err = ec.unmarshalOOrderFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg2
 	return args, nil
 }
 
@@ -9784,6 +9800,15 @@ func (ec *executionContext) field_Party_ordersConnection_args(ctx context.Contex
 		}
 	}
 	args["pagination"] = arg1
+	var arg2 *v2.OrderFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg2, err = ec.unmarshalOOrderFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg2
 	return args, nil
 }
 
@@ -10759,6 +10784,15 @@ func (ec *executionContext) field_Query_orderByReference_args(ctx context.Contex
 		}
 	}
 	args["reference"] = arg0
+	var arg1 *v2.OrderFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg1, err = ec.unmarshalOOrderFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg1
 	return args, nil
 }
 
@@ -26970,7 +27004,7 @@ func (ec *executionContext) _Market_ordersConnection(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().OrdersConnection(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Market().OrdersConnection(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination), fc.Args["filter"].(*v2.OrderFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -38220,7 +38254,7 @@ func (ec *executionContext) _Party_ordersConnection(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().OrdersConnection(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Party().OrdersConnection(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination), fc.Args["filter"].(*v2.OrderFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -45727,7 +45761,7 @@ func (ec *executionContext) _Query_orderByReference(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OrderByReference(rctx, fc.Args["reference"].(string))
+		return ec.resolvers.Query().OrderByReference(rctx, fc.Args["reference"].(string), fc.Args["filter"].(*v2.OrderFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -59938,6 +59972,64 @@ func (ec *executionContext) unmarshalInputOffsetPagination(ctx context.Context, 
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("descending"))
 			it.Descending, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputOrderFilter(ctx context.Context, obj interface{}) (v2.OrderFilter, error) {
+	var it v2.OrderFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"status", "types", "timeInForce", "excludeLiquidity"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "status":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalOOrderStatus2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Statusᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.OrderFilter().Status(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "types":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("types"))
+			it.Types, err = ec.unmarshalOOrderType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Typeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "timeInForce":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("timeInForce"))
+			data, err := ec.unmarshalOOrderTimeInForce2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_TimeInForceᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.OrderFilter().TimeInForce(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "excludeLiquidity":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("excludeLiquidity"))
+			it.ExcludeLiquidity, err = ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -80049,6 +80141,14 @@ func (ec *executionContext) marshalOOrderEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋv
 	return ret
 }
 
+func (ec *executionContext) unmarshalOOrderFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderFilter(ctx context.Context, v interface{}) (*v2.OrderFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputOrderFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOOrderRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrderError(ctx context.Context, v interface{}) (*vega.OrderError, error) {
 	if v == nil {
 		return nil, nil
@@ -80065,6 +80165,140 @@ func (ec *executionContext) marshalOOrderRejectionReason2ᚖcodeᚗvegaprotocol�
 	return res
 }
 
+func (ec *executionContext) unmarshalOOrderStatus2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Statusᚄ(ctx context.Context, v interface{}) ([]vega.Order_Status, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]vega.Order_Status, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Status(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOOrderStatus2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Statusᚄ(ctx context.Context, sel ast.SelectionSet, v []vega.Order_Status) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Status(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOOrderTimeInForce2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_TimeInForceᚄ(ctx context.Context, v interface{}) ([]vega.Order_TimeInForce, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]vega.Order_TimeInForce, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_TimeInForce(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOOrderTimeInForce2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_TimeInForceᚄ(ctx context.Context, sel ast.SelectionSet, v []vega.Order_TimeInForce) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_TimeInForce(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Type(ctx context.Context, v interface{}) (vega.Order_Type, error) {
 	res, err := marshallers.UnmarshalOrderType(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -80073,6 +80307,73 @@ func (ec *executionContext) unmarshalOOrderType2codeᚗvegaprotocolᚗioᚋvega�
 func (ec *executionContext) marshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Type(ctx context.Context, sel ast.SelectionSet, v vega.Order_Type) graphql.Marshaler {
 	res := marshallers.MarshalOrderType(v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOOrderType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Typeᚄ(ctx context.Context, v interface{}) ([]vega.Order_Type, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]vega.Order_Type, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Type(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOOrderType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Typeᚄ(ctx context.Context, sel ast.SelectionSet, v []vega.Order_Type) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Type(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOOrderUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Order) graphql.Marshaler {

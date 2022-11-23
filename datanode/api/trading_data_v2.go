@@ -1961,8 +1961,19 @@ func (t *tradingDataServiceV2) ListOrders(ctx context.Context, in *v2.ListOrders
 		liveOnly = *in.LiveOnly
 	}
 	dateRange := entities.DateRangeFromProto(in.DateRange)
+	var filter entities.OrderFilter
 
-	orders, pageInfo, err := t.orderService.ListOrders(ctx, in.PartyId, in.MarketId, in.Reference, liveOnly, pagination, dateRange)
+	if in.Filter != nil {
+		filter = entities.OrderFilter{
+			Statuses:         in.Filter.Statuses,
+			Types:            in.Filter.Types,
+			TimeInForces:     in.Filter.TimeInForces,
+			ExcludeLiquidity: in.Filter.ExcludeLiquidity,
+		}
+	}
+
+	orders, pageInfo, err := t.orderService.ListOrders(ctx, in.PartyId, in.MarketId, in.Reference, liveOnly,
+		pagination, dateRange, filter)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -2019,10 +2030,15 @@ func (t *tradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
+	excludeLiquidity := false
+	if req.ExcludeLiquidity != nil {
+		excludeLiquidity = *req.ExcludeLiquidity
+	}
+
 	if err := t.sendOrdersSnapshot(ctx, req, srv); err != nil {
 		return t.formatE(err)
 	}
-	ordersChan, ref := t.orderService.ObserveOrders(ctx, t.config.StreamRetries, req.MarketId, req.PartyId)
+	ordersChan, ref := t.orderService.ObserveOrders(ctx, t.config.StreamRetries, req.MarketId, req.PartyId, excludeLiquidity)
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Orders subscriber - new rpc stream", logging.Uint64("ref", ref))
@@ -2041,7 +2057,8 @@ func (t *tradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v
 }
 
 func (t *tradingDataServiceV2) sendOrdersSnapshot(ctx context.Context, req *v2.ObserveOrdersRequest, srv v2.TradingDataService_ObserveOrdersServer) error {
-	orders, pageInfo, err := t.orderService.ListOrders(ctx, req.PartyId, req.MarketId, nil, true, entities.CursorPagination{}, entities.DateRange{})
+	orders, pageInfo, err := t.orderService.ListOrders(ctx, req.PartyId, req.MarketId, nil, true, entities.CursorPagination{},
+		entities.DateRange{}, entities.OrderFilter{})
 	if err != nil {
 		return errors.Wrap(err, "fetching orders initial image")
 	}

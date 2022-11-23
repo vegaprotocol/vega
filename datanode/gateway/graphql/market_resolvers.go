@@ -67,10 +67,13 @@ func (r *myMarketResolver) Data(ctx context.Context, market *types.Market) (*typ
 	return res.MarketData, nil
 }
 
-func (r *myMarketResolver) OrdersConnection(ctx context.Context, market *types.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.OrderConnection, error) {
+func (r *myMarketResolver) OrdersConnection(ctx context.Context, market *types.Market, dateRange *v2.DateRange,
+	pagination *v2.Pagination, filter *v2.OrderFilter) (*v2.OrderConnection, error) {
 	req := v2.ListOrdersRequest{
 		MarketId:   &market.Id,
+		DateRange:  dateRange,
 		Pagination: pagination,
+		Filter:     filter,
 	}
 
 	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
