@@ -67,7 +67,7 @@ Feature: Confirm automatic adjustments to LP orders when reference price is out 
       | id  | party | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 20     | submission |
       | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 20     | submission |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 13     | submission |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 10     | submission |
       | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 9      | submission |
       | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 5      | submission |
 
@@ -89,21 +89,21 @@ Feature: Confirm automatic adjustments to LP orders when reference price is out 
     # MID price is (140+180)/2=160, 
     # LP sell order should be at 160+20=180, but since reference price itself is above the max bound it should be placed at 161 (reference + minimum valid offset)
     # 1st LP buy order should be at 160-20=140, but since that adjusted price would fall below the minimum bound of 149, it gets placed at that bound
-    # 2nd LP buy order should be at 160-13=147, since that's above the min bound it should be unaffected
+    # 2nd LP buy order should be at 160-10=150, since that's above the min bound it should be unaffected
     # 3rd LP buy order should be at 160-9=151, since that's above the min bound it should be unaffected
-    # 4th LP buy order should be at 160-5=155, since that's above the min bound it should be unaffected
+    # 4th LP buy order should be at 160-5=155, since that's above the min bound it should be unaffected 
+    # TODO: We seem to get 159 for the case above instead
     Then the order book should have the following volumes for market "ETH/DEC19":
-      | side | price | volume |
-      | sell | 2465  | 0      |
-      | sell | 180   | 10     |
-      | sell | 161   | 1119   |
-      | buy  | 159   | 0      |
-      | buy  | 155   | 1209   |
-      | buy  | 151   | 1209   |
-      | buy  | 147   | 1209   |
-      | buy  | 149   | 1209   |
-      | buy  | 140   | 10     |
-      | buy  | 9     | 0      |
+      | side | price |  volume |
+      | sell | 180   |   10    |
+      | sell | 161   | 1119    |
+      | buy  | 159   |    0    |
+      | buy  | 151   |  299    |
+      | buy  | 150   |  300    |
+      | buy  | 155   |  300    |
+      | buy  | 149   |  303    |
+      | buy  | 140   |   10    |
+      | buy  | 9     |    0    |
 
   Scenario: 003, If MID reference price is below the min valid price bound then the buy order should get placed one tick below it, if the adjusted sell order is above the max price bound it should get placed at that bound, otherwise it should remain unaffected (0038-OLIQ-xxx)
     Given the parties deposit on asset's general account the following amount:
@@ -114,11 +114,11 @@ Feature: Confirm automatic adjustments to LP orders when reference price is out 
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 20     | submission |
       | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 20     | submission |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 13     | submission |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 9      | submission |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 5      | submission |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         |  1     | submission |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         |  9     | submission |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 10     | submission |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 15     | submission |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -141,15 +141,14 @@ Feature: Confirm automatic adjustments to LP orders when reference price is out 
     # 2nd LP sell order should be at 140+9=149, since that's below the max bound it should be unaffected
     # 3rd LP sell order should be at 140+10=150, since that's below the max bound it should be unaffected
     # 4th LP sell order should be at 140+15=155, but since that adjusted price would fall above the maximum bound of 151, it gets placed at that bound
+    # TODO: we seem to be getting 151 for the case above instead
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 2465  | 0      |
-      | sell | 180   | 10     |
-      | sell | 161   | 1119   |
-      | buy  | 159   | 0      |
-      | buy  | 155   | 1209   |
-      | buy  | 151   | 1209   |
-      | buy  | 147   | 1209   |
-      | buy  | 149   | 1209   |
-      | buy  | 140   | 10     |
-      | buy  | 9     | 0      |
+      | buy  | 139   | 1295   |
+      | buy  | 125   | 10     |
+      | sell | 159   | 0      |
+      | sell | 155   | 10     |
+      | sell | 151   | 1209   |
+      | sell | 150   | 1209   |
+      | sell | 149   | 303    |
+      | sell | 141   | 320    |
