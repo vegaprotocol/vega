@@ -24,6 +24,7 @@
 - [6832](https://github.com/vegaprotocol/vega/issues/6832) - Add signature to transaction information returned by block explorer API
 - [6642](https://github.com/vegaprotocol/vega/issues/6642) - Add methods to manage the wallet service and its connections on wallet API version 2
 - [6853](https://github.com/vegaprotocol/vega/issues/6853) - Max gas and priority improvements
+- [6782](https://github.com/vegaprotocol/vega/issues/6782) - Bump embedded `postgres` version to hopefully fix `CI` instability
 - [6880](https://github.com/vegaprotocol/vega/issues/6880) - Omit transactions we can't decode in block explorer transaction list
 - [6640](https://github.com/vegaprotocol/vega/issues/6640) - Mark to market to happen every N seconds.
 - [6827](https://github.com/vegaprotocol/vega/issues/6827) - Add `LastTradedPrice` field in market data
