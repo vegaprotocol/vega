@@ -1,9 +1,5 @@
 # Changelog
 
-### 🛠 Improvements
-- [6871](https://github.com/vegaprotocol/vega/issues/6871) - Assure integration test framework throws an error when no watchers specified for a network parameter being set/updated
-- [6908](https://github.com/vegaprotocol/vega/issues/6871) - Update default retention policy
-
 ## Unreleased 0.63.0
 
 ### 🚨 Breaking changes
@@ -27,6 +23,8 @@
 - [6880](https://github.com/vegaprotocol/vega/issues/6880) - Omit transactions we can't decode in block explorer transaction list
 - [6640](https://github.com/vegaprotocol/vega/issues/6640) - Mark to market to happen every N seconds.
 - [6827](https://github.com/vegaprotocol/vega/issues/6827) - Add `LastTradedPrice` field in market data
+- [6871](https://github.com/vegaprotocol/vega/issues/6871) - Assure integration test framework throws an error when no watchers specified for a network parameter being set/updated
+- [6908](https://github.com/vegaprotocol/vega/issues/6871) - Update default retention policy
 
 ### 🐛 Fixes
 - [6831](https://github.com/vegaprotocol/vega/issues/6831) - Fix settlement state in snapshots and market settlement.
@@ -45,6 +43,7 @@
 - [6894](https://github.com/vegaprotocol/vega/issues/6894) - Finer error code returned to the third-party application
 - [6849](https://github.com/vegaprotocol/vega/issues/6849) - Ensure the positions are remove from the positions engine when they are closed
 - [6896](https://github.com/vegaprotocol/vega/issues/6896) - Fix timestamps in proposals (`GQL`)
+- [6844](https://github.com/vegaprotocol/vega/issues/6844) - Use proper type in `GQL` for transfer types and some types rename
 
 
 ## 0.62.1
