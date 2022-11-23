@@ -97,8 +97,10 @@ Feature: test margin during amending orders
       | party1 | buy-ref-1  |
       | party4 | sell-ref-4 |
 
+    And the network moves ahead "1" blocks
+
+
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond |
       | party1 | USD   | ETH/MAR22 | 0      | 100000000 | 0    |
       | party4 | USD   | ETH/MAR22 | 0      | 100000000 | 0    |
-

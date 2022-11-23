@@ -12,8 +12,8 @@ import (
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
 	walletnode "code.vegaprotocol.io/vega/wallet/api/node"
-	"code.vegaprotocol.io/vega/wallet/api/node/adapters"
 	nodemocks "code.vegaprotocol.io/vega/wallet/api/node/mocks"
+	"code.vegaprotocol.io/vega/wallet/api/node/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -247,7 +247,7 @@ func testAdminSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
 		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(node, nil)
-		node.EXPECT().LastBlock(ctx).Times(1).Return(adapters.LastBlock{
+		node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
 			BlockHeight:             150,
 			BlockHash:               vgrand.RandomStr(64),
 			ProofOfWorkHashFunction: vgcrypto.Sha3,
@@ -292,7 +292,7 @@ func testAdminSignTransactionGettingInternalErrorDuringWalletVerificationFails(t
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
 		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(node, nil)
-		node.EXPECT().LastBlock(ctx).Times(1).Return(adapters.LastBlock{
+		node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
 			BlockHeight:             150,
 			BlockHash:               vgrand.RandomStr(64),
 			ProofOfWorkHashFunction: vgcrypto.Sha3,
@@ -352,7 +352,7 @@ func testAdminSignTransactionGettingInternalErrorDuringWalletRetrievalFails(t *t
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
 		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(node, nil)
-		node.EXPECT().LastBlock(ctx).Times(1).Return(adapters.LastBlock{
+		node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
 			BlockHeight:             150,
 			BlockHash:               vgrand.RandomStr(64),
 			ProofOfWorkHashFunction: vgcrypto.Sha3,

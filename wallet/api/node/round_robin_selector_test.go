@@ -7,8 +7,8 @@ import (
 
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api/node"
-	"code.vegaprotocol.io/vega/wallet/api/node/adapters"
 	nodemocks "code.vegaprotocol.io/vega/wallet/api/node/mocks"
+	"code.vegaprotocol.io/vega/wallet/api/node/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,21 +42,21 @@ func testRoundRobinSelectorReturnsTheFirstHealthyNode(t *testing.T) {
 
 	chainID := vgrand.RandomStr(5)
 
-	latestStats := adapters.Statistics{
+	latestStats := types.Statistics{
 		BlockHash:   vgrand.RandomStr(5),
 		BlockHeight: 987654321,
 		ChainID:     chainID,
 		VegaTime:    "123456789",
 	}
 
-	lateStats := adapters.Statistics{
+	lateStats := types.Statistics{
 		BlockHash:   vgrand.RandomStr(5),
 		BlockHeight: 987654310,
 		ChainID:     chainID,
 		VegaTime:    "123456780",
 	}
 
-	veryLateStats := adapters.Statistics{
+	veryLateStats := types.Statistics{
 		BlockHash:   vgrand.RandomStr(5),
 		BlockHeight: 987654300,
 		ChainID:     chainID,
@@ -175,11 +175,11 @@ func testRoundRobinSelectorReturnsTheFirstHealthyNode(t *testing.T) {
 	assert.Equal(t, "node-4", selectedNode.Host())
 
 	// given all nodes except one don't respond except one.
-	node0.EXPECT().Statistics(ctx).Times(1).Return(adapters.Statistics{}, assert.AnError)
-	node1.EXPECT().Statistics(ctx).Times(1).Return(adapters.Statistics{}, assert.AnError)
+	node0.EXPECT().Statistics(ctx).Times(1).Return(types.Statistics{}, assert.AnError)
+	node1.EXPECT().Statistics(ctx).Times(1).Return(types.Statistics{}, assert.AnError)
 	node2.EXPECT().Statistics(ctx).Times(1).Return(latestStats, nil)
-	node3.EXPECT().Statistics(ctx).Times(1).Return(adapters.Statistics{}, assert.AnError)
-	node4.EXPECT().Statistics(ctx).Times(1).Return(adapters.Statistics{}, assert.AnError)
+	node3.EXPECT().Statistics(ctx).Times(1).Return(types.Statistics{}, assert.AnError)
+	node4.EXPECT().Statistics(ctx).Times(1).Return(types.Statistics{}, assert.AnError)
 
 	// when
 	selectedNode, err = selector.Node(ctx, noReporting)
@@ -190,11 +190,11 @@ func testRoundRobinSelectorReturnsTheFirstHealthyNode(t *testing.T) {
 	assert.Equal(t, "node-2", selectedNode.Host())
 
 	// given all nodes except one don't respond except one.
-	node0.EXPECT().Statistics(ctx).Times(1).Return(adapters.Statistics{}, assert.AnError)
-	node1.EXPECT().Statistics(ctx).Times(1).Return(adapters.Statistics{}, assert.AnError)
-	node2.EXPECT().Statistics(ctx).Times(1).Return(adapters.Statistics{}, assert.AnError)
-	node3.EXPECT().Statistics(ctx).Times(1).Return(adapters.Statistics{}, assert.AnError)
-	node4.EXPECT().Statistics(ctx).Times(1).Return(adapters.Statistics{}, assert.AnError)
+	node0.EXPECT().Statistics(ctx).Times(1).Return(types.Statistics{}, assert.AnError)
+	node1.EXPECT().Statistics(ctx).Times(1).Return(types.Statistics{}, assert.AnError)
+	node2.EXPECT().Statistics(ctx).Times(1).Return(types.Statistics{}, assert.AnError)
+	node3.EXPECT().Statistics(ctx).Times(1).Return(types.Statistics{}, assert.AnError)
+	node4.EXPECT().Statistics(ctx).Times(1).Return(types.Statistics{}, assert.AnError)
 
 	// when
 	selectedNode, err = selector.Node(ctx, noReporting)

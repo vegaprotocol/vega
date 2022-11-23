@@ -136,6 +136,8 @@ Feature: Close potential positions
       | party  | reference  |
       | party1 | party1-s-2 |
 
+    And the network moves ahead "1" blocks
+
     ### balance are 0 out
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general  |
