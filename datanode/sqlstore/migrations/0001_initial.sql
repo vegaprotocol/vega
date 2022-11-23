@@ -1545,7 +1545,16 @@ CREATE VIEW protocol_upgrade_proposals_current AS (
       FROM protocol_upgrade_proposals
   ORDER BY upgrade_block_height, vega_release_tag, vega_time DESC);
 
+create table last_snapshot_span
+(
+    onerow_check  bool PRIMARY KEY DEFAULT TRUE,
+    from_height        BIGINT                   NOT NULL,
+    to_height          BIGINT                    NOT NULL
+);
+
 -- +goose Down
+DROP TABLE IF EXISTS last_snapshot_span;
+
 DROP AGGREGATE IF EXISTS public.first(anyelement);
 DROP AGGREGATE IF EXISTS public.last(anyelement);
 DROP FUNCTION IF EXISTS public.first_agg(anyelement, anyelement);
