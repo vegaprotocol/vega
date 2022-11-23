@@ -652,6 +652,8 @@ func (m *Market) GetID() string {
 }
 
 func (m *Market) PostRestore(ctx context.Context) error {
+	// load position data from positions engine, same as before
+	m.settlement.Update(m.position.Positions())
 	pps := m.position.Parties()
 	peggedOrder := m.peggedOrders.parked
 	parties := make(map[string]struct{}, len(pps)+len(peggedOrder))

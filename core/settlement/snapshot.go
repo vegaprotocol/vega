@@ -65,15 +65,7 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 			logging.Int("positions", len(data.Positions)),
 			logging.Int("trades", len(data.Trades)),
 		)
-		// restore positions
-		for _, p := range data.Positions {
-			e.pos[p.PartyID] = &pos{
-				MarketPosition: snapWrap{p},
-				party:          p.PartyID,
-				size:           p.Size,
-				price:          p.Price, // should be fine not cloning this value
-			}
-		}
+		// We don't restore positions here, we get those from the positions engine post restore
 		// restore trades
 		tradeMap := map[string][]*settlementTrade{}
 		for _, trade := range data.Trades {
@@ -94,34 +86,13 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 }
 
 func (e *SnapshotEngine) serialise() ([]byte, error) {
+	// we just use the embedded market positions type for the market ID
+	// positions aren't working correctly for some reason, we get them from positions engine
 	data := types.SettlementState{
 		MarketPositions: &types.MarketPositions{
 			MarketID: e.market,
 		},
 	}
-	positions := make([]*types.MarketPosition, 0, len(e.pos))
-	for _, p := range e.pos {
-		// we could prune the data here, but the snapshot issue was the result of the market postRestore call.
-		// if _, ok := e.trades[p.party]; !ok && p.isEmpty() {
-		// position data is empty, and party has no unsettled trades
-		// this data can be excluded
-		// continue
-		// }
-		positions = append(positions, &types.MarketPosition{
-			PartyID: p.party,
-			Size:    p.size,
-			Buy:     p.Buy(),
-			Sell:    p.Sell(),
-			VwBuy:   p.VWBuy(),
-			VwSell:  p.VWSell(),
-			Price:   p.price, // no need to clone, we're serialising it in this call
-		})
-	}
-	// now sort by party
-	sort.SliceStable(positions, func(i, j int) bool {
-		return positions[i].PartyID < positions[j].PartyID
-	})
-	data.MarketPositions.Positions = positions
 	// first get all parties that traded
 	tradeParties := make([]string, 0, len(e.trades))
 	tradeTotal := 0
