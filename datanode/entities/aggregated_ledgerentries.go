@@ -11,10 +11,10 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// AggregatedLedgerEntries represents the the summed amount of ledger entries for a set of accounts within a given time range.
+// AggregatedLedgerEntry represents the the summed amount of ledger entries for a set of accounts within a given time range.
 // VegaTime and Quantity will always be set. The others will be nil unless when
 // querying grouping by one of the corresponding fields is requested.
-type AggregatedLedgerEntries struct {
+type AggregatedLedgerEntry struct {
 	VegaTime     time.Time
 	Quantity     decimal.Decimal
 	TransferType *LedgerMovementType
@@ -28,8 +28,8 @@ type AggregatedLedgerEntries struct {
 	ReceiverAccountType *types.AccountType
 }
 
-func (ledgerEntries *AggregatedLedgerEntries) ToProto() *v2.AggregatedLedgerEntries {
-	lep := &v2.AggregatedLedgerEntries{}
+func (ledgerEntries *AggregatedLedgerEntry) ToProto() *v2.AggregatedLedgerEntry {
+	lep := &v2.AggregatedLedgerEntry{}
 
 	lep.Quantity = ledgerEntries.Quantity.String()
 	lep.Timestamp = ledgerEntries.VegaTime.UnixNano()
@@ -84,13 +84,13 @@ func (ledgerEntries *AggregatedLedgerEntries) ToProto() *v2.AggregatedLedgerEntr
 	return lep
 }
 
-func (ledgerEntries AggregatedLedgerEntries) Cursor() *Cursor {
+func (ledgerEntries AggregatedLedgerEntry) Cursor() *Cursor {
 	return NewCursor(AggregatedLedgerEntriesCursor{
 		VegaTime: ledgerEntries.VegaTime,
 	}.String())
 }
 
-func (ledgerEntries AggregatedLedgerEntries) ToProtoEdge(_ ...any) (*v2.AggregatedLedgerEntriesEdge, error) {
+func (ledgerEntries AggregatedLedgerEntry) ToProtoEdge(_ ...any) (*v2.AggregatedLedgerEntriesEdge, error) {
 	return &v2.AggregatedLedgerEntriesEdge{
 		Node:   ledgerEntries.ToProto(),
 		Cursor: ledgerEntries.Cursor().Encode(),
