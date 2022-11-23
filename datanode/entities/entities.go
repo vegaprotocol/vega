@@ -19,7 +19,7 @@ type PagedEntity[T proto.Message] interface {
 		Withdrawal | Asset | OracleSpec | OracleData | Position | LiquidityProvision | Vote |
 		Transfer | AccountBalance | Proposal | Delegation | Node | NetworkParameter | Checkpoint |
 		StakeLinking | NodeSignature | KeyRotation | ERC20MultiSigSignerAddedEvent |
-		ERC20MultiSigSignerRemovedEvent | EthereumKeyRotation | AggregatedBalance | AggregatedLedgerEntries |
+		ERC20MultiSigSignerRemovedEvent | EthereumKeyRotation | AggregatedBalance | AggregatedLedgerEntry |
 		ProtocolUpgradeProposal
 
 	// ToProtoEdge may need some optional arguments in order to generate the proto, for example margin levels

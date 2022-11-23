@@ -346,8 +346,8 @@ models:
     model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.LedgerEntryField
   LedgerEntryFilter:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LedgerEntryFilter
-  AggregatedLedgerEntries:
-    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedLedgerEntries
+  AggregatedLedgerEntry:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedLedgerEntry
   AggregatedLedgerEntriesEdge:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedLedgerEntriesEdge
   AggregatedLedgerEntriesConnection:

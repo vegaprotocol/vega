@@ -708,7 +708,7 @@ enum LedgerEntryField {
     LEDGER_ENTRY_FIELD_TRANSFER_TYPE = 3;
 }
 
-message AggregatedLedgerEntries {
+message AggregatedLedgerEntry {
     // Removing ID field as it is not used, there is no id for an aggregated ledger entry.
     reserved 1;
     // Timestamp to of block the result is referring to, in nanoseconds since the epoch
@@ -746,7 +746,7 @@ message ListLedgerEntriesResponse {
 }
 
 message AggregatedLedgerEntriesEdge {
-    AggregatedLedgerEntries node = 1;
+    AggregatedLedgerEntry node = 1;
     string cursor = 2;
 }
 
