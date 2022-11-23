@@ -44,6 +44,7 @@
 - [6899](https://github.com/vegaprotocol/vega/issues/6899) - Upgrade to tendermint 0.34.24
 - [6894](https://github.com/vegaprotocol/vega/issues/6894) - Finer error code returned to the third-party application
 - [6849](https://github.com/vegaprotocol/vega/issues/6849) - Ensure the positions are remove from the positions engine when they are closed
+- [6896](https://github.com/vegaprotocol/vega/issues/6896) - Fix timestamps in proposals (`GQL`)
 
 
 ## 0.62.1
