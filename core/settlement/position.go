@@ -37,11 +37,6 @@ type pos struct {
 	price *num.Uint
 }
 
-// snapWrap wraps MarketPosition to implement the MarketPosition event interface so we can restore snapshots more easily.
-type snapWrap struct {
-	*types.MarketPosition
-}
-
 type mtmTransfer struct {
 	events.MarketPosition
 	transfer *types.Transfer
@@ -146,42 +141,5 @@ func (npos) VWBuy() *num.Uint {
 }
 
 func (npos) VWSell() *num.Uint {
-	return num.UintZero()
-}
-
-func (p snapWrap) Party() string {
-	return p.PartyID
-}
-
-func (p snapWrap) Size() int64 {
-	return p.MarketPosition.Size
-}
-
-func (p snapWrap) Buy() int64 {
-	return p.MarketPosition.Buy
-}
-
-func (p snapWrap) Sell() int64 {
-	return p.MarketPosition.Sell
-}
-
-func (p snapWrap) Price() *num.Uint {
-	if p.MarketPosition.Price != nil {
-		return p.MarketPosition.Price.Clone()
-	}
-	return num.UintZero()
-}
-
-func (p snapWrap) VWBuy() *num.Uint {
-	if p.VwBuy != nil {
-		return p.VwBuy.Clone()
-	}
-	return num.UintZero()
-}
-
-func (p snapWrap) VWSell() *num.Uint {
-	if p.VwSell != nil {
-		return p.VwSell.Clone()
-	}
 	return num.UintZero()
 }

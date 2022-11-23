@@ -69,7 +69,7 @@ func (md *MarketData) Flush(ctx context.Context) ([]*entities.MarketData, error)
 			data.MidPrice, data.StaticMidPrice, data.OpenInterest, data.AuctionEnd,
 			data.AuctionStart, data.IndicativePrice, data.IndicativeVolume, data.MarketTradingMode,
 			data.AuctionTrigger, data.ExtensionTrigger, data.TargetStake, data.SuppliedStake,
-			data.PriceMonitoringBounds, data.MarketValueProxy, data.LiquidityProviderFeeShares, data.MarketState, data.NextMTM,
+			data.PriceMonitoringBounds, data.MarketValueProxy, data.LiquidityProviderFeeShares, data.MarketState, data.NextMarkToMarket,
 		})
 	}
 	defer metrics.StartSQLQuery("MarketData", "Flush")()
