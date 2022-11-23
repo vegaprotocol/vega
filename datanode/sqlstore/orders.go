@@ -284,7 +284,7 @@ func applyOrderFilter(whereClause string, args []any, filter entities.OrderFilte
 			if i > 0 {
 				states.WriteString(",")
 			}
-			states.WriteString(fmt.Sprintf("%s", nextBindVar(&args, status)))
+			states.WriteString(nextBindVar(&args, status))
 		}
 		whereClause += fmt.Sprintf(" AND status IN (%s)", states.String())
 	}
@@ -295,7 +295,7 @@ func applyOrderFilter(whereClause string, args []any, filter entities.OrderFilte
 			if i > 0 {
 				types.WriteString(",")
 			}
-			types.WriteString(fmt.Sprintf("%s", nextBindVar(&args, orderType)))
+			types.WriteString(nextBindVar(&args, orderType))
 		}
 		whereClause += fmt.Sprintf(" AND type IN (%s)", types.String())
 	}
@@ -306,7 +306,7 @@ func applyOrderFilter(whereClause string, args []any, filter entities.OrderFilte
 			if i > 0 {
 				timeInForces.WriteString(",")
 			}
-			timeInForces.WriteString(fmt.Sprintf("%s", nextBindVar(&args, timeInForce)))
+			timeInForces.WriteString(nextBindVar(&args, timeInForce))
 		}
 		whereClause += fmt.Sprintf(" AND time_in_force IN (%s)", timeInForces.String())
 	}

@@ -68,7 +68,8 @@ func (r *myMarketResolver) Data(ctx context.Context, market *types.Market) (*typ
 }
 
 func (r *myMarketResolver) OrdersConnection(ctx context.Context, market *types.Market, dateRange *v2.DateRange,
-	pagination *v2.Pagination, filter *v2.OrderFilter) (*v2.OrderConnection, error) {
+	pagination *v2.Pagination, filter *v2.OrderFilter,
+) (*v2.OrderConnection, error) {
 	req := v2.ListOrdersRequest{
 		MarketId:   &market.Id,
 		DateRange:  dateRange,

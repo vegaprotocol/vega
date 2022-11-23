@@ -1260,7 +1260,8 @@ func (r *myPartyResolver) MarginsConnection(ctx context.Context, party *types.Pa
 }
 
 func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Party, dateRange *v2.DateRange,
-	pagination *v2.Pagination, filter *v2.OrderFilter) (*v2.OrderConnection, error) {
+	pagination *v2.Pagination, filter *v2.OrderFilter,
+) (*v2.OrderConnection, error) {
 	if party == nil {
 		return nil, errors.New("party is required")
 	}
