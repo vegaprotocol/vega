@@ -11,7 +11,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [6898](https://github.com/vegaprotocol/vega/issues/6795) - allow `-snapshot.load-from-block-height=` to apply to `statesync` snapshots
+- [6898](https://github.com/vegaprotocol/vega/issues/6898) - allow `-snapshot.load-from-block-height=` to apply to `statesync` snapshots
 - [6795](https://github.com/vegaprotocol/vega/issues/6795) - max gas implementation
 - [6641](https://github.com/vegaprotocol/vega/issues/6641) - network wide limits
 - [6731](https://github.com/vegaprotocol/vega/issues/6731) - standardize on 'network' and '' for network party and no market identifiers
@@ -28,6 +28,7 @@
 - [6908](https://github.com/vegaprotocol/vega/issues/6871) - Update default retention policy
 
 ### 🐛 Fixes
+- [6924](https://github.com/vegaprotocol/vega/issues/6924) - Fix deterministic sorting when nodes have equal scores and we have to choose who is in the signer set
 - [6831](https://github.com/vegaprotocol/vega/issues/6831) - Fix settlement state in snapshots and market settlement.
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
 - [6766](https://github.com/vegaprotocol/vega/issues/6766) - Handle relative vega home path being passed in `postgres` snapshots
