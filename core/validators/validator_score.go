@@ -217,7 +217,7 @@ func getMultisigScore(log *logging.Logger, status ValidatorStatus, rawScores map
 	}
 
 	sort.SliceStable(valScores, func(i, j int) bool {
-		if valScores[i].score == valScores[j].score {
+		if valScores[i].score.Equal(valScores[j].score) {
 			return valScores[i].ID < valScores[j].ID
 		}
 		return valScores[i].score.GreaterThan(valScores[j].score)
