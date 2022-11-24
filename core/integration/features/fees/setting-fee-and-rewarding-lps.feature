@@ -448,6 +448,7 @@ Feature: Test liquidity provider reward distribution
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
+  @Panic
  Scenario: 2 LPs joining at start, unequal commitments, market settles (0042-LIQF-014)
 
     Given the parties deposit on asset's general account the following amount:
@@ -535,7 +536,7 @@ Feature: Test liquidity provider reward distribution
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 12     | ETH   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 3      | ETH   |
 
-Scenario: 2 LPs joining at start, unequal commitments, 1 leaves later (0042-LIQF-012)
+  Scenario: 2 LPs joining at start, unequal commitments, 1 leaves later (0042-LIQF-012)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |

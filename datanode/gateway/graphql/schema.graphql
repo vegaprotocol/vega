@@ -3774,14 +3774,15 @@ type RewardSummary {
 "RFC3339Nano value for time"
 scalar Timestamp
 
-type AggregatedLedgerEntries {
+type AggregatedLedgerEntry {
   "RFC3339Nano time from at which this ledger entries records were relevant"
   vegaTime: Timestamp!
   "Net amount of ledger entries for the accounts specified in the filter at this time"
   quantity: String!
   "Asset identifier, if query was grouped by asset - else null"
   assetId: ID
-  transferType: String
+  "Type of the transfer for this ledger entry"
+  transferType: TransferType
   "Party identifier, if query was grouped by sender party - else null"
   senderPartyId: ID
   "Party identifier, if query was grouped by receiver party - else null"
@@ -3797,7 +3798,7 @@ type AggregatedLedgerEntries {
 }
 
 type AggregatedLedgerEntriesEdge {
-  node: AggregatedLedgerEntries!
+  node: AggregatedLedgerEntry!
   cursor: String!
 }
 

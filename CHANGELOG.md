@@ -1,9 +1,5 @@
 # Changelog
 
-### 🛠 Improvements
-- [6871](https://github.com/vegaprotocol/vega/issues/6871) - Assure integration test framework throws an error when no watchers specified for a network parameter being set/updated
-- [6908](https://github.com/vegaprotocol/vega/issues/6871) - Update default retention policy
-
 ## Unreleased 0.63.0
 
 ### 🚨 Breaking changes
@@ -24,12 +20,16 @@
 - [6832](https://github.com/vegaprotocol/vega/issues/6832) - Add signature to transaction information returned by block explorer API
 - [6642](https://github.com/vegaprotocol/vega/issues/6642) - Add methods to manage the wallet service and its connections on wallet API version 2
 - [6853](https://github.com/vegaprotocol/vega/issues/6853) - Max gas and priority improvements
+- [6782](https://github.com/vegaprotocol/vega/issues/6782) - Bump embedded `postgres` version to hopefully fix `CI` instability
 - [6880](https://github.com/vegaprotocol/vega/issues/6880) - Omit transactions we can't decode in block explorer transaction list
 - [6640](https://github.com/vegaprotocol/vega/issues/6640) - Mark to market to happen every N seconds.
 - [6827](https://github.com/vegaprotocol/vega/issues/6827) - Add `LastTradedPrice` field in market data
+- [6871](https://github.com/vegaprotocol/vega/issues/6871) - Assure integration test framework throws an error when no watchers specified for a network parameter being set/updated
+- [6908](https://github.com/vegaprotocol/vega/issues/6871) - Update default retention policy
 - [6827](https://github.com/vegaprotocol/vega/issues/6615) - Add filters to `ordersConnection`
 
 ### 🐛 Fixes
+- [6831](https://github.com/vegaprotocol/vega/issues/6831) - Fix settlement state in snapshots and market settlement.
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
 - [6766](https://github.com/vegaprotocol/vega/issues/6766) - Handle relative vega home path being passed in `postgres` snapshots
 - [6885](https://github.com/vegaprotocol/vega/issues/6885) - Don't ignore 'bootstrap peers' `IPFS` configuration setting in `datanode`
@@ -44,6 +44,9 @@
 - [6899](https://github.com/vegaprotocol/vega/issues/6899) - Upgrade to tendermint 0.34.24
 - [6894](https://github.com/vegaprotocol/vega/issues/6894) - Finer error code returned to the third-party application
 - [6849](https://github.com/vegaprotocol/vega/issues/6849) - Ensure the positions are remove from the positions engine when they are closed
+- [6767](https://github.com/vegaprotocol/vega/issues/6767) - Protocol upgrade rejected events fail to write in the database
+- [6896](https://github.com/vegaprotocol/vega/issues/6896) - Fix timestamps in proposals (`GQL`)
+- [6844](https://github.com/vegaprotocol/vega/issues/6844) - Use proper type in `GQL` for transfer types and some types rename
 
 
 ## 0.62.1

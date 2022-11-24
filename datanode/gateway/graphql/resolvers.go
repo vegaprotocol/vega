@@ -426,17 +426,12 @@ func (r *accountUpdateResolver) PartyID(ctx context.Context, obj *v2.AccountBala
 // AggregatedLedgerEntriesResolver resolver.
 type aggregatedLedgerEntriesResolver VegaResolverRoot
 
-func (r *VegaResolverRoot) AggregatedLedgerEntries() AggregatedLedgerEntriesResolver {
+func (r *VegaResolverRoot) AggregatedLedgerEntry() AggregatedLedgerEntryResolver {
 	return (*aggregatedLedgerEntriesResolver)(r)
 }
 
-func (r *aggregatedLedgerEntriesResolver) VegaTime(ctx context.Context, obj *v2.AggregatedLedgerEntries) (int64, error) {
+func (r *aggregatedLedgerEntriesResolver) VegaTime(ctx context.Context, obj *v2.AggregatedLedgerEntry) (int64, error) {
 	return obj.Timestamp, nil
-}
-
-func (r *aggregatedLedgerEntriesResolver) TransferType(ctx context.Context, obj *v2.AggregatedLedgerEntries) (*string, error) {
-	tt := obj.TransferType.String()
-	return &tt, nil
 }
 
 // LiquidityOrderReference resolver.

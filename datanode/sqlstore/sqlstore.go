@@ -38,11 +38,11 @@ var EmbedMigrations embed.FS
 
 const SQLMigrationsDir = "migrations"
 
-func MigrateSchema(log *logging.Logger, config ConnectionConfig) error {
+func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 	goose.SetBaseFS(EmbedMigrations)
 	goose.SetLogger(log.Named("db migration").GooseLogger())
 
-	poolConfig, err := config.GetPoolConfig()
+	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
 	if err != nil {
 		return fmt.Errorf("failed to get pool config:%w", err)
 	}
@@ -50,9 +50,29 @@ func MigrateSchema(log *logging.Logger, config ConnectionConfig) error {
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
 	defer db.Close()
 
-	if err := goose.Up(db, SQLMigrationsDir); err != nil {
-		return fmt.Errorf("failed to goose up the schema: %w", err)
+	if err = goose.Up(db, SQLMigrationsDir); err != nil {
+		return fmt.Errorf("error migrating sql schema: %w", err)
 	}
+
+	return nil
+}
+
+func MigrateToSchemaVersion(log *logging.Logger, config Config, version int64) error {
+	goose.SetBaseFS(EmbedMigrations)
+	goose.SetLogger(log.Named("db migration").GooseLogger())
+
+	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get pool config:%w", err)
+	}
+
+	db := stdlib.OpenDB(*poolConfig.ConnConfig)
+	defer db.Close()
+
+	if err = goose.UpTo(db, SQLMigrationsDir, version); err != nil {
+		return fmt.Errorf("error migrating sql schema: %w", err)
+	}
+
 	return nil
 }
 

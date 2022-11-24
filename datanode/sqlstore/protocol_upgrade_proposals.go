@@ -41,6 +41,10 @@ func NewProtocolUpgradeProposals(connectionSource *ConnectionSource) *ProtocolUp
 
 func (ps *ProtocolUpgradeProposals) Add(ctx context.Context, p entities.ProtocolUpgradeProposal) error {
 	defer metrics.StartSQLQuery("ProtocolUpgradeProposals", "Add")()
+	if p.Approvers == nil {
+		p.Approvers = []string{}
+	}
+
 	_, err := ps.Connection.Exec(ctx,
 		`INSERT INTO protocol_upgrade_proposals(
 			upgrade_block_height,

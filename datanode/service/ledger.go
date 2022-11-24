@@ -24,11 +24,11 @@ import (
 type ledgerStore interface {
 	Flush(ctx context.Context) ([]entities.LedgerEntry, error)
 	Add(le entities.LedgerEntry) error
-	Query(filter *entities.LedgerEntryFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedLedgerEntries, entities.PageInfo, error)
+	Query(filter *entities.LedgerEntryFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedLedgerEntry, entities.PageInfo, error)
 }
 
 type LedgerEntriesStore interface {
-	Query(filter *entities.LedgerEntryFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedLedgerEntries, entities.PageInfo, error)
+	Query(filter *entities.LedgerEntryFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedLedgerEntry, entities.PageInfo, error)
 }
 
 type Ledger struct {
@@ -81,7 +81,7 @@ func (l *Ledger) Query(
 	filter *entities.LedgerEntryFilter,
 	dateRange entities.DateRange,
 	pagination entities.CursorPagination,
-) (*[]entities.AggregatedLedgerEntries, entities.PageInfo, error) {
+) (*[]entities.AggregatedLedgerEntry, entities.PageInfo, error) {
 	return l.store.Query(
 		filter,
 		dateRange,
