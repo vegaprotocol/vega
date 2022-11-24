@@ -54,8 +54,9 @@ func (b *Service) LoadAllSnapshotData(ctx context.Context, currentStateSnapshot 
 	b.log.Info("copying data into database", logging.Int64("database version", dbVersion))
 	// History first
 	var totalRowsCopied int64
+	var rowsCopied int64
 	for _, history := range contiguousHistory {
-		rowsCopied, err := b.loadSnapshot(ctx, history, sourceDir, dbVersion, vegaDbConn)
+		rowsCopied, dbVersion, err = b.loadSnapshot(ctx, history, sourceDir, dbVersion, vegaDbConn)
 		totalRowsCopied += rowsCopied
 		if err != nil {
 			return 0, fmt.Errorf("failed to load history snapshot %s: %w", history, err)
@@ -63,7 +64,7 @@ func (b *Service) LoadAllSnapshotData(ctx context.Context, currentStateSnapshot 
 	}
 
 	// Then current state
-	rowsCopied, err := b.loadSnapshot(ctx, currentStateSnapshot, sourceDir, dbVersion, vegaDbConn)
+	rowsCopied, _, err = b.loadSnapshot(ctx, currentStateSnapshot, sourceDir, dbVersion, vegaDbConn)
 	totalRowsCopied += rowsCopied
 	if err != nil {
 		return 0, fmt.Errorf("failed to load current state snapshot %s: %w", currentStateSnapshot, err)
@@ -91,7 +92,7 @@ type compressedFileMapping interface {
 
 func (b *Service) loadSnapshot(ctx context.Context, snapshotData compressedFileMapping, copyFromDirectory string, currentDbVersion int64,
 	vegaDbConn *pgxpool.Pool,
-) (rowsCopied int64, err error) {
+) (int64, int64, error) {
 	compressedFilePath := filepath.Join(copyFromDirectory, snapshotData.CompressedFileName())
 	decompressedFilesDestination := filepath.Join(copyFromDirectory, snapshotData.UncompressedDataDir())
 	defer func() {
@@ -101,26 +102,28 @@ func (b *Service) loadSnapshot(ctx context.Context, snapshotData compressedFileM
 
 	snapshotDbVersion, err := fsutil.DecompressAndUntarFile(compressedFilePath, decompressedFilesDestination)
 	if err != nil {
-		return 0, fmt.Errorf("failed to decompress and untar data: %w", err)
+		return 0, currentDbVersion, fmt.Errorf("failed to decompress and untar data: %w", err)
 	}
 
-	// TODO handle loading of data from older database version by upgrading database as snapshots
-	// TODO are loaded, for now it is expected that all snapshots are from the same database version
 	if currentDbVersion != snapshotDbVersion {
-		return 0, fmt.Errorf("snapshot database version %d does not match current database version %d", snapshotDbVersion, currentDbVersion)
+		err = b.migrateDatabaseToVersion(snapshotDbVersion)
+		if err != nil {
+			return 0, currentDbVersion, fmt.Errorf("failed to migrate database from version %d to %d: %w", currentDbVersion, snapshotDbVersion, err)
+		}
+		currentDbVersion = snapshotDbVersion
 	}
 
 	b.log.Infof("copying %s into database", snapshotData.UncompressedDataDir())
 
-	rowsCopied, err = b.copyDataIntoDatabase(ctx, vegaDbConn, decompressedFilesDestination,
+	rowsCopied, err := b.copyDataIntoDatabase(ctx, vegaDbConn, decompressedFilesDestination,
 		filepath.Join(b.snapshotsCopyFromPath, snapshotData.UncompressedDataDir()))
 	if err != nil {
-		return 0, fmt.Errorf("failed to copy uncompressed data into the database %s : %w", snapshotData.UncompressedDataDir(), err)
+		return 0, currentDbVersion, fmt.Errorf("failed to copy uncompressed data into the database %s : %w", snapshotData.UncompressedDataDir(), err)
 	}
 
 	b.log.Infof("copied %d rows from %s into database", rowsCopied, snapshotData.UncompressedDataDir())
 
-	return rowsCopied, nil
+	return rowsCopied, currentDbVersion, nil
 }
 
 func killAllConnectionsToDatabase(ctx context.Context, connConfig sqlstore.ConnectionConfig) error {

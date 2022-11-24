@@ -33,7 +33,7 @@ func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider) {
 	if prev := len(e.generatedProviders); prev < mkts {
 		mkts -= prev
 	}
-	e.newGeneratedProviders = make([]types.StateProvider, 0, mkts*4)
+	e.newGeneratedProviders = make([]types.StateProvider, 0, mkts*5)
 	for _, m := range e.marketsCpy {
 		// ensure the next MTM timestamp is set correctly:
 		am := e.markets[m.mkt.ID]
@@ -42,7 +42,7 @@ func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider) {
 		mks = append(mks, m.getState())
 
 		if _, ok := e.generatedProviders[m.GetID()]; !ok {
-			e.newGeneratedProviders = append(e.newGeneratedProviders, m.position, m.matching, m.tsCalc, m.liquidity)
+			e.newGeneratedProviders = append(e.newGeneratedProviders, m.position, m.matching, m.tsCalc, m.liquidity, m.settlement)
 			e.generatedProviders[m.GetID()] = struct{}{}
 		}
 	}
@@ -132,7 +132,7 @@ func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMark
 			return nil, fmt.Errorf("failed to restore market: %w", err)
 		}
 
-		pvds = append(pvds, m.position, m.matching, m.tsCalc, m.liquidity)
+		pvds = append(pvds, m.position, m.matching, m.tsCalc, m.liquidity, m.settlement)
 
 		// so that we don't return them again the next state change
 		e.generatedProviders[m.GetID()] = struct{}{}

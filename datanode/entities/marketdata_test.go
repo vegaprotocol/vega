@@ -14,6 +14,7 @@ package entities_test
 
 import (
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -189,6 +190,9 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 		marketdata types.MarketData
 	}
 
+	nextMTM := time.Now()
+	zeroTime := time.Unix(0, 0)
+
 	testCases := []struct {
 		name string
 		args args
@@ -205,13 +209,15 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				MarketTradingMode: "TRADING_MODE_UNSPECIFIED",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
 				TxHash:            generateTxHash(),
+				NextMarkToMarket:  zeroTime,
 			},
 		},
 		{
 			name: "Market data with auction trigger specified",
 			args: args{
 				marketdata: types.MarketData{
-					Trigger: types.AuctionTrigger_AUCTION_TRIGGER_PRICE,
+					Trigger:          types.AuctionTrigger_AUCTION_TRIGGER_PRICE,
+					NextMarkToMarket: nextMTM.UnixNano(),
 				},
 			},
 			want: &entities.MarketData{
@@ -219,6 +225,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				MarketState:       "STATE_UNSPECIFIED",
 				MarketTradingMode: "TRADING_MODE_UNSPECIFIED",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
+				NextMarkToMarket:  nextMTM,
 				TxHash:            generateTxHash(),
 			},
 		},
@@ -228,6 +235,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				marketdata: types.MarketData{
 					Trigger:           types.AuctionTrigger_AUCTION_TRIGGER_PRICE,
 					MarketTradingMode: types.Market_TRADING_MODE_CONTINUOUS,
+					NextMarkToMarket:  nextMTM.UnixNano(),
 				},
 			},
 			want: &entities.MarketData{
@@ -235,6 +243,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				MarketTradingMode: "TRADING_MODE_CONTINUOUS",
 				MarketState:       "STATE_UNSPECIFIED",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
+				NextMarkToMarket:  nextMTM,
 				TxHash:            generateTxHash(),
 			},
 		},
@@ -247,6 +256,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 					Trigger:           types.AuctionTrigger_AUCTION_TRIGGER_PRICE,
 					MarketTradingMode: types.Market_TRADING_MODE_CONTINUOUS,
 					MarketState:       types.Market_STATE_ACTIVE,
+					NextMarkToMarket:  nextMTM.UnixNano(),
 				},
 			},
 			want: &entities.MarketData{
@@ -257,6 +267,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				MarketTradingMode: "TRADING_MODE_CONTINUOUS",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
 				TxHash:            generateTxHash(),
+				NextMarkToMarket:  nextMTM,
 			},
 		},
 		{
@@ -273,6 +284,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 							MaxValidPrice: "200",
 						},
 					},
+					NextMarkToMarket: nextMTM.UnixNano(),
 				},
 			},
 			want: &entities.MarketData{
@@ -289,7 +301,8 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 						ReferencePrice: num.NewUint(0),
 					},
 				},
-				TxHash: generateTxHash(),
+				TxHash:           generateTxHash(),
+				NextMarkToMarket: nextMTM,
 			},
 		},
 	}

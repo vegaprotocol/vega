@@ -2,10 +2,12 @@ package dehistory
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"sort"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/dehistory/aggregation"
@@ -20,6 +22,7 @@ import (
 
 type Service struct {
 	log *logging.Logger
+	cfg Config
 
 	snapshotService *snapshot.Service
 	store           *store.Store
@@ -31,6 +34,8 @@ type Service struct {
 	snapshotsCopyToDir   string
 
 	datanodeGrpcAPIPort int
+
+	publishLock sync.Mutex
 }
 
 func New(ctx context.Context, log *logging.Logger, cfg Config, deHistoryHome string, connConfig sqlstore.ConnectionConfig,
@@ -56,6 +61,7 @@ func NewWithStore(ctx context.Context, log *logging.Logger, chainID string, cfg 
 ) (*Service, error) {
 	s := &Service{
 		log:                  log,
+		cfg:                  cfg,
 		snapshotService:      snapshotService,
 		store:                deHistoryStore,
 		connConfig:           connConfig,
@@ -86,7 +92,7 @@ func NewWithStore(ctx context.Context, log *logging.Logger, chainID string, cfg 
 				case <-ctx.Done():
 					return
 				case <-ticker.C:
-					err = s.addAllSnapshotDataToStore(ctx)
+					err = s.publishSnapshots(ctx)
 					if err != nil {
 						s.log.Errorf("failed to add all snapshot data to store:%s", err)
 					}
@@ -112,6 +118,21 @@ func (d *Service) ListAllHistorySegments() ([]store.SegmentIndexEntry, error) {
 
 func (d *Service) FetchHistorySegment(ctx context.Context, historySegmentID string) (store.SegmentIndexEntry, error) {
 	return d.store.FetchHistorySegment(ctx, historySegmentID)
+}
+
+func (d *Service) CreateAndPublishSegment(ctx context.Context, chainID string, toHeight int64) error {
+	_, err := d.snapshotService.CreateSnapshot(ctx, chainID, toHeight)
+	if err != nil {
+		if !errors.Is(err, snapshot.ErrSnapshotExists) {
+			return fmt.Errorf("failed to create snapshot: %w", err)
+		}
+	}
+
+	if err = d.publishSnapshots(ctx); err != nil {
+		return fmt.Errorf("failed to publish snapshots: %w", err)
+	}
+
+	return nil
 }
 
 func (d *Service) GetActivePeerAddresses() []string {
@@ -185,7 +206,10 @@ func (d *Service) LoadAllAvailableHistoryIntoDatanode(ctx context.Context) (load
 	return loadedFrom, loadedTo, err
 }
 
-func (d *Service) addAllSnapshotDataToStore(ctx context.Context) error {
+func (d *Service) publishSnapshots(ctx context.Context) error {
+	d.publishLock.Lock()
+	defer d.publishLock.Unlock()
+
 	_, snapshots, err := snapshot.GetCurrentStateSnapshots(d.snapshotsCopyToDir)
 	if err != nil {
 		return fmt.Errorf("failed to get current state snapshots:%w", err)
