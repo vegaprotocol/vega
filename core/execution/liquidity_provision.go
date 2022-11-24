@@ -529,7 +529,7 @@ func (m *Market) scaleOffsetToMarket(offset *num.Uint) *num.Uint {
 	return num.UintZero().Div(offset, m.priceFactor)
 }
 
-func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price *num.Uint) (p *num.Uint, _ *types.PeggedOrder, _ error) {
+func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, refPrice *num.Uint) (p *num.Uint, _ *types.PeggedOrder, _ error) {
 	// now from here, we will be adjusting the offset
 	// to ensure the price is always in the range [minPrice, maxPrice]
 	// from the price monitoring engine.
@@ -556,143 +556,51 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		maxP.Div(maxP, m.priceFactor)
 		maxP.Mul(maxP, m.priceFactor)
 	}
-
-	// this is handling bestAsk / mid for ASK.
+	// sell order
 	if side == types.SideSell {
-		// that's our initial price with our offset
-		basePrice := num.Sum(price, m.scaleOffsetAsset(po.Offset))
-		// now if this price+offset is < to maxPrice,
-		// nothing needs to be changed. we return
-		// both the current price, and the offset
-		if basePrice.LTE(maxP) {
-			// now we also need to make sure we are > minPrice
-			if basePrice.GTE(minP) {
-				return basePrice, po, nil
-			}
-
-			// now we are in the case where the price we did
-			// calculate was < minPrice, we now need
-			// to place an offset which gets us at least to
-			// bestAsk/Mid
-			switch po.Reference {
-			case types.PeggedReferenceBestAsk:
-				po.Offset = num.UintZero()
-			case types.PeggedReferenceMid:
-				po.Offset.SetUint64(1)
-				if m.as.InAuction() {
-					po.Offset = num.UintZero()
-				}
-			}
+		// reference price is already at or above the max bound so the minimal viable offset is all we can do
+		if refPrice.GTE(maxP) {
+			m.applyMinViableOffset(po)
 			// ensure the offset takes into account the decimal places
-			return num.Sum(price, m.scaleOffsetAsset(po.Offset)), po, nil
+			return num.Sum(refPrice, m.scaleOffsetAsset(po.Offset)), po, nil
 		}
-
-		// now our basePrice is outside range.
-		// we have two posibilitied now, maxPrice is
-		// bigger than the price we got, then we use it
-		// or we will use price if it's higher.
-		if price.LT(maxP) {
-			// this is the case where maxPrice is > to price,
-			// then we need to adapt the offset
-			po.Offset = m.scaleOffsetToMarket(num.UintZero().Sub(maxP, price))
+		// that's our initial price with original offset
+		offsetPrice := num.Sum(refPrice, m.scaleOffsetAsset(po.Offset))
+		// adjusted price violated the upper bound
+		if offsetPrice.GT(maxP) {
+			// we need to adjust the offest so that the adjusted price ends up on the bound
+			po.Offset = m.scaleOffsetToMarket(num.UintZero().Sub(maxP, refPrice))
 			// and our price is the maxPrice
 			return maxP, po, nil
 		}
-
-		// then this is the last case, were maxPrice would be smaller
-		// than our price.
-		// then we're going to set our price to the calculated price,
-		// and the offset to 0 or 1 dependingof the reference.
-		switch po.Reference {
-		case types.PeggedReferenceBestAsk:
-			po.Offset = num.UintZero()
-		case types.PeggedReferenceMid:
-			po.Offset.SetUint64(1)
-			if m.as.InAuction() {
-				po.Offset = num.UintZero()
-			}
-		}
-		return num.Sum(price, m.scaleOffsetAsset(po.Offset)), po, nil
+		// no adjustment needed
+		return offsetPrice, po, nil
 	}
-
-	// This is handling bestBid / mid for BID
-	// first the case where we are sure to be able to price
-	offset := m.scaleOffsetAsset(po.Offset)
-	if price.GT(offset) {
-		basePrice := num.UintZero().Sub(price, offset)
-
-		// this is the case where our price is correct
-		// at this point our basePrice should not be 0
-		// and this would cover anycase where minPrice
-		// would be 0, it's safe to return this offset
-		// minPrice <= basePrice <= price
-		if basePrice.GTE(minP) {
-			if basePrice.LTE(maxP) {
-				return basePrice, po, nil
-			}
-
-			// now we are in the case where the price we did
-			// calculate was > maxPrice too, we now need
-			// to place an offset which gets us at max to
-			// at bestBid/Mid
-			switch po.Reference {
-			case types.PeggedReferenceBestBid:
-				po.Offset = num.UintZero()
-			case types.PeggedReferenceMid:
-				po.Offset.SetUint64(1)
-				if m.as.InAuction() {
-					po.Offset = num.UintZero()
-				}
-			}
-			return price.Sub(price, m.scaleOffsetAsset(po.Offset)), po, nil
-		}
-
-		// now this is the case where basePrice is < minPrice
-		// and minPrice is non-negative + inferior to bestBid
-		if !minP.IsZero() && minP.LT(price) {
-			offset = po.Offset.Sub(price, minP)
-			po.Offset = m.scaleOffsetToMarket(offset)
-			return price.Sub(price, offset), po, nil
-		}
-
-		// now we are going to handle the case where
-		// basePrice < price > minPrice
-		// in that case we will just assign the offset
-		// to the price
-		// we also know the price here cannot be 0
-		// so it's safe to have a 1 offset
-		switch po.Reference {
-		case types.PeggedReferenceBestBid:
-			po.Offset = num.UintZero()
-		case types.PeggedReferenceMid:
-			po.Offset.SetUint64(1)
-			if m.as.InAuction() {
-				po.Offset = num.UintZero()
-			}
-		}
-		return price.Sub(price, m.scaleOffsetAsset(po.Offset)), po, nil
+	// buy order
+	// reference price is already at or below the min bound so minimum viable offset is all we can do
+	if refPrice.LTE(minP) || refPrice.IsZero() {
+		m.applyMinViableOffset(po)
+		// ensure the offset takes into account the decimal places
+		return num.UintZero().Sub(refPrice, m.scaleOffsetAsset(po.Offset)), po, nil
 	}
-
-	// now at this point we know that price - offset
-	// would be negative, so we need to handle 2 cases
-	// either minPrice is a non-0 price after offset
-	// and it's smaller that price, or we will use price
-	if minP.IsZero() || minP.GT(price) {
-		// here we use the price as both case are invalid
-		// for using minPrice
-		switch po.Reference {
-		case types.PeggedReferenceBestBid:
-			po.Offset = num.UintZero()
-		case types.PeggedReferenceMid:
-			po.Offset.SetUint64(1)
-		}
-		return price.Sub(price, m.scaleOffsetAsset(po.Offset)), po, nil
+	// that's our initial price with original offset
+	offsetPrice := num.UintZero().Sub(refPrice, m.scaleOffsetAsset(po.Offset))
+	// adjusted price violated the lower bound
+	if offsetPrice.LT(minP) {
+		// we need to adjust the offest so that the adjusted price ends up on the bound
+		po.Offset = m.scaleOffsetToMarket(num.UintZero().Sub(refPrice, minP))
+		// and our price is the minPrice
+		return minP, po, nil
 	}
+	// no adjustment needed
+	return offsetPrice, po, nil
+}
 
-	// this is the last case where we can use the minPrice
-	off := num.UintZero().Sub(price, minP)
-	po.Offset = m.scaleOffsetToMarket(off)
-	return price.Sub(price, off), po, nil
+func (m *Market) applyMinViableOffset(po *types.PeggedOrder) {
+	po.Offset = num.UintZero()
+	if po.Reference == types.PeggedReferenceMid && !m.as.InAuction() {
+		po.Offset.SetUint64(1)
+	}
 }
 
 func (m *Market) cancelLiquidityProvision(
