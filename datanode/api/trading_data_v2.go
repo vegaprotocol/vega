@@ -1,4 +1,3 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
 // in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.

@@ -1330,7 +1330,7 @@ type ComplexityRoot struct {
 		OracleSpec                         func(childComplexity int, oracleSpecID string) int
 		OracleSpecsConnection              func(childComplexity int, pagination *v2.Pagination) int
 		OrderByID                          func(childComplexity int, id string, version *int) int
-		OrderByReference                   func(childComplexity int, reference string, filter *v2.OrderFilter) int
+		OrderByReference                   func(childComplexity int, reference string) int
 		OrderVersionsConnection            func(childComplexity int, orderID *string, pagination *v2.Pagination) int
 		PartiesConnection                  func(childComplexity int, id *string, pagination *v2.Pagination) int
 		Party                              func(childComplexity int, id string) int
@@ -2086,7 +2086,7 @@ type QueryResolver interface {
 	OracleSpec(ctx context.Context, oracleSpecID string) (*vega.OracleSpec, error)
 	OracleSpecsConnection(ctx context.Context, pagination *v2.Pagination) (*v2.OracleSpecsConnection, error)
 	OrderByID(ctx context.Context, id string, version *int) (*vega.Order, error)
-	OrderByReference(ctx context.Context, reference string, filter *v2.OrderFilter) (*vega.Order, error)
+	OrderByReference(ctx context.Context, reference string) (*vega.Order, error)
 	OrderVersionsConnection(ctx context.Context, orderID *string, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	PartiesConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.PartyConnection, error)
 	Party(ctx context.Context, id string) (*vega.Party, error)
@@ -7480,7 +7480,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OrderByReference(childComplexity, args["reference"].(string), args["filter"].(*v2.OrderFilter)), true
+		return e.complexity.Query.OrderByReference(childComplexity, args["reference"].(string)), true
 
 	case "Query.orderVersionsConnection":
 		if e.complexity.Query.OrderVersionsConnection == nil {
@@ -10784,15 +10784,6 @@ func (ec *executionContext) field_Query_orderByReference_args(ctx context.Contex
 		}
 	}
 	args["reference"] = arg0
-	var arg1 *v2.OrderFilter
-	if tmp, ok := rawArgs["filter"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg1, err = ec.unmarshalOOrderFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderFilter(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["filter"] = arg1
 	return args, nil
 }
 
@@ -45761,7 +45752,7 @@ func (ec *executionContext) _Query_orderByReference(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OrderByReference(rctx, fc.Args["reference"].(string), fc.Args["filter"].(*v2.OrderFilter))
+		return ec.resolvers.Query().OrderByReference(rctx, fc.Args["reference"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

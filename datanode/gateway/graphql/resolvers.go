@@ -907,10 +907,10 @@ func (r *myQueryResolver) OrderVersionsConnection(ctx context.Context, orderID *
 	return resp.Orders, nil
 }
 
-func (r *myQueryResolver) OrderByReference(ctx context.Context, reference string, filter *v2.OrderFilter) (*types.Order, error) {
+func (r *myQueryResolver) OrderByReference(ctx context.Context, reference string) (*types.Order, error) {
 	req := &v2.ListOrdersRequest{
 		Reference: &reference,
-		Filter:    filter,
+		Filter:    &v2.OrderFilter{},
 	}
 	res, err := r.tradingDataClientV2.ListOrders(ctx, req)
 	if err != nil {

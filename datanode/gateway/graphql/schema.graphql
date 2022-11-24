@@ -599,7 +599,7 @@ type Query {
   ): Order!
 
   "An order in the Vega network found by referenceID"
-  orderByReference("Reference for an order" reference: String!, filter: OrderFilter): Order!
+  orderByReference("Reference for an order" reference: String!): Order!
 
   "Order versions (created via amendments if any) found by orderID"
   orderVersionsConnection(
