@@ -302,7 +302,6 @@ func TestMain(t *testing.M) {
 		storeCfg.UseIpfsDefaultPeers = false
 		storeCfg.StartWebUI = false
 
-		storeCfg.IDSeed = strings.ReplaceAll(uuid.NewV4().String(), "-", "")
 		deHistoryStore, err = store.New(outerCtx, log, chainID, storeCfg, deHistoryHome, false)
 		if err != nil {
 			panic(err)
