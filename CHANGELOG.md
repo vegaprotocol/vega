@@ -48,6 +48,8 @@
 - [6767](https://github.com/vegaprotocol/vega/issues/6767) - Protocol upgrade rejected events fail to write in the database
 - [6896](https://github.com/vegaprotocol/vega/issues/6896) - Fix timestamps in proposals (`GQL`)
 - [6844](https://github.com/vegaprotocol/vega/issues/6844) - Use proper type in `GQL` for transfer types and some types rename
+- [6783](https://github.com/vegaprotocol/vega/issues/6783) - Unstable `CI` tests for `dehistory`
+- [6844](https://github.com/vegaprotocol/vega/issues/6844) - Unstable `CI` tests for `dehistory`
 
 
 ## 0.62.1
