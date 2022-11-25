@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// The kind of the signature created by a node, for example, allow-listing a new asset, withdrawal etc
+// The kind of signature created by a node, for example, allow-listing a new asset, withdrawal etc
 type NodeSignatureKind int32
 
 const (
@@ -86,8 +86,8 @@ func (NodeSignatureKind) EnumDescriptor() ([]byte, []int) {
 	return file_vega_commands_v1_validator_commands_proto_rawDescGZIP(), []int{0}
 }
 
-// A message from a validator signaling they are still online and validating blocks
-// or ready to validate block when they are till a potential validator
+// A message from a validator signalling they are still online and validating blocks
+// or ready to validate blocks when they are still a pending validator
 type ValidatorHeartbeat struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -154,7 +154,7 @@ func (x *ValidatorHeartbeat) GetVegaSignature() *Signature {
 	return nil
 }
 
-// Used announce a node as a new potential validator
+// Used announce a node as a new pending validator
 type AnnounceNode struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -183,7 +183,7 @@ type AnnounceNode struct {
 	FromEpoch uint64 `protobuf:"varint,10,opt,name=from_epoch,json=fromEpoch,proto3" json:"from_epoch,omitempty"`
 	// Signature from the validator made using the ethereum wallet
 	EthereumSignature *Signature `protobuf:"bytes,11,opt,name=ethereum_signature,json=ethereumSignature,proto3" json:"ethereum_signature,omitempty"`
-	// Signature from the validator made using the vega wallet
+	// Signature from the validator made using the Vega wallet
 	VegaSignature *Signature `protobuf:"bytes,12,opt,name=vega_signature,json=vegaSignature,proto3" json:"vega_signature,omitempty"`
 	// Ethereum public key to use as a submitter to allow automatic signature generation
 	SubmitterAddress string `protobuf:"bytes,13,opt,name=submitter_address,json=submitterAddress,proto3" json:"submitter_address,omitempty"`
@@ -312,7 +312,7 @@ func (x *AnnounceNode) GetSubmitterAddress() string {
 	return ""
 }
 
-// Used when a node votes for validating a given resource exists or is valid,
+// Used when a node votes for validating that a given resource exists or is valid,
 // for example, an ERC20 deposit is valid and exists on ethereum
 type NodeVote struct {
 	state         protoimpl.MessageState
@@ -442,7 +442,6 @@ type ChainEvent struct {
 	// The event
 	//
 	// Types that are assignable to Event:
-	//
 	//	*ChainEvent_Builtin
 	//	*ChainEvent_Erc20
 	//	*ChainEvent_StakingEvent
@@ -563,7 +562,7 @@ func (*ChainEvent_StakingEvent) isChainEvent_Event() {}
 
 func (*ChainEvent_Erc20Multisig) isChainEvent_Event() {}
 
-// A transaction to allow validator to rotate their vega keys
+// A transaction to allow validator to rotate their Vega keys
 type KeyRotateSubmission struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -779,7 +778,7 @@ type ProtocolUpgradeProposal struct {
 
 	// The block height at which to perform the upgrade
 	UpgradeBlockHeight uint64 `protobuf:"varint,1,opt,name=upgrade_block_height,json=upgradeBlockHeight,proto3" json:"upgrade_block_height,omitempty"`
-	// the release tag for the vega binary
+	// the release tag for the Vega binary
 	VegaReleaseTag string `protobuf:"bytes,2,opt,name=vega_release_tag,json=vegaReleaseTag,proto3" json:"vega_release_tag,omitempty"`
 }
 

@@ -20,13 +20,13 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// The current state of the Market
+// The current state of the market
 type Market_State int32
 
 const (
 	// Default value, invalid
 	Market_STATE_UNSPECIFIED Market_State = 0
-	// The Governance proposal valid and accepted
+	// The governance proposal valid and accepted
 	Market_STATE_PROPOSED Market_State = 1
 	// Outcome of governance votes is to reject the market
 	Market_STATE_REJECTED Market_State = 2
@@ -39,7 +39,7 @@ const (
 	Market_STATE_ACTIVE Market_State = 5
 	// Price monitoring or liquidity monitoring trigger
 	Market_STATE_SUSPENDED Market_State = 6
-	// Governance vote (to close)
+	// Governance vote to close (Not currently implemented)
 	Market_STATE_CLOSED Market_State = 7
 	// Defined by the product (i.e. from a product parameter,
 	// specified in market definition, giving close date/time)
@@ -117,7 +117,7 @@ const (
 	Market_TRADING_MODE_OPENING_AUCTION Market_TradingMode = 3
 	// Auction triggered by monitoring
 	Market_TRADING_MODE_MONITORING_AUCTION Market_TradingMode = 4
-	// Not trading is allowed
+	// No trading is allowed
 	Market_TRADING_MODE_NO_TRADING Market_TradingMode = 5
 )
 
@@ -169,12 +169,12 @@ func (Market_TradingMode) EnumDescriptor() ([]byte, []int) {
 }
 
 // An auction duration is used to configure 3 auction periods:
-//  1. `duration > 0`, `volume == 0`:
-//     The auction will last for at least N seconds
-//  2. `duration == 0`, `volume > 0`:
-//     The auction will end once the given volume will match at uncrossing
-//  3. `duration > 0`, `volume > 0`:
-//     The auction will take at least N seconds, but can end sooner if the market can trade a certain volume
+// 1. `duration > 0`, `volume == 0`:
+//   The auction will last for at least N seconds
+// 2. `duration == 0`, `volume > 0`:
+//   The auction will end once the given volume will match at uncrossing
+// 3. `duration > 0`, `volume > 0`:
+//   The auction will take at least N seconds, but can end sooner if the market can trade a certain volume
 type AuctionDuration struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -454,7 +454,6 @@ type Instrument struct {
 	// The product the instrument is composed of
 	//
 	// Types that are assignable to Product:
-	//
 	//	*Instrument_Future
 	Product isInstrument_Product `protobuf_oneof:"product"`
 }
@@ -552,7 +551,7 @@ type LogNormalRiskModel struct {
 
 	// Risk Aversion Parameter
 	RiskAversionParameter float64 `protobuf:"fixed64,1,opt,name=risk_aversion_parameter,json=riskAversionParameter,proto3" json:"risk_aversion_parameter,omitempty"`
-	// Tau
+	// Tau parameter of the risk model, projection horizon measured as a year fraction used in the expected shortfall calculation to obtain the maintenance margin, must be a strictly non-negative real number
 	Tau float64 `protobuf:"fixed64,2,opt,name=tau,proto3" json:"tau,omitempty"`
 	// Risk model parameters for log normal
 	Params *LogNormalModelParams `protobuf:"bytes,3,opt,name=params,proto3" json:"params,omitempty"`
@@ -617,11 +616,11 @@ type LogNormalModelParams struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Mu param
+	// Mu parameter, annualised growth rate of the underlying asset
 	Mu float64 `protobuf:"fixed64,1,opt,name=mu,proto3" json:"mu,omitempty"`
-	// R param
+	// R parameter, annualised growth rate of the risk-free asset, used for discounting of future cash flows, can be any real number
 	R float64 `protobuf:"fixed64,2,opt,name=r,proto3" json:"r,omitempty"`
-	// Sigma param
+	// Sigma parameter, annualised volatility of the underlying asset, must be a strictly non-negative real number
 	Sigma float64 `protobuf:"fixed64,3,opt,name=sigma,proto3" json:"sigma,omitempty"`
 }
 
@@ -941,7 +940,6 @@ type TradableInstrument struct {
 	// Risk model for use by the instrument
 	//
 	// Types that are assignable to RiskModel:
-	//
 	//	*TradableInstrument_LogNormalRiskModel
 	//	*TradableInstrument_SimpleRiskModel
 	RiskModel isTradableInstrument_RiskModel `protobuf_oneof:"risk_model"`
@@ -1159,7 +1157,7 @@ type PriceMonitoringTrigger struct {
 	// Price monitoring probability level p
 	Probability string `protobuf:"bytes,2,opt,name=probability,proto3" json:"probability,omitempty"`
 	// Price monitoring auction extension duration in seconds should the price
-	// breach it's theoretical level over the specified horizon at the specified
+	// breach its theoretical level over the specified horizon at the specified
 	// probability level
 	AuctionExtension int64 `protobuf:"varint,3,opt,name=auction_extension,json=auctionExtension,proto3" json:"auction_extension,omitempty"`
 }
@@ -1466,9 +1464,9 @@ type Market struct {
 	TradingMode Market_TradingMode `protobuf:"varint,8,opt,name=trading_mode,json=tradingMode,proto3,enum=vega.Market_TradingMode" json:"trading_mode,omitempty"`
 	// Current state of the market
 	State Market_State `protobuf:"varint,9,opt,name=state,proto3,enum=vega.Market_State" json:"state,omitempty"`
-	// Timestamps for when the market stay changes
+	// Timestamps for when the market state changes
 	MarketTimestamps *MarketTimestamps `protobuf:"bytes,10,opt,name=market_timestamps,json=marketTimestamps,proto3" json:"market_timestamps,omitempty"`
-	// The number of decimal places for position
+	// The number of decimal places for a position
 	PositionDecimalPlaces int64 `protobuf:"varint,11,opt,name=position_decimal_places,json=positionDecimalPlaces,proto3" json:"position_decimal_places,omitempty"`
 }
 
@@ -1589,11 +1587,11 @@ type MarketTimestamps struct {
 
 	// Time when the market is first proposed
 	Proposed int64 `protobuf:"varint,1,opt,name=proposed,proto3" json:"proposed,omitempty"`
-	// Time when the market has been voted in and is created into an opening auction
+	// Time when the market has been voted in and began its opening auction
 	Pending int64 `protobuf:"varint,2,opt,name=pending,proto3" json:"pending,omitempty"`
 	// Time when the market has left the opening auction and is ready to accept trades
 	Open int64 `protobuf:"varint,3,opt,name=open,proto3" json:"open,omitempty"`
-	// Time when the market is closed
+	// Time when the market closed
 	Close int64 `protobuf:"varint,4,opt,name=close,proto3" json:"close,omitempty"`
 }
 

@@ -1259,7 +1259,7 @@ type DiscreteTrading {
 type LogNormalModelParams {
   "Mu parameter, annualised growth rate of the underlying asset"
   mu: Float!
-  "R parameter"
+  "R parameter, annualised growth rate of the risk-free asset, used for discounting of future cash flows, can be any real number"
   r: Float!
   "Sigma parameter, annualised volatility of the underlying asset, must be a strictly non-negative real number"
   sigma: Float!
@@ -2445,7 +2445,7 @@ type AccountUpdate {
   type: AccountType!
   "Market id (only relevant to margin accounts)"
   marketId: ID
-  "The party owning the accounbt"
+  "The party owning the account"
   partyId: ID!
 }
 
@@ -2464,7 +2464,7 @@ type Erc20WithdrawalApproval {
   0x + sig1 + sig2 + ... + sigN
   """
   signatures: String!
-  "The target address which will receive the funds"
+  "The target address that will receive the funds"
   targetAddress: String!
   "Timestamp at which the withdrawal was created"
   creation: String!

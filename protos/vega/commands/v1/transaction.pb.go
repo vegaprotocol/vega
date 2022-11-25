@@ -99,7 +99,6 @@ type InputData struct {
 	// `block_height` prevents replay attacks in conjunction with `nonce` (see above).
 	BlockHeight uint64 `protobuf:"varint,2,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
 	// Types that are assignable to Command:
-	//
 	//	*InputData_OrderSubmission
 	//	*InputData_OrderCancellation
 	//	*InputData_OrderAmendment
@@ -520,9 +519,8 @@ type Transaction struct {
 	unknownFields protoimpl.UnknownFields
 
 	// One of the set of Vega commands.
-	// These bytes are should be built as follow:
-	//
-	//	chain_id_as_bytes + \0 character as delimiter + proto_marshalled_command
+	// These bytes are should be built as follows:
+	//   chain_id_as_bytes + \0 character as delimiter + proto_marshalled_command
 	InputData []byte `protobuf:"bytes,1,opt,name=input_data,json=inputData,proto3" json:"input_data,omitempty"`
 	// The signature of the inputData.
 	Signature *Signature `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
@@ -530,7 +528,6 @@ type Transaction struct {
 	// Any of the following would be valid:
 	//
 	// Types that are assignable to From:
-	//
 	//	*Transaction_Address
 	//	*Transaction_PubKey
 	From isTransaction_From `protobuf_oneof:"from"`
@@ -640,12 +637,15 @@ func (*Transaction_Address) isTransaction_From() {}
 
 func (*Transaction_PubKey) isTransaction_From() {}
 
+// Components needed for the network to verify proof-of-work
 type ProofOfWork struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Tid   string `protobuf:"bytes,1,opt,name=tid,proto3" json:"tid,omitempty"`
+	// A unique transaction identifier used to seed the proof-of-work hash.
+	Tid string `protobuf:"bytes,1,opt,name=tid,proto3" json:"tid,omitempty"`
+	// A number which, combined with the transaction identifier, will produce a hash with the required number of leading zeros to be accepted by the network.
 	Nonce uint64 `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
 }
 

@@ -164,7 +164,6 @@ type AssetDetails struct {
 	// The source
 	//
 	// Types that are assignable to Source:
-	//
 	//	*AssetDetails_BuiltinAsset
 	//	*AssetDetails_Erc20
 	Source isAssetDetails_Source `protobuf_oneof:"source"`
@@ -399,7 +398,6 @@ type AssetDetailsUpdate struct {
 	// The source
 	//
 	// Types that are assignable to Source:
-	//
 	//	*AssetDetailsUpdate_Erc20
 	Source isAssetDetailsUpdate_Source `protobuf_oneof:"source"`
 }
