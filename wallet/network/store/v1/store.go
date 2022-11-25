@@ -61,9 +61,7 @@ func (s *Store) GetNetwork(name string) (*network.Network, error) {
 	if err := paths.ReadStructuredFile(s.nameToFilePath(name), &net); err != nil {
 		return nil, fmt.Errorf("couldn't read network configuration file: %w", err)
 	}
-	if name != net.Name {
-		return nil, NewDifferentNetworkNamesError(name, net.Name)
-	}
+	net.Name = name
 	return net, nil
 }
 

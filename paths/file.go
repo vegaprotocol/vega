@@ -19,7 +19,7 @@ var (
 	ErrEmptyFile     = errors.New("empty file")
 )
 
-func FetchStructuredFile(url string, v interface{}) error {
+func FetchStructuredFile(url string, v ...interface{}) error {
 	resp, err := http.Get(url) //nolint:noctx
 	if err != nil {
 		return fmt.Errorf("couldn't load file: %w", err)
@@ -39,14 +39,16 @@ func FetchStructuredFile(url string, v interface{}) error {
 		return ErrEmptyResponse
 	}
 
-	if _, err := toml.Decode(string(body), v); err != nil {
-		return fmt.Errorf("invalid TOML document: %w", err)
+	for _, vv := range v {
+		if _, err := toml.Decode(string(body), vv); err != nil {
+			return fmt.Errorf("invalid TOML document: %w", err)
+		}
 	}
 
 	return nil
 }
 
-func ReadStructuredFile(path string, v interface{}) error {
+func ReadStructuredFile(path string, v ...interface{}) error {
 	buf, err := vgfs.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("couldn't read file: %w", err)
@@ -56,8 +58,10 @@ func ReadStructuredFile(path string, v interface{}) error {
 		return ErrEmptyFile
 	}
 
-	if _, err := toml.Decode(string(buf), v); err != nil {
-		return fmt.Errorf("invalid TOML file: %w", err)
+	for _, vv := range v {
+		if _, err := toml.Decode(string(buf), vv); err != nil {
+			return fmt.Errorf("invalid TOML document: %w", err)
+		}
 	}
 
 	return nil

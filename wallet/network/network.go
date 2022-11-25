@@ -10,7 +10,7 @@ import (
 var ErrNetworkDoesNotHaveGRPCHostConfigured = errors.New("network configuration does not have any gRPC host set")
 
 type Network struct {
-	Name        string              `json:"name"`
+	Name        string              `json:"name" toml:"-"`
 	LogLevel    vgencoding.LogLevel `json:"level"`
 	TokenExpiry vgencoding.Duration `json:"tokenExpiry"`
 	Port        int                 `json:"port"`
