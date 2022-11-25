@@ -63,6 +63,7 @@ func TestScores(t *testing.T) {
 	t.Run("test validator score with anti whaling", testValidatorScore)
 	t.Run("test composition of raw validator score for rewards with performance score", testGetValScore)
 	t.Run("test multisig score", testGetMultisigScore)
+	t.Run("test multisig score more validators than signers", TestGetMultisigScoreMoreValidatorsThanSigners)
 	t.Run("test calculate tm rewards scores", testCalculateTMScores)
 	t.Run("test calculate ersatz rewards scores", testCalculateErsatzScores)
 	t.Run("test calculate rewards scores", testGetRewardsScores)
@@ -500,6 +501,55 @@ func testGetMultisigScore(t *testing.T) {
 	require.Equal(t, "0", multisigScore["node8"].String())
 	require.Equal(t, "0", multisigScore["node9"].String())
 	require.Equal(t, "0", multisigScore["node10"].String())
+}
+
+func TestGetMultisigScoreMoreValidatorsThanSigners(t *testing.T) {
+	// 5 nodes all with an equal score, and none of them on the contract. We also set the number of signers we check to only 2
+	// normally in this case we check the 2 nodes with the highest score, but when they are all equal we *should* instead sort
+	// by nodeID
+	nEthMultisigSigners := 2
+	stakeScore := map[string]num.Decimal{
+		"node1": num.DecimalFromFloat(0.1),
+		"node2": num.DecimalFromFloat(0.1),
+		"node3": num.DecimalFromFloat(0.1),
+		"node4": num.DecimalFromFloat(0.1),
+		"node5": num.DecimalFromFloat(0.1),
+	}
+	perfScore := map[string]num.Decimal{
+		"node1": num.DecimalFromFloat(0.1),
+		"node2": num.DecimalFromFloat(0.1),
+		"node3": num.DecimalFromFloat(0.1),
+		"node4": num.DecimalFromFloat(0.1),
+		"node5": num.DecimalFromFloat(0.1),
+	}
+
+	nodeIDToEthAddress := map[string]string{
+		"node1": "node1eth",
+		"node2": "node2eth",
+		"node3": "node3eth",
+		"node4": "node4eth",
+		"node5": "node5eth",
+	}
+
+	multisigTopology := &TestMultisigTopology{
+		validators: map[string]struct{}{},
+	}
+
+	log := logging.NewTestLogger()
+
+	for i := 0; i < 100; i++ {
+		multisigScore := getMultisigScore(
+			log,
+			ValidatorStatusTendermint,
+			stakeScore, perfScore, multisigTopology, nEthMultisigSigners,
+			nodeIDToEthAddress,
+		)
+		require.Equal(t, "0", multisigScore["node1"].String())
+		require.Equal(t, "0", multisigScore["node2"].String())
+		require.Equal(t, "1", multisigScore["node3"].String())
+		require.Equal(t, "1", multisigScore["node4"].String())
+		require.Equal(t, "1", multisigScore["node5"].String())
+	}
 }
 
 func testCalculateTMScores(t *testing.T) {
