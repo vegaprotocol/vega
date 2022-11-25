@@ -1148,20 +1148,27 @@ func TestSubmit(t *testing.T) {
 				}
 			}
 
+			md := tm.market.GetMarketData()
+			assert.NotNil(t, md)
 			expectedQnts := []struct {
+				side  proto.Side
 				size  uint64
+				price string
 				found bool
 			}{
-				{104, false},
-				{2, false},
-				{2, false},
-				{3, false},
-				{113, false},
+				{proto.Side_SIDE_SELL, 104, "123102", false},
+				{proto.Side_SIDE_SELL, 3, "123101", false},
+				{proto.Side_SIDE_SELL, 2, "123100", false},
+				{proto.Side_SIDE_BUY, 2, "119800", false},
+				{proto.Side_SIDE_BUY, 113, "119799", false},
 			}
 
 			for _, v := range found {
 				for i, expectedQnt := range expectedQnts {
-					if v.Size == expectedQnt.size && expectedQnt.found == false {
+					if expectedQnt.found == false &&
+						expectedQnt.side == v.Side &&
+						expectedQnt.size == v.Size &&
+						expectedQnt.price == v.Price {
 						expectedQnts[i].found = true
 					}
 				}
@@ -2338,7 +2345,7 @@ func TestAmend(t *testing.T) {
 		ctx := context.Background()
 
 		// Create a new party account with very little funding
-		addAccountWithAmount(tm, "party-A", 10000000000)
+		addAccountWithAmount(tm, "party-A", 100000000000)
 		addAccountWithAmount(tm, "party-B", 10000000)
 		addAccountWithAmount(tm, "party-C", 10000000)
 		tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -2792,3 +2799,200 @@ func TestAmend(t *testing.T) {
 func newTestIDGenerator() execution.IDGenerator {
 	return idgeneration.New(vgcrypto.RandomHash())
 }
+
+// func ExtractedTest(t *testing.T) {
+// 	now := time.Unix(10, 0)
+// 	// block := time.Second
+// 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+// 	auctionEnd := now.Add(10001 * time.Second)
+// 	mktCfg := getMarketWithDP(pMonitorSettings, &types.AuctionDuration{
+// 		Duration: 10000,
+// 	}, 0)
+// 	mktCfg.Fees = &types.Fees{
+// 		Factors: &types.FeeFactors{
+// 			InfrastructureFee: num.DecimalFromFloat(0.0005),
+// 			MakerFee:          num.DecimalFromFloat(0.00025),
+// 		},
+// 	}
+// 	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
+// 		LogNormalRiskModel: &types.LogNormalRiskModel{
+// 			RiskAversionParameter: num.DecimalFromFloat(0.001),
+// 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+// 			Params: &types.LogNormalModelParams{
+// 				Mu:    num.DecimalZero(),
+// 				R:     num.DecimalFromFloat(0.016),
+// 				Sigma: num.DecimalFromFloat(2),
+// 			},
+// 		},
+// 	}
+
+// 	lpparty := "lp-party-1"
+// 	oth1 := "party1"
+// 	oth2 := "party2"
+
+// 	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+// 	tm.StartOpeningAuction().
+// 		WithAccountAndAmount(lpparty, 100000000000000).
+// 		WithAccountAndAmount(oth1, 500000000000).
+// 		WithAccountAndAmount(oth2, 500000000000)
+
+// 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
+// 	tm.now = now
+// 	tm.market.OnTick(ctx, now)
+
+// 	// Add a LPSubmission
+// 	// this is a log of stake, enough to cover all
+// 	// the required stake for the market
+// 	lpSubmission := &types.LiquidityProvisionSubmission{
+// 		MarketID:         tm.market.GetID(),
+// 		CommitmentAmount: num.NewUint(10000000),
+// 		Fee:              num.DecimalFromFloat(0.5),
+// 		Reference:        "ref-lp-submission-1",
+// 		Buys: []*types.LiquidityOrder{
+// 			newLiquidityOrder(types.PeggedReferenceBestBid, 201, 99),
+// 			newLiquidityOrder(types.PeggedReferenceBestBid, 200, 1),
+// 		},
+// 		Sells: []*types.LiquidityOrder{
+// 			newLiquidityOrder(types.PeggedReferenceBestAsk, 100, 1),
+// 			newLiquidityOrder(types.PeggedReferenceBestAsk, 101, 2),
+// 			newLiquidityOrder(types.PeggedReferenceBestAsk, 102, 98),
+// 		},
+// 	}
+
+// 	// submit our lp
+// 	tm.events = nil
+// 	require.NoError(t,
+// 		tm.market.SubmitLiquidityProvision(
+// 			ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
+// 	)
+
+// 	t.Run("lp submission is pending", func(t *testing.T) {
+// 		// First collect all the orders events
+// 		var found *proto.LiquidityProvision
+// 		for _, e := range tm.events {
+// 			switch evt := e.(type) {
+// 			case *events.LiquidityProvision:
+// 				found = evt.LiquidityProvision()
+// 			}
+// 		}
+// 		require.NotNil(t, found)
+// 		// no update to the liquidity fee
+// 		assert.Equal(t, found.Status.String(), types.LiquidityProvisionStatusPending.String())
+// 	})
+
+// 	// then submit some orders, some for the lp party,
+// 	// end some for the other parrties
+
+// 	lpOrders := []*types.Order{
+// 		// Limit Orders
+// 		{
+// 			Type:        types.OrderTypeLimit,
+// 			Size:        10,
+// 			Remaining:   10,
+// 			Price:       num.NewUint(120000),
+// 			Side:        types.SideBuy,
+// 			Party:       lpparty,
+// 			TimeInForce: types.OrderTimeInForceGTC,
+// 		},
+// 		{
+// 			Type:        types.OrderTypeLimit,
+// 			Size:        10,
+// 			Remaining:   10,
+// 			Price:       num.NewUint(123000),
+// 			Side:        types.SideSell,
+// 			Party:       lpparty,
+// 			TimeInForce: types.OrderTimeInForceGTC,
+// 		},
+// 	}
+
+// 	// submit the auctions orders
+// 	tm.WithSubmittedOrders(t, lpOrders...)
+
+// 	// set the mark price and end auction
+// 	auctionOrders := []*types.Order{
+// 		{
+// 			Type:        types.OrderTypeLimit,
+// 			Size:        1,
+// 			Remaining:   1,
+// 			Price:       num.NewUint(121500),
+// 			Side:        types.SideBuy,
+// 			Party:       oth1,
+// 			TimeInForce: types.OrderTimeInForceGTC,
+// 		},
+// 		{
+// 			Type:        types.OrderTypeLimit,
+// 			Size:        1,
+// 			Remaining:   1,
+// 			Price:       num.NewUint(121500),
+// 			Side:        types.SideSell,
+// 			Party:       oth2,
+// 			TimeInForce: types.OrderTimeInForceGTC,
+// 		},
+// 	}
+
+// 	// submit the auctions orders
+// 	tm.events = nil
+// 	tm.WithSubmittedOrders(t, auctionOrders...)
+// 	// update the time to get out of auction
+// 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+// 	tm.now = auctionEnd
+// 	tm.market.OnTick(ctx, auctionEnd)
+
+// 	t.Run("verify LP orders sizes", func(t *testing.T) {
+// 		// First collect all the orders events
+// 		found := map[string]*proto.Order{}
+// 		for _, e := range tm.events {
+// 			switch evt := e.(type) {
+// 			case *events.Order:
+// 				if ord := evt.Order(); ord.PartyId == lpparty {
+// 					found[ord.Id] = ord
+// 				}
+// 			}
+// 		}
+
+// 		expectedQnts := []struct {
+// 			side  proto.Side
+// 			size  uint64
+// 			price string
+// 			found bool
+// 		}{
+// 			// {proto.Side_SIDE_SELL, 104, "123102", false},
+// 			// {proto.Side_SIDE_SELL, 3, "123101", false},
+// 			// {proto.Side_SIDE_SELL, 2, "123100", false},
+// 			// {proto.Side_SIDE_BUY, 2, "119800", false},
+// 			// {proto.Side_SIDE_BUY, 113, "119799", false},
+// 			{proto.Side_SIDE_SELL, 104, "123102", false},
+// 			{proto.Side_SIDE_SELL, 3, "123101", false},
+// 			{proto.Side_SIDE_SELL, 2, "123100", false},
+// 			{proto.Side_SIDE_BUY, 2, "120000", false},
+// 			{proto.Side_SIDE_BUY, 106, "120000", false},
+// 		}
+
+// 		// Buys: []*types.LiquidityOrder{
+// 		// 	newLiquidityOrder(types.PeggedReferenceBestBid, 201, 99),
+// 		// 	newLiquidityOrder(types.PeggedReferenceBestBid, 200, 1),
+// 		// },
+// 		// Sells: []*types.LiquidityOrder{
+// 		// 	newLiquidityOrder(types.PeggedReferenceBestAsk, 100, 1),
+// 		// 	newLiquidityOrder(types.PeggedReferenceBestAsk, 101, 2),
+// 		// 	newLiquidityOrder(types.PeggedReferenceBestAsk, 102, 98),
+
+// 		for _, v := range found {
+// 			for i, expectedQnt := range expectedQnts {
+// 				if expectedQnt.found == false &&
+// 					expectedQnt.side == v.Side &&
+// 					expectedQnt.size == v.Size &&
+// 					expectedQnt.price == v.Price {
+// 					expectedQnts[i].found = true
+// 				}
+// 			}
+// 		}
+
+// 		allExpectedQntsFound := true
+// 		for _, exp := range expectedQnts {
+// 			allExpectedQntsFound = allExpectedQntsFound && exp.found
+// 		}
+// 		assert.True(t, allExpectedQntsFound, "missing expected order quantities")
+// 	})
+
+// }

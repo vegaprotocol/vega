@@ -543,6 +543,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, refPri
 	// minPrice can't be negative anymore
 	minP := minPrice.Representation()
 	maxP := maxPrice.Representation()
+
 	// now we have to ensure that the min price is ceil'ed, and max price is floored
 	// if the market decimal places != asset decimals (indicated by priceFactor == 1)
 	if m.priceFactor.NEQ(one) {
@@ -564,9 +565,9 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, refPri
 			// ensure the offset takes into account the decimal places
 			return num.Sum(refPrice, m.scaleOffsetAsset(po.Offset)), po, nil
 		}
-		// that's our initial price with original offset
+		// that's our initial candidate with original offset
 		offsetPrice := num.Sum(refPrice, m.scaleOffsetAsset(po.Offset))
-		// adjusted price violated the upper bound
+		// resulting price violated the upper bound
 		if offsetPrice.GT(maxP) {
 			// we need to adjust the offest so that the adjusted price ends up on the bound
 			po.Offset = m.scaleOffsetToMarket(num.UintZero().Sub(maxP, refPrice))
@@ -578,15 +579,26 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, refPri
 	}
 	// buy order
 	// reference price is already at or below the min bound so minimum viable offset is all we can do
+	// also cover the case of minP == 0 here to preserve the old behaviour
 	if refPrice.LTE(minP) || refPrice.IsZero() {
-		m.applyMinViableOffset(po)
+		if refPrice.IsZero() {
+			// if refPrice is 0 we can't decrease it any further so offset must be 0
+			po.Offset = num.UintZero()
+		} else {
+			m.applyMinViableOffset(po)
+		}
 		// ensure the offset takes into account the decimal places
 		return num.UintZero().Sub(refPrice, m.scaleOffsetAsset(po.Offset)), po, nil
 	}
-	// that's our initial price with original offset
-	offsetPrice := num.UintZero().Sub(refPrice, m.scaleOffsetAsset(po.Offset))
-	// adjusted price violated the lower bound
-	if offsetPrice.LT(minP) {
+
+	delta := m.scaleOffsetAsset(po.Offset)
+	// that's our initial candidate with original offset
+	offsetPrice := num.UintZero().Sub(refPrice, delta)
+
+	// make sure we return at least the minimum positive price
+	minP = num.Max(minP, num.UintOne())
+	// resulting price violated the lower bound or delta would result in a non-positive price
+	if offsetPrice.LT(minP) || delta.GTE(refPrice) {
 		// we need to adjust the offest so that the adjusted price ends up on the bound
 		po.Offset = m.scaleOffsetToMarket(num.UintZero().Sub(refPrice, minP))
 		// and our price is the minPrice
