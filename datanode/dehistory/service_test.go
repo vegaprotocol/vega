@@ -480,8 +480,8 @@ func newTestEventSourceWithProtocolUpdateMessage() *TestEventSource {
 				m.RUnlock()
 			}
 		case events.BeginBlockEvent:
-			beginBlock := e.(entities.BeginBlockEvent)
 			m.Lock()
+			beginBlock := e.(entities.BeginBlockEvent)
 			currentBlock, err = entities.BlockFromBeginBlock(beginBlock)
 			m.Unlock()
 			if err != nil {
