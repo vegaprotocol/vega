@@ -49,7 +49,7 @@ func TestMain(m *testing.M) {
 		testDBPort = cfg.ConnectionConfig.Port
 		testDBSocketDir = cfg.ConnectionConfig.SocketDir
 		connectionSource = source
-	}, postgresRuntimePath)
+	}, postgresRuntimePath, sqlstore.EmbedMigrations)
 }
 
 func DeleteEverything() {

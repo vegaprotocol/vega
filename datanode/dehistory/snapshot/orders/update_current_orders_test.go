@@ -52,7 +52,7 @@ func TestMain(t *testing.M) {
 		sqlConfig = config
 		connectionSource = source
 		snapshotsDir = snapshotCopyToPath
-	}, postgresRuntimePath)
+	}, postgresRuntimePath, sqlstore.EmbedMigrations)
 }
 
 func TestUpdateCurrentOrdersState(t *testing.T) {
