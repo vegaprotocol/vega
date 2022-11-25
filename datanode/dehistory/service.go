@@ -158,7 +158,7 @@ func (d *Service) GetActivePeerAddresses() []string {
 	return activePeerIPAddresses
 }
 
-func (d *Service) LoadAllAvailableHistoryIntoDatanode(ctx context.Context) (loadedFrom int64, loadedTo int64, err error) {
+func (d *Service) LoadAllAvailableHistoryIntoDatanode(ctx context.Context, sqlFs fs.FS) (loadedFrom int64, loadedTo int64, err error) {
 	defer func() { _ = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromDir) }()
 
 	err = os.MkdirAll(d.snapshotsCopyFromDir, fs.ModePerm)
@@ -183,7 +183,7 @@ func (d *Service) LoadAllAvailableHistoryIntoDatanode(ctx context.Context) (load
 	}
 
 	d.log.Infof("creating database")
-	if err = sqlstore.RecreateVegaDatabase(ctx, d.log, d.connConfig); err != nil {
+	if err = sqlstore.WipeDatabase(d.log, d.connConfig, sqlFs); err != nil {
 		return 0, 0, fmt.Errorf("failed to create vega database: %w", err)
 	}
 
