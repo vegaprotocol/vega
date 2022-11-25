@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -467,17 +468,22 @@ func migrateDatabase(version int64) error {
 func newTestEventSourceWithProtocolUpdateMessage() *TestEventSource {
 	var err error
 	var currentBlock *entities.Block
+	var m sync.RWMutex
 	evtSource, err := newTestEventSource(func(e events.Event, evtsCh chan<- events.Event) {
 		switch e.Type() {
 		case events.EndBlockEvent:
 			if currentBlock != nil && currentBlock.Height == 2500 {
+				m.RLock()
 				evtsCh <- events.NewProtocolUpgradeStarted(context.Background(), eventsv1.ProtocolUpgradeStarted{
 					LastBlockHeight: uint64(currentBlock.Height),
 				})
+				m.RUnlock()
 			}
 		case events.BeginBlockEvent:
 			beginBlock := e.(entities.BeginBlockEvent)
+			m.Lock()
 			currentBlock, err = entities.BlockFromBeginBlock(beginBlock)
+			m.Unlock()
 			if err != nil {
 				panic(err)
 			}
