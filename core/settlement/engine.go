@@ -287,12 +287,6 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 
 	for _, evt := range positions {
 		party := evt.Party()
-		// NB:
-		// current = last mtm'ed position if there is such of the position from the position event
-		// lastSettledPrice = last mark price if there is mtm'ed position or the price from the position event
-		// In addition if there is no previous mtm'ed position, e.settledPosition is updated with the position event size.
-		// @@EVODelavega this seems wrong to me - I think in case there was no previous mtm'ed position size should be initialised to 0
-		// but maybe I'm missing something.
 		current, lastSettledPrice := e.getOrCreateCurrentPosition(party, evt.Size(), evt.Price())
 		traded, hasTraded = trades[party]
 		tradeset := make([]events.TradeSettlement, 0, len(traded))
@@ -466,7 +460,7 @@ func (e *Engine) getOrCreateCurrentPosition(party string, size int64, price *num
 	p, ok := e.settledPosition[party]
 	if !ok {
 		e.settledPosition[party] = size
-		return size, price
+		return 0, price
 	}
 	return p, e.lastMarkPrice
 }
