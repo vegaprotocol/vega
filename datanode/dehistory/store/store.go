@@ -1,10 +1,7 @@
 package store
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -23,8 +20,6 @@ import (
 
 	"github.com/ipfs/kubo/core/node/libp2p"
 	"github.com/ipfs/kubo/repo/fsrepo"
-	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/peer"
 	sockets "github.com/libp2p/go-socket-activation"
 	manet "github.com/multiformats/go-multiaddr/net"
 
@@ -111,17 +106,17 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, d
 		return nil, fmt.Errorf("failed to create index:%w", err)
 	}
 
-	if len(cfg.IDSeed) == 0 {
-		return nil, fmt.Errorf("the configurations id seed must be set")
-	}
-
 	if len(chainID) == 0 {
 		return nil, fmt.Errorf("chain ID must be set")
 	}
 
-	p.identity, err = CreateIdentityFromSeed([]byte(cfg.IDSeed))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create ipfs identity from id seed:%w", err)
+	if len(cfg.PeerID) == 0 || len(cfg.PrivKey) == 0 {
+		return nil, fmt.Errorf("the ipfs peer id and priv key must be set")
+	}
+
+	p.identity = config.Identity{
+		PeerID:  cfg.PeerID,
+		PrivKey: cfg.PrivKey,
 	}
 
 	log.Infof("starting decentralized history store with ipfs Peer Id:%s", p.identity.PeerID)
@@ -950,35 +945,4 @@ func (p *Store) unpinSegment(ctx context.Context, segment SegmentIndexEntry) err
 	}
 
 	return nil
-}
-
-func CreateIdentityFromSeed(seed []byte) (config.Identity, error) {
-	ident := config.Identity{}
-
-	var sk crypto.PrivKey
-	var pk crypto.PubKey
-
-	// Everything > 32 bytes is ignored in GenerateEd25519Key so do a little pre hashing
-	seedHash := sha256.Sum256(seed)
-
-	priv, pub, err := crypto.GenerateEd25519Key(bytes.NewReader(seedHash[:]))
-	if err != nil {
-		return ident, err
-	}
-
-	sk = priv
-	pk = pub
-
-	skbytes, err := crypto.MarshalPrivateKey(sk)
-	if err != nil {
-		return ident, err
-	}
-	ident.PrivKey = base64.StdEncoding.EncodeToString(skbytes)
-
-	id, err := peer.IDFromPublicKey(pk)
-	if err != nil {
-		return ident, err
-	}
-	ident.PeerID = id.Pretty()
-	return ident, nil
 }
