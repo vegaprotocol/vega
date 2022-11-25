@@ -88,7 +88,7 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 	risk.EXPECT().GetProjectionHorizon().AnyTimes()
 
 	engine := liquidity.NewSnapshotEngine(liquidityConfig,
-		log, tsvc, broker, risk, monitor, orderbook, asset, market, stateVarEngine, num.NewUint(100000), num.NewUint(100000), num.DecimalFromInt64(1),
+		log, tsvc, broker, risk, monitor, orderbook, asset, market, stateVarEngine, num.NewUint(100000), num.DecimalFromInt64(1),
 	)
 
 	return &testEngine{
