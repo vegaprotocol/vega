@@ -141,7 +141,7 @@ Feature: Confirm automatic adjustments to LP orders when reference price is out 
     # 2nd LP sell order should be at 142+8=150, since that's not above the max bound it should be unaffected
     # 3rd LP sell order should be at 142+7=149, since that's not above the max bound it should be unaffected
     # 4th LP sell order should be at 142+2=144, since that's not above the max bound it should be unaffected
-    # LP buy order should be at 140-20=120, but since reference price itself is below the min bound it should be placed at 139 (reference - minimum valid offset)
+    # LP buy order should be at 142-20=122, but since reference price itself is below the min bound it should be placed at 141 (reference - minimum valid offset)
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 158   |     0  |
