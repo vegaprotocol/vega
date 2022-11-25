@@ -18,6 +18,7 @@ import (
 	"embed"
 	"fmt"
 	"io"
+	"io/fs"
 	"time"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
@@ -57,8 +58,8 @@ func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 	return nil
 }
 
-func MigrateToSchemaVersion(log *logging.Logger, config Config, version int64) error {
-	goose.SetBaseFS(EmbedMigrations)
+func MigrateToSchemaVersion(log *logging.Logger, config Config, version int64, fs fs.FS) error {
+	goose.SetBaseFS(fs)
 	goose.SetLogger(log.Named("db migration").GooseLogger())
 
 	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
@@ -76,8 +77,8 @@ func MigrateToSchemaVersion(log *logging.Logger, config Config, version int64) e
 	return nil
 }
 
-func WipeDatabase(log *logging.Logger, config ConnectionConfig) error {
-	goose.SetBaseFS(EmbedMigrations)
+func WipeDatabase(log *logging.Logger, config ConnectionConfig, fs fs.FS) error {
+	goose.SetBaseFS(fs)
 	goose.SetLogger(log.Named("wipe database").GooseLogger())
 
 	poolConfig, err := config.GetPoolConfig()
@@ -94,7 +95,7 @@ func WipeDatabase(log *logging.Logger, config ConnectionConfig) error {
 	}
 
 	if currentVersion > 0 {
-		if err := goose.Down(db, SQLMigrationsDir); err != nil {
+		if err := goose.DownTo(db, SQLMigrationsDir, 0); err != nil {
 			return fmt.Errorf("failed to goose down the schema: %w", err)
 		}
 	}
