@@ -26,6 +26,7 @@
 - [6827](https://github.com/vegaprotocol/vega/issues/6827) - Add `LastTradedPrice` field in market data
 - [6871](https://github.com/vegaprotocol/vega/issues/6871) - Assure integration test framework throws an error when no watchers specified for a network parameter being set/updated
 - [6908](https://github.com/vegaprotocol/vega/issues/6871) - Update default retention policy
+- [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position 
 
 ### 🐛 Fixes
 - [6924](https://github.com/vegaprotocol/vega/issues/6924) - Fix deterministic sorting when nodes have equal scores and we have to choose who is in the signer set
