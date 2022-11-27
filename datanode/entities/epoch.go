@@ -49,16 +49,10 @@ func (e *Epoch) ToProto() *vega.Epoch {
 }
 
 func EpochFromProto(ee eventspb.EpochEvent, txHash TxHash, blockNr int64) Epoch {
-	var endTime *time.Time
-	if ee.Action == vega.EpochAction_EPOCH_ACTION_END {
-		t := NanosToPostgresTimestamp(ee.EndTime)
-		endTime = &t
-	}
 	epoch := Epoch{
 		ID:         int64(ee.Seq),
 		StartTime:  NanosToPostgresTimestamp(ee.StartTime),
 		ExpireTime: NanosToPostgresTimestamp(ee.ExpireTime),
-		EndTime:    endTime,
 		TxHash:     txHash,
 	}
 	switch ee.Action {
@@ -68,7 +62,7 @@ func EpochFromProto(ee eventspb.EpochEvent, txHash TxHash, blockNr int64) Epoch 
 		if blockNr > 0 {
 			epoch.LastBlock = &blockNr
 		}
-		epoch.VegaTime = NanosToPostgresTimestamp(ee.EndTime)
+		epoch.EndTime = toPtr(NanosToPostgresTimestamp(ee.EndTime))
 	}
 	return epoch
 }
