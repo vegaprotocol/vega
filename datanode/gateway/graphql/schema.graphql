@@ -1259,7 +1259,7 @@ type DiscreteTrading {
 type LogNormalModelParams {
   "Mu parameter, annualised growth rate of the underlying asset"
   mu: Float!
-  "R parameter"
+  "R parameter, annualised growth rate of the risk-free asset, used for discounting of future cash flows, can be any real number"
   r: Float!
   "Sigma parameter, annualised volatility of the underlying asset, must be a strictly non-negative real number"
   sigma: Float!
@@ -2445,7 +2445,7 @@ type AccountUpdate {
   type: AccountType!
   "Market id (only relevant to margin accounts)"
   marketId: ID
-  "The party owning the accounbt"
+  "The party owning the account"
   partyId: ID!
 }
 
@@ -2464,7 +2464,7 @@ type Erc20WithdrawalApproval {
   0x + sig1 + sig2 + ... + sigN
   """
   signatures: String!
-  "The target address which will receive the funds"
+  "The target address that will receive the funds"
   targetAddress: String!
   "Timestamp at which the withdrawal was created"
   creation: String!
@@ -3047,31 +3047,55 @@ enum AccountType {
 }
 
 enum TransferType {
+  "Default value, always invalid"
   TRANSFER_TYPE_UNSPECIFIED
+  "Funds deducted after final settlement loss"
   TRANSFER_TYPE_LOSS
+  "Funds added to general account after final settlement gain"
   TRANSFER_TYPE_WIN
-  TRANSFER_TYPE_CLOSE
+  "Funds deducted from margin account after mark to market loss"
   TRANSFER_TYPE_MTM_LOSS
+  "Funds added to margin account after mark to market gain"
   TRANSFER_TYPE_MTM_WIN
+  "Funds transferred from general account to meet margin requirement"
   TRANSFER_TYPE_MARGIN_LOW
+  "Excess margin amount returned to general account"
   TRANSFER_TYPE_MARGIN_HIGH
+  "Margin confiscated from margin account to fulfil closeout"
   TRANSFER_TYPE_MARGIN_CONFISCATED
+  "Maker fee paid from general account"
   TRANSFER_TYPE_MAKER_FEE_PAY
+  "Maker fee received into general account"
   TRANSFER_TYPE_MAKER_FEE_RECEIVE
+  "Infrastructure fee paid from general account"
   TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY
+  "Infrastructure fee received into general account"
   TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE
+  "Liquidity fee paid from general account"
   TRANSFER_TYPE_LIQUIDITY_FEE_PAY
+  "Liquidity fee received into general account"
   TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE
+  "Bond account funded from general account to meet required bond amount"
   TRANSFER_TYPE_BOND_LOW
+  "Bond returned to general account after liquidity commitment was reduced"
   TRANSFER_TYPE_BOND_HIGH
-  TRANSFER_TYPE_WITHDRAW_LOCK
+  "Funds withdrawn from general account"
   TRANSFER_TYPE_WITHDRAW
+  "Funds deposited to general account"
   TRANSFER_TYPE_DEPOSIT
+  "Bond account penalised when liquidity commitment not met"
   TRANSFER_TYPE_BOND_SLASHING
+  "Staking reward received"
   TRANSFER_TYPE_STAKE_REWARD
+  "A network internal instruction for the collateral engine to move funds from a user's general account into the pending transfers pool"
   TRANSFER_TYPE_TRANSFER_FUNDS_SEND
+  "A network internal instruction for the collateral engine to move funds from the pending transfers pool account into the destination account"
   TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE
+  "Market-related accounts emptied because market has closed"
   TRANSFER_TYPE_CLEAR_ACCOUNT
+  "Balances are being restored to the user's account following a checkpoint restart of the network"
+  TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE
+
 }
 
 type FutureProduct {

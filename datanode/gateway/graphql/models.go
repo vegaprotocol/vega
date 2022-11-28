@@ -316,7 +316,7 @@ type Erc20WithdrawalApproval struct {
 	// Signature aggregate from the nodes, in the following format:
 	// 0x + sig1 + sig2 + ... + sigN
 	Signatures string `json:"signatures"`
-	// The target address which will receive the funds
+	// The target address that will receive the funds
 	TargetAddress string `json:"targetAddress"`
 	// Timestamp at which the withdrawal was created
 	Creation string `json:"creation"`
