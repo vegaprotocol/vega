@@ -65,7 +65,6 @@ func NewSnapshotEngine(config Config,
 	asset string,
 	market string,
 	stateVarEngine StateVarEngine,
-	tickSize *num.Uint,
 	priceFactor *num.Uint,
 	positionFactor num.Decimal,
 ) *SnapshotEngine {
@@ -73,7 +72,7 @@ func NewSnapshotEngine(config Config,
 		// tickSize = 10^{market_dp} - used for calculating probabilities at offsets from the best bid/ask
 		// priceFactor = 10^{asset_dp} / 10^{market_dp} - used for scaling a price to the market
 		// positionFactor = 10^{position_dp} - used to scale sizes to the market position decimals
-		Engine:  NewEngine(config, log, timeService, broker, riskModel, priceMonitor, orderBook, asset, market, stateVarEngine, tickSize, priceFactor, positionFactor),
+		Engine:  NewEngine(config, log, timeService, broker, riskModel, priceMonitor, orderBook, asset, market, stateVarEngine, priceFactor, positionFactor),
 		pl:      types.Payload{},
 		market:  market,
 		stopped: false,

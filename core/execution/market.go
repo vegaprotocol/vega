@@ -357,7 +357,7 @@ func NewMarket(
 
 	now := timeService.GetTimeNow()
 	liqEngine := liquidity.NewSnapshotEngine(
-		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, book, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
+		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, book, asset, mkt.ID, stateVarEngine, priceFactor.Clone(), positionFactor)
 
 	// The market is initially created in a proposed state
 	mkt.State = types.MarketStateProposed
