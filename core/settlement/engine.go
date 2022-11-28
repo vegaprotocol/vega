@@ -185,6 +185,10 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 	e.mu.Unlock()
 }
 
+func (e *Engine) HasTraded() bool {
+	return len(e.trades) > 0
+}
+
 func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.MarketPosition, owner string) *mtmTransfer {
 	if mtmShare.IsZero() {
 		return &mtmTransfer{
