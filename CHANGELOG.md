@@ -52,8 +52,8 @@
 - [6844](https://github.com/vegaprotocol/vega/issues/6844) - Use proper type in `GQL` for transfer types and some types rename
 - [6783](https://github.com/vegaprotocol/vega/issues/6783) - Unstable `CI` tests for `dehistory`
 - [6844](https://github.com/vegaprotocol/vega/issues/6844) - Unstable `CI` tests for `dehistory`
-
-
+- [6844](https://github.com/vegaprotocol/vega/issues/6844) - Add API descriptions, remove unused ledger entries and fix typos
+ 
 ## 0.62.1
 
 ### 🛠 Improvements
@@ -66,7 +66,7 @@
 - [6762](https://github.com/vegaprotocol/vega/issues/6762) - Fix one off transfer events serialization
 - [6747](https://github.com/vegaprotocol/vega/issues/6747) - Ensure proposal with no participation does not get enacted
 - [6757](https://github.com/vegaprotocol/vega/issues/6655) - Fix oracle spec resolvers in Gateway
-- [6757](https://github.com/vegaprotocol/vega/issues/6757) - Fix signers resolvers in Gateway
+- [6952](https://github.com/vegaprotocol/vega/issues/6757) - Fix signers resolvers in Gateway
 
 
 ## 0.62.0
