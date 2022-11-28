@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	vgencoding "code.vegaprotocol.io/vega/libs/encoding"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/paths"
 
@@ -17,6 +18,14 @@ const fileExt = ".toml"
 
 type Store struct {
 	networksHome string
+}
+
+type networkFileContent struct {
+	LogLevel    vgencoding.LogLevel `json:"level"`
+	TokenExpiry vgencoding.Duration `json:"tokenExpiry"`
+	Port        int                 `json:"port"`
+	Host        string              `json:"host"`
+	API         network.APIConfig   `json:"api"`
 }
 
 func InitialiseStore(vegaPaths paths.Paths) (*Store, error) {
@@ -57,16 +66,29 @@ func (s *Store) NetworkExists(name string) (bool, error) {
 }
 
 func (s *Store) GetNetwork(name string) (*network.Network, error) {
-	net := &network.Network{}
-	if err := paths.ReadStructuredFile(s.nameToFilePath(name), &net); err != nil {
+	nfc := &networkFileContent{}
+	if err := paths.ReadStructuredFile(s.nameToFilePath(name), &nfc); err != nil {
 		return nil, fmt.Errorf("couldn't read network configuration file: %w", err)
 	}
-	net.Name = name
-	return net, nil
+	return &network.Network{
+		Name:        name,
+		LogLevel:    nfc.LogLevel,
+		TokenExpiry: nfc.TokenExpiry,
+		Port:        nfc.Port,
+		Host:        nfc.Host,
+		API:         nfc.API,
+	}, nil
 }
 
 func (s *Store) SaveNetwork(net *network.Network) error {
-	if err := paths.WriteStructuredFile(s.nameToFilePath(net.Name), net); err != nil {
+	nfc := &networkFileContent{
+		LogLevel:    net.LogLevel,
+		TokenExpiry: net.TokenExpiry,
+		Port:        net.Port,
+		Host:        net.Host,
+		API:         net.API,
+	}
+	if err := paths.WriteStructuredFile(s.nameToFilePath(net.Name), nfc); err != nil {
 		return fmt.Errorf("couldn't write network configuration file: %w", err)
 	}
 	return nil

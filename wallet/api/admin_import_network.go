@@ -31,7 +31,7 @@ type AdminImportNetwork struct {
 	networkStore NetworkStore
 }
 
-type Reader func(uri string, net ...interface{}) error
+type Reader func(uri string, net interface{}) error
 
 type Readers struct {
 	ReadFromFile Reader
@@ -109,7 +109,6 @@ func validateImportNetworkParams(rawParams jsonrpc.Params) (AdminImportNetworkPa
 // into a `Network` which can then be saved to disk.
 func readImportNetworkSource(params AdminImportNetworkParams) (*network.Network, error) {
 	net := &network.Network{}
-	aux := &struct{ Name string }{}
 	rs := NewReaders()
 	if len(params.FilePath) != 0 {
 		exists, err := vgfs.FileExists(params.FilePath)
@@ -120,28 +119,24 @@ func readImportNetworkSource(params AdminImportNetworkParams) (*network.Network,
 			return nil, fmt.Errorf("the network source file does not exist: %w", ErrInvalidNetworkSource)
 		}
 
-		err = rs.ReadFromFile(params.FilePath, net, aux)
+		err = rs.ReadFromFile(params.FilePath, net)
 		if err == paths.ErrEmptyFile {
 			return nil, fmt.Errorf("network source file is empty: %w", ErrInvalidNetworkSource)
 		}
 		if err != nil {
 			return nil, fmt.Errorf("could not read the network configuration at %q: %w", params.FilePath, err)
 		}
-
-		net.Name = aux.Name
 		return net, nil
 	}
 
 	if len(params.URL) != 0 {
-		err := rs.ReadFromURL(params.URL, net, aux)
+		err := rs.ReadFromURL(params.URL, net)
 		if err == paths.ErrEmptyResponse {
 			return nil, fmt.Errorf("network source url points to an empty file: %w", ErrInvalidNetworkSource)
 		}
 		if err != nil {
 			return nil, fmt.Errorf("could not fetch the network configuration from %q: %w", params.URL, err)
 		}
-
-		net.Name = aux.Name
 		return net, nil
 	}
 
