@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -21,10 +22,11 @@ import (
 )
 
 type ClientSendTransactionParams struct {
-	Token              string `json:"token"`
-	PublicKey          string `json:"publicKey"`
-	SendingMode        string `json:"sendingMode"`
-	EncodedTransaction string `json:"encodedTransaction"`
+	Token              string      `json:"token"`
+	PublicKey          string      `json:"publicKey"`
+	SendingMode        string      `json:"sendingMode"`
+	EncodedTransaction string      `json:"encodedTransaction"`
+	Transaction        interface{} `json:"transaction"`
 }
 
 type ClientParsedSendTransactionParams struct {
@@ -231,13 +233,29 @@ func validateSendTransactionParams(rawParams jsonrpc.Params) (ClientParsedSendTr
 		return ClientParsedSendTransactionParams{}, ErrSendingModeCannotBeTypeUnspecified
 	}
 
-	if params.EncodedTransaction == "" {
-		return ClientParsedSendTransactionParams{}, ErrEncodedTransactionIsRequired
+	if params.EncodedTransaction == "" && params.Transaction == nil {
+		return ClientParsedSendTransactionParams{}, ErrTransactionIsRequired
 	}
 
-	tx, err := base64.StdEncoding.DecodeString(params.EncodedTransaction)
-	if err != nil {
-		return ClientParsedSendTransactionParams{}, ErrEncodedTransactionIsNotValidBase64String
+	if params.EncodedTransaction != "" && params.Transaction != nil {
+		return ClientParsedSendTransactionParams{}, ErrEncodedTransactionAndTransactionSupplied
+	}
+
+	var tx []byte
+	var err error
+
+	if params.EncodedTransaction != "" {
+		tx, err = base64.StdEncoding.DecodeString(params.EncodedTransaction)
+		if err != nil {
+			return ClientParsedSendTransactionParams{}, ErrEncodedTransactionIsNotValidBase64String
+		}
+	}
+
+	if params.Transaction != nil {
+		tx, err = json.Marshal(params.Transaction)
+		if err != nil {
+			return ClientParsedSendTransactionParams{}, ErrEncodedTransactionIsNotValid
+		}
 	}
 
 	return ClientParsedSendTransactionParams{
