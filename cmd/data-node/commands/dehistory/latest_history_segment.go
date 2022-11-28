@@ -58,12 +58,12 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 
 	grpcAPIPorts := []int{cmd.Config.API.Port}
 	grpcAPIPorts = append(grpcAPIPorts, cmd.Config.DeHistory.Initialise.GrpcAPIPorts...)
-	suggestedRootSegment, peerToSegment, err := dehistory.GetMostRecentHistorySegmentFromPeerAddresses(context.Background(), peerAddresses,
-		grpcAPIPorts)
+	selectedResponse, peerToResponse, err := dehistory.GetMostRecentHistorySegmentFromPeersAddresses(context.Background(), peerAddresses,
+		cmd.Config.DeHistory.Store.GetSwarmKey(log, cmd.Config.ChainID), grpcAPIPorts)
 
 	segmentsInfo := "Most Recent History Segments:\n\n"
-	for peer, segment := range peerToSegment {
-		segmentsInfo += fmt.Sprintf("Peer:%-39s Segment{%s}\n\n", peer, segment)
+	for peer, segment := range peerToResponse {
+		segmentsInfo += fmt.Sprintf("Peer:%-39s,  Swarm Key:%s, Segment{%s}\n\n", peer, segment.SwarmKey, segment.Segment)
 	}
 
 	fmt.Println(segmentsInfo)
@@ -72,7 +72,7 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 		return fmt.Errorf("failed to get most recent history segment from peers:%w", err)
 	}
 
-	fmt.Printf("Suggested segment to use to fetch decentralised history data {%s}\n\n", suggestedRootSegment)
+	fmt.Printf("Suggested segment to use to fetch decentralised history data {%s}\n\n", selectedResponse.Response.Segment)
 
 	return nil
 }
