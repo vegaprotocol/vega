@@ -3093,6 +3093,9 @@ enum TransferType {
   TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE
   "Market-related accounts emptied because market has closed"
   TRANSFER_TYPE_CLEAR_ACCOUNT
+  "Balances are being restored to the user's account following a checkpoint restart of the network"
+  TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE
+
 }
 
 type FutureProduct {
