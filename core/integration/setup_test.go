@@ -45,16 +45,15 @@ var (
 )
 
 type tstReporter struct {
-	err  error
-	step string
+	scenario string
 }
 
 func (t tstReporter) Errorf(format string, args ...interface{}) {
-	fmt.Printf("%s ERROR: %s", t.step, fmt.Sprintf(format, args...))
+	fmt.Printf("%s ERROR: %s", t.scenario, fmt.Sprintf(format, args...))
 }
 
 func (t tstReporter) Fatalf(format string, args ...interface{}) {
-	fmt.Printf("%s FATAL: %s", t.step, fmt.Sprintf(format, args...))
+	fmt.Printf("%s FATAL: %s", t.scenario, fmt.Sprintf(format, args...))
 	os.Exit(1)
 }
 
