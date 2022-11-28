@@ -520,7 +520,7 @@ type Transaction struct {
 	unknownFields protoimpl.UnknownFields
 
 	// One of the set of Vega commands.
-	// These bytes are should be built as follow:
+	// These bytes are should be built as follows:
 	//
 	//	chain_id_as_bytes + \0 character as delimiter + proto_marshalled_command
 	InputData []byte `protobuf:"bytes,1,opt,name=input_data,json=inputData,proto3" json:"input_data,omitempty"`
@@ -640,12 +640,15 @@ func (*Transaction_Address) isTransaction_From() {}
 
 func (*Transaction_PubKey) isTransaction_From() {}
 
+// Components needed for the network to verify proof-of-work
 type ProofOfWork struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Tid   string `protobuf:"bytes,1,opt,name=tid,proto3" json:"tid,omitempty"`
+	// A unique transaction identifier used to seed the proof-of-work hash.
+	Tid string `protobuf:"bytes,1,opt,name=tid,proto3" json:"tid,omitempty"`
+	// A number which, combined with the transaction identifier, will produce a hash with the required number of leading zeros to be accepted by the network.
 	Nonce uint64 `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
 }
 
