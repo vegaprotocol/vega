@@ -1,9 +1,11 @@
 package v1_test
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/network"
@@ -94,7 +96,7 @@ func testFileStoreV1SaveNetworkSucceeds(t *testing.T) {
 	// given
 	s := initialiseFromPath(t, vegaHome)
 	net := &network.Network{
-		Name: "test",
+		Name: vgrand.RandomStr(10),
 	}
 
 	// when
@@ -104,12 +106,19 @@ func testFileStoreV1SaveNetworkSucceeds(t *testing.T) {
 	require.NoError(t, err)
 	vgtest.AssertFileAccess(t, networkPath(t, vegaHome, net.Name))
 
+	// confirm that the network name is not saved in the file
+	netpath := networkPath(t, vegaHome, net.Name)
+	b, err := os.ReadFile(netpath)
+	assert.NoError(t, err)
+	assert.NotContains(t, string(b), net.Name)
+
 	// when
-	returnedNet, err := s.GetNetwork("test")
+	returnedNet, err := s.GetNetwork(net.Name)
 
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, net, returnedNet)
+	assert.Equal(t, net.Name, returnedNet.Name)
 }
 
 func testFileStoreV1VerifyingNonExistingNetworkFails(t *testing.T) {
