@@ -57,14 +57,18 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 	case *types.PayloadSettlement:
 		data := pl.SettlementState
 
-		// Check the payload is for this market
-		if e.market != data.MarketID {
-			return nil, types.ErrUnknownSnapshotType
-		}
 		e.log.Debug("loading settlement snapshot",
-			logging.Int("positions", len(data.Positions)),
+			logging.Int("positions", len(data.PartyLastSettledPosition)),
 			logging.Int("trades", len(data.Trades)),
 		)
+
+		e.settledPosition = make(map[string]int64, len(data.PartyLastSettledPosition))
+		for _, psp := range data.PartyLastSettledPosition {
+			e.settledPosition[psp.Party] = psp.SettledPosition
+		}
+
+		e.lastMarkPrice = data.LastMarkPrice
+
 		// We don't restore positions here, we get those from the positions engine post restore
 		// restore trades
 		tradeMap := map[string][]*settlementTrade{}
@@ -89,10 +93,17 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 	// we just use the embedded market positions type for the market ID
 	// positions aren't working correctly for some reason, we get them from positions engine
 	data := types.SettlementState{
-		MarketPositions: &types.MarketPositions{
-			MarketID: e.market,
-		},
+		MarketID:      e.market,
+		LastMarkPrice: e.lastMarkPrice,
 	}
+
+	lastSettledPositions := make([]*types.PartySettledPosition, 0, len(e.settledPosition))
+	for k, v := range e.settledPosition {
+		lastSettledPositions = append(lastSettledPositions, &types.PartySettledPosition{Party: k, SettledPosition: v})
+	}
+	sort.Slice(lastSettledPositions, func(i, j int) bool { return lastSettledPositions[i].Party < lastSettledPositions[j].Party })
+	data.PartyLastSettledPosition = lastSettledPositions
+
 	// first get all parties that traded
 	tradeParties := make([]string, 0, len(e.trades))
 	tradeTotal := 0

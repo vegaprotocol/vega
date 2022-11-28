@@ -106,7 +106,7 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 	}
 
 	if dataNodeHasData && bool(l.conf.SQLStore.WipeOnStartup) {
-		if err = sqlstore.WipeDatabase(l.Log, l.conf.SQLStore.ConnectionConfig); err != nil {
+		if err = sqlstore.WipeDatabase(l.Log, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations); err != nil {
 			return fmt.Errorf("failed to wiped database:%w", err)
 		}
 		dataNodeHasData = false
@@ -287,7 +287,7 @@ func (l *NodeCommand) initialiseDecentralizedHistory() error {
 	l.snapshotService, err = snapshot.NewSnapshotService(snapshotServiceLog, l.conf.DeHistory.Snapshot,
 		l.conf.SQLStore.ConnectionConfig, l.vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyFrom),
 		l.vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyTo), func(version int64) error {
-			if err = sqlstore.MigrateToSchemaVersion(deHistoryLog, l.conf.SQLStore, version); err != nil {
+			if err = sqlstore.MigrateToSchemaVersion(deHistoryLog, l.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
 				return fmt.Errorf("failed to migrate to schema version %d: %w", version, err)
 			}
 			return nil

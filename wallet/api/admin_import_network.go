@@ -64,6 +64,10 @@ func (h *AdminImportNetwork) Handle(_ context.Context, rawParams jsonrpc.Params)
 		net.Name = params.Name
 	}
 
+	if len(net.Name) == 0 {
+		return nil, invalidParams(ErrNetworkNameIsRequired)
+	}
+
 	if exist, err := h.networkStore.NetworkExists(net.Name); err != nil {
 		return nil, internalError(fmt.Errorf("could not verify the network existence: %w", err))
 	} else if exist && !params.Overwrite {
@@ -122,7 +126,6 @@ func readImportNetworkSource(params AdminImportNetworkParams) (*network.Network,
 		if err != nil {
 			return nil, fmt.Errorf("could not read the network configuration at %q: %w", params.FilePath, err)
 		}
-
 		return net, nil
 	}
 

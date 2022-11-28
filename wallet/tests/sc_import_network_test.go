@@ -1,6 +1,8 @@
 package tests_test
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
@@ -175,4 +177,43 @@ func TestImportNetworkWithNewName(t *testing.T) {
 	require.NoError(t, err)
 	AssertListNetwork(t, listNetsResp2).
 		WithNetworks("my-network", networkName)
+}
+
+func TestRenameANetworkFileRenamesNetwork(t *testing.T) {
+	// given
+	home := t.TempDir()
+	networkFile := NewFile(t, home, "my-network.toml", FakeNetwork("my-network"))
+
+	// when
+	importNetworkResp, err := NetworkImport(t, []string{
+		"--home", home,
+		"--output", "json",
+		"--from-file", networkFile,
+	})
+
+	// then
+	require.NoError(t, err)
+	AssertImportNetwork(t, importNetworkResp).
+		WithName("my-network").
+		LocatedUnder(home)
+
+	// when
+	newNetworkName := "renamed-network"
+	require.NoError(t,
+		os.Rename(
+			importNetworkResp.FilePath,
+			filepath.Join(filepath.Dir(importNetworkResp.FilePath), newNetworkName+".toml"),
+		),
+	)
+
+	// when
+	listNetsResp, err := NetworkList(t, []string{
+		"--home", home,
+		"--output", "json",
+	})
+
+	// then
+	require.NoError(t, err)
+	AssertListNetwork(t, listNetsResp).
+		WithNetworks(newNetworkName)
 }

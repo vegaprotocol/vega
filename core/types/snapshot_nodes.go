@@ -181,8 +181,15 @@ type PayloadSettlement struct {
 }
 
 type SettlementState struct {
-	*MarketPositions
-	Trades []*SettlementTrade
+	MarketID                 string
+	LastMarkPrice            *num.Uint
+	PartyLastSettledPosition []*PartySettledPosition
+	Trades                   []*SettlementTrade
+}
+
+type PartySettledPosition struct {
+	Party           string
+	SettledPosition int64
 }
 
 type SettlementTrade struct {
@@ -1722,9 +1729,20 @@ func (s SettlementState) IntoProto() *snapshot.SettlementState {
 	for _, t := range s.Trades {
 		trades = append(trades, t.IntoProto())
 	}
+
+	settledPositions := make([]*snapshot.LastSettledPosition, 0, len(s.PartyLastSettledPosition))
+	for _, psp := range s.PartyLastSettledPosition {
+		settledPositions = append(settledPositions, &snapshot.LastSettledPosition{Party: psp.Party, SettledPosition: psp.SettledPosition})
+	}
+	lastMarkPrice := ""
+	if s.LastMarkPrice != nil {
+		lastMarkPrice = s.LastMarkPrice.String()
+	}
 	return &snapshot.SettlementState{
-		MarketPositions: s.MarketPositions.IntoProto(),
-		Trades:          trades,
+		MarketId:             s.MarketID,
+		LastMarkPrice:        lastMarkPrice,
+		Trades:               trades,
+		LastSettledPositions: settledPositions,
 	}
 }
 
@@ -1733,9 +1751,20 @@ func SettlementStateFromProto(ss *snapshot.SettlementState) *SettlementState {
 	for _, t := range ss.Trades {
 		trades = append(trades, SettlementTradeFromProto(t))
 	}
+	var lmp *num.Uint
+	if len(ss.LastMarkPrice) > 0 {
+		lmp, _ = num.UintFromString(ss.LastMarkPrice, 10)
+	}
+	partySettledPosition := make([]*PartySettledPosition, 0, len(ss.LastSettledPositions))
+	for _, lsp := range ss.LastSettledPositions {
+		partySettledPosition = append(partySettledPosition, &PartySettledPosition{Party: lsp.Party, SettledPosition: lsp.SettledPosition})
+	}
+
 	return &SettlementState{
-		MarketPositions: MarketPositionsFromProto(ss.MarketPositions),
-		Trades:          trades,
+		MarketID:                 ss.MarketId,
+		LastMarkPrice:            lmp,
+		PartyLastSettledPosition: partySettledPosition,
+		Trades:                   trades,
 	}
 }
 

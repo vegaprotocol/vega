@@ -1,13 +1,22 @@
 package store
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/base64"
+
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
+
+	"github.com/ipfs/kubo/config"
+	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
 	uuid "github.com/satori/go.uuid"
 )
 
 type Config struct {
 	// Mandatory Setting, must be set
-	IDSeed string `long:"id-seed" description:"used to generate the id and Key pair for this node"`
+	PeerID  string `long:"peer-id" description:"the ipfs peer id of this node"`
+	PrivKey string `long:"priv-key" description:"the ipfs priv key of this node"`
 
 	// Optional Settings
 	UseIpfsDefaultPeers encoding.Bool `long:"use-ipfs-default-peers" description:"if true ipfs default peers will be appended to the bootstrap peers"`
@@ -24,8 +33,16 @@ type Config struct {
 }
 
 func NewDefaultConfig() Config {
+	seed := uuid.NewV4().String()
+	identity, err := GenerateIdentityFromSeed([]byte(seed))
+	if err != nil {
+		panic("failed to generate default ipfs identity")
+	}
+
 	return Config{
-		IDSeed:              uuid.NewV4().String(),
+		PeerID:  identity.PeerID,
+		PrivKey: identity.PrivKey,
+
 		BootstrapPeers:      []string{},
 		UseIpfsDefaultPeers: true,
 
@@ -36,4 +53,35 @@ func NewDefaultConfig() Config {
 
 		HistoryRetentionBlockSpan: 604800, // One week of history at 1s per block
 	}
+}
+
+func GenerateIdentityFromSeed(seed []byte) (config.Identity, error) {
+	ident := config.Identity{}
+
+	var sk crypto.PrivKey
+	var pk crypto.PubKey
+
+	// Everything > 32 bytes is ignored in GenerateEd25519Key so do a little pre hashing
+	seedHash := sha256.Sum256(seed)
+
+	priv, pub, err := crypto.GenerateEd25519Key(bytes.NewReader(seedHash[:]))
+	if err != nil {
+		return ident, err
+	}
+
+	sk = priv
+	pk = pub
+
+	skbytes, err := crypto.MarshalPrivateKey(sk)
+	if err != nil {
+		return ident, err
+	}
+	ident.PrivKey = base64.StdEncoding.EncodeToString(skbytes)
+
+	id, err := peer.IDFromPublicKey(pk)
+	if err != nil {
+		return ident, err
+	}
+	ident.PeerID = id.Pretty()
+	return ident, nil
 }

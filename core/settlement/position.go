@@ -27,13 +27,8 @@ type npos struct {
 	price *num.Uint
 }
 
-// See positions.MarketPosition.
 type pos struct {
-	// embed the type, we will copy the three main fields because those should be immutable
-	// which we can't guarantee through an embedded interface
 	events.MarketPosition
-	party string
-	size  int64
 	price *num.Uint
 }
 
@@ -61,46 +56,11 @@ func (t settlementTrade) MarketPrice() *num.Uint {
 	return t.marketPrice.Clone()
 }
 
-func newPos(evt events.MarketPosition) *pos {
+func newPos(marketPosition events.MarketPosition, price *num.Uint) *pos {
 	return &pos{
-		MarketPosition: evt,
-		party:          evt.Party(),
-		size:           evt.Size(),
-		price:          evt.Price().Clone(),
+		MarketPosition: marketPosition,
+		price:          price.Clone(),
 	}
-}
-
-// update - set the size/price of an event accordingly.
-func (p *pos) update(evt events.MarketPosition) error {
-	// this check, in theory, should not be needed...
-	if p.party != evt.Party() {
-		return ErrPartyDoesNotMatch
-	}
-	// embed updated event
-	p.MarketPosition = evt
-	p.size = evt.Size()
-	p.price = evt.Price().Clone()
-	return nil
-}
-
-func (p pos) IsEmpty() bool {
-	if p.size != 0 || p.Buy() != 0 || p.Sell() != 0 {
-		return false
-	}
-	if !p.price.IsZero() || !p.VWBuy().IsZero() || !p.VWSell().IsZero() {
-		return false
-	}
-	return true
-}
-
-// Party - part of the MarketPosition interface, used to update position after SettlePreTrade.
-func (p pos) Party() string {
-	return p.party
-}
-
-// Size - part of the MarketPosition interface, used to update position after SettlePreTrade.
-func (p pos) Size() int64 {
-	return p.size
 }
 
 // Price - part of the MarketPosition interface, used to update position after SettlePreTrade.

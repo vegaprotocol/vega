@@ -111,10 +111,10 @@ message SubmitTransactionResponse {
   // Hash of the transaction, if accepted
   string tx_hash = 2;
   // Result code success if unsucessful
-  uint32 code     = 3;
+  uint32 code = 3;
   // Data for details
-  string data     = 4;
-  string log = 5 ;
+  string data = 4;
+  string log = 5;
   // Height for commit
   int64 height = 6;
 }
@@ -127,14 +127,19 @@ message CheckTransactionRequest {
 
 message CheckTransactionResponse {
   // Success will be true if the transaction was checked by the node
-  bool success      = 1;
-
+  bool success = 1;
   // Check code result
-  uint32 code       = 2;
+  uint32 code = 2;
   // Gas wanted for transaction
-  int64 gas_wanted  = 3;
+  int64 gas_wanted = 3;
   // Gas used for transaction
-  int64 gas_used    = 4;
+  int64 gas_used = 4;
+  // Data for details
+  string data = 5;
+  // Transaction log
+  string log = 6;
+  // Informations about the transaction
+  string info = 7;
 }
 
 // Request for submitting a version agnostic transaction on Vega
@@ -162,14 +167,14 @@ message SubmitRawTransactionRequest {
 message SubmitRawTransactionResponse {
   // Success will be true if the transaction was accepted by the node,
   // **Important** - success does not mean that the event is confirmed by consensus
-  bool success   = 1;
+  bool success = 1;
   // Hash of the transaction, if accepted
   string tx_hash = 2;
 
-  uint32 code    = 3;
-  string data    = 4;
-  string log     = 5;
-  int64 height   = 6;
+  uint32 code = 3;
+  string data = 4;
+  string log = 5;
+  int64 height = 6;
 }
 
 // Request for checking a version agnostic transaction on Vega
@@ -181,14 +186,19 @@ message CheckRawTransactionRequest {
 // Response for checking a version agnostic transaction on Vega
 message CheckRawTransactionResponse {
   // Success will be true if the transaction was checked by the node
-  bool success      = 1;
-
+  bool success = 1;
   // Check code result
-  uint32 code       = 2;
+  uint32 code = 2;
   // Gas wanted for transaction
-  int64 gas_wanted  = 3;
+  int64 gas_wanted = 3;
   // Gas used for transaction
-  int64 gas_used    = 4;
+  int64 gas_used = 4;
+  // Data for details
+  string data = 5;
+  // Transaction log
+  string log = 6;
+  // Informations about the transaction
+  string info = 7;
 }
 
 // Request for the current time of the vega network

@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -76,13 +77,14 @@ var (
 
 	testMigrationsDir       string
 	testMigrationVersionNum int
+	sqlFs                   fs.FS
 )
 
 func TestMain(t *testing.M) {
 	outerCtx, cancelOuterCtx := context.WithCancel(context.Background())
 	defer cancelOuterCtx()
 
-	testMigrationVersionNum = setupTestSQLMigrations()
+	testMigrationVersionNum, sqlFs = setupTestSQLMigrations()
 
 	var err error
 	snapshotsBackupDir, err = os.MkdirTemp("", "snapshotbackup")
@@ -302,7 +304,6 @@ func TestMain(t *testing.M) {
 		storeCfg.UseIpfsDefaultPeers = false
 		storeCfg.StartWebUI = false
 
-		storeCfg.IDSeed = strings.ReplaceAll(uuid.NewV4().String(), "-", "")
 		deHistoryStore, err = store.New(outerCtx, log, chainID, storeCfg, deHistoryHome, false)
 		if err != nil {
 			panic(err)
@@ -363,20 +364,20 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmbogxbXpQsmkPhrsRGdoAMTeBuab2ALhPPHZA4hw8ifQ7", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmWezSPFbRiY6u7WeohaafBWdCd5cfMiuFrVWUdSEZtyvJ", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmNqyrM538DrNFmMsjAohwHSzPJNvyC64Q8n8hzEHvp6FJ", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmcapMojGygbWJoNDcUeDyPALV9Lp2GefACqTjFqzLVvos", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmNqy7u9fSCbZEUGk4EFTGkwFwJhaFnmRqxfjWorbo6mtH", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmWUUBXB2AwHyinufVYNHKMQoA1ry1rpebsZzEbsJrjw29", snapshots)
-	}, postgresRuntimePath)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmRHYHFXTroa6haZNCj4ZCKFSNz5Y6SXpym9Dm3tahaksp", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmXr8CqxVTAp6vnftLJSU6z9pH9WM7jpeF5dxtDzkF6y2x", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmcWzgNz4kobCHDNMWL6cHsJrP6W65QuxAf7BEFcybXftb", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmRT2vvRADdhZFPCtwTBywewc3VhfJGkdNCSJVt5gw3vdU", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmNNAg4xPjzTX9BGkPEtpzkmdJ6tS125mhcwzBZ2AMqT5m", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmVjVwfs9rCMsmTuVCyLjvhWq3cvsdXyTyzmE6YmdE9z1X", snapshots)
+	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
 		log.Errorf("One or more tests failed, dumping postgres log:\n%s", postgresLog.String())
 	}
 }
 
-func setupTestSQLMigrations() int {
+func setupTestSQLMigrations() (int, fs.FS) {
 	sourceMigrationsDir, err := os.Getwd()
 	if err != nil {
 		panic(err)
@@ -388,6 +389,10 @@ func setupTestSQLMigrations() int {
 	testMigrationsDir, err = os.MkdirTemp("", "migrations")
 	if err != nil {
 		panic(err)
+	}
+
+	if os.Mkdir(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir), fs.ModePerm); err != nil {
+		panic(fmt.Errorf("failed to create migrations dir: %w", err))
 	}
 
 	var highestMigrationNumber int
@@ -413,7 +418,7 @@ func setupTestSQLMigrations() int {
 					return fmt.Errorf("failed to read file:%w", err)
 				}
 
-				err = os.WriteFile(filepath.Join(testMigrationsDir, info.Name()), data, fs.ModePerm)
+				err = os.WriteFile(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir, info.Name()), data, fs.ModePerm)
 				if err != nil {
 					return fmt.Errorf("failed to write file:%w", err)
 				}
@@ -433,13 +438,13 @@ func setupTestSQLMigrations() int {
 	}
 
 	testMigrationVersionNum := highestMigrationNumber + 1
-	err = os.WriteFile(filepath.Join(testMigrationsDir,
+	err = os.WriteFile(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir,
 		fmt.Sprintf("%04d_testmigration.sql", testMigrationVersionNum)), sql, fs.ModePerm)
 	if err != nil {
 		panic(err)
 	}
 
-	return testMigrationVersionNum
+	return testMigrationVersionNum, os.DirFS(testMigrationsDir)
 }
 
 func migrateDatabase(version int64) error {
@@ -463,17 +468,22 @@ func migrateDatabase(version int64) error {
 func newTestEventSourceWithProtocolUpdateMessage() *TestEventSource {
 	var err error
 	var currentBlock *entities.Block
+	var m sync.RWMutex
 	evtSource, err := newTestEventSource(func(e events.Event, evtsCh chan<- events.Event) {
 		switch e.Type() {
 		case events.EndBlockEvent:
 			if currentBlock != nil && currentBlock.Height == 2500 {
+				m.RLock()
 				evtsCh <- events.NewProtocolUpgradeStarted(context.Background(), eventsv1.ProtocolUpgradeStarted{
 					LastBlockHeight: uint64(currentBlock.Height),
 				})
+				m.RUnlock()
 			}
 		case events.BeginBlockEvent:
+			m.Lock()
 			beginBlock := e.(entities.BeginBlockEvent)
 			currentBlock, err = entities.BlockFromBeginBlock(beginBlock)
+			m.Unlock()
 			if err != nil {
 				panic(err)
 			}
@@ -513,7 +523,7 @@ func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {
 		assert.Equal(t, expectedBlocks, blocksFetched)
 		dehistoryService := setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
 
-		from, to, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
+		from, to, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx, sqlFs)
 		require.NoError(t, err)
 
 		assert.Equal(t, int64(1), from)
@@ -546,7 +556,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 
 	dehistoryService := setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
 
-	from, to, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
+	from, to, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx, sqlFs)
 	require.NoError(t, err)
 	assert.Equal(t, int64(2001), from)
 	assert.Equal(t, int64(3000), to)
@@ -636,7 +646,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 
 	dehistoryService := setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
 
-	from, to, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
+	from, to, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx, sqlFs)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), from)
 	assert.Equal(t, int64(2000), to)
@@ -762,21 +772,29 @@ type sqlStoreBroker interface {
 func emptyDatabase() {
 	// NOTE: do not use databasetest.DeleteEverything(), for these we need a totally fresh database everytime to ensure
 	// we model as closely as possible what happens in practice
-
 	var err error
+	var poolConfig *pgxpool.Config
+
+	poolConfig, err = sqlConfig.ConnectionConfig.GetPoolConfig()
+	if err != nil {
+		panic(fmt.Errorf("failed to get pool config: %w", err))
+	}
+
+	db := stdlib.OpenDB(*poolConfig.ConnConfig)
+
+	if _, err = db.Exec(`SELECT alter_job(job_id, scheduled => false) FROM timescaledb_information.jobs WHERE proc_name = 'policy_refresh_continuous_aggregate'`); err != nil {
+		panic(fmt.Errorf("failed to stop continuous aggregates: %w", err))
+	}
+	db.Close()
+
 	for i := 0; i < 5; i++ {
-		err = sqlstore.RecreateVegaDatabase(context.Background(), logging.NewTestLogger(), sqlConfig.ConnectionConfig)
+		err = sqlstore.WipeDatabase(logging.NewTestLogger(), sqlConfig.ConnectionConfig, sqlFs)
 		if err == nil {
 			break
 		}
 		time.Sleep(5 * time.Second)
 	}
 
-	if err != nil {
-		panic(err)
-	}
-
-	err = sqlstore.CreateVegaSchema(logging.NewTestLogger(), sqlConfig.ConnectionConfig)
 	if err != nil {
 		panic(err)
 	}

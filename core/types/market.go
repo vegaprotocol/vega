@@ -656,11 +656,6 @@ func MarketFromProto(mkt *proto.Market) *Market {
 	return m
 }
 
-// tick size as implied by the decimal places for the market.
-func (m Market) TickSize() *num.Uint {
-	return num.UintZero().Exp(num.NewUint(10), num.NewUint(m.DecimalPlaces))
-}
-
 func (m Market) IntoProto() *proto.Market {
 	var (
 		openAuct *proto.AuctionDuration

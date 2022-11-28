@@ -194,9 +194,7 @@ func ClientAPI(log *zap.Logger, walletStore WalletStore, interactor Interactor, 
 	walletAPI.RegisterMethod("client.connect_wallet", NewConnectWallet(walletStore, interactor, sessions))
 	walletAPI.RegisterMethod("client.disconnect_wallet", NewDisconnectWallet(sessions))
 	walletAPI.RegisterMethod("client.get_chain_id", NewGetChainID(nodeSelector))
-	walletAPI.RegisterMethod("client.get_permissions", NewGetPermissions(sessions))
-	walletAPI.RegisterMethod("client.list_keys", NewListKeys(sessions))
-	walletAPI.RegisterMethod("client.request_permissions", NewRequestPermissions(walletStore, interactor, sessions))
+	walletAPI.RegisterMethod("client.list_keys", NewListKeys(walletStore, interactor, sessions))
 	walletAPI.RegisterMethod("client.sign_transaction", NewSignTransaction(interactor, nodeSelector, sessions))
 	walletAPI.RegisterMethod("client.send_transaction", NewSendTransaction(interactor, nodeSelector, sessions))
 

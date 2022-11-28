@@ -458,12 +458,12 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 			p.Print(p.String().CheckMark().SuccessText(data.Message).NextLine())
 		}
 	case interactor.RequestPermissionsReview:
-		str := p.String().BlueArrow().Text("The application \"").InfoText(data.Hostname).Text("\" want to update the permissions for the wallet \"").InfoText(data.Wallet).Text("\":").NextLine()
+		str := p.String().BlueArrow().Text("The application \"").InfoText(data.Hostname).Text("\" requires the following permissions for \"").InfoText(data.Wallet).Text("\":").NextLine()
 		for perm, access := range data.Permissions {
 			str.ListItem().Text("- ").InfoText(perm).Text(": ").InfoText(access).NextLine()
 		}
 		p.Print(str)
-		approved := yesOrNo(p.String().QuestionMark().Text("Do you approve this update?"), p)
+		approved := yesOrNo(p.String().QuestionMark().Text("Do you want to grant these permissions?"), p)
 		if approved {
 			p.Print(p.String().CheckMark().Text("Permissions update approved.").NextLine())
 		} else {

@@ -203,7 +203,7 @@ type RequestPassphrase struct {
 }
 
 // RequestPermissionsReview is a review request emitted when a third-party
-// application wants to update the permissions.
+// application performs an operation that requires an update to the permissions.
 type RequestPermissionsReview struct {
 	Hostname    string            `json:"hostname"`
 	Wallet      string            `json:"wallet"`

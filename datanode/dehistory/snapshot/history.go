@@ -42,8 +42,11 @@ func (h History) GetCopySQL(dbMetaData DatabaseMetadata, databaseSnapshotsPath s
 	var copySQL []string
 	for tableName, meta := range dbMetaData.TableNameToMetaData {
 		if dbMetaData.TableNameToMetaData[tableName].Hypertable {
+			partitionColumn := dbMetaData.TableNameToMetaData[tableName].PartitionColumn
 			snapshotFile := filepath.Join(databaseSnapshotsPath, h.UncompressedDataDir(), tableName)
-			hyperTableCopySQL := fmt.Sprintf(`copy (select * from %s where vega_time >= (SELECT vega_time from blocks where height = %d) order by %s) to '%s'`, tableName,
+			hyperTableCopySQL := fmt.Sprintf(`copy (select * from %s where %s >= (SELECT vega_time from blocks where height = %d) order by %s) to '%s'`,
+				tableName,
+				partitionColumn,
 				h.HeightFrom,
 				meta.SortOrder, snapshotFile)
 			copySQL = append(copySQL, hyperTableCopySQL)
