@@ -105,8 +105,8 @@ func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerE
 	}
 
 	le := entities.LedgerEntry{
-		AccountFromID: accTo.ID,
-		AccountToID:   accFrom.ID,
+		AccountFromID: accFrom.ID,
+		AccountToID:   accTo.ID,
 		Quantity:      quantity,
 		TxHash:        entities.TxHash(txHash),
 		VegaTime:      vegaTime,

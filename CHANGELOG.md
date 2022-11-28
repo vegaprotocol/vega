@@ -32,6 +32,7 @@
 
 ### 🐛 Fixes
 - [6924](https://github.com/vegaprotocol/vega/issues/6924) - Fix deterministic sorting when nodes have equal scores and we have to choose who is in the signer set
+- [6812](https://github.com/vegaprotocol/vega/issues/6812) - Network name is derived solely from the filename to cause less confusion if the network `config` is renamed
 - [6831](https://github.com/vegaprotocol/vega/issues/6831) - Fix settlement state in snapshots and market settlement.
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
 - [6766](https://github.com/vegaprotocol/vega/issues/6766) - Handle relative vega home path being passed in `postgres` snapshots
@@ -40,6 +41,7 @@
 - [6781](https://github.com/vegaprotocol/vega/issues/6781) - Fix bug where only first 32 characters of the `IPFS` identity seed were used.
 - [6824](https://github.com/vegaprotocol/vega/issues/6824) - Respect `VEGA_HOME` for embedded `postgres` log location
 - [6843](https://github.com/vegaprotocol/vega/issues/6843) - Fix Visor runner keys
+- [6934](https://github.com/vegaprotocol/vega/issues/6934) - from/to accounts for ledger entries in database were reversed
 - [6826](https://github.com/vegaprotocol/vega/issues/6826) - Update `spam.pow.numberOfPastBlocks` range values
 - [6332](https://github.com/vegaprotocol/vega/issues/6332) - Standardise `graphql` responses
 - [6862](https://github.com/vegaprotocol/vega/issues/6862) - Add party in account update
@@ -52,8 +54,8 @@
 - [6844](https://github.com/vegaprotocol/vega/issues/6844) - Use proper type in `GQL` for transfer types and some types rename
 - [6783](https://github.com/vegaprotocol/vega/issues/6783) - Unstable `CI` tests for `dehistory`
 - [6844](https://github.com/vegaprotocol/vega/issues/6844) - Unstable `CI` tests for `dehistory`
-
-
+- [6844](https://github.com/vegaprotocol/vega/issues/6844) - Add API descriptions, remove unused ledger entries and fix typos
+ 
 ## 0.62.1
 
 ### 🛠 Improvements
@@ -66,7 +68,7 @@
 - [6762](https://github.com/vegaprotocol/vega/issues/6762) - Fix one off transfer events serialization
 - [6747](https://github.com/vegaprotocol/vega/issues/6747) - Ensure proposal with no participation does not get enacted
 - [6757](https://github.com/vegaprotocol/vega/issues/6655) - Fix oracle spec resolvers in Gateway
-- [6757](https://github.com/vegaprotocol/vega/issues/6757) - Fix signers resolvers in Gateway
+- [6952](https://github.com/vegaprotocol/vega/issues/6757) - Fix signers resolvers in Gateway
 
 
 ## 0.62.0
