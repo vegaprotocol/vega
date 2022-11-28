@@ -2980,6 +2980,12 @@ func (t *tradingDataServiceV2) GetMostRecentDeHistorySegment(context.Context, *v
 
 	segment, err := t.deHistoryService.GetHighestBlockHeightHistorySegment()
 	if err != nil {
+		if errors.Is(err, store.ErrSegmentNotFound) {
+			return &v2.GetMostRecentDeHistorySegmentResponse{
+				Segment: nil,
+			}, nil
+		}
+
 		return nil, apiError(codes.Internal, ErrGetMostRecentHistorySegment, err)
 	}
 

@@ -3,7 +3,7 @@ package dehistory
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/datanode/dehistory/initialise"
+	"code.vegaprotocol.io/vega/datanode/dehistory"
 
 	"github.com/jessevdk/go-flags"
 	"google.golang.org/grpc"
@@ -44,7 +44,7 @@ func DeHistory(ctx context.Context, parser *flags.Parser) error {
 }
 
 func getDatanodeClient(cfg config.Config) (v2.TradingDataServiceClient, *grpc.ClientConn, error) {
-	return initialise.GetDatanodeClientFromIPAndPort(cfg.API.IP, cfg.API.Port)
+	return dehistory.GetDatanodeClientFromIPAndPort(cfg.API.IP, cfg.API.Port)
 }
 
 func datanodeLive(cfg config.Config) bool {
