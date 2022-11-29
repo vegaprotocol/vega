@@ -358,7 +358,7 @@ type LedgerEntry struct {
 	// The amount transferred
 	Amount string `json:"amount"`
 	// Type of ledger entry
-	Type string `json:"type"`
+	Type vega.TransferType `json:"type"`
 	// RFC3339Nano time at which the transfer was made
 	Timestamp int64 `json:"timestamp"`
 }

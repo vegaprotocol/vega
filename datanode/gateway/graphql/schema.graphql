@@ -3457,7 +3457,7 @@ type LedgerEntry {
   "The amount transferred"
   amount: String!
   "Type of ledger entry"
-  type: String!
+  type: TransferType!
   "RFC3339Nano time at which the transfer was made"
   timestamp: Timestamp!
 }
