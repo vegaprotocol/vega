@@ -43,7 +43,7 @@ func testGenerateAPITokenValidFlagsSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, expectedReq, req)
+	assert.EqualValues(t, expectedReq, req)
 }
 
 func testGenerateAPITokenWithMissingFlagsFails(t *testing.T) {

@@ -30,11 +30,12 @@
 - [6871](https://github.com/vegaprotocol/vega/issues/6871) - Assure integration test framework throws an error when no watchers specified for a network parameter being set/updated
 - [6908](https://github.com/vegaprotocol/vega/issues/6871) - Update default retention policy
 - [6827](https://github.com/vegaprotocol/vega/issues/6615) - Add filters to `ordersConnection`
-- [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position 
+- [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position
 - [6988](https://github.com/vegaprotocol/vega/issues/6988) - Handle 0 timestamps in `graphql` marshaller
-- [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position 
+- [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position
 - [6949](https://github.com/vegaprotocol/vega/issues/6949) - Mark positions to market at the end of the block.
 - [6819](https://github.com/vegaprotocol/vega/issues/6819) - Support long-living token in wallet client API
+- [6964](https://github.com/vegaprotocol/vega/issues/6964) - Add support for long living tokens with expiry
 
 
 ### 🐛 Fixes

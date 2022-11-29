@@ -11,7 +11,10 @@ import (
 	"code.vegaprotocol.io/vega/wallet/api/session"
 )
 
-var ErrStoreNotInitialized = errors.New("the tokens store has not been initialized")
+var (
+	ErrStoreNotInitialized = errors.New("the tokens store has not been initialized")
+	ErrTokenExpired        = errors.New("token expired")
+)
 
 type Store struct {
 	tokensFilePath string
@@ -45,6 +48,7 @@ func (s *Store) ListTokens() ([]session.TokenSummary, error) {
 			CreateAt:    tokenInfo.CreatedAt,
 			Description: tokenInfo.Description,
 			Token:       tokenInfo.Token,
+			Expiry:      tokenInfo.Expiry,
 		})
 	}
 
@@ -61,6 +65,7 @@ func (s *Store) GetToken(token string) (session.Token, error) {
 		if tokenInfo.Token == token {
 			return session.Token{
 				Description: tokenInfo.Description,
+				Expiry:      tokenInfo.Expiry,
 				Token:       tokenInfo.Token,
 				Wallet: session.WalletCredentials{
 					Name:       tokenInfo.Wallet,
@@ -86,6 +91,7 @@ func (s *Store) SaveToken(token session.Token) error {
 		CreatedAt:   time.Now(),
 		Description: token.Description,
 		Wallet:      token.Wallet.Name,
+		Expiry:      token.Expiry,
 	})
 
 	return s.writeFile(tokens)
@@ -239,5 +245,14 @@ type tokenContent struct {
 	Token       string    `json:"token"`
 	CreatedAt   time.Time `json:"createdAt"`
 	Description string    `json:"description"`
+	Expiry      *int64    `json:"expiry"`
 	Wallet      string    `json:"wallet"`
+}
+
+func (t *tokenContent) Expired(now time.Time) bool {
+	if t.Expiry == nil {
+		return false
+	}
+
+	return time.Unix(*t.Expiry, 0).Before(now)
 }

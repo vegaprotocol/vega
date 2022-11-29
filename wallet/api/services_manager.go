@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/wallet/api/session"
 )
 
@@ -49,7 +51,13 @@ func (ns *ServicesManager) RegisterService(network, url string, sessions *sessio
 		if err != nil {
 			return fmt.Errorf("could not retrieve the wallet %q associated to the token %q: %w", tokenInfo.Wallet.Name, token.Token, err)
 		}
-		if err := sessions.ConnectWalletForLongLivingConnection(token.Token, w); err != nil {
+
+		var expiry *time.Time
+		if tokenInfo.Expiry != nil {
+			expiry = ptr.From(time.Unix(*tokenInfo.Expiry, 0))
+		}
+
+		if err := sessions.ConnectWalletForLongLivingConnection(token.Token, w, time.Now(), expiry); err != nil {
 			return fmt.Errorf("could not connect the wallet %q: %w", tokenInfo.Wallet.Name, err)
 		}
 	}

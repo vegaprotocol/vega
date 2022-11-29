@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api/session"
@@ -42,7 +43,7 @@ func (h *ClientListKeys) Handle(ctx context.Context, rawParams jsonrpc.Params) (
 		return nil, invalidParams(err)
 	}
 
-	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token)
+	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token, time.Now())
 	if err != nil {
 		return nil, invalidParams(err)
 	}

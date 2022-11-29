@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/api"
 	tokenStore "code.vegaprotocol.io/vega/wallet/api/session/store/v1"
@@ -115,6 +117,12 @@ func BuildCmdGenerateAPIToken(w io.Writer, preCheck APITokePreCheck, handler Gen
 		"Path to the file containing the wallet's passphrase",
 	)
 
+	cmd.Flags().DurationVar(&f.ExpiresIn,
+		"expires-in",
+		0,
+		"How duration for which the token will be valid",
+	)
+
 	autoCompleteWallet(cmd, f.WalletName, "wallet-name")
 
 	return cmd
@@ -125,6 +133,7 @@ type GenerateAPITokenFlags struct {
 	PassphraseFile       string
 	WalletName           string
 	WalletPassphraseFile string
+	ExpiresIn            time.Duration
 	passphrase           string
 }
 
@@ -144,8 +153,14 @@ func (f *GenerateAPITokenFlags) Validate() (api.AdminGenerateAPITokenParams, err
 		return api.AdminGenerateAPITokenParams{}, err
 	}
 
+	var expiry *int64
+	if f.ExpiresIn != 0 {
+		expiry = ptr.From(time.Now().Add(f.ExpiresIn).Unix())
+	}
+
 	tokenParams := api.AdminGenerateAPITokenParams{
 		Description: f.Description,
+		Expiry:      expiry,
 		Wallet: api.AdminGenerateAPITokenWalletParams{
 			Name:       f.WalletName,
 			Passphrase: walletPassphrase,
