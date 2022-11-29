@@ -1709,6 +1709,8 @@ type Market {
     dateRange: DateRange,
     "Pagination information"
     pagination: Pagination
+    "Filter orders"
+    filter: OrderFilter
   ): OrderConnection
 
   "Get account for a party or market"
@@ -1905,6 +1907,8 @@ type Party {
     dateRange: DateRange
     "Pagination information"
     pagination: Pagination
+    "Filter orders"
+    filter: OrderFilter
   ): OrderConnection
 
   tradesConnection(
@@ -3990,6 +3994,13 @@ type OrderEdge {
   node: Order!
   "The cursor for this order"
   cursor: String
+}
+
+input OrderFilter {
+  status: [OrderStatus!]
+  types: [OrderType!]
+  timeInForce: [OrderTimeInForce!]
+  excludeLiquidity: Boolean
 }
 
 "Connection type for retrieving cursor-based paginated order information"
