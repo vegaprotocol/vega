@@ -245,7 +245,17 @@ func MarshalOrderStatus(s vega.Order_Status) graphql.Marshaler {
 }
 
 func UnmarshalOrderStatus(v interface{}) (vega.Order_Status, error) {
-	return vega.Order_STATUS_UNSPECIFIED, ErrUnimplemented
+	s, ok := v.(string)
+	if !ok {
+		return vega.Order_STATUS_UNSPECIFIED, fmt.Errorf("exoected order status to be a string")
+	}
+
+	t, ok := vega.Order_Status_value[s]
+	if !ok {
+		return vega.Order_STATUS_UNSPECIFIED, fmt.Errorf("failed to convert order status from GraphQL to Proto: %v", s)
+	}
+
+	return vega.Order_Status(t), nil
 }
 
 func MarshalOrderTimeInForce(s vega.Order_TimeInForce) graphql.Marshaler {

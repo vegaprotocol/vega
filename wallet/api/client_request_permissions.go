@@ -10,8 +10,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-const PermissionsSuccessfullyUpdated = "The permissions have been successfully updated."
-
 type ClientRequestPermissionsParams struct {
 	Token                string                    `json:"token"`
 	RequestedPermissions wallet.PermissionsSummary `json:"requestedPermissions"`

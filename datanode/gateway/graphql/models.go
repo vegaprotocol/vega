@@ -316,7 +316,7 @@ type Erc20WithdrawalApproval struct {
 	// Signature aggregate from the nodes, in the following format:
 	// 0x + sig1 + sig2 + ... + sigN
 	Signatures string `json:"signatures"`
-	// The target address which will receive the funds
+	// The target address that will receive the funds
 	TargetAddress string `json:"targetAddress"`
 	// Timestamp at which the withdrawal was created
 	Creation string `json:"creation"`
@@ -358,7 +358,7 @@ type LedgerEntry struct {
 	// The amount transferred
 	Amount string `json:"amount"`
 	// Type of ledger entry
-	Type string `json:"type"`
+	Type vega.TransferType `json:"type"`
 	// RFC3339Nano time at which the transfer was made
 	Timestamp int64 `json:"timestamp"`
 }

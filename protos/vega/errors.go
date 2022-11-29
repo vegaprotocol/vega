@@ -114,6 +114,8 @@ func (err OrderError) Error() string {
 		return "OrderError: offset must be greater than zero"
 	case OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS:
 		return "OrderError: non-persistent order trades out of price bounds"
+	case OrderError_ORDER_ERROR_TOO_MANY_PEGGED_ORDERS:
+		return "OrderError: too many pegged orders"
 	default:
 		return "invalid OrderError"
 	}

@@ -100,7 +100,7 @@ func (ls *Ledger) Query(
 	filter *entities.LedgerEntryFilter,
 	dateRange entities.DateRange,
 	pagination entities.CursorPagination,
-) (*[]entities.AggregatedLedgerEntries, entities.PageInfo, error) {
+) (*[]entities.AggregatedLedgerEntry, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
 
 	filterQueries, args, err := filterLedgerEntriesQuery(filter)
@@ -179,11 +179,11 @@ type ledgerEntriesScanned struct {
 	AccountToMarketID   entities.MarketID
 }
 
-func parseScanned(scanned []ledgerEntriesScanned) []entities.AggregatedLedgerEntries {
-	ledgerEntries := []entities.AggregatedLedgerEntries{}
+func parseScanned(scanned []ledgerEntriesScanned) []entities.AggregatedLedgerEntry {
+	ledgerEntries := []entities.AggregatedLedgerEntry{}
 	if len(scanned) > 0 {
 		for i := range scanned {
-			ledgerEntries = append(ledgerEntries, entities.AggregatedLedgerEntries{
+			ledgerEntries = append(ledgerEntries, entities.AggregatedLedgerEntry{
 				VegaTime:            scanned[i].VegaTime,
 				Quantity:            scanned[i].Quantity,
 				AssetID:             &scanned[i].AssetID,

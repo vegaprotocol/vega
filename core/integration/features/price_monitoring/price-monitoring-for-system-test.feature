@@ -31,7 +31,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
       | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
-      
+
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price  | resulting trades | type       | tif     |
@@ -66,7 +66,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party  | reference     |
       | party3 | party3_buy_1  |
       | party4 | party4_sell_1 |
-      
+
     # 1st trigger breached with non-persistent order -> auction with initial duration of 6s starts
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
@@ -109,9 +109,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 100447 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 100447 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the mark price should be "100447" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 100356     | 100447            | TRADING_MODE_CONTINUOUS |
 
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     # Now we should be after update and the bounds should change
     # T + 5s
@@ -122,9 +123,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 100448 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 100448 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the mark price should be "100448" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 100356     | 100448            | TRADING_MODE_CONTINUOUS |
 
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     # Now, we have the following valid price ranges for the 2 triggers: [100213, 100525] & [100079, 100660]
     When the parties place the following orders:
@@ -132,9 +134,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party2 | ETH/DEC20 | buy  | 2      | 100213 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 100050 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the mark price should be "100448" for the market "ETH/DEC20"
-
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 100356     | 100448            | TRADING_MODE_CONTINUOUS |
 
 
     # T + 2s
@@ -175,9 +177,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party2 | ETH/DEC20 | buy  | 1      | 100292 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
 
-    Then the mark price should be "100292" for the market "ETH/DEC20"
-
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 100448     | 100292            | TRADING_MODE_CONTINUOUS |
 
 
     # T + 12s

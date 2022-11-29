@@ -106,7 +106,7 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 	}
 
 	if dataNodeHasData && bool(l.conf.SQLStore.WipeOnStartup) {
-		if err = sqlstore.WipeDatabase(l.Log, l.conf.SQLStore.ConnectionConfig); err != nil {
+		if err = sqlstore.WipeDatabase(l.Log, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations); err != nil {
 			return fmt.Errorf("failed to wiped database:%w", err)
 		}
 		dataNodeHasData = false
@@ -195,7 +195,7 @@ func (l *NodeCommand) initialiseDatabase() error {
 		}
 	}
 
-	err = sqlstore.MigrateSchema(l.Log, l.conf.SQLStore.ConnectionConfig)
+	err = sqlstore.MigrateToLatestSchema(l.Log, l.conf.SQLStore)
 	if err != nil {
 		return fmt.Errorf("failed to migrate to latest schema:%w", err)
 	}
@@ -233,21 +233,26 @@ func (l *NodeCommand) preRun([]string) (err error) {
 
 	eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SQLStore.FanOutBufferSize, 2)
 
-	var onBlockCommittedFn func(ctx context.Context, chainId string, lastCommittedBlockHeight int64)
+	var onBlockCommittedHandler func(ctx context.Context, chainId string, lastCommittedBlockHeight int64)
+	var protocolUpgradeHandler broker.ProtocolUpgradeHandler
 
-	if l.snapshotService != nil {
-		blockCommitHandler := snapshot.NewBlockCommitHandler(l.Log, l.snapshotService.SnapshotData, l.networkParameterService.GetByKey,
-			l.conf.Broker)
-		onBlockCommittedFn = blockCommitHandler.OnBlockCommitted
+	if l.conf.DeHistory.Enabled {
+		blockCommitHandler := dehistory.NewBlockCommitHandler(l.Log, l.conf.DeHistory, l.snapshotService.SnapshotData, l.networkParameterService.GetByKey,
+			bool(l.conf.Broker.UseEventFile), l.conf.Broker.FileEventSourceConfig.TimeBetweenBlocks.Duration)
+		onBlockCommittedHandler = blockCommitHandler.OnBlockCommitted
+		protocolUpgradeHandler = dehistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService,
+			l.deHistoryService.CreateAndPublishSegment)
 	} else {
-		onBlockCommittedFn = func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) {}
+		onBlockCommittedHandler = func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) {}
+		protocolUpgradeHandler = dehistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService,
+			func(ctx context.Context, chainID string, toHeight int64) error { return nil })
 	}
 
 	l.sqlBroker = broker.NewSQLStoreBroker(l.Log, l.conf.Broker, l.conf.ChainID, eventSource,
 		l.transactionalConnectionSource,
 		l.blockStore,
-		l.protocolUpgradeService,
-		onBlockCommittedFn,
+		onBlockCommittedHandler,
+		protocolUpgradeHandler,
 		l.GetSQLSubscribers(),
 	)
 
@@ -281,7 +286,12 @@ func (l *NodeCommand) initialiseDecentralizedHistory() error {
 	var err error
 	l.snapshotService, err = snapshot.NewSnapshotService(snapshotServiceLog, l.conf.DeHistory.Snapshot,
 		l.conf.SQLStore.ConnectionConfig, l.vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyFrom),
-		l.vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyTo))
+		l.vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyTo), func(version int64) error {
+			if err = sqlstore.MigrateToSchemaVersion(deHistoryLog, l.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
+				return fmt.Errorf("failed to migrate to schema version %d: %w", version, err)
+			}
+			return nil
+		})
 	if err != nil {
 		return fmt.Errorf("failed to create snapshot service:%w", err)
 	}

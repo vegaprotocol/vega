@@ -51,7 +51,11 @@ Feature: Replicate failing system tests after changes to price monitoring (trigg
       | party1 | ETH/DEC20 | buy  | 1      | 100150 | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC20 | sell | 1      | 100150 | 1                | TYPE_LIMIT | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-    And the mark price should be "100150" for the market "ETH/DEC20"
+
+    # checking if continuous mode still exists
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 100000     | 100150            | TRADING_MODE_CONTINUOUS |
 
     ## This order should breach one price bound (price bounds are 100156 and 100290)
     When the parties place the following orders:
@@ -59,11 +63,19 @@ Feature: Replicate failing system tests after changes to price monitoring (trigg
       | party2 | ETH/DEC20 | sell | 2      | 100160 | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC20 | buy  | 1      | 100160 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
-    And the mark price should be "100150" for the market "ETH/DEC20"
+
+    # checking if continuous mode still exists
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode                    |
+      | 100000     | 100150            | TRADING_MODE_MONITORING_AUCTION |
+
 
     # after opening auction, market time is 2020-10-16T00:00:02Z (00 seconds + 2x auction duration)
     # The price auction violated 1 bound, so the auction period was 6 seconds, meaning  the auction
     # lasts until 2020-10-16T00:00:08Z, update time to 1 second after:
     When time is updated to "2020-10-16T00:00:09Z"
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-    And the mark price should be "100160" for the market "ETH/DEC20"
+
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 100160     | 100160            | TRADING_MODE_CONTINUOUS |

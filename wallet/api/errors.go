@@ -7,15 +7,43 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	coreversion "code.vegaprotocol.io/vega/version"
+	"code.vegaprotocol.io/vega/wallet/api/node/types"
 )
 
 const (
 	// Network error codes are errors that comes from the network itself and its
 	// nodes. It ranges from 1000 to 1999, included.
+	// Apart from the communication failure, network errors are valued based on
+	// their ABCI code counter-part:
+	//     Network_Error_Code == ABCI_Error_Code + 1000
 
-	// ErrorCodeNodeRequestFailed refers to the inability of the program to
+	// ErrorCodeNodeCommunicationFailed refers to the inability of the program to
 	// talk to the network nodes.
-	ErrorCodeNodeRequestFailed jsonrpc.ErrorCode = 1000
+	ErrorCodeNodeCommunicationFailed jsonrpc.ErrorCode = 1000
+
+	// ErrorCodeNetworkRejectedTransaction refers to a transaction rejected by
+	// the network nodes but for an unknown ABCI code.
+	ErrorCodeNetworkRejectedTransaction jsonrpc.ErrorCode = 1001
+
+	// ErrorCodeNetworkRejectedInvalidTransaction refers to a validation failure raised
+	// by the network nodes (error code 51).
+	ErrorCodeNetworkRejectedInvalidTransaction jsonrpc.ErrorCode = 1051
+
+	// ErrorCodeNetworkRejectedMalformedTransaction refers to the inability to
+	// decode a transaction from the network nodes (error code 60).
+	ErrorCodeNetworkRejectedMalformedTransaction jsonrpc.ErrorCode = 1060
+
+	// ErrorCodeNetworkCouldNotProcessTransaction refers to the inability to
+	// process a transaction from the network nodes (error code 70).
+	ErrorCodeNetworkCouldNotProcessTransaction jsonrpc.ErrorCode = 1070
+
+	// ErrorCodeNetworkRejectedUnsupportedTransaction is raised when the network
+	// nodes encounter an unsupported transaction (error code 80).
+	ErrorCodeNetworkRejectedUnsupportedTransaction jsonrpc.ErrorCode = 1080
+
+	// ErrorCodeNetworkSpamProtectionActivated is raised when the network
+	// nodes spin up the spam protection mechanism (error code 89).
+	ErrorCodeNetworkSpamProtectionActivated jsonrpc.ErrorCode = 1089
 
 	// Application error codes are programmatic errors that comes from the API
 	// itself and its "business" rules. It ranges from 2000 to 2999, included.
@@ -36,7 +64,7 @@ const (
 	ErrorCodeIncompatibilityBetweenNetworkAndSoftware jsonrpc.ErrorCode = 2002
 
 	// ErrorCodeServicePortAlreadyBound refers to a service that attempt to run
-	// on a port that is already bound. The user should try to shutdown the
+	// on a port that is already bound. The user should try to shut down the
 	// software using that port, or update the configuration to use another port.
 	ErrorCodeServicePortAlreadyBound jsonrpc.ErrorCode = 2003
 
@@ -80,6 +108,9 @@ var (
 	ErrEncodedSignatureIsNotValidBase64String             = errors.New("the encoded signature is not a valid base-64 string")
 	ErrEncodedTransactionIsNotValidBase64String           = errors.New("the encoded transaction is not a valid base-64 string")
 	ErrEncodedTransactionIsRequired                       = errors.New("the encoded transaction is required")
+	ErrTransactionIsRequired                              = errors.New("the transaction or encoded transaction is required")
+	ErrEncodedTransactionAndTransactionSupplied           = errors.New("both transaction and encodedTransaction supplied")
+	ErrEncodedTransactionIsNotValid                       = errors.New("the encoded transaction is not valid")
 	ErrHostnameIsRequired                                 = errors.New("the hostname is required")
 	ErrInvalidLogLevelValue                               = errors.New("invalid log level value")
 	ErrInvalidTokenExpiryValue                            = errors.New("invalid token expiry value")
@@ -89,11 +120,16 @@ var (
 	ErrMultipleNetworkSources                             = errors.New("network sources are mutually exclusive")
 	ErrNetworkAlreadyExists                               = errors.New("a network with the same name already exists")
 	ErrNetworkConfigurationDoesNotHaveGRPCNodes           = errors.New("the network does not have gRPC hosts configured")
+	ErrNetworkCouldNotProcessTransaction                  = errors.New("the network could not process the transaction")
 	ErrNetworkDoesNotExist                                = errors.New("the network does not exist")
 	ErrNetworkIsRequired                                  = errors.New("the network is required")
 	ErrNetworkNameIsRequired                              = errors.New("the network name is required")
 	ErrNetworkOrNodeAddressIsRequired                     = errors.New("a network or a node address is required")
+	ErrNetworkRejectedInvalidTransaction                  = errors.New("the network rejected the transaction because it's invalid")
+	ErrNetworkRejectedMalformedTransaction                = errors.New("the network rejected the transaction because it's malformed")
+	ErrNetworkRejectedUnsupportedTransaction              = errors.New("the network does not support this transaction")
 	ErrNetworkSourceIsRequired                            = errors.New("a network source is required")
+	ErrNetworkSpamProtectionActivated                     = errors.New("the network blocked the transaction through the spam protection")
 	ErrNewNameIsRequired                                  = errors.New("the new name is required")
 	ErrNewPassphraseIsRequired                            = errors.New("the new passphrase is required")
 	ErrNextAndCurrentPublicKeysCannotBeTheSame            = errors.New("the next and current public keys cannot be the same")
@@ -145,8 +181,39 @@ func userError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
 	return jsonrpc.NewCustomError(code, "User error", err)
 }
 
-func networkError(err error) *jsonrpc.ErrorDetails {
-	return jsonrpc.NewCustomError(ErrorCodeNodeRequestFailed, "Network error", err)
+func networkError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
+	return jsonrpc.NewCustomError(code, "Network error", err)
+}
+
+// networkErrorFromTransactionError returns an error with a generic message but
+// a specialized code. This is intended to give a coarse-grained indication
+// to the third-party application without taking any risk of leaking information
+// from the error message.
+func networkErrorFromTransactionError(err error) *jsonrpc.ErrorDetails {
+	txErr := types.TransactionError{}
+	isTxErr := errors.As(err, &txErr)
+	if !isTxErr {
+		return networkError(ErrorCodeNodeCommunicationFailed, ErrTransactionFailed)
+	}
+
+	switch txErr.ABCICode {
+	case 51:
+		return networkError(ErrorCodeNetworkRejectedInvalidTransaction, ErrNetworkRejectedInvalidTransaction)
+	case 60:
+		return networkError(ErrorCodeNetworkRejectedMalformedTransaction, ErrNetworkRejectedMalformedTransaction)
+	case 70:
+		return networkError(ErrorCodeNetworkCouldNotProcessTransaction, ErrNetworkCouldNotProcessTransaction)
+	case 80:
+		return networkError(ErrorCodeNetworkRejectedUnsupportedTransaction, ErrNetworkRejectedUnsupportedTransaction)
+	case 89:
+		return networkError(ErrorCodeNetworkSpamProtectionActivated, ErrNetworkSpamProtectionActivated)
+	default:
+		return networkError(ErrorCodeNetworkRejectedTransaction, ErrTransactionFailed)
+	}
+}
+
+func nodeCommunicationError(err error) *jsonrpc.ErrorDetails {
+	return networkError(ErrorCodeNodeCommunicationFailed, err)
 }
 
 func invalidParams(err error) *jsonrpc.ErrorDetails {

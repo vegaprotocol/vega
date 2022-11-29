@@ -57,19 +57,19 @@ Feature: Test for issue 5460
 
     When the opening auction period ends for market "ETH/DEC21"
     Then the auction ends with a traded volume of "1000000" at a price of "100000000"
-    
+
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 100000000  | TRADING_MODE_CONTINUOUS | 43200   | 82056031  | 121701233 | 54210000     | 100000000      | 1000000       |
 
     When the parties place the following orders:
-      | party  | market id | side | volume | price     | resulting trades | type        | tif     | reference | 
-      | party1 | ETH/DEC21 | buy  | 2000000| 101000000 | 4                | TYPE_MARKET | TIF_GFN | ref-ref   | 
-    And the network moves ahead "1" blocks
+      | party  | market id | side | volume | price     | resulting trades | type        | tif     | reference |
+      | party1 | ETH/DEC21 | buy  | 2000000| 101000000 | 4                | TYPE_MARKET | TIF_GFN | ref-ref   |
+    And the network moves ahead "100" blocks
 
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 110000000  | TRADING_MODE_MONITORING_AUCTION | 43200   | 82757664  | 122741858 | 84107975     | 100000000      | 1410474       |
+      | mark price | last traded price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 100000000  | 110000000         | TRADING_MODE_MONITORING_AUCTION | 43200   | 82757664  | 122741858 | 84107975     | 100000000      | 1410474       |
 
 Scenario: 002 replicate bug
 
@@ -84,7 +84,7 @@ Scenario: 002 replicate bug
       | party_a2 | ETH/DEC21 | sell | 100000 | 30000    | 0                | TYPE_LIMIT | TIF_GTC |
       | party_r  | ETH/DEC21 | buy  | 100000 | 29998    | 0                | TYPE_LIMIT | TIF_GTC |
       | party_r  | ETH/DEC21 | sell | 100000 | 30002    | 0                | TYPE_LIMIT | TIF_GTC |
-      
+
     Then the opening auction period ends for market "ETH/DEC21"
     And the auction ends with a traded volume of "100000" at a price of "30000"
 
@@ -92,7 +92,7 @@ Scenario: 002 replicate bug
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 30000      | TRADING_MODE_CONTINUOUS | 43200   | 24617     | 36510     | 1626         | 200000000      | 100000        |
 
-   When the parties place the following orders: 
+   When the parties place the following orders:
      | party    | market id | side | volume | price    | resulting trades | type       | tif     |
      | party_r  | ETH/DEC21 | buy  | 100000 | 29987    | 0                | TYPE_LIMIT | TIF_GTC |
      | party_r  | ETH/DEC21 | buy  | 100000 | 29977    | 0                | TYPE_LIMIT | TIF_GTC |
@@ -100,14 +100,14 @@ Scenario: 002 replicate bug
      | party_r  | ETH/DEC21 | buy  | 100000 | 29957    | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC21"
-    
+
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 30000      | TRADING_MODE_CONTINUOUS | 43200   | 24617     | 36510     | 1626         | 200000000      | 100000        |
 
-    And the parties place the following orders: 
-     | party    | market id | side | volume  | price   | resulting trades | type        | tif     | 
-     | party_r1 | ETH/DEC21 | buy  | 300000  | 400000  | 2                | TYPE_MARKET | TIF_IOC | 
+    And the parties place the following orders:
+     | party    | market id | side | volume  | price   | resulting trades | type        | tif     |
+     | party_r1 | ETH/DEC21 | buy  | 300000  | 400000  | 2                | TYPE_MARKET | TIF_IOC |
 
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price  | volume      |
@@ -120,12 +120,12 @@ Scenario: 002 replicate bug
       | sell | 30002  | 0           |
       | sell | 30205  | 0           |
     When the network moves ahead "1" blocks
-    
+
     Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC21"
 
-   And the parties place the following orders: 
-     | party    | market id | side | volume  | price  | resulting trades | type       | tif     | 
-     | party_r  | ETH/DEC21 | sell | 100000  | 30002  | 0                | TYPE_LIMIT | TIF_GTC | 
+   And the parties place the following orders:
+     | party    | market id | side | volume  | price  | resulting trades | type       | tif     |
+     | party_r  | ETH/DEC21 | sell | 100000  | 30002  | 0                | TYPE_LIMIT | TIF_GTC |
 
    Then the network moves ahead "10" blocks
 
@@ -142,9 +142,9 @@ Scenario: 002 replicate bug
       | sell | 30002  | 100000      |
       | sell | 30205  | 2513432974  |
 
-   And the parties place the following orders: 
-     | party    | market id | side | volume  | price   |resulting trades | type       | tif     | 
-     | party_r  | ETH/DEC21 | buy  | 100000  | 29700   |       0         | TYPE_LIMIT | TIF_GTC | 
+   And the parties place the following orders:
+     | party    | market id | side | volume  | price   |resulting trades | type       | tif     |
+     | party_r  | ETH/DEC21 | buy  | 100000  | 29700   |       0         | TYPE_LIMIT | TIF_GTC |
 
   And the order book should have the following volumes for market "ETH/DEC21":
       | side | price  | volume      |
@@ -163,7 +163,7 @@ Scenario: 002 replicate bug
      | trading mode            | auction trigger             | target stake | supplied stake | open interest |
      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 6549         | 200000000      | 400000        |
 
-   And the parties place the following orders: 
+   And the parties place the following orders:
      | party    | market id | side | volume  | price   | resulting trades | type        | tif     |
      | party_r1 | ETH/DEC21 | sell | 600000  | 29000   | 6                | TYPE_MARKET | TIF_IOC |
 

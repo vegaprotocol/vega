@@ -4,6 +4,7 @@ import (
 	"context"
 
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"google.golang.org/grpc"
@@ -20,13 +21,13 @@ func (c *InsecureGRPCAdapter) Host() string {
 	return c.host
 }
 
-func (c *InsecureGRPCAdapter) Statistics(ctx context.Context) (Statistics, error) {
+func (c *InsecureGRPCAdapter) Statistics(ctx context.Context) (nodetypes.Statistics, error) {
 	statistics, err := c.client.Statistics(ctx, &apipb.StatisticsRequest{})
 	if err != nil {
-		return Statistics{}, err
+		return nodetypes.Statistics{}, err
 	}
 
-	return Statistics{
+	return nodetypes.Statistics{
 		BlockHeight: statistics.Statistics.BlockHeight,
 		BlockHash:   statistics.Statistics.BlockHash,
 		ChainID:     statistics.Statistics.ChainId,
@@ -38,13 +39,13 @@ func (c *InsecureGRPCAdapter) SubmitTransaction(ctx context.Context, req *apipb.
 	return c.client.SubmitTransaction(ctx, req)
 }
 
-func (c *InsecureGRPCAdapter) LastBlock(ctx context.Context) (LastBlock, error) {
+func (c *InsecureGRPCAdapter) LastBlock(ctx context.Context) (nodetypes.LastBlock, error) {
 	lastBlock, err := c.client.LastBlockHeight(ctx, &apipb.LastBlockHeightRequest{})
 	if err != nil {
-		return LastBlock{}, err
+		return nodetypes.LastBlock{}, err
 	}
 
-	return LastBlock{
+	return nodetypes.LastBlock{
 		ChainID:                 lastBlock.ChainId,
 		BlockHeight:             lastBlock.Height,
 		BlockHash:               lastBlock.Hash,

@@ -5,7 +5,7 @@ import (
 
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/wallet/api/node/adapters"
+	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
 )
 
 // Generates mocks
@@ -16,8 +16,8 @@ type Node interface {
 	Host() string
 	Stop() error
 	SendTransaction(context.Context, *commandspb.Transaction, apipb.SubmitTransactionRequest_Type) (string, error)
-	Statistics(ctx context.Context) (adapters.Statistics, error)
-	LastBlock(context.Context) (adapters.LastBlock, error)
+	Statistics(ctx context.Context) (nodetypes.Statistics, error)
+	LastBlock(context.Context) (nodetypes.LastBlock, error)
 }
 
 // ReportType defines the type of event that occurred.

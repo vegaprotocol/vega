@@ -474,8 +474,8 @@ Feature: Fees calculations
 
       # checking if continuous mode still exists
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            |
-      | 1000       | TRADING_MODE_CONTINUOUS |
+      | mark price | last traded price | trading mode            |
+      | 1002       | 1000              | TRADING_MODE_CONTINUOUS |
 
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |

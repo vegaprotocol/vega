@@ -82,7 +82,7 @@ enum TxVersion {
 // Represents a transaction to be sent to Vega.
 message Transaction {
   // One of the set of Vega commands.
-  // These bytes are should be built as follow:
+  // These bytes are should be built as follows:
   //   chain_id_as_bytes + \0 character as delimiter + proto_marshalled_command
   bytes input_data = 1;
 
@@ -106,7 +106,10 @@ message Transaction {
   ProofOfWork pow = 3000;
 }
 
+// Components needed for the network to verify proof-of-work
 message ProofOfWork {
+  // A unique transaction identifier used to seed the proof-of-work hash.
   string tid = 1;
+  // A number which, combined with the transaction identifier, will produce a hash with the required number of leading zeros to be accepted by the network.
   uint64 nonce = 2;
 }

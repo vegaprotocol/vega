@@ -214,15 +214,16 @@ type Market struct {
 
 	mu sync.Mutex
 
-	markPrice   *num.Uint
-	priceFactor *num.Uint
+	lastTradedPrice *num.Uint
+	markPrice       *num.Uint
+	priceFactor     *num.Uint
 
 	// own engines
 	matching           *matching.CachedOrderBook
 	tradableInstrument *markets.TradableInstrument
 	risk               *risk.Engine
 	position           *positions.SnapshotEngine
-	settlement         *settlement.Engine
+	settlement         *settlement.SnapshotEngine
 	fee                *fee.Engine
 	liquidity          *liquidity.SnapshotEngine
 
@@ -269,7 +270,6 @@ type Market struct {
 	settlementDataInMarket *num.Uint
 	nextMTM                time.Time
 	mtmDelta               time.Duration
-	hasTraded              bool
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -329,7 +329,7 @@ func NewMarket(
 		nil,
 	)
 
-	settleEngine := settlement.New(
+	settleEngine := settlement.NewSnapshotEngine(
 		log,
 		settlementConfig,
 		tradableInstrument.Instrument.Product,
@@ -356,7 +356,7 @@ func NewMarket(
 
 	now := timeService.GetTimeNow()
 	liqEngine := liquidity.NewSnapshotEngine(
-		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, book, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
+		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, book, asset, mkt.ID, stateVarEngine, priceFactor.Clone(), positionFactor)
 
 	// The market is initially created in a proposed state
 	mkt.State = types.MarketStateProposed
@@ -559,6 +559,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		MidPrice:                  m.priceToMarketPrecision(midPrice),
 		StaticMidPrice:            m.priceToMarketPrecision(staticMidPrice),
 		MarkPrice:                 m.priceToMarketPrecision(m.getCurrentMarkPrice()),
+		LastTradedPrice:           m.priceToMarketPrecision(m.getLastTradedPrice()),
 		Timestamp:                 m.timeService.GetTimeNow().UnixNano(),
 		OpenInterest:              m.position.GetOpenInterest(),
 		IndicativePrice:           m.priceToMarketPrecision(indicativePrice),
@@ -650,8 +651,6 @@ func (m *Market) GetID() string {
 }
 
 func (m *Market) PostRestore(ctx context.Context) error {
-	m.settlement.Update(m.position.Positions())
-
 	pps := m.position.Parties()
 	peggedOrder := m.peggedOrders.parked
 	parties := make(map[string]struct{}, len(pps)+len(peggedOrder))
@@ -728,9 +727,11 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 
 	// MTM if enough time has elapsed, we are not in auction, and we have a non-zero mark price.
 	// we MTM in leaveAuction before deploying LP orders like we did before, but we do update nextMTM there
-	if mp := m.getCurrentMarkPrice(); mp != nil && !mp.IsZero() && !m.nextMTM.After(t) && !m.as.InAuction() {
+	mp := m.getLastTradedPrice()
+	if mp != nil && !mp.IsZero() && !m.as.InAuction() && !m.nextMTM.After(t) {
+		m.markPrice = mp.Clone()
 		m.nextMTM = t.Add(m.mtmDelta) // add delta here
-		if m.hasTraded {
+		if m.settlement.HasTraded() {
 			mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
 			dummy := &types.Order{
 				ID:            m.idgen.NextID(),
@@ -738,7 +739,20 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 				OriginalPrice: mcmp,
 			}
 			m.confirmMTM(ctx, dummy, nil)
-			m.hasTraded = false // trades have been settled
+		}
+
+		closedWithoutLP := []events.MarketPosition{}
+		closedPositions := m.position.GetClosedPositions()
+		for _, p := range closedPositions {
+			// if the party doesn't have a potential position anymore?
+			// and it's not an LP (they could just be undeployed)
+			if !m.liquidity.IsLiquidityProvider(p.Party()) {
+				closedWithoutLP = append(closedWithoutLP, p)
+			}
+		}
+
+		if len(closedWithoutLP) > 0 {
+			m.releaseExcessMargin(ctx, closedWithoutLP...)
 		}
 	}
 
@@ -748,6 +762,18 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 
 	m.updateMarketValueProxy()
 	m.updateLiquidityFee(ctx)
+	if m.settlement.HasTraded() && m.closed && mp != nil {
+		// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
+		// works as expected.
+		m.markPrice = mp.Clone()
+		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
+		dummy := &types.Order{
+			ID:            m.idgen.NextID(),
+			Price:         mp.Clone(),
+			OriginalPrice: mcmp,
+		}
+		m.confirmMTM(ctx, dummy, nil)
+	}
 	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
 	return m.closed
 }
@@ -829,8 +855,6 @@ func (m *Market) closeCancelledMarket(ctx context.Context) error {
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
-	// market is closed, final settlement
-	// call settlement and stuff
 	positions, err := m.settlement.Settle(t, m.assetDP)
 	if err != nil {
 		m.log.Error("Failed to get settle positions on market closed",
@@ -1073,7 +1097,8 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	// now that we're left the auction, we can mark all positions
 	// in case any party is distressed (Which shouldn't be possible)
 	// we'll fall back to the a network order at the new mark price (mid-price)
-	cmp := m.getCurrentMarkPrice()
+	cmp := m.getLastTradedPrice()
+	m.markPrice = cmp.Clone()
 	mcmp := num.UintZero().Div(cmp, m.priceFactor) // create the market representation of the price
 	m.confirmMTM(ctx, &types.Order{
 		ID:            m.idgen.NextID(),
@@ -1253,9 +1278,10 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 	// if this position went 0
 	pos, ok := m.position.GetPositionByPartyID(partyID)
 	if !ok {
-		// position was never created or party went distressed and don't exist
-		// all good we can return
-		return
+		// the party has closed their position and it's been removed from the
+		// position engine. Let's just create an empty one, so it can be cleared
+		// down the line.
+		pos = positions.NewMarketPosition(partyID)
 	}
 	m.releaseExcessMargin(ctx, pos)
 }
@@ -1267,22 +1293,33 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 	asset, _ := m.mkt.GetAsset()
 	evts := make([]events.Event, 0, len(positions))
 	for _, pos := range positions {
+		// if the party still have a position in the settlement engine,
+		// do not remove them for now
+		if m.settlement.HasPosition(pos.Party()) {
+			continue
+		}
+
 		// now check if all buy/sell/size are 0
 		if pos.Buy() != 0 || pos.Sell() != 0 || pos.Size() != 0 || !pos.VWBuy().IsZero() || !pos.VWSell().IsZero() {
 			// position is not 0, nothing to release surely
-			return
+			continue
 		}
-		partyID := pos.Party()
 
 		transfers, err := m.collateral.ClearPartyMarginAccount(
-			ctx, partyID, m.GetID(), asset)
+			ctx, pos.Party(), m.GetID(), asset)
 		if err != nil {
 			m.log.Error("unable to clear party margin account", logging.Error(err))
 			return
 		}
-		evts = append(evts, events.NewLedgerMovements(
-			ctx, []*types.LedgerMovement{transfers}),
-		)
+
+		if transfers != nil {
+			evts = append(evts, events.NewLedgerMovements(
+				ctx, []*types.LedgerMovement{transfers}),
+			)
+		}
+
+		// we can delete the party from the map here
+		delete(m.parties, pos.Party())
 	}
 	m.broker.SendBatch(evts)
 }
@@ -1645,7 +1682,6 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	}
 	// Calculate and set current mark price
 	m.setMarkPrice(conf.Trades[len(conf.Trades)-1])
-	m.hasTraded = true
 
 	// Insert all trades resulted from the executed order
 	tradeEvts := make([]events.Event, 0, len(conf.Trades))
@@ -1684,7 +1720,7 @@ func (m *Market) confirmMTM(
 	ctx context.Context, order *types.Order, orderUpdates []*types.Order,
 ) {
 	// now let's get the transfers for MTM settlement
-	markPrice := m.getCurrentMarkPrice()
+	markPrice := m.getLastTradedPrice()
 	evts := m.position.UpdateMarkPrice(markPrice)
 	settle := m.settlement.SettleMTM(ctx, markPrice, evts)
 	if len(orderUpdates) == 0 {
@@ -1852,7 +1888,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		// now that we closed orders, let's run the risk engine again
 		// so it'll separate the positions still in distress from the
 		// which have acceptable margins
-		okPos, closed = m.risk.ExpectMargins(distressedMarginEvts, m.markPrice.Clone())
+		okPos, closed = m.risk.ExpectMargins(distressedMarginEvts, m.lastTradedPrice.Clone())
 
 		if m.log.GetLevel() == logging.DebugLevel {
 			for _, v := range okPos {
@@ -2006,7 +2042,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	evt := m.position.Positions()
 
 	// settle MTM, the positions have changed
-	settle := m.settlement.SettleMTM(ctx, m.markPrice.Clone(), evt)
+	settle := m.settlement.SettleMTM(ctx, m.lastTradedPrice.Clone(), evt)
 	// we're not interested in the events here, they're used for margin updates
 	// we know the margin requirements will be met, and come the next block
 	// margins will automatically be checked anyway
@@ -2231,7 +2267,7 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 	// The current mark price calculation is simply the last trade
 	// in the future this will use varying logic based on market config
 	// the responsibility for calculation could be elsewhere for testability
-	m.markPrice = trade.Price.Clone()
+	m.lastTradedPrice = trade.Price.Clone()
 }
 
 // this function handles moving money after settle MTM + risk margin updates
@@ -2255,7 +2291,7 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.getCurrentMarkPrice())
+	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.getLastTradedPrice())
 	if len(riskUpdates) == 0 {
 		return nil
 	}
@@ -3127,7 +3163,7 @@ func (m *Market) getTheoreticalTargetStake() *num.Uint {
 }
 
 func (m *Market) getTargetStake() *num.Uint {
-	return m.tsCalc.GetTargetStake(*m.risk.GetRiskFactors(), m.timeService.GetTimeNow(), m.getCurrentMarkPrice())
+	return m.tsCalc.GetTargetStake(*m.risk.GetRiskFactors(), m.timeService.GetTimeNow(), m.getLastTradedPrice())
 }
 
 func (m *Market) getSuppliedStake() *num.Uint {
@@ -3238,11 +3274,11 @@ func (m *Market) settlementDataWithLock(ctx context.Context) {
 			return
 		}
 
-		m.markPrice = settlementDataInAsset.Clone()
+		m.lastTradedPrice = settlementDataInAsset.Clone()
 
 		// send the market data with all updated stuff
 		m.broker.Send(events.NewMarketDataEvent(ctx, m.GetMarketData()))
-		m.broker.Send(events.NewMarketSettled(ctx, m.GetID(), m.timeService.GetTimeNow().UnixNano(), m.markPrice, m.positionFactor))
+		m.broker.Send(events.NewMarketSettled(ctx, m.GetID(), m.timeService.GetTimeNow().UnixNano(), m.lastTradedPrice, m.positionFactor))
 	}
 }
 
@@ -3368,11 +3404,11 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 // Mark price gets returned when market is not in auction, otherwise indicative uncrossing price gets returned.
 func (m *Market) getReferencePrice() *num.Uint {
 	if !m.as.InAuction() {
-		return m.getCurrentMarkPrice()
+		return m.getLastTradedPrice()
 	}
 	ip := m.matching.GetIndicativePrice() // can be zero
 	if ip.IsZero() {
-		return m.getCurrentMarkPrice()
+		return m.getLastTradedPrice()
 	}
 	return ip
 }

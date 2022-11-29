@@ -108,13 +108,12 @@ Feature: Closeout-cascades
     # check that trader3 is closed-out but trader2 is not
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      #| trader2 | ETH/DEC19 | 3000        | 4500   | 6000    | 9000    |
       | trader2 | ETH/DEC19 | 5000        | 7500   | 10000   | 15000   |
       | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
     #maintenance_margin_trader2: 50*100*0.1=500
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | BTC   | ETH/DEC19 | 2097   | 0       |
+      | trader2 | BTC   | ETH/DEC19 | 197    | 1900    |
       | trader3 | BTC   | ETH/DEC19 | 0      | 0       |
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
@@ -125,7 +124,7 @@ Feature: Closeout-cascades
     # eventhough  trader2 does not have enough margin
     Then the parties should have the following account balances:
       | party      | asset | market id | margin | general      |
-      | trader2    | BTC   | ETH/DEC19 | 2097   | 0            |
+      | trader2    | BTC   | ETH/DEC19 | 197    | 1900         |
       | trader3    | BTC   | ETH/DEC19 | 0      | 0            |
       | auxiliary1 | BTC   | ETH/DEC19 | 114800 | 999999884295 |
       | auxiliary2 | BTC   | ETH/DEC19 | 3200   | 999999997700 |
@@ -136,11 +135,11 @@ Feature: Closeout-cascades
       | auxiliary2 | ETH/DEC19 | buy  | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1   |
       | auxiliary1 | ETH/DEC19 | sell | 10     | 10    | 1                | TYPE_LIMIT | TIF_GTC | aux-s-1   |
 
-    And the mark price should be "10" for the market "ETH/DEC19"
+    And the mark price should be "100" for the market "ETH/DEC19"
     And then the network moves ahead "10" blocks
+    And the mark price should be "10" for the market "ETH/DEC19"
 
     #trader2 got closed-out
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
       | trader2 | 0      | 0              | -2000        |
-

@@ -123,7 +123,6 @@ func NewEngine(config Config,
 	asset string,
 	marketID string,
 	stateVarEngine StateVarEngine,
-	tickSize *num.Uint,
 	priceFactor *num.Uint,
 	positionFactor num.Decimal,
 ) *Engine {

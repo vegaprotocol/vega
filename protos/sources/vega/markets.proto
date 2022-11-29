@@ -15,7 +15,7 @@ import "vega/data_source.proto";
 message AuctionDuration {
   // Duration of the auction in seconds
   int64 duration = 1;
-  //Target uncrossing trading volume
+  // Target uncrossing trading volume
   uint64 volume = 2;
 }
 
@@ -77,7 +77,7 @@ message Instrument {
 message LogNormalRiskModel {
   // Risk Aversion Parameter
   double risk_aversion_parameter = 1;
-  // Tau
+  // Tau parameter of the risk model, projection horizon measured as a year fraction used in the expected shortfall calculation to obtain the maintenance margin, must be a strictly non-negative real number
   double tau = 2;
   // Risk model parameters for log normal
   LogNormalModelParams params = 3;
@@ -85,11 +85,11 @@ message LogNormalRiskModel {
 
 // Risk model parameters for log normal
 message LogNormalModelParams {
-  // Mu param
+  // Mu parameter, annualised growth rate of the underlying asset
   double mu = 1;
-  // R param
+  // R parameter, annualised growth rate of the risk-free asset, used for discounting of future cash flows, can be any real number
   double r = 2;
-  // Sigma param
+  // Sigma parameter, annualised volatility of the underlying asset, must be a strictly non-negative real number
   double sigma = 3;
 }
 
@@ -167,7 +167,7 @@ message PriceMonitoringTrigger {
   // Price monitoring probability level p
   string probability = 2;
   // Price monitoring auction extension duration in seconds should the price
-  // breach it's theoretical level over the specified horizon at the specified
+  // breach its theoretical level over the specified horizon at the specified
   // probability level
   int64 auction_extension = 3;
 }
@@ -204,11 +204,11 @@ message TargetStakeParameters {
 
 // Market definition
 message Market {
-  // The current state of the Market
+  // The current state of the market
   enum State {
     // Default value, invalid
     STATE_UNSPECIFIED = 0;
-    // The Governance proposal valid and accepted
+    // The governance proposal valid and accepted
     STATE_PROPOSED = 1;
     // Outcome of governance votes is to reject the market
     STATE_REJECTED = 2;
@@ -221,7 +221,7 @@ message Market {
     STATE_ACTIVE = 5;
     // Price monitoring or liquidity monitoring trigger
     STATE_SUSPENDED = 6;
-    // Governance vote (to close)
+    // Governance vote to close (Not currently implemented)
     STATE_CLOSED = 7;
     // Defined by the product (i.e. from a product parameter,
     // specified in market definition, giving close date/time)
@@ -242,7 +242,7 @@ message Market {
     TRADING_MODE_OPENING_AUCTION = 3;
     // Auction triggered by monitoring
     TRADING_MODE_MONITORING_AUCTION = 4;
-    // Not trading is allowed
+    // No trading is allowed
     TRADING_MODE_NO_TRADING = 5;
 
     // Note: If adding an enum value, add a matching entry in:
@@ -271,9 +271,9 @@ message Market {
   TradingMode trading_mode = 8;
   // Current state of the market
   State state = 9;
-  // Timestamps for when the market stay changes
+  // Timestamps for when the market state changes
   MarketTimestamps market_timestamps = 10;
-  // The number of decimal places for position
+  // The number of decimal places for a position
   int64 position_decimal_places = 11;
 }
 
@@ -281,10 +281,10 @@ message Market {
 message MarketTimestamps {
   // Time when the market is first proposed
   int64 proposed = 1;
-  // Time when the market has been voted in and is created into an opening auction
+  // Time when the market has been voted in and began its opening auction
   int64 pending = 2;
   // Time when the market has left the opening auction and is ready to accept trades
   int64 open = 3;
-  // Time when the market is closed
+  // Time when the market closed
   int64 close = 4;
 }

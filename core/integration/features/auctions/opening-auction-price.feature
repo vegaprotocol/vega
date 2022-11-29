@@ -13,7 +13,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | network.floatingPointUpdates.delay      | 10s   |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  @OpenIP
+  # @OpenIP
   Scenario: Simple test with different indicative price before auction uncross
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -172,18 +172,15 @@ Feature: Set up a market, create indiciative price different to actual opening a
     When the network moves ahead "1" blocks
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party2 | ETH/DEC19 | 39992       | 43991  | 47990   | 55988   |
-      #| party2 | ETH/DEC19 | 16000       | 17600  | 19200   | 22400   |
+      | party2 | ETH/DEC19 | 16000       | 17600  | 19200   | 22400   |
     And the following transfers should happen:
       | from   | to     | from account        | to account           | market id | amount | asset |
       | party2 | party2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9480   | BTC   |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
-      | party2 | BTC   | ETH/DEC19 | 47990  | 99952010 |
-      | party1 | BTC   | ETH/DEC19 | 48009  | 99951991 |
-      #| party2 | BTC   | ETH/DEC19 | 19200  | 99980800 |
-      #| party1 | BTC   | ETH/DEC19 | 96000  | 99904000 |
+      | party2 | BTC   | ETH/DEC19 | 19200  | 99980800 |
+      | party1 | BTC   | ETH/DEC19 | 96000  | 99904000 |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
       | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
@@ -262,18 +259,15 @@ Feature: Set up a market, create indiciative price different to actual opening a
 
     When the network moves ahead "1" blocks
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | party2 | ETH/DEC19 | 39992       | 43991  | 47990   | 55988   |
-      #| party2 | ETH/DEC19 | 16000       | 17600  | 19200   | 22400   |
+      | party  | market id | maintenance | search | initial | release |      
+      | party2 | ETH/DEC19 | 16000       | 17600  | 19200   | 22400   |
     And the following transfers should happen:
       | from   | to     | from account        | to account           | market id | amount | asset |
       | party2 | party2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9480   | BTC   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
-      | party2 | BTC   | ETH/DEC19 | 47990  | 99952010 |
-      | party1 | BTC   | ETH/DEC19 | 54010  | 99945990 |
-      #| party2 | BTC   | ETH/DEC19 | 19200  | 99980800 |
-      #| party1 | BTC   | ETH/DEC19 | 108000 | 99892000 |
+      | party2 | BTC   | ETH/DEC19 | 19200  | 99980800 |
+      | party1 | BTC   | ETH/DEC19 | 108000 | 99892000 |
       # values before uint
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
     And the market data for the market "ETH/DEC19" should be:
@@ -364,10 +358,8 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party2 | party2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9480   | BTC   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
-      | party2 | BTC   | ETH/DEC19 | 47990  | 99952010 |
-      | party1 | BTC   | ETH/DEC19 | 42008  | 99957992 |
-      #| party2 | BTC   | ETH/DEC19 | 19200  | 99980800 |
-      #| party1 | BTC   | ETH/DEC19 | 84000  | 99916000 |
+      | party2 | BTC   | ETH/DEC19 | 19200  | 99980800 |
+      | party1 | BTC   | ETH/DEC19 | 84000  | 99916000 |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
       | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |

@@ -48,7 +48,7 @@ type ResolverRoot interface {
 	AccountDetails() AccountDetailsResolver
 	AccountEvent() AccountEventResolver
 	AccountUpdate() AccountUpdateResolver
-	AggregatedLedgerEntries() AggregatedLedgerEntriesResolver
+	AggregatedLedgerEntry() AggregatedLedgerEntryResolver
 	Asset() AssetResolver
 	AuctionEvent() AuctionEventResolver
 	Candle() CandleResolver
@@ -115,6 +115,7 @@ type ResolverRoot interface {
 	Withdrawal() WithdrawalResolver
 	DateRange() DateRangeResolver
 	LedgerEntryFilter() LedgerEntryFilterResolver
+	OrderFilter() OrderFilterResolver
 }
 
 type DirectiveRoot struct {
@@ -181,7 +182,17 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
-	AggregatedLedgerEntries struct {
+	AggregatedLedgerEntriesConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	AggregatedLedgerEntriesEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	AggregatedLedgerEntry struct {
 		AssetId             func(childComplexity int) int
 		Quantity            func(childComplexity int) int
 		ReceiverAccountType func(childComplexity int) int
@@ -192,16 +203,6 @@ type ComplexityRoot struct {
 		SenderPartyId       func(childComplexity int) int
 		TransferType        func(childComplexity int) int
 		VegaTime            func(childComplexity int) int
-	}
-
-	AggregatedLedgerEntriesConnection struct {
-		Edges    func(childComplexity int) int
-		PageInfo func(childComplexity int) int
-	}
-
-	AggregatedLedgerEntriesEdge struct {
-		Cursor func(childComplexity int) int
-		Node   func(childComplexity int) int
 	}
 
 	Asset struct {
@@ -722,7 +723,7 @@ type ComplexityRoot struct {
 		LiquidityProvisionsConnection func(childComplexity int, partyID *string, pagination *v2.Pagination) int
 		MarketTimestamps              func(childComplexity int) int
 		OpeningAuction                func(childComplexity int) int
-		OrdersConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
+		OrdersConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter) int
 		PositionDecimalPlaces         func(childComplexity int) int
 		PriceMonitoringSettings       func(childComplexity int) int
 		Proposal                      func(childComplexity int) int
@@ -1098,7 +1099,7 @@ type ComplexityRoot struct {
 		Id                            func(childComplexity int) int
 		LiquidityProvisionsConnection func(childComplexity int, marketID *string, reference *string, pagination *v2.Pagination) int
 		MarginsConnection             func(childComplexity int, marketID *string, pagination *v2.Pagination) int
-		OrdersConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
+		OrdersConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter) int
 		PositionsConnection           func(childComplexity int, market *string, pagination *v2.Pagination) int
 		ProposalsConnection           func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		RewardSummaries               func(childComplexity int, assetID *string) int
@@ -1753,10 +1754,8 @@ type AccountUpdateResolver interface {
 
 	PartyID(ctx context.Context, obj *v2.AccountBalance) (string, error)
 }
-type AggregatedLedgerEntriesResolver interface {
-	VegaTime(ctx context.Context, obj *v2.AggregatedLedgerEntries) (int64, error)
-
-	TransferType(ctx context.Context, obj *v2.AggregatedLedgerEntries) (*string, error)
+type AggregatedLedgerEntryResolver interface {
+	VegaTime(ctx context.Context, obj *v2.AggregatedLedgerEntry) (int64, error)
 }
 type AssetResolver interface {
 	Name(ctx context.Context, obj *vega.Asset) (string, error)
@@ -1866,7 +1865,7 @@ type MarketResolver interface {
 	LiquidityMonitoringParameters(ctx context.Context, obj *vega.Market) (*LiquidityMonitoringParameters, error)
 
 	Proposal(ctx context.Context, obj *vega.Market) (*vega.GovernanceData, error)
-	OrdersConnection(ctx context.Context, obj *vega.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.OrderConnection, error)
+	OrdersConnection(ctx context.Context, obj *vega.Market, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter) (*v2.OrderConnection, error)
 	AccountsConnection(ctx context.Context, obj *vega.Market, partyID *string, pagination *v2.Pagination) (*v2.AccountsConnection, error)
 	TradesConnection(ctx context.Context, obj *vega.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	Depth(ctx context.Context, obj *vega.Market, maxDepth *int) (*vega.MarketDepth, error)
@@ -1997,7 +1996,7 @@ type OrderUpdateResolver interface {
 	Version(ctx context.Context, obj *vega.Order) (string, error)
 }
 type PartyResolver interface {
-	OrdersConnection(ctx context.Context, obj *vega.Party, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.OrderConnection, error)
+	OrdersConnection(ctx context.Context, obj *vega.Party, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter) (*v2.OrderConnection, error)
 	TradesConnection(ctx context.Context, obj *vega.Party, marketID *string, dataRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	AccountsConnection(ctx context.Context, obj *vega.Party, marketID *string, assetID *string, typeArg *vega.AccountType, pagination *v2.Pagination) (*v2.AccountsConnection, error)
 	PositionsConnection(ctx context.Context, obj *vega.Party, market *string, pagination *v2.Pagination) (*v2.PositionConnection, error)
@@ -2251,6 +2250,11 @@ type LedgerEntryFilterResolver interface {
 	SenderAccountFilter(ctx context.Context, obj *v2.LedgerEntryFilter, data *v2.AccountFilter) error
 	ReceiverAccountFilter(ctx context.Context, obj *v2.LedgerEntryFilter, data *v2.AccountFilter) error
 }
+type OrderFilterResolver interface {
+	Status(ctx context.Context, obj *v2.OrderFilter, data []vega.Order_Status) error
+
+	TimeInForce(ctx context.Context, obj *v2.OrderFilter, data []vega.Order_TimeInForce) error
+}
 
 type executableSchema struct {
 	resolvers  ResolverRoot
@@ -2498,76 +2502,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AggregatedBalanceEdge.Node(childComplexity), true
 
-	case "AggregatedLedgerEntries.assetId":
-		if e.complexity.AggregatedLedgerEntries.AssetId == nil {
-			break
-		}
-
-		return e.complexity.AggregatedLedgerEntries.AssetId(childComplexity), true
-
-	case "AggregatedLedgerEntries.quantity":
-		if e.complexity.AggregatedLedgerEntries.Quantity == nil {
-			break
-		}
-
-		return e.complexity.AggregatedLedgerEntries.Quantity(childComplexity), true
-
-	case "AggregatedLedgerEntries.receiverAccountType":
-		if e.complexity.AggregatedLedgerEntries.ReceiverAccountType == nil {
-			break
-		}
-
-		return e.complexity.AggregatedLedgerEntries.ReceiverAccountType(childComplexity), true
-
-	case "AggregatedLedgerEntries.receiverMarketId":
-		if e.complexity.AggregatedLedgerEntries.ReceiverMarketId == nil {
-			break
-		}
-
-		return e.complexity.AggregatedLedgerEntries.ReceiverMarketId(childComplexity), true
-
-	case "AggregatedLedgerEntries.receiverPartyId":
-		if e.complexity.AggregatedLedgerEntries.ReceiverPartyId == nil {
-			break
-		}
-
-		return e.complexity.AggregatedLedgerEntries.ReceiverPartyId(childComplexity), true
-
-	case "AggregatedLedgerEntries.senderAccountType":
-		if e.complexity.AggregatedLedgerEntries.SenderAccountType == nil {
-			break
-		}
-
-		return e.complexity.AggregatedLedgerEntries.SenderAccountType(childComplexity), true
-
-	case "AggregatedLedgerEntries.senderMarketId":
-		if e.complexity.AggregatedLedgerEntries.SenderMarketId == nil {
-			break
-		}
-
-		return e.complexity.AggregatedLedgerEntries.SenderMarketId(childComplexity), true
-
-	case "AggregatedLedgerEntries.senderPartyId":
-		if e.complexity.AggregatedLedgerEntries.SenderPartyId == nil {
-			break
-		}
-
-		return e.complexity.AggregatedLedgerEntries.SenderPartyId(childComplexity), true
-
-	case "AggregatedLedgerEntries.transferType":
-		if e.complexity.AggregatedLedgerEntries.TransferType == nil {
-			break
-		}
-
-		return e.complexity.AggregatedLedgerEntries.TransferType(childComplexity), true
-
-	case "AggregatedLedgerEntries.vegaTime":
-		if e.complexity.AggregatedLedgerEntries.VegaTime == nil {
-			break
-		}
-
-		return e.complexity.AggregatedLedgerEntries.VegaTime(childComplexity), true
-
 	case "AggregatedLedgerEntriesConnection.edges":
 		if e.complexity.AggregatedLedgerEntriesConnection.Edges == nil {
 			break
@@ -2595,6 +2529,76 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AggregatedLedgerEntriesEdge.Node(childComplexity), true
+
+	case "AggregatedLedgerEntry.assetId":
+		if e.complexity.AggregatedLedgerEntry.AssetId == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntry.AssetId(childComplexity), true
+
+	case "AggregatedLedgerEntry.quantity":
+		if e.complexity.AggregatedLedgerEntry.Quantity == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntry.Quantity(childComplexity), true
+
+	case "AggregatedLedgerEntry.receiverAccountType":
+		if e.complexity.AggregatedLedgerEntry.ReceiverAccountType == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntry.ReceiverAccountType(childComplexity), true
+
+	case "AggregatedLedgerEntry.receiverMarketId":
+		if e.complexity.AggregatedLedgerEntry.ReceiverMarketId == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntry.ReceiverMarketId(childComplexity), true
+
+	case "AggregatedLedgerEntry.receiverPartyId":
+		if e.complexity.AggregatedLedgerEntry.ReceiverPartyId == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntry.ReceiverPartyId(childComplexity), true
+
+	case "AggregatedLedgerEntry.senderAccountType":
+		if e.complexity.AggregatedLedgerEntry.SenderAccountType == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntry.SenderAccountType(childComplexity), true
+
+	case "AggregatedLedgerEntry.senderMarketId":
+		if e.complexity.AggregatedLedgerEntry.SenderMarketId == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntry.SenderMarketId(childComplexity), true
+
+	case "AggregatedLedgerEntry.senderPartyId":
+		if e.complexity.AggregatedLedgerEntry.SenderPartyId == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntry.SenderPartyId(childComplexity), true
+
+	case "AggregatedLedgerEntry.transferType":
+		if e.complexity.AggregatedLedgerEntry.TransferType == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntry.TransferType(childComplexity), true
+
+	case "AggregatedLedgerEntry.vegaTime":
+		if e.complexity.AggregatedLedgerEntry.VegaTime == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntry.VegaTime(childComplexity), true
 
 	case "Asset.decimals":
 		if e.complexity.Asset.Decimals == nil {
@@ -4596,7 +4600,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Market.OrdersConnection(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Market.OrdersConnection(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination), args["filter"].(*v2.OrderFilter)), true
 
 	case "Market.positionDecimalPlaces":
 		if e.complexity.Market.PositionDecimalPlaces == nil {
@@ -6333,7 +6337,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.OrdersConnection(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Party.OrdersConnection(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination), args["filter"].(*v2.OrderFilter)), true
 
 	case "Party.positionsConnection":
 		if e.complexity.Party.PositionsConnection == nil {
@@ -9288,6 +9292,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputDateRange,
 		ec.unmarshalInputLedgerEntryFilter,
 		ec.unmarshalInputOffsetPagination,
+		ec.unmarshalInputOrderFilter,
 		ec.unmarshalInputPagination,
 	)
 	first := true
@@ -9544,6 +9549,15 @@ func (ec *executionContext) field_Market_ordersConnection_args(ctx context.Conte
 		}
 	}
 	args["pagination"] = arg1
+	var arg2 *v2.OrderFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg2, err = ec.unmarshalOOrderFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg2
 	return args, nil
 }
 
@@ -9802,6 +9816,15 @@ func (ec *executionContext) field_Party_ordersConnection_args(ctx context.Contex
 		}
 	}
 	args["pagination"] = arg1
+	var arg2 *v2.OrderFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg2, err = ec.unmarshalOOrderFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg2
 	return args, nil
 }
 
@@ -13124,422 +13147,6 @@ func (ec *executionContext) fieldContext_AggregatedBalanceEdge_cursor(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _AggregatedLedgerEntries_vegaTime(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AggregatedLedgerEntries_vegaTime(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.AggregatedLedgerEntries().VegaTime(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AggregatedLedgerEntries_vegaTime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AggregatedLedgerEntries",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Timestamp does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AggregatedLedgerEntries_quantity(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AggregatedLedgerEntries_quantity(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Quantity, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AggregatedLedgerEntries_quantity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AggregatedLedgerEntries",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AggregatedLedgerEntries_assetId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AggregatedLedgerEntries_assetId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AssetId, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AggregatedLedgerEntries_assetId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AggregatedLedgerEntries",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AggregatedLedgerEntries_transferType(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AggregatedLedgerEntries_transferType(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.AggregatedLedgerEntries().TransferType(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AggregatedLedgerEntries_transferType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AggregatedLedgerEntries",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AggregatedLedgerEntries_senderPartyId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AggregatedLedgerEntries_senderPartyId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.SenderPartyId, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AggregatedLedgerEntries_senderPartyId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AggregatedLedgerEntries",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AggregatedLedgerEntries_receiverPartyId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AggregatedLedgerEntries_receiverPartyId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ReceiverPartyId, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AggregatedLedgerEntries_receiverPartyId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AggregatedLedgerEntries",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AggregatedLedgerEntries_senderMarketId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AggregatedLedgerEntries_senderMarketId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.SenderMarketId, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AggregatedLedgerEntries_senderMarketId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AggregatedLedgerEntries",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AggregatedLedgerEntries_receiverMarketId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AggregatedLedgerEntries_receiverMarketId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ReceiverMarketId, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AggregatedLedgerEntries_receiverMarketId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AggregatedLedgerEntries",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AggregatedLedgerEntries_senderAccountType(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AggregatedLedgerEntries_senderAccountType(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.SenderAccountType, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(vega.AccountType)
-	fc.Result = res
-	return ec.marshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AggregatedLedgerEntries_senderAccountType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AggregatedLedgerEntries",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type AccountType does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AggregatedLedgerEntries_receiverAccountType(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AggregatedLedgerEntries_receiverAccountType(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ReceiverAccountType, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(vega.AccountType)
-	fc.Result = res
-	return ec.marshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AggregatedLedgerEntries_receiverAccountType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AggregatedLedgerEntries",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type AccountType does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _AggregatedLedgerEntriesConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntriesConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AggregatedLedgerEntriesConnection_edges(ctx, field)
 	if err != nil {
@@ -13670,9 +13277,9 @@ func (ec *executionContext) _AggregatedLedgerEntriesEdge_node(ctx context.Contex
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*v2.AggregatedLedgerEntries)
+	res := resTmp.(*v2.AggregatedLedgerEntry)
 	fc.Result = res
-	return ec.marshalNAggregatedLedgerEntries2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedLedgerEntries(ctx, field.Selections, res)
+	return ec.marshalNAggregatedLedgerEntry2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedLedgerEntry(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_AggregatedLedgerEntriesEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13684,27 +13291,27 @@ func (ec *executionContext) fieldContext_AggregatedLedgerEntriesEdge_node(ctx co
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "vegaTime":
-				return ec.fieldContext_AggregatedLedgerEntries_vegaTime(ctx, field)
+				return ec.fieldContext_AggregatedLedgerEntry_vegaTime(ctx, field)
 			case "quantity":
-				return ec.fieldContext_AggregatedLedgerEntries_quantity(ctx, field)
+				return ec.fieldContext_AggregatedLedgerEntry_quantity(ctx, field)
 			case "assetId":
-				return ec.fieldContext_AggregatedLedgerEntries_assetId(ctx, field)
+				return ec.fieldContext_AggregatedLedgerEntry_assetId(ctx, field)
 			case "transferType":
-				return ec.fieldContext_AggregatedLedgerEntries_transferType(ctx, field)
+				return ec.fieldContext_AggregatedLedgerEntry_transferType(ctx, field)
 			case "senderPartyId":
-				return ec.fieldContext_AggregatedLedgerEntries_senderPartyId(ctx, field)
+				return ec.fieldContext_AggregatedLedgerEntry_senderPartyId(ctx, field)
 			case "receiverPartyId":
-				return ec.fieldContext_AggregatedLedgerEntries_receiverPartyId(ctx, field)
+				return ec.fieldContext_AggregatedLedgerEntry_receiverPartyId(ctx, field)
 			case "senderMarketId":
-				return ec.fieldContext_AggregatedLedgerEntries_senderMarketId(ctx, field)
+				return ec.fieldContext_AggregatedLedgerEntry_senderMarketId(ctx, field)
 			case "receiverMarketId":
-				return ec.fieldContext_AggregatedLedgerEntries_receiverMarketId(ctx, field)
+				return ec.fieldContext_AggregatedLedgerEntry_receiverMarketId(ctx, field)
 			case "senderAccountType":
-				return ec.fieldContext_AggregatedLedgerEntries_senderAccountType(ctx, field)
+				return ec.fieldContext_AggregatedLedgerEntry_senderAccountType(ctx, field)
 			case "receiverAccountType":
-				return ec.fieldContext_AggregatedLedgerEntries_receiverAccountType(ctx, field)
+				return ec.fieldContext_AggregatedLedgerEntry_receiverAccountType(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type AggregatedLedgerEntries", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type AggregatedLedgerEntry", field.Name)
 		},
 	}
 	return fc, nil
@@ -13749,6 +13356,422 @@ func (ec *executionContext) fieldContext_AggregatedLedgerEntriesEdge_cursor(ctx 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedLedgerEntry_vegaTime(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntry) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedLedgerEntry_vegaTime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AggregatedLedgerEntry().VegaTime(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedLedgerEntry_vegaTime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntry",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedLedgerEntry_quantity(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntry) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedLedgerEntry_quantity(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Quantity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedLedgerEntry_quantity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedLedgerEntry_assetId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntry) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedLedgerEntry_assetId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AssetId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedLedgerEntry_assetId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedLedgerEntry_transferType(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntry) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedLedgerEntry_transferType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TransferType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(vega.TransferType)
+	fc.Result = res
+	return ec.marshalOTransferType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTransferType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedLedgerEntry_transferType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type TransferType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedLedgerEntry_senderPartyId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntry) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedLedgerEntry_senderPartyId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SenderPartyId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedLedgerEntry_senderPartyId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedLedgerEntry_receiverPartyId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntry) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedLedgerEntry_receiverPartyId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReceiverPartyId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedLedgerEntry_receiverPartyId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedLedgerEntry_senderMarketId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntry) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedLedgerEntry_senderMarketId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SenderMarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedLedgerEntry_senderMarketId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedLedgerEntry_receiverMarketId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntry) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedLedgerEntry_receiverMarketId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReceiverMarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedLedgerEntry_receiverMarketId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedLedgerEntry_senderAccountType(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntry) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedLedgerEntry_senderAccountType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SenderAccountType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(vega.AccountType)
+	fc.Result = res
+	return ec.marshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedLedgerEntry_senderAccountType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type AccountType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedLedgerEntry_receiverAccountType(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntry) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedLedgerEntry_receiverAccountType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReceiverAccountType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(vega.AccountType)
+	fc.Result = res
+	return ec.marshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedLedgerEntry_receiverAccountType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type AccountType does not have child fields")
 		},
 	}
 	return fc, nil
@@ -23119,9 +23142,9 @@ func (ec *executionContext) _LedgerEntry_type(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(vega.TransferType)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTransferType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTransferType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_LedgerEntry_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -23131,7 +23154,7 @@ func (ec *executionContext) fieldContext_LedgerEntry_type(ctx context.Context, f
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type TransferType does not have child fields")
 		},
 	}
 	return fc, nil
@@ -27077,7 +27100,7 @@ func (ec *executionContext) _Market_ordersConnection(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().OrdersConnection(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Market().OrdersConnection(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination), fc.Args["filter"].(*v2.OrderFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -38327,7 +38350,7 @@ func (ec *executionContext) _Party_ordersConnection(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().OrdersConnection(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Party().OrdersConnection(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination), fc.Args["filter"].(*v2.OrderFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -60054,6 +60077,64 @@ func (ec *executionContext) unmarshalInputOffsetPagination(ctx context.Context, 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputOrderFilter(ctx context.Context, obj interface{}) (v2.OrderFilter, error) {
+	var it v2.OrderFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"status", "types", "timeInForce", "excludeLiquidity"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "status":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalOOrderStatus2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Statusᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.OrderFilter().Status(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "types":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("types"))
+			it.Types, err = ec.unmarshalOOrderType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Typeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "timeInForce":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("timeInForce"))
+			data, err := ec.unmarshalOOrderTimeInForce2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_TimeInForceᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.OrderFilter().TimeInForce(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "excludeLiquidity":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("excludeLiquidity"))
+			it.ExcludeLiquidity, err = ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputPagination(ctx context.Context, obj interface{}) (v2.Pagination, error) {
 	var it v2.Pagination
 	asMap := map[string]interface{}{}
@@ -61089,99 +61170,6 @@ func (ec *executionContext) _AggregatedBalanceEdge(ctx context.Context, sel ast.
 	return out
 }
 
-var aggregatedLedgerEntriesImplementors = []string{"AggregatedLedgerEntries"}
-
-func (ec *executionContext) _AggregatedLedgerEntries(ctx context.Context, sel ast.SelectionSet, obj *v2.AggregatedLedgerEntries) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, aggregatedLedgerEntriesImplementors)
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("AggregatedLedgerEntries")
-		case "vegaTime":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._AggregatedLedgerEntries_vegaTime(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "quantity":
-
-			out.Values[i] = ec._AggregatedLedgerEntries_quantity(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "assetId":
-
-			out.Values[i] = ec._AggregatedLedgerEntries_assetId(ctx, field, obj)
-
-		case "transferType":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._AggregatedLedgerEntries_transferType(ctx, field, obj)
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "senderPartyId":
-
-			out.Values[i] = ec._AggregatedLedgerEntries_senderPartyId(ctx, field, obj)
-
-		case "receiverPartyId":
-
-			out.Values[i] = ec._AggregatedLedgerEntries_receiverPartyId(ctx, field, obj)
-
-		case "senderMarketId":
-
-			out.Values[i] = ec._AggregatedLedgerEntries_senderMarketId(ctx, field, obj)
-
-		case "receiverMarketId":
-
-			out.Values[i] = ec._AggregatedLedgerEntries_receiverMarketId(ctx, field, obj)
-
-		case "senderAccountType":
-
-			out.Values[i] = ec._AggregatedLedgerEntries_senderAccountType(ctx, field, obj)
-
-		case "receiverAccountType":
-
-			out.Values[i] = ec._AggregatedLedgerEntries_receiverAccountType(ctx, field, obj)
-
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var aggregatedLedgerEntriesConnectionImplementors = []string{"AggregatedLedgerEntriesConnection"}
 
 func (ec *executionContext) _AggregatedLedgerEntriesConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.AggregatedLedgerEntriesConnection) graphql.Marshaler {
@@ -61241,6 +61229,86 @@ func (ec *executionContext) _AggregatedLedgerEntriesEdge(ctx context.Context, se
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var aggregatedLedgerEntryImplementors = []string{"AggregatedLedgerEntry"}
+
+func (ec *executionContext) _AggregatedLedgerEntry(ctx context.Context, sel ast.SelectionSet, obj *v2.AggregatedLedgerEntry) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, aggregatedLedgerEntryImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AggregatedLedgerEntry")
+		case "vegaTime":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AggregatedLedgerEntry_vegaTime(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "quantity":
+
+			out.Values[i] = ec._AggregatedLedgerEntry_quantity(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "assetId":
+
+			out.Values[i] = ec._AggregatedLedgerEntry_assetId(ctx, field, obj)
+
+		case "transferType":
+
+			out.Values[i] = ec._AggregatedLedgerEntry_transferType(ctx, field, obj)
+
+		case "senderPartyId":
+
+			out.Values[i] = ec._AggregatedLedgerEntry_senderPartyId(ctx, field, obj)
+
+		case "receiverPartyId":
+
+			out.Values[i] = ec._AggregatedLedgerEntry_receiverPartyId(ctx, field, obj)
+
+		case "senderMarketId":
+
+			out.Values[i] = ec._AggregatedLedgerEntry_senderMarketId(ctx, field, obj)
+
+		case "receiverMarketId":
+
+			out.Values[i] = ec._AggregatedLedgerEntry_receiverMarketId(ctx, field, obj)
+
+		case "senderAccountType":
+
+			out.Values[i] = ec._AggregatedLedgerEntry_senderAccountType(ctx, field, obj)
+
+		case "receiverAccountType":
+
+			out.Values[i] = ec._AggregatedLedgerEntry_receiverAccountType(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -75565,16 +75633,6 @@ func (ec *executionContext) marshalNAggregatedBalanceEdge2ᚕᚖcodeᚗvegaproto
 	return ret
 }
 
-func (ec *executionContext) marshalNAggregatedLedgerEntries2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedLedgerEntries(ctx context.Context, sel ast.SelectionSet, v *v2.AggregatedLedgerEntries) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._AggregatedLedgerEntries(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNAggregatedLedgerEntriesConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedLedgerEntriesConnection(ctx context.Context, sel ast.SelectionSet, v v2.AggregatedLedgerEntriesConnection) graphql.Marshaler {
 	return ec._AggregatedLedgerEntriesConnection(ctx, sel, &v)
 }
@@ -75625,6 +75683,16 @@ func (ec *executionContext) marshalNAggregatedLedgerEntriesEdge2ᚕᚖcodeᚗveg
 	wg.Wait()
 
 	return ret
+}
+
+func (ec *executionContext) marshalNAggregatedLedgerEntry2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedLedgerEntry(ctx context.Context, sel ast.SelectionSet, v *v2.AggregatedLedgerEntry) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AggregatedLedgerEntry(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNAsset2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx context.Context, sel ast.SelectionSet, v vega.Asset) graphql.Marshaler {
@@ -78083,6 +78151,21 @@ func (ec *executionContext) marshalNTransferStatus2codeᚗvegaprotocolᚗioᚋve
 	return res
 }
 
+func (ec *executionContext) unmarshalNTransferType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTransferType(ctx context.Context, v interface{}) (vega.TransferType, error) {
+	res, err := marshallers.UnmarshalTransferType(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTransferType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTransferType(ctx context.Context, sel ast.SelectionSet, v vega.TransferType) graphql.Marshaler {
+	res := marshallers.MarshalTransferType(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) marshalNUpdateAssetSource2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐUpdateAssetSource(ctx context.Context, sel ast.SelectionSet, v UpdateAssetSource) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -80193,6 +80276,14 @@ func (ec *executionContext) marshalOOrderEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋv
 	return ret
 }
 
+func (ec *executionContext) unmarshalOOrderFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderFilter(ctx context.Context, v interface{}) (*v2.OrderFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputOrderFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOOrderRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrderError(ctx context.Context, v interface{}) (*vega.OrderError, error) {
 	if v == nil {
 		return nil, nil
@@ -80209,6 +80300,140 @@ func (ec *executionContext) marshalOOrderRejectionReason2ᚖcodeᚗvegaprotocol�
 	return res
 }
 
+func (ec *executionContext) unmarshalOOrderStatus2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Statusᚄ(ctx context.Context, v interface{}) ([]vega.Order_Status, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]vega.Order_Status, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Status(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOOrderStatus2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Statusᚄ(ctx context.Context, sel ast.SelectionSet, v []vega.Order_Status) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Status(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOOrderTimeInForce2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_TimeInForceᚄ(ctx context.Context, v interface{}) ([]vega.Order_TimeInForce, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]vega.Order_TimeInForce, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_TimeInForce(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOOrderTimeInForce2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_TimeInForceᚄ(ctx context.Context, sel ast.SelectionSet, v []vega.Order_TimeInForce) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_TimeInForce(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Type(ctx context.Context, v interface{}) (vega.Order_Type, error) {
 	res, err := marshallers.UnmarshalOrderType(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -80217,6 +80442,73 @@ func (ec *executionContext) unmarshalOOrderType2codeᚗvegaprotocolᚗioᚋvega�
 func (ec *executionContext) marshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Type(ctx context.Context, sel ast.SelectionSet, v vega.Order_Type) graphql.Marshaler {
 	res := marshallers.MarshalOrderType(v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOOrderType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Typeᚄ(ctx context.Context, v interface{}) ([]vega.Order_Type, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]vega.Order_Type, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Type(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOOrderType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Typeᚄ(ctx context.Context, sel ast.SelectionSet, v []vega.Order_Type) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder_Type(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOOrderUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Order) graphql.Marshaler {

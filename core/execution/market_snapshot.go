@@ -90,7 +90,7 @@ func NewMarketFromSnapshot(
 		&types.RiskFactor{Market: mkt.ID, Short: em.ShortRiskFactor, Long: em.LongRiskFactor},
 	)
 
-	settleEngine := settlement.New(
+	settleEngine := settlement.NewSnapshotEngine(
 		log,
 		settlementConfig,
 		tradableInstrument.Instrument.Product,
@@ -117,7 +117,7 @@ func NewMarketFromSnapshot(
 	priceFactor := num.UintZero().Exp(num.NewUint(10), num.NewUint(exp))
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
-	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, book, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
+	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, book, asset, mkt.ID, stateVarEngine, priceFactor.Clone(), positionFactor)
 
 	now := timeService.GetTimeNow()
 	market := &Market{
@@ -148,6 +148,7 @@ func NewMarketFromSnapshot(
 		lastMidBuyPrice:            em.LastMidBid.Clone(),
 		lastMidSellPrice:           em.LastMidAsk.Clone(),
 		markPrice:                  em.CurrentMarkPrice.Clone(),
+		lastTradedPrice:            em.LastTradedPrice.Clone(),
 		priceFactor:                priceFactor,
 		lastMarketValueProxy:       em.LastMarketValueProxy,
 		lastEquityShareDistributed: time.Unix(0, em.LastEquityShareDistributed),
@@ -191,6 +192,7 @@ func (m *Market) getState() *types.ExecMarket {
 		LastMidAsk:                 m.lastMidSellPrice.Clone(),
 		LastMarketValueProxy:       m.lastMarketValueProxy,
 		CurrentMarkPrice:           m.getCurrentMarkPrice(),
+		LastTradedPrice:            m.getLastTradedPrice(),
 		LastEquityShareDistributed: m.lastEquityShareDistributed.UnixNano(),
 		EquityShare:                m.equityShares.GetState(),
 		RiskFactorConsensusReached: m.risk.IsRiskFactorInitialised(),

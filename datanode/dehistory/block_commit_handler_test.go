@@ -1,14 +1,14 @@
-package snapshot_test
+package dehistory_test
 
 import (
 	"context"
 	"strconv"
 	"testing"
+	"time"
+
+	"code.vegaprotocol.io/vega/datanode/dehistory"
 
 	"code.vegaprotocol.io/vega/core/netparams"
-	"code.vegaprotocol.io/vega/datanode/broker"
-	"code.vegaprotocol.io/vega/datanode/config/encoding"
-	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/logging"
 
@@ -16,10 +16,6 @@ import (
 )
 
 func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
-	brokerCfg := broker.NewDefaultConfig()
-	brokerCfg.UseEventFile = true
-	brokerCfg.FileEventSourceConfig.TimeBetweenBlocks = encoding.Duration{Duration: 0}
-
 	log := logging.NewTestLogger()
 
 	snapshotInterval := &struct {
@@ -30,7 +26,7 @@ func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
 
 	var snapshots []int64
 
-	snapshotData := func(ctx context.Context, chainID string, toHeight int64, fromHeight int64) error {
+	snapshotData := func(ctx context.Context, chainID string, toHeight int64) error {
 		if toHeight >= 5000 {
 			snapshotInterval.interval = 300
 		}
@@ -48,7 +44,7 @@ func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
 		}, nil
 	}
 
-	commitHandler := snapshot.NewBlockCommitHandler(log, snapshotData, getNetworkParameter, brokerCfg)
+	commitHandler := dehistory.NewBlockCommitHandler(log, dehistory.NewDefaultConfig(), snapshotData, getNetworkParameter, true, time.Duration(0))
 
 	ctx := context.Background()
 	for blockHeight := int64(0); blockHeight < 6100; blockHeight++ {
@@ -66,7 +62,6 @@ func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
 
 func TestAlteringBlockCommitHandlerSnapshotInterval(t *testing.T) {
 	log := logging.NewTestLogger()
-	brokerConfig := broker.NewDefaultConfig()
 
 	snapshotInterval := &struct {
 		interval int
@@ -76,7 +71,7 @@ func TestAlteringBlockCommitHandlerSnapshotInterval(t *testing.T) {
 
 	var snapshots []int64
 
-	snapshotData := func(ctx context.Context, chainID string, toHeight int64, fromHeight int64) error {
+	snapshotData := func(ctx context.Context, chainID string, toHeight int64) error {
 		if toHeight >= 5000 {
 			snapshotInterval.interval = 500
 		}
@@ -94,7 +89,7 @@ func TestAlteringBlockCommitHandlerSnapshotInterval(t *testing.T) {
 		}, nil
 	}
 
-	commitHandler := snapshot.NewBlockCommitHandler(log, snapshotData, getNetworkParameter, brokerConfig)
+	commitHandler := dehistory.NewBlockCommitHandler(log, dehistory.NewDefaultConfig(), snapshotData, getNetworkParameter, false, time.Duration(0))
 
 	ctx := context.Background()
 	for blockHeight := int64(0); blockHeight < 6100; blockHeight++ {
@@ -109,4 +104,46 @@ func TestAlteringBlockCommitHandlerSnapshotInterval(t *testing.T) {
 	assert.Equal(t, int64(5000), snapshots[4])
 	assert.Equal(t, int64(5500), snapshots[5])
 	assert.Equal(t, int64(6000), snapshots[6])
+}
+
+func TestPublishingOff(t *testing.T) {
+	log := logging.NewTestLogger()
+
+	snapshotInterval := &struct {
+		interval int
+	}{
+		interval: 1000,
+	}
+
+	var snapshots []int64
+
+	snapshotData := func(ctx context.Context, chainID string, toHeight int64) error {
+		if toHeight >= 5000 {
+			snapshotInterval.interval = 500
+		}
+
+		snapshots = append(snapshots, toHeight)
+		return nil
+	}
+
+	getNetworkParameter := func(ctx context.Context, key string) (entities.NetworkParameter, error) {
+		assert.Equal(t, netparams.SnapshotIntervalLength, key)
+
+		return entities.NetworkParameter{
+			Key:   netparams.SnapshotIntervalLength,
+			Value: strconv.Itoa(snapshotInterval.interval),
+		}, nil
+	}
+
+	cfg := dehistory.NewDefaultConfig()
+	cfg.Publish = false
+	commitHandler := dehistory.NewBlockCommitHandler(log, cfg, snapshotData,
+		getNetworkParameter, false, 0)
+
+	ctx := context.Background()
+	for blockHeight := int64(0); blockHeight < 6100; blockHeight++ {
+		commitHandler.OnBlockCommitted(ctx, "", blockHeight)
+	}
+
+	assert.Equal(t, 0, len(snapshots))
 }

@@ -26,6 +26,10 @@ func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *godo
 	for _, row := range parseNetworkParametersTable(table) {
 		name := row.MustStr("name")
 
+		if !netParams.AnyWatchers(name) {
+			return errNoWatchersSpecified(name)
+		}
+
 		switch name {
 		case netparams.MarketAuctionMinimumDuration:
 			d := row.MustDurationSec("value")

@@ -146,11 +146,11 @@ Feature: Target stake
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 270          | 2000           | 20            |
     And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
-    
+
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | tt_2  | ETH/DEC21 | sell | 20     | 90    | 1                | TYPE_LIMIT | TIF_GTC |
-    # OI is now 0, but target stake remains unchanged as max OI of 20 is still within the window 
+    # OI is now 0, but target stake remains unchanged as max OI of 20 is still within the window
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 270          | 2000           | 0             |
@@ -177,10 +177,10 @@ Feature: Target stake
       | tt_2  | ETH/DEC21 | buy  | 10     | 0     | 1                | TYPE_MARKET | TIF_FOK |
 
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 110        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 165          | 2000           | 0             |
+      | mark price | last traded price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 90         | 110               | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 165          | 2000           | 0             |
     And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
-    
+
     # O is now the last recorded open interest so target stake should drop to 0
     Then the network moves ahead "10" blocks
     And the market data for the market "ETH/DEC21" should be:
@@ -238,8 +238,8 @@ Feature: Target stake
     # the maximum oi over the last 20s is still unchanged
     # target_stake = 90 x 60 x 1.5 x 0.1 = 810
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 810          | 2000           | 40            |
+      | mark price | last traded price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 110        | 90                | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 810          | 2000           | 40            |
 
     # T0 + 10s
     Then the network moves ahead "10" blocks
@@ -254,7 +254,7 @@ Feature: Target stake
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_1  | ETH/DEC21 | buy  | 100    | 110   | 1                | TYPE_LIMIT | TIF_GTC | lp_1_0    |
-    Then the mark price should be "110" for the market "ETH/DEC21"
+    Then the mark price should be "90" for the market "ETH/DEC21"
 
     # max_io=10+20+30-20+100=140
     # target_stake = 110 x 140 x 1.5 x 0.1=2310

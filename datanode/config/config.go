@@ -18,11 +18,12 @@ import (
 	"fmt"
 	"os"
 
+	"code.vegaprotocol.io/vega/datanode/dehistory"
+
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
-	"code.vegaprotocol.io/vega/datanode/dehistory"
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/service"

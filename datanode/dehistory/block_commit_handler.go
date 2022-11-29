@@ -1,4 +1,4 @@
-package snapshot
+package dehistory
 
 import (
 	"context"
@@ -7,30 +7,34 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/netparams"
-	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/logging"
 )
 
 type BlockCommitHandler struct {
-	log                 *logging.Logger
-	snapshotData        func(ctx context.Context, chainID string, toHeight int64, fromHeight int64) error
-	getNetworkParameter func(ctx context.Context, key string) (entities.NetworkParameter, error)
-	blockInterval       int64
-	brokerConfig        broker.Config
+	log                       *logging.Logger
+	cfg                       Config
+	snapshotData              func(ctx context.Context, chainID string, toHeight int64) error
+	getNetworkParameter       func(ctx context.Context, key string) (entities.NetworkParameter, error)
+	blockInterval             int64
+	usingEventFile            bool
+	eventFileTimeBetweenBlock time.Duration
 }
 
 func NewBlockCommitHandler(
 	log *logging.Logger,
-	snapshotData func(ctx context.Context, chainID string, toHeight int64, fromHeight int64) error,
+	cfg Config,
+	snapshotData func(ctx context.Context, chainID string, toHeight int64) error,
 	getNetworkParameter func(ctx context.Context, key string) (entities.NetworkParameter, error),
-	brokerConfig broker.Config,
+	usingEventFile bool, eventFileTimeBetweenBlock time.Duration,
 ) *BlockCommitHandler {
 	return &BlockCommitHandler{
-		log:                 log.Named("block-commit-handler"),
-		snapshotData:        snapshotData,
-		getNetworkParameter: getNetworkParameter,
-		brokerConfig:        brokerConfig,
+		log:                       log.Named("block-commit-handler"),
+		cfg:                       cfg,
+		snapshotData:              snapshotData,
+		getNetworkParameter:       getNetworkParameter,
+		usingEventFile:            usingEventFile,
+		eventFileTimeBetweenBlock: eventFileTimeBetweenBlock,
 	}
 }
 
@@ -52,8 +56,8 @@ func (b *BlockCommitHandler) OnBlockCommitted(ctx context.Context, chainID strin
 
 			// An interval less than 1000 when using a file source with no time between blocks results
 			// in excessive snapshot data creation and should be avoided, 1000 is a reasonable default
-			if b.brokerConfig.UseEventFile &&
-				b.brokerConfig.FileEventSourceConfig.TimeBetweenBlocks.Duration < time.Second {
+			if b.usingEventFile &&
+				b.eventFileTimeBetweenBlock < time.Second {
 				if blockInterval < 1000 {
 					b.blockInterval = 1000
 				}
@@ -62,8 +66,7 @@ func (b *BlockCommitHandler) OnBlockCommitted(ctx context.Context, chainID strin
 	}
 
 	if b.snapshotRequiredAtBlockHeight(blockHeight) {
-		fromHeight := GetFromHeight(blockHeight, b.blockInterval)
-		err = b.snapshotData(ctx, chainID, blockHeight, fromHeight)
+		err = b.snapshotData(ctx, chainID, blockHeight)
 		if err != nil {
 			b.log.Errorf("failed to snapshot data:%w", err)
 		}
@@ -71,13 +74,9 @@ func (b *BlockCommitHandler) OnBlockCommitted(ctx context.Context, chainID strin
 }
 
 func (b *BlockCommitHandler) snapshotRequiredAtBlockHeight(lastCommittedBlockHeight int64) bool {
-	if b.blockInterval > 0 {
+	if b.cfg.Publish && b.blockInterval > 0 {
 		return lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%b.blockInterval == 0
 	}
 
 	return false
-}
-
-func GetFromHeight(toHeight int64, snapshotInterval int64) int64 {
-	return toHeight - (snapshotInterval - 1)
 }

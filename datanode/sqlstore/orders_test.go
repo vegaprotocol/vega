@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,7 +31,7 @@ import (
 
 func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block entities.Block, party entities.Party, market entities.Market, reference string,
 	side types.Side, timeInForce types.OrderTimeInForce, orderType types.OrderType, status types.OrderStatus,
-	price, size, remaining int64, seqNum uint64, version int32,
+	price, size, remaining int64, seqNum uint64, version int32, lpID []byte,
 ) entities.Order {
 	t.Helper()
 	order := entities.Order{
@@ -46,6 +47,7 @@ func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block 
 		Status:          status,
 		Reference:       reference,
 		Version:         version,
+		LpID:            lpID,
 		PeggedOffset:    decimal.NewFromInt(0),
 		PeggedReference: types.PeggedReferenceMid,
 		CreatedAt:       time.Now().Truncate(time.Microsecond),
@@ -110,6 +112,7 @@ func TestOrders(t *testing.T) {
 			60,
 			uint64(i),
 			version,
+			nil,
 		)
 		orders[i] = order
 
@@ -230,6 +233,14 @@ func TestOrders(t *testing.T) {
 		require.Len(t, fetchedOrders, 2)
 		assert.Equal(t, int32(1), fetchedOrders[0].Version)
 		assert.Equal(t, int32(2), fetchedOrders[1].Version)
+	})
+
+	t.Run("GetOrderNotFound", func(t *testing.T) {
+		notAnOrderID := entities.OrderID(helpers.GenerateID())
+		fetchedOrder, err := os.GetOrder(ctx, notAnOrderID.String(), nil)
+		require.Error(t, err)
+		assert.Equal(t, entities.ErrNotFound, err)
+		assert.Equal(t, entities.Order{}, fetchedOrder)
 	})
 }
 
@@ -405,7 +416,7 @@ func generateTestOrders(t *testing.T, blocks []entities.Block, parties []entitie
 		}
 		ref := fmt.Sprintf("reference-%d", i)
 		orders[i] = addTestOrder(t, os, to.id, to.block, to.party, to.market, ref, to.side,
-			to.timeInForce, to.orderType, to.status, to.price, to.size, to.remaining, uint64(i), int32(1))
+			to.timeInForce, to.orderType, to.status, to.price, to.size, to.remaining, uint64(i), int32(1), nil)
 	}
 
 	return orders
@@ -495,6 +506,11 @@ func TestOrders_CursorPagination(t *testing.T) {
 	t.Run("Should return the page of current orders for a given market when a first and after cursor is given", testOrdersCursorPaginationBetweenDatesByMarketFirstAndAfterCursor)
 }
 
+func TestOrdersFiltering(t *testing.T) {
+	t.Run("Should filter orders", testOrdersFilter)
+	t.Run("Should filter orders excluding liquidity orders", testOrdersFilterLiquidityOrders)
+}
+
 type orderTestStores struct {
 	bs     *sqlstore.Blocks
 	ps     *sqlstore.Parties
@@ -533,7 +549,7 @@ func setupOrderCursorPaginationTests(t *testing.T) (*orderTestStores, func(t *te
 func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores) orderTestData {
 	t.Helper()
 
-	blocks := generateTestBlocks(t, 10, stores.bs)
+	blocks := generateTestBlocks(t, 12, stores.bs)
 	parties := generateParties(t, 2, blocks[0], stores.ps)
 	markets := helpers.GenerateMarkets(t, 2, blocks[0], stores.ms)
 	orderIDs := generateOrderIDs(t, 20)
@@ -545,6 +561,7 @@ func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores
 		block       entities.Block
 		party       entities.Party
 		market      entities.Market
+		reference   string
 		side        types.Side
 		price       int64
 		size        int64
@@ -554,6 +571,7 @@ func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores
 		orderType   types.OrderType
 		status      types.OrderStatus
 		cursor      *entities.Cursor
+		lpID        []byte
 	}{
 		{
 			// testOrders[0]
@@ -566,7 +584,7 @@ func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores
 			size:        100,
 			remaining:   100,
 			version:     1,
-			timeInForce: types.OrderTimeInForceGTC,
+			timeInForce: types.OrderTimeInForceGTT,
 			orderType:   types.OrderTypeLimit,
 			status:      types.OrderStatusActive,
 		},
@@ -607,6 +625,7 @@ func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores
 			party:       parties[1],
 			market:      markets[0],
 			side:        types.SideBuy,
+			reference:   "DEADBEEF",
 			price:       100,
 			size:        100,
 			remaining:   100,
@@ -642,7 +661,7 @@ func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores
 			remaining:   100,
 			version:     1,
 			timeInForce: types.OrderTimeInForceGTC,
-			orderType:   types.OrderTypeLimit,
+			orderType:   types.OrderTypeMarket,
 			status:      types.OrderStatusActive,
 		},
 		{
@@ -672,7 +691,7 @@ func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores
 			remaining:   100,
 			version:     1,
 			timeInForce: types.OrderTimeInForceGTC,
-			orderType:   types.OrderTypeLimit,
+			orderType:   types.OrderTypeMarket,
 			status:      types.OrderStatusActive,
 		},
 		{
@@ -701,7 +720,7 @@ func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores
 			size:        100,
 			remaining:   100,
 			version:     1,
-			timeInForce: types.OrderTimeInForceGTC,
+			timeInForce: types.OrderTimeInForceGTT,
 			orderType:   types.OrderTypeLimit,
 			status:      types.OrderStatusActive,
 		},
@@ -763,7 +782,7 @@ func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores
 			version:     6,
 			timeInForce: types.OrderTimeInForceGTC,
 			orderType:   types.OrderTypeLimit,
-			status:      types.OrderStatusActive,
+			status:      types.OrderStatusFilled,
 		},
 		{
 			// testOrders[14]
@@ -776,9 +795,42 @@ func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores
 			size:        100,
 			remaining:   100,
 			version:     1,
+			timeInForce: types.OrderTimeInForceFOK,
+			orderType:   types.OrderTypeLimit,
+			status:      types.OrderStatusFilled,
+		},
+		{
+			// testOrders[15]
+			id:          orderIDs[10],
+			block:       blocks[10],
+			party:       parties[1],
+			market:      markets[0],
+			reference:   "DEADBEEF",
+			side:        types.SideBuy,
+			price:       100,
+			size:        100,
+			remaining:   100,
+			version:     1,
 			timeInForce: types.OrderTimeInForceGTC,
 			orderType:   types.OrderTypeLimit,
 			status:      types.OrderStatusActive,
+			lpID:        []byte("TEST_LP1"),
+		},
+		{
+			// testOrders[16]
+			id:          orderIDs[11],
+			block:       blocks[11],
+			party:       parties[1],
+			market:      markets[0],
+			side:        types.SideBuy,
+			price:       100,
+			size:        100,
+			remaining:   100,
+			version:     1,
+			timeInForce: types.OrderTimeInForceGTC,
+			orderType:   types.OrderTypeLimit,
+			status:      types.OrderStatusActive,
+			lpID:        []byte("TEST_LP2"),
 		},
 	}
 
@@ -800,8 +852,8 @@ func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores
 			SeqNum:   seqNum,
 		}
 		cursors[i] = entities.NewCursor(orderCursor.String())
-		orders[i] = addTestOrder(t, stores.os, order.id, order.block, order.party, order.market, "", order.side, order.timeInForce,
-			order.orderType, order.status, order.price, order.size, order.remaining, seqNum, order.version)
+		orders[i] = addTestOrder(t, stores.os, order.id, order.block, order.party, order.market, order.reference, order.side, order.timeInForce,
+			order.orderType, order.status, order.price, order.size, order.remaining, seqNum, order.version, order.lpID)
 	}
 
 	// Make sure we flush the batcher and write the orders to the database
@@ -830,17 +882,25 @@ func testOrdersCursorPaginationByMarketNoCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 
 	require.NoError(t, err)
-	assert.Len(t, got, 5)
-	want := append([]entities.Order{}, testData.orders[0], testData.orders[3], testData.orders[7], testData.orders[13], testData.orders[14])
+	assert.Len(t, got, 7)
+	want := append([]entities.Order{},
+		testData.orders[0],
+		testData.orders[3],
+		testData.orders[7],
+		testData.orders[13],
+		testData.orders[14],
+		testData.orders[15],
+		testData.orders[16],
+	)
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: false,
 		StartCursor:     testData.cursors[0].Encode(),
-		EndCursor:       testData.cursors[14].Encode(),
+		EndCursor:       testData.cursors[16].Encode(),
 	}, pageInfo)
 }
 
@@ -857,16 +917,25 @@ func testOrdersCursorPaginationByPartyNoCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
-	assert.Len(t, got, 6)
-	want := append([]entities.Order{}, testData.orders[3], testData.orders[5], testData.orders[7], testData.orders[9], testData.orders[12], testData.orders[13])
+	assert.Len(t, got, 8)
+	want := append([]entities.Order{},
+		testData.orders[3],
+		testData.orders[5],
+		testData.orders[7],
+		testData.orders[9],
+		testData.orders[12],
+		testData.orders[13],
+		testData.orders[15],
+		testData.orders[16],
+	)
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: false,
 		StartCursor:     testData.cursors[3].Encode(),
-		EndCursor:       testData.cursors[13].Encode(),
+		EndCursor:       testData.cursors[16].Encode(),
 	}, pageInfo)
 }
 
@@ -910,7 +979,7 @@ func testOrdersCursorPaginationByMarketAndPartyNoCursor(t *testing.T) {
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[5], testData.orders[9], testData.orders[12])
@@ -936,10 +1005,12 @@ func testOrdersCursorPaginationByMarketNoCursorNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
-	assert.Len(t, got, 5)
+	assert.Len(t, got, 7)
 	want := append([]entities.Order{},
+		testData.orders[16],
+		testData.orders[15],
 		testData.orders[14],
 		testData.orders[13],
 		testData.orders[7],
@@ -950,7 +1021,7 @@ func testOrdersCursorPaginationByMarketNoCursorNewestFirst(t *testing.T) {
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: false,
-		StartCursor:     testData.cursors[14].Encode(),
+		StartCursor:     testData.cursors[16].Encode(),
 		EndCursor:       testData.cursors[0].Encode(),
 	}, pageInfo)
 }
@@ -968,10 +1039,12 @@ func testOrdersCursorPaginationByPartyNoCursorNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
-	assert.Len(t, got, 6)
+	assert.Len(t, got, 8)
 	want := append([]entities.Order{},
+		testData.orders[16],
+		testData.orders[15],
 		testData.orders[13],
 		testData.orders[12],
 		testData.orders[9],
@@ -983,7 +1056,7 @@ func testOrdersCursorPaginationByPartyNoCursorNewestFirst(t *testing.T) {
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: false,
-		StartCursor:     testData.cursors[13].Encode(),
+		StartCursor:     testData.cursors[16].Encode(),
 		EndCursor:       testData.cursors[3].Encode(),
 	}, pageInfo)
 }
@@ -1035,7 +1108,7 @@ func testOrdersCursorPaginationByMarketAndPartyNoCursorNewestFirst(t *testing.T)
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{},
@@ -1068,7 +1141,7 @@ func testOrdersCursorPaginationByMarketFirstCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[0], testData.orders[3], testData.orders[7])
@@ -1095,7 +1168,7 @@ func testOrdersCursorPaginationByPartyFirstCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[3], testData.orders[5], testData.orders[7])
@@ -1150,7 +1223,7 @@ func testOrdersCursorPaginationByMarketAndPartyFirstCursor(t *testing.T) {
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	want := append([]entities.Order{}, testData.orders[5], testData.orders[9])
@@ -1172,15 +1245,17 @@ func testOrdersCursorPaginationByMarketFirstCursorNewestFirst(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	first := int32(3)
+	first := int32(5)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
-	assert.Len(t, got, 3)
+	assert.Len(t, got, 5)
 	want := append([]entities.Order{},
+		testData.orders[16],
+		testData.orders[15],
 		testData.orders[14],
 		testData.orders[13],
 		testData.orders[7],
@@ -1189,7 +1264,7 @@ func testOrdersCursorPaginationByMarketFirstCursorNewestFirst(t *testing.T) {
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: false,
-		StartCursor:     testData.cursors[14].Encode(),
+		StartCursor:     testData.cursors[16].Encode(),
 		EndCursor:       testData.cursors[7].Encode(),
 	}, pageInfo)
 }
@@ -1203,15 +1278,17 @@ func testOrdersCursorPaginationByPartyFirstCursorNewestFirst(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	first := int32(3)
+	first := int32(5)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
-	assert.Len(t, got, 3)
+	assert.Len(t, got, 5)
 	want := append([]entities.Order{},
+		testData.orders[16],
+		testData.orders[15],
 		testData.orders[13],
 		testData.orders[12],
 		testData.orders[9],
@@ -1220,7 +1297,7 @@ func testOrdersCursorPaginationByPartyFirstCursorNewestFirst(t *testing.T) {
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: false,
-		StartCursor:     testData.cursors[13].Encode(),
+		StartCursor:     testData.cursors[16].Encode(),
 		EndCursor:       testData.cursors[9].Encode(),
 	}, pageInfo)
 }
@@ -1271,7 +1348,7 @@ func testOrdersCursorPaginationByMarketAndPartyFirstCursorNewestFirst(t *testing
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	want := append([]entities.Order{},
@@ -1298,21 +1375,27 @@ func testOrdersCursorPaginationByMarketLastCursor(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	last := int32(3)
+	last := int32(5)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
-	assert.Len(t, got, 3)
-	want := append([]entities.Order{}, testData.orders[7], testData.orders[13], testData.orders[14])
+	assert.Len(t, got, 5)
+	want := append([]entities.Order{},
+		testData.orders[7],
+		testData.orders[13],
+		testData.orders[14],
+		testData.orders[15],
+		testData.orders[16],
+	)
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: true,
 		StartCursor:     testData.cursors[7].Encode(),
-		EndCursor:       testData.cursors[14].Encode(),
+		EndCursor:       testData.cursors[16].Encode(),
 	}, pageInfo)
 }
 
@@ -1325,21 +1408,27 @@ func testOrdersCursorPaginationByPartyLastCursor(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	last := int32(3)
+	last := int32(5)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
-	assert.Len(t, got, 3)
-	want := append([]entities.Order{}, testData.orders[9], testData.orders[12], testData.orders[13])
+	assert.Len(t, got, 5)
+	want := append([]entities.Order{},
+		testData.orders[9],
+		testData.orders[12],
+		testData.orders[13],
+		testData.orders[15],
+		testData.orders[16],
+	)
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: true,
 		StartCursor:     testData.cursors[9].Encode(),
-		EndCursor:       testData.cursors[13].Encode(),
+		EndCursor:       testData.cursors[16].Encode(),
 	}, pageInfo)
 }
 
@@ -1385,7 +1474,7 @@ func testOrdersCursorPaginationByMarketAndPartyLastCursor(t *testing.T) {
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	want := append([]entities.Order{}, testData.orders[9], testData.orders[12])
@@ -1412,7 +1501,7 @@ func testOrdersCursorPaginationByMarketLastCursorNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{},
@@ -1443,7 +1532,7 @@ func testOrdersCursorPaginationByPartyLastCursorNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{},
@@ -1506,7 +1595,7 @@ func testOrdersCursorPaginationByMarketAndPartyLastCursorNewestFirst(t *testing.
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	want := append([]entities.Order{},
@@ -1539,7 +1628,7 @@ func testOrdersCursorPaginationByMarketFirstAndAfterCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[3], testData.orders[7], testData.orders[13])
@@ -1567,7 +1656,7 @@ func testOrdersCursorPaginationByPartyFirstAndAfterCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[7], testData.orders[9], testData.orders[12])
@@ -1624,7 +1713,7 @@ func testOrdersCursorPaginationByMarketAndPartyFirstAndAfterCursor(t *testing.T)
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 1)
 	want := append([]entities.Order{}, testData.orders[9])
@@ -1652,7 +1741,7 @@ func testOrdersCursorPaginationByMarketFirstAndAfterCursorNewestFirst(t *testing
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{},
@@ -1684,7 +1773,7 @@ func testOrdersCursorPaginationByPartyFirstAndAfterCursorNewestFirst(t *testing.
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{},
@@ -1749,7 +1838,7 @@ func testOrdersCursorPaginationByMarketAndPartyFirstAndAfterCursorNewestFirst(t 
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 1)
 	want := append([]entities.Order{},
@@ -1781,7 +1870,7 @@ func testOrdersCursorPaginationByMarketLastAndBeforeCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[3], testData.orders[7], testData.orders[13])
@@ -1809,7 +1898,7 @@ func testOrdersCursorPaginationByPartyLastAndBeforeCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[5], testData.orders[7], testData.orders[9])
@@ -1866,7 +1955,7 @@ func testOrdersCursorPaginationByMarketAndPartyLastAndBeforeCursor(t *testing.T)
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 1)
 	want := append([]entities.Order{}, testData.orders[9])
@@ -1894,7 +1983,7 @@ func testOrdersCursorPaginationByMarketLastAndBeforeCursorNewestFirst(t *testing
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{},
@@ -1926,7 +2015,7 @@ func testOrdersCursorPaginationByPartyLastAndBeforeCursorNewestFirst(t *testing.
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{},
@@ -1991,7 +2080,7 @@ func testOrdersCursorPaginationByMarketAndPartyLastAndBeforeCursorNewestFirst(t 
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 1)
 	want := append([]entities.Order{},
@@ -2024,7 +2113,7 @@ func testOrdersCursorPaginationBetweenDatesByMarketNoCursor(t *testing.T) {
 	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{
 		Start: &startDate,
 		End:   &endDate,
-	})
+	}, entities.OrderFilter{})
 
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
@@ -2057,7 +2146,7 @@ func testOrdersCursorPaginationBetweenDatesByMarketFirstCursor(t *testing.T) {
 	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{
 		Start: &startDate,
 		End:   &endDate,
-	})
+	}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	want := append([]entities.Order{}, testData.orders[3], testData.orders[7])
@@ -2090,7 +2179,7 @@ func testOrdersCursorPaginationBetweenDatesByMarketFirstAndAfterCursor(t *testin
 	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{
 		Start: &startDate,
 		End:   &endDate,
-	})
+	}, entities.OrderFilter{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	want := append([]entities.Order{}, testData.orders[3], testData.orders[7])
@@ -2100,5 +2189,1339 @@ func testOrdersCursorPaginationBetweenDatesByMarketFirstAndAfterCursor(t *testin
 		HasPreviousPage: true,
 		StartCursor:     testData.cursors[3].Encode(),
 		EndCursor:       testData.cursors[7].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilter(t *testing.T) {
+	t.Run("Should filter orders by market and states", testOrdersFilterByMarketAndStates)
+	t.Run("Should filter orders by party and states", testOrdersFilterByPartyAndStates)
+	t.Run("Should filter orders by reference and states", testOrdersFilterByReferenceAndStates)
+	t.Run("Should filter orders by market and types", testOrdersFilterByMarketAndTypes)
+	t.Run("Should filter orders by party and types", testOrdersFilterByPartyAndTypes)
+	t.Run("Should filter orders by reference and types", testOrdersFilterByReferenceAndTypes)
+	t.Run("Should filter orders by market and time in force", testOrdersFilterByMarketAndTimeInForce)
+	t.Run("Should filter orders by party and time in force", testOrdersFilterByPartyAndTimeInForce)
+	t.Run("Should filter orders by reference and time in force", testOrdersFilterByReferenceAndTimeInForce)
+	t.Run("Should filter by market, states and type", testOrdersFilterByMarketStatesAndTypes)
+	t.Run("Should filter by party, states and type", testOrdersFilterByPartyStatesAndTypes)
+	t.Run("Should filter by reference, states and type", testOrdersFilterByReferenceStatesAndTypes)
+	t.Run("Should filter by market, states and time in force", testOrdersFilterByMarketStatesAndTimeInForce)
+	t.Run("Should filter by party, states and time in force", testOrdersFilterByPartyStatesAndTimeInForce)
+	t.Run("Should filter by reference, states and time in force", testOrdersFilterByReferenceStatesAndTimeInForce)
+	t.Run("Should filter by market states, types and time in force", testOrdersFilterByMarketStatesTypesAndTimeInForce)
+	t.Run("Should filter by party states, types and time in force", testOrdersFilterByPartyStatesTypesAndTimeInForce)
+	t.Run("Should filter by reference states, types and time in force", testOrdersFilterByReferenceStatesTypesAndTimeInForce)
+}
+
+func testOrdersFilterByMarketAndStates(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            nil,
+		TimeInForces:     nil,
+		ExcludeLiquidity: false,
+	}
+
+	marketID := testData.markets[0].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[0],
+		testData.orders[3],
+		testData.orders[7],
+		testData.orders[15],
+		testData.orders[16],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[0].Encode(),
+		EndCursor:       testData.cursors[16].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByPartyAndStates(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            nil,
+		TimeInForces:     nil,
+		ExcludeLiquidity: false,
+	}
+
+	partyID := testData.parties[1].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[5],
+		testData.orders[7],
+		testData.orders[9],
+		testData.orders[12],
+		testData.orders[15],
+		testData.orders[16],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[16].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByReferenceAndStates(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            nil,
+		TimeInForces:     nil,
+		ExcludeLiquidity: false,
+	}
+
+	reference := "DEADBEEF"
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, nil, &reference, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[15],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[15].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByMarketAndTypes(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         nil,
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     nil,
+		ExcludeLiquidity: false,
+	}
+
+	marketID := testData.markets[0].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append([]entities.Order{},
+		testData.orders[0],
+		testData.orders[3],
+		testData.orders[13],
+		testData.orders[14],
+		testData.orders[15],
+		testData.orders[16],
+	)
+
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[0].Encode(),
+		EndCursor:       testData.cursors[16].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByPartyAndTypes(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         nil,
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     nil,
+		ExcludeLiquidity: false,
+	}
+
+	partyID := testData.parties[1].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[9],
+		testData.orders[12],
+		testData.orders[13],
+		testData.orders[15],
+		testData.orders[16],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[16].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByReferenceAndTypes(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         nil,
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     nil,
+		ExcludeLiquidity: false,
+	}
+
+	reference := "DEADBEEF"
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, nil, &reference, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[15],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[15].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByMarketAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         nil,
+		Types:            nil,
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: false,
+	}
+
+	marketID := testData.markets[0].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[7],
+		testData.orders[13],
+		testData.orders[15],
+		testData.orders[16],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[16].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByPartyAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         nil,
+		Types:            nil,
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: false,
+	}
+
+	partyID := testData.parties[1].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[5],
+		testData.orders[7],
+		testData.orders[12],
+		testData.orders[13],
+		testData.orders[15],
+		testData.orders[16],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[16].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByReferenceAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         nil,
+		Types:            nil,
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: false,
+	}
+
+	reference := "DEADBEEF"
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, nil, &reference, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[15],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[15].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByMarketStatesAndTypes(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     nil,
+		ExcludeLiquidity: false,
+	}
+
+	marketID := testData.markets[0].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[0],
+		testData.orders[3],
+		testData.orders[15],
+		testData.orders[16],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[0].Encode(),
+		EndCursor:       testData.cursors[16].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByPartyStatesAndTypes(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     nil,
+		ExcludeLiquidity: false,
+	}
+
+	partyID := testData.parties[1].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[9],
+		testData.orders[12],
+		testData.orders[15],
+		testData.orders[16],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[16].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByReferenceStatesAndTypes(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     nil,
+		ExcludeLiquidity: false,
+	}
+
+	reference := "DEADBEEF"
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, nil, &reference, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append([]entities.Order{},
+		testData.orders[3],
+		testData.orders[15],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[15].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByMarketStatesAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            nil,
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: false,
+	}
+
+	marketID := testData.markets[0].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[7],
+		testData.orders[15],
+		testData.orders[16],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[16].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByPartyStatesAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            nil,
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: false,
+	}
+
+	partyID := testData.parties[1].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[5],
+		testData.orders[7],
+		testData.orders[12],
+		testData.orders[15],
+		testData.orders[16],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[16].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByReferenceStatesAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            nil,
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: false,
+	}
+
+	reference := "DEADBEEF"
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, nil, &reference, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append([]entities.Order{},
+		testData.orders[3],
+		testData.orders[15],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[15].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByMarketStatesTypesAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: false,
+	}
+
+	marketID := testData.markets[0].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[15],
+		testData.orders[16],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[16].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByPartyStatesTypesAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: false,
+	}
+
+	partyID := testData.parties[1].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[12],
+		testData.orders[15],
+		testData.orders[16],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[16].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterByReferenceStatesTypesAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: false,
+	}
+
+	reference := "DEADBEEF"
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, nil, &reference, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append([]entities.Order{},
+		testData.orders[3],
+		testData.orders[15],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[15].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterLiquidityOrders(t *testing.T) {
+	t.Run("Should filter orders by market and states", testOrdersFilterExcludeLiquidityByMarketAndStates)
+	t.Run("Should filter orders by party and states", testOrdersFilterExcludeLiquidityByPartyAndStates)
+	t.Run("Should filter orders by reference and states", testOrdersFilterExcludeLiquidityByReferenceAndStates)
+	t.Run("Should filter orders by market and types", testOrdersFilterExcludeLiquidityByMarketAndTypes)
+	t.Run("Should filter orders by party and types", testOrdersFilterExcludeLiquidityByPartyAndTypes)
+	t.Run("Should filter orders by reference and types", testOrdersFilterExcludeLiquidityByReferenceAndTypes)
+	t.Run("Should filter orders by market and time in force", testOrdersFilterExcludeLiquidityByMarketAndTimeInForce)
+	t.Run("Should filter orders by party and time in force", testOrdersFilterExcludeLiquidityByPartyAndTimeInForce)
+	t.Run("Should filter orders by reference and time in force", testOrdersFilterExcludeLiquidityByReferenceAndTimeInForce)
+	t.Run("Should filter by market, states and type", testOrdersFilterExcludeLiquidityByMarketStatesAndTypes)
+	t.Run("Should filter by party, states and type", testOrdersFilterExcludeLiquidityByPartyStatesAndTypes)
+	t.Run("Should filter by reference, states and type", testOrdersFilterExcludeLiquidityByReferenceStatesAndTypes)
+	t.Run("Should filter by market, states and time in force", testOrdersFilterExcludeLiquidityByMarketStatesAndTimeInForce)
+	t.Run("Should filter by party, states and time in force", testOrdersFilterExcludeLiquidityByPartyStatesAndTimeInForce)
+	t.Run("Should filter by reference, states and time in force", testOrdersFilterExcludeLiquidityByReferenceStatesAndTimeInForce)
+	t.Run("Should filter by market states, types and time in force", testOrdersFilterExcludeLiquidityByMarketStatesTypesAndTimeInForce)
+	t.Run("Should filter by party states, types and time in force", testOrdersFilterExcludeLiquidityByPartyStatesTypesAndTimeInForce)
+	t.Run("Should filter by reference states, types and time in force", testOrdersFilterExcludeLiquidityByReferenceStatesTypesAndTimeInForce)
+}
+
+func testOrdersFilterExcludeLiquidityByMarketAndStates(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            nil,
+		TimeInForces:     nil,
+		ExcludeLiquidity: true,
+	}
+
+	marketID := testData.markets[0].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[0],
+		testData.orders[3],
+		testData.orders[7],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[0].Encode(),
+		EndCursor:       testData.cursors[7].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByPartyAndStates(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            nil,
+		TimeInForces:     nil,
+		ExcludeLiquidity: true,
+	}
+
+	partyID := testData.parties[1].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[5],
+		testData.orders[7],
+		testData.orders[9],
+		testData.orders[12],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[12].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByReferenceAndStates(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            nil,
+		TimeInForces:     nil,
+		ExcludeLiquidity: true,
+	}
+
+	reference := "DEADBEEF"
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, nil, &reference, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append([]entities.Order{}, testData.orders[3])
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[3].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByMarketAndTypes(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         nil,
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     nil,
+		ExcludeLiquidity: true,
+	}
+
+	marketID := testData.markets[0].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append([]entities.Order{},
+		testData.orders[0],
+		testData.orders[3],
+		testData.orders[13],
+		testData.orders[14],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[0].Encode(),
+		EndCursor:       testData.cursors[14].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByPartyAndTypes(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         nil,
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     nil,
+		ExcludeLiquidity: true,
+	}
+
+	partyID := testData.parties[1].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[9],
+		testData.orders[12],
+		testData.orders[13],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[13].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByReferenceAndTypes(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         nil,
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     nil,
+		ExcludeLiquidity: true,
+	}
+
+	reference := "DEADBEEF"
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, nil, &reference, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[3].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByMarketAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         nil,
+		Types:            nil,
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: true,
+	}
+
+	marketID := testData.markets[0].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[7],
+		testData.orders[13],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[13].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByPartyAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         nil,
+		Types:            nil,
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: true,
+	}
+
+	partyID := testData.parties[1].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[5],
+		testData.orders[7],
+		testData.orders[12],
+		testData.orders[13],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[13].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByReferenceAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         nil,
+		Types:            nil,
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: true,
+	}
+
+	reference := "DEADBEEF"
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, nil, &reference, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[3].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByMarketStatesAndTypes(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     nil,
+		ExcludeLiquidity: true,
+	}
+
+	marketID := testData.markets[0].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[0],
+		testData.orders[3],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[0].Encode(),
+		EndCursor:       testData.cursors[3].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByPartyStatesAndTypes(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     nil,
+		ExcludeLiquidity: true,
+	}
+
+	partyID := testData.parties[1].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[9],
+		testData.orders[12],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[12].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByReferenceStatesAndTypes(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     nil,
+		ExcludeLiquidity: true,
+	}
+
+	reference := "DEADBEEF"
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, nil, &reference, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append([]entities.Order{},
+		testData.orders[3],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[3].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByMarketStatesAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            nil,
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: true,
+	}
+
+	marketID := testData.markets[0].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[7],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[7].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByPartyStatesAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            nil,
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: true,
+	}
+
+	partyID := testData.parties[1].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[5],
+		testData.orders[7],
+		testData.orders[12],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[12].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByReferenceStatesAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            nil,
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: true,
+	}
+
+	reference := "DEADBEEF"
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, nil, &reference, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append([]entities.Order{}, testData.orders[3])
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[3].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByMarketStatesTypesAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: true,
+	}
+
+	marketID := testData.markets[0].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[3].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByPartyStatesTypesAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: true,
+	}
+
+	partyID := testData.parties[1].ID.String()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append(
+		[]entities.Order{},
+		testData.orders[3],
+		testData.orders[12],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[12].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersFilterExcludeLiquidityByReferenceStatesTypesAndTimeInForce(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	filter := entities.OrderFilter{
+		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
+		Types:            []vega.Order_Type{vega.Order_TYPE_LIMIT},
+		TimeInForces:     []vega.Order_TimeInForce{vega.Order_TIME_IN_FORCE_GTC},
+		ExcludeLiquidity: true,
+	}
+
+	reference := "DEADBEEF"
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, nil, &reference, false, pagination, entities.DateRange{}, filter)
+	require.NoError(t, err)
+
+	want := append([]entities.Order{}, testData.orders[3])
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[3].Encode(),
 	}, pageInfo)
 }

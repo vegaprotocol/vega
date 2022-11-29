@@ -274,8 +274,8 @@ Feature: Fees calculations
     And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
 
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            |
-      | 1002       | TRADING_MODE_CONTINUOUS |
+      | mark price | last traded price | trading mode            |
+      | 1002       | 1002              |TRADING_MODE_CONTINUOUS |
 
     # For trader3a-
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 2 * 1002 = 2004
@@ -401,8 +401,8 @@ Feature: Fees calculations
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            |
-      | 1000       | TRADING_MODE_CONTINUOUS |
+      | mark price | last traded price | trading mode            |
+      | 1000       | 1000              | TRADING_MODE_CONTINUOUS |
 
     When the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
@@ -411,8 +411,8 @@ Feature: Fees calculations
       | trader4  | ETH/DEC21 | sell | 400    | 1002  | 2                | TYPE_LIMIT | TIF_GTC |
 
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            |
-      | 1002       | TRADING_MODE_CONTINUOUS |
+      | mark price | last traded price | trading mode            |
+      | 1000       | 1002              | TRADING_MODE_CONTINUOUS |
 
     Then the following trades should be executed:
 
@@ -482,8 +482,8 @@ Feature: Fees calculations
 
     # checking if continuous mode still exists
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            |
-      | 1002       | TRADING_MODE_CONTINUOUS |
+      | mark price | last traded price | trading mode            |
+      | 1000       | 1002              | TRADING_MODE_CONTINUOUS |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |

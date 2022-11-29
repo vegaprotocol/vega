@@ -57,7 +57,7 @@ func assertInternalError(t *testing.T, errorDetails *jsonrpc.ErrorDetails, expec
 func assertNetworkError(t *testing.T, errorDetails *jsonrpc.ErrorDetails, expectedErr error) {
 	t.Helper()
 	require.NotNil(t, errorDetails)
-	assert.Equal(t, api.ErrorCodeNodeRequestFailed, errorDetails.Code)
+	assert.Equal(t, api.ErrorCodeNodeCommunicationFailed, errorDetails.Code)
 	assert.Equal(t, string(api.NetworkError), errorDetails.Message)
 	assert.Equal(t, expectedErr.Error(), errorDetails.Data)
 }

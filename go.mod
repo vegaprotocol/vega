@@ -32,7 +32,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.0
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a
-	github.com/tendermint/tendermint v0.34.23
+	github.com/tendermint/tendermint v0.34.24
 	github.com/tendermint/tm-db v0.6.7
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.nanomsg.org/mangos/v3 v3.2.1
@@ -390,6 +390,6 @@ require (
 )
 
 replace (
-	github.com/fergusstrange/embedded-postgres => github.com/vegaprotocol/embedded-postgres v1.13.1-0.20221110101551-88cf95986ea4
+	github.com/fergusstrange/embedded-postgres => github.com/vegaprotocol/embedded-postgres v1.13.1-0.20221123183204-2e7a2feee5bb
 	github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.3.1-uint256
 )
