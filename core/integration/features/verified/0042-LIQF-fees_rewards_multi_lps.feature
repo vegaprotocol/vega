@@ -34,6 +34,7 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
 
     Given the average block duration is "2"
 
+  @Now
   Scenario: All liquidity providers in the market receive a greater than zero amount of liquidity fee, 0042-LIQF-010
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount         |
@@ -87,8 +88,8 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | lp1    | USD   | ETH/MAR22 | 53353554   | 9999946636446 | 10000      |
       | lp2    | USD   | ETH/MAR22 | 53353554   | 9999945646446 | 1000000    |
       | lp3    | USD   | ETH/MAR22 | 9710346805 | 9989289653195 | 1000000000 |
-      | party1 | USD   | ETH/MAR22 | 255218463  | 999744781537  | 0          |
-      | party2 | USD   | ETH/MAR22 | 1082071078 | 98917928922   | 0          |
+      | party1 | USD   | ETH/MAR22 | 228207540  | 999771792460  | 0          |
+      | party2 | USD   | ETH/MAR22 | 1120424632 | 98879575368   | 0          |
 
     Then the network moves ahead "1" blocks
 

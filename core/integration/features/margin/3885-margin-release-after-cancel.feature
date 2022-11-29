@@ -56,8 +56,7 @@ Feature: Regression test for issue 3885
       | party1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | party1-3  |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | BTC   | ETH/DEC19 | 32     | 9968    |
-      #| party1 | BTC   | ETH/DEC19 | 37     | 9963    |
+      | party1 | BTC   | ETH/DEC19 | 37     | 9963    |
     And the mark price should be "100" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
@@ -66,8 +65,7 @@ Feature: Regression test for issue 3885
       | party1 | party1-3  |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | BTC   | ETH/DEC19 | 32     | 9968    |
-      #| party1 | BTC   | ETH/DEC19 | 37     | 9963    |
+      | party1 | BTC   | ETH/DEC19 | 37     | 9963    |
       # With a small change to force margin recalculating whennever an order is removed, we can have margins released.
       # But back when we implemented this, we decided not to check margins for parties who still have an open position.
       # The reasoning being that any party with an open position will get their margin released/topped up next MTM cycle.

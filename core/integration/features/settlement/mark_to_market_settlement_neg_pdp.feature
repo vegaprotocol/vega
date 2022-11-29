@@ -53,8 +53,7 @@ Feature: Test mark to market settlement
       | party1 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general |
-      | party1 | ETH   | ETH/DEC19 | 1440000   | 8560000 |
-      #| party1 | ETH   | ETH/DEC19 | 5041200   | 4958800 |
+      | party1 | ETH   | ETH/DEC19 | 5041200   | 4958800 |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |

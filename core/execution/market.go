@@ -781,8 +781,7 @@ func (m *Market) blockEnd(ctx context.Context) {
 		// last traded price should not reflect the closeout trades
 		m.lastTradedPrice = mp.Clone()
 	}
-	// update margin requirements
-	_ = m.recheckMargin(ctx, m.position.Positions())
+	m.releaseExcessMargin(ctx, m.position.Positions()...)
 }
 
 func (m *Market) updateMarketValueProxy() {
@@ -1791,7 +1790,7 @@ func (m *Market) confirmMTM(
 	// we can safely ignore the error here
 	_ = m.recheckMargin(ctx, pos)
 	// release any excess if needed
-	m.releaseExcessMargin(ctx, pos...)
+	// m.releaseExcessMargin(ctx, pos...)
 }
 
 // updateLiquidityFee computes the current LiquidityProvision fee and updates

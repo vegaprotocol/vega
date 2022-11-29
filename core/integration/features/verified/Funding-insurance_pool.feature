@@ -145,7 +145,7 @@ Feature: Position resolution case 5 lognormal risk model
       | sellSideProvider | USD   | ETH/DEC19 | 839594  | 999999163306       |
       | buySideProvider  | USD   | ETH/DEC19 | 81259   | 999999924541       |
       | aux              | USD   | ETH/DEC19 | 1088    | 999999998902       |
-      | aux2             | USD   | ETH/DEC19 | 2893    | 999999997117       |
+      | aux2             | USD   | ETH/DEC19 | 2896    | 999999997114       |
 
     # check margin levels
     Then the parties should have the following margin levels:

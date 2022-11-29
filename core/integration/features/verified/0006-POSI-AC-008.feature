@@ -74,8 +74,7 @@ Feature: test AC 0006-POSI-008
       | party1 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 1440   | 8560    |
-      #| party1 | ETH   | ETH/DEC19 | 5041   | 4959    |
+      | party1 | ETH   | ETH/DEC19 | 5041   | 4959    |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -95,7 +94,6 @@ Feature: test AC 0006-POSI-008
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 7682   | 1318    |
-      #| party1 | ETH   | ETH/DEC19 | 504    | 8496    |
       | party2 | ETH   | ETH/DEC19 | 2605   | 8295    |
       | party3 | ETH   | ETH/DEC19 | 2605   | 7195    |
 
@@ -136,7 +134,4 @@ Feature: test AC 0006-POSI-008
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS |         |           |           | 3300         | 9000           | 3             |
-
-
-
 

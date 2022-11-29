@@ -62,7 +62,7 @@ func addMarginLevels(ml *types.MarginLevels, maintenance num.Decimal, scalingFac
 
 func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice *num.Uint, rf types.RiskFactor) *types.MarginLevels {
 	// calculate margins without order positions
-	ml := e.calculateMargins(m, markPrice, rf, true, true)
+	ml := e.calculateMargins(m, markPrice, rf, false, true)
 	// now add the margin levels for orders
 	long, short := num.DecimalFromInt64(m.Buy()).Div(e.positionFactor), num.DecimalFromInt64(m.Sell()).Div(e.positionFactor)
 	var lMargin, sMargin num.Decimal

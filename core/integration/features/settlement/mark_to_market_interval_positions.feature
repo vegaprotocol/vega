@@ -100,8 +100,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     When the network moves ahead "1" blocks
     Then the parties should have the following margin levels:
       | party           | market id | maintenance | search  | initial  | release |
-      #| designatedLoser | ETH/DEC19 | 14654       | 17584   | 21981    | 29308   |
-      | designatedLoser | ETH/DEC19 | 54384       | 65260   | 81576    | 108768  |
+      | designatedLoser | ETH/DEC19 | 14654       | 17584   | 21981    | 29308   |
 
     # Add another 4 blocks, and we will have crossed over the threshold, and we will MTM
     When the network moves ahead "4" blocks

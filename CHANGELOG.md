@@ -61,6 +61,9 @@
 - [6844](https://github.com/vegaprotocol/vega/issues/6844) - Add API descriptions, remove unused ledger entries and fix typos
 - [6960](https://github.com/vegaprotocol/vega/issues/6960) - Infer has traded from settlement engine rather than from an unsaved-to-snapshot flag
 - [6941](https://github.com/vegaprotocol/vega/issues/6941) - Rename `admin.describe_network` parameter to `name`
+- [6976](https://github.com/vegaprotocol/vega/issues/6976) - Recalculate margins on MTM aniversary even if there were no trades.
+- [6977](https://github.com/vegaprotocol/vega/issues/6977) - Prior to final settlement, perform MTM on unsettled trades.
+- [6569](https://github.com/vegaprotocol/vega/issues/6569) - Fix margin calculations during auctions.
 
 ## 0.62.1
 

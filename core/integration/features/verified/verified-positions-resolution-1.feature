@@ -87,8 +87,7 @@ Feature: Position resolution case 1
       | sellSideProvider | BTC   | ETH/DEC19 | 2154700 | 999997854000 |
       | buySideProvider  | BTC   | ETH/DEC19 | 320     | 999999999680 |
       | aux              | BTC   | ETH/DEC19 | 320     | 999999999650 |
-      | aux2             | BTC   | ETH/DEC19 | 7520    | 999999992510 |
-      #| aux2             | BTC   | ETH/DEC19 | 7430    | 999999992600 |
+      | aux2             | BTC   | ETH/DEC19 | 7430    | 999999992600 |
 
     # margin level: vol* slippage = vol * (MarkPrice-ExitPrice) =290 * (120-(1*10+40*1)/11) = 290*116 = 33640
     And the parties should have the following margin levels:

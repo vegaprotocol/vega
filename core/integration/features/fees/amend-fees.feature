@@ -109,8 +109,7 @@ Feature: Fees when amend trades
       | trader4  | ETH/DEC21 | sell | 4      | 1003  | 0                | TYPE_LIMIT | TIF_GTC | t4-s4-03  |
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 964    | 9047    |
-      #| trader3a | ETH   | ETH/DEC21 | 1171   | 8840    |
+      | trader3a | ETH   | ETH/DEC21 | 1171   | 8840    |
       | trader4  | ETH   | ETH/DEC21 | 984    | 8986    |
       # ensure orders are on the book
     And the order book should have the following volumes for market "ETH/DEC21":
@@ -241,10 +240,8 @@ Feature: Fees when amend trades
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 967    | 9044    |
-      | trader4  | ETH   | ETH/DEC21 | 962    | 261     |
-      #| trader3a | ETH   | ETH/DEC21 | 1183   | 8828    |
-      #| trader4  | ETH   | ETH/DEC21 | 1171   | 52      |
+      | trader3a | ETH   | ETH/DEC21 | 1183   | 8828    |
+      | trader4  | ETH   | ETH/DEC21 | 1171   | 52      |
 
       # reducing size
     And the parties amend the following orders:

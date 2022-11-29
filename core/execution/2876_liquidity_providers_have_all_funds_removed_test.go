@@ -115,12 +115,12 @@ func TestIssue2876(t *testing.T) {
 	// but also some margin to cover the orders
 	marginAccount, err := tm.collateralEngine.GetPartyMarginAccount(tm.market.GetID(), "party-2", tm.asset)
 	assert.NoError(t, err)
-	assert.True(t, marginAccount.Balance.EQ(num.NewUint(27000)))
+	assert.True(t, marginAccount.Balance.EQ(num.NewUint(15000)))
 
 	// but also some funds left in the genearal
 	generalAccount, err := tm.collateralEngine.GetPartyGeneralAccount("party-2", tm.asset)
 	assert.NoError(t, err)
-	assert.True(t, generalAccount.Balance.EQ(num.NewUint(98973000)))
+	assert.True(t, generalAccount.Balance.EQ(num.NewUint(98985000)))
 
 	// now let's move time and see
 	// this should end the opening auction

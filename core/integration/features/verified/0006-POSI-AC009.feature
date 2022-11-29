@@ -44,7 +44,6 @@ Feature: test AC 006-POSI-009, 006-POSI-027
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 4921   | 5079    |
-      #| party1 | ETH   | ETH/DEC19 | 132    | 9868    |
       | party2 | ETH   | ETH/DEC19 | 1273   | 8627    |
 
     # party3 does not have position record exist since party3 does not have either an open position nor active order
@@ -54,7 +53,6 @@ Feature: test AC 006-POSI-009, 006-POSI-027
       | aux2     | 1      | 0              | 0            |
       | party1   | -1     | 0              | 0            |
       | party2   | 1      | 0              | 0            |
-      # | party3   | -1     | 0              | 0            |
       
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the parties place the following orders with ticks:
@@ -62,8 +60,7 @@ Feature: test AC 006-POSI-009, 006-POSI-027
       | party1 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 1440   | 8560    |
-      #| party1 | ETH   | ETH/DEC19 | 5041   | 4959    |
+      | party1 | ETH   | ETH/DEC19 | 5041   | 4959    |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -71,7 +68,6 @@ Feature: test AC 006-POSI-009, 006-POSI-027
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 7682   | 1318    |
-      #| party1 | ETH   | ETH/DEC19 | 504    | 8496    |
       | party2 | ETH   | ETH/DEC19 | 2605   | 8295    |
       | party3 | ETH   | ETH/DEC19 | 2605   | 7195    |
 

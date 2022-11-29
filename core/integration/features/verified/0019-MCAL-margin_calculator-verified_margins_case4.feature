@@ -89,7 +89,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | sellSideMM | sell2     |
       | sellSideMM | sell3     |
     And the parties place the following orders with ticks:
-      | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | buySideMM  | ETH/DEC19 | buy  | 45     | 7000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 50     | 7500000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | sellSideMM | ETH/DEC19 | sell | 10     | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
@@ -97,12 +97,11 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | sellSideMM | ETH/DEC19 | sell | 2      | 8400000  | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
 
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin   | general   |
-      | party1 | ETH   | ETH/DEC19 | 57200000 | 945600000 |
+      | party  | asset | market id | margin    | general   |
+      | party1 | ETH   | ETH/DEC19 | 284399960 | 718400040 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search   | initial  | release   |
-      | party1 | ETH/DEC19 | 15100007    | 48320022 | 60400028 | 75500035 |
-      #| party1 | ETH/DEC19 | 71099990    | 227519968 | 284399960 | 355499950 |
+      | party1 | ETH/DEC19 | 71099990    | 227519968 | 284399960 | 355499950 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party1 | -13    | 2800000        | 0            |
@@ -121,7 +120,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
-      | party1 | ETH   | ETH/DEC19 | 70200000 | 945600000 |
+      | party1 | ETH   | ETH/DEC19 | 79999972 | 935800028 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search   | initial  | release  |
       | party1 | ETH/DEC19 | 19999993    | 63999977 | 79999972 | 99999965 |

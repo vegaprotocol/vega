@@ -456,8 +456,7 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 967    | 9044    |
-      #| trader3a | ETH   | ETH/DEC21 | 1159   | 8852    |
+      | trader3a | ETH   | ETH/DEC21 | 1159   | 8852    |
       | trader4  | ETH   | ETH/DEC21 | 1102   | 123     |
 
       # reducing size
@@ -486,11 +485,8 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 967    | 9054    |
-      #| trader3a | ETH   | ETH/DEC21 | 1159   | 8862    |
+      | trader3a | ETH   | ETH/DEC21 | 1159   | 8862    |
       | trader4  | ETH   | ETH/DEC21 | 1102   | 109     |
-      #| trader3a | ETH   | ETH/DEC21 | 1344   | 8673    |
-      #| trader4  | ETH   | ETH/DEC21 | 1108   | 109     |
 
   Scenario: S006, Testing fees in continuous trading with insufficient balance in their general account but margin covers the fees (0029-FEES-008)
 
@@ -575,7 +571,7 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 34227  | 9966280 |
+      | trader3 | ETH   | ETH/DEC21 | 34129  | 9966378 |
       | trader4 | ETH   | ETH/DEC21 | 21375  | 0       |
 
   Scenario: S007, Testing fees to confirm fees are collected first and then margin (0029-FEES-002, 0029-FEES-008)
@@ -887,9 +883,8 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 5568   | 3726    |
       | trader4  | ETH   | ETH/DEC21 | 10679  | 0       |
-      #| trader3a | ETH   | ETH/DEC21 | 5427   | 3867    |
+      | trader3a | ETH   | ETH/DEC21 | 5427   | 3867    |
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             |

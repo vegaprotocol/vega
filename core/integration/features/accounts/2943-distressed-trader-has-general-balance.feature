@@ -63,8 +63,7 @@ Feature: Distressed parties should not have general balance left
       | party  | asset | market id | margin | general       |
       | party4 | ETH   | ETH/DEC20 | 360    | 9999999999640 |
       #| party4 | ETH   | ETH/DEC20 | 240    | 9999999999760 |
-      #| party5 | ETH   | ETH/DEC20 | 372    | 9999999999528 |
-      | party5 | ETH   | ETH/DEC20 | 132    | 9999999999768 |
+      | party5 | ETH   | ETH/DEC20 | 372    | 9999999999528 |
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp2 | party3 | ETH/DEC20 | 10000             | 0.1 | buy  | BID              | 10         | 10     | submission |

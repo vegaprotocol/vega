@@ -92,11 +92,11 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | sellSideMM | ETH/DEC19 | sell | 14     | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | sellSideMM | ETH/DEC19 | sell | 2      | 8000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin   | general   |
-      | party1 | ETH   | ETH/DEC19 | 98800000 | 884000000 |
+      | party  | asset | market id | margin    | general   |
+      | party1 | ETH   | ETH/DEC19 | 284399960 | 698400040 |
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search   | initial  | release   |
-      | party1 | ETH/DEC19 | 20699991    | 66239971 | 82799964 | 103499955 |
+      | party  | market id | maintenance | search    | initial   | release   |
+      | party1 | ETH/DEC19 | 71099990    | 227519968 | 284399960 | 355499950 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party1 | -13    | 2800000        | 0            |
@@ -111,9 +111,9 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
     # MTM
     And the following transfers should happen:
       | from   | to      | from account         | to account              | market id | amount    | asset |
-      | party1 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 98800000  | ETH   |
-      | party1 | party1  | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 239854576 | ETH   |
-      | party1 | party1  | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 156000000 | ETH   |
+      | party1 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 273000000 | ETH   |
+      | party1 | party1  | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 144600040 | ETH   |
+      | party1 | party1  | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 144600040 | ETH   |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
