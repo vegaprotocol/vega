@@ -33,7 +33,7 @@ type orderStore interface {
 	GetLiveOrders(ctx context.Context) ([]entities.Order, error)
 	ListOrderVersions(ctx context.Context, orderIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error)
 	ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool, p entities.CursorPagination,
-		dateRange entities.DateRange) ([]entities.Order, entities.PageInfo, error)
+		dateRange entities.DateRange, filter entities.OrderFilter) ([]entities.Order, entities.PageInfo, error)
 }
 
 type Order struct {
@@ -50,13 +50,14 @@ func NewOrder(store orderStore, log *logging.Logger) *Order {
 	}
 }
 
-func (o *Order) ObserveOrders(ctx context.Context, retries int, market *string, party *string) (<-chan []entities.Order, uint64) {
+func (o *Order) ObserveOrders(ctx context.Context, retries int, market *string, party *string, includeLiquidity bool) (<-chan []entities.Order, uint64) {
 	ch, ref := o.observer.Observe(ctx,
 		retries,
 		func(o entities.Order) bool {
 			marketOk := market == nil || o.MarketID.String() == *market
 			partyOk := party == nil || o.PartyID.String() == *party
-			return marketOk && partyOk
+			liqOrder := (o.LpID != nil && includeLiquidity) || !includeLiquidity
+			return marketOk && partyOk && liqOrder
 		})
 	return ch, ref
 }
@@ -103,9 +104,9 @@ func (o *Order) GetLiveOrders(ctx context.Context) ([]entities.Order, error) {
 }
 
 func (o *Order) ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool,
-	p entities.CursorPagination, dateRange entities.DateRange,
+	p entities.CursorPagination, dateRange entities.DateRange, filter entities.OrderFilter,
 ) ([]entities.Order, entities.PageInfo, error) {
-	return o.store.ListOrders(ctx, party, market, reference, liveOnly, p, dateRange)
+	return o.store.ListOrders(ctx, party, market, reference, liveOnly, p, dateRange, filter)
 }
 
 func (o *Order) ListOrderVersions(ctx context.Context, orderID string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {

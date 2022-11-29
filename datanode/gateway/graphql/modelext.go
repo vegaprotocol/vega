@@ -150,7 +150,7 @@ func transfersFromProto(transfers []*types.LedgerEntry) []*LedgerEntry {
 			AccountFromID: t.FromAccount,
 			AccountToID:   t.ToAccount,
 			Amount:        t.Amount,
-			Type:          t.Type.String(),
+			Type:          t.Type,
 			Timestamp:     t.Timestamp,
 		})
 	}

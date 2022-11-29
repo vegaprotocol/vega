@@ -59,30 +59,19 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.BeforeScenario(func(*godog.Scenario) {
 		execsetup = newExecutionTestSetup()
 	})
-	// each step changes the output from the reporter
-	// so we know where a mock failed
 	s.BeforeStep(func(step *godog.Step) {
-		// rm any errors from previous step (if applies)
-		reporter.err = nil
-		reporter.step = step.Text
+		// no need to do anything here, the framework will take care of error reporting
 	})
-	// if a mock assert failed, we're just setting an error here and crash out of the test here
 	s.AfterStep(func(step *godog.Step, err error) {
-		if err != nil && reporter.err == nil {
-			reporter.err = err
-		}
-		if reporter.err != nil {
-			reporter.Fatalf("some mock assertion failed: %v", reporter.err)
-		}
+		// no need to do anything here, the framework will take care of error reporting
 	})
-
 	s.AfterScenario(func(s *godog.Scenario, err error) {
 		if err != nil {
 			return
 		}
-
 		berr := steps.TheCumulatedBalanceForAllAccountsShouldBeWorth(execsetup.broker, execsetup.netDeposits.String())
 		if berr != nil {
+			reporter.scenario = s.Name
 			reporter.Fatalf("\n\nError at scenario end (testing net deposits/withdrawals against cumulated balance for all accounts): %v\n\n", berr)
 		}
 	})
