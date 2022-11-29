@@ -36,7 +36,7 @@ Feature: Closeout scenarios
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lprov | ETH/DEC19 | 100000            | 0.001 | sell | ASK              | 100        | 55     | submission |
-      | lp1 | lprov | ETH/DEC19 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendmend  |
+      | lp1 | lprov | ETH/DEC19 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendment  |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     # trading happens at the end of the open auction period
     Then the parties place the following orders:
@@ -107,11 +107,13 @@ Feature: Closeout scenarios
       | party      | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | auxiliary2 | ETH/DEC19 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
 
+    Then debug orders
+
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | buy  | 5     | 40005  |
+      | buy  | 5     | 5      |
       | buy  | 45    | 0      |
-      | buy  | 50    | 0      |
+      | buy  | 50    | 4030   |
       | buy  | 100   | 0      |
       | sell | 1000  | 10     |
       | sell | 1055  | 223    |
@@ -119,12 +121,12 @@ Feature: Closeout scenarios
     #trader2's order is canceled since mark price has moved from 10 to 100, hence margin level has increased by 10 times
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
+      | trader2 | ETH/DEC19 | 3703        | 5554   | 7406    | 11109   |
       | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC19 | 0      | 2000    |
+      | trader2 | USD   | ETH/DEC19 | 731    | 1358    |
       | trader3 | USD   | ETH/DEC19 | 0      | 0       |
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
@@ -132,9 +134,9 @@ Feature: Closeout scenarios
       | party      | volume | unrealised pnl | realised pnl |
       | auxiliary1 | -10    | -900           | 0            |
       | auxiliary2 | 0      | 0              | 900          |
-      | trader2    | 0      | 0              | 0            |
+      | trader2    | 10     | 500            | -411         |
       | trader3    | 0      | 0              | -90          |
-      | lprov      | 10     | 500            | -411         |
+      | lprov      | 0      | 0              | 0            |
       #| lprov      | 10     | 550            | -461         |
     And the mark price should be "100" for the market "ETH/DEC19"
 

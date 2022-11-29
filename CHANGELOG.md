@@ -18,6 +18,7 @@
 - [6731](https://github.com/vegaprotocol/vega/issues/6731) - standardize on 'network' and '' for network party and no market identifiers
 - [6792](https://github.com/vegaprotocol/vega/issues/6792) - Better handling of panics when moving time with `nullchain`, add endpoint to query whether `nullchain` is replaying
 - [6753](https://github.com/vegaprotocol/vega/issues/6753) - Filter votes per party and/or proposal
+- [6959](https://github.com/vegaprotocol/vega/issues/6959) - Fix listing transactions by block height in block explorer back end
 - [6832](https://github.com/vegaprotocol/vega/issues/6832) - Add signature to transaction information returned by block explorer API
 - [6642](https://github.com/vegaprotocol/vega/issues/6642) - Add methods to manage the wallet service and its connections on wallet API version 2
 - [6853](https://github.com/vegaprotocol/vega/issues/6853) - Max gas and priority improvements
@@ -40,6 +41,7 @@
 - [6781](https://github.com/vegaprotocol/vega/issues/6781) - Fix bug where only first 32 characters of the `IPFS` identity seed were used.
 - [6824](https://github.com/vegaprotocol/vega/issues/6824) - Respect `VEGA_HOME` for embedded `postgres` log location
 - [6843](https://github.com/vegaprotocol/vega/issues/6843) - Fix Visor runner keys
+- [6934](https://github.com/vegaprotocol/vega/issues/6934) - from/to accounts for ledger entries in database were reversed
 - [6826](https://github.com/vegaprotocol/vega/issues/6826) - Update `spam.pow.numberOfPastBlocks` range values
 - [6332](https://github.com/vegaprotocol/vega/issues/6332) - Standardise `graphql` responses
 - [6862](https://github.com/vegaprotocol/vega/issues/6862) - Add party in account update
@@ -53,6 +55,7 @@
 - [6783](https://github.com/vegaprotocol/vega/issues/6783) - Unstable `CI` tests for `dehistory`
 - [6844](https://github.com/vegaprotocol/vega/issues/6844) - Unstable `CI` tests for `dehistory`
 - [6844](https://github.com/vegaprotocol/vega/issues/6844) - Add API descriptions, remove unused ledger entries and fix typos
+- [6960](https://github.com/vegaprotocol/vega/issues/6960) - Infer has traded from settlement engine rather than from an unsaved-to-snapshot flag
  
 ## 0.62.1
 
