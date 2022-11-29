@@ -59,7 +59,6 @@ func TheNetworkMovesAheadNBlocks(exec Execution, block *helpers.Block, time *stu
 		// progress time
 		time.SetTime(now)
 	}
-	// exec.BlockEnd(context.Background())
 	return nil
 }
 
@@ -79,6 +78,5 @@ func TheNetworkMovesAheadDurationWithBlocks(exec Execution, block *helpers.Block
 		now = now.Add(block.GetStep(bd))
 		ts.SetTime(now)
 	}
-	// exec.BlockEnd(context.Background())
 	return nil
 }

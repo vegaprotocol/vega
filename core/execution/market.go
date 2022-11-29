@@ -726,35 +726,11 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	}
 
 	// check auction, if any. If we leave auction, MTM is performed in this call
-	inAuction := m.as.InAuction()
 	m.checkAuction(ctx, t)
-	hasTraded := m.settlement.HasTraded()
-	// have we left auction -> if so, hasTraded will be set to true, but should be false
-	// so we avoid triggering a second MTM call.
-	if inAuction && !m.as.InAuction() {
-		hasTraded = false
-	}
 	timer.EngineTimeCounterAdd()
 
 	m.updateMarketValueProxy()
 	m.updateLiquidityFee(ctx)
-	if hasTraded && m.closed {
-		// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
-		// works as expected.
-		mp := m.getLastTradedPrice()
-		if mp == nil {
-			m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
-			return m.closed
-		}
-		m.markPrice = mp.Clone()
-		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
-		dummy := &types.Order{
-			ID:            m.idgen.NextID(),
-			Price:         mp,
-			OriginalPrice: mcmp,
-		}
-		m.confirmMTM(ctx, dummy, nil)
-	}
 	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
 	return m.closed
 }
@@ -886,6 +862,19 @@ func (m *Market) closeCancelledMarket(ctx context.Context) error {
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
+	// perform last MTM settlement if needed
+	if mp := m.getLastTradedPrice(); mp != nil && mp.IsZero() && m.settlement.HasTraded() {
+		// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
+		// works as expected.
+		m.markPrice = mp.Clone()
+		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
+		dummy := &types.Order{
+			ID:            m.idgen.NextID(),
+			Price:         mp,
+			OriginalPrice: mcmp,
+		}
+		m.confirmMTM(ctx, dummy, nil)
+	}
 	positions, err := m.settlement.Settle(t, m.assetDP)
 	if err != nil {
 		m.log.Error("Failed to get settle positions on market closed",
