@@ -83,10 +83,10 @@ func NewWithStore(ctx context.Context, log *logging.Logger, chainID string, cfg 
 		}
 	}
 
-	if cfg.AddSnapshotsToStore {
+	if cfg.Publish {
 		var err error
 		go func() {
-			ticker := time.NewTicker(cfg.AddSnapshotsInterval.Duration)
+			ticker := time.NewTicker(5 * time.Second)
 			for {
 				select {
 				case <-ctx.Done():
