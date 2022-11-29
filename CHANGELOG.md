@@ -56,6 +56,7 @@
 - [6783](https://github.com/vegaprotocol/vega/issues/6783) - Unstable `CI` tests for `dehistory`
 - [6844](https://github.com/vegaprotocol/vega/issues/6844) - Unstable `CI` tests for `dehistory`
 - [6844](https://github.com/vegaprotocol/vega/issues/6844) - Add API descriptions, remove unused ledger entries and fix typos
+- [6960](https://github.com/vegaprotocol/vega/issues/6960) - Infer has traded from settlement engine rather than from an unsaved-to-snapshot flag
  
 ## 0.62.1
 
