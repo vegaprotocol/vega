@@ -1224,7 +1224,7 @@
       "paramStructure": "by-name",
       "params": [
         {
-          "name": "network",
+          "name": "name",
           "required": true,
           "schema": {
             "type": "string"

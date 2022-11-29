@@ -10,7 +10,7 @@ import (
 )
 
 type AdminDescribeNetworkParams struct {
-	Network string `json:"network"`
+	Name string `json:"name"`
 }
 
 type AdminDescribeNetworkResult struct {
@@ -44,13 +44,13 @@ func (h *AdminDescribeNetwork) Handle(_ context.Context, rawParams jsonrpc.Param
 		return nil, invalidParams(err)
 	}
 
-	if exist, err := h.networkStore.NetworkExists(params.Network); err != nil {
+	if exist, err := h.networkStore.NetworkExists(params.Name); err != nil {
 		return nil, internalError(fmt.Errorf("could not verify the network existence: %w", err))
 	} else if !exist {
 		return nil, invalidParams(ErrNetworkDoesNotExist)
 	}
 
-	n, err := h.networkStore.GetNetwork(params.Network)
+	n, err := h.networkStore.GetNetwork(params.Name)
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not retrieve the network: %w", err))
 	}
@@ -80,8 +80,8 @@ func validateDescribeNetworkParams(rawParams jsonrpc.Params) (AdminDescribeNetwo
 		return AdminDescribeNetworkParams{}, ErrParamsDoNotMatch
 	}
 
-	if params.Network == "" {
-		return AdminDescribeNetworkParams{}, ErrNetworkIsRequired
+	if params.Name == "" {
+		return AdminDescribeNetworkParams{}, ErrNetworkNameIsRequired
 	}
 
 	return params, nil
