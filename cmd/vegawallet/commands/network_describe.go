@@ -59,7 +59,7 @@ func (f *DescribeNetworkFlags) Validate() (api.AdminDescribeNetworkParams, error
 	if len(f.Network) == 0 {
 		return api.AdminDescribeNetworkParams{}, flags.MustBeSpecifiedError("network")
 	}
-	req.Network = f.Network
+	req.Name = f.Network
 
 	return req, nil
 }
