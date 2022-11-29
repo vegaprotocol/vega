@@ -20,6 +20,7 @@
 - [6753](https://github.com/vegaprotocol/vega/issues/6753) - Filter votes per party and/or proposal
 - [6959](https://github.com/vegaprotocol/vega/issues/6959) - Fix listing transactions by block height in block explorer back end
 - [6832](https://github.com/vegaprotocol/vega/issues/6832) - Add signature to transaction information returned by block explorer API
+- [6884](https://github.com/vegaprotocol/vega/issues/6884) - Specify transaction as `JSON` rather than a base64 encoded string in `client_{sign|send}_transaction`
 - [6642](https://github.com/vegaprotocol/vega/issues/6642) - Add methods to manage the wallet service and its connections on wallet API version 2
 - [6853](https://github.com/vegaprotocol/vega/issues/6853) - Max gas and priority improvements
 - [6782](https://github.com/vegaprotocol/vega/issues/6782) - Bump embedded `postgres` version to hopefully fix `CI` instability

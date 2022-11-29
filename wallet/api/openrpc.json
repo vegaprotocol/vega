@@ -384,10 +384,10 @@
           }
         },
         {
-          "name": "encodedTransaction",
+          "name": "transaction",
           "required": true,
           "schema": {
-            "$ref": "#/components/schemas/encoded_transaction"
+            "$ref": "#/components/schemas/transaction"
           }
         }
       ],
@@ -495,10 +495,10 @@
           }
         },
         {
-          "name": "encodedTransaction",
+          "name": "transaction",
           "required": true,
           "schema": {
-            "$ref": "#/components/schemas/encoded_transaction"
+            "$ref": "#/components/schemas/transaction"
           }
         }
       ],
@@ -3529,6 +3529,10 @@
       "encoded_transaction": {
         "type": "string",
         "description": "The transaction encoded using base-64."
+      },
+      "transaction": {
+        "type": "object",
+        "description": "The transaction as a JSON object"
       },
       "access_mode": {
         "type": "string",

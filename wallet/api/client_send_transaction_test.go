@@ -2,7 +2,7 @@ package api_test
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
@@ -22,7 +22,7 @@ import (
 
 func TestSendTransaction(t *testing.T) {
 	t.Run("Sending a transaction with invalid params fails", testSendingTransactionWithInvalidParamsFails)
-	t.Run("Sending a transaction with with valid params succeeds", testSendingTransactionWithValidParamsSucceeds)
+	t.Run("Sending a transaction with valid params succeeds", testSendingTransactionWithValidParamsSucceeds)
 	t.Run("Sending a transaction with invalid token fails", testSendingTransactionWithInvalidTokenFails)
 	t.Run("Sending a transaction without the needed permissions send the transaction", testSendingTransactionWithoutNeededPermissionsDoesNotSendTransaction)
 	t.Run("Refusing the sending of a transaction does not send the transaction", testRefusingSendingOfTransactionDoesNotSendTransaction)
@@ -34,6 +34,17 @@ func TestSendTransaction(t *testing.T) {
 	t.Run("Failure when sending transaction returns an error", testFailureWhenSendingTransactionReturnsAnError)
 }
 
+var testTransactionJSON = `{"voteSubmission":{"proposalId":"eb2d3902fdda9c3eb6e369f2235689b871c7322cf3ab284dde3e9dfc13863a17","value":"VALUE_YES"}}`
+
+func testTransaction(t *testing.T) map[string]any {
+	t.Helper()
+	testTransaction := make(map[string]any)
+	assert.NoError(t, json.Unmarshal([]byte(testTransactionJSON), &testTransaction))
+	return testTransaction
+}
+
+var testEncodedTransaction = "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
+
 func testSendingTransactionWithInvalidParamsFails(t *testing.T) {
 	tcs := []struct {
 		name          string
@@ -44,65 +55,84 @@ func testSendingTransactionWithInvalidParamsFails(t *testing.T) {
 			name:          "with nil params",
 			params:        nil,
 			expectedError: api.ErrParamsRequired,
-		}, {
+		},
+		{
 			name:          "with wrong type of params",
 			params:        "test",
 			expectedError: api.ErrParamsDoNotMatch,
-		}, {
+		},
+		{
 			name: "with empty token",
 			params: api.ClientSendTransactionParams{
-				Token:              "",
-				PublicKey:          vgrand.RandomStr(10),
-				SendingMode:        "TYPE_SYNC",
-				EncodedTransaction: "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K",
+				Token:       "",
+				PublicKey:   vgrand.RandomStr(10),
+				SendingMode: "TYPE_SYNC",
+				Transaction: testTransaction(t),
 			},
 			expectedError: api.ErrConnectionTokenIsRequired,
-		}, {
+		},
+		{
 			name: "with empty public key permissions",
 			params: api.ClientSendTransactionParams{
-				Token:              vgrand.RandomStr(10),
-				PublicKey:          "",
-				SendingMode:        "TYPE_SYNC",
-				EncodedTransaction: "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K",
+				Token:       vgrand.RandomStr(10),
+				PublicKey:   "",
+				SendingMode: "TYPE_SYNC",
+				Transaction: testTransaction(t),
 			},
 			expectedError: api.ErrPublicKeyIsRequired,
-		}, {
+		},
+		{
 			name: "with empty sending mode",
 			params: api.ClientSendTransactionParams{
-				Token:              vgrand.RandomStr(10),
-				PublicKey:          vgrand.RandomStr(10),
-				SendingMode:        "",
-				EncodedTransaction: "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K",
+				Token:       vgrand.RandomStr(10),
+				PublicKey:   vgrand.RandomStr(10),
+				SendingMode: "",
+				Transaction: testTransaction(t),
 			},
 			expectedError: api.ErrSendingModeIsRequired,
-		}, {
+		},
+		{
 			name: "with unsupported sending mode",
 			params: api.ClientSendTransactionParams{
-				Token:              vgrand.RandomStr(10),
-				PublicKey:          vgrand.RandomStr(10),
-				SendingMode:        "TYPE_UNSPECIFIED",
-				EncodedTransaction: "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K",
+				Token:       vgrand.RandomStr(10),
+				PublicKey:   vgrand.RandomStr(10),
+				SendingMode: "TYPE_UNSPECIFIED",
+				Transaction: testTransaction(t),
 			},
 			expectedError: api.ErrSendingModeCannotBeTypeUnspecified,
-		}, {
+		},
+		{
 			name: "with unsupported sending mode",
 			params: api.ClientSendTransactionParams{
-				Token:              vgrand.RandomStr(10),
-				PublicKey:          vgrand.RandomStr(10),
-				SendingMode:        "TYPE_MANY_FAST",
-				EncodedTransaction: "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K",
+				Token:       vgrand.RandomStr(10),
+				PublicKey:   vgrand.RandomStr(10),
+				SendingMode: "TYPE_MANY_FAST",
+				Transaction: testTransaction(t),
 			},
 			expectedError: errors.New(`the sending mode "TYPE_MANY_FAST" is not a valid one`),
-		}, {
-			name: "with empty encoded transaction",
+		},
+		{
+			name: "with empty encoded transaction and no transaction",
 			params: api.ClientSendTransactionParams{
 				Token:              vgrand.RandomStr(10),
 				PublicKey:          vgrand.RandomStr(10),
 				SendingMode:        "TYPE_SYNC",
 				EncodedTransaction: "",
 			},
-			expectedError: api.ErrEncodedTransactionIsRequired,
-		}, {
+			expectedError: api.ErrTransactionIsRequired,
+		},
+		{
+			name: "with both encoded transaction and transaction",
+			params: api.ClientSendTransactionParams{
+				Token:              vgrand.RandomStr(10),
+				PublicKey:          vgrand.RandomStr(10),
+				SendingMode:        "TYPE_SYNC",
+				EncodedTransaction: testEncodedTransaction,
+				Transaction:        testTransaction(t),
+			},
+			expectedError: api.ErrEncodedTransactionAndTransactionSupplied,
+		},
+		{
 			name: "with invalid encoded transaction",
 			params: api.ClientSendTransactionParams{
 				Token:              vgrand.RandomStr(10),
@@ -136,8 +166,6 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
 	hostname := "vega.xyz"
-	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
-	decodedTransaction, _ := base64.StdEncoding.DecodeString(encodedTransaction)
 	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
@@ -154,7 +182,7 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
 		BlockHeight:           100,
@@ -168,10 +196,10 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
-		Token:              token,
-		PublicKey:          pubKey,
-		SendingMode:        "TYPE_SYNC",
-		EncodedTransaction: encodedTransaction,
+		Token:       token,
+		PublicKey:   pubKey,
+		SendingMode: "TYPE_SYNC",
+		Transaction: testTransaction(t),
 	})
 
 	// then
@@ -185,7 +213,6 @@ func testSendingTransactionWithInvalidTokenFails(t *testing.T) {
 	// given
 	ctx, _ := contextWithTraceID()
 	hostname := "vega.xyz"
-	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
 	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{})
 	_, _ = wallet1.GenerateKeyPair(nil)
 	pubKey := wallet1.ListPublicKeys()[0].Key()
@@ -195,10 +222,10 @@ func testSendingTransactionWithInvalidTokenFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
-		Token:              vgrand.RandomStr(5),
-		PublicKey:          pubKey,
-		SendingMode:        "TYPE_SYNC",
-		EncodedTransaction: encodedTransaction,
+		Token:       vgrand.RandomStr(5),
+		PublicKey:   pubKey,
+		SendingMode: "TYPE_SYNC",
+		Transaction: testTransaction(t),
 	})
 
 	// then
@@ -210,7 +237,6 @@ func testSendingTransactionWithoutNeededPermissionsDoesNotSendTransaction(t *tes
 	// given
 	ctx, _ := contextWithTraceID()
 	hostname := "vega.xyz"
-	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
 	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{})
 	_, _ = wallet1.GenerateKeyPair(nil)
 	pubKey := wallet1.ListPublicKeys()[0].Key()
@@ -221,10 +247,10 @@ func testSendingTransactionWithoutNeededPermissionsDoesNotSendTransaction(t *tes
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
-		Token:              token,
-		PublicKey:          pubKey,
-		SendingMode:        "TYPE_SYNC",
-		EncodedTransaction: encodedTransaction,
+		Token:       token,
+		PublicKey:   pubKey,
+		SendingMode: "TYPE_SYNC",
+		Transaction: testTransaction(t),
 	})
 
 	// then
@@ -236,8 +262,6 @@ func testRefusingSendingOfTransactionDoesNotSendTransaction(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
 	hostname := "vega.xyz"
-	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
-	decodedTransaction, _ := base64.StdEncoding.DecodeString(encodedTransaction)
 	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
@@ -251,16 +275,16 @@ func testRefusingSendingOfTransactionDoesNotSendTransaction(t *testing.T) {
 	handler := newSendTransactionHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(false, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(false, nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
-		Token:              token,
-		PublicKey:          pubKey,
-		SendingMode:        "TYPE_SYNC",
-		EncodedTransaction: encodedTransaction,
+		Token:       token,
+		PublicKey:   pubKey,
+		SendingMode: "TYPE_SYNC",
+		Transaction: testTransaction(t),
 	})
 
 	// then
@@ -272,8 +296,6 @@ func testCancellingTheReviewDoesNotSendTransaction(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
 	hostname := "vega.xyz"
-	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
-	decodedTransaction, _ := base64.StdEncoding.DecodeString(encodedTransaction)
 	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
@@ -289,14 +311,14 @@ func testCancellingTheReviewDoesNotSendTransaction(t *testing.T) {
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(false, api.ErrUserCloseTheConnection)
+	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(false, api.ErrUserCloseTheConnection)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
-		Token:              token,
-		PublicKey:          pubKey,
-		SendingMode:        "TYPE_SYNC",
-		EncodedTransaction: encodedTransaction,
+		Token:       token,
+		PublicKey:   pubKey,
+		SendingMode: "TYPE_SYNC",
+		Transaction: testTransaction(t),
 	})
 
 	// then
@@ -308,8 +330,6 @@ func testInterruptingTheRequestDoesNotSendTransaction(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
 	hostname := "vega.xyz"
-	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
-	decodedTransaction, _ := base64.StdEncoding.DecodeString(encodedTransaction)
 	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
@@ -325,15 +345,15 @@ func testInterruptingTheRequestDoesNotSendTransaction(t *testing.T) {
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(false, api.ErrRequestInterrupted)
+	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(false, api.ErrRequestInterrupted)
 	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
-		Token:              token,
-		PublicKey:          pubKey,
-		SendingMode:        "TYPE_SYNC",
-		EncodedTransaction: encodedTransaction,
+		Token:       token,
+		PublicKey:   pubKey,
+		SendingMode: "TYPE_SYNC",
+		Transaction: testTransaction(t),
 	})
 
 	// then
@@ -345,8 +365,6 @@ func testGettingInternalErrorDuringReviewDoesNotSendTransaction(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
 	hostname := "vega.xyz"
-	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
-	decodedTransaction, _ := base64.StdEncoding.DecodeString(encodedTransaction)
 	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
@@ -362,15 +380,15 @@ func testGettingInternalErrorDuringReviewDoesNotSendTransaction(t *testing.T) {
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(false, assert.AnError)
+	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(false, assert.AnError)
 	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("requesting the transaction review failed: %w", assert.AnError)).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
-		Token:              token,
-		PublicKey:          pubKey,
-		SendingMode:        "TYPE_SYNC",
-		EncodedTransaction: encodedTransaction,
+		Token:       token,
+		PublicKey:   pubKey,
+		SendingMode: "TYPE_SYNC",
+		Transaction: testTransaction(t),
 	})
 
 	// then
@@ -382,8 +400,6 @@ func testNoHealthyNodeAvailableDoesNotSendTransaction(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
 	hostname := "vega.xyz"
-	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
-	decodedTransaction, _ := base64.StdEncoding.DecodeString(encodedTransaction)
 	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
@@ -399,17 +415,17 @@ func testNoHealthyNodeAvailableDoesNotSendTransaction(t *testing.T) {
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(nil, assert.AnError)
 	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not find a healthy node: %w", assert.AnError)).Times(1)
 	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
-		Token:              token,
-		PublicKey:          pubKey,
-		SendingMode:        "TYPE_SYNC",
-		EncodedTransaction: encodedTransaction,
+		Token:       token,
+		PublicKey:   pubKey,
+		SendingMode: "TYPE_SYNC",
+		Transaction: testTransaction(t),
 	})
 
 	// then
@@ -424,8 +440,6 @@ func testFailingToGetLastBlockDoesNotSendTransaction(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
 	hostname := "vega.xyz"
-	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
-	decodedTransaction, _ := base64.StdEncoding.DecodeString(encodedTransaction)
 	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
@@ -441,7 +455,7 @@ func testFailingToGetLastBlockDoesNotSendTransaction(t *testing.T) {
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{}, assert.AnError)
 	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get the latest block from node: %w", assert.AnError)).Times(1)
@@ -449,10 +463,10 @@ func testFailingToGetLastBlockDoesNotSendTransaction(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
-		Token:              token,
-		PublicKey:          pubKey,
-		SendingMode:        "TYPE_SYNC",
-		EncodedTransaction: encodedTransaction,
+		Token:       token,
+		PublicKey:   pubKey,
+		SendingMode: "TYPE_SYNC",
+		Transaction: testTransaction(t),
 	})
 
 	// then
@@ -467,8 +481,6 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
 	hostname := "vega.xyz"
-	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
-	decodedTransaction, _ := base64.StdEncoding.DecodeString(encodedTransaction)
 	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
@@ -484,7 +496,7 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
 		BlockHeight:           100,
@@ -498,10 +510,10 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
-		Token:              token,
-		PublicKey:          pubKey,
-		SendingMode:        "TYPE_SYNC",
-		EncodedTransaction: encodedTransaction,
+		Token:       token,
+		PublicKey:   pubKey,
+		SendingMode: "TYPE_SYNC",
+		Transaction: testTransaction(t),
 	})
 
 	// then
