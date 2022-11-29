@@ -311,7 +311,6 @@ func TestMain(t *testing.M) {
 
 		datanodeConfig := config2.NewDefaultConfig()
 		cfg := dehistory.NewDefaultConfig()
-		cfg.AddSnapshotsInterval = encoding.Duration{Duration: 1 * time.Second}
 		cfg.WipeOnStartup = false
 		deHistoryService, err = dehistory.NewWithStore(outerCtx, log, chainID, cfg, sqlConfig.ConnectionConfig, snapshotService,
 			deHistoryStore, datanodeConfig.API.Port, snapshotCopyFromPath, snapshotCopyToPath)
@@ -753,7 +752,7 @@ func setupDeHistoryService(ctx context.Context, log *logging.Logger, inputSnapsh
 	snapshotCopyFromPath, snapshotCopyToPath string,
 ) *dehistory.Service {
 	cfg := dehistory.NewDefaultConfig()
-	cfg.AddSnapshotsToStore = false
+	cfg.Publish = false
 
 	datanodeConfig := config2.NewDefaultConfig()
 	deHistoryService, err := dehistory.NewWithStore(ctx, log, chainID, cfg, sqlConfig.ConnectionConfig,

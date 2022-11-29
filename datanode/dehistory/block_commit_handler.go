@@ -1,4 +1,4 @@
-package snapshot
+package dehistory
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 
 type BlockCommitHandler struct {
 	log                       *logging.Logger
+	cfg                       Config
 	snapshotData              func(ctx context.Context, chainID string, toHeight int64) error
 	getNetworkParameter       func(ctx context.Context, key string) (entities.NetworkParameter, error)
 	blockInterval             int64
@@ -22,12 +23,14 @@ type BlockCommitHandler struct {
 
 func NewBlockCommitHandler(
 	log *logging.Logger,
+	cfg Config,
 	snapshotData func(ctx context.Context, chainID string, toHeight int64) error,
 	getNetworkParameter func(ctx context.Context, key string) (entities.NetworkParameter, error),
 	usingEventFile bool, eventFileTimeBetweenBlock time.Duration,
 ) *BlockCommitHandler {
 	return &BlockCommitHandler{
 		log:                       log.Named("block-commit-handler"),
+		cfg:                       cfg,
 		snapshotData:              snapshotData,
 		getNetworkParameter:       getNetworkParameter,
 		usingEventFile:            usingEventFile,
@@ -71,7 +74,7 @@ func (b *BlockCommitHandler) OnBlockCommitted(ctx context.Context, chainID strin
 }
 
 func (b *BlockCommitHandler) snapshotRequiredAtBlockHeight(lastCommittedBlockHeight int64) bool {
-	if b.blockInterval > 0 {
+	if b.cfg.Publish && b.blockInterval > 0 {
 		return lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%b.blockInterval == 0
 	}
 
