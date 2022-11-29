@@ -23035,9 +23035,9 @@ func (ec *executionContext) _LedgerEntry_type(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(vega.TransferType)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTransferType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTransferType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_LedgerEntry_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -23047,7 +23047,7 @@ func (ec *executionContext) fieldContext_LedgerEntry_type(ctx context.Context, f
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type TransferType does not have child fields")
 		},
 	}
 	return fc, nil
@@ -77999,6 +77999,21 @@ func (ec *executionContext) unmarshalNTransferStatus2codeᚗvegaprotocolᚗioᚋ
 
 func (ec *executionContext) marshalNTransferStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer_Status(ctx context.Context, sel ast.SelectionSet, v v1.Transfer_Status) graphql.Marshaler {
 	res := marshallers.MarshalTransferStatus(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNTransferType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTransferType(ctx context.Context, v interface{}) (vega.TransferType, error) {
+	res, err := marshallers.UnmarshalTransferType(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTransferType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTransferType(ctx context.Context, sel ast.SelectionSet, v vega.TransferType) graphql.Marshaler {
+	res := marshallers.MarshalTransferType(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
