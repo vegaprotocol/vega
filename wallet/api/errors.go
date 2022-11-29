@@ -171,6 +171,7 @@ var (
 	ErrWalletPassphraseIsRequired                         = errors.New("the wallet passphrase is required")
 	ErrWalletVersionIsRequired                            = errors.New("the wallet version is required")
 	ErrWrongPassphrase                                    = errors.New("wrong passphrase")
+	ErrAPITokenExpiryInThePast                            = errors.New("api token expiry in the past")
 )
 
 func applicationError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {

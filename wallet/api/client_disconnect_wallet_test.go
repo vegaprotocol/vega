@@ -3,6 +3,7 @@ package api_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
@@ -83,7 +84,7 @@ func testDisconnectingWalletWithValidParamsSucceeds(t *testing.T) {
 	// then
 	assert.Nil(t, errorDetails)
 	assert.Nil(t, result)
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	assert.Nil(t, connectedWallet)
 	assert.Error(t, session.ErrNoWalletConnected, err)
 }
@@ -96,7 +97,7 @@ func testDisconnectingWalletWithInvalidTokenSucceeds(t *testing.T) {
 
 	// setup
 	handler := newDisconnectWalletHandler(t)
-	if err := handler.sessions.ConnectWalletForLongLivingConnection(token, w); err != nil {
+	if err := handler.sessions.ConnectWalletForLongLivingConnection(token, w, time.Now(), nil); err != nil {
 		t.Fatalf("could not connect test wallet to a long-living sessions: %v", err)
 	}
 

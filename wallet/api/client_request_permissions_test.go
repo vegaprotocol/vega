@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
@@ -166,7 +167,7 @@ func testRequestingPermissionsWithValidParamsSucceeds(t *testing.T) {
 			require.NotEmpty(tt, result)
 			assert.Equal(tt, tc.askedPermissions, result.Permissions)
 			// Verifying the connected wallet is updated.
-			connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+			connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 			require.NoError(tt, err)
 			assert.Equal(tt, tc.askedPermissions, connectedWallet.Permissions().Summary())
 		})
@@ -221,7 +222,7 @@ func testRefusingPermissionsUpdateDoesNotUpdatePermissions(t *testing.T) {
 	assertUserRejectionError(t, errorDetails)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -254,7 +255,7 @@ func testCancellingTheReviewDoesNotUpdatePermissions(t *testing.T) {
 	assertConnectionClosedError(t, errorDetails)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -288,7 +289,7 @@ func testInterruptingTheRequestDoesNotUpdatePermissions(t *testing.T) {
 	assertRequestInterruptionError(t, errorDetails)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -322,7 +323,7 @@ func testGettingInternalErrorDuringReviewDoesNotUpdatePermissions(t *testing.T) 
 	assertInternalError(t, errorDetails, api.ErrCouldNotRequestPermissions)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -356,7 +357,7 @@ func testCancellingThePassphraseRequestDoesNotUpdatePermissions(t *testing.T) {
 	assertConnectionClosedError(t, errorDetails)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -391,7 +392,7 @@ func testInterruptingTheRequestDuringPassphraseRequestDoesNotUpdatePermissions(t
 	assertRequestInterruptionError(t, errorDetails)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -426,7 +427,7 @@ func testGettingInternalErrorDuringPassphraseRequestDoesNotUpdatePermissions(t *
 	assertInternalError(t, errorDetails, api.ErrCouldNotRequestPermissions)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -467,7 +468,7 @@ func testUsingWrongPassphraseDoesNotUpdatePermissions(t *testing.T) {
 	assertRequestInterruptionError(t, errorDetails)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -504,7 +505,7 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermissions(t *te
 	assertInternalError(t, errorDetails, api.ErrCouldNotRequestPermissions)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -559,7 +560,7 @@ func testGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissions(t *testi
 	assertInternalError(t, errorDetails, api.ErrCouldNotRequestPermissions)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is not updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -618,7 +619,7 @@ func testUpdatingPermissionsDoesNotOverwriteUntrackedChanges(t *testing.T) {
 	require.NotEmpty(t, result)
 	assert.Equal(t, askedPermissions, result.Permissions)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, askedPermissions, connectedWallet.Permissions().Summary())
 }

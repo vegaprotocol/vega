@@ -2,9 +2,11 @@ package api_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
@@ -25,6 +27,8 @@ func TestListKeys(t *testing.T) {
 	t.Run("Listing keys excludes tainted keys", testListingKeysExcludesTaintedKeys)
 	t.Run("Listing keys with invalid token fails", testListingKeysWithInvalidTokenFails)
 	t.Run("Listing keys with long-living token succeeds", testListingKeysWithLongLivingTokenSucceeds)
+	t.Run("Listing keys with long-living expiring token succeeds", testListingKeysWithLongLivingExpiringTokenSucceeds)
+	t.Run("List keys with long expired token succeed", testListingKeysWithLongExpiredTokenSucceeds)
 	t.Run("Listing keys with not enough permissions fails", testListingKeysWithNotEnoughPermissionsFails)
 	t.Run("Cancelling the review does not update the permissions", testListingKeysCancellingTheReviewDoesNotUpdatePermissions)
 	t.Run("Interrupting the request does not update the permissions", testListingKeysInterruptingTheRequestDoesNotUpdatePermissions)
@@ -180,7 +184,7 @@ func testListingKeysWithLongLivingTokenSucceeds(t *testing.T) {
 
 	// setup
 	handler := newListKeysHandler(t)
-	if err := handler.sessions.ConnectWalletForLongLivingConnection(token, w); err != nil {
+	if err := handler.sessions.ConnectWalletForLongLivingConnection(token, w, time.Now(), nil); err != nil {
 		t.Fatalf("could not connect test wallet to a long-living sessions %v", err)
 	}
 
@@ -197,6 +201,53 @@ func testListingKeysWithLongLivingTokenSucceeds(t *testing.T) {
 			PublicKey: kp.PublicKey(),
 		},
 	}, result.Keys)
+}
+
+func testListingKeysWithLongLivingExpiringTokenSucceeds(t *testing.T) {
+	// given
+	ctx := context.Background()
+	w, kp := walletWithKey(t)
+	token := vgrand.RandomStr(10)
+
+	now := time.Now()
+
+	expiry := now.Add(24 * time.Hour)
+
+	// setup
+	handler := newListKeysHandler(t)
+	if err := handler.sessions.ConnectWalletForLongLivingConnection(token, w, now, &expiry); err != nil {
+		t.Fatalf("could not connect test wallet to a long-living sessions %v", err)
+	}
+
+	// when
+	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
+		Token: token,
+	})
+
+	// then
+	assert.Nil(t, errorDetails)
+	assert.Equal(t, []api.ClientNamedPublicKey{
+		{
+			Name:      "Key 1",
+			PublicKey: kp.PublicKey(),
+		},
+	}, result.Keys)
+}
+
+func testListingKeysWithLongExpiredTokenSucceeds(t *testing.T) {
+	// given
+	w, _ := walletWithKey(t)
+	token := vgrand.RandomStr(10)
+
+	// long expired token
+	now := time.Now()
+	expiry := now.Add(-24 * time.Hour)
+
+	// setup
+	handler := newListKeysHandler(t)
+	if err := handler.sessions.ConnectWalletForLongLivingConnection(token, w, now, &expiry); !errors.Is(err, session.ErrAPITokenExpired) {
+		t.Fatalf("expected %v got %v", session.ErrAPITokenExpired, err)
+	}
 }
 
 func testListingKeysWithNotEnoughPermissionsFails(t *testing.T) {
@@ -237,7 +288,7 @@ func testListingKeysWithNotEnoughPermissionsFails(t *testing.T) {
 	assert.Empty(t, result)
 
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -269,7 +320,7 @@ func testListingKeysCancellingTheReviewDoesNotUpdatePermissions(t *testing.T) {
 	assertConnectionClosedError(t, errorDetails)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -302,7 +353,7 @@ func testListingKeysInterruptingTheRequestDoesNotUpdatePermissions(t *testing.T)
 	assertRequestInterruptionError(t, errorDetails)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -335,7 +386,7 @@ func testListingKeysGettingInternalErrorDuringReviewDoesNotUpdatePermissions(t *
 	assertInternalError(t, errorDetails, api.ErrCouldNotRequestPermissions)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -368,7 +419,7 @@ func testListingKeysCancellingThePassphraseRequestDoesNotUpdatePermissions(t *te
 	assertConnectionClosedError(t, errorDetails)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -402,7 +453,7 @@ func testListingKeysInterruptingTheRequestDuringPassphraseRequestDoesNotUpdatePe
 	assertRequestInterruptionError(t, errorDetails)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -436,7 +487,7 @@ func testListingKeysGettingInternalErrorDuringPassphraseRequestDoesNotUpdatePerm
 	assertInternalError(t, errorDetails, api.ErrCouldNotRequestPermissions)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -476,7 +527,7 @@ func testListingKeysUsingWrongPassphraseDoesNotUpdatePermissions(t *testing.T) {
 	assertRequestInterruptionError(t, errorDetails)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -512,7 +563,7 @@ func testListingKeysGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermis
 	assertInternalError(t, errorDetails, api.ErrCouldNotRequestPermissions)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -566,7 +617,7 @@ func testListingKeysGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissio
 	assertInternalError(t, errorDetails, api.ErrCouldNotRequestPermissions)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is not updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
 }
@@ -623,7 +674,7 @@ func testListingKeysUpdatingPermissionsDoesNotOverwriteUntrackedChanges(t *testi
 	assert.Nil(t, errorDetails)
 	require.NotEmpty(t, result)
 	// Verifying the connected wallet is updated.
-	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
+	connectedWallet, err := handler.sessions.GetConnectedWallet(token, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, askedPermissions, connectedWallet.Permissions().Summary())
 }

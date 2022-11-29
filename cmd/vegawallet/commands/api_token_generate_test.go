@@ -2,6 +2,7 @@ package cmd_test
 
 import (
 	"testing"
+	"time"
 
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
@@ -10,6 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const ninetyNineYears = 365 * 24 * 99 * time.Hour
 
 func TestGenerateAPITokenFlags(t *testing.T) {
 	t.Run("Valid flags succeeds", testGenerateAPITokenValidFlagsSucceeds)
@@ -43,7 +46,7 @@ func testGenerateAPITokenValidFlagsSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, expectedReq, req)
+	assert.EqualValues(t, expectedReq, req)
 }
 
 func testGenerateAPITokenWithMissingFlagsFails(t *testing.T) {

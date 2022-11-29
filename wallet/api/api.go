@@ -15,7 +15,7 @@ import (
 )
 
 // Generates mocks
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Interactor,ServiceStore,TokenStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Interactor,ServiceStore,TokenStore,TimeProvider
 
 type NodeSelectorBuilder func(hosts []string, retries uint64) (node.Selector, error)
 

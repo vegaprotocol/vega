@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api/session"
@@ -33,7 +34,7 @@ func (h *ClientGetPermissions) Handle(_ context.Context, rawParams jsonrpc.Param
 		return nil, invalidParams(err)
 	}
 
-	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token)
+	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token, time.Now())
 	if err != nil {
 		return nil, invalidParams(err)
 	}
