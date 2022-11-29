@@ -361,6 +361,10 @@ func (r *VegaResolverRoot) LedgerEntryFilter() LedgerEntryFilterResolver {
 	return (*ledgerEntryFilterResolver)(r)
 }
 
+func (r *VegaResolverRoot) OrderFilter() OrderFilterResolver {
+	return (*orderFilterResolver)(r)
+}
+
 type ledgerEntryFilterResolver VegaResolverRoot
 
 func (r *ledgerEntryFilterResolver) SenderAccountFilter(ctx context.Context, obj *v2.LedgerEntryFilter, data *v2.AccountFilter) error {
@@ -901,6 +905,7 @@ func (r *myQueryResolver) OrderVersionsConnection(ctx context.Context, orderID *
 func (r *myQueryResolver) OrderByReference(ctx context.Context, reference string) (*types.Order, error) {
 	req := &v2.ListOrdersRequest{
 		Reference: &reference,
+		Filter:    &v2.OrderFilter{},
 	}
 	res, err := r.tradingDataClientV2.ListOrders(ctx, req)
 	if err != nil {
@@ -1249,7 +1254,9 @@ func (r *myPartyResolver) MarginsConnection(ctx context.Context, party *types.Pa
 	return res.MarginLevels, nil
 }
 
-func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Party, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.OrderConnection, error) {
+func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Party, dateRange *v2.DateRange,
+	pagination *v2.Pagination, filter *v2.OrderFilter,
+) (*v2.OrderConnection, error) {
 	if party == nil {
 		return nil, errors.New("party is required")
 	}
@@ -1257,6 +1264,7 @@ func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Par
 		PartyId:    &party.Id,
 		Pagination: pagination,
 		DateRange:  dateRange,
+		Filter:     filter,
 	}
 	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
 	if err != nil {

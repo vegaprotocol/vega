@@ -487,3 +487,5 @@ models:
   ProtocolUpgradeProposalStatus:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.ProtocolUpgradeProposalStatus
+  OrderFilter:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.OrderFilter
