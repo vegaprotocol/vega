@@ -270,7 +270,6 @@ type Market struct {
 	settlementDataInMarket *num.Uint
 	nextMTM                time.Time
 	mtmDelta               time.Duration
-	hasTraded              bool
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -732,7 +731,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	if mp != nil && !mp.IsZero() && !m.as.InAuction() && !m.nextMTM.After(t) {
 		m.markPrice = mp.Clone()
 		m.nextMTM = t.Add(m.mtmDelta) // add delta here
-		if m.hasTraded {
+		if m.settlement.HasTraded() {
 			mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
 			dummy := &types.Order{
 				ID:            m.idgen.NextID(),
@@ -740,7 +739,6 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 				OriginalPrice: mcmp,
 			}
 			m.confirmMTM(ctx, dummy, nil)
-			m.hasTraded = false // trades have been settled
 		}
 
 		closedWithoutLP := []events.MarketPosition{}
@@ -764,7 +762,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 
 	m.updateMarketValueProxy()
 	m.updateLiquidityFee(ctx)
-	if m.hasTraded && m.closed && mp != nil {
+	if m.settlement.HasTraded() && m.closed && mp != nil {
 		// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
 		// works as expected.
 		m.markPrice = mp.Clone()
@@ -775,7 +773,6 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 			OriginalPrice: mcmp,
 		}
 		m.confirmMTM(ctx, dummy, nil)
-		m.hasTraded = false // trades have been settled
 	}
 	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
 	return m.closed
@@ -1685,7 +1682,6 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	}
 	// Calculate and set current mark price
 	m.setMarkPrice(conf.Trades[len(conf.Trades)-1])
-	m.hasTraded = true
 
 	// Insert all trades resulted from the executed order
 	tradeEvts := make([]events.Event, 0, len(conf.Trades))
