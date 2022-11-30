@@ -138,6 +138,7 @@ func (balance *AggregatedBalance) ToProto() *v2.AggregatedBalance {
 }
 
 func (balance AggregatedBalance) Cursor() *Cursor {
+	// though this should be OK, it's not exactly safe for concurrent use
 	return NewCursor(AggregatedBalanceCursor{
 		VegaTime:  balance.VegaTime,
 		AccountID: balance.AccountID,

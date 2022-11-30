@@ -80,11 +80,11 @@ func LiquidityProvisionFromProto(lpProto *vega.LiquidityProvision, txHash TxHash
 	buys := make([]LiquidityOrderReference, 0, len(lpProto.Buys))
 
 	for _, sell := range lpProto.Sells {
-		sells = append(sells, LiquidityOrderReference{sell})
+		sells = append(sells, LiquidityOrderReference{sell.DeepClone()})
 	}
 
 	for _, buy := range lpProto.Buys {
-		buys = append(buys, LiquidityOrderReference{buy})
+		buys = append(buys, LiquidityOrderReference{buy.DeepClone()})
 	}
 
 	return LiquidityProvision{
@@ -110,10 +110,10 @@ func (lp *LiquidityProvision) ToProto() *vega.LiquidityProvision {
 	buys := make([]*vega.LiquidityOrderReference, 0, len(lp.Buys))
 
 	for _, sell := range lp.Sells {
-		sells = append(sells, sell.LiquidityOrderReference)
+		sells = append(sells, sell.LiquidityOrderReference.DeepClone())
 	}
 	for _, buy := range lp.Buys {
-		buys = append(buys, buy.LiquidityOrderReference)
+		buys = append(buys, buy.LiquidityOrderReference.DeepClone())
 	}
 
 	return &vega.LiquidityProvision{

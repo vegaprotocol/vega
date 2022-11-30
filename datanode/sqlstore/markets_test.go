@@ -14,6 +14,7 @@ package sqlstore_test
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -242,7 +243,17 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "TEST_INSTRUMENT", market.InstrumentID)
 
-		assert.Equal(t, marketProto.TradableInstrument, got.TradableInstrument.ToProto())
+		// entity and proto share no state, including the proto secret-sauce fields.
+		// as a result, assert.Equal(t, marketProto.TradableInstrument, got.TradableInstrument.ToProto()) no longer works.
+		// we can marshal both values to JSON (which is how it's stored in the DB anyway), and check for equality that way.
+		protoJSON, err := json.Marshal(entities.TradableInstrument{
+			TradableInstrument: marketProto.TradableInstrument,
+		})
+		require.NoError(t, err)
+		gotJSON, err := json.Marshal(got.TradableInstrument)
+		require.NoError(t, err)
+
+		require.EqualValues(t, string(protoJSON), string(gotJSON))
 	})
 
 	marketProto.TradableInstrument.Instrument.Name = "Updated Test Instrument"
@@ -261,7 +272,16 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "TEST_INSTRUMENT", market.InstrumentID)
 
-		assert.Equal(t, marketProto.TradableInstrument, got.TradableInstrument.ToProto())
+		// entity and proto share no state, including the proto secret-sauce fields.
+		// as a result, assert.Equal(t, marketProto.TradableInstrument, got.TradableInstrument.ToProto()) no longer works.
+		// we can marshal both values to JSON (which is how it's stored in the DB anyway), and check for equality that way.
+		protoJSON, err := json.Marshal(entities.TradableInstrument{
+			TradableInstrument: marketProto.TradableInstrument,
+		})
+		require.NoError(t, err)
+		gotJSON, err := json.Marshal(got.TradableInstrument)
+		require.NoError(t, err)
+		require.EqualValues(t, string(protoJSON), string(gotJSON))
 	})
 
 	t.Run("should add the updated market record to the database if the block number has changed", func(t *testing.T) {
@@ -286,13 +306,31 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "TEST_INSTRUMENT", market.InstrumentID)
 
-		assert.Equal(t, marketProto.TradableInstrument, gotFirstBlock.TradableInstrument.ToProto())
+		// entity and proto share no state, including the proto secret-sauce fields.
+		// as a result, assert.Equal(t, marketProto.TradableInstrument, got.TradableInstrument.ToProto()) no longer works.
+		// we can marshal both values to JSON (which is how it's stored in the DB anyway), and check for equality that way.
+		protoJSON, err := json.Marshal(entities.TradableInstrument{
+			TradableInstrument: marketProto.TradableInstrument,
+		})
+		require.NoError(t, err)
+		gotJSON, err := json.Marshal(gotFirstBlock.TradableInstrument)
+		require.NoError(t, err)
+		require.EqualValues(t, string(protoJSON), string(gotJSON))
 
 		err = pgxscan.Get(ctx, conn, &gotSecondBlock, `select * from markets where id = $1 and vega_time = $2`, market.ID, newBlock.VegaTime)
 		assert.NoError(t, err)
 		assert.Equal(t, "TEST_INSTRUMENT", market.InstrumentID)
 
-		assert.Equal(t, newMarketProto.TradableInstrument, gotSecondBlock.TradableInstrument.ToProto())
+		// entity and proto share no state, including the proto secret-sauce fields.
+		// as a result, assert.Equal(t, marketProto.TradableInstrument, got.TradableInstrument.ToProto()) no longer works.
+		// we can marshal both values to JSON (which is how it's stored in the DB anyway), and check for equality that way.
+		protoJSON, err = json.Marshal(entities.TradableInstrument{
+			TradableInstrument: newMarketProto.TradableInstrument,
+		})
+		require.NoError(t, err)
+		gotJSON, err = json.Marshal(gotSecondBlock.TradableInstrument)
+		require.NoError(t, err)
+		require.EqualValues(t, string(protoJSON), string(gotJSON))
 	})
 }
 
