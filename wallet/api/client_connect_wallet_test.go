@@ -9,6 +9,7 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/preferences"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/golang/mock/gomock"
@@ -576,7 +577,7 @@ func newConnectWalletHandler(t *testing.T) *connectWalletHandler {
 	walletStore := mocks.NewMockWalletStore(ctrl)
 	interactor := mocks.NewMockInteractor(ctrl)
 
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 
 	return &connectWalletHandler{
 		ClientConnectWallet: api.NewConnectWallet(walletStore, interactor, sessions),

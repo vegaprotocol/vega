@@ -21,6 +21,7 @@ import (
 	coreversion "code.vegaprotocol.io/vega/version"
 	walletapi "code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/interactor"
+	tokenStore "code.vegaprotocol.io/vega/wallet/api/session/store/v1"
 	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
 	"code.vegaprotocol.io/vega/wallet/preferences"
 	"code.vegaprotocol.io/vega/wallet/service"
@@ -69,6 +70,8 @@ var (
 	`)
 )
 
+type ServicePreCheck func(rf *RootFlags) error
+
 type RunServiceHandler func(io.Writer, *RootFlags, *RunServiceFlags) error
 
 func NewCmdRunService(w io.Writer, rf *RootFlags) *cobra.Command {
@@ -84,7 +87,7 @@ func BuildCmdRunService(w io.Writer, handler RunServiceHandler, rf *RootFlags) *
 		Long:    runServiceLong,
 		Example: runServiceExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			if err := f.Validate(); err != nil {
+			if err := f.Validate(rf); err != nil {
 				return err
 			}
 
@@ -106,10 +109,20 @@ func BuildCmdRunService(w io.Writer, handler RunServiceHandler, rf *RootFlags) *
 		false,
 		"Automatically approve incoming transaction. Only use this flag when you have absolute trust in incoming transactions!",
 	)
+	cmd.Flags().BoolVar(&f.LoadTokens,
+		"load-tokens",
+		false,
+		"Load the sessions with long-living tokens",
+	)
 	cmd.PersistentFlags().BoolVar(&f.NoVersionCheck,
 		"no-version-check",
 		false,
 		"Do not check for new version of the Vega wallet",
+	)
+	cmd.Flags().StringVar(&f.TokensPassphraseFile,
+		"tokens-passphrase-file",
+		"",
+		"Path to the file containing the tokens database passphrase",
 	)
 
 	autoCompleteNetwork(cmd, rf.Home)
@@ -120,12 +133,30 @@ func BuildCmdRunService(w io.Writer, handler RunServiceHandler, rf *RootFlags) *
 type RunServiceFlags struct {
 	Network                string
 	EnableAutomaticConsent bool
+	LoadTokens             bool
+	TokensPassphraseFile   string
 	NoVersionCheck         bool
+	tokensPassphrase       string
 }
 
-func (f *RunServiceFlags) Validate() error {
+func (f *RunServiceFlags) Validate(rf *RootFlags) error {
 	if len(f.Network) == 0 {
 		return flags.MustBeSpecifiedError("network")
+	}
+
+	if !f.LoadTokens && f.TokensPassphraseFile != "" {
+		return flags.OneOfParentsFlagMustBeSpecifiedError("tokens-passphrase-file", "load-tokens")
+	}
+
+	if f.LoadTokens {
+		if err := ensureAPITokensStoreIsInit(rf); err != nil {
+			return err
+		}
+		passphrase, err := flags.GetPassphraseWithOptions(flags.PassphraseOptions{Name: "tokens"}, f.TokensPassphraseFile)
+		if err != nil {
+			return err
+		}
+		f.tokensPassphrase = passphrase
 	}
 
 	return nil
@@ -177,6 +208,21 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		return fmt.Errorf("could not initialise service store: %w", err)
 	}
 
+	var tokStore walletapi.TokenStore
+	if f.LoadTokens {
+		s, err := tokenStore.LoadStore(vegaPaths, f.tokensPassphrase)
+		if err != nil {
+			if errors.Is(err, walletapi.ErrWrongPassphrase) {
+				return err
+			}
+			return fmt.Errorf("couldn't load the tokens store: %w", err)
+		}
+		tokStore = s
+	} else {
+		s := tokenStore.NewEmptyStore()
+		tokStore = s
+	}
+
 	loggerBuilderFunc := func(path paths.StatePath, levelName string) (*zap.Logger, zap.AtomicLevel, error) {
 		svcLog, svcLogPath, level, err := buildJSONFileLogger(vegaPaths, path, levelName)
 		if err != nil {
@@ -214,7 +260,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		return shutdownSwitch
 	}
 
-	servicesManager := walletapi.NewServicesManager()
+	servicesManager := walletapi.NewServicesManager(tokStore, walletStore)
 
 	serviceStarter := walletapi.NewAdminStartService(
 		walletStore,

@@ -86,7 +86,7 @@ func BuildCmdGetInfoWallet(w io.Writer, handler GetInfoWalletHandler, rf *RootFl
 		"Path to the file containing the wallet's passphrase",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }

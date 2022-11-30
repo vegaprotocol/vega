@@ -8,6 +8,7 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/node"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/stretchr/testify/assert"
@@ -151,7 +152,7 @@ func contextWithTraceID() (context.Context, string) {
 	return context.WithValue(context.Background(), "trace-id", traceID), traceID
 }
 
-func connectWallet(t *testing.T, sessions *api.Sessions, hostname string, w wallet.Wallet) string {
+func connectWallet(t *testing.T, sessions *session.Sessions, hostname string, w wallet.Wallet) string {
 	t.Helper()
 	token, err := sessions.ConnectWallet(hostname, w)
 	if err != nil {

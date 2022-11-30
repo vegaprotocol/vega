@@ -139,7 +139,7 @@ func BuildCmdCommandSend(w io.Writer, handler SendCommandHandler, rf *RootFlags)
 	)
 
 	autoCompleteNetwork(cmd, rf.Home)
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 	autoCompleteLogLevel(cmd)
 
 	return cmd

@@ -102,7 +102,7 @@ func BuildCmdSignMessage(w io.Writer, handler SignMessageHandler, rf *RootFlags)
 		"Path to the file containing the wallet's passphrase",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }

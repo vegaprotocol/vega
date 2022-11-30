@@ -106,7 +106,7 @@ func BuildCmdDeleteWallet(w io.Writer, handler RemoveWalletHandler, rf *RootFlag
 		"Do not ask for confirmation",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }

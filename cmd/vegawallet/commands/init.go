@@ -31,7 +31,7 @@ var (
 	`)
 )
 
-type InitHandler func(home string, f *InitFlags) (*InitResponse, error)
+type InitHandler func(home string, f *InitFlags) error
 
 func NewCmdInit(w io.Writer, rf *RootFlags) *cobra.Command {
 	return BuildCmdInit(w, Init, rf)
@@ -46,18 +46,14 @@ func BuildCmdInit(w io.Writer, handler InitHandler, rf *RootFlags) *cobra.Comman
 		Long:    initLong,
 		Example: initExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			resp, err := handler(rf.Home, f)
-			if err != nil {
+			if err := handler(rf.Home, f); err != nil {
 				return err
 			}
 
 			switch rf.Output {
 			case flags.InteractiveOutput:
-				PrintInitResponse(w, resp)
-			case flags.JSONOutput:
-				return printer.FprintJSON(w, resp)
+				PrintInitResponse(w)
 			}
-
 			return nil
 		},
 	}
@@ -72,52 +68,39 @@ func BuildCmdInit(w io.Writer, handler InitHandler, rf *RootFlags) *cobra.Comman
 }
 
 type InitFlags struct {
-	Force bool
+	Force                bool
+	TokensPassphraseFile string
 }
 
-type InitResponse struct {
-	RSAKeys struct {
-		PublicKeyFilePath  string `json:"publicKeyFilePath"`
-		PrivateKeyFilePath string `json:"privateKeyFilePath"`
-	} `json:"rsaKeys"`
-}
-
-func Init(home string, f *InitFlags) (*InitResponse, error) {
-	_, err := wallets.InitialiseStore(home)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't initialise wallets store: %w", err)
+func Init(home string, f *InitFlags) error {
+	if _, err := wallets.InitialiseStore(home); err != nil {
+		return fmt.Errorf("couldn't initialise wallets store: %w", err)
 	}
 
-	svcStore, err := svcstore.InitialiseStore(paths.New(home))
+	vegaPaths := paths.New(home)
+
+	svcStore, err := svcstore.InitialiseStore(vegaPaths)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialise service store: %w", err)
+		return fmt.Errorf("couldn't initialise service store: %w", err)
 	}
 
 	if err = service.InitialiseService(svcStore, f.Force); err != nil {
-		return nil, fmt.Errorf("couldn't initialise the service: %w", err)
+		return fmt.Errorf("couldn't initialise the service: %w", err)
 	}
 
-	resp := &InitResponse{}
-	pubRSAKeysPath, privRSAKeysPath := svcStore.GetRSAKeysPath()
-	resp.RSAKeys.PublicKeyFilePath = pubRSAKeysPath
-	resp.RSAKeys.PrivateKeyFilePath = privRSAKeysPath
-
-	return resp, nil
+	return nil
 }
 
-func PrintInitResponse(w io.Writer, resp *InitResponse) {
+func PrintInitResponse(w io.Writer) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
 	defer p.Print(str)
 
-	str.CheckMark().Text("Service public RSA keys created at: ").SuccessText(resp.RSAKeys.PublicKeyFilePath).NextLine()
-	str.CheckMark().Text("Service private RSA keys created at: ").SuccessText(resp.RSAKeys.PrivateKeyFilePath).NextLine()
 	str.CheckMark().SuccessText("Initialisation succeeded").NextSection()
 
 	str.BlueArrow().InfoText("Create a wallet").NextLine()
 	str.Text("To create a wallet, use the following command:").NextSection()
-	str.Code(fmt.Sprintf("%s create --wallet \"YOUR_USERNAME\"", os.Args[0])).NextSection()
-	str.Text("The ").Bold("--wallet").Text(" flag sets the name of your wallet and will be used to login to Vega Console.").NextSection()
+	str.Code(fmt.Sprintf("%s create --wallet \"YOUR_WALLET\"", os.Args[0])).NextSection()
 	str.Text("For more information, use ").Bold("--help").Text(" flag.").NextLine()
 }

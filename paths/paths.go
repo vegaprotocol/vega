@@ -49,8 +49,7 @@ var DataNodeCacheHome = CachePath("data-node")
 // 	├── wallet-app/
 // 	│	└── config.toml
 // 	└── wallet-service/
-// 		├── networks/
-//		└── permissions.toml
+// 		└──  networks/
 
 type ConfigPath string
 
@@ -152,6 +151,7 @@ var (
 // 	│	├── vega-wallet-1
 // 	│	└── vega-wallet-2
 // 	└── wallet-service/
+//      ├── tokens.json
 // 		└── rsa-keys/
 // 			├── private.pem
 // 			└── public.pem
@@ -205,6 +205,10 @@ var (
 	// WalletServiceDataHome is the folder containing the data used by the
 	// wallet service.
 	WalletServiceDataHome = DataPath("wallet-service")
+
+	// WalletServiceTokensDataFile is the file containing all the API tokens
+	// used by the third-party applications to connect to the wallet API.
+	WalletServiceTokensDataFile = DataPath(filepath.Join(WalletServiceDataHome.String(), "tokens.json"))
 
 	// WalletServiceRSAKeysDataHome is the folder containing the RSA keys used by
 	// the wallet service.

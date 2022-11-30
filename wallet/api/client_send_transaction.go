@@ -15,6 +15,7 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	"code.vegaprotocol.io/vega/wallet/api/node"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -46,7 +47,7 @@ type ClientSendTransactionResult struct {
 type ClientSendTransaction struct {
 	interactor   Interactor
 	nodeSelector node.Selector
-	sessions     *Sessions
+	sessions     *session.Sessions
 }
 
 func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
@@ -83,16 +84,19 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
 
 	receivedAt := time.Now()
-	approved, err := h.interactor.RequestTransactionReviewForSending(ctx, traceID, connectedWallet.Hostname, connectedWallet.Wallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
-	if err != nil {
-		if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
-			return nil, errDetails
+
+	if connectedWallet.RequireInteraction() {
+		approved, err := h.interactor.RequestTransactionReviewForSending(ctx, traceID, connectedWallet.Hostname, connectedWallet.Wallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
+		if err != nil {
+			if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
+				return nil, errDetails
+			}
+			h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the transaction review failed: %w", err))
+			return nil, internalError(ErrCouldNotSendTransaction)
 		}
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the transaction review failed: %w", err))
-		return nil, internalError(ErrCouldNotSendTransaction)
-	}
-	if !approved {
-		return nil, userRejectionError()
+		if !approved {
+			return nil, userRejectionError()
+		}
 	}
 
 	h.interactor.Log(ctx, traceID, InfoLog, "Looking for a healthy node...")
@@ -187,7 +191,7 @@ func protoToJSON(tx proto.Message) string {
 	return jsonProto
 }
 
-func NewSendTransaction(interactor Interactor, nodeSelector node.Selector, sessions *Sessions) *ClientSendTransaction {
+func NewSendTransaction(interactor Interactor, nodeSelector node.Selector, sessions *session.Sessions) *ClientSendTransaction {
 	return &ClientSendTransaction{
 		interactor:   interactor,
 		nodeSelector: nodeSelector,

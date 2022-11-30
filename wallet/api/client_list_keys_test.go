@@ -10,6 +10,7 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -23,6 +24,7 @@ func TestListKeys(t *testing.T) {
 	t.Run("Listing keys with invalid params fails", testListingKeysWithInvalidParamsFails)
 	t.Run("Listing keys excludes tainted keys", testListingKeysExcludesTaintedKeys)
 	t.Run("Listing keys with invalid token fails", testListingKeysWithInvalidTokenFails)
+	t.Run("Listing keys with long-living token succeeds", testListingKeysWithLongLivingTokenSucceeds)
 	t.Run("Listing keys with not enough permissions fails", testListingKeysWithNotEnoughPermissionsFails)
 	t.Run("Cancelling the review does not update the permissions", testListingKeysCancellingTheReviewDoesNotUpdatePermissions)
 	t.Run("Interrupting the request does not update the permissions", testListingKeysInterruptingTheRequestDoesNotUpdatePermissions)
@@ -167,7 +169,34 @@ func testListingKeysWithInvalidTokenFails(t *testing.T) {
 
 	// then
 	assert.Empty(t, result)
-	assertInvalidParams(t, errorDetails, api.ErrNoWalletConnected)
+	assertInvalidParams(t, errorDetails, session.ErrNoWalletConnected)
+}
+
+func testListingKeysWithLongLivingTokenSucceeds(t *testing.T) {
+	// given
+	ctx := context.Background()
+	w, kp := walletWithKey(t)
+	token := vgrand.RandomStr(10)
+
+	// setup
+	handler := newListKeysHandler(t)
+	if err := handler.sessions.ConnectWalletForLongLivingConnection(token, w); err != nil {
+		t.Fatalf("could not connect test wallet to a long-living sessions %v", err)
+	}
+
+	// when
+	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
+		Token: token,
+	})
+
+	// then
+	assert.Nil(t, errorDetails)
+	assert.Equal(t, []api.ClientNamedPublicKey{
+		{
+			Name:      "Key 1",
+			PublicKey: kp.PublicKey(),
+		},
+	}, result.Keys)
 }
 
 func testListingKeysWithNotEnoughPermissionsFails(t *testing.T) {
@@ -604,7 +633,7 @@ type listKeysHandler struct {
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
 	interactor  *mocks.MockInteractor
-	sessions    *api.Sessions
+	sessions    *session.Sessions
 }
 
 func (h *listKeysHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.ClientListKeysResult, *jsonrpc.ErrorDetails) {
@@ -628,7 +657,7 @@ func newListKeysHandler(t *testing.T) *listKeysHandler {
 	walletStore := mocks.NewMockWalletStore(ctrl)
 	interactor := mocks.NewMockInteractor(ctrl)
 
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 
 	return &listKeysHandler{
 		ClientListKeys: api.NewListKeys(walletStore, interactor, sessions),

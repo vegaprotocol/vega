@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+
+	"code.vegaprotocol.io/vega/wallet/api/session"
 )
 
 var ErrNoServiceIsRunningForThisNetwork = errors.New("no service is running for this network")
@@ -12,7 +14,7 @@ var ErrNoServiceIsRunningForThisNetwork = errors.New("no service is running for 
 type RunningService struct {
 	url            string
 	shutdownSwitch *ServiceShutdownSwitch
-	sessions       *Sessions
+	sessions       *session.Sessions
 }
 
 // ServicesManager keeps track of all running services. It is used by the
@@ -20,15 +22,36 @@ type RunningService struct {
 type ServicesManager struct {
 	servicesByNetwork map[string]*RunningService
 
-	mu sync.Mutex
+	mu          sync.Mutex
+	tokenStore  TokenStore
+	walletStore WalletStore
 }
 
-func (ns *ServicesManager) RegisterService(network, url string, sessions *Sessions, shutdownSwitch *ServiceShutdownSwitch) error {
+func (ns *ServicesManager) RegisterService(network, url string, sessions *session.Sessions, shutdownSwitch *ServiceShutdownSwitch) error {
 	ns.mu.Lock()
 	defer ns.mu.Unlock()
 
 	if svc, ok := ns.servicesByNetwork[network]; ok {
 		return fmt.Errorf("a service is already running for this network at %q", svc.url)
+	}
+
+	tokens, err := ns.tokenStore.ListTokens()
+	if err != nil {
+		return fmt.Errorf("could not retrieve the list of registered tokens: %w", err)
+	}
+
+	for _, token := range tokens {
+		tokenInfo, err := ns.tokenStore.GetToken(token.Token)
+		if err != nil {
+			return fmt.Errorf("could not retrieve the information linked to the token %q: %w", token.Token, err)
+		}
+		w, err := ns.walletStore.GetWallet(context.Background(), tokenInfo.Wallet.Name, tokenInfo.Wallet.Passphrase)
+		if err != nil {
+			return fmt.Errorf("could not retrieve the wallet %q associated to the token %q: %w", tokenInfo.Wallet.Name, token.Token, err)
+		}
+		if err := sessions.ConnectWalletForLongLivingConnection(token.Token, w); err != nil {
+			return fmt.Errorf("could not connect the wallet %q: %w", tokenInfo.Wallet.Name, err)
+		}
 	}
 
 	ns.servicesByNetwork[network] = &RunningService{
@@ -40,7 +63,7 @@ func (ns *ServicesManager) RegisterService(network, url string, sessions *Sessio
 	return nil
 }
 
-func (ns *ServicesManager) Sessions(network string) (*Sessions, error) {
+func (ns *ServicesManager) Sessions(network string) (*session.Sessions, error) {
 	ns.mu.Lock()
 	defer ns.mu.Unlock()
 
@@ -71,9 +94,11 @@ func (ns *ServicesManager) StopService(network string) {
 	ns.AbortService(network, nil)
 }
 
-func NewServicesManager() *ServicesManager {
+func NewServicesManager(tokenStore TokenStore, walletStore WalletStore) *ServicesManager {
 	return &ServicesManager{
 		servicesByNetwork: map[string]*RunningService{},
+		tokenStore:        tokenStore,
+		walletStore:       walletStore,
 	}
 }
 

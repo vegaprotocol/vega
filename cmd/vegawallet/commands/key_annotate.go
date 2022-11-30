@@ -117,7 +117,7 @@ func BuildCmdAnnotateKey(w io.Writer, handler AnnotateKeyHandler, rf *RootFlags)
 		"Clear the metadata",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }

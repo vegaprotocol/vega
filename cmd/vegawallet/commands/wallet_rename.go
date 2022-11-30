@@ -87,7 +87,7 @@ func BuildCmdRenameWallet(w io.Writer, handler RenameWalletHandler, rf *RootFlag
 		"New name for the wallet",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }
