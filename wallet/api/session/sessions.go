@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"time"
 
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/wallet/wallet"
@@ -13,6 +14,7 @@ var (
 	ErrNoWalletConnected                       = errors.New("no wallet connected")
 	ErrCannotEndLongLivingSessions             = errors.New("sessions attached to long-living tokens cannot be ended")
 	ErrGeneratedTokenCollidesWithExistingToken = errors.New("the generated token collides with an existing token")
+	ErrAPITokenExpired                         = errors.New("the token has expired")
 )
 
 // Sessions holds the live sessions.
@@ -58,8 +60,10 @@ func (s *Sessions) ConnectWallet(hostname string, w wallet.Wallet) (string, erro
 	return token, nil
 }
 
-func (s *Sessions) ConnectWalletForLongLivingConnection(token string, w wallet.Wallet) error {
-	connectedWallet, err := NewLongLivingConnectedWallet(w)
+func (s *Sessions) ConnectWalletForLongLivingConnection(
+	token string, w wallet.Wallet, now time.Time, expiry *time.Time,
+) error {
+	connectedWallet, err := NewLongLivingConnectedWallet(w, now, expiry)
 	if err != nil {
 		return fmt.Errorf("could not load the wallet: %w", err)
 	}
@@ -110,10 +114,14 @@ func (s *Sessions) DisconnectAllWallets() {
 
 // GetConnectedWallet retrieves the resources and information of the
 // connected wallet, associated to the specified token.
-func (s *Sessions) GetConnectedWallet(token string) (*ConnectedWallet, error) {
+func (s *Sessions) GetConnectedWallet(token string, now time.Time) (*ConnectedWallet, error) {
 	connectedWallet, ok := s.connectedWallets[token]
 	if !ok {
 		return nil, ErrNoWalletConnected
+	}
+
+	if err := connectedWallet.Expired(now); err != nil {
+		return nil, ErrAPITokenExpired
 	}
 
 	return connectedWallet, nil
@@ -168,9 +176,19 @@ type ConnectedWallet struct {
 	// during the permissions request.
 	RestrictedKeys map[string]wallet.KeyPair
 
+	// An optional expiry date for this token
+	Expiry *time.Time
+
 	// noRestrictions is a hack to know if we should skip permission
 	// verification when we are connected with a long-living API token.
 	noRestrictions bool
+}
+
+func (s *ConnectedWallet) Expired(now time.Time) error {
+	if s.Expiry != nil && s.Expiry.Before(now) {
+		return ErrAPITokenExpired
+	}
+	return nil
 }
 
 // RequireInteraction tells if an interaction with the user is needed for
@@ -270,12 +288,16 @@ func NewConnectedWallet(hostname string, w wallet.Wallet) (*ConnectedWallet, err
 	return s, nil
 }
 
-func NewLongLivingConnectedWallet(w wallet.Wallet) (*ConnectedWallet, error) {
+func NewLongLivingConnectedWallet(w wallet.Wallet, now time.Time, expiry *time.Time) (*ConnectedWallet, error) {
 	s := &ConnectedWallet{
 		noRestrictions: true,
 		Hostname:       "",
 		Wallet:         w,
+		Expiry:         expiry,
 		RestrictedKeys: map[string]wallet.KeyPair{},
+	}
+	if err := s.Expired(now); err != nil {
+		return nil, err
 	}
 
 	if err := s.loadRestrictedKeys(); err != nil {

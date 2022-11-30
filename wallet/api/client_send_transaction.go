@@ -48,6 +48,7 @@ type ClientSendTransaction struct {
 	interactor   Interactor
 	nodeSelector node.Selector
 	sessions     *session.Sessions
+	time         TimeProvider
 }
 
 func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
@@ -58,7 +59,7 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		return nil, invalidParams(err)
 	}
 
-	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token)
+	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token, h.time.Now())
 	if err != nil {
 		return nil, invalidParams(err)
 	}
@@ -191,11 +192,12 @@ func protoToJSON(tx proto.Message) string {
 	return jsonProto
 }
 
-func NewSendTransaction(interactor Interactor, nodeSelector node.Selector, sessions *session.Sessions) *ClientSendTransaction {
+func NewSendTransaction(interactor Interactor, nodeSelector node.Selector, sessions *session.Sessions, tp ...TimeProvider) *ClientSendTransaction {
 	return &ClientSendTransaction{
 		interactor:   interactor,
 		nodeSelector: nodeSelector,
 		sessions:     sessions,
+		time:         extractTimeProvider(tp...),
 	}
 }
 
