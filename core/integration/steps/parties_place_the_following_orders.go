@@ -27,6 +27,8 @@ import (
 )
 
 func PartiesPlaceTheFollowingOrdersWithTicks(exec Execution, time *stubs.TimeStub, epochService EpochService, table *godog.Table) error {
+	// ensure time is set + idgen is not nil
+	time.SetTime(time.GetTimeNow())
 	for _, r := range parseSubmitOrderTable(table) {
 		row := newSubmitOrderRow(r)
 
@@ -63,6 +65,8 @@ func PartiesPlaceTheFollowingOrdersWithTicks(exec Execution, time *stubs.TimeStu
 		}
 		// make it look like we start a new block
 		epochService.OnBlockEnd(context.Background())
+		// indicate block has ended, so we MTM if needed
+		exec.BlockEnd(context.Background())
 		// trigger OnTick calls, but without actually progressing time
 		time.SetTime(time.GetTimeNow())
 	}
@@ -70,6 +74,8 @@ func PartiesPlaceTheFollowingOrdersWithTicks(exec Execution, time *stubs.TimeStu
 }
 
 func PartiesPlaceTheFollowingOrdersBlocksApart(exec Execution, time *stubs.TimeStub, block *helpers.Block, epochService EpochService, table *godog.Table, blockCount string) error {
+	// ensure time is set + idgen is not nil
+	time.SetTime(time.GetTimeNow())
 	nr, err := strconv.ParseInt(blockCount, 10, 0)
 	if err != nil {
 		return err
@@ -111,6 +117,8 @@ func PartiesPlaceTheFollowingOrdersBlocksApart(exec Execution, time *stubs.TimeS
 		now := time.GetTimeNow()
 		for i := int64(0); i < nr; i++ {
 			epochService.OnBlockEnd(context.Background())
+			// end of block
+			exec.BlockEnd(context.Background())
 			now = now.Add(block.GetDuration())
 			// progress time
 			time.SetTime(now)

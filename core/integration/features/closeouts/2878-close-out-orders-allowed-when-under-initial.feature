@@ -56,13 +56,16 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general       |
       | party4 | ETH   | ETH/DEC20 | 132    | 9999999999868 |
-      | party5 | ETH   | ETH/DEC20 | 1320   | 9999999998580 |
-      | party3 | ETH   | ETH/DEC20 | 1220   | 0             |
+      | party5 | ETH   | ETH/DEC20 | 132    | 9999999999768 |
+      | party3 | ETH   | ETH/DEC20 | 360    | 860           |
+      #| party3 | ETH   | ETH/DEC20 | 1220   | 0             |
+      #| party5 | ETH   | ETH/DEC20 | 1320   | 9999999998580 |
       # Value before uint stuff
       # | party4 | ETH   | ETH/DEC20 | 133    | 9999999999867 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party3 | ETH/DEC20 | 1100        | 1210   | 1320    | 1540    |
+      | party3 | ETH/DEC20 | 300         | 330    | 360     | 420     |
+      #| party3 | ETH/DEC20 | 1100        | 1210   | 1320    | 1540    |
 
     ## Now party 3, though below initial margin places a buy order to close their position out
     When the parties place the following orders with ticks:

@@ -77,7 +77,8 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party2 | party2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9480   | BTC   |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party2 | BTC   | ETH/DEC19 | 19200  | 9480    |
+      #| party2 | BTC   | ETH/DEC19 | 19200  | 9480    |
+      | party2 | BTC   | ETH/DEC19 | 28680  | 0       |
       | party1 | BTC   | ETH/DEC19 | 30240  | 0       |
       # values before uint
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |

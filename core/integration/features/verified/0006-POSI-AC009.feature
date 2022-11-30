@@ -62,7 +62,8 @@ Feature: test AC 006-POSI-009, 006-POSI-027
       | party1 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 5041   | 4959    |
+      | party1 | ETH   | ETH/DEC19 | 1440   | 8560    |
+      #| party1 | ETH   | ETH/DEC19 | 5041   | 4959    |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |

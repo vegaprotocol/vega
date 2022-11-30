@@ -68,7 +68,7 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
 
     ## Now mark to market, the mark price should be 2,000 at this point, dramatically changing the balances
     ## The interval is set to 5s, so 5 blocks should do the trick
-    When the network moves ahead "5" blocks
+    When the network moves ahead "6" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
       | party1 | ETH   | ETH/DEC19 | 7682400   | 1317600 |

@@ -75,8 +75,10 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party2 | ETH/DEC20 | buy  | 1      | 12000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-3    |
     Then the following transfers should happen:
       | from   | to     | from account         | to account              | market id | amount  | asset |
-      | party3 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 275489  | ETH   |
-      | party3 | party3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 1949413 | ETH   |
+      | party3 | party3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 1800000 | ETH   |
+      | party3 | market | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 2000000 | ETH   |
+      #| party3 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 275489  | ETH   |
+      #| party3 | party3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 1949413 | ETH   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
       | party3 | ETH   | ETH/DEC20 | 1949413 | 993000587 |
@@ -101,8 +103,8 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party2 | ETH/DEC20 | buy  | 1      | 14000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-4    |
     # Check MTM Loss transfer happened
     Then the following transfers should happen:
-      | from   | to     | from account         | to account              | market id | amount | asset |
-      | party3 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 50587  | ETH   |
+      | from   | to     | from account         | to account              | market id | amount  | asset |
+      | party3 | market | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 2000000 | ETH   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
       | party3 | ETH   | ETH/DEC20 | 2174316 | 990775684 |
@@ -123,10 +125,10 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the following transfers should happen:
       | from   | to     | from account         | to account              | market id | amount  | asset |
       | party3 | market | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 2000000 | ETH   |
-      | party3 | party3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2224901 | ETH   |
+      | party3 | party3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2400000 | ETH   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
-      | party3 | ETH   | ETH/DEC20 | 2399217 | 988550783 |
+      | party3 | ETH   | ETH/DEC20 | 2574316 | 988375684 |
 
     # Amend orders to set slippage to 180
     When the parties amend the following orders:
@@ -143,10 +145,10 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the following transfers should happen:
       | from   | to     | from account         | to account              | market id | amount  | asset |
       | party3 | market | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 2000000 | ETH   |
-      | party3 | party3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2224903 | ETH   |
+      | party3 | party3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2224901 | ETH   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
-      | party3 | ETH   | ETH/DEC20 | 2624120 | 986325880 |
+      | party3 | ETH   | ETH/DEC20 | 2799217 | 986150783 |
 
     # Amend orders to set slippage to 140
     # Amending prices down, so amend buy order first, so it doesn't uncross with the lowered sell order
@@ -164,7 +166,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the following transfers should happen:
       | from   | to     | from account            | to account           | market id | amount  | asset |
       | market | party3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 4000000 | ETH   |
-      | party3 | party3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 4449804 | ETH   |
+      | party3 | party3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 8649804 | ETH   |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
       | party3 | ETH   | ETH/DEC20 | 2174316 | 990775684 |
@@ -183,7 +185,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the following transfers should happen:
       | from   | to     | from account            | to account           | market id | amount  | asset |
       | market | party3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 2000000 | ETH   |
-      | party3 | party3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 2224903 | ETH   |
+      | party3 | party3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 4024903 | ETH   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
       | party3 | ETH   | ETH/DEC20 | 1949413 | 993000587 |
@@ -203,7 +205,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the following transfers should happen:
       | from   | to     | from account            | to account           | market id | amount  | asset |
       | market | party3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 1000000 | ETH   |
-      | party3 | party3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 1112451 | ETH   |
+      | party3 | party3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 1712451 | ETH   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
       | party3 | ETH   | ETH/DEC20 | 1836962 | 994113038 |
@@ -222,7 +224,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the following transfers should happen:
       | from   | to     | from account            | to account           | market id | amount  | asset |
       | market | party3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 1000000 | ETH   |
-      | party3 | party3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 1112451 | ETH   |
+      | party3 | party3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 1712451 | ETH   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
       | party3 | ETH   | ETH/DEC20 | 1724511 | 995225489 |

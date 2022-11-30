@@ -99,11 +99,13 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin       | general        |
-      | party1 | ETH   | ETH/DEC19 | 394400000020 | 99611199999980 |
+      | party1 | ETH   | ETH/DEC19 | 145600000000 | 99860000000000 |
+      #| party1 | ETH   | ETH/DEC19 | 394400000020 | 99611199999980 |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search       | initial      | release      |
-      | party1 | ETH/DEC19 | 98600000005 | 315520000016 | 394400000020 | 493000000025 |
+      | party1 | ETH/DEC19 | 36400000000 | 116480000000 | 145600000000 | 182000000000 |
+      #| party1 | ETH/DEC19 | 98600000005 | 315520000016 | 394400000020 | 493000000025 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party1 | 13     | 5600000000     | 0            |

@@ -55,7 +55,7 @@ Feature: Distressed parties should not have general balance left
     When the parties place the following orders "1" blocks apart:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party4 | ETH/DEC20 | sell | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | party5 | ETH/DEC20 | buy  | 10     | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-1     |
+      | party5 | ETH/DEC20 | buy  | 10     | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-4     |
       | party3 | ETH/DEC20 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | party3 | ETH/DEC20 | sell | 10     | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
@@ -63,7 +63,8 @@ Feature: Distressed parties should not have general balance left
       | party  | asset | market id | margin | general       |
       | party4 | ETH   | ETH/DEC20 | 360    | 9999999999640 |
       #| party4 | ETH   | ETH/DEC20 | 240    | 9999999999760 |
-      | party5 | ETH   | ETH/DEC20 | 372    | 9999999999528 |
+      #| party5 | ETH   | ETH/DEC20 | 372    | 9999999999528 |
+      | party5 | ETH   | ETH/DEC20 | 132    | 9999999999768 |
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp2 | party3 | ETH/DEC20 | 10000             | 0.1 | buy  | BID              | 10         | 10     | submission |

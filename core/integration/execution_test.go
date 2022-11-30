@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 )
 
@@ -35,6 +36,12 @@ func newExEng(e *execution.Engine, broker *stubs.BrokerStub) *exEng {
 		Engine: e,
 		broker: broker,
 	}
+}
+
+func (e *exEng) BlockEnd(ctx context.Context) {
+	// set hash ID to some value
+	ctx = vgcontext.WithTraceID(ctx, "deadbeef")
+	e.Engine.BlockEnd(ctx)
 }
 
 func (e *exEng) SubmitOrder(ctx context.Context, submission *types.OrderSubmission, party string) (*types.OrderConfirmation, error) {
