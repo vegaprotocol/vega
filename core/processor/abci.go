@@ -739,6 +739,7 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 			AppVersion: AppVersion,
 		},
 	}
+	app.exec.BlockEnd(app.blockCtx)
 
 	return ctx, resp
 }

@@ -31,6 +31,9 @@
 - [6908](https://github.com/vegaprotocol/vega/issues/6871) - Update default retention policy
 - [6827](https://github.com/vegaprotocol/vega/issues/6615) - Add filters to `ordersConnection`
 - [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position 
+- [6988](https://github.com/vegaprotocol/vega/issues/6988) - Handle 0 timestamps in `graphql` marshaller
+- [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position 
+- [6949](https://github.com/vegaprotocol/vega/issues/6949) - Mark positions to market at the end of the block.
 - [6819](https://github.com/vegaprotocol/vega/issues/6819) - Support long-living token in wallet client API
 
 
@@ -61,6 +64,9 @@
 - [6844](https://github.com/vegaprotocol/vega/issues/6844) - Add API descriptions, remove unused ledger entries and fix typos
 - [6960](https://github.com/vegaprotocol/vega/issues/6960) - Infer has traded from settlement engine rather than from an unsaved-to-snapshot flag
 - [6941](https://github.com/vegaprotocol/vega/issues/6941) - Rename `admin.describe_network` parameter to `name`
+- [6976](https://github.com/vegaprotocol/vega/issues/6976) - Recalculate margins on MTM anniversary even if there were no trades.
+- [6977](https://github.com/vegaprotocol/vega/issues/6977) - Prior to final settlement, perform MTM on unsettled trades.
+- [6569](https://github.com/vegaprotocol/vega/issues/6569) - Fix margin calculations during auctions.
 
 ## 0.62.1
 

@@ -30378,11 +30378,14 @@ func (ec *executionContext) _MarketTimestamps_pending(ctx context.Context, field
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MarketTimestamps_pending(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -30419,11 +30422,14 @@ func (ec *executionContext) _MarketTimestamps_open(ctx context.Context, field gr
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MarketTimestamps_open(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -30460,11 +30466,14 @@ func (ec *executionContext) _MarketTimestamps_close(ctx context.Context, field g
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOTimestamp2int64(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MarketTimestamps_close(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -66372,14 +66381,23 @@ func (ec *executionContext) _MarketTimestamps(ctx context.Context, sel ast.Selec
 
 			out.Values[i] = ec._MarketTimestamps_pending(ctx, field, obj)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "open":
 
 			out.Values[i] = ec._MarketTimestamps_open(ctx, field, obj)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "close":
 
 			out.Values[i] = ec._MarketTimestamps_close(ctx, field, obj)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
