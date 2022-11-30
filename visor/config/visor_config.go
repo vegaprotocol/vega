@@ -55,12 +55,71 @@ type AutoInstallConfig struct {
 	Assets                AssetsConfig `toml:"assets"`
 }
 
+/*
+description: Root of the config file
+example:
+
+	type: toml
+	value: |
+		maxNumberOfRestarts = 3
+		restartsDelaySeconds = 5
+
+		[upgradeFolders]
+			"vX.X.X" = "vX.X.X"
+
+		[autoInstall]
+			enabled = false
+*/
 type VisorConfigFile struct {
-	UpgradeFolders                    map[string]string `toml:"upgradeFolders"`
-	MaxNumberOfRestarts               int               `toml:"maxNumberOfRestarts"`
-	RestartsDelaySeconds              int               `toml:"restartsDelaySeconds"`
-	StopSignalTimeoutSeconds          int               `toml:"stopSignalTimeoutSeconds"`
-	MaxNumberOfFirstConnectionRetries int               `toml:"maxNumberOfFirstConnectionRetries"`
+	/*
+		description: |
+			Visor communicates with Core node via RPC API. This variable allows to specify
+			how many times should Visor try to establish connection to Core node before the Visor process fails.
+			The `maxNumberOfFirstConnectionRetries` is only taken to the account
+			during the first start up of the Core node process - not restarts.
+		note: |
+			There is a 2 seconds delay between each try. Setting the max retry number to 5 means the Visor will try to establish
+			5 connections times in 10 seconds.
+		default: 10
+	*/
+	MaxNumberOfFirstConnectionRetries int `toml:"maxNumberOfFirstConnectionRetries,optional"`
+	/*
+		description: |
+			Visor at it's core starts and manages processes of provided binaries.
+			This alows to define maximum number of restarts in case that any of
+			the processes has failed before the Visor process fails.
+		note: |
+			The amount of time Visor should wait between restarts can be set by `maxNumberOfRestarts`.
+		default: 3
+	*/
+	MaxNumberOfRestarts int `toml:"maxNumberOfRestarts,optional"`
+	/*
+		description: |
+			Number of seconds that Visor waits before it tries to re-start the processes.
+		default: 5
+	*/
+	RestartsDelaySeconds int `toml:"restartsDelaySeconds,optional"`
+	/*
+		description: |
+			Number of seconds that Visor waits after it sends termination singal (SIGTERM) to running processes.
+			After the time has elapsed the Visor force kills (SIGKILL) to running processes.
+		default: 15
+	*/
+	StopSignalTimeoutSeconds int `toml:"stopSignalTimeoutSeconds,optional"`
+
+	/*
+		description: |
+			During the upgrade, by default Visor looks for a folder with a name identical to the upgrade version.
+			The default behaviour can be changed by providing mapping between `version` and `custom_folder_name`.
+			If a custom mapping is provided, during the upgrade Visor uses the folder given in the mapping for specific version.
+
+		example:
+			type: toml
+			value: |
+				[upgradeFolders]
+					"v99.9.9" = "custom_upgrade_folder_name"
+	*/
+	UpgradeFolders map[string]string `toml:"upgradeFolders,optional"`
 
 	AutoInstall AutoInstallConfig `toml:"autoInstall"`
 }
