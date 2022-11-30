@@ -193,20 +193,11 @@ func protoToJSON(tx proto.Message) string {
 }
 
 func NewSendTransaction(interactor Interactor, nodeSelector node.Selector, sessions *session.Sessions, tp ...TimeProvider) *ClientSendTransaction {
-	if len(tp) > 1 {
-		panic("only one time provider allowed at most")
-	}
-
-	var t TimeProvider = &StdTime{}
-	if len(tp) > 0 {
-		t = tp[0]
-	}
-
 	return &ClientSendTransaction{
 		interactor:   interactor,
 		nodeSelector: nodeSelector,
 		sessions:     sessions,
-		time:         t,
+		time:         extractTimeProvider(tp...),
 	}
 }
 

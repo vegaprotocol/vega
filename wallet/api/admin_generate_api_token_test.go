@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
@@ -18,6 +20,8 @@ import (
 func TestAdminGenerateAPIToken(t *testing.T) {
 	t.Run("Generating an API token with invalid params fails", testGeneratingAPITokenWithInvalidParamsFails)
 	t.Run("Generating an API token with valid params succeeds", testGeneratingAPITokenWithValidParamsSucceeds)
+	t.Run("Generating an API token with valid params past expiry fails", testGeneratingAPITokenWithValidParamsPastExpiryFails)
+	t.Run("Generating an API token with valid params valid expiry succeeds", testGeneratingAPITokenWithValidParamsValidExpirySucceeds)
 	t.Run("Generating an API token on unknown wallet fails", testGeneratingAPITokenOnUnknownWalletFails)
 	t.Run("Getting internal error during wallet verification doesn't generate the token", testGettingInternalErrorDuringWalletVerificationDoesNotGenerateAPIToken)
 	t.Run("Getting internal error during wallet retrieval doesn't generate the token", testGettingInternalErrorDuringWalletRetrievalDoesNotGenerateAPIToken)
@@ -107,6 +111,76 @@ func testGeneratingAPITokenWithValidParamsSucceeds(t *testing.T) {
 	// then
 	require.Nil(t, errorDetails)
 	assert.NotEmpty(t, result.Token)
+}
+
+func testGeneratingAPITokenWithValidParamsValidExpirySucceeds(t *testing.T) {
+	// given
+	ctx := context.Background()
+	walletPassphrase := vgrand.RandomStr(5)
+	name := vgrand.RandomStr(5)
+	description := vgrand.RandomStr(5)
+	expectedWallet, _, err := wallet.NewHDWallet(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	now := time.Now()
+	okExpiry := now.Add(1 * time.Hour)
+
+	// setup
+	handler := newGenerateAPITokenHandler(t)
+	// -- expected calls
+	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, name, walletPassphrase).Times(1).Return(expectedWallet, nil)
+	handler.tokenStore.EXPECT().SaveToken(gomock.Any()).Times(1).Return(nil)
+	handler.time.EXPECT().Now().Times(1).Return(now)
+
+	// when
+	result, errorDetails := handler.handle(t, ctx, api.AdminGenerateAPITokenParams{
+		Wallet: api.AdminGenerateAPITokenWalletParams{
+			Name:       name,
+			Passphrase: walletPassphrase,
+		},
+		ExpiryTs:    ptr.From(okExpiry.Unix()),
+		Description: description,
+	})
+
+	// then
+	require.Nil(t, errorDetails)
+	assert.NotEmpty(t, result.Token)
+}
+
+func testGeneratingAPITokenWithValidParamsPastExpiryFails(t *testing.T) {
+	// given
+	ctx := context.Background()
+	walletPassphrase := vgrand.RandomStr(5)
+	name := vgrand.RandomStr(5)
+	description := vgrand.RandomStr(5)
+	_, _, err := wallet.NewHDWallet(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	now := time.Now()
+	pastNow := now.Add(-1 * time.Hour)
+
+	// setup
+	handler := newGenerateAPITokenHandler(t)
+	// -- expected calls
+	handler.time.EXPECT().Now().Times(1).Return(now)
+
+	// when
+	_, errorDetails := handler.handle(t, ctx, api.AdminGenerateAPITokenParams{
+		Wallet: api.AdminGenerateAPITokenWalletParams{
+			Name:       name,
+			Passphrase: walletPassphrase,
+		},
+		ExpiryTs:    ptr.From(pastNow.Unix()),
+		Description: description,
+	})
+
+	// then
+	require.EqualError(t, errorDetails, "the token expiration date cannot be set to a past date (Invalid params -32602)")
 }
 
 func testGeneratingAPITokenOnUnknownWalletFails(t *testing.T) {
@@ -221,6 +295,7 @@ type generateAPITokenHandler struct {
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
 	tokenStore  *mocks.MockTokenStore
+	time        *mocks.MockTimeProvider
 }
 
 func (h *generateAPITokenHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminGenerateAPITokenResult, *jsonrpc.ErrorDetails) {
@@ -243,11 +318,13 @@ func newGenerateAPITokenHandler(t *testing.T) *generateAPITokenHandler {
 	ctrl := gomock.NewController(t)
 	walletStore := mocks.NewMockWalletStore(ctrl)
 	tokenStore := mocks.NewMockTokenStore(ctrl)
+	tp := mocks.NewMockTimeProvider(ctrl)
 
 	return &generateAPITokenHandler{
-		AdminGenerateAPIToken: api.NewAdminGenerateAPIToken(walletStore, tokenStore),
+		AdminGenerateAPIToken: api.NewAdminGenerateAPIToken(walletStore, tokenStore, tp),
 		ctrl:                  ctrl,
 		walletStore:           walletStore,
 		tokenStore:            tokenStore,
+		time:                  tp,
 	}
 }

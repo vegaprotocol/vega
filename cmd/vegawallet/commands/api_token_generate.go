@@ -160,7 +160,7 @@ func (f *GenerateAPITokenFlags) Validate() (api.AdminGenerateAPITokenParams, err
 
 	tokenParams := api.AdminGenerateAPITokenParams{
 		Description: f.Description,
-		Expiry:      expiry,
+		ExpiryTs:    expiry,
 		Wallet: api.AdminGenerateAPITokenWalletParams{
 			Name:       f.WalletName,
 			Passphrase: walletPassphrase,

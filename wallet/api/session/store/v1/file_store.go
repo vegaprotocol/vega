@@ -11,10 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/api/session"
 )
 
-var (
-	ErrStoreNotInitialized = errors.New("the tokens store has not been initialized")
-	ErrTokenExpired        = errors.New("token expired")
-)
+var ErrStoreNotInitialized = errors.New("the tokens store has not been initialized")
 
 type Store struct {
 	tokensFilePath string

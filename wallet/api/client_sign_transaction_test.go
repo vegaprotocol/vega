@@ -237,7 +237,7 @@ func testSigningTransactionWithLongLivingExpiredTokenFails(t *testing.T) {
 	})
 
 	// then
-	assert.EqualError(t, errorDetails, "api token expired (Invalid params -32602)")
+	assert.EqualError(t, errorDetails, "the token has expired (Invalid params -32602)")
 }
 
 func testSigningTransactionWithLongLivingValidTokenSucceeds(t *testing.T) {

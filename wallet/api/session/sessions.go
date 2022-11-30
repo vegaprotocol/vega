@@ -14,7 +14,7 @@ var (
 	ErrNoWalletConnected                       = errors.New("no wallet connected")
 	ErrCannotEndLongLivingSessions             = errors.New("sessions attached to long-living tokens cannot be ended")
 	ErrGeneratedTokenCollidesWithExistingToken = errors.New("the generated token collides with an existing token")
-	ErrAPITokenExpired                         = errors.New("api token expired")
+	ErrAPITokenExpired                         = errors.New("the token has expired")
 )
 
 // Sessions holds the live sessions.

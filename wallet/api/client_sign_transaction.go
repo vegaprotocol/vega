@@ -159,20 +159,11 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 }
 
 func NewSignTransaction(interactor Interactor, nodeSelector node.Selector, sessions *session.Sessions, tp ...TimeProvider) *ClientSignTransaction {
-	if len(tp) > 1 {
-		panic("only one time provider allowed at most")
-	}
-
-	var t TimeProvider = &StdTime{}
-	if len(tp) > 0 {
-		t = tp[0]
-	}
-
 	return &ClientSignTransaction{
 		interactor:   interactor,
 		nodeSelector: nodeSelector,
 		sessions:     sessions,
-		time:         t,
+		time:         extractTimeProvider(tp...),
 	}
 }
 
