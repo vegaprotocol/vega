@@ -74,4 +74,7 @@ message Transaction {
   vega.commands.v1.InputData command = 8;
   // Submitter's signature of transaction
   vega.commands.v1.Signature signature = 9;
+  // An optional error happening when processing / checking the transaction
+  // Should be set if error code is not 0
+  optional string error = 10;
 }
