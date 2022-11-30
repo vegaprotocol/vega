@@ -1777,8 +1777,14 @@ message ListProposalsResponse {
 }
 
 message ProposalsEdge {
-  vega.Proposal node = 1;
+  ProposalData node = 1;
   string cursor = 2;
+}
+
+message ProposalData {
+  vega.Proposal proposal = 1;
+  uint64 yes_votes = 2;
+  uint64 no_votes = 3;
 }
 
 message ProposalsConnection {

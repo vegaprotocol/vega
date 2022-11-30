@@ -28,6 +28,18 @@ type Votes struct {
 	*ConnectionSource
 }
 
+var (
+	incClauses = map[entities.VoteValue]string{
+		entities.VoteValueNo:  "no_votes = no_votes + 1",
+		entities.VoteValueYes: "yes_votes = yes_votes + 1",
+	}
+
+	decClauses = map[entities.VoteValue]string{
+		entities.VoteValueNo:  "no_votes = no_votes - 1",
+		entities.VoteValueYes: "yes_votes = yes_votes - 1",
+	}
+)
+
 var votesOrdering = TableOrdering{
 	ColumnOrdering{Name: "vega_time", Sorting: ASC},
 }
@@ -39,8 +51,35 @@ func NewVotes(connectionSource *ConnectionSource) *Votes {
 	return d
 }
 
+func (vs *Votes) addTotal(ctx context.Context, v entities.Vote) error {
+	query := `SELECT * FROM votes_current WHERE proposal_id = $1 AND party_id = $2`
+	votes := []entities.Vote{}
+	err := pgxscan.Select(ctx, vs.Connection, &votes, query, v.ProposalID, v.PartyID)
+	if err != nil || len(votes) == 0 {
+		// no previous vote, just increment the correct total
+		query = fmt.Sprintf(`UPDATE proposals SET %s WHERE id = $1`, incClauses[v.Value])
+	} else if votes[0].Value == v.Value {
+		// we had a previous vote registered, but it had the same value - totals should be fine
+		return nil
+	} else {
+		// Vote value changed, decrement the previous value total, and increment the other
+		clauses := make([]string, 0, 2)
+		clauses = append(clauses, incClauses[v.Value])
+		clauses = append(clauses, decClauses[votes[0].Value])
+		query = fmt.Sprintf(`UPDATE proposals SET %s WHERE proposal_id = $1`, strings.Join(clauses, ", "))
+	}
+	// update the totals:
+	_, err = vs.Connection.Exec(ctx, query, v.ProposalID)
+	return err
+}
+
 func (vs *Votes) Add(ctx context.Context, v entities.Vote) error {
 	defer metrics.StartSQLQuery("Votes", "Add")()
+	// this is a bit clunky but if we could not set the totals properly, we probably are dealing with a vote
+	// for a proposal that doesn't exist yet, or something is seriously wrong
+	if err := vs.addTotal(ctx, c); err != nil {
+		return err
+	}
 	_, err := vs.Connection.Exec(ctx,
 		`INSERT INTO votes(
 			proposal_id,

@@ -71,6 +71,8 @@ type Proposal struct {
 	Terms                   ProposalTerms
 	Reason                  ProposalError
 	ErrorDetails            string
+	YesVotes                uint64
+	NoVotes                 uint64
 	ProposalTime            time.Time
 	VegaTime                time.Time
 	RequiredMajority        num.Decimal
@@ -80,7 +82,7 @@ type Proposal struct {
 	TxHash                  TxHash
 }
 
-func (p *Proposal) ToProto() *vega.Proposal {
+func (p *Proposal) ToProto() *v2.ProposalData {
 	var lpMajority *string
 	if !p.RequiredLPMajority.IsZero() {
 		lpMajority = toPtr(p.RequiredLPMajority.String())
@@ -115,6 +117,11 @@ func (p *Proposal) ToProto() *vega.Proposal {
 		RequiredLiquidityProviderMajority:      lpMajority,
 		RequiredLiquidityProviderParticipation: lpParticipation,
 	}
+	dnP := v2.ProposalData{
+		Proposal: &pp,
+		YesVotes: p.YesVotes,
+		NoVotes:  p.NoVotes,
+	}
 	return &pp
 }
 
@@ -127,11 +134,9 @@ func (p Proposal) Cursor() *Cursor {
 	return NewCursor(pc.String())
 }
 
-func (p Proposal) ToProtoEdge(_ ...any) (*v2.GovernanceDataEdge, error) {
-	return &v2.GovernanceDataEdge{
-		Node: &vega.GovernanceData{
-			Proposal: p.ToProto(),
-		},
+func (p Proposal) ToProtoEdge(_ ...any) (*v2.ProposalsEdge, error) {
+	return &v2.ProposalsEdge{
+		Node:   o.ToProto(),
 		Cursor: p.Cursor().Encode(),
 	}, nil
 }

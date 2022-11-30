@@ -888,6 +888,8 @@ CREATE TABLE proposals(
   rationale                 JSONB          NOT NULL,
   reason                    proposal_error,
   error_details             TEXT,
+  yes_votes                 BIGINT,
+  no_votes                  BIGINT,
   vega_time                 TIMESTAMP WITH TIME ZONE NOT NULL,
   proposal_time             TIMESTAMP WITH TIME ZONE,
   required_majority         NUMERIC(1000, 16) NOT NULL,
