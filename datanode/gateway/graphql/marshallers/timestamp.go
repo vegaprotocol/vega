@@ -23,6 +23,11 @@ import (
 
 func MarshalTimestamp(t int64) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
+		// special case for 0 timestamps, returns null
+		if t == 0 {
+			io.WriteString(w, "null")
+			return
+		}
 		io.WriteString(w, strconv.Quote(vegatime.Format(vegatime.UnixNano(t))))
 	})
 }
