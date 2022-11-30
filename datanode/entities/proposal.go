@@ -63,23 +63,27 @@ type _Proposal struct{}
 type ProposalID = ID[_Proposal]
 
 type Proposal struct {
-	ID                      ProposalID
-	Reference               string
-	PartyID                 PartyID
-	State                   ProposalState
-	Rationale               ProposalRationale
-	Terms                   ProposalTerms
-	Reason                  ProposalError
-	ErrorDetails            string
-	YesVotes                uint64
-	NoVotes                 uint64
-	ProposalTime            time.Time
-	VegaTime                time.Time
-	RequiredMajority        num.Decimal
-	RequiredParticipation   num.Decimal
-	RequiredLPMajority      *num.Decimal
-	RequiredLPParticipation *num.Decimal
-	TxHash                  TxHash
+	ID                       ProposalID
+	Reference                string
+	PartyID                  PartyID
+	State                    ProposalState
+	Rationale                ProposalRationale
+	Terms                    ProposalTerms
+	Reason                   ProposalError
+	ErrorDetails             string
+	YesVotes                 uint64
+	YesTokens                num.Decimal
+	YesEquityLikeShareWeight num.Decimal
+	NoVotes                  uint64
+	NoTokens                 num.Decimal
+	NoEquityLikeShareWeight  num.Decimal
+	ProposalTime             time.Time
+	VegaTime                 time.Time
+	RequiredMajority         num.Decimal
+	RequiredParticipation    num.Decimal
+	RequiredLPMajority       *num.Decimal
+	RequiredLPParticipation  *num.Decimal
+	TxHash                   TxHash
 }
 
 func (p *Proposal) ToProto() *v2.ProposalData {
@@ -118,9 +122,13 @@ func (p *Proposal) ToProto() *v2.ProposalData {
 		RequiredLiquidityProviderParticipation: lpParticipation,
 	}
 	dnP := v2.ProposalData{
-		Proposal: &pp,
-		YesVotes: p.YesVotes,
-		NoVotes:  p.NoVotes,
+		Proposal:                 &pp,
+		YesVotes:                 p.YesVotes,
+		YesTokens:                p.YesTokens.String(),
+		YesEquityLikeShareWeight: p.YesEquityLikeShareWeight.String(),
+		NoVotes:                  p.NoVotes,
+		NoTokens:                 p.NoTokens.String(),
+		NoEquityLikeShareWeight:  p.NoEquityLikeShareWeight.String(),
 	}
 	return &pp
 }

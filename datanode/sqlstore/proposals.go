@@ -43,8 +43,8 @@ func NewProposals(connectionSource *ConnectionSource) *Proposals {
 
 func (ps *Proposals) Add(ctx context.Context, p entities.Proposal) error {
 	defer metrics.StartSQLQuery("Proposals", "Add")()
-	// should we update the vote countes if a proposal is updated?
-	// this probably sets votes to 0 if the state changes, so leave them as is
+	// when adding/updating, we do not set the totals
+	// that's handled by votes, and an update here is likely to mess up the values
 	_, err := ps.Connection.Exec(ctx,
 		`INSERT INTO proposals(
 			id,
@@ -56,8 +56,6 @@ func (ps *Proposals) Add(ctx context.Context, p entities.Proposal) error {
 			reason,
 			error_details,
 			proposal_time,
-			yes_votes,
-			no_votes,
 			vega_time,
 			required_majority,
 			required_participation,
@@ -77,7 +75,7 @@ func (ps *Proposals) Add(ctx context.Context, p entities.Proposal) error {
 			tx_hash = EXCLUDED.tx_hash
 			;
 		 `,
-		p.ID, p.Reference, p.PartyID, p.State, p.Terms, p.Rationale, p.Reason, p.ErrorDetails, p.ProposalTime, p.YesVotes, p.NoVotes, p.VegaTime, p.RequiredMajority, p.RequiredParticipation, p.RequiredLPMajority, p.RequiredLPParticipation, p.TxHash)
+		p.ID, p.Reference, p.PartyID, p.State, p.Terms, p.Rationale, p.Reason, p.ErrorDetails, p.ProposalTime, p.VegaTime, p.RequiredMajority, p.RequiredParticipation, p.RequiredLPMajority, p.RequiredLPParticipation, p.TxHash)
 	return err
 }
 

@@ -1719,7 +1719,7 @@ message GetProposalRequest {
 }
 
 message GetProposalResponse {
-  vega.Proposal data = 1;
+  ProposalData data = 1;
 }
 
 message ListGovernanceDataRequest {
@@ -1784,7 +1784,11 @@ message ProposalsEdge {
 message ProposalData {
   vega.Proposal proposal = 1;
   uint64 yes_votes = 2;
-  uint64 no_votes = 3;
+  string yes_tokens = 3;
+  string yes_equity_like_share_weight = 4;
+  uint64 no_votes = 5;
+  string no_tokens = 6;
+  string no_equity_like_share_weight = 7;
 }
 
 message ProposalsConnection {

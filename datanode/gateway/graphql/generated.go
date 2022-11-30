@@ -1222,9 +1222,13 @@ type ComplexityRoot struct {
 	}
 
 	ProposalData struct {
-		NoVotes  func(childComplexity int) int
-		Proposal func(childComplexity int) int
-		YesVotes func(childComplexity int) int
+		NoEquityLikeShareWeight  func(childComplexity int) int
+		NoTokens                 func(childComplexity int) int
+		NoVotes                  func(childComplexity int) int
+		Proposal                 func(childComplexity int) int
+		YesEquityLikeShareWeight func(childComplexity int) int
+		YesTokens                func(childComplexity int) int
+		YesVotes                 func(childComplexity int) int
 	}
 
 	ProposalEdge struct {
@@ -2043,6 +2047,7 @@ type ProposalResolver interface {
 }
 type ProposalDataResolver interface {
 	YesVotes(ctx context.Context, obj *v2.ProposalData) (int, error)
+
 	NoVotes(ctx context.Context, obj *v2.ProposalData) (int, error)
 }
 type ProposalTermsResolver interface {
@@ -6858,6 +6863,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Proposal.Terms(childComplexity), true
 
+	case "ProposalData.noEquityLikeShareWeight":
+		if e.complexity.ProposalData.NoEquityLikeShareWeight == nil {
+			break
+		}
+
+		return e.complexity.ProposalData.NoEquityLikeShareWeight(childComplexity), true
+
+	case "ProposalData.noTokens":
+		if e.complexity.ProposalData.NoTokens == nil {
+			break
+		}
+
+		return e.complexity.ProposalData.NoTokens(childComplexity), true
+
 	case "ProposalData.noVotes":
 		if e.complexity.ProposalData.NoVotes == nil {
 			break
@@ -6871,6 +6890,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ProposalData.Proposal(childComplexity), true
+
+	case "ProposalData.yesEquityLikeShareWeight":
+		if e.complexity.ProposalData.YesEquityLikeShareWeight == nil {
+			break
+		}
+
+		return e.complexity.ProposalData.YesEquityLikeShareWeight(childComplexity), true
+
+	case "ProposalData.yesTokens":
+		if e.complexity.ProposalData.YesTokens == nil {
+			break
+		}
+
+		return e.complexity.ProposalData.YesTokens(childComplexity), true
 
 	case "ProposalData.yesVotes":
 		if e.complexity.ProposalData.YesVotes == nil {
@@ -42105,6 +42138,94 @@ func (ec *executionContext) fieldContext_ProposalData_yesVotes(ctx context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _ProposalData_yesTokens(ctx context.Context, field graphql.CollectedField, obj *v2.ProposalData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProposalData_yesTokens(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.YesTokens, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProposalData_yesTokens(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProposalData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProposalData_yesEquityLikeShareWeight(ctx context.Context, field graphql.CollectedField, obj *v2.ProposalData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProposalData_yesEquityLikeShareWeight(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.YesEquityLikeShareWeight, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProposalData_yesEquityLikeShareWeight(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProposalData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ProposalData_noVotes(ctx context.Context, field graphql.CollectedField, obj *v2.ProposalData) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ProposalData_noVotes(ctx, field)
 	if err != nil {
@@ -42144,6 +42265,94 @@ func (ec *executionContext) fieldContext_ProposalData_noVotes(ctx context.Contex
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProposalData_noTokens(ctx context.Context, field graphql.CollectedField, obj *v2.ProposalData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProposalData_noTokens(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NoTokens, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProposalData_noTokens(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProposalData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProposalData_noEquityLikeShareWeight(ctx context.Context, field graphql.CollectedField, obj *v2.ProposalData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProposalData_noEquityLikeShareWeight(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NoEquityLikeShareWeight, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProposalData_noEquityLikeShareWeight(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProposalData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -42192,8 +42401,16 @@ func (ec *executionContext) fieldContext_ProposalEdge_node(ctx context.Context, 
 				return ec.fieldContext_ProposalData_proposal(ctx, field)
 			case "yesVotes":
 				return ec.fieldContext_ProposalData_yesVotes(ctx, field)
+			case "yesTokens":
+				return ec.fieldContext_ProposalData_yesTokens(ctx, field)
+			case "yesEquityLikeShareWeight":
+				return ec.fieldContext_ProposalData_yesEquityLikeShareWeight(ctx, field)
 			case "noVotes":
 				return ec.fieldContext_ProposalData_noVotes(ctx, field)
+			case "noTokens":
+				return ec.fieldContext_ProposalData_noTokens(ctx, field)
+			case "noEquityLikeShareWeight":
+				return ec.fieldContext_ProposalData_noEquityLikeShareWeight(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ProposalData", field.Name)
 		},
@@ -46186,8 +46403,16 @@ func (ec *executionContext) fieldContext_Query_proposal(ctx context.Context, fie
 				return ec.fieldContext_ProposalData_proposal(ctx, field)
 			case "yesVotes":
 				return ec.fieldContext_ProposalData_yesVotes(ctx, field)
+			case "yesTokens":
+				return ec.fieldContext_ProposalData_yesTokens(ctx, field)
+			case "yesEquityLikeShareWeight":
+				return ec.fieldContext_ProposalData_yesEquityLikeShareWeight(ctx, field)
 			case "noVotes":
 				return ec.fieldContext_ProposalData_noVotes(ctx, field)
+			case "noTokens":
+				return ec.fieldContext_ProposalData_noTokens(ctx, field)
+			case "noEquityLikeShareWeight":
+				return ec.fieldContext_ProposalData_noEquityLikeShareWeight(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ProposalData", field.Name)
 		},
@@ -70026,6 +70251,20 @@ func (ec *executionContext) _ProposalData(ctx context.Context, sel ast.Selection
 				return innerFunc(ctx)
 
 			})
+		case "yesTokens":
+
+			out.Values[i] = ec._ProposalData_yesTokens(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "yesEquityLikeShareWeight":
+
+			out.Values[i] = ec._ProposalData_yesEquityLikeShareWeight(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "noVotes":
 			field := field
 
@@ -70046,6 +70285,20 @@ func (ec *executionContext) _ProposalData(ctx context.Context, sel ast.Selection
 				return innerFunc(ctx)
 
 			})
+		case "noTokens":
+
+			out.Values[i] = ec._ProposalData_noTokens(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "noEquityLikeShareWeight":
+
+			out.Values[i] = ec._ProposalData_noEquityLikeShareWeight(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

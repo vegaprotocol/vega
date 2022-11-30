@@ -30,13 +30,18 @@ type Votes struct {
 
 var (
 	incClauses = map[entities.VoteValue]string{
-		entities.VoteValueNo:  "no_votes = no_votes + 1",
-		entities.VoteValueYes: "yes_votes = yes_votes + 1",
+		entities.VoteValueNo:  "no_votes = no_votes + 1, no_tokens = no_tokens + $1, no_equity_like_share_weight = no_equity_like_share_weight + $2",
+		entities.VoteValueYes: "yes_votes = yes_votes + 1, yes_tokens = yes_tokens + $1, yes_equity_like_share_weight = yes_equity_like_share_weight + $2",
 	}
 
 	decClauses = map[entities.VoteValue]string{
-		entities.VoteValueNo:  "no_votes = no_votes - 1",
-		entities.VoteValueYes: "yes_votes = yes_votes - 1",
+		entities.VoteValueNo:  "no_votes = no_votes - 1, no_tokens = no_tokens - $3, no_equity_like_share_weight = no_equity_like_share_weight - $4",
+		entities.VoteValueYes: "yes_votes = yes_votes - 1, yes_tokens = yes_tokens - $3, yes_equity_like_share_weight = yes_equity_like_share_weight - $4",
+	}
+
+	updClauses = map[entities.VoteValue]string{
+		entities.VoteValueNo:  "no_tokens = no_tokens - $1 + $2, no_equity_like_share_weight = no_equity_like_share_weight - $3 + $4",
+		entities.VoteValueYes: "yes_tokens = yes_tokens - $1 + $2, yes_equity_like_share_weight = yes_equity_like_share_weight - $3 + $4",
 	}
 )
 
@@ -55,21 +60,32 @@ func (vs *Votes) addTotal(ctx context.Context, v entities.Vote) error {
 	query := `SELECT * FROM votes_current WHERE proposal_id = $1 AND party_id = $2`
 	votes := []entities.Vote{}
 	err := pgxscan.Select(ctx, vs.Connection, &votes, query, v.ProposalID, v.PartyID)
+	bind := make([]interface{}, 0, 5)
+	bind = append(bind, v.TotalGovernanceTokenBalance, v.TotalEquityLikeShareWeight)
 	if err != nil || len(votes) == 0 {
 		// no previous vote, just increment the correct total
-		query = fmt.Sprintf(`UPDATE proposals SET %s WHERE id = $1`, incClauses[v.Value])
+		query = fmt.Sprintf(`UPDATE proposals SET %s WHERE id = $3`, incClauses[v.Value])
 	} else if votes[0].Value == v.Value {
-		// we had a previous vote registered, but it had the same value - totals should be fine
-		return nil
+		// we had a previous vote registered, but it had the same value
+		// we could update the old ELS and token values here
+		query = fmt.Sprintf(`UPDATE proposals SET %s WHERE id = $5`, updClauses[v.Value])
+		bind = []interface{}{
+			votes[0].TotalGovernanceTokenBalance,
+			v.TotalGovernanceTokenBalance,
+			votes[0].TotalEquityLikeShareWeight,
+			v.TotalEquityLikeShareWeight,
+		}
 	} else {
 		// Vote value changed, decrement the previous value total, and increment the other
 		clauses := make([]string, 0, 2)
 		clauses = append(clauses, incClauses[v.Value])
 		clauses = append(clauses, decClauses[votes[0].Value])
-		query = fmt.Sprintf(`UPDATE proposals SET %s WHERE proposal_id = $1`, strings.Join(clauses, ", "))
+		bind = append(bind, votes[0].TotalGovernanceTokenBalance, votes[0].TotalEquityLikeShareWeight)
+		query = fmt.Sprintf(`UPDATE proposals SET %s WHERE id = $5`, strings.Join(clauses, ", "))
 	}
+	bind = append(bind, v.ProposalID)
 	// update the totals:
-	_, err = vs.Connection.Exec(ctx, query, v.ProposalID)
+	_, err = vs.Connection.Exec(ctx, query, bind...)
 	return err
 }
 
@@ -95,7 +111,7 @@ func (vs *Votes) Add(ctx context.Context, v entities.Vote) error {
 		 VALUES ($1,  $2,  $3,  $4,  $5, $6, $7, $8, $9)
 		 ON CONFLICT (proposal_id, party_id, vega_time) DO UPDATE SET
 			value = EXCLUDED.value,
-			total_governance_token_balance =EXCLUDED.total_governance_token_balance,
+			total_governance_token_balance = EXCLUDED.total_governance_token_balance,
 			total_governance_token_weight = EXCLUDED.total_governance_token_weight,
 			total_equity_like_share_weight = EXCLUDED.total_equity_like_share_weight,
 			tx_hash = EXCLUDED.tx_hash;

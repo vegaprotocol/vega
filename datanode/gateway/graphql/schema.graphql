@@ -3347,8 +3347,16 @@ type ProposalData {
   proposal: Proposal!
   "The total number of votes in favour of the proposal"
   yesVotes: Int!
+  "The total number of tokens voting yes"
+  yesTokens: String!
+  "The combined equity like share weight held by parties who voted yes on the proposal"
+  yesEquityLikeShareWeight: String!
   "The total number of votes against the proposal"
   noVotes: Int!
+  "The total number of tokens voting no"
+  noTokens: String!
+  "The combined equity like share weight held by parties who voted no on the proposal"
+  noEquityLikeShareWeight: String!
 }
 
 type Proposal {
