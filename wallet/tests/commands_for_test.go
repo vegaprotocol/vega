@@ -554,7 +554,7 @@ type SignCommandResponse struct {
 
 func SignCommand(t *testing.T, args []string) (*SignCommandResponse, error) {
 	t.Helper()
-	argsWithCmd := []string{"command", "sign"}
+	argsWithCmd := []string{"transaction", "sign"}
 	argsWithCmd = append(argsWithCmd, args...)
 	output, err := ExecuteCmd(t, argsWithCmd)
 	if err != nil {

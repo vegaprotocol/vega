@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
@@ -173,3 +174,27 @@ func unexpectedNodeSelectorCall(t *testing.T) api.NodeSelectorBuilder {
 func dummyServiceShutdownSwitch() *api.ServiceShutdownSwitch {
 	return api.NewServiceShutdownSwitch(func(err error) {})
 }
+
+var (
+	testTransactionJSON          = `{"voteSubmission":{"proposalId":"eb2d3902fdda9c3eb6e369f2235689b871c7322cf3ab284dde3e9dfc13863a17","value":"VALUE_YES"}}`
+	testMalformedTransactionJSON = `{"voteSubmission":{"proposalId":"not real id","value":"VALUE_YES"}}`
+)
+
+func transactionFromJSON(t *testing.T, JSON string) map[string]any {
+	t.Helper()
+	testTransaction := make(map[string]any)
+	assert.NoError(t, json.Unmarshal([]byte(JSON), &testTransaction))
+	return testTransaction
+}
+
+func testTransaction(t *testing.T) map[string]any {
+	t.Helper()
+	return transactionFromJSON(t, testTransactionJSON)
+}
+
+func testMalformedTransaction(t *testing.T) map[string]any {
+	t.Helper()
+	return transactionFromJSON(t, testMalformedTransactionJSON)
+}
+
+var testEncodedTransaction = "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"

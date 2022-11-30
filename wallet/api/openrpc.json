@@ -2769,10 +2769,11 @@
           }
         },
         {
-          "name": "encodedCommand",
+          "name": "transaction",
           "required": true,
           "schema": {
-            "type": "string"
+            "type": "object",
+            "$ref": "#/components/schemas/transaction"
           }
         }
       ],
@@ -2937,6 +2938,100 @@
     },
     {
       "name": "admin.send_transaction",
+      "summary": "Sign & send a transaction to a network",
+      "description": "This method signs a transaction returning a base64-encoded transaction that can be sent using the method `admin.send_transaction`",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "transaction"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "pubKey",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "network",
+          "schema": {
+            "type": "integer"
+          }
+        },
+        {
+          "name": "sendingMode",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/sending_mode"
+          }
+        },
+        {
+          "name": "transaction",
+          "required": true,
+          "schema": {
+            "type": "object",
+            "$ref": "#/components/schemas/transaction"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "object",
+          "required": [
+            "receivedAt",
+            "sentAt",
+            "transactionHash",
+            "transaction"
+          ],
+          "properties": {
+            "receivedAt": {
+              "type": "string",
+              "description": "The date when the API received the request to send the transaction.\n\nThe time is a quoted string in RFC 3339 format, with sub-second precision added if present.",
+              "examples": [
+                "2021-02-18T21:54:42.123Z"
+              ]
+            },
+            "sentAt": {
+              "type": "string",
+              "description": "The date when the transaction has been sent to the network.\n\nThe time is a quoted string in RFC 3339 format, with sub-second precision added if present.",
+              "examples": [
+                "2021-02-18T21:54:42.123Z"
+              ]
+            },
+            "transactionHash": {
+              "type": "string",
+              "description": "The hash of the transaction. It's used to uniquely identify the transaction and can be used in the block explorer to retrieve it."
+            },
+            "transaction": {
+              "$ref": "#/components/schemas/signed_transaction"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "admin.send_raw_transaction",
       "summary": "Send a signed transaction to a network",
       "description": "This method sends a transaction that was signed using admin.sign_transaction into a network",
       "tags": [

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -29,21 +30,21 @@ type AdminLastBlockData struct {
 }
 
 type AdminSignTransactionParams struct {
-	Wallet         string              `json:"wallet"`
-	Passphrase     string              `json:"passphrase"`
-	PublicKey      string              `json:"publicKey"`
-	EncodedCommand string              `json:"encodedCommand"`
-	Network        string              `json:"network"`
-	LastBlockData  *AdminLastBlockData `json:"lastBlockData"`
+	Wallet        string              `json:"wallet"`
+	Passphrase    string              `json:"passphrase"`
+	PublicKey     string              `json:"publicKey"`
+	Transaction   interface{}         `json:"transaction"`
+	Network       string              `json:"network"`
+	LastBlockData *AdminLastBlockData `json:"lastBlockData"`
 }
 
 type ParsedAdminSignTransactionParams struct {
-	Wallet        string
-	Passphrase    string
-	PublicKey     string
-	RawCommand    string
-	Network       string
-	LastBlockData *AdminLastBlockData
+	Wallet         string
+	Passphrase     string
+	PublicKey      string
+	RawTransaction string
+	Network        string
+	LastBlockData  *AdminLastBlockData
 }
 
 type AdminSignTransactionResult struct {
@@ -78,7 +79,7 @@ func (h *AdminSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 	}
 
 	request := &walletpb.SubmitTransactionRequest{}
-	if err := jsonpb.Unmarshal(strings.NewReader(params.RawCommand), request); err != nil {
+	if err := jsonpb.Unmarshal(strings.NewReader(params.RawTransaction), request); err != nil {
 		return nil, invalidParams(ErrTransactionIsMalformed)
 	}
 
@@ -210,13 +211,13 @@ func validateAdminSignTransactionParams(rawParams jsonrpc.Params) (ParsedAdminSi
 		return ParsedAdminSignTransactionParams{}, ErrPublicKeyIsRequired
 	}
 
-	if params.EncodedCommand == "" {
-		return ParsedAdminSignTransactionParams{}, ErrEncodedTransactionIsRequired
+	if params.Transaction == nil || params.Transaction == "" {
+		return ParsedAdminSignTransactionParams{}, ErrTransactionIsRequired
 	}
 
-	tx, err := base64.StdEncoding.DecodeString(params.EncodedCommand)
+	tx, err := json.Marshal(params.Transaction)
 	if err != nil {
-		return ParsedAdminSignTransactionParams{}, ErrEncodedTransactionIsNotValidBase64String
+		return ParsedAdminSignTransactionParams{}, ErrEncodedTransactionIsNotValid
 	}
 
 	if params.Network != "" && params.LastBlockData != nil {
@@ -246,11 +247,11 @@ func validateAdminSignTransactionParams(rawParams jsonrpc.Params) (ParsedAdminSi
 	}
 
 	return ParsedAdminSignTransactionParams{
-		Wallet:        params.Wallet,
-		Passphrase:    params.Passphrase,
-		PublicKey:     params.PublicKey,
-		RawCommand:    string(tx),
-		Network:       params.Network,
-		LastBlockData: params.LastBlockData,
+		Wallet:         params.Wallet,
+		Passphrase:     params.Passphrase,
+		PublicKey:      params.PublicKey,
+		RawTransaction: string(tx),
+		Network:        params.Network,
+		LastBlockData:  params.LastBlockData,
 	}, nil
 }
