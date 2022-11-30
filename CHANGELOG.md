@@ -9,7 +9,7 @@
 - [6746](https://github.com/vegaprotocol/vega/issues/6746) - The `validating_nodes` has been removed from `NodeData` and replaced with details of each node set
 
 ### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6848](https://github.com/vegaprotocol/vega/issues/6848) - Add get and list calls for proposals to deprecate governance data calls.
 
 ### 🛠 Improvements
 - [6898](https://github.com/vegaprotocol/vega/issues/6898) - allow `-snapshot.load-from-block-height=` to apply to `statesync` snapshots

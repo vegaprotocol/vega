@@ -69,16 +69,16 @@ type TradingDataServiceClient interface {
 	//   - listing ledger entries with filtering on the sending AND receiving account
 	//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 	ListLedgerEntries(ctx context.Context, in *ListLedgerEntriesRequest, opts ...grpc.CallOption) (*ListLedgerEntriesResponse, error)
-	//	Balances
+	//  Balances
 	//
 	// `ListBalanceChanges` is for querying the change in account balances over a period of time.
 	//
 	// An account is defined a 4-tuple of (asset_id, type, party_id, market_id).
-	//   - Every account has associated asset and type.
-	//   - Certain account types (for example, the global reward pool) do not have an associated party.
-	//     These are denoted by the special party identifier 'network'
-	//   - Certain account types do not have an associated market (for example general party accounts)
-	//     These are denoted by the special market identifier ” (the empty string)
+	// - Every account has associated asset and type.
+	// - Certain account types (for example, the global reward pool) do not have an associated party.
+	//   These are denoted by the special party identifier 'network'
+	// - Certain account types do not have an associated market (for example general party accounts)
+	//   These are denoted by the special market identifier '' (the empty string)
 	//
 	// `ListBalanceChangesRequest` will return a list of
 	// `(vega_time, asset_id, account_type, party_id, market_id, balance)`
@@ -235,10 +235,14 @@ type TradingDataServiceClient interface {
 	//
 	// Get a single proposal details
 	GetGovernanceData(ctx context.Context, in *GetGovernanceDataRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error)
+	// Get a single proposal
+	GetProposal(ctx context.Context, in *GetProposalRequest, opts ...grpc.CallOption) (*GetProposalResponse, error)
 	// Governance list
 	//
 	// List proposals using a cursor based pagination model
 	ListGovernanceData(ctx context.Context, in *ListGovernanceDataRequest, opts ...grpc.CallOption) (*ListGovernanceDataResponse, error)
+	// List proposals using a cursor based pagination model
+	ListProposals(ctx context.Context, in *ListProposalsRequest, opts ...grpc.CallOption) (*ListProposalsResponse, error)
 	ObserveGovernance(ctx context.Context, in *ObserveGovernanceRequest, opts ...grpc.CallOption) (TradingDataService_ObserveGovernanceClient, error)
 	// Delegation list
 	//
@@ -1114,9 +1118,27 @@ func (c *tradingDataServiceClient) GetGovernanceData(ctx context.Context, in *Ge
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetProposal(ctx context.Context, in *GetProposalRequest, opts ...grpc.CallOption) (*GetProposalResponse, error) {
+	out := new(GetProposalResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetProposal", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ListGovernanceData(ctx context.Context, in *ListGovernanceDataRequest, opts ...grpc.CallOption) (*ListGovernanceDataResponse, error) {
 	out := new(ListGovernanceDataResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListGovernanceData", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListProposals(ctx context.Context, in *ListProposalsRequest, opts ...grpc.CallOption) (*ListProposalsResponse, error) {
+	out := new(ListProposalsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListProposals", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1517,16 +1539,16 @@ type TradingDataServiceServer interface {
 	//   - listing ledger entries with filtering on the sending AND receiving account
 	//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 	ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error)
-	//	Balances
+	//  Balances
 	//
 	// `ListBalanceChanges` is for querying the change in account balances over a period of time.
 	//
 	// An account is defined a 4-tuple of (asset_id, type, party_id, market_id).
-	//   - Every account has associated asset and type.
-	//   - Certain account types (for example, the global reward pool) do not have an associated party.
-	//     These are denoted by the special party identifier 'network'
-	//   - Certain account types do not have an associated market (for example general party accounts)
-	//     These are denoted by the special market identifier ” (the empty string)
+	// - Every account has associated asset and type.
+	// - Certain account types (for example, the global reward pool) do not have an associated party.
+	//   These are denoted by the special party identifier 'network'
+	// - Certain account types do not have an associated market (for example general party accounts)
+	//   These are denoted by the special market identifier '' (the empty string)
 	//
 	// `ListBalanceChangesRequest` will return a list of
 	// `(vega_time, asset_id, account_type, party_id, market_id, balance)`
@@ -1683,10 +1705,14 @@ type TradingDataServiceServer interface {
 	//
 	// Get a single proposal details
 	GetGovernanceData(context.Context, *GetGovernanceDataRequest) (*GetGovernanceDataResponse, error)
+	// Get a single proposal
+	GetProposal(context.Context, *GetProposalRequest) (*GetProposalResponse, error)
 	// Governance list
 	//
 	// List proposals using a cursor based pagination model
 	ListGovernanceData(context.Context, *ListGovernanceDataRequest) (*ListGovernanceDataResponse, error)
+	// List proposals using a cursor based pagination model
+	ListProposals(context.Context, *ListProposalsRequest) (*ListProposalsResponse, error)
 	ObserveGovernance(*ObserveGovernanceRequest, TradingDataService_ObserveGovernanceServer) error
 	// Delegation list
 	//
@@ -1959,8 +1985,14 @@ func (UnimplementedTradingDataServiceServer) ObserveLiquidityProvisions(*Observe
 func (UnimplementedTradingDataServiceServer) GetGovernanceData(context.Context, *GetGovernanceDataRequest) (*GetGovernanceDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetGovernanceData not implemented")
 }
+func (UnimplementedTradingDataServiceServer) GetProposal(context.Context, *GetProposalRequest) (*GetProposalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProposal not implemented")
+}
 func (UnimplementedTradingDataServiceServer) ListGovernanceData(context.Context, *ListGovernanceDataRequest) (*ListGovernanceDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListGovernanceData not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListProposals(context.Context, *ListProposalsRequest) (*ListProposalsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListProposals not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ObserveGovernance(*ObserveGovernanceRequest, TradingDataService_ObserveGovernanceServer) error {
 	return status.Errorf(codes.Unimplemented, "method ObserveGovernance not implemented")
@@ -3067,6 +3099,24 @@ func _TradingDataService_GetGovernanceData_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetProposal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProposalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetProposal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetProposal",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetProposal(ctx, req.(*GetProposalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ListGovernanceData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListGovernanceDataRequest)
 	if err := dec(in); err != nil {
@@ -3081,6 +3131,24 @@ func _TradingDataService_ListGovernanceData_Handler(srv interface{}, ctx context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).ListGovernanceData(ctx, req.(*ListGovernanceDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListProposals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListProposalsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListProposals(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListProposals",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListProposals(ctx, req.(*ListProposalsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3782,8 +3850,16 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_GetGovernanceData_Handler,
 		},
 		{
+			MethodName: "GetProposal",
+			Handler:    _TradingDataService_GetProposal_Handler,
+		},
+		{
 			MethodName: "ListGovernanceData",
 			Handler:    _TradingDataService_ListGovernanceData_Handler,
+		},
+		{
+			MethodName: "ListProposals",
+			Handler:    _TradingDataService_ListProposals_Handler,
 		},
 		{
 			MethodName: "ListDelegations",

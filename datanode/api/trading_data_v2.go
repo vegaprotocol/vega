@@ -1756,6 +1756,31 @@ func (t *tradingDataServiceV2) ObserveLiquidityProvisions(request *v2.ObserveLiq
 	})
 }
 
+func (t *tradingDataServiceV2) GetProposal(ctx context.Context, req *v2.GetProposalRequest) (*v2.GetProposalResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetProposal")
+
+	resp := v2.GetProposalResponse{}
+	var (
+		proposal entities.Proposal
+		err      error
+	)
+	if req.ProposalId != nil {
+		proposal, err = t.governanceService.GetProposalByID(ctx, *req.ProposalId)
+	} else if req.Reference != nil {
+		proposal, err = t.governanceService.GetProposalByReference(ctx, *req.Reference)
+	} else {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("proposal id or reference required"))
+	}
+
+	if err != nil {
+		return nil, t.formatE(err)
+	}
+
+	return &v2.GetProposalResponse{
+		Data: proposal.ToProto(),
+	}, nil
+}
+
 func (t *tradingDataServiceV2) GetGovernanceData(ctx context.Context, req *v2.GetGovernanceDataRequest) (*v2.GetGovernanceDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetGovernanceData")
 
@@ -1781,6 +1806,42 @@ func (t *tradingDataServiceV2) GetGovernanceData(ctx context.Context, req *v2.Ge
 	}
 
 	return &v2.GetGovernanceDataResponse{Data: gd}, nil
+}
+
+func (t *tradingDataServiceV2) ListProposals(ctx context.Context, req *v2.ListProposalsRequest) (*v2.ListProposalsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListProposals")()
+
+	var state *entities.ProposalState
+	if req.ProposalState != nil {
+		state = ptr.From(entities.ProposalState(*req.ProposalState))
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	proposals, pageInfo, err := t.governanceService.GetProposals(
+		ctx,
+		state,
+		req.ProposerPartyId,
+		(*entities.ProposalType)(req.ProposalType),
+		pagination,
+	)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	edges, err := makeEdges[*v2.ProposalsEdge](proposals)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+	proposalsConnection := &v2.ProposalsConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListProposalsResponse{Connection: proposalsConnection}, nil
 }
 
 func (t *tradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.ListGovernanceDataRequest) (*v2.ListGovernanceDataResponse, error) {

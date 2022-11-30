@@ -285,10 +285,16 @@ service TradingDataService {
     // Get a single proposal details
     rpc GetGovernanceData(GetGovernanceDataRequest) returns (GetGovernanceDataResponse);
 
+    // Get a single proposal
+    rpc GetProposal(GetProposalRequest) returns (GetProposalResponse);
+
     // Governance list
     //
     // List proposals using a cursor based pagination model
     rpc ListGovernanceData(ListGovernanceDataRequest) returns (ListGovernanceDataResponse);
+
+    // List proposals using a cursor based pagination model
+    rpc ListProposals(ListProposalsRequest) returns (ListProposalsResponse);
 
     rpc ObserveGovernance(ObserveGovernanceRequest) returns (stream ObserveGovernanceResponse);
 
@@ -1707,6 +1713,15 @@ message GetGovernanceDataResponse {
     vega.GovernanceData data = 1;
 }
 
+message GetProposalRequest {
+    optional string proposal_id = 1;
+    optional string reference = 2;
+}
+
+message GetProposalResponse {
+  vega.Proposal data = 1;
+}
+
 message ListGovernanceDataRequest {
     enum Type {
         TYPE_UNSPECIFIED = 0;
@@ -1730,6 +1745,45 @@ message ListGovernanceDataRequest {
     optional string proposer_party_id = 3;
     optional string proposal_reference = 4;
     optional Pagination pagination = 5;
+}
+
+message ListProposalsRequest {
+    enum Type {
+        TYPE_UNSPECIFIED = 0;
+        // List all proposals
+        TYPE_ALL = 1;
+        // List new market proposals
+        TYPE_NEW_MARKET = 2;
+        // List update market proposals
+        TYPE_UPDATE_MARKET = 3;
+        // List change Vega network parameter proposals
+        TYPE_NETWORK_PARAMETERS = 4;
+        // New asset proposals
+        TYPE_NEW_ASSET = 5;
+        // Proposals for creating a new free form proposal
+        TYPE_NEW_FREE_FORM = 6;
+        // Update asset proposals
+        TYPE_UPDATE_ASSET = 7;
+    }
+    optional vega.Proposal.State proposal_state = 1;
+    optional Type proposal_type = 2;
+    optional string proposer_party_id = 3;
+    optional string proposal_reference = 4;
+    optional Pagination pagination = 5;
+}
+
+message ListProposalsResponse {
+  ProposalsConnection connection = 1;
+}
+
+message ProposalsEdge {
+  vega.Proposal node = 1;
+  string cursor = 2;
+}
+
+message ProposalsConnection {
+  repeated ProposalsEdge edges = 1;
+  PageInfo page_info = 2;
 }
 
 message ListGovernanceDataResponse {

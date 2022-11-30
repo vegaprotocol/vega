@@ -87,6 +87,10 @@ http:
       get: "/api/v2/assets"
     - selector: datanode.api.v2.TradingDataService.ListLiquidityProvisions
       get: "/api/v2/liquidity/provisions"
+    - selector: datanode.api.v2.TradingDataService.ListProposals
+      get: "/api/v2/proposals"
+    - selector: datanode.api.v2.TradingDataService.GetProposal
+      get: "/api/v2/proposal"
     - selector: datanode.api.v2.TradingDataService.ListGovernanceData
       get: "/api/v2/governances"
     - selector: datanode.api.v2.TradingDataService.GetGovernanceData
