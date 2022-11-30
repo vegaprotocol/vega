@@ -66,7 +66,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | buySideMM | 9600000  | 3    | party1 |
       | buySideMM | 9000000  | 9    | party1 |
     Then the following transfers should happen:
-      | from   | to      | from account            | to account          | market id | amount  | asset |
+      | from   | to     | from account            | to account          | market id | amount  | asset |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 2800000 | ETH   |
 
     Then the parties should have the following account balances:
@@ -81,12 +81,12 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
     # NEW ORDERS ADDED WITHOUT ANOTHER TRADE HAPPENING
     Then the parties cancel the following orders:
-      | party     | reference |
+      | party      | reference |
       | buySideMM  | buy4      |
       | sellSideMM | sell2     |
       | sellSideMM | sell3     |
     And the parties place the following orders with ticks:
-      | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | buySideMM  | ETH/DEC19 | buy  | 45     | 7000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 50     | 7500000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | sellSideMM | ETH/DEC19 | sell | 14     | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
@@ -110,9 +110,10 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
     # MTM
     And the following transfers should happen:
-      | from    | to      | from account         | to account              | market id | amount    | asset |
+      | from   | to      | from account         | to account              | market id | amount    | asset |
       | party1 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 273000000 | ETH   |
-      | party1 | party1 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 144600040 | ETH   |
+      | party1 | party1  | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 144600040 | ETH   |
+      | party1 | party1  | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 144600040 | ETH   |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |

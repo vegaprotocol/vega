@@ -725,13 +725,37 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 		}
 	}
 
+	// check auction, if any. If we leave auction, MTM is performed in this call
+	m.checkAuction(ctx, t)
+	timer.EngineTimeCounterAdd()
+
+	m.updateMarketValueProxy()
+	m.updateLiquidityFee(ctx)
+	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
+	return m.closed
+}
+
+func (m *Market) blockEnd(ctx context.Context) {
 	// MTM if enough time has elapsed, we are not in auction, and we have a non-zero mark price.
 	// we MTM in leaveAuction before deploying LP orders like we did before, but we do update nextMTM there
+	var tID string
+	ctx, tID = vegacontext.TraceIDFromContext(ctx)
+	m.idgen = idgeneration.New(tID + crypto.HashStrToHex("blockend"+m.GetID()))
+	defer func() {
+		m.idgen = nil
+	}()
+	hasTraded := m.settlement.HasTraded()
 	mp := m.getLastTradedPrice()
-	if mp != nil && !mp.IsZero() && !m.as.InAuction() && !m.nextMTM.After(t) {
+	if !hasTraded && m.markPrice != nil {
+		// no trades happened, make sure we're just using the current mark price
+		mp = m.markPrice.Clone()
+	}
+	t := m.timeService.GetTimeNow()
+	if mp != nil && !mp.IsZero() && !m.as.InAuction() && (m.nextMTM.IsZero() || !m.nextMTM.After(t)) {
 		m.markPrice = mp.Clone()
 		m.nextMTM = t.Add(m.mtmDelta) // add delta here
-		if m.settlement.HasTraded() {
+		if hasTraded {
+			// only MTM if we have traded
 			mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
 			dummy := &types.Order{
 				ID:            m.idgen.NextID(),
@@ -754,28 +778,10 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 		if len(closedWithoutLP) > 0 {
 			m.releaseExcessMargin(ctx, closedWithoutLP...)
 		}
+		// last traded price should not reflect the closeout trades
+		m.lastTradedPrice = mp.Clone()
 	}
-
-	// check auction, if any. If we leave auction, MTM is performed in this call
-	m.checkAuction(ctx, t)
-	timer.EngineTimeCounterAdd()
-
-	m.updateMarketValueProxy()
-	m.updateLiquidityFee(ctx)
-	if m.settlement.HasTraded() && m.closed && mp != nil {
-		// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
-		// works as expected.
-		m.markPrice = mp.Clone()
-		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
-		dummy := &types.Order{
-			ID:            m.idgen.NextID(),
-			Price:         mp.Clone(),
-			OriginalPrice: mcmp,
-		}
-		m.confirmMTM(ctx, dummy, nil)
-	}
-	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
-	return m.closed
+	m.releaseExcessMargin(ctx, m.position.Positions()...)
 }
 
 func (m *Market) updateMarketValueProxy() {
@@ -855,6 +861,19 @@ func (m *Market) closeCancelledMarket(ctx context.Context) error {
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
+	// perform last MTM settlement if needed
+	if mp := m.getLastTradedPrice(); mp != nil && mp.IsZero() && m.settlement.HasTraded() {
+		// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
+		// works as expected.
+		m.markPrice = mp.Clone()
+		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
+		dummy := &types.Order{
+			ID:            m.idgen.NextID(),
+			Price:         mp,
+			OriginalPrice: mcmp,
+		}
+		m.confirmMTM(ctx, dummy, nil)
+	}
 	positions, err := m.settlement.Settle(t, m.assetDP)
 	if err != nil {
 		m.log.Error("Failed to get settle positions on market closed",
@@ -1732,6 +1751,9 @@ func (m *Market) confirmMTM(
 	margins := m.collateralAndRisk(ctx, settle)
 	if len(margins) > 0 {
 		transfers, closed, bondPenalties, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
+		if err != nil {
+			m.log.Error("margin update had issues", logging.Error(err))
+		}
 		if err == nil && len(transfers) > 0 {
 			evt := events.NewLedgerMovements(ctx, transfers)
 			m.broker.Send(evt)
@@ -1768,7 +1790,7 @@ func (m *Market) confirmMTM(
 	// we can safely ignore the error here
 	_ = m.recheckMargin(ctx, pos)
 	// release any excess if needed
-	m.releaseExcessMargin(ctx, pos...)
+	// m.releaseExcessMargin(ctx, pos...)
 }
 
 // updateLiquidityFee computes the current LiquidityProvision fee and updates
@@ -2040,30 +2062,14 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 
 	// get the updated positions
 	evt := m.position.Positions()
-
-	// settle MTM, the positions have changed
-	settle := m.settlement.SettleMTM(ctx, m.lastTradedPrice.Clone(), evt)
-	// we're not interested in the events here, they're used for margin updates
-	// we know the margin requirements will be met, and come the next block
-	// margins will automatically be checked anyway
-
-	_, responses, err := m.collateral.MarkToMarket(ctx, m.GetID(), settle, asset)
-	if m.log.GetLevel() == logging.DebugLevel {
-		m.log.Debug(
-			"ledger movements after MTM on parties who closed out distressed",
-			logging.Int("response-count", len(responses)),
-			logging.String("raw", fmt.Sprintf("%#v", responses)),
-		)
+	mp := m.markPrice.Clone()
+	mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
+	dummy := &types.Order{
+		ID:            m.idgen.NextID(),
+		Price:         mp,
+		OriginalPrice: mcmp,
 	}
-	// lastly, recalculate margins for the non-distressed parties
-	if err != nil {
-		return orderUpdates, err
-	}
-
-	// send transfer to buffer
-	if len(responses) > 0 {
-		m.broker.Send(events.NewLedgerMovements(ctx, responses))
-	}
+	m.confirmMTM(ctx, dummy, nil)
 
 	// Only check margins if MTM was successful.
 	return orderUpdates, m.recheckMargin(ctx, evt)
