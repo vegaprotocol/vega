@@ -57,7 +57,7 @@ func testDescribingWalletWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newDescribeWalletHandler(tt)
@@ -183,7 +183,7 @@ type describeWalletHandler struct {
 func (h *describeWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminDescribeWalletResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminDescribeWalletResult)
 		if !ok {

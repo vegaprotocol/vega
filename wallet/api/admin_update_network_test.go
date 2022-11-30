@@ -72,7 +72,7 @@ func testUpdatingNetworkWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newUpdateNetworkHandler(tt)
@@ -192,7 +192,7 @@ type updateNetworkHandler struct {
 func (h *updateNetworkHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	assert.Nil(t, rawResult)
 	return err
 }

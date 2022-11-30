@@ -32,7 +32,7 @@ type AdminImportWallet struct {
 }
 
 // Handle creates a wallet and generates its first key.
-func (h *AdminImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateImportWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

@@ -55,7 +55,7 @@ type AdminSendTransaction struct {
 	nodeSelectorBuilder NodeSelectorBuilder
 }
 
-func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminSendTransactionParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

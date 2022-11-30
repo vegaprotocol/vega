@@ -56,7 +56,7 @@ func testAdminCloseConnectionsToWalletWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newCloseConnectionsToWalletHandler(tt)
@@ -242,7 +242,7 @@ type adminCloseConnectionsToWalletHandler struct {
 func (h *adminCloseConnectionsToWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	require.Empty(t, rawResult)
 	return err
 }

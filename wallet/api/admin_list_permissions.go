@@ -24,7 +24,7 @@ type AdminListPermissions struct {
 }
 
 // Handle returns the permissions summary for all set hostnames.
-func (h *AdminListPermissions) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminListPermissions) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateListPermissionsParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
