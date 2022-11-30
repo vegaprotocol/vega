@@ -3357,8 +3357,6 @@ type Proposal {
   rationale: ProposalRationale!
   "Terms of the proposal"
   terms: ProposalTerms!
-  "Votes cast for this proposal"
-  votes: ProposalVotes!
   "Why the proposal was rejected by the core"
   rejectionReason: ProposalRejectionReason
   "Error details of the rejectionReason"

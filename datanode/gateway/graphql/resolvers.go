@@ -920,32 +920,32 @@ func (r *myQueryResolver) OrderByReference(ctx context.Context, reference string
 	return res.Orders.Edges[0].Node, nil
 }
 
-func (r *myQueryResolver) ProposalsConnection(ctx context.Context, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State,
+func (r *myQueryResolver) ProposalsConnection(ctx context.Context, proposalType *v2.ListProposalsRequest_Type, inState *vega.Proposal_State,
 	pagination *v2.Pagination,
-) (*v2.GovernanceDataConnection, error) {
+) (*v2.ProposalsConnection, error) {
 	return handleProposalsRequest(ctx, r.tradingDataClientV2, nil, nil, proposalType, inState, pagination)
 }
 
-func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *string) (*types.GovernanceData, error) {
+func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *string) (*types.Proposal, error) {
+	if id == nil && reference == nil {
+		return nil, ErrMissingIDOrReference
+	}
 	if id != nil {
-		resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, &v2.GetGovernanceDataRequest{
+		resp, err := r.tradingDataClientV2.GetProposal(ctx, &v2.GetProposalRequest{
 			ProposalId: id,
 		})
 		if err != nil {
 			return nil, err
 		}
 		return resp.Data, nil
-	} else if reference != nil {
-		resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, &v2.GetGovernanceDataRequest{
-			Reference: reference,
-		})
-		if err != nil {
-			return nil, err
-		}
-		return resp.Data, nil
 	}
-
-	return nil, ErrMissingIDOrReference
+	resp, err := r.tradingDataClientV2.GetProposal(ctx, &v2.GetProposalRequest{
+		Reference: reference,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
 }
 
 func (r *myQueryResolver) ProtocolUpgradeStatus(ctx context.Context) (*ProtocolUpgradeStatus, error) {

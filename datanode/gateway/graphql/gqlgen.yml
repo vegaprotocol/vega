@@ -222,10 +222,7 @@ models:
       delegations:
         resolver: true
   Proposal:
-    model: code.vegaprotocol.io/vega/protos/vega.GovernanceData
-    fields:
-      votes:
-        resolver: true
+    model: code.vegaprotocol.io/vega/protos/vega.Proposal
   ProposalRationale:
     model: code.vegaprotocol.io/vega/protos/vega.ProposalRationale
   ProposalTerms:
@@ -437,9 +434,9 @@ models:
   TransferConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TransferConnection
   ProposalEdge:
-    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GovernanceDataEdge
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ProposalsEdge
   ProposalsConnection:
-    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GovernanceDataConnection
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ProposalsConnection
   DelegationEdge:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.DelegationEdge
   DelegationsConnection:

@@ -112,23 +112,21 @@ func handleDepositsConnectionRequest(ctx context.Context, client TradingDataServ
 	return resp.Deposits, nil
 }
 
-func handleProposalsRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party, ref *string, inType *v2.ListGovernanceDataRequest_Type,
-	inState *vega.Proposal_State, pagination *v2.Pagination,
-) (*v2.GovernanceDataConnection, error) {
-	var partyID *string
-
+func handleProposalsRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party, ref *string, inType *v2.ListProposalsRequest_Type,
+	inSTate *vega.Proposal_State, pagination *v2.Pagination,
+) (*v2.ProposalsConnection, error) {
+	var pID *string
 	if party != nil {
-		partyID = &party.Id
+		pID = &party.Id
 	}
-
-	req := v2.ListGovernanceDataRequest{
+	req := v2.ListProposalsRequest{
 		ProposerPartyId:   partyID,
 		ProposalReference: ref,
 		ProposalType:      inType,
 		ProposalState:     inState,
 		Pagination:        pagination,
 	}
-	resp, err := client.ListGovernanceData(ctx, &req)
+	resp, err := client.ListProposals(cttx, &req)
 	if err != nil {
 		return nil, err
 	}

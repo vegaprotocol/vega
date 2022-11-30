@@ -10,7 +10,7 @@ func (Trade) IsEvent()                                                    {}
 func (Party) IsEvent()                                                    {}
 func (MarginLevels) IsEvent()                                             {}
 func (MarketData) IsEvent()                                               {}
-func (GovernanceData) IsEvent()                                           {}
+func (Proposal) IsEvent()                                                 {}
 func (RiskFactor) IsEvent()                                               {}
 func (Deposit) IsEvent()                                                  {}
 func (Withdrawal) IsEvent()                                               {}
