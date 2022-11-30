@@ -1113,7 +1113,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 
 		req, err := e.getTransferRequest(transfer, settle, nil, mevt)
 		if err != nil {
-			return nil, nil, nil, err
+			return response, closed, toPenalise, err
 		}
 
 		// calculate the marginShortFall in case of a liquidityProvider
@@ -1123,7 +1123,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 
 		res, err := e.getLedgerEntries(ctx, req)
 		if err != nil {
-			return nil, nil, nil, err
+			return response, closed, toPenalise, err
 		}
 		// we didn't manage to top up to even the minimum required system margin, close out party
 		// we need to be careful with this, only apply this to transfer for low margin

@@ -5,6 +5,7 @@ Feature: check the impact from change of market parameter: market.liquidity.prob
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
+  @Now
   Scenario: 001, market.liquidity.probabilityOfTrading.tau.scaling=10, 0034-PROB-006
 
     Given time is updated to "2020-11-30T00:00:00Z"
@@ -89,8 +90,8 @@ Feature: check the impact from change of market parameter: market.liquidity.prob
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
       | party0 | USD   | ETH/MAR22 | 42294429 | 452705571 |
-      | party1 | USD   | ETH/MAR22 | 53265    | 99946735  |
-      | party2 | USD   | ETH/MAR22 | 225250   | 99774750  |
+      | party1 | USD   | ETH/MAR22 | 49815    | 99950185  |
+      | party2 | USD   | ETH/MAR22 | 222172   | 99777828  |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -102,6 +103,7 @@ Feature: check the impact from change of market parameter: market.liquidity.prob
       | party1 | 52     | 704            | 0            |
       | party2 | -51    | -704           | 0            |
 
+  @Now
   Scenario: 002,market.liquidity.probabilityOfTrading.tau.scaling=2, 0034-PROB-006
 
     Given time is updated to "2020-11-30T00:00:00Z"
@@ -186,8 +188,8 @@ Feature: check the impact from change of market parameter: market.liquidity.prob
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
       | party0 | USD   | ETH/MAR22 | 42448088 | 452551912 |
-      | party1 | USD   | ETH/MAR22 | 53265    | 99946735  |
-      | party2 | USD   | ETH/MAR22 | 225250   | 99774750  |
+      | party1 | USD   | ETH/MAR22 | 49815    | 99950185  |
+      | party2 | USD   | ETH/MAR22 | 222172   | 99777828  |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -199,6 +201,7 @@ Feature: check the impact from change of market parameter: market.liquidity.prob
       | party1 | 52     | 704            | 0            |
       | party2 | -51    | -704           | 0            |
 
+  @Now
   Scenario: 003,market.liquidity.probabilityOfTrading.tau.scaling default, 0034-PROB-006
 
     Given time is updated to "2020-11-30T00:00:00Z"
@@ -282,8 +285,8 @@ Feature: check the impact from change of market parameter: market.liquidity.prob
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
       | party0 | USD   | ETH/MAR22 | 42576136 | 452423864 |
-      | party1 | USD   | ETH/MAR22 | 53265    | 99946735  |
-      | party2 | USD   | ETH/MAR22 | 225250   | 99774750  |
+      | party1 | USD   | ETH/MAR22 | 49815    | 99950185  |
+      | party2 | USD   | ETH/MAR22 | 222172   | 99777828  |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -295,6 +298,7 @@ Feature: check the impact from change of market parameter: market.liquidity.prob
       | party1 | 52     | 704            | 0            |
       | party2 | -51    | -704           | 0            |
 
+  @Now
   Scenario: 004,market.liquidity.probabilityOfTrading.tau.scaling=1, 0034-PROB-006, 0034-PROB-001, 0013-ACCT-007
 
     Given time is updated to "2020-11-30T00:00:00Z"
@@ -382,8 +386,8 @@ Feature: check the impact from change of market parameter: market.liquidity.prob
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
       | party0 | USD   | ETH/MAR22 | 42576136 | 452423864 |
-      | party1 | USD   | ETH/MAR22 | 53265    | 99946735  |
-      | party2 | USD   | ETH/MAR22 | 225250   | 99774750  |
+      | party1 | USD   | ETH/MAR22 | 49815    | 99950185  |
+      | party2 | USD   | ETH/MAR22 | 222172   | 99777828  |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |

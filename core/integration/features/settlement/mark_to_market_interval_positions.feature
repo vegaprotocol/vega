@@ -101,7 +101,6 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     Then the parties should have the following margin levels:
       | party           | market id | maintenance | search  | initial  | release |
       | designatedLoser | ETH/DEC19 | 14654       | 17584   | 21981    | 29308   |
-      #| designatedLoser | ETH/DEC19 | 54384       | 65260   | 81576    | 108768  |
 
     # Add another 4 blocks, and we will have crossed over the threshold, and we will MTM
     When the network moves ahead "4" blocks
@@ -121,7 +120,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
-    And the network moves ahead "5" blocks
+    And the network moves ahead "6" blocks
 
     Then the following trades should be executed:
       | buyer           | price | size | seller           |

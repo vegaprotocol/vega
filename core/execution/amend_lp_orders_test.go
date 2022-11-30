@@ -788,7 +788,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 
 	// the submission should be all OK
 	// order are not deployed while still in auction
-	require.EqualError(t,
+	require.NoError(t,
 		tm.market.AmendLiquidityProvision(
 			ctx, lpSubmissionUpdate, lpparty, vgcrypto.RandomHash()),
 		"margin would be below maintenance: insufficient margin",

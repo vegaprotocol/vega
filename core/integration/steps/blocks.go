@@ -46,7 +46,7 @@ func TheAverageBlockDurationWithVariance(block *helpers.Block, dur, variance str
 	return nil
 }
 
-func TheNetworkMovesAheadNBlocks(block *helpers.Block, time *stubs.TimeStub, n string, epochService EpochService) error {
+func TheNetworkMovesAheadNBlocks(exec Execution, block *helpers.Block, time *stubs.TimeStub, n string, epochService EpochService) error {
 	nr, err := strconv.ParseInt(n, 10, 0)
 	if err != nil {
 		return err
@@ -54,6 +54,7 @@ func TheNetworkMovesAheadNBlocks(block *helpers.Block, time *stubs.TimeStub, n s
 	now := time.GetTimeNow()
 	for i := int64(0); i < nr; i++ {
 		epochService.OnBlockEnd(context.Background())
+		exec.BlockEnd(context.Background())
 		now = now.Add(block.GetDuration())
 		// progress time
 		time.SetTime(now)
@@ -61,7 +62,7 @@ func TheNetworkMovesAheadNBlocks(block *helpers.Block, time *stubs.TimeStub, n s
 	return nil
 }
 
-func TheNetworkMovesAheadDurationWithBlocks(block *helpers.Block, ts *stubs.TimeStub, delta, dur string) error {
+func TheNetworkMovesAheadDurationWithBlocks(exec Execution, block *helpers.Block, ts *stubs.TimeStub, delta, dur string) error {
 	td, err := time.ParseDuration(delta)
 	if err != nil {
 		return err
@@ -73,6 +74,7 @@ func TheNetworkMovesAheadDurationWithBlocks(block *helpers.Block, ts *stubs.Time
 	now := ts.GetTimeNow()
 	target := now.Add(td)
 	for now.Before(target) {
+		exec.BlockEnd(context.Background())
 		now = now.Add(block.GetStep(bd))
 		ts.SetTime(now)
 	}

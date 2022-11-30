@@ -27,6 +27,7 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
+    @Now
   Scenario: Bond slashing on LP (0044-LIME-002, 0035-LIQM-004, 0044-LIME-009 )
 
     Given the following network parameters are set:
@@ -76,8 +77,8 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 426829 | 23171    | 50000 |
-      | party1 | USD   | ETH/MAR22 | 12190  | 99987810 | 0     |
-      | party2 | USD   | ETH/MAR22 | 51879  | 99948121 | 0     |
+      | party1 | USD   | ETH/MAR22 | 11425  | 99988575 | 0     |
+      | party2 | USD   | ETH/MAR22 | 51688  | 99948312 | 0     |
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
@@ -116,7 +117,7 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 426829 | 23251    | 50000 |
-      | party1 | USD   | ETH/MAR22 | 12190  | 99987810 | 0     |
+      | party1 | USD   | ETH/MAR22 | 11425  | 99988575 | 0     |
       | party2 | USD   | ETH/MAR22 | 264754 | 99734996 | 0     |
     #check the margin levels
     Then the parties should have the following margin levels:
@@ -161,7 +162,7 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond |
       | party0 | USD   | ETH/MAR22 | 490852 | 0        | 5151 |
-      | party1 | USD   | ETH/MAR22 | 12190  | 99987810 | 0    |
+      | party1 | USD   | ETH/MAR22 | 11425  | 99988575 | 0    |
       | party2 | USD   | ETH/MAR22 | 264754 | 99734996 | 0    |
       | party3 | USD   | ETH/MAR22 | 28826  | 99971294 | 0    |
 
