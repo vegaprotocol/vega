@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	tmTypes "github.com/tendermint/tendermint/abci/types"
 	"google.golang.org/protobuf/proto"
@@ -57,12 +58,18 @@ func (t *TxResultRow) ToProto() (*pb.Transaction, error) {
 
 	cursor := t.Cursor()
 
+	var error *string
+	if txResult.Result.Code != 0 {
+		error = ptr.From(string(txResult.Result.Data))
+	}
+
 	return &pb.Transaction{
 		Block:     uint64(t.BlockID),
 		Index:     uint32(t.Index),
 		Type:      extractAttribute(&txResult, "command", "type"),
 		Submitter: extractAttribute(&txResult, "tx", "submitter"),
 		Code:      txResult.Result.Code,
+		Error:     error,
 		Hash:      t.TxHash,
 		Cursor:    cursor.String(),
 		Command:   &command,

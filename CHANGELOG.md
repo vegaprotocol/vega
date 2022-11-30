@@ -36,7 +36,7 @@
 - [6949](https://github.com/vegaprotocol/vega/issues/6949) - Mark positions to market at the end of the block.
 - [6819](https://github.com/vegaprotocol/vega/issues/6819) - Support long-living token in wallet client API
 - [6964](https://github.com/vegaprotocol/vega/issues/6964) - Add support for long living tokens with expiry
-
+- [6991](https://github.com/vegaprotocol/vega/issues/6991) - Expose error field in explorer API
 
 ### 🐛 Fixes
 - [6924](https://github.com/vegaprotocol/vega/issues/6924) - Fix deterministic sorting when nodes have equal scores and we have to choose who is in the signer set
