@@ -25,7 +25,7 @@ import (
 
 var (
 	sendTxLong = cli.LongDesc(`
-		Send a transaction to a Vega node via the gRPC API. The command can be sent to
+		Send a signed 'raw' transaction to a Vega node via the gRPC API. The command can be sent to
 		any node of a registered network or to a specific node address.
 
 		The transaction should be base64-encoded.
@@ -33,51 +33,51 @@ var (
 
 	sendTxExample = cli.Examples(`
 		# Send a transaction to a registered network
-		{{.Software}} tx send --network NETWORK BASE64_TRANSACTION
+		{{.Software}} raw_transaction send --network NETWORK BASE64_TRANSACTION
 
 		# Send a transaction to a specific Vega node address
-		{{.Software}} tx send --node-address ADDRESS BASE64_TRANSACTION
+		{{.Software}} raw_transaction send --node-address ADDRESS BASE64_TRANSACTION
 
 		# Send a transaction with a log level set to debug
-		{{.Software}} tx send --network NETWORK --level debug BASE64_TRANSACTION
+		{{.Software}} raw_transaction send --network NETWORK --level debug BASE64_TRANSACTION
 
 		# Send a transaction with a maximum of 10 retries
-		{{.Software}} tx send --network NETWORK --retries 10 BASE64_TRANSACTION
+		{{.Software}} raw_transaction send --network NETWORK --retries 10 BASE64_TRANSACTION
 
 		# Send a transaction without verifying network version compatibility
-		{{.Software}} tx send --network NETWORK --retries 10 BASE64_TRANSACTION --no-version-check
+		{{.Software}} raw_transaction send --network NETWORK --retries 10 BASE64_TRANSACTION --no-version-check
 	`)
 )
 
-type SendTxHandler func(api.AdminSendTransactionParams, *zap.Logger) (api.AdminSendTransactionResult, error)
+type SendRawTransactionHandler func(api.AdminSendRawTransactionParams, *zap.Logger) (api.AdminSendRawTransactionResult, error)
 
-func NewCmdTxSend(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminSendTransactionParams, log *zap.Logger) (api.AdminSendTransactionResult, error) {
+func NewCmdRawTransactionSend(w io.Writer, rf *RootFlags) *cobra.Command {
+	h := func(params api.AdminSendRawTransactionParams, log *zap.Logger) (api.AdminSendRawTransactionResult, error) {
 		vegaPaths := paths.New(rf.Home)
 
 		netStore, err := networkStore.InitialiseStore(vegaPaths)
 		if err != nil {
-			return api.AdminSendTransactionResult{}, fmt.Errorf("couldn't initialise network store: %w", err)
+			return api.AdminSendRawTransactionResult{}, fmt.Errorf("couldn't initialise network store: %w", err)
 		}
 
-		sendTransaction := api.NewAdminSendTransaction(netStore, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+		sendTransaction := api.NewAdminSendRawTransaction(netStore, func(hosts []string, retries uint64) (walletnode.Selector, error) {
 			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries)
 		})
 		rawResult, errorDetails := sendTransaction.Handle(context.Background(), params)
 		if errorDetails != nil {
-			return api.AdminSendTransactionResult{}, errors.New(errorDetails.Data)
+			return api.AdminSendRawTransactionResult{}, errors.New(errorDetails.Data)
 		}
-		return rawResult.(api.AdminSendTransactionResult), nil
+		return rawResult.(api.AdminSendRawTransactionResult), nil
 	}
-	return BuildCmdTxSend(w, h, rf)
+	return BuildCmdRawTransactionSend(w, h, rf)
 }
 
-func BuildCmdTxSend(w io.Writer, handler SendTxHandler, rf *RootFlags) *cobra.Command {
-	f := &SendTxFlags{}
+func BuildCmdRawTransactionSend(w io.Writer, handler SendRawTransactionHandler, rf *RootFlags) *cobra.Command {
+	f := &SendRawTransactionFlags{}
 
 	cmd := &cobra.Command{
 		Use:     "send",
-		Short:   "Send a transaction to a Vega node",
+		Short:   "Send a raw transaction to a Vega node",
 		Long:    sendTxLong,
 		Example: sendTxExample,
 		RunE: func(_ *cobra.Command, args []string) error {
@@ -146,7 +146,7 @@ func BuildCmdTxSend(w io.Writer, handler SendTxHandler, rf *RootFlags) *cobra.Co
 	return cmd
 }
 
-type SendTxFlags struct {
+type SendRawTransactionFlags struct {
 	Network        string
 	NodeAddress    string
 	Retries        uint64
@@ -155,45 +155,45 @@ type SendTxFlags struct {
 	NoVersionCheck bool
 }
 
-func (f *SendTxFlags) Validate() (api.AdminSendTransactionParams, error) {
-	req := api.AdminSendTransactionParams{
+func (f *SendRawTransactionFlags) Validate() (api.AdminSendRawTransactionParams, error) {
+	req := api.AdminSendRawTransactionParams{
 		Retries: f.Retries,
 	}
 
 	if len(f.LogLevel) == 0 {
-		return api.AdminSendTransactionParams{}, flags.MustBeSpecifiedError("level")
+		return api.AdminSendRawTransactionParams{}, flags.MustBeSpecifiedError("level")
 	}
 	if err := vgzap.EnsureIsSupportedLogLevel(f.LogLevel); err != nil {
-		return api.AdminSendTransactionParams{}, err
+		return api.AdminSendRawTransactionParams{}, err
 	}
 
 	if len(f.NodeAddress) == 0 && len(f.Network) == 0 {
-		return api.AdminSendTransactionParams{}, flags.OneOfFlagsMustBeSpecifiedError("network", "node-address")
+		return api.AdminSendRawTransactionParams{}, flags.OneOfFlagsMustBeSpecifiedError("network", "node-address")
 	}
 	if len(f.NodeAddress) != 0 && len(f.Network) != 0 {
-		return api.AdminSendTransactionParams{}, flags.MutuallyExclusiveError("network", "node-address")
+		return api.AdminSendRawTransactionParams{}, flags.MutuallyExclusiveError("network", "node-address")
 	}
 	req.NodeAddress = f.NodeAddress
 	req.Network = f.Network
 	req.SendingMode = "TYPE_ASYNC"
 
 	if len(f.RawTx) == 0 {
-		return api.AdminSendTransactionParams{}, flags.ArgMustBeSpecifiedError("transaction")
+		return api.AdminSendRawTransactionParams{}, flags.ArgMustBeSpecifiedError("transaction")
 	}
 	decodedTx, err := base64.StdEncoding.DecodeString(f.RawTx)
 	if err != nil {
-		return api.AdminSendTransactionParams{}, flags.MustBase64EncodedError("transaction")
+		return api.AdminSendRawTransactionParams{}, flags.MustBase64EncodedError("transaction")
 	}
 	tx := &commandspb.Transaction{}
 	if err := proto.Unmarshal(decodedTx, tx); err != nil {
-		return api.AdminSendTransactionParams{}, fmt.Errorf("couldn't unmarshal transaction: %w", err)
+		return api.AdminSendRawTransactionParams{}, fmt.Errorf("couldn't unmarshal transaction: %w", err)
 	}
 	req.EncodedTransaction = f.RawTx
 
 	return req, nil
 }
 
-func PrintTXSendResponse(w io.Writer, resp api.AdminSendTransactionResult) {
+func PrintTXSendResponse(w io.Writer, resp api.AdminSendRawTransactionResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()

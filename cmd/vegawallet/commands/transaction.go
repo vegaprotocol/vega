@@ -6,14 +6,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewCmdCommand(w io.Writer, rf *RootFlags) *cobra.Command {
+func NewCmdTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "command",
-		Short: "Provides utilities for interacting with commands",
-		Long:  "Provides utilities for interacting with commands",
+		Use:   "transaction",
+		Short: "Provides utilities for interacting with transactions",
+		Long:  "Provides utilities for interacting with transactions",
 	}
 
-	cmd.AddCommand(NewCmdCommandSend(w, rf))
-	cmd.AddCommand(NewCmdCommandSign(w, rf))
+	cmd.AddCommand(NewCmdSendTransaction(w, rf))
+	cmd.AddCommand(NewCmdSignTransaction(w, rf))
 	return cmd
 }

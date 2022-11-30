@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -24,12 +24,12 @@ import (
 )
 
 var (
-	signCommandLong = cli.LongDesc(`
-		Sign a command using the specified wallet and public key and bundle it as a
-		transaction ready to be sent. The resulting transaction is base64-encoded and
-		can be sent using the command "tx send".
+	signTransactionLong = cli.LongDesc(`
+		Sign a transaction using the specified wallet and public key and bundle it as a
+		raw transaction ready to be sent. The resulting transaction is base64-encoded and
+		can be sent using the command "raw_transaction send".
 
-		The command should be a Vega command formatted as a JSON payload, as follows:
+		The transaction should be a Vega transaction formatted as a JSON payload, as follows:
 
 		'{"commandName": {"someProperty": "someValue"} }'
 
@@ -42,23 +42,23 @@ var (
 		environment then proof-of-work details should be supplied via the CLI options.
 	`)
 
-	signCommandExample = cli.Examples(`
-		# Sign a command offline with necessary information to generate a proof-of-work
-		{{.Software}} command sign --wallet WALLET --pubkey PUBKEY --tx-height TX_HEIGHT --chain-id CHAIN_ID --tx-block-hash BLOCK_HASH --pow-difficulty POW_DIFF --pow-difficulty "sha3_24_rounds" COMMAND
+	signTransactionExample = cli.Examples(`
+		# Sign a transaction offline with necessary information to generate a proof-of-work
+		{{.Software}} transaction sign --wallet WALLET --pubkey PUBKEY --tx-height TX_HEIGHT --chain-id CHAIN_ID --tx-block-hash BLOCK_HASH --pow-difficulty POW_DIFF --pow-difficulty "sha3_24_rounds" TRANSACTION
 
-		# Sign a command online generating proof-of-work automatically using the network to obtain the last block data
-		{{.Software}} command sign --wallet WALLET --pubkey PUBKEY --network NETWORK COMMAND
+		# Sign a transaction online generating proof-of-work automatically using the network to obtain the last block data
+		{{.Software}} transaction sign --wallet WALLET --pubkey PUBKEY --network NETWORK TRANSACTION
 
 		# To decode the result, save the result in a file and use the command
 		# "base64"
-		{{.Software}} command sign --wallet WALLET --pubkey PUBKEY --network NETWORK COMMAND > result.txt
+		{{.Software}} transaction sign --wallet WALLET --pubkey PUBKEY --network NETWORK TRANSACTION > result.txt
 		base64 --decode --input result.txt
 	`)
 )
 
-type SignCommandHandler func(api.AdminSignTransactionParams, *zap.Logger) (api.AdminSignTransactionResult, error)
+type SignTransactionHandler func(api.AdminSignTransactionParams, *zap.Logger) (api.AdminSignTransactionResult, error)
 
-func NewCmdCommandSign(w io.Writer, rf *RootFlags) *cobra.Command {
+func NewCmdSignTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
 	handler := func(params api.AdminSignTransactionParams, log *zap.Logger) (api.AdminSignTransactionResult, error) {
 		vegaPaths := paths.New(rf.Home)
 
@@ -83,24 +83,24 @@ func NewCmdCommandSign(w io.Writer, rf *RootFlags) *cobra.Command {
 		return rawResult.(api.AdminSignTransactionResult), nil
 	}
 
-	return BuildCmdCommandSign(w, handler, rf)
+	return BuildCmdSignTransaction(w, handler, rf)
 }
 
-func BuildCmdCommandSign(w io.Writer, handler SignCommandHandler, rf *RootFlags) *cobra.Command {
-	f := &SignCommandFlags{}
+func BuildCmdSignTransaction(w io.Writer, handler SignTransactionHandler, rf *RootFlags) *cobra.Command {
+	f := &SignTransactionFlags{}
 
 	cmd := &cobra.Command{
 		Use:     "sign",
-		Short:   "Sign a command for offline use",
-		Long:    signCommandLong,
-		Example: signCommandExample,
+		Short:   "Sign a transaction for offline use",
+		Long:    signTransactionLong,
+		Example: signTransactionExample,
 		RunE: func(_ *cobra.Command, args []string) error {
 			if aLen := len(args); aLen == 0 {
-				return flags.ArgMustBeSpecifiedError("command")
+				return flags.ArgMustBeSpecifiedError("transaction")
 			} else if aLen > 1 {
-				return flags.TooManyArgsError("command")
+				return flags.TooManyArgsError("transaction")
 			}
-			f.RawCommand = args[0]
+			f.RawTransaction = args[0]
 
 			req, err := f.Validate()
 			if err != nil {
@@ -119,7 +119,7 @@ func BuildCmdCommandSign(w io.Writer, handler SignCommandHandler, rf *RootFlags)
 
 			switch rf.Output {
 			case flags.InteractiveOutput:
-				PrintSignCommandResponse(w, resp, rf)
+				PrintSignTransactionResponse(w, resp, rf)
 			case flags.JSONOutput:
 				return printer.FprintJSON(w, resp)
 			}
@@ -179,11 +179,11 @@ func BuildCmdCommandSign(w io.Writer, handler SignCommandHandler, rf *RootFlags)
 	return cmd
 }
 
-type SignCommandFlags struct {
+type SignTransactionFlags struct {
 	Wallet          string
 	PubKey          string
 	PassphraseFile  string
-	RawCommand      string
+	RawTransaction  string
 	TxBlockHeight   uint64
 	ChainID         string
 	TxBlockHash     string
@@ -192,7 +192,7 @@ type SignCommandFlags struct {
 	Network         string
 }
 
-func (f *SignCommandFlags) Validate() (api.AdminSignTransactionParams, error) {
+func (f *SignTransactionFlags) Validate() (api.AdminSignTransactionParams, error) {
 	params := api.AdminSignTransactionParams{}
 
 	if len(f.Wallet) == 0 {
@@ -203,8 +203,8 @@ func (f *SignCommandFlags) Validate() (api.AdminSignTransactionParams, error) {
 	if len(f.PubKey) == 0 {
 		return api.AdminSignTransactionParams{}, flags.MustBeSpecifiedError("pubkey")
 	}
-	if len(f.RawCommand) == 0 {
-		return api.AdminSignTransactionParams{}, flags.ArgMustBeSpecifiedError("command")
+	if len(f.RawTransaction) == 0 {
+		return api.AdminSignTransactionParams{}, flags.ArgMustBeSpecifiedError("transaction")
 	}
 
 	if f.Network == "" {
@@ -262,13 +262,19 @@ func (f *SignCommandFlags) Validate() (api.AdminSignTransactionParams, error) {
 	params.Network = f.Network
 	params.PublicKey = f.PubKey
 
-	// Encode it in base-64, so we can send it to the API handler.
-	encodedTransaction := base64.StdEncoding.EncodeToString([]byte(f.RawCommand))
-	params.EncodedCommand = encodedTransaction
+	// Encode transaction into nested structure; this is a bit nasty but mirroring what happens
+	// when our json-rpc library parses a request. There's an issue (6983#) to make the use
+	// json.RawMessage instead.
+	transaction := make(map[string]any)
+	if err := json.Unmarshal([]byte(f.RawTransaction), &transaction); err != nil {
+		return api.AdminSignTransactionParams{}, err
+	}
+
+	params.Transaction = transaction
 	return params, nil
 }
 
-func PrintSignCommandResponse(w io.Writer, req api.AdminSignTransactionResult, rf *RootFlags) {
+func PrintSignTransactionResponse(w io.Writer, req api.AdminSignTransactionResult, rf *RootFlags) {
 	p := printer.NewInteractivePrinter(w)
 
 	if rf.Output == flags.InteractiveOutput && version.IsUnreleased() {
@@ -280,10 +286,10 @@ func PrintSignCommandResponse(w io.Writer, req api.AdminSignTransactionResult, r
 
 	str := p.String()
 	defer p.Print(str)
-	str.CheckMark().SuccessText("Command signature successful").NextSection()
+	str.CheckMark().SuccessText("Transaction signature successful").NextSection()
 	str.Text("Transaction (base64-encoded):").NextLine().WarningText(req.EncodedTransaction).NextSection()
 
 	str.BlueArrow().InfoText("Send a transaction").NextLine()
-	str.Text("To send a raw transaction, see the following command:").NextSection()
-	str.Code(fmt.Sprintf("%s tx send --help", os.Args[0])).NextSection()
+	str.Text("To send a raw transaction, see the following transaction:").NextSection()
+	str.Code(fmt.Sprintf("%s raw_transaction send --help", os.Args[0])).NextSection()
 }

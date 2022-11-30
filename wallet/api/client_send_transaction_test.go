@@ -2,7 +2,6 @@ package api_test
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
@@ -38,17 +37,6 @@ func TestSendTransaction(t *testing.T) {
 	t.Run("Failing to get the last block does not send the transaction", testFailingToGetLastBlockDoesNotSendTransaction)
 	t.Run("Failure when sending transaction returns an error", testFailureWhenSendingTransactionReturnsAnError)
 }
-
-var testTransactionJSON = `{"voteSubmission":{"proposalId":"eb2d3902fdda9c3eb6e369f2235689b871c7322cf3ab284dde3e9dfc13863a17","value":"VALUE_YES"}}`
-
-func testTransaction(t *testing.T) map[string]any {
-	t.Helper()
-	testTransaction := make(map[string]any)
-	assert.NoError(t, json.Unmarshal([]byte(testTransactionJSON), &testTransaction))
-	return testTransaction
-}
-
-var testEncodedTransaction = "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
 
 func testSendingTransactionWithInvalidParamsFails(t *testing.T) {
 	tcs := []struct {

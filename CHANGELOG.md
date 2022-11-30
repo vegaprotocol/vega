@@ -21,6 +21,8 @@
 - [6959](https://github.com/vegaprotocol/vega/issues/6959) - Fix listing transactions by block height in block explorer back end
 - [6832](https://github.com/vegaprotocol/vega/issues/6832) - Add signature to transaction information returned by block explorer API
 - [6884](https://github.com/vegaprotocol/vega/issues/6884) - Specify transaction as `JSON` rather than a base64 encoded string in `client_{sign|send}_transaction`
+- [6975](https://github.com/vegaprotocol/vega/issues/6975) - Implement `admin.sign_transaction` in the wallet
+- [6974](https://github.com/vegaprotocol/vega/issues/6974) - Make names in wallet admin `API` consistent
 - [6642](https://github.com/vegaprotocol/vega/issues/6642) - Add methods to manage the wallet service and its connections on wallet API version 2
 - [6853](https://github.com/vegaprotocol/vega/issues/6853) - Max gas and priority improvements
 - [6782](https://github.com/vegaprotocol/vega/issues/6782) - Bump embedded `postgres` version to hopefully fix `CI` instability
