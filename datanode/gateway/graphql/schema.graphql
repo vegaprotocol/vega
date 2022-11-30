@@ -626,7 +626,7 @@ type Query {
     id: ID
     "Optionally, locate proposal by its reference. If ID is set, this parameter is ignored."
     reference: String
-  ): Proposal
+  ): ProposalData
 
   "All governance proposals in the Vega network"
   proposalsConnection(
@@ -3342,6 +3342,15 @@ enum ProposalState {
   STATE_WAITING_FOR_NODE_VOTE
 }
 
+type ProposalData {
+  "The proposal itself"
+  proposal: Proposal!
+  "The total number of votes in favour of the proposal"
+  yesVotes: Int!
+  "The total number of votes against the proposal"
+  noVotes: Int!
+}
+
 type Proposal {
   "Proposal ID that is filled by Vega once proposal reaches the network"
   id: ID
@@ -4223,7 +4232,7 @@ enum TransferDirection {
 "Edge type containing the proposals and cursor information returned by a ProposalsConnection"
 type ProposalEdge {
   "The proposal data"
-  node: Proposal!
+  node: ProposalData!
   "Cursor identifying the proposal"
   cursor: String!
 }

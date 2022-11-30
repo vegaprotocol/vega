@@ -91,6 +91,7 @@ type ResolverRoot interface {
 	PositionUpdate() PositionUpdateResolver
 	PriceLevel() PriceLevelResolver
 	Proposal() ProposalResolver
+	ProposalData() ProposalDataResolver
 	ProposalTerms() ProposalTermsResolver
 	ProtocolUpgradeProposal() ProtocolUpgradeProposalResolver
 	Query() QueryResolver
@@ -1218,7 +1219,12 @@ type ComplexityRoot struct {
 		RequiredParticipation   func(childComplexity int) int
 		State                   func(childComplexity int) int
 		Terms                   func(childComplexity int) int
-		Votes                   func(childComplexity int) int
+	}
+
+	ProposalData struct {
+		NoVotes  func(childComplexity int) int
+		Proposal func(childComplexity int) int
+		YesVotes func(childComplexity int) int
 	}
 
 	ProposalEdge struct {
@@ -2030,11 +2036,14 @@ type ProposalResolver interface {
 
 	Datetime(ctx context.Context, obj *vega.Proposal) (int64, error)
 
-	Votes(ctx context.Context, obj *vega.Proposal) (*ProposalVotes, error)
 	RejectionReason(ctx context.Context, obj *vega.Proposal) (*vega.ProposalError, error)
 
 	RequiredLpMajority(ctx context.Context, obj *vega.Proposal) (*string, error)
 	RequiredLpParticipation(ctx context.Context, obj *vega.Proposal) (*string, error)
+}
+type ProposalDataResolver interface {
+	YesVotes(ctx context.Context, obj *v2.ProposalData) (int, error)
+	NoVotes(ctx context.Context, obj *v2.ProposalData) (int, error)
 }
 type ProposalTermsResolver interface {
 	ClosingDatetime(ctx context.Context, obj *vega.ProposalTerms) (int64, error)
@@ -2083,7 +2092,7 @@ type QueryResolver interface {
 	OrderVersionsConnection(ctx context.Context, orderID *string, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	PartiesConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.PartyConnection, error)
 	Party(ctx context.Context, id string) (*vega.Party, error)
-	Proposal(ctx context.Context, id *string, reference *string) (*vega.Proposal, error)
+	Proposal(ctx context.Context, id *string, reference *string) (*v2.ProposalData, error)
 	ProposalsConnection(ctx context.Context, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) (*v2.ProposalsConnection, error)
 	ProtocolUpgradeStatus(ctx context.Context) (*ProtocolUpgradeStatus, error)
 	ProtocolUpgradeProposals(ctx context.Context, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) (*v2.ProtocolUpgradeProposalConnection, error)
@@ -6849,12 +6858,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Proposal.Terms(childComplexity), true
 
-	case "Proposal.votes":
-		if e.complexity.Proposal.Votes == nil {
+	case "ProposalData.noVotes":
+		if e.complexity.ProposalData.NoVotes == nil {
 			break
 		}
 
-		return e.complexity.Proposal.Votes(childComplexity), true
+		return e.complexity.ProposalData.NoVotes(childComplexity), true
+
+	case "ProposalData.proposal":
+		if e.complexity.ProposalData.Proposal == nil {
+			break
+		}
+
+		return e.complexity.ProposalData.Proposal(childComplexity), true
+
+	case "ProposalData.yesVotes":
+		if e.complexity.ProposalData.YesVotes == nil {
+			break
+		}
+
+		return e.complexity.ProposalData.YesVotes(childComplexity), true
 
 	case "ProposalEdge.cursor":
 		if e.complexity.ProposalEdge.Cursor == nil {
@@ -26953,8 +26976,6 @@ func (ec *executionContext) fieldContext_Market_proposal(ctx context.Context, fi
 				return ec.fieldContext_Proposal_rationale(ctx, field)
 			case "terms":
 				return ec.fieldContext_Proposal_terms(ctx, field)
-			case "votes":
-				return ec.fieldContext_Proposal_votes(ctx, field)
 			case "rejectionReason":
 				return ec.fieldContext_Proposal_rejectionReason(ctx, field)
 			case "errorDetails":
@@ -41716,56 +41737,6 @@ func (ec *executionContext) fieldContext_Proposal_terms(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Proposal_votes(ctx context.Context, field graphql.CollectedField, obj *vega.Proposal) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Proposal_votes(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Proposal().Votes(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ProposalVotes)
-	fc.Result = res
-	return ec.marshalNProposalVotes2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalVotes(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Proposal_votes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Proposal",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "yes":
-				return ec.fieldContext_ProposalVotes_yes(ctx, field)
-			case "no":
-				return ec.fieldContext_ProposalVotes_no(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ProposalVotes", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Proposal_rejectionReason(ctx context.Context, field graphql.CollectedField, obj *vega.Proposal) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Proposal_rejectionReason(ctx, field)
 	if err != nil {
@@ -42018,6 +41989,166 @@ func (ec *executionContext) fieldContext_Proposal_requiredLpParticipation(ctx co
 	return fc, nil
 }
 
+func (ec *executionContext) _ProposalData_proposal(ctx context.Context, field graphql.CollectedField, obj *v2.ProposalData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProposalData_proposal(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Proposal, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Proposal)
+	fc.Result = res
+	return ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProposalData_proposal(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProposalData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Proposal_id(ctx, field)
+			case "reference":
+				return ec.fieldContext_Proposal_reference(ctx, field)
+			case "party":
+				return ec.fieldContext_Proposal_party(ctx, field)
+			case "state":
+				return ec.fieldContext_Proposal_state(ctx, field)
+			case "datetime":
+				return ec.fieldContext_Proposal_datetime(ctx, field)
+			case "rationale":
+				return ec.fieldContext_Proposal_rationale(ctx, field)
+			case "terms":
+				return ec.fieldContext_Proposal_terms(ctx, field)
+			case "rejectionReason":
+				return ec.fieldContext_Proposal_rejectionReason(ctx, field)
+			case "errorDetails":
+				return ec.fieldContext_Proposal_errorDetails(ctx, field)
+			case "requiredMajority":
+				return ec.fieldContext_Proposal_requiredMajority(ctx, field)
+			case "requiredParticipation":
+				return ec.fieldContext_Proposal_requiredParticipation(ctx, field)
+			case "requiredLpMajority":
+				return ec.fieldContext_Proposal_requiredLpMajority(ctx, field)
+			case "requiredLpParticipation":
+				return ec.fieldContext_Proposal_requiredLpParticipation(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Proposal", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProposalData_yesVotes(ctx context.Context, field graphql.CollectedField, obj *v2.ProposalData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProposalData_yesVotes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ProposalData().YesVotes(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProposalData_yesVotes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProposalData",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProposalData_noVotes(ctx context.Context, field graphql.CollectedField, obj *v2.ProposalData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProposalData_noVotes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ProposalData().NoVotes(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProposalData_noVotes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProposalData",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ProposalEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.ProposalsEdge) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ProposalEdge_node(ctx, field)
 	if err != nil {
@@ -42044,9 +42175,9 @@ func (ec *executionContext) _ProposalEdge_node(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*vega.Proposal)
+	res := resTmp.(*v2.ProposalData)
 	fc.Result = res
-	return ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal(ctx, field.Selections, res)
+	return ec.marshalNProposalData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐProposalData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ProposalEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -42057,36 +42188,14 @@ func (ec *executionContext) fieldContext_ProposalEdge_node(ctx context.Context, 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Proposal_id(ctx, field)
-			case "reference":
-				return ec.fieldContext_Proposal_reference(ctx, field)
-			case "party":
-				return ec.fieldContext_Proposal_party(ctx, field)
-			case "state":
-				return ec.fieldContext_Proposal_state(ctx, field)
-			case "datetime":
-				return ec.fieldContext_Proposal_datetime(ctx, field)
-			case "rationale":
-				return ec.fieldContext_Proposal_rationale(ctx, field)
-			case "terms":
-				return ec.fieldContext_Proposal_terms(ctx, field)
-			case "votes":
-				return ec.fieldContext_Proposal_votes(ctx, field)
-			case "rejectionReason":
-				return ec.fieldContext_Proposal_rejectionReason(ctx, field)
-			case "errorDetails":
-				return ec.fieldContext_Proposal_errorDetails(ctx, field)
-			case "requiredMajority":
-				return ec.fieldContext_Proposal_requiredMajority(ctx, field)
-			case "requiredParticipation":
-				return ec.fieldContext_Proposal_requiredParticipation(ctx, field)
-			case "requiredLpMajority":
-				return ec.fieldContext_Proposal_requiredLpMajority(ctx, field)
-			case "requiredLpParticipation":
-				return ec.fieldContext_Proposal_requiredLpParticipation(ctx, field)
+			case "proposal":
+				return ec.fieldContext_ProposalData_proposal(ctx, field)
+			case "yesVotes":
+				return ec.fieldContext_ProposalData_yesVotes(ctx, field)
+			case "noVotes":
+				return ec.fieldContext_ProposalData_noVotes(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Proposal", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type ProposalData", field.Name)
 		},
 	}
 	return fc, nil
@@ -46060,9 +46169,9 @@ func (ec *executionContext) _Query_proposal(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*vega.Proposal)
+	res := resTmp.(*v2.ProposalData)
 	fc.Result = res
-	return ec.marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal(ctx, field.Selections, res)
+	return ec.marshalOProposalData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐProposalData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_proposal(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -46073,36 +46182,14 @@ func (ec *executionContext) fieldContext_Query_proposal(ctx context.Context, fie
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Proposal_id(ctx, field)
-			case "reference":
-				return ec.fieldContext_Proposal_reference(ctx, field)
-			case "party":
-				return ec.fieldContext_Proposal_party(ctx, field)
-			case "state":
-				return ec.fieldContext_Proposal_state(ctx, field)
-			case "datetime":
-				return ec.fieldContext_Proposal_datetime(ctx, field)
-			case "rationale":
-				return ec.fieldContext_Proposal_rationale(ctx, field)
-			case "terms":
-				return ec.fieldContext_Proposal_terms(ctx, field)
-			case "votes":
-				return ec.fieldContext_Proposal_votes(ctx, field)
-			case "rejectionReason":
-				return ec.fieldContext_Proposal_rejectionReason(ctx, field)
-			case "errorDetails":
-				return ec.fieldContext_Proposal_errorDetails(ctx, field)
-			case "requiredMajority":
-				return ec.fieldContext_Proposal_requiredMajority(ctx, field)
-			case "requiredParticipation":
-				return ec.fieldContext_Proposal_requiredParticipation(ctx, field)
-			case "requiredLpMajority":
-				return ec.fieldContext_Proposal_requiredLpMajority(ctx, field)
-			case "requiredLpParticipation":
-				return ec.fieldContext_Proposal_requiredLpParticipation(ctx, field)
+			case "proposal":
+				return ec.fieldContext_ProposalData_proposal(ctx, field)
+			case "yesVotes":
+				return ec.fieldContext_ProposalData_yesVotes(ctx, field)
+			case "noVotes":
+				return ec.fieldContext_ProposalData_noVotes(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Proposal", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type ProposalData", field.Name)
 		},
 	}
 	defer func() {
@@ -52043,8 +52130,6 @@ func (ec *executionContext) fieldContext_Subscription_proposals(ctx context.Cont
 				return ec.fieldContext_Proposal_rationale(ctx, field)
 			case "terms":
 				return ec.fieldContext_Proposal_terms(ctx, field)
-			case "votes":
-				return ec.fieldContext_Proposal_votes(ctx, field)
 			case "rejectionReason":
 				return ec.fieldContext_Proposal_rejectionReason(ctx, field)
 			case "errorDetails":
@@ -69824,26 +69909,6 @@ func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "votes":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Proposal_votes(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "rejectionReason":
 			field := field
 
@@ -69906,6 +69971,74 @@ func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet,
 					}
 				}()
 				res = ec._Proposal_requiredLpParticipation(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var proposalDataImplementors = []string{"ProposalData"}
+
+func (ec *executionContext) _ProposalData(ctx context.Context, sel ast.SelectionSet, obj *v2.ProposalData) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, proposalDataImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProposalData")
+		case "proposal":
+
+			out.Values[i] = ec._ProposalData_proposal(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "yesVotes":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ProposalData_yesVotes(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "noVotes":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ProposalData_noVotes(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -77363,6 +77496,16 @@ func (ec *executionContext) marshalNProposalChange2codeᚗvegaprotocolᚗioᚋve
 	return ec._ProposalChange(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNProposalData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐProposalData(ctx context.Context, sel ast.SelectionSet, v *v2.ProposalData) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ProposalData(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNProposalRationale2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposalRationale(ctx context.Context, sel ast.SelectionSet, v *vega.ProposalRationale) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -77430,20 +77573,6 @@ func (ec *executionContext) marshalNProposalVoteSide2ᚖcodeᚗvegaprotocolᚗio
 		return graphql.Null
 	}
 	return ec._ProposalVoteSide(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNProposalVotes2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalVotes(ctx context.Context, sel ast.SelectionSet, v ProposalVotes) graphql.Marshaler {
-	return ec._ProposalVotes(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNProposalVotes2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalVotes(ctx context.Context, sel ast.SelectionSet, v *ProposalVotes) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._ProposalVotes(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNProtocolUpgradeProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐProtocolUpgradeEvent(ctx context.Context, sel ast.SelectionSet, v *v1.ProtocolUpgradeEvent) graphql.Marshaler {
@@ -80605,6 +80734,13 @@ func (ec *executionContext) marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋvega�
 		return graphql.Null
 	}
 	return ec._Proposal(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOProposalData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐProposalData(ctx context.Context, sel ast.SelectionSet, v *v2.ProposalData) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ProposalData(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOProposalEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐProposalsEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.ProposalsEdge) graphql.Marshaler {
