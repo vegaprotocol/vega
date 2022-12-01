@@ -27,7 +27,7 @@ type AdminDescribeWallet struct {
 }
 
 // Handle retrieve a wallet from its name and passphrase.
-func (h *AdminDescribeWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminDescribeWallet) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateDescribeWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

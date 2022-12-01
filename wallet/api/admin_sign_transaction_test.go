@@ -205,7 +205,7 @@ func testAdminSigningTransactionWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newAdminSignTransactionHandler(tt, unexpectedNodeSelectorCall(tt))
@@ -222,7 +222,7 @@ func testAdminSigningTransactionWithInvalidParamsFails(t *testing.T) {
 
 func testAdminSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	network := newNetwork(t)
 	passphrase := vgrand.RandomStr(5)
 	w, kp := walletWithKey(t)
@@ -266,7 +266,7 @@ func testAdminSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 
 func testAdminSignTransactionGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	network := newNetwork(t)
 	walletName := vgrand.RandomStr(5)
 	passphrase := vgrand.RandomStr(5)
@@ -306,7 +306,7 @@ func testAdminSignTransactionGettingInternalErrorDuringWalletVerificationFails(t
 
 func testAdminSigningTransactionWithWalletThatDoesntExistFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	params := api.AdminSignTransactionParams{
 		Wallet:      vgrand.RandomStr(5),
 		Passphrase:  vgrand.RandomStr(5),
@@ -331,7 +331,7 @@ func testAdminSigningTransactionWithWalletThatDoesntExistFails(t *testing.T) {
 
 func testAdminSignTransactionGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	network := newNetwork(t)
 	walletName := vgrand.RandomStr(5)
 	passphrase := vgrand.RandomStr(5)
@@ -372,7 +372,7 @@ func testAdminSignTransactionGettingInternalErrorDuringWalletRetrievalFails(t *t
 
 func testAdminSigningTransactionWithMalformedTransactionFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	network := vgrand.RandomStr(5)
 	passphrase := vgrand.RandomStr(5)
 	w, kp := walletWithKey(t)
@@ -400,7 +400,7 @@ func testAdminSigningTransactionWithMalformedTransactionFails(t *testing.T) {
 
 func testAdminSigningTransactionWithInvalidTransactionFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	network := newNetwork(t)
 	passphrase := vgrand.RandomStr(5)
 	w, kp := walletWithKey(t)
@@ -436,7 +436,7 @@ type AdminSignTransactionHandler struct {
 func (h *AdminSignTransactionHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminSignTransactionResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminSignTransactionResult)
 		if !ok {

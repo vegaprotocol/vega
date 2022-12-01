@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/api"
@@ -50,7 +51,7 @@ func NewCmdGenerateAPIToken(w io.Writer, rf *RootFlags) *cobra.Command {
 		}
 
 		generateAPIToken := api.NewAdminGenerateAPIToken(walletStore, tokStore)
-		rawResult, errorDetails := generateAPIToken.Handle(context.Background(), params)
+		rawResult, errorDetails := generateAPIToken.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
 		if errorDetails != nil {
 			return api.AdminGenerateAPITokenResult{}, errors.New(errorDetails.Data)
 		}

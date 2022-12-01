@@ -92,7 +92,7 @@ func testAdminSendingRawTransactionWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newAdminSendRawTransactionHandler(tt, unexpectedNodeSelectorCall(tt))
@@ -109,7 +109,7 @@ func testAdminSendingRawTransactionWithInvalidParamsFails(t *testing.T) {
 
 func testAdminSendingRawTransactionWithValidParamsSucceeds(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	sendingMode := "TYPE_SYNC"
 	network := newNetwork(t)
 	txHash := vgrand.RandomStr(64)
@@ -145,7 +145,7 @@ func testAdminSendingRawTransactionWithValidParamsSucceeds(t *testing.T) {
 
 func testAdminSendingRawTransactionWithNetworkThatDoesntExistFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 
 	// setup
 	handler := newAdminSendRawTransactionHandler(t, unexpectedNodeSelectorCall(t))
@@ -167,7 +167,7 @@ func testAdminSendingRawTransactionWithNetworkThatDoesntExistFails(t *testing.T)
 
 func testAdminSendingRawTransactionWithNetworkThatFailsExistenceCheckFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 
 	// setup
 	handler := newAdminSendRawTransactionHandler(t, unexpectedNodeSelectorCall(t))
@@ -189,7 +189,7 @@ func testAdminSendingRawTransactionWithNetworkThatFailsExistenceCheckFails(t *te
 
 func testAdminSendingRawTransactionWithFailureToGetNetworkFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	network := "fairground"
 
 	// setup
@@ -213,7 +213,7 @@ func testAdminSendingRawTransactionWithFailureToGetNetworkFails(t *testing.T) {
 
 func testAdminSendingRawTransactionGettingInternalErrorDuringNodeSelectorBuildingFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	network := newNetwork(t)
 
 	// setup
@@ -239,7 +239,7 @@ func testAdminSendingRawTransactionGettingInternalErrorDuringNodeSelectorBuildin
 
 func testAdminSendingRawTransactionWithoutHealthyNodeFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	network := newNetwork(t)
 
 	// setup
@@ -268,7 +268,7 @@ func testAdminSendingRawTransactionWithoutHealthyNodeFails(t *testing.T) {
 
 func testAdminSendingRawTransactionWithFailedSendingFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	sendingMode := "TYPE_SYNC"
 	network := newNetwork(t)
 
@@ -307,7 +307,7 @@ type adminSendRawTransactionHandler struct {
 func (h *adminSendRawTransactionHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminSendRawTransactionResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminSendRawTransactionResult)
 		if !ok {

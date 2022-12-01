@@ -57,7 +57,7 @@ func testListingPermissionsWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newListPermissionsHandler(tt)
@@ -191,7 +191,7 @@ type listPermissionsHandler struct {
 func (h *listPermissionsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminListPermissionsResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminListPermissionsResult)
 		if !ok {

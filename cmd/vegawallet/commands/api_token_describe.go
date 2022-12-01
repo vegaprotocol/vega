@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/api"
 	tokenStore "code.vegaprotocol.io/vega/wallet/api/session/store/v1"
@@ -41,7 +42,7 @@ func NewCmdDescribeAPIToken(w io.Writer, rf *RootFlags) *cobra.Command {
 		}
 
 		describeAPIToken := api.NewAdminDescribeAPIToken(store)
-		rawResult, errorDetails := describeAPIToken.Handle(context.Background(), params)
+		rawResult, errorDetails := describeAPIToken.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
 		if errorDetails != nil {
 			return api.AdminDescribeAPITokenResult{}, errors.New(errorDetails.Data)
 		}

@@ -140,13 +140,14 @@ func testSendingTransactionWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
+			metadata := requestMetadataForTest()
 
 			// setup
 			handler := newSendTransactionHandler(tt)
 
 			// when
-			result, errorDetails := handler.handle(t, ctx, tc.params)
+			result, errorDetails := handler.handle(t, ctx, tc.params, metadata)
 
 			// then
 			require.Empty(tt, result)
@@ -157,9 +158,9 @@ func testSendingTransactionWithInvalidParamsFails(t *testing.T) {
 
 func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: nil,
@@ -172,11 +173,11 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	// setup
 	handler := newSendTransactionHandler(t)
 	handler.time.EXPECT().Now().Times(1).Return(time.Now())
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
 		BlockHeight:           100,
@@ -185,8 +186,8 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 		ChainID:               "chain-id",
 	}, nil)
 	handler.node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return(txHash, nil)
-	handler.interactor.EXPECT().NotifySuccessfulTransaction(ctx, traceID, txHash, gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
-	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
+	handler.interactor.EXPECT().NotifySuccessfulTransaction(ctx, metadata.TraceID, txHash, gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	handler.interactor.EXPECT().Log(ctx, metadata.TraceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
@@ -194,7 +195,7 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 		PublicKey:   pubKey,
 		SendingMode: "TYPE_SYNC",
 		Transaction: testTransaction(t),
-	})
+	}, metadata)
 
 	// then
 	assert.Nil(t, errorDetails)
@@ -205,9 +206,9 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 
 func testSendingTransactionWithInvalidTokenFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
-	hostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{})
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{})
 	_, _ = wallet1.GenerateKeyPair(nil)
 	pubKey := wallet1.ListPublicKeys()[0].Key()
 
@@ -221,7 +222,7 @@ func testSendingTransactionWithInvalidTokenFails(t *testing.T) {
 		PublicKey:   pubKey,
 		SendingMode: "TYPE_SYNC",
 		Transaction: testTransaction(t),
-	})
+	}, metadata)
 
 	// then
 	assertInvalidParams(t, errorDetails, session.ErrNoWalletConnected)
@@ -230,7 +231,8 @@ func testSendingTransactionWithInvalidTokenFails(t *testing.T) {
 
 func testSendingTransactionWithLongLivingTokenSucceeds(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
 	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
 	wallet1, kp := walletWithKey(t)
 	token := vgrand.RandomStr(10)
@@ -253,8 +255,8 @@ func testSendingTransactionWithLongLivingTokenSucceeds(t *testing.T) {
 		ChainID:               "chain-id",
 	}, nil)
 	handler.node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return(txHash, nil)
-	handler.interactor.EXPECT().NotifySuccessfulTransaction(ctx, traceID, txHash, gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
-	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
+	handler.interactor.EXPECT().NotifySuccessfulTransaction(ctx, metadata.TraceID, txHash, gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	handler.interactor.EXPECT().Log(ctx, metadata.TraceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
@@ -262,7 +264,7 @@ func testSendingTransactionWithLongLivingTokenSucceeds(t *testing.T) {
 		PublicKey:          kp.PublicKey(),
 		SendingMode:        "TYPE_SYNC",
 		EncodedTransaction: encodedTransaction,
-	})
+	}, metadata)
 
 	// then
 	assert.Nil(t, errorDetails)
@@ -273,7 +275,8 @@ func testSendingTransactionWithLongLivingTokenSucceeds(t *testing.T) {
 
 func testSendingTransactionWithLongLivingExpiredTokenFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
 	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
 	wallet1, kp := walletWithKey(t)
 	token := vgrand.RandomStr(10)
@@ -296,14 +299,15 @@ func testSendingTransactionWithLongLivingExpiredTokenFails(t *testing.T) {
 		PublicKey:          kp.PublicKey(),
 		SendingMode:        "TYPE_SYNC",
 		EncodedTransaction: encodedTransaction,
-	})
+	}, metadata)
 
 	assert.EqualError(t, errorDetails, "the token has expired (Invalid params -32602)")
 }
 
 func testSendingTransactionWithLongLivingExpiringTokenSucceed(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
 	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
 	wallet1, kp := walletWithKey(t)
 	token := vgrand.RandomStr(10)
@@ -329,8 +333,8 @@ func testSendingTransactionWithLongLivingExpiringTokenSucceed(t *testing.T) {
 		ChainID:               "chain-id",
 	}, nil)
 	handler.node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return(txHash, nil)
-	handler.interactor.EXPECT().NotifySuccessfulTransaction(ctx, traceID, txHash, gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
-	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
+	handler.interactor.EXPECT().NotifySuccessfulTransaction(ctx, metadata.TraceID, txHash, gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	handler.interactor.EXPECT().Log(ctx, metadata.TraceID, gomock.Any(), gomock.Any()).AnyTimes()
 	handler.time.EXPECT().Now().Times(1).Return(nextT)
 
 	// when
@@ -339,7 +343,7 @@ func testSendingTransactionWithLongLivingExpiringTokenSucceed(t *testing.T) {
 		PublicKey:          kp.PublicKey(),
 		SendingMode:        "TYPE_SYNC",
 		EncodedTransaction: encodedTransaction,
-	})
+	}, metadata)
 
 	// then
 	assert.Nil(t, errorDetails)
@@ -350,9 +354,9 @@ func testSendingTransactionWithLongLivingExpiringTokenSucceed(t *testing.T) {
 
 func testSendingTransactionWithoutNeededPermissionsDoesNotSendTransaction(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
-	hostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{})
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{})
 	_, _ = wallet1.GenerateKeyPair(nil)
 	pubKey := wallet1.ListPublicKeys()[0].Key()
 
@@ -360,7 +364,7 @@ func testSendingTransactionWithoutNeededPermissionsDoesNotSendTransaction(t *tes
 	handler := newSendTransactionHandler(t)
 	handler.time.EXPECT().Now().Times(1).Return(time.Now())
 
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
@@ -368,7 +372,7 @@ func testSendingTransactionWithoutNeededPermissionsDoesNotSendTransaction(t *tes
 		PublicKey:   pubKey,
 		SendingMode: "TYPE_SYNC",
 		Transaction: testTransaction(t),
-	})
+	}, metadata)
 
 	// then
 	assertRequestNotPermittedError(t, errorDetails, api.ErrPublicKeyIsNotAllowedToBeUsed)
@@ -377,9 +381,9 @@ func testSendingTransactionWithoutNeededPermissionsDoesNotSendTransaction(t *tes
 
 func testRefusingSendingOfTransactionDoesNotSendTransaction(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: nil,
@@ -391,9 +395,9 @@ func testRefusingSendingOfTransactionDoesNotSendTransaction(t *testing.T) {
 	// setup
 	handler := newSendTransactionHandler(t)
 	handler.time.EXPECT().Now().Times(1).Return(time.Now())
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(false, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(false, nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 
@@ -403,7 +407,7 @@ func testRefusingSendingOfTransactionDoesNotSendTransaction(t *testing.T) {
 		PublicKey:   pubKey,
 		SendingMode: "TYPE_SYNC",
 		Transaction: testTransaction(t),
-	})
+	}, metadata)
 
 	// then
 	assertUserRejectionError(t, errorDetails)
@@ -412,9 +416,9 @@ func testRefusingSendingOfTransactionDoesNotSendTransaction(t *testing.T) {
 
 func testCancellingTheReviewDoesNotSendTransaction(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: nil,
@@ -426,11 +430,11 @@ func testCancellingTheReviewDoesNotSendTransaction(t *testing.T) {
 	// setup
 	handler := newSendTransactionHandler(t)
 	handler.time.EXPECT().Now().Times(1).Return(time.Now())
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(false, api.ErrUserCloseTheConnection)
+	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(false, api.ErrUserCloseTheConnection)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
@@ -438,7 +442,7 @@ func testCancellingTheReviewDoesNotSendTransaction(t *testing.T) {
 		PublicKey:   pubKey,
 		SendingMode: "TYPE_SYNC",
 		Transaction: testTransaction(t),
-	})
+	}, metadata)
 
 	// then
 	assertConnectionClosedError(t, errorDetails)
@@ -447,9 +451,9 @@ func testCancellingTheReviewDoesNotSendTransaction(t *testing.T) {
 
 func testInterruptingTheRequestDoesNotSendTransaction(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: nil,
@@ -461,12 +465,12 @@ func testInterruptingTheRequestDoesNotSendTransaction(t *testing.T) {
 	// setup
 	handler := newSendTransactionHandler(t)
 	handler.time.EXPECT().Now().Times(1).Return(time.Now())
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(false, api.ErrRequestInterrupted)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
+	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(false, api.ErrRequestInterrupted)
+	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
@@ -474,7 +478,7 @@ func testInterruptingTheRequestDoesNotSendTransaction(t *testing.T) {
 		PublicKey:   pubKey,
 		SendingMode: "TYPE_SYNC",
 		Transaction: testTransaction(t),
-	})
+	}, metadata)
 
 	// then
 	assertRequestInterruptionError(t, errorDetails)
@@ -483,9 +487,9 @@ func testInterruptingTheRequestDoesNotSendTransaction(t *testing.T) {
 
 func testGettingInternalErrorDuringReviewDoesNotSendTransaction(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: nil,
@@ -497,12 +501,12 @@ func testGettingInternalErrorDuringReviewDoesNotSendTransaction(t *testing.T) {
 	// setup
 	handler := newSendTransactionHandler(t)
 	handler.time.EXPECT().Now().Times(1).Return(time.Now())
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(false, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("requesting the transaction review failed: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(false, assert.AnError)
+	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.InternalError, fmt.Errorf("requesting the transaction review failed: %w", assert.AnError)).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
@@ -510,7 +514,7 @@ func testGettingInternalErrorDuringReviewDoesNotSendTransaction(t *testing.T) {
 		PublicKey:   pubKey,
 		SendingMode: "TYPE_SYNC",
 		Transaction: testTransaction(t),
-	})
+	}, metadata)
 
 	// then
 	assertInternalError(t, errorDetails, api.ErrCouldNotSendTransaction)
@@ -519,9 +523,9 @@ func testGettingInternalErrorDuringReviewDoesNotSendTransaction(t *testing.T) {
 
 func testNoHealthyNodeAvailableDoesNotSendTransaction(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: nil,
@@ -533,14 +537,14 @@ func testNoHealthyNodeAvailableDoesNotSendTransaction(t *testing.T) {
 	// setup
 	handler := newSendTransactionHandler(t)
 	handler.time.EXPECT().Now().Times(1).Return(time.Now())
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(nil, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not find a healthy node: %w", assert.AnError)).Times(1)
-	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
+	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.NetworkError, fmt.Errorf("could not find a healthy node: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().Log(ctx, metadata.TraceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
@@ -548,7 +552,7 @@ func testNoHealthyNodeAvailableDoesNotSendTransaction(t *testing.T) {
 		PublicKey:   pubKey,
 		SendingMode: "TYPE_SYNC",
 		Transaction: testTransaction(t),
-	})
+	}, metadata)
 
 	// then
 	require.NotNil(t, errorDetails)
@@ -560,9 +564,9 @@ func testNoHealthyNodeAvailableDoesNotSendTransaction(t *testing.T) {
 
 func testFailingToGetLastBlockDoesNotSendTransaction(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: nil,
@@ -574,15 +578,15 @@ func testFailingToGetLastBlockDoesNotSendTransaction(t *testing.T) {
 	// setup
 	handler := newSendTransactionHandler(t)
 	handler.time.EXPECT().Now().Times(1).Return(time.Now())
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{}, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get the latest block from node: %w", assert.AnError)).Times(1)
-	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
+	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.NetworkError, fmt.Errorf("could not get the latest block from node: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().Log(ctx, metadata.TraceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
@@ -590,7 +594,7 @@ func testFailingToGetLastBlockDoesNotSendTransaction(t *testing.T) {
 		PublicKey:   pubKey,
 		SendingMode: "TYPE_SYNC",
 		Transaction: testTransaction(t),
-	})
+	}, metadata)
 
 	// then
 	require.NotNil(t, errorDetails)
@@ -602,9 +606,9 @@ func testFailingToGetLastBlockDoesNotSendTransaction(t *testing.T) {
 
 func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: nil,
@@ -616,11 +620,11 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 	// setup
 	handler := newSendTransactionHandler(t)
 	handler.time.EXPECT().Now().Times(1).Return(time.Now())
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
 		BlockHeight:           100,
@@ -629,8 +633,8 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 		ChainID:               "chain-id",
 	}, nil)
 	handler.node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return("", assert.AnError)
-	handler.interactor.EXPECT().NotifyFailedTransaction(ctx, traceID, gomock.Any(), gomock.Any(), assert.AnError, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
+	handler.interactor.EXPECT().NotifyFailedTransaction(ctx, metadata.TraceID, gomock.Any(), gomock.Any(), assert.AnError, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().Log(ctx, metadata.TraceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
@@ -638,7 +642,7 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 		PublicKey:   pubKey,
 		SendingMode: "TYPE_SYNC",
 		Transaction: testTransaction(t),
-	})
+	}, metadata)
 
 	// then
 	require.NotNil(t, errorDetails)
@@ -658,10 +662,10 @@ type sendTransactionHandler struct {
 	time         *mocks.MockTimeProvider
 }
 
-func (h *sendTransactionHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.ClientSendTransactionResult, *jsonrpc.ErrorDetails) {
+func (h *sendTransactionHandler) handle(t *testing.T, ctx context.Context, params interface{}, metadata jsonrpc.RequestMetadata) (api.ClientSendTransactionResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, metadata)
 	if rawResult != nil {
 		result, ok := rawResult.(api.ClientSendTransactionResult)
 		if !ok {

@@ -16,7 +16,7 @@ type AdminStopService struct {
 }
 
 // Handle closes all opened connections to a running service and stop the service.
-func (h *AdminStopService) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminStopService) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminStopServiceParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

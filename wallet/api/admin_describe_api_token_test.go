@@ -49,7 +49,7 @@ func testDescribingTokenWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newDescribeAPITokenHandler(tt)
@@ -190,7 +190,7 @@ type adminDescribeAPITokenHandler struct {
 func (h *adminDescribeAPITokenHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminDescribeAPITokenResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminDescribeAPITokenResult)
 		if !ok {
