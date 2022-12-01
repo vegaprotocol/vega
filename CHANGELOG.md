@@ -70,6 +70,7 @@
 - [6976](https://github.com/vegaprotocol/vega/issues/6976) - Recalculate margins on MTM anniversary even if there were no trades.
 - [6977](https://github.com/vegaprotocol/vega/issues/6977) - Prior to final settlement, perform MTM on unsettled trades.
 - [6569](https://github.com/vegaprotocol/vega/issues/6569) - Fix margin calculations during auctions.
+- [7001](https://github.com/vegaprotocol/vega/issues/7001) - Set mark price on final settlement.
 
 ## 0.62.1
 
