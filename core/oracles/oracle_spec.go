@@ -60,15 +60,17 @@ type OracleSpec struct {
 }
 
 type filter struct {
-	propertyName string
-	propertyType datapb.PropertyKey_Type
-	conditions   []condition
+	propertyName     string
+	propertyType     datapb.PropertyKey_Type
+	numberOfDecimals uint64
+	conditions       []condition
 }
 
 type condition func(string) (bool, error)
 
 // NewOracleSpec builds an OracleSpec from a types.OracleSpec in a form that
 // suits the processing of the filters.
+// OracleSpec allows the existence of one and only one.
 func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, error) {
 	signersFromSpec := []*types.Signer{}
 	if originalSpec.Spec != nil {
@@ -102,6 +104,11 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 			return nil, ErrMissingPropertyName
 		}
 
+		_, exist := typedFilters[f.Key.Name]
+		if exist {
+			return nil, types.ErrMultipleSameKeyNamesInFilterList
+		}
+
 		conditions, err := toConditions(f.Key.Type, f.Conditions)
 		if err != nil {
 			return nil, err
@@ -109,11 +116,16 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 
 		typedFilter, ok := typedFilters[f.Key.Name]
 
+		var dp uint64
+		if f.Key.NumberDecimalPlaces != nil {
+			dp = *f.Key.NumberDecimalPlaces
+		}
 		if !ok {
 			typedFilters[f.Key.Name] = &filter{
-				propertyName: f.Key.Name,
-				propertyType: f.Key.Type,
-				conditions:   conditions,
+				propertyName:     f.Key.Name,
+				propertyType:     f.Key.Type,
+				numberOfDecimals: dp,
+				conditions:       conditions,
 			}
 			continue
 		}

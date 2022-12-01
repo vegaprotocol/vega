@@ -1334,9 +1334,6 @@ type Future {
 
   "The binding between the data source specification and the settlement data"
   dataSourceSpecBinding: DataSourceSpecToFutureBinding!
-
-  "The number of decimal places implied by the settlement data (such as price) emitted by the settlement data source"
-  settlementDataDecimals: Int!
 }
 
 """
@@ -1428,6 +1425,11 @@ type PropertyKey {
   name: String
   "The type of the property."
   type: PropertyKeyType!
+  """
+  An optional decimal place to be applied on the provided value.
+  Valid only for PropertyType of type DECIMAL, INTEGER.
+  """
+  numberDecimalPlaces: Int
 }
 
 """
@@ -3133,9 +3135,6 @@ type FutureProduct {
   used as settlement data.
   """
   dataSourceSpecBinding: DataSourceSpecToFutureBinding!
-
-  "The number of decimal places implied by the settlement data (such as price) emitted by the settlement oracle"
-  settlementDataDecimals: Int!
 }
 
 """

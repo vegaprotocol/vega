@@ -4,6 +4,7 @@
 
 ### 🚨 Breaking changes
 - [6955](https://github.com/vegaprotocol/vega/issues/6955) - Market definition extended with the new field for LP price range across the API.
+- [6645](https://github.com/vegaprotocol/vega/issues/6645) - Set decimal number value to be used from oracle instead of from tradable instruments
 
 ### 🗑️ Deprecation
 - [7068](https://github.com/vegaprotocol/vega/issues/7068) - Alias `vegawallet info` to `vegawallet describe`, before definitive renaming.

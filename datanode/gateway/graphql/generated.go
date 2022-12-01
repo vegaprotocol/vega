@@ -567,7 +567,6 @@ type ComplexityRoot struct {
 		DataSourceSpecForTradingTermination func(childComplexity int) int
 		QuoteName                           func(childComplexity int) int
 		SettlementAsset                     func(childComplexity int) int
-		SettlementDataDecimals              func(childComplexity int) int
 	}
 
 	FutureProduct struct {
@@ -576,7 +575,6 @@ type ComplexityRoot struct {
 		DataSourceSpecForTradingTermination func(childComplexity int) int
 		QuoteName                           func(childComplexity int) int
 		SettlementAsset                     func(childComplexity int) int
-		SettlementDataDecimals              func(childComplexity int) int
 	}
 
 	HistorySegment struct {
@@ -1238,8 +1236,9 @@ type ComplexityRoot struct {
 	}
 
 	PropertyKey struct {
-		Name func(childComplexity int) int
-		Type func(childComplexity int) int
+		Name                func(childComplexity int) int
+		NumberDecimalPlaces func(childComplexity int) int
+		Type                func(childComplexity int) int
 	}
 
 	Proposal struct {
@@ -3933,13 +3932,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Future.SettlementAsset(childComplexity), true
 
-	case "Future.settlementDataDecimals":
-		if e.complexity.Future.SettlementDataDecimals == nil {
-			break
-		}
-
-		return e.complexity.Future.SettlementDataDecimals(childComplexity), true
-
 	case "FutureProduct.dataSourceSpecBinding":
 		if e.complexity.FutureProduct.DataSourceSpecBinding == nil {
 			break
@@ -3974,13 +3966,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FutureProduct.SettlementAsset(childComplexity), true
-
-	case "FutureProduct.settlementDataDecimals":
-		if e.complexity.FutureProduct.SettlementDataDecimals == nil {
-			break
-		}
-
-		return e.complexity.FutureProduct.SettlementDataDecimals(childComplexity), true
 
 	case "HistorySegment.chainID":
 		if e.complexity.HistorySegment.ChainId == nil {
@@ -6934,6 +6919,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PropertyKey.Name(childComplexity), true
+
+	case "PropertyKey.numberDecimalPlaces":
+		if e.complexity.PropertyKey.NumberDecimalPlaces == nil {
+			break
+		}
+
+		return e.complexity.PropertyKey.NumberDecimalPlaces(childComplexity), true
 
 	case "PropertyKey.type":
 		if e.complexity.PropertyKey.Type == nil {
@@ -22212,6 +22204,8 @@ func (ec *executionContext) fieldContext_Filter_key(ctx context.Context, field g
 				return ec.fieldContext_PropertyKey_name(ctx, field)
 			case "type":
 				return ec.fieldContext_PropertyKey_type(ctx, field)
+			case "numberDecimalPlaces":
+				return ec.fieldContext_PropertyKey_numberDecimalPlaces(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PropertyKey", field.Name)
 		},
@@ -22544,50 +22538,6 @@ func (ec *executionContext) fieldContext_Future_dataSourceSpecBinding(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Future_settlementDataDecimals(ctx context.Context, field graphql.CollectedField, obj *vega.Future) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Future_settlementDataDecimals(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.SettlementDataDecimals, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(uint32)
-	fc.Result = res
-	return ec.marshalNInt2uint32(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Future_settlementDataDecimals(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Future",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _FutureProduct_settlementAsset(ctx context.Context, field graphql.CollectedField, obj *vega.FutureProduct) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_FutureProduct_settlementAsset(ctx, field)
 	if err != nil {
@@ -22845,50 +22795,6 @@ func (ec *executionContext) fieldContext_FutureProduct_dataSourceSpecBinding(ctx
 				return ec.fieldContext_DataSourceSpecToFutureBinding_tradingTerminationProperty(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DataSourceSpecToFutureBinding", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _FutureProduct_settlementDataDecimals(ctx context.Context, field graphql.CollectedField, obj *vega.FutureProduct) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_FutureProduct_settlementDataDecimals(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.SettlementDataDecimals, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(uint32)
-	fc.Result = res
-	return ec.marshalNInt2uint32(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_FutureProduct_settlementDataDecimals(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "FutureProduct",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -23428,8 +23334,6 @@ func (ec *executionContext) fieldContext_InstrumentConfiguration_futureProduct(c
 				return ec.fieldContext_FutureProduct_dataSourceSpecForTradingTermination(ctx, field)
 			case "dataSourceSpecBinding":
 				return ec.fieldContext_FutureProduct_dataSourceSpecBinding(ctx, field)
-			case "settlementDataDecimals":
-				return ec.fieldContext_FutureProduct_settlementDataDecimals(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FutureProduct", field.Name)
 		},
@@ -42461,6 +42365,47 @@ func (ec *executionContext) fieldContext_PropertyKey_type(ctx context.Context, f
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type PropertyKeyType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PropertyKey_numberDecimalPlaces(ctx context.Context, field graphql.CollectedField, obj *v13.PropertyKey) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PropertyKey_numberDecimalPlaces(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NumberDecimalPlaces, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(uint32)
+	fc.Result = res
+	return ec.marshalOInt2uint32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PropertyKey_numberDecimalPlaces(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PropertyKey",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -65295,13 +65240,6 @@ func (ec *executionContext) _Future(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "settlementDataDecimals":
-
-			out.Values[i] = ec._Future_settlementDataDecimals(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -65393,13 +65331,6 @@ func (ec *executionContext) _FutureProduct(ctx context.Context, sel ast.Selectio
 		case "dataSourceSpecBinding":
 
 			out.Values[i] = ec._FutureProduct_dataSourceSpecBinding(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "settlementDataDecimals":
-
-			out.Values[i] = ec._FutureProduct_settlementDataDecimals(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
@@ -71258,6 +71189,10 @@ func (ec *executionContext) _PropertyKey(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "numberDecimalPlaces":
+
+			out.Values[i] = ec._PropertyKey_numberDecimalPlaces(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -80945,6 +80880,16 @@ func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.Se
 		return graphql.Null
 	}
 	res := graphql.MarshalID(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOInt2uint32(ctx context.Context, v interface{}) (uint32, error) {
+	res, err := marshallers.UnmarshalUint32(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2uint32(ctx context.Context, sel ast.SelectionSet, v uint32) graphql.Marshaler {
+	res := marshallers.MarshalUint32(v)
 	return res
 }
 

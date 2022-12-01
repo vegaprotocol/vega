@@ -33,9 +33,6 @@ message Future {
 
   // The binding between the data spec and the data source
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
-
-  // The number of decimal places implied by the settlement data (such as price) emitted by the settlement data source
-  uint32 settlement_data_decimals = 6;
 }
 
 // DataSourceSpecToFutureBinding describes which property of the data source data is to be
