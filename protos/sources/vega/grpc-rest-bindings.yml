@@ -63,4 +63,4 @@ http:
     # websockets
 
     - selector: vega.api.v1.CoreService.ObserveEventBus
-      post: '/stream/event/bus'
+      get: '/stream/event/bus'
