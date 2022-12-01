@@ -71,12 +71,7 @@ Feature:  test 0038-OLIQ-008
       | aux4  | USD   | ETH/DEC19 | 2220   | 999999997780 |
       | lp    | USD   | ETH/DEC19 | 295261 | 999999614739 |
 
-    When the following network parameters are set:
-      | name                                                   | value |
-      | market.liquidity.minimum.probabilityOfTrading.lpOrders | 0.1   |
     And the network moves ahead "10" blocks
-
-    # updating the parameter itself is not enough for the volumes to get affected
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 170   | 1419   |
@@ -129,7 +124,7 @@ Feature:  test 0038-OLIQ-008
       | aux4  | ETH/DEC19 | 1388        | 1665   | 2082    | 2776    |
       | lp    | ETH/DEC19 | 142426      | 170911 | 213639  | 284852  |
 
-    # transder in lp account from general to margin account since the existing margin account is above release level
+    # transder from general to margin account since the existing margin account is above release level
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general      |
       | aux3  | USD   | ETH/DEC19 | 1050   | 999999998950 |
