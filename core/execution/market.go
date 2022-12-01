@@ -3280,7 +3280,9 @@ func (m *Market) settlementDataWithLock(ctx context.Context) {
 			return
 		}
 
+		// mark price should be updated here
 		m.lastTradedPrice = settlementDataInAsset.Clone()
+		m.markPrice = settlementDataInAsset.Clone()
 
 		// send the market data with all updated stuff
 		m.broker.Send(events.NewMarketDataEvent(ctx, m.GetMarketData()))
