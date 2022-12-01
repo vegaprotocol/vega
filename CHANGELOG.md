@@ -21,6 +21,8 @@
 - [6959](https://github.com/vegaprotocol/vega/issues/6959) - Fix listing transactions by block height in block explorer back end
 - [6832](https://github.com/vegaprotocol/vega/issues/6832) - Add signature to transaction information returned by block explorer API
 - [6884](https://github.com/vegaprotocol/vega/issues/6884) - Specify transaction as `JSON` rather than a base64 encoded string in `client_{sign|send}_transaction`
+- [6975](https://github.com/vegaprotocol/vega/issues/6975) - Implement `admin.sign_transaction` in the wallet
+- [6974](https://github.com/vegaprotocol/vega/issues/6974) - Make names in wallet admin `API` consistent
 - [6642](https://github.com/vegaprotocol/vega/issues/6642) - Add methods to manage the wallet service and its connections on wallet API version 2
 - [6853](https://github.com/vegaprotocol/vega/issues/6853) - Max gas and priority improvements
 - [6782](https://github.com/vegaprotocol/vega/issues/6782) - Bump embedded `postgres` version to hopefully fix `CI` instability
@@ -30,9 +32,13 @@
 - [6871](https://github.com/vegaprotocol/vega/issues/6871) - Assure integration test framework throws an error when no watchers specified for a network parameter being set/updated
 - [6908](https://github.com/vegaprotocol/vega/issues/6871) - Update default retention policy
 - [6827](https://github.com/vegaprotocol/vega/issues/6615) - Add filters to `ordersConnection`
+- [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position
 - [6988](https://github.com/vegaprotocol/vega/issues/6988) - Handle 0 timestamps in `graphql` marshaller
-- [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position 
+- [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position
 - [6949](https://github.com/vegaprotocol/vega/issues/6949) - Mark positions to market at the end of the block.
+- [6819](https://github.com/vegaprotocol/vega/issues/6819) - Support long-living token in wallet client API
+- [6964](https://github.com/vegaprotocol/vega/issues/6964) - Add support for long living tokens with expiry
+- [6991](https://github.com/vegaprotocol/vega/issues/6991) - Expose error field in explorer API
 
 ### 🐛 Fixes
 - [6924](https://github.com/vegaprotocol/vega/issues/6924) - Fix deterministic sorting when nodes have equal scores and we have to choose who is in the signer set

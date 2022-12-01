@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/preferences"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/mitchellh/mapstructure"
@@ -16,7 +17,7 @@ const WalletConnectionSuccessfullyEstablished = "The connection to the wallet ha
 type ClientConnectWallet struct {
 	walletStore WalletStore
 	interactor  Interactor
-	sessions    *Sessions
+	sessions    *session.Sessions
 }
 
 type ClientConnectWalletParams struct {
@@ -160,7 +161,7 @@ func isConnectionRejected(approval preferences.ConnectionApproval) bool {
 func NewConnectWallet(
 	walletStore WalletStore,
 	interactor Interactor,
-	sessions *Sessions,
+	sessions *session.Sessions,
 ) *ClientConnectWallet {
 	return &ClientConnectWallet{
 		walletStore: walletStore,

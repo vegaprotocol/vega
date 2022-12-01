@@ -4,11 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/mitchellh/mapstructure"
 )
+
+var ErrCannotUpdatePermissionsWhileUsingLingLivingToken = errors.New("cannot update the permissions of the wallet connected with a long-living token")
 
 type ClientRequestPermissionsParams struct {
 	Token                string                    `json:"token"`
@@ -22,7 +26,7 @@ type ClientRequestPermissionsResult struct {
 type ClientRequestPermissions struct {
 	walletStore WalletStore
 	interactor  Interactor
-	sessions    *Sessions
+	sessions    *session.Sessions
 }
 
 // Handle allows a third-party application to request permissions to access
@@ -54,9 +58,13 @@ func (h *ClientRequestPermissions) Handle(ctx context.Context, rawParams jsonrpc
 		return nil, invalidParams(err)
 	}
 
-	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token)
+	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token, time.Now())
 	if err != nil {
 		return nil, invalidParams(err)
+	}
+
+	if !connectedWallet.RequireInteraction() {
+		return nil, applicationError(ErrorCodeRequestNotPermitted, ErrCannotUpdatePermissionsWhileUsingLingLivingToken)
 	}
 
 	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
@@ -164,7 +172,7 @@ func validateRequestPermissionsParams(rawParams jsonrpc.Params) (ClientRequestPe
 func NewRequestPermissions(
 	walletStore WalletStore,
 	interactor Interactor,
-	sessions *Sessions,
+	sessions *session.Sessions,
 ) *ClientRequestPermissions {
 	return &ClientRequestPermissions{
 		walletStore: walletStore,

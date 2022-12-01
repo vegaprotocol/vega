@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -12,7 +13,7 @@ type AdminListConnectionsParams struct {
 }
 
 type AdminListConnectionsResult struct {
-	ActiveConnections []Connection `json:"activeConnections"`
+	ActiveConnections []session.Connection `json:"activeConnections"`
 }
 
 type AdminListConnections struct {

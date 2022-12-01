@@ -87,7 +87,7 @@ func BuildCmdListKeys(w io.Writer, handler ListKeysHandler, rf *RootFlags) *cobr
 		"Path to the file containing the wallet's passphrase",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }

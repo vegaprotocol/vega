@@ -24,6 +24,10 @@ var (
 		# Update the passphrase of the specified wallet
 		{{.Software}} passphrase update --wallet WALLET
 	`)
+
+	newWalletPassphraseOptions = flags.PassphraseOptions{
+		Name: "new",
+	}
 )
 
 type UpdatePassphraseHandler func(api.AdminUpdatePassphraseParams) error
@@ -92,7 +96,7 @@ func BuildCmdUpdatePassphrase(w io.Writer, handler UpdatePassphraseHandler, rf *
 		"Path to the file containing the new wallet's passphrase",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }
@@ -113,7 +117,7 @@ func (f *UpdatePassphraseFlags) Validate() (api.AdminUpdatePassphraseParams, err
 		return api.AdminUpdatePassphraseParams{}, err
 	}
 
-	newPassphrase, err := flags.GetConfirmedPassphraseWithContext("new", f.NewPassphraseFile)
+	newPassphrase, err := flags.GetConfirmedPassphraseWithContext(newWalletPassphraseOptions, f.NewPassphraseFile)
 	if err != nil {
 		return api.AdminUpdatePassphraseParams{}, err
 	}

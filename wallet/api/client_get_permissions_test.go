@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -100,12 +101,12 @@ func testGettingPermissionsWithInvalidTokenFails(t *testing.T) {
 
 	// then
 	assert.Empty(t, result)
-	assertInvalidParams(t, errorDetails, api.ErrNoWalletConnected)
+	assertInvalidParams(t, errorDetails, session.ErrNoWalletConnected)
 }
 
 type GetPermissionsHandler struct {
 	*api.ClientGetPermissions
-	sessions *api.Sessions
+	sessions *session.Sessions
 }
 
 func (h *GetPermissionsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.ClientGetPermissionsResult, *jsonrpc.ErrorDetails) {
@@ -125,7 +126,7 @@ func (h *GetPermissionsHandler) handle(t *testing.T, ctx context.Context, params
 func newGetPermissionsHandler(t *testing.T) *GetPermissionsHandler {
 	t.Helper()
 
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 
 	return &GetPermissionsHandler{
 		ClientGetPermissions: api.NewGetPermissions(sessions),

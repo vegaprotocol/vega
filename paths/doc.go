@@ -45,6 +45,7 @@ func List(vegaPaths Paths) *ListPathsResponse {
 			"FaucetWalletsDataHome":              vegaPaths.DataPathFor(FaucetWalletsDataHome),
 			"WalletsDataHome":                    vegaPaths.DataPathFor(WalletsDataHome),
 			"WalletServiceDataHome":              vegaPaths.DataPathFor(WalletServiceDataHome),
+			"WalletServiceDataTokensDataFile":    vegaPaths.DataPathFor(WalletServiceTokensDataFile),
 			"WalletServiceRSAKeysDataHome":       vegaPaths.DataPathFor(WalletServiceRSAKeysDataHome),
 			"WalletServicePublicRSAKeyDataFile":  vegaPaths.DataPathFor(WalletServicePublicRSAKeyDataFile),
 			"WalletServicePrivateRSAKeyDataFile": vegaPaths.DataPathFor(WalletServicePrivateRSAKeyDataFile),

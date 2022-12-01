@@ -115,7 +115,7 @@ func BuildCmdRotateKey(w io.Writer, handler RotateKeyHandler, rf *RootFlags) *co
 		"Height of block where the public key change will take effect",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }

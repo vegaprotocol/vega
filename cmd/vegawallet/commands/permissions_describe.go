@@ -90,7 +90,7 @@ func BuildCmdDescribePermissions(w io.Writer, handler DescribePermissionsHandler
 		"Path to the file containing the wallet's passphrase",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }

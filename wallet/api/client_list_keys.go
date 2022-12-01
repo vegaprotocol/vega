@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/mitchellh/mapstructure"
 )
@@ -29,7 +31,7 @@ type ClientNamedPublicKey struct {
 type ClientListKeys struct {
 	walletStore WalletStore
 	interactor  Interactor
-	sessions    *Sessions
+	sessions    *session.Sessions
 }
 
 // Handle returns the public keys the third-party application has access to.
@@ -41,7 +43,7 @@ func (h *ClientListKeys) Handle(ctx context.Context, rawParams jsonrpc.Params) (
 		return nil, invalidParams(err)
 	}
 
-	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token)
+	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token, time.Now())
 	if err != nil {
 		return nil, invalidParams(err)
 	}
@@ -70,7 +72,7 @@ func (h *ClientListKeys) Handle(ctx context.Context, rawParams jsonrpc.Params) (
 	}, nil
 }
 
-func (h *ClientListKeys) requestPermissions(ctx context.Context, connectedWallet *ConnectedWallet, perms wallet.Permissions) *jsonrpc.ErrorDetails {
+func (h *ClientListKeys) requestPermissions(ctx context.Context, connectedWallet *session.ConnectedWallet, perms wallet.Permissions) *jsonrpc.ErrorDetails {
 	traceID := TraceIDFromContext(ctx)
 
 	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
@@ -168,7 +170,7 @@ func validateSessionListKeysParams(rawParams jsonrpc.Params) (ClientListKeysPara
 	return params, nil
 }
 
-func NewListKeys(walletStore WalletStore, interactor Interactor, sessions *Sessions) *ClientListKeys {
+func NewListKeys(walletStore WalletStore, interactor Interactor, sessions *session.Sessions) *ClientListKeys {
 	return &ClientListKeys{
 		walletStore: walletStore,
 		interactor:  interactor,
