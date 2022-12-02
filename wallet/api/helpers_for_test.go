@@ -1,13 +1,14 @@
 package api_test
 
 import (
-	"context"
+	"encoding/json"
 	"testing"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/node"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/stretchr/testify/assert"
@@ -57,7 +58,7 @@ func assertInternalError(t *testing.T, errorDetails *jsonrpc.ErrorDetails, expec
 func assertNetworkError(t *testing.T, errorDetails *jsonrpc.ErrorDetails, expectedErr error) {
 	t.Helper()
 	require.NotNil(t, errorDetails)
-	assert.Equal(t, api.ErrorCodeNodeRequestFailed, errorDetails.Code)
+	assert.Equal(t, api.ErrorCodeNodeCommunicationFailed, errorDetails.Code)
 	assert.Equal(t, string(api.NetworkError), errorDetails.Message)
 	assert.Equal(t, expectedErr.Error(), errorDetails.Data)
 }
@@ -144,14 +145,14 @@ func generateKey(t *testing.T, w wallet.Wallet) wallet.KeyPair {
 	return kp
 }
 
-func contextWithTraceID() (context.Context, string) {
-	traceID := vgrand.RandomStr(5)
-	//revive:disable:context-keys-type
-	//nolint:staticcheck
-	return context.WithValue(context.Background(), "trace-id", traceID), traceID
+func requestMetadataForTest() jsonrpc.RequestMetadata {
+	return jsonrpc.RequestMetadata{
+		TraceID:  vgrand.RandomStr(5),
+		Hostname: vgrand.RandomStr(5) + ".xyz",
+	}
 }
 
-func connectWallet(t *testing.T, sessions *api.Sessions, hostname string, w wallet.Wallet) string {
+func connectWallet(t *testing.T, sessions *session.Sessions, hostname string, w wallet.Wallet) string {
 	t.Helper()
 	token, err := sessions.ConnectWallet(hostname, w)
 	if err != nil {
@@ -168,3 +169,31 @@ func unexpectedNodeSelectorCall(t *testing.T) api.NodeSelectorBuilder {
 		return nil, nil
 	}
 }
+
+func dummyServiceShutdownSwitch() *api.ServiceShutdownSwitch {
+	return api.NewServiceShutdownSwitch(func(err error) {})
+}
+
+var (
+	testTransactionJSON          = `{"voteSubmission":{"proposalId":"eb2d3902fdda9c3eb6e369f2235689b871c7322cf3ab284dde3e9dfc13863a17","value":"VALUE_YES"}}`
+	testMalformedTransactionJSON = `{"voteSubmission":{"proposalId":"not real id","value":"VALUE_YES"}}`
+)
+
+func transactionFromJSON(t *testing.T, JSON string) map[string]any {
+	t.Helper()
+	testTransaction := make(map[string]any)
+	assert.NoError(t, json.Unmarshal([]byte(JSON), &testTransaction))
+	return testTransaction
+}
+
+func testTransaction(t *testing.T) map[string]any {
+	t.Helper()
+	return transactionFromJSON(t, testTransactionJSON)
+}
+
+func testMalformedTransaction(t *testing.T) map[string]any {
+	t.Helper()
+	return transactionFromJSON(t, testMalformedTransactionJSON)
+}
+
+var testEncodedTransaction = "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"

@@ -76,7 +76,6 @@ func (nl *NetworkLimits) Add(ctx context.Context, limits entities.NetworkLimits)
 func (nl *NetworkLimits) GetLatest(ctx context.Context) (entities.NetworkLimits, error) {
 	networkLimits := entities.NetworkLimits{}
 	defer metrics.StartSQLQuery("NetworkLimits", "GetLatest")()
-	err := pgxscan.Get(ctx, nl.Connection, &networkLimits,
-		`SELECT * FROM network_limits ORDER BY vega_time DESC limit 1;`)
-	return networkLimits, err
+	return networkLimits, nl.wrapE(pgxscan.Get(ctx, nl.Connection, &networkLimits,
+		`SELECT * FROM network_limits ORDER BY vega_time DESC limit 1;`))
 }

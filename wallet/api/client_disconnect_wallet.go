@@ -4,11 +4,12 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"github.com/mitchellh/mapstructure"
 )
 
 type ClientDisconnectWallet struct {
-	sessions *Sessions
+	sessions *session.Sessions
 }
 
 type ClientDisconnectWalletParams struct {
@@ -21,13 +22,15 @@ type ClientDisconnectWalletParams struct {
 // happens.
 //
 // The wallet resources are unloaded.
-func (h *ClientDisconnectWallet) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *ClientDisconnectWallet) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateDisconnectWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
 	}
 
-	h.sessions.DisconnectWallet(params.Token)
+	if err := h.sessions.DisconnectWalletWithToken(params.Token); err != nil {
+		return nil, applicationError(ErrorCodeRequestNotPermitted, err)
+	}
 
 	return nil, nil
 }
@@ -49,7 +52,7 @@ func validateDisconnectWalletParams(rawParams jsonrpc.Params) (ClientDisconnectW
 	return params, nil
 }
 
-func NewDisconnectWallet(sessions *Sessions) *ClientDisconnectWallet {
+func NewDisconnectWallet(sessions *session.Sessions) *ClientDisconnectWallet {
 	return &ClientDisconnectWallet{
 		sessions: sessions,
 	}

@@ -1,11 +1,12 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
@@ -15,11 +16,20 @@ import (
 )
 
 var (
-	ErrCouldNotReadRequestBody = errors.New("couldn't read the HTTP request body")
-	ErrRequestCannotBeBlank    = errors.New("request can't be blank")
+	ErrCouldNotReadRequestBody  = errors.New("couldn't read the HTTP request body")
+	ErrRequestCannotBeBlank     = errors.New("the request can't be blank")
+	ErrNoneOfRequiredHeadersSet = errors.New("the request is expected to specified the Origin or the Referer header")
 )
 
 type TraceIDKey struct{}
+
+func (s *Service) CheckHealthV2(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	s.log.Debug("New request",
+		logging.String("url", r.URL.String()),
+	)
+
+	w.WriteHeader(http.StatusOK)
+}
 
 type ListMethodsV2Response struct {
 	RegisteredMethods []string `json:"registeredMethods"`
@@ -59,23 +69,29 @@ func (s *Service) HandleRequestV2(w http.ResponseWriter, r *http.Request, _ http
 		logging.String("trace-id", traceID),
 	)
 
-	//revive:disable:context-keys-type
-	//nolint:staticcheck
-	tracedCtx := context.WithValue(r.Context(), "trace-id", traceID)
-
 	lw := newLoggedResponseWriter(w, traceID)
-	defer log(s.log, lw)
+	defer logResponse(s.log, lw)
 
-	request, err := s.unmarshallRequest(traceID, r)
-	if err != nil {
-		lw.WriteHeader(http.StatusBadRequest)
-		// Failing to unmarshall the request prevent us from retrieving the
-		// request ID. So, it's left empty.
-		lw.WriteBody(jsonrpc.NewErrorResponse("", err))
+	hostname, err := resolveHostname(r)
+	if err != nil || hostname == "" {
+		s.log.Error("Could not resolve the hostname", zap.Error(err))
+		lw.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	response := s.apiV2.DispatchRequest(tracedCtx, request)
+	request, errDetails := s.unmarshallRequest(traceID, r)
+	if errDetails != nil {
+		lw.WriteHeader(http.StatusBadRequest)
+		// Failing to unmarshall the request prevent us from retrieving the
+		// request ID. So, it's left empty.
+		lw.WriteBody(jsonrpc.NewErrorResponse("", errDetails))
+		return
+	}
+
+	response := s.apiV2.DispatchRequest(r.Context(), request, jsonrpc.RequestMetadata{
+		TraceID:  traceID,
+		Hostname: hostname,
+	})
 
 	// If the request doesn't have an ID, it's a notification. Notifications do
 	// not send content back, even if an error occurred.
@@ -97,9 +113,11 @@ func (s *Service) HandleRequestV2(w http.ResponseWriter, r *http.Request, _ http
 }
 
 func (s *Service) unmarshallRequest(traceID string, r *http.Request) (*jsonrpc.Request, *jsonrpc.ErrorDetails) {
-	defer r.Body.Close()
+	defer func() {
+		_ = r.Body.Close()
+	}()
 
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, jsonrpc.NewParseError(ErrCouldNotReadRequestBody)
 	}
@@ -173,6 +191,34 @@ func (lw *loggedResponseWriter) WriteBody(response *jsonrpc.Response) {
 	}
 }
 
+func resolveHostname(r *http.Request) (string, error) {
+	origin := r.Header.Get("Origin")
+	if origin != "" {
+		parsedOrigin, err := url.Parse(origin)
+		if err != nil {
+			return origin, nil //nolint:nilerr
+		}
+		if parsedOrigin.Host != "" {
+			return parsedOrigin.Host, nil
+		}
+		return origin, nil
+	}
+
+	// In some scenario, the Origin can be set to null by the browser for privacy
+	// reasons. Since we are not trying to fingerprint or spoof anyone, we
+	// attempt to parse the Referer.
+	referer := r.Header.Get("Referer")
+	if referer != "" {
+		parsedReferer, err := url.Parse(referer)
+		if err != nil {
+			return "", fmt.Errorf("could not parse the Referer header: %w", err)
+		}
+		return parsedReferer.Host, nil
+	}
+
+	return "", ErrNoneOfRequiredHeadersSet
+}
+
 func newLoggedResponseWriter(writer http.ResponseWriter, traceID string) *loggedResponseWriter {
 	writer.Header().Set("Content-Type", "application/json")
 
@@ -182,7 +228,7 @@ func newLoggedResponseWriter(writer http.ResponseWriter, traceID string) *logged
 	}
 }
 
-func log(logger *zap.Logger, lw *loggedResponseWriter) {
+func logResponse(logger *zap.Logger, lw *loggedResponseWriter) {
 	if lw.statusCode >= 400 && lw.statusCode <= 499 {
 		logger.Error("Client error",
 			logging.Int("http-status", lw.statusCode),

@@ -134,6 +134,7 @@ var (
 	ErrFetchDeHistorySegment       = errors.New("failed to fetch segment")
 	ErrDeHistoryNotEnabled         = errors.New("dehistory not enabled")
 	ErrCopyHistorySegmentToFile    = errors.New("failed to copy history segment to file")
+	ErrMissingNodeID               = errors.New("missing node id")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

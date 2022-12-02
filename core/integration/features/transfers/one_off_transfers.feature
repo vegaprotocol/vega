@@ -3,9 +3,10 @@ Feature: Test one off transfers
 Background:
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the following network parameters are set:
-      | name                 |  value  |
-      | transfer.fee.factor  |  0.5    |
-      | transfer.fee.factor  |  0.5    |
+      | name                                    | value |
+      | transfer.fee.factor                     |  0.5  |
+      | transfer.fee.factor                     |  0.5  |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
 
     Given the parties deposit on asset's general account the following amount:

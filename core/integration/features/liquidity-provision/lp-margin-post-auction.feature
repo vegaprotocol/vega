@@ -20,6 +20,9 @@ Feature: Assure LP margin is correct
       | party1 | USD   | 100000000 |
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: Assure LP margin is released when opening auction concludes with a price lower than indicative uncrossing price at the time of LP submission
     Given the following network parameters are set:
@@ -52,11 +55,11 @@ Feature: Assure LP margin is correct
       | lp1 | party0 | ETH/MAR22 | 55000             | 0.001 | buy  | BID              | 500        | 17     | amendment |
 
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search  | initial | release |
-      | party0 | ETH/MAR22 | 1380011     | 1518012 | 1656013 | 1932015 |
+      | party  | market id | maintenance | search | initial | release |
+      | party0 | ETH/MAR22 | 695821      | 765403 | 834985  | 974149  |
     And the parties should have the following account balances:
-      | party  | asset | market id | margin  | general   | bond  |
-      | party0 | USD   | ETH/MAR22 | 1656013 | 498288987 | 55000 |
+      | party  | asset | market id | margin | general   | bond  |
+      | party0 | USD   | ETH/MAR22 | 834985 | 499110015 | 55000 |
 
     Then the parties cancel the following orders:
       | party  | reference  |

@@ -21,8 +21,6 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
-	"code.vegaprotocol.io/vega/datanode/service"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/pkg/errors"
 )
@@ -49,6 +47,11 @@ type BlockStore interface {
 	GetLastBlock(ctx context.Context) (entities.Block, error)
 }
 
+type ProtocolUpgradeHandler interface {
+	OnProtocolUpgradeEvent(ctx context.Context, chainID string, lastCommittedBlockHeight int64) error
+	GetProtocolUpgradeStarted() bool
+}
+
 const (
 	slowTimeUpdateThreshold = 2 * time.Second
 )
@@ -63,11 +66,11 @@ type SQLStoreBroker struct {
 	transactionManager           TransactionManager
 	blockStore                   BlockStore
 	onBlockCommitted             func(ctx context.Context, chainId string, lastCommittedBlockHeight int64)
+	protocolUpdateHandler        ProtocolUpgradeHandler
 	chainID                      string
 	lastBlock                    *entities.Block
 	slowTimeUpdateTicker         *time.Ticker
 	receivedProtocolUpgradeEvent bool
-	protocolUpgradeService       *service.ProtocolUpgrade
 }
 
 func NewSQLStoreBroker(
@@ -77,22 +80,22 @@ func NewSQLStoreBroker(
 	eventsource eventSource,
 	transactionManager TransactionManager,
 	blockStore BlockStore,
-	protocolUpgradeService *service.ProtocolUpgrade,
 	onBlockCommitted func(ctx context.Context, chainId string, lastCommittedBlockHeight int64),
+	protocolUpdateHandler ProtocolUpgradeHandler,
 	subs []SQLBrokerSubscriber,
 ) *SQLStoreBroker {
 	b := &SQLStoreBroker{
-		config:                 config,
-		log:                    log,
-		subscribers:            subs,
-		typeToSubs:             map[events.Type][]SQLBrokerSubscriber{},
-		eventSource:            eventsource,
-		transactionManager:     transactionManager,
-		blockStore:             blockStore,
-		chainID:                chainID,
-		onBlockCommitted:       onBlockCommitted,
-		slowTimeUpdateTicker:   time.NewTicker(slowTimeUpdateThreshold),
-		protocolUpgradeService: protocolUpgradeService,
+		config:                config,
+		log:                   log,
+		subscribers:           subs,
+		typeToSubs:            map[events.Type][]SQLBrokerSubscriber{},
+		eventSource:           eventsource,
+		transactionManager:    transactionManager,
+		blockStore:            blockStore,
+		chainID:               chainID,
+		onBlockCommitted:      onBlockCommitted,
+		protocolUpdateHandler: protocolUpdateHandler,
+		slowTimeUpdateTicker:  time.NewTicker(slowTimeUpdateThreshold),
 	}
 
 	for _, s := range subs {
@@ -129,7 +132,7 @@ func (b *SQLStoreBroker) Receive(ctx context.Context) error {
 		b.onBlockCommitted(ctx, b.chainID, b.lastBlock.Height)
 
 		if b.receivedProtocolUpgradeEvent {
-			b.protocolUpgradeService.SetProtocolUpgradeStarted()
+			b.protocolUpdateHandler.OnProtocolUpgradeEvent(ctx, b.chainID, b.lastBlock.Height)
 			return nil
 		}
 	}
@@ -142,7 +145,7 @@ func (b *SQLStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 
 	if err == nil {
 		b.log.Infof("waiting for first unprocessed block, last processed block height: %d", lastProcessedBlock.Height)
-	} else if errors.Is(err, sqlstore.ErrNoLastBlock) {
+	} else if errors.Is(err, entities.ErrNotFound) {
 		lastProcessedBlock = entities.Block{
 			VegaTime: time.Time{},
 			// TODO: This is making the assumption that the first block will be height 1. This is not necessarily true.
@@ -234,7 +237,7 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 			b.log.Warningf("slow time update detected, time between checks %v, block height: %d, total block processing time: %v", slowTimeUpdateThreshold,
 				block.Height, blockTimer.duration)
 		case e := <-eventsCh:
-			if b.protocolUpgradeService.GetProtocolUpgradeStarted() {
+			if b.protocolUpdateHandler.GetProtocolUpgradeStarted() {
 				return nil, errors.New("received event after protocol upgrade started")
 			}
 

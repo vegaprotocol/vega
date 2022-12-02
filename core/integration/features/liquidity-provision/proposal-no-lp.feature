@@ -11,9 +11,10 @@ Feature: Replicate unexpected margin issues.
       | id        | quote name | asset | risk model         | margin calculator         | auction duration | fees         | price monitoring | data source config          | decimal places |
       | DAI/DEC22 | DAI        | DAI   | dai-lognormal-risk | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 5              |
     And the following network parameters are set:
-      | name                              | value |
-      | market.auction.minimumDuration    | 1     |
-      | market.stake.target.scalingFactor | .1    |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | market.stake.target.scalingFactor       | .1    |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @NoLP
   Scenario: Attempt to recreate margin drain for LP
@@ -70,12 +71,17 @@ Feature: Replicate unexpected margin issues.
       | buy  | 3500000000 | 1      |
 
     And clear transfer response events
-    
+
     When the parties place the following orders:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
       | party3 | DAI/DEC22 | sell | 1      | 3500000020 | 0                | TYPE_LIMIT | TIF_GTC | party3-3  |
       | party2 | DAI/DEC22 | buy  | 1      | 3500000020 | 1                | TYPE_LIMIT | TIF_GTC | party2-3  |
-    Then the mark price should be "3500000020" for the market "DAI/DEC22"
+
+    # checking if continuous mode still exists
+    Then the market data for the market "DAI/DEC22" should be:
+      | mark price | last traded price | trading mode            |
+      | 3500000005 | 3500000020        | TRADING_MODE_CONTINUOUS |
+
 
     ## Always keep track of what's going on
     And clear transfer response events
@@ -88,7 +94,12 @@ Feature: Replicate unexpected margin issues.
       | party2 | DAI/DEC22 | sell | 1      | 3500000010 | 0                | TYPE_LIMIT | TIF_GTC | p2-2      |
       | party3 | DAI/DEC22 | sell | 1      | 3500000040 | 0                | TYPE_LIMIT | TIF_GTC | p3-2      |
       | party1 | DAI/DEC22 | sell | 1      | 3500000015 | 1                | TYPE_LIMIT | TIF_GTC | p1-2      |
-    Then the mark price should be "3500000015" for the market "DAI/DEC22"
+
+    # checking if continuous mode still exists
+    Then the market data for the market "DAI/DEC22" should be:
+      | mark price | last traded price | trading mode            |
+      | 3500000005 | 3500000015        | TRADING_MODE_CONTINUOUS |
+
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial    | release    |
       | party1 | DAI/DEC22 | 900761672   | 990837839 | 1080914006 | 1261066340 |
@@ -100,7 +111,11 @@ Feature: Replicate unexpected margin issues.
     When the parties place the following orders:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     |
       | party1 | DAI/DEC22 | buy  | 1      | 3500000020 | 1                | TYPE_LIMIT | TIF_GTC |
-    Then the mark price should be "3500000020" for the market "DAI/DEC22"
+
+    Then the market data for the market "DAI/DEC22" should be:
+      | mark price | last traded price | trading mode            |
+      | 3500000005 | 3500000020        | TRADING_MODE_CONTINUOUS |
+
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial    | release    |
       | party1 | DAI/DEC22 | 884094922   | 972504414 | 1060913906 | 1237732890 |

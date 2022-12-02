@@ -140,6 +140,7 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.ExecutionSnapshot,              // creates the markets, returns matching and positions engines for state providers
 	types.MatchingSnapshot,               // this requires a market
 	types.PositionsSnapshot,              // again, needs a market
+	types.SettlementSnapshot,             // needs the market to exist, too
 	types.LiquiditySnapshot,
 	types.LiquidityTargetSnapshot,
 	types.StakingSnapshot,
@@ -439,6 +440,10 @@ func (e *Engine) applySnapshotFromLocalStore(ctx context.Context) error {
 }
 
 func (e *Engine) ReceiveSnapshot(snap *types.Snapshot) error {
+	if e.Config.StartHeight > 0 && snap.Height != uint64(e.Config.StartHeight) {
+		return fmt.Errorf("received snapshot height does not equal config height: %d != %d", snap.Height, e.Config.StartHeight)
+	}
+
 	if e.snapshot != nil {
 		// in case other peers provide snapshots, check if their hashes match what we want
 		if !bytes.Equal(e.snapshot.Hash, snap.Hash) {
@@ -446,7 +451,6 @@ func (e *Engine) ReceiveSnapshot(snap *types.Snapshot) error {
 		}
 		return e.snapshot.ValidateMeta(snap)
 	}
-	// @TODO here's where we check the hash or height we want
 	e.snapshot = snap
 	return nil
 }
@@ -665,9 +669,9 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, error
 	inputChan := make(chan nsInput, numWorkers)
 
 	// workers
-	wg := new(sync.WaitGroup)
+	wg := &sync.WaitGroup{}
 	inputCnt := int64(0)
-	inputs := []nsInput{}
+	inputs := make([]nsInput, 0, len(e.namespaces))
 
 	// we first iterate over the namespaces and collect all the top level tree keys
 	for _, ns := range e.namespaces {
@@ -702,7 +706,7 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, error
 	}
 
 	// analyse the results
-	results := []nsSnapResult{}
+	results := make([]nsSnapResult, 0, numWorkers)
 	for res := range resChan {
 		if res.err != nil {
 			e.log.Panic("Failed to update snapshot namespace",
@@ -890,9 +894,7 @@ func (e *Engine) saveCurrentTree() error {
 
 func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg *sync.WaitGroup, cnt *int64) {
 	// Decreasing internal counter for wait-group as soon as goroutine finishes
-	defer func() {
-		wg.Done()
-	}()
+	defer wg.Done()
 
 	for input := range nsInputChan {
 		treeKeyStr := string(input.treeKey)

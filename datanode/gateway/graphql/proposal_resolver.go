@@ -63,15 +63,11 @@ func (r *proposalResolver) State(_ context.Context, data *types.GovernanceData) 
 	return data.Proposal.State, nil
 }
 
-func (r *proposalResolver) Datetime(_ context.Context, data *types.GovernanceData) (string, error) {
+func (r *proposalResolver) Datetime(_ context.Context, data *types.GovernanceData) (int64, error) {
 	if data == nil || data.Proposal == nil {
-		return "", ErrInvalidProposal
+		return 0, ErrInvalidProposal
 	}
-	if data.Proposal.Timestamp == 0 {
-		// no timestamp for prepared proposals
-		return "", nil
-	}
-	return nanoTSToDatetime(data.Proposal.Timestamp), nil
+	return data.Proposal.Timestamp, nil
 }
 
 func (r *proposalResolver) Rationale(_ context.Context, data *types.GovernanceData) (*types.ProposalRationale, error) {

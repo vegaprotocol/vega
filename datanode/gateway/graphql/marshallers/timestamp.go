@@ -13,29 +13,35 @@
 package marshallers
 
 import (
-	"fmt"
+	"errors"
 	"io"
 	"strconv"
 
+	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"github.com/99designs/gqlgen/graphql"
 )
 
 func MarshalTimestamp(t int64) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
-		io.WriteString(w, strconv.Quote(strconv.FormatInt(t, 10)))
+		// special case for 0 timestamps, returns null
+		if t == 0 {
+			io.WriteString(w, "null")
+			return
+		}
+		io.WriteString(w, strconv.Quote(vegatime.Format(vegatime.UnixNano(t))))
 	})
 }
 
 func UnmarshalTimestamp(v interface{}) (int64, error) {
 	s, ok := v.(string)
 	if !ok {
-		return 0, fmt.Errorf("Expected timestamp to be a string")
+		return 0, errors.New("expected timestamp to be a string")
 	}
 
-	ts, err := strconv.ParseInt(s, 10, 64)
+	t, err := vegatime.Parse(s)
 	if err != nil {
-		return 0, fmt.Errorf("Expected timestamp to be a string")
+		return 0, err
 	}
 
-	return ts, nil
+	return t.UnixNano(), nil
 }

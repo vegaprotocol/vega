@@ -13,8 +13,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring    | data source config          |
       | ETH/DEC20 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 60               | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 60    |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 60    |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @SupStake
   Scenario: Persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction. (0032-PRIM-002, 0032-PRIM-005)

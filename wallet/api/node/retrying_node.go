@@ -8,6 +8,7 @@ import (
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/wallet/api/node/adapters"
+	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
 	"github.com/cenkalti/backoff/v4"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
@@ -17,9 +18,9 @@ import (
 
 type GRPCAdapter interface {
 	Host() string
-	Statistics(ctx context.Context) (adapters.Statistics, error)
+	Statistics(ctx context.Context) (nodetypes.Statistics, error)
 	SubmitTransaction(ctx context.Context, in *apipb.SubmitTransactionRequest) (*apipb.SubmitTransactionResponse, error)
-	LastBlock(ctx context.Context) (adapters.LastBlock, error)
+	LastBlock(ctx context.Context) (nodetypes.LastBlock, error)
 	Stop() error
 }
 
@@ -35,7 +36,7 @@ func (n *RetryingNode) Host() string {
 	return n.grpcAdapter.Host()
 }
 
-func (n *RetryingNode) Statistics(ctx context.Context) (adapters.Statistics, error) {
+func (n *RetryingNode) Statistics(ctx context.Context) (nodetypes.Statistics, error) {
 	n.log.Debug("querying the node statistics through the graphQL API", zap.String("host", n.grpcAdapter.Host()))
 	requestTime := time.Now()
 	resp, err := n.grpcAdapter.Statistics(ctx)
@@ -44,7 +45,7 @@ func (n *RetryingNode) Statistics(ctx context.Context) (adapters.Statistics, err
 			zap.String("host", n.grpcAdapter.Host()),
 			zap.Error(err),
 		)
-		return adapters.Statistics{}, err
+		return nodetypes.Statistics{}, err
 	}
 	n.log.Debug("response from Statistics",
 		zap.String("host", n.grpcAdapter.Host()),
@@ -58,9 +59,9 @@ func (n *RetryingNode) Statistics(ctx context.Context) (adapters.Statistics, err
 }
 
 // LastBlock returns information about the last block acknowledged by the node.
-func (n *RetryingNode) LastBlock(ctx context.Context) (adapters.LastBlock, error) {
+func (n *RetryingNode) LastBlock(ctx context.Context) (nodetypes.LastBlock, error) {
 	n.log.Debug("getting the last block from the gRPC API", zap.String("host", n.grpcAdapter.Host()))
-	var resp adapters.LastBlock
+	var resp nodetypes.LastBlock
 	if err := n.retry(func() error {
 		requestTime := time.Now()
 		r, err := n.grpcAdapter.LastBlock(ctx)
@@ -82,7 +83,7 @@ func (n *RetryingNode) LastBlock(ctx context.Context) (adapters.LastBlock, error
 			zap.String("host", n.grpcAdapter.Host()),
 			zap.Error(err),
 		)
-		return adapters.LastBlock{}, err
+		return nodetypes.LastBlock{}, err
 	}
 
 	return resp, nil
@@ -111,6 +112,13 @@ func (n *RetryingNode) SendTransaction(ctx context.Context, tx *commandspb.Trans
 		return nil
 	}); err != nil {
 		return "", err
+	}
+
+	if !resp.Success {
+		return "", nodetypes.TransactionError{
+			ABCICode: resp.Code,
+			Message:  resp.Data,
+		}
 	}
 
 	return resp.TxHash, nil

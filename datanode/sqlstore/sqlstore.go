@@ -18,6 +18,7 @@ import (
 	"embed"
 	"fmt"
 	"io"
+	"io/fs"
 	"time"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
@@ -31,18 +32,18 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 )
 
-var ErrBadID = errors.New("Bad ID (must be hex string)")
+var ErrBadID = errors.New("bad id (must be hex string)")
 
 //go:embed migrations/*.sql
 var EmbedMigrations embed.FS
 
 const SQLMigrationsDir = "migrations"
 
-func MigrateSchema(log *logging.Logger, config ConnectionConfig) error {
+func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 	goose.SetBaseFS(EmbedMigrations)
 	goose.SetLogger(log.Named("db migration").GooseLogger())
 
-	poolConfig, err := config.GetPoolConfig()
+	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
 	if err != nil {
 		return fmt.Errorf("failed to get pool config:%w", err)
 	}
@@ -50,14 +51,34 @@ func MigrateSchema(log *logging.Logger, config ConnectionConfig) error {
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
 	defer db.Close()
 
-	if err := goose.Up(db, SQLMigrationsDir); err != nil {
-		return fmt.Errorf("failed to goose up the schema: %w", err)
+	if err = goose.Up(db, SQLMigrationsDir); err != nil {
+		return fmt.Errorf("error migrating sql schema: %w", err)
 	}
+
 	return nil
 }
 
-func WipeDatabase(log *logging.Logger, config ConnectionConfig) error {
-	goose.SetBaseFS(EmbedMigrations)
+func MigrateToSchemaVersion(log *logging.Logger, config Config, version int64, fs fs.FS) error {
+	goose.SetBaseFS(fs)
+	goose.SetLogger(log.Named("db migration").GooseLogger())
+
+	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get pool config:%w", err)
+	}
+
+	db := stdlib.OpenDB(*poolConfig.ConnConfig)
+	defer db.Close()
+
+	if err = goose.UpTo(db, SQLMigrationsDir, version); err != nil {
+		return fmt.Errorf("error migrating sql schema: %w", err)
+	}
+
+	return nil
+}
+
+func WipeDatabase(log *logging.Logger, config ConnectionConfig, fs fs.FS) error {
+	goose.SetBaseFS(fs)
 	goose.SetLogger(log.Named("wipe database").GooseLogger())
 
 	poolConfig, err := config.GetPoolConfig()
@@ -74,7 +95,7 @@ func WipeDatabase(log *logging.Logger, config ConnectionConfig) error {
 	}
 
 	if currentVersion > 0 {
-		if err := goose.Down(db, SQLMigrationsDir); err != nil {
+		if err := goose.DownTo(db, SQLMigrationsDir, 0); err != nil {
 			return fmt.Errorf("failed to goose down the schema: %w", err)
 		}
 	}

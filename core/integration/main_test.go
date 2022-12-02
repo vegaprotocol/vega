@@ -59,30 +59,19 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.BeforeScenario(func(*godog.Scenario) {
 		execsetup = newExecutionTestSetup()
 	})
-	// each step changes the output from the reporter
-	// so we know where a mock failed
 	s.BeforeStep(func(step *godog.Step) {
-		// rm any errors from previous step (if applies)
-		reporter.err = nil
-		reporter.step = step.Text
+		// no need to do anything here, the framework will take care of error reporting
 	})
-	// if a mock assert failed, we're just setting an error here and crash out of the test here
 	s.AfterStep(func(step *godog.Step, err error) {
-		if err != nil && reporter.err == nil {
-			reporter.err = err
-		}
-		if reporter.err != nil {
-			reporter.Fatalf("some mock assertion failed: %v", reporter.err)
-		}
+		// no need to do anything here, the framework will take care of error reporting
 	})
-
 	s.AfterScenario(func(s *godog.Scenario, err error) {
 		if err != nil {
 			return
 		}
-
 		berr := steps.TheCumulatedBalanceForAllAccountsShouldBeWorth(execsetup.broker, execsetup.netDeposits.String())
 		if berr != nil {
+			reporter.scenario = s.Name
 			reporter.Fatalf("\n\nError at scenario end (testing net deposits/withdrawals against cumulated balance for all accounts): %v\n\n", berr)
 		}
 	})
@@ -174,7 +163,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.TheFollowingNetworkParametersAreSet(execsetup.netParams, table)
 	})
 	s.Step(`^time is updated to "([^"]*)"$`, func(rawTime string) error {
-		steps.TimeIsUpdatedTo(execsetup.timeService, rawTime)
+		steps.TimeIsUpdatedTo(execsetup.executionEngine, execsetup.timeService, rawTime)
 		return nil
 	})
 	s.Step(`^the parties cancel the following orders:$`, func(table *godog.Table) error {
@@ -205,6 +194,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties place the following orders:$`, func(table *godog.Table) error {
 		return steps.PartiesPlaceTheFollowingOrders(execsetup.executionEngine, table)
 	})
+
+	s.Step(`^the parties place the following orders "([^"]+)" blocks apart:$`, func(blockCount string, table *godog.Table) error {
+		return steps.PartiesPlaceTheFollowingOrdersBlocksApart(execsetup.executionEngine, execsetup.timeService, execsetup.block, execsetup.epochEngine, table, blockCount)
+	})
+	s.Step(`^the parties place the following orders with ticks:$`, func(table *godog.Table) error {
+		return steps.PartiesPlaceTheFollowingOrdersWithTicks(execsetup.executionEngine, execsetup.timeService, execsetup.epochEngine, table)
+	})
+
 	s.Step(`^the parties submit the following liquidity provision:$`, func(table *godog.Table) error {
 		return steps.PartiesSubmitLiquidityProvision(execsetup.executionEngine, table)
 	})
@@ -246,10 +243,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	s.Step(`the network moves ahead "([^"]+)" blocks`, func(blocks string) error {
-		return steps.TheNetworkMovesAheadNBlocks(execsetup.block, execsetup.timeService, blocks, execsetup.epochEngine)
+		return steps.TheNetworkMovesAheadNBlocks(execsetup.executionEngine, execsetup.block, execsetup.timeService, blocks, execsetup.epochEngine)
 	})
 	s.Step(`the network moves ahead "([^"]+)" with block duration of "([^"]+)"`, func(total, block string) error {
-		return steps.TheNetworkMovesAheadDurationWithBlocks(execsetup.block, execsetup.timeService, total, block)
+		return steps.TheNetworkMovesAheadDurationWithBlocks(execsetup.executionEngine, execsetup.block, execsetup.timeService, total, block)
 	})
 
 	// Assertion steps

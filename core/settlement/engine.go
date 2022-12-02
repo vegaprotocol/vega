@@ -65,14 +65,15 @@ type Engine struct {
 	Config
 	log *logging.Logger
 
-	market         string
-	product        Product
-	pos            map[string]*pos
-	mu             *sync.Mutex
-	trades         map[string][]*settlementTrade
-	timeService    TimeService
-	broker         Broker
-	positionFactor num.Decimal
+	market          string
+	product         Product
+	settledPosition map[string]int64 // party -> last mark-to-market position
+	mu              *sync.Mutex
+	trades          map[string][]*settlementTrade
+	timeService     TimeService
+	broker          Broker
+	positionFactor  num.Decimal
+	lastMarkPrice   *num.Uint // price at last mark to market
 }
 
 // New instantiates a new instance of the settlement engine.
@@ -82,16 +83,16 @@ func New(log *logging.Logger, conf Config, product Product, market string, timeS
 	log.SetLevel(conf.Level.Get())
 
 	return &Engine{
-		Config:         conf,
-		log:            log,
-		market:         market,
-		product:        product,
-		pos:            map[string]*pos{},
-		mu:             &sync.Mutex{},
-		trades:         map[string][]*settlementTrade{},
-		timeService:    timeService,
-		broker:         broker,
-		positionFactor: positionFactor,
+		Config:          conf,
+		log:             log,
+		market:          market,
+		product:         product,
+		settledPosition: map[string]int64{},
+		mu:              &sync.Mutex{},
+		trades:          map[string][]*settlementTrade{},
+		timeService:     timeService,
+		broker:          broker,
+		positionFactor:  positionFactor,
 	}
 }
 
@@ -120,12 +121,8 @@ func (e *Engine) Update(positions []events.MarketPosition) {
 	e.mu.Lock()
 	for _, p := range positions {
 		party := p.Party()
-		if ps, ok := e.pos[party]; ok {
-			// ATM, this can't possibly return an error, hence we're ignoring it
-			_ = ps.update(p)
-		} else {
-			e.pos[party] = newPos(p)
-		}
+		e.settledPosition[party] = p.Size()
+		e.lastMarkPrice = p.Price()
 	}
 	e.mu.Unlock()
 }
@@ -154,8 +151,8 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 	if cd, ok := e.trades[trade.Buyer]; !ok || len(cd) == 0 {
 		e.trades[trade.Buyer] = []*settlementTrade{}
 		// check if the buyer already has a known position
-		if pos, ok := e.pos[trade.Buyer]; ok {
-			buyerSize = pos.size
+		if pos, ok := e.settledPosition[trade.Buyer]; ok {
+			buyerSize = pos
 		}
 	} else {
 		buyerSize = cd[len(cd)-1].newSize
@@ -163,8 +160,8 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 	if cd, ok := e.trades[trade.Seller]; !ok || len(cd) == 0 {
 		e.trades[trade.Seller] = []*settlementTrade{}
 		// check if seller has a known position
-		if pos, ok := e.pos[trade.Seller]; ok {
-			sellerSize = pos.size
+		if pos, ok := e.settledPosition[trade.Seller]; ok {
+			sellerSize = pos
 		}
 	} else {
 		sellerSize = cd[len(cd)-1].newSize
@@ -186,6 +183,10 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 		newSize:     sellerSize - size,
 	})
 	e.mu.Unlock()
+}
+
+func (e *Engine) HasTraded() bool {
+	return len(e.trades) > 0
 }
 
 func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.MarketPosition, owner string) *mtmTransfer {
@@ -231,6 +232,7 @@ func (e *Engine) winSocialisationUpdate(transfer *mtmTransfer, amt *num.Uint) {
 
 func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions []events.MarketPosition) []events.Transfer {
 	timer := metrics.NewTimeCounter("-", "settlement", "SettleOrder")
+	defer func() { e.lastMarkPrice = markPrice.Clone() }()
 	e.mu.Lock()
 	tCap := e.transferCap(positions)
 	transfers := make([]events.Transfer, 0, tCap)
@@ -289,9 +291,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 
 	for _, evt := range positions {
 		party := evt.Party()
-		// get the current position, and all (if any) position changes because of trades
-		current := e.getCurrentPosition(party, evt)
-		// we don't care if this is a nil value
+		current, lastSettledPrice := e.getOrCreateCurrentPosition(party, evt.Size(), evt.Price())
 		traded, hasTraded = trades[party]
 		tradeset := make([]events.TradeSettlement, 0, len(traded))
 		for _, t := range traded {
@@ -300,7 +300,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		// create (and add position to buffer)
 		evts = append(evts, events.NewSettlePositionEvent(ctx, party, e.market, evt.Price(), tradeset, e.timeService.GetTimeNow().UnixNano(), e.positionFactor))
 		// no changes in position, and the MTM price hasn't changed, we don't need to do anything
-		if !hasTraded && current.price.EQ(markPrice) {
+		if !hasTraded && lastSettledPrice.EQ(markPrice) {
 			// no changes in position and markPrice hasn't changed -> nothing needs to be marked
 			continue
 		}
@@ -309,18 +309,18 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		// and the old mark price at which the party held the position
 		// the trades slice contains all trade positions (position changes for the party)
 		// at their exact trade price, so we can MTM that volume correctly, too
-		mtmShare, mtmDShare, neg := calcMTM(markPrice, current.price, current.size, traded, e.positionFactor)
+		mtmShare, mtmDShare, neg := calcMTM(markPrice, lastSettledPrice, current, traded, e.positionFactor)
 		// we've marked this party to market, their position can now reflect this
-		_ = current.update(evt)
-		current.price = markPrice
+		e.settledPosition[party] = evt.Size()
 		// we don't want to accidentally MTM a party who closed out completely when they open
 		// a new position at a later point, so remove if size == 0
-		if current.size == 0 && current.Buy() == 0 && current.Sell() == 0 {
+		if evt.Size() == 0 && evt.Buy() == 0 && evt.Sell() == 0 {
 			// broke this up into its own func for symmetry
 			e.rmPosition(party)
 		}
 
-		mtmTransfer := e.getMtmTransfer(mtmShare.Clone(), neg, current, current.Party())
+		posEvent := newPos(evt, markPrice)
+		mtmTransfer := e.getMtmTransfer(mtmShare.Clone(), neg, posEvent, party)
 
 		if !neg {
 			wins = append(wins, mtmTransfer)
@@ -393,7 +393,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 		key := v.Party()
 		margin := num.Sum(v.MarginBalance(), v.GeneralBalance())
 		devts = append(devts, events.NewSettleDistressed(ctx, key, e.market, v.Price(), margin, e.timeService.GetTimeNow().UnixNano()))
-		delete(e.pos, key)
+		delete(e.settledPosition, key)
 		delete(e.trades, key)
 	}
 	e.mu.Unlock()
@@ -405,27 +405,26 @@ func (e *Engine) settleAll(assetDecimals uint32) ([]*types.Transfer, error) {
 	e.mu.Lock()
 
 	// there should be as many positions as there are parties (obviously)
-	aggregated := make([]*types.Transfer, 0, len(e.pos))
+	aggregated := make([]*types.Transfer, 0, len(e.settledPosition))
 	// parties who are in profit should be appended (collect first).
 	// The split won't always be 50-50, but it's a reasonable approximation
-	owed := make([]*types.Transfer, 0, len(e.pos)/2)
+	owed := make([]*types.Transfer, 0, len(e.settledPosition)/2)
 	// ensure we iterate over the positions in the same way by getting all the parties (keys)
 	// and sort them
-	keys := make([]string, 0, len(e.pos))
-	for p := range e.pos {
+	keys := make([]string, 0, len(e.settledPosition))
+	for p := range e.settledPosition {
 		keys = append(keys, p)
 	}
 	sort.Strings(keys)
 	for _, party := range keys {
-		pos := e.pos[party]
+		pos := e.settledPosition[party]
 		// this is possible now, with the Mark to Market stuff, it's possible we've settled any and all positions for a given party
-		if pos.size == 0 {
+		if pos == 0 {
 			continue
 		}
 		e.log.Debug("Settling position for party", logging.String("party-id", party))
 		// @TODO - there was something here... the final amount had to be oracle - market or something
-		// check with Tamlyn why that was, because we're only handling open positions here...
-		amt, neg, err := e.product.Settle(pos.price, assetDecimals, num.DecimalFromInt64(pos.size).Div(e.positionFactor))
+		amt, neg, err := e.product.Settle(e.lastMarkPrice, assetDecimals, num.DecimalFromInt64(pos).Div(e.positionFactor))
 		// for now, product.Settle returns the total value, we need to only settle the delta between a parties current position
 		// and the final price coming from the oracle, so oracle_price - mark_price * volume (check with Tamlyn whether this should be absolute or not)
 		if err != nil {
@@ -461,28 +460,29 @@ func (e *Engine) settleAll(assetDecimals uint32) ([]*types.Transfer, error) {
 	return aggregated, nil
 }
 
-// this doesn't need the mutex wrap because it's an internal call and the function that is being
-// called already locks the positions map.
-func (e *Engine) getCurrentPosition(party string, evt events.MarketPosition) *pos {
-	p, ok := e.pos[party]
+func (e *Engine) getOrCreateCurrentPosition(party string, size int64, price *num.Uint) (int64, *num.Uint) {
+	p, ok := e.settledPosition[party]
 	if !ok {
-		p = newPos(evt)
-		e.pos[party] = p
+		e.settledPosition[party] = size
+		return 0, price
 	}
-	return p
+	return p, e.lastMarkPrice
 }
 
-func (e *Engine) AddPosition(party string, evt events.MarketPosition) {
-	_ = e.getCurrentPosition(party, evt)
+func (e *Engine) HasPosition(party string) bool {
+	_, okPos := e.settledPosition[party]
+	_, okTrades := e.trades[party]
+
+	return okPos && okTrades
 }
 
 func (e *Engine) rmPosition(party string) {
-	delete(e.pos, party)
+	delete(e.settledPosition, party)
 }
 
 // just get the max len as cap.
 func (e *Engine) transferCap(evts []events.MarketPosition) int {
-	curLen, evtLen := len(e.pos), len(evts)
+	curLen, evtLen := len(e.settledPosition), len(evts)
 	if curLen >= evtLen {
 		return curLen
 	}

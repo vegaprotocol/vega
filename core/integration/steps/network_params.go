@@ -26,6 +26,10 @@ func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *godo
 	for _, row := range parseNetworkParametersTable(table) {
 		name := row.MustStr("name")
 
+		if !netParams.AnyWatchers(name) {
+			return errNoWatchersSpecified(name)
+		}
+
 		switch name {
 		case netparams.MarketAuctionMinimumDuration:
 			d := row.MustDurationSec("value")
@@ -48,6 +52,12 @@ func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *godo
 			f := row.MustDurationStr("value")
 			str := f.String()
 			if err := netParams.Update(ctx, netparams.MarketTargetStakeTimeWindow, str); err != nil {
+				return err
+			}
+		case netparams.MarkPriceUpdateMaximumFrequency:
+			f := row.MustDurationStr("value")
+			str := f.String()
+			if err := netParams.Update(ctx, netparams.MarkPriceUpdateMaximumFrequency, str); err != nil {
 				return err
 			}
 		default:

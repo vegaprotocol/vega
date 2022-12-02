@@ -150,8 +150,8 @@ func transfersFromProto(transfers []*types.LedgerEntry) []*LedgerEntry {
 			AccountFromID: t.FromAccount,
 			AccountToID:   t.ToAccount,
 			Amount:        t.Amount,
-			Type:          t.Type.String(),
-			Timestamp:     nanoTSToDatetime(t.Timestamp),
+			Type:          t.Type,
+			Timestamp:     t.Timestamp,
 		})
 	}
 	return gql
@@ -164,7 +164,7 @@ func eventFromProto(e *eventspb.BusEvent) Event {
 		return rf
 	case eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
 		return &TimeUpdate{
-			Timestamp: secondsTSToDatetime(e.GetTimeUpdate().Timestamp),
+			Timestamp: e.GetTimeUpdate().Timestamp,
 		}
 	case eventspb.BusEventType_BUS_EVENT_TYPE_LEDGER_MOVEMENTS:
 		tr := e.GetLedgerMovements()

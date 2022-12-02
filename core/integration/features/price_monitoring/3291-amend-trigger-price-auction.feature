@@ -10,8 +10,9 @@ Feature: Amend order to trigger price monitoring auction
       | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees         | price monitoring    | data source config          |
       | ETH/DEC20 | ETH        | ETH   | system-test-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 6     |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 6     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: Upper bound breached
     Given the parties deposit on asset's general account the following amount:
@@ -37,7 +38,7 @@ Feature: Amend order to trigger price monitoring auction
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 5670000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 10     | 5670010 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |

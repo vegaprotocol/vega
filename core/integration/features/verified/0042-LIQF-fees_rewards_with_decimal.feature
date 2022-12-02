@@ -10,6 +10,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
     And the following assets are registered:
       | id  | decimal places |
       | ETH | 5              |
@@ -149,8 +150,8 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | lp1    | USD   | USD/DEC21 | 8281752046   | 100000000000   | 1000000000 |
       | party1 | ETH   | USD/DEC19 | 1176961234   | 9996469116298  |            |
       | party1 | USD   | USD/DEC19 | 1176961234   | 10000000000    |            |
-      | party2 | ETH   | USD/DEC19 | 4815112741   | 9985554661777  |            |
-      | party2 | USD   | USD/DEC19 | 4815112741   | 10000000000    |            |
+      | party2 | ETH   | USD/DEC19 | 4737795542   | 9985786613374  |            |
+      | party2 | USD   | USD/DEC19 | 4737795542   | 10000000000    |            |
 
   Scenario: 002: 0070-MKTD-007, 0042-LIQF-001, 0038-OLIQ-002; 0038-OLIQ-006; 0019-MCAL-008, check updated version of dpd feature in 0038-OLIQ-liquidity_provision_order_type.md
 
@@ -163,6 +164,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
     And the following assets are registered:
       | id  | decimal places |
       | ETH | 5              |
@@ -304,8 +306,8 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | lp1    | USD   | USD/DEC21 | 8963397      | 100000000000   |         |
       | party1 | ETH   | USD/DEC19 | 1176961234   | 9996469116298  |         |
       | party1 | USD   | USD/DEC19 | 1176961234   | 10000000000    |         |
-      | party2 | ETH   | USD/DEC19 | 4815112741   | 9985554661777  |         |
-      | party2 | USD   | USD/DEC19 | 4815112741   | 10000000000    |         |
+      | party2 | ETH   | USD/DEC19 | 4737795542   | 9985786613374  |         |
+      | party2 | USD   | USD/DEC19 | 4737795542   | 10000000000    |         |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     |
@@ -328,8 +330,8 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
 
       #check MTM settlement with correct PDP
     And the market data for the market "USD/DEC21" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 100100000  | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3560812945   | 5001000000     | 10001         |
+      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 100000000  | 100100000         | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3560812945   | 5001000000     | 10001         |
       # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1001 x 10.001 x 1 x 3.5569=35608.1294569, which is 3560812945 in asset decimal (which is 5)
 
     And the parties should have the following account balances:
@@ -344,8 +346,8 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | lp1 | lp1   | USD/DEC19 | 2000000           | 0.001 | sell | ASK              | 1          | 200000 | amendment |
 
     And the market data for the market "USD/DEC19" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001000    | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 5002000000     | 10005         |
+      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000000    | 1001000           | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 5002000000     | 10005         |
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -355,8 +357,8 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | lp4 | lpprov| USD/DEC19 | 1000000000        | 0.001 | sell | MID              | 2          | 1000   | amendment |
 
     And the market data for the market "USD/DEC19" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001000    | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 5000000000     | 10005         |
+      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000000    | 1001000           | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 5000000000     | 10005         |
 
     #reduce LP commitment amount
     And the parties submit the following liquidity provision:
@@ -365,8 +367,8 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | lp1 | lp1   | USD/DEC19 | 3600000000        | 0.001 | sell | ASK              | 1          | 200000 | amendment  |
 
     And the market data for the market "USD/DEC19" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001000    | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 4600000000     | 10005         |
+      | mark price | last traded price |trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000000    | 1001000           | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 4600000000     | 10005         |
 
     # 0038-OLIQ-006 assure that submission bringing supplied stake < target stake gets rejected
     And the parties submit the following liquidity provision:
@@ -403,6 +405,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
 
     Given the average block duration is "2"
 
@@ -456,7 +459,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | party  | asset | market id | margin | general   | bond  |
       | lp1    | USD   | ETH/MAR22 | 337195 | 999622805 | 40000 |
       | party1 | USD   | ETH/MAR22 | 11770  | 99988230  | 0     |
-      | party2 | USD   | ETH/MAR22 | 48151  | 99951849  | 0     |
+      | party2 | USD   | ETH/MAR22 | 47374  | 99952626  | 0     |
 
     Then the network moves ahead "1" blocks
 

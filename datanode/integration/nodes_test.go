@@ -16,24 +16,24 @@ import "testing"
 
 func TestNodes(t *testing.T) {
 	queries := map[string]string{
-		"Nodes": "{ nodes { id, pubkey, tmPubkey, ethereumAddress, infoUrl, location, name, avatarUrl, status, stakedByOperator, stakedByDelegates, stakedTotal, pendingStake, delegations { party { id }, epoch, amount }, rewardScore { validatorStatus, validatorScore }, rankingScore { previousStatus, status, votingPower, performanceScore, stakeScore, rankingScore }, epochData { total, offline, online } } }",
+		"Nodes": "{ nodesConnection { edges { node { id, pubkey, tmPubkey, ethereumAddress, infoUrl, location, name, avatarUrl, status, stakedByOperator, stakedByDelegates, stakedTotal, pendingStake, delegationsConnection{ edges { node { party { id }, epoch, amount } } }, rewardScore { validatorStatus, validatorScore }, rankingScore { previousStatus, status, votingPower, performanceScore, stakeScore, rankingScore }, epochData { total, offline, online } } } } }",
 	}
 
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
-			assertGraphQLQueriesReturnSame[struct{ Nodes []Node }](t, query)
+			assertGraphQLQueriesReturnSame(t, query)
 		})
 	}
 }
 
 func TestNodeData(t *testing.T) {
 	queries := map[string]string{
-		"NodeData": "{ nodeData { stakedTotal, totalNodes, inactiveNodes, validatingNodes, uptime } }",
+		"NodeData": "{ nodeData { stakedTotal, totalNodes, inactiveNodes, tendermintNodes {total, inactive, maximum }, ersatzNodes {total, inactive, maximum }, pendingNodes {total, inactive}, uptime } }",
 	}
 
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
-			assertGraphQLQueriesReturnSame[struct{ NodeData NodeData }](t, query)
+			assertGraphQLQueriesReturnSame(t, query)
 		})
 	}
 }

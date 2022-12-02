@@ -40,7 +40,7 @@ func listAssetAccounts(ctx context.Context, client TradingDataServiceClientV2, a
 
 	var acc *v2.AccountBalance
 	if len(res.Accounts.Edges) > 0 {
-		acc = res.Accounts.Edges[0].Account
+		acc = res.Accounts.Edges[0].Node
 	}
 
 	return acc, nil

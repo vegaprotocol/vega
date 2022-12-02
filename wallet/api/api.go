@@ -5,14 +5,17 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/api/node"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/network"
+	"code.vegaprotocol.io/vega/wallet/service"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"go.uber.org/zap"
 )
 
 // Generates mocks
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Interactor
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Interactor,ServiceStore,TokenStore,TimeProvider
 
 type NodeSelectorBuilder func(hosts []string, retries uint64) (node.Selector, error)
 
@@ -38,6 +41,42 @@ type NetworkStore interface {
 	GetNetworkPath(string) string
 	DeleteNetwork(string) error
 }
+
+// ServiceStore is used to initialise the RSA keys the service API v1 relies on.
+type ServiceStore interface {
+	RSAKeysExists() (bool, error)
+	SaveRSAKeys(*service.RSAKeys) error
+	GetRsaKeys() (*service.RSAKeys, error)
+}
+
+// TokenStore is the component used to retrieve and update the API tokens from the
+// computer.
+type TokenStore interface {
+	TokenExists(token string) (bool, error)
+	ListTokens() ([]session.TokenSummary, error)
+	GetToken(token string) (session.Token, error)
+	SaveToken(tokenConfig session.Token) error
+	DeleteToken(token string) error
+}
+
+// PolicyBuilderFunc return the policy the API v2.
+type PolicyBuilderFunc func(ctx context.Context) service.Policy
+
+// InteractorBuilderFunc returns the interactor to use in the client API.
+type InteractorBuilderFunc func(ctx context.Context) Interactor
+
+// ShutdownSwitchBuilder is used to build a switch that is controlled by
+// components that share the same lifecycle.
+type ShutdownSwitchBuilder func() *ServiceShutdownSwitch
+
+// LoggerBuilderFunc is used to build a logger. It returns the built logger and a
+// zap.AtomicLevel to allow the caller to dynamically change the log level.
+type LoggerBuilderFunc func(path paths.StatePath, level string) (*zap.Logger, zap.AtomicLevel, error)
+
+// EventListener is used to transmit event happening in a component to another one.
+// For example, it's used in the service to broadcast information about the
+// service health and state.
+type EventListener func(eventName string, optionalData ...interface{})
 
 // Interactor is the component in charge of delegating the JSON-RPC API
 // requests, notifications and logs to the wallet front-end.
@@ -159,22 +198,18 @@ type SelectedWallet struct {
 // non-trustable environment.
 // Because of the nature of the environment from where these methods are called,
 // no administration methods are exposed. We don't want malicious third-party
-// applications to leverage administration capabilities that could expose to the
-// user and compromise his wallets.
-func ClientAPI(log *zap.Logger, walletStore WalletStore, interactor Interactor, nodeSelector node.Selector) (*jsonrpc.API, error) {
-	sessions := NewSessions()
-
+// applications to leverage administration capabilities that could expose the
+// user and/or compromise his wallets.
+func ClientAPI(log *zap.Logger, walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, sessions *session.Sessions) (*jsonrpc.API, error) {
 	walletAPI := jsonrpc.New(log)
 	walletAPI.RegisterMethod("client.connect_wallet", NewConnectWallet(walletStore, interactor, sessions))
 	walletAPI.RegisterMethod("client.disconnect_wallet", NewDisconnectWallet(sessions))
 	walletAPI.RegisterMethod("client.get_chain_id", NewGetChainID(nodeSelector))
-	walletAPI.RegisterMethod("client.get_permissions", NewGetPermissions(sessions))
-	walletAPI.RegisterMethod("client.list_keys", NewListKeys(sessions))
-	walletAPI.RegisterMethod("client.request_permissions", NewRequestPermissions(walletStore, interactor, sessions))
+	walletAPI.RegisterMethod("client.list_keys", NewListKeys(walletStore, interactor, sessions))
 	walletAPI.RegisterMethod("client.sign_transaction", NewSignTransaction(interactor, nodeSelector, sessions))
 	walletAPI.RegisterMethod("client.send_transaction", NewSendTransaction(interactor, nodeSelector, sessions))
 
-	log.Info("the restricted JSON-RPC API has been initialised")
+	log.Info("the client JSON-RPC API has been initialised")
 
 	return walletAPI, nil
 }
@@ -182,21 +217,42 @@ func ClientAPI(log *zap.Logger, walletStore WalletStore, interactor Interactor, 
 // AdminAPI builds the JSON-RPC API of the wallet with all the methods available.
 // This API exposes highly-sensitive methods, and, as a result, it should be
 // only exposed to highly-trustable applications.
-func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore, nodeSelectorBuilder NodeSelectorBuilder) (*jsonrpc.API, error) {
+func AdminAPI(
+	log *zap.Logger,
+	walletStore WalletStore,
+	netStore NetworkStore,
+	svcStore ServiceStore,
+	tokenStore TokenStore,
+	nodeSelectorBuilder NodeSelectorBuilder,
+	policyBuilderFunc PolicyBuilderFunc,
+	interactorBuilderFunc InteractorBuilderFunc,
+	loggerBuilderFunc LoggerBuilderFunc,
+	contextBuilderFunc ShutdownSwitchBuilder,
+) (*jsonrpc.API, error) {
+	servicesManager := NewServicesManager(tokenStore, walletStore)
+
 	walletAPI := jsonrpc.New(log)
 	walletAPI.RegisterMethod("admin.annotate_key", NewAdminAnnotateKey(walletStore))
+	walletAPI.RegisterMethod("admin.close_connection", NewAdminCloseConnection(servicesManager))
+	walletAPI.RegisterMethod("admin.close_connections_to_hostname", NewAdminCloseConnectionsToHostname(servicesManager))
+	walletAPI.RegisterMethod("admin.close_connections_to_wallet", NewAdminCloseConnectionsToWallet(servicesManager))
 	walletAPI.RegisterMethod("admin.create_wallet", NewAdminCreateWallet(walletStore))
+	walletAPI.RegisterMethod("admin.delete_api_token", NewAdminDeleteAPIToken(tokenStore))
 	walletAPI.RegisterMethod("admin.describe_key", NewAdminDescribeKey(walletStore))
 	walletAPI.RegisterMethod("admin.describe_network", NewAdminDescribeNetwork(netStore))
 	walletAPI.RegisterMethod("admin.describe_permissions", NewAdminDescribePermissions(walletStore))
+	walletAPI.RegisterMethod("admin.describe_tokens", NewAdminDescribeAPIToken(tokenStore))
 	walletAPI.RegisterMethod("admin.describe_wallet", NewAdminDescribeWallet(walletStore))
+	walletAPI.RegisterMethod("admin.generate_api_token", NewAdminGenerateAPIToken(walletStore, tokenStore))
 	walletAPI.RegisterMethod("admin.generate_key", NewAdminGenerateKey(walletStore))
 	walletAPI.RegisterMethod("admin.import_network", NewAdminImportNetwork(netStore))
 	walletAPI.RegisterMethod("admin.import_wallet", NewAdminImportWallet(walletStore))
 	walletAPI.RegisterMethod("admin.isolate_key", NewAdminIsolateKey(walletStore))
+	walletAPI.RegisterMethod("admin.list_connections", NewAdminListConnections(servicesManager))
 	walletAPI.RegisterMethod("admin.list_keys", NewAdminListKeys(walletStore))
 	walletAPI.RegisterMethod("admin.list_networks", NewAdminListNetworks(netStore))
 	walletAPI.RegisterMethod("admin.list_permissions", NewAdminListPermissions(walletStore))
+	walletAPI.RegisterMethod("admin.list_tokens", NewAdminListAPITokens(tokenStore))
 	walletAPI.RegisterMethod("admin.list_wallets", NewAdminListWallets(walletStore))
 	walletAPI.RegisterMethod("admin.purge_permissions", NewAdminPurgePermissions(walletStore))
 	walletAPI.RegisterMethod("admin.remove_network", NewAdminRemoveNetwork(netStore))
@@ -204,10 +260,12 @@ func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore, n
 	walletAPI.RegisterMethod("admin.rename_wallet", NewAdminRenameWallet(walletStore))
 	walletAPI.RegisterMethod("admin.revoke_permissions", NewAdminRevokePermissions(walletStore))
 	walletAPI.RegisterMethod("admin.rotate_key", NewAdminRotateKey(walletStore))
-	walletAPI.RegisterMethod("admin.send_command", NewAdminSendTransaction(netStore, nodeSelectorBuilder))
-	walletAPI.RegisterMethod("admin.send_transaction", NewAdminSendTransaction(netStore, nodeSelectorBuilder))
+	walletAPI.RegisterMethod("admin.send_transaction", NewAdminSendTransaction(walletStore, netStore, nodeSelectorBuilder))
+	walletAPI.RegisterMethod("admin.send_raw_transaction", NewAdminSendRawTransaction(netStore, nodeSelectorBuilder))
 	walletAPI.RegisterMethod("admin.sign_message", NewAdminSignMessage(walletStore))
 	walletAPI.RegisterMethod("admin.sign_transaction", NewAdminSignTransaction(walletStore, netStore, nodeSelectorBuilder))
+	walletAPI.RegisterMethod("admin.start_service", NewAdminStartService(walletStore, netStore, svcStore, policyBuilderFunc, interactorBuilderFunc, loggerBuilderFunc, contextBuilderFunc, servicesManager))
+	walletAPI.RegisterMethod("admin.stop_service", NewAdminStopService(servicesManager))
 	walletAPI.RegisterMethod("admin.taint_key", NewAdminTaintKey(walletStore))
 	walletAPI.RegisterMethod("admin.untaint_key", NewAdminUntaintKey(walletStore))
 	walletAPI.RegisterMethod("admin.update_network", NewAdminUpdateNetwork(netStore))

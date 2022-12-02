@@ -7,8 +7,8 @@ import "vega/vega.proto";
 import "vega/chain_events.proto";
 import "vega/commands/v1/signature.proto";
 
-// A message from a validator signaling they are still online and validating blocks
-// or ready to validate block when they are till a potential validator
+// A message from a validator signalling they are still online and validating blocks
+// or ready to validate blocks when they are still a pending validator
 message ValidatorHeartbeat {
   // the id of the node emitting the heartbeat
   string node_id = 1;
@@ -18,7 +18,7 @@ message ValidatorHeartbeat {
   Signature vega_signature = 3;
 }
 
-// Used announce a node as a new potential validator
+// Used announce a node as a new pending validator
 message AnnounceNode {
   // Vega public key, required field
   string vega_pub_key = 1;
@@ -43,12 +43,12 @@ message AnnounceNode {
   uint64 from_epoch = 10;
   // Signature from the validator made using the ethereum wallet
   Signature ethereum_signature = 11;
-  // Signature from the validator made using the vega wallet
+  // Signature from the validator made using the Vega wallet
   Signature vega_signature = 12;
   // Ethereum public key to use as a submitter to allow automatic signature generation
   string submitter_address = 13;
 }
-// Used when a node votes for validating a given resource exists or is valid,
+// Used when a node votes for validating that a given resource exists or is valid,
 // for example, an ERC20 deposit is valid and exists on ethereum
 message NodeVote {
   // Previous public key field.
@@ -57,7 +57,7 @@ message NodeVote {
   string reference = 2;
 }
 
-// The kind of the signature created by a node, for example, allow-listing a new asset, withdrawal etc
+// The kind of signature created by a node, for example, allow-listing a new asset, withdrawal etc
 enum NodeSignatureKind {
   // Represents an unspecified or missing value from the input
   NODE_SIGNATURE_KIND_UNSPECIFIED = 0;
@@ -103,7 +103,7 @@ message ChainEvent {
   }
 }
 
-// A transaction to allow validator to rotate their vega keys
+// A transaction to allow validator to rotate their Vega keys
 message KeyRotateSubmission {
   // New Vega public key derivation index
   uint32 new_pub_key_index = 1;
@@ -137,7 +137,7 @@ message StateVariableProposal {
 message ProtocolUpgradeProposal {
    // The block height at which to perform the upgrade
    uint64 upgrade_block_height = 1;
-   // the release tag for the vega binary
+   // the release tag for the Vega binary
    string vega_release_tag = 2;
 }
 

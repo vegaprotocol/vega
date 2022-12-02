@@ -35,7 +35,7 @@ func (m *Market) calcMarginsLiquidityProvisionAmendContinuous(
 		return err
 	}
 
-	_, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, e, m.getCurrentMarkPrice())
+	_, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, e, m.getLastTradedPrice())
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition,
 }
 
 func (m *Market) updateMargin(ctx context.Context, pos []events.MarketPosition) []events.Risk {
-	price := m.getCurrentMarkPrice()
+	price := m.getLastTradedPrice()
 	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
 	margins := make([]events.Margin, 0, len(pos))
@@ -207,10 +207,17 @@ func (m *Market) getMarkPrice(o *types.Order) *num.Uint {
 		// we don't have an indicative price yet, this must be the first order, so we use its price
 		return o.Price.Clone()
 	}
-	if m.markPrice == nil {
+	if m.lastTradedPrice == nil {
 		return num.UintZero()
 	}
-	return m.markPrice.Clone()
+	return m.lastTradedPrice.Clone()
+}
+
+func (m *Market) getLastTradedPrice() *num.Uint {
+	if m.lastTradedPrice == nil {
+		return num.UintZero()
+	}
+	return m.lastTradedPrice.Clone()
 }
 
 func (m *Market) getCurrentMarkPrice() *num.Uint {

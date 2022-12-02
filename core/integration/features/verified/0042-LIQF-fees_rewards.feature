@@ -14,7 +14,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     |
       | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
 
     And the following network parameters are set:
@@ -24,6 +24,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
 
     Given the average block duration is "2"
 
@@ -87,8 +88,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
       | lp1    | USD   | ETH/MAR22 | 10680  | 999979320 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 2758   | 99997242  | 0     |
-      | party2 | USD   | ETH/MAR22 | 2652   | 99997348  | 0     |
+      | party1 | USD   | ETH/MAR22 | 2520   | 99997480  | 0     |
+      | party2 | USD   | ETH/MAR22 | 2520   | 99997480  | 0     |
 
     Then the network moves ahead "1" blocks
 
@@ -98,14 +99,15 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the liquidity fee factor should be "0.001" for the market "ETH/MAR22"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | party2 | ETH/MAR22 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
-      | lp1    | USD   | ETH/MAR22 | 12522  | 999976749 | 10000 |
+      | lp1    | USD   | ETH/MAR22 | 11787  | 999977484 | 10000 |
+      #| lp1    | USD   | ETH/MAR22 | 12522  | 999976749 | 10000 |
       | party1 | USD   | ETH/MAR22 | 1800   | 99998202  | 0     |
       | party2 | USD   | ETH/MAR22 | 1812   | 99998875  | 0     |
 
@@ -134,7 +136,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
     Then time is updated to "2019-11-30T00:20:05Z"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | buy  | 40     | 1100  | 1                | TYPE_LIMIT | TIF_GTC | party1-buy  |
       | party2 | ETH/MAR22 | sell | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell |
@@ -215,7 +217,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     # no fees in auction
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | party2 | ETH/MAR22 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | party2-buy  |
@@ -237,7 +239,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 20     | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 20     | USD   |
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | buy  | 40     | 1100  | 2                | TYPE_LIMIT | TIF_GTC | party1-buy  |
       | party2 | ETH/MAR22 | sell | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell |
@@ -313,7 +315,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     # no fees in auction
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | party2 | ETH/MAR22 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | party2-buy  |
@@ -334,7 +336,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | buy  | 40     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party1-buy  |
       | party2 | ETH/MAR22 | sell | 40     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell |
@@ -380,7 +382,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | sell | ASK              | 1          | 2      | submission |
       | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | sell | MID              | 2          | 1      | submission |
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/MAR22 | buy  | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -413,7 +415,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     # no fees in auction
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | party2 | ETH/MAR22 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party2-buy  |
@@ -613,7 +615,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     Then the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
-      | prices.ETH.value | 1200 |
+      | prices.ETH.value | 1200  |
 
     # check lp fee distribution at s
 
@@ -623,3 +625,121 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 19     | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1      | USD   |
+
+  Scenario: Cut the market value window short with a parameter change (0042-LIQF-022)
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount     |
+      | lp1    | USD   | 1000000000 |
+      | lp2    | USD   | 1000000000 |
+      | party1 | USD   | 100000000  |
+      | party2 | USD   | 100000000  |
+
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | buy  | MID              | 2          | 1      | submission |
+      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | sell | MID              | 2          | 1      | submission |
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | buy  | BID              | 1          | 2      | submission |
+      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | buy  | MID              | 2          | 1      | submission |
+      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | sell | ASK              | 1          | 2      | submission |
+      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | sell | MID              | 2          | 1      | submission |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/MAR22 | buy  | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/MAR22"
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
+      | 1000       | TRADING_MODE_CONTINUOUS | 6000         | 10000          | 60            | 10000              |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC |
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
+      | 1000       | TRADING_MODE_CONTINUOUS | 6000         | 10000          | 55            | 10000              |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | buy  | 15     | 1000  | 2                | TYPE_LIMIT | TIF_GTC |
+
+    Then then the network moves ahead "5" blocks
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
+      | 951        | TRADING_MODE_CONTINUOUS | 6657         | 10000          | 70            | 12070800           |
+
+
+    # Move the current market value window beyond 30 min
+    Then the network moves ahead "920" blocks
+
+    # Assure that trades are registered
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
+      | 951        | TRADING_MODE_CONTINUOUS | 6657         | 10000          | 70            | 65247              |
+
+    # Decrease the window length to 30 min
+    Then the following network parameters are set:
+      | name                                                | value |
+      | market.value.windowLength                           | 30m   |
+
+    # Move 1 block ahead to trigger market value proxy recalculation
+    Then the network moves ahead "1" blocks
+    # Now market value proxy == supplied stake (we started a new window and had no trades yet)
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
+      | 951        | TRADING_MODE_CONTINUOUS | 6657         | 10000          | 70            | 10000              |
+
+    # Place another trade and observe that it gets picked up by the market value proxy
+    Then the parties place the following orders:
+      | party  | market id | side  | volume | price | resulting trades | type        | tif     |
+      | party2 | ETH/MAR22 | sell  | 10     | 1000  | 2                | TYPE_MARKET | TIF_FOK |
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | last traded price | trading mode            | target stake | supplied stake | open interest | market value proxy |
+      | 951        | 949               | TRADING_MODE_CONTINUOUS | 6643         | 10000          | 70            | 10000              |
+
+    Then the network moves ahead "1" blocks
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
+      | 949        | TRADING_MODE_CONTINUOUS | 6643         | 10000          | 70            | 8541000            |
+
+    # Moving beyond 30min starts a new time window (market value proxy == supplied stake again as there weren't any trades in that window yet)
+    Then the network moves ahead "900" blocks
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
+      | 949        | TRADING_MODE_CONTINUOUS | 6643         | 10000          | 70            | 10000              |
+
+
+    # Place another trade and observe that it gets picked up by the market value proxy
+    Then the parties place the following orders:
+      | party  | market id | side  | volume | price | resulting trades | type        | tif     |
+      | party2 | ETH/MAR22 | buy   | 10     | 1000  | 2                | TYPE_MARKET | TIF_FOK |
+
+    Then the network moves ahead "100" blocks
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
+      | 951        | TRADING_MODE_CONTINUOUS | 6657         | 10000          | 70            | 85590              |
+
+    # Increase the window length to 40 min
+    Then the following network parameters are set:
+      | name                                                | value |
+      | market.value.windowLength                           | 40m  |
+
+    # Move beyond 30min (previous window length) and observe that trades are still picked up by market value proxy
+    Then the network moves ahead "1000" blocks
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
+      | 951        | TRADING_MODE_CONTINUOUS | 6657         | 10000          | 70            | 10374              |
+
+    Then the network moves ahead "100" blocks
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
+      | 951        | TRADING_MODE_CONTINUOUS | 6657         | 10000          | 70            | 10000              |

@@ -2,16 +2,17 @@ Feature: Fees calculations
 
 Background:
     Given the following network parameters are set:
-      | name                                              |  value                   |
-      | reward.asset                                      |  VEGA                    |
-      | validators.epoch.length                           |  10s                     |
-      | validators.delegation.minAmount                   |  10                      |
-      | reward.staking.delegation.delegatorShare          |  0.883                   |
-      | reward.staking.delegation.minimumValidatorStake   |  100                     |
-      | reward.staking.delegation.maxPayoutPerParticipant | 100000                   |
-      | reward.staking.delegation.competitionLevel        |  1.1                     |
-      | reward.staking.delegation.minValidators           |  5                       |
-      | reward.staking.delegation.optimalStakeMultiplier  |  5.0                     |
+      | name                                              |  value |
+      | reward.asset                                      |  VEGA  |
+      | validators.epoch.length                           |  10s   |
+      | validators.delegation.minAmount                   |  10    |
+      | reward.staking.delegation.delegatorShare          |  0.883 |
+      | reward.staking.delegation.minimumValidatorStake   |  100   |
+      | reward.staking.delegation.maxPayoutPerParticipant | 100000 |
+      | reward.staking.delegation.competitionLevel        |  1.1   |
+      | reward.staking.delegation.minValidators           |  5     |
+      | reward.staking.delegation.optimalStakeMultiplier  |  5.0   |
+      | network.markPriceUpdateMaximumFrequency           | 0s     |
 
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
@@ -109,7 +110,7 @@ Scenario: Testing fees when network parameters are changed (in continuous tradin
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | 
       | 1000       | TRADING_MODE_CONTINUOUS |  
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -126,7 +127,7 @@ Scenario: Testing fees when network parameters are changed (in continuous tradin
       | market.fee.factors.makerFee          | 0.05  |
       | market.fee.factors.infrastructureFee | 0.5   |
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader4 | ETH/DEC21 | sell  | 4     | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
 
@@ -154,7 +155,7 @@ Scenario: Testing fees when network parameters are changed (in continuous tradin
     # Trader4 margin + general account balance = 10000 - 151 ( Maker fees) - 1503 (Infra fee) = 8346
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1082   | 9069    | 
+      | trader3 | ETH   | ETH/DEC21 | 1089   | 9062    | 
       | trader4 | ETH   | ETH/DEC21 | 715    | 7330    | 
       
     And the accumulated infrastructure fees should be "1503" for the asset "ETH"

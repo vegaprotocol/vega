@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -13,6 +14,7 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	"code.vegaprotocol.io/vega/wallet/api/node"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/mitchellh/mapstructure"
@@ -21,9 +23,10 @@ import (
 const TransactionSuccessfullySigned = "The transaction has been successfully signed."
 
 type ClientSignTransactionParams struct {
-	Token              string `json:"token"`
-	PublicKey          string `json:"publicKey"`
-	EncodedTransaction string `json:"encodedTransaction"`
+	Token              string      `json:"token"`
+	PublicKey          string      `json:"publicKey"`
+	EncodedTransaction string      `json:"encodedTransaction"`
+	Transaction        interface{} `json:"transaction"`
 }
 
 type ClientParsedSignTransactionParams struct {
@@ -39,18 +42,17 @@ type ClientSignTransactionResult struct {
 type ClientSignTransaction struct {
 	interactor   Interactor
 	nodeSelector node.Selector
-	sessions     *Sessions
+	sessions     *session.Sessions
+	time         TimeProvider
 }
 
-func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
-	traceID := TraceIDFromContext(ctx)
-
+func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params, metadata jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateSignTransactionParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
 	}
 
-	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token)
+	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token, h.time.Now())
 	if err != nil {
 		return nil, invalidParams(err)
 	}
@@ -69,60 +71,62 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		return nil, invalidParams(errs)
 	}
 
-	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
+	if err := h.interactor.NotifyInteractionSessionBegan(ctx, metadata.TraceID); err != nil {
 		return nil, internalError(err)
 	}
-	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
+	defer h.interactor.NotifyInteractionSessionEnded(ctx, metadata.TraceID)
 
-	receivedAt := time.Now()
-	approved, err := h.interactor.RequestTransactionReviewForSigning(ctx, traceID, connectedWallet.Hostname, connectedWallet.Wallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
-	if err != nil {
-		if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
-			return nil, errDetails
+	if connectedWallet.RequireInteraction() {
+		receivedAt := time.Now()
+		approved, err := h.interactor.RequestTransactionReviewForSigning(ctx, metadata.TraceID, connectedWallet.Hostname, connectedWallet.Wallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
+		if err != nil {
+			if errDetails := handleRequestFlowError(ctx, metadata.TraceID, h.interactor, err); errDetails != nil {
+				return nil, errDetails
+			}
+			h.interactor.NotifyError(ctx, metadata.TraceID, InternalError, fmt.Errorf("requesting the transaction review failed: %w", err))
+			return nil, internalError(ErrCouldNotSignTransaction)
 		}
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the transaction review failed: %w", err))
-		return nil, internalError(ErrCouldNotSignTransaction)
-	}
-	if !approved {
-		return nil, userRejectionError()
+		if !approved {
+			return nil, userRejectionError()
+		}
 	}
 
-	h.interactor.Log(ctx, traceID, InfoLog, "Looking for a healthy node...")
+	h.interactor.Log(ctx, metadata.TraceID, InfoLog, "Looking for a healthy node...")
 	currentNode, err := h.nodeSelector.Node(ctx, func(reportType node.ReportType, msg string) {
-		h.interactor.Log(ctx, traceID, LogType(reportType), msg)
+		h.interactor.Log(ctx, metadata.TraceID, LogType(reportType), msg)
 	})
 	if err != nil {
-		h.interactor.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not find a healthy node: %w", err))
-		return nil, networkError(ErrNoHealthyNodeAvailable)
+		h.interactor.NotifyError(ctx, metadata.TraceID, NetworkError, fmt.Errorf("could not find a healthy node: %w", err))
+		return nil, nodeCommunicationError(ErrNoHealthyNodeAvailable)
 	}
 
-	h.interactor.Log(ctx, traceID, InfoLog, "Retrieving latest block information...")
+	h.interactor.Log(ctx, metadata.TraceID, InfoLog, "Retrieving latest block information...")
 	lastBlockData, err := currentNode.LastBlock(ctx)
 	if err != nil {
-		h.interactor.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get the latest block from the node: %w", err))
-		return nil, networkError(ErrCouldNotGetLastBlockInformation)
+		h.interactor.NotifyError(ctx, metadata.TraceID, NetworkError, fmt.Errorf("could not get the latest block from the node: %w", err))
+		return nil, nodeCommunicationError(ErrCouldNotGetLastBlockInformation)
 	}
-	h.interactor.Log(ctx, traceID, SuccessLog, "Latest block information has been retrieved.")
+	h.interactor.Log(ctx, metadata.TraceID, SuccessLog, "Latest block information has been retrieved.")
 
 	if lastBlockData.ChainID == "" {
-		h.interactor.NotifyError(ctx, traceID, NetworkError, ErrCouldNotGetChainIDFromNode)
-		return nil, networkError(ErrCouldNotGetChainIDFromNode)
+		h.interactor.NotifyError(ctx, metadata.TraceID, NetworkError, ErrCouldNotGetChainIDFromNode)
+		return nil, nodeCommunicationError(ErrCouldNotGetChainIDFromNode)
 	}
 
 	// Sign the payload.
 	inputData, err := wcommands.ToMarshaledInputData(request, lastBlockData.BlockHeight)
 	if err != nil {
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not marshal input data: %w", err))
+		h.interactor.NotifyError(ctx, metadata.TraceID, InternalError, fmt.Errorf("could not marshal input data: %w", err))
 		return nil, internalError(ErrCouldNotSignTransaction)
 	}
 
-	h.interactor.Log(ctx, traceID, InfoLog, "Signing the transaction...")
+	h.interactor.Log(ctx, metadata.TraceID, InfoLog, "Signing the transaction...")
 	signature, err := connectedWallet.Wallet.SignTx(params.PublicKey, commands.BundleInputDataForSigning(inputData, lastBlockData.ChainID))
 	if err != nil {
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not sign command: %w", err))
+		h.interactor.NotifyError(ctx, metadata.TraceID, InternalError, fmt.Errorf("could not sign command: %w", err))
 		return nil, internalError(ErrCouldNotSignTransaction)
 	}
-	h.interactor.Log(ctx, traceID, SuccessLog, "The transaction has been signed.")
+	h.interactor.Log(ctx, metadata.TraceID, SuccessLog, "The transaction has been signed.")
 
 	// Build the transaction.
 	tx := commands.NewTransaction(params.PublicKey, inputData, &commandspb.Signature{
@@ -132,31 +136,32 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	})
 
 	// Generate the proof of work for the transaction.
-	h.interactor.Log(ctx, traceID, InfoLog, "Computing proof-of-work...")
+	h.interactor.Log(ctx, metadata.TraceID, InfoLog, "Computing proof-of-work...")
 	txID := vgcrypto.RandomHash()
 	powNonce, _, err := vgcrypto.PoW(lastBlockData.BlockHash, txID, uint(lastBlockData.ProofOfWorkDifficulty), lastBlockData.ProofOfWorkHashFunction)
 	if err != nil {
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not compute the proof-of-work: %w", err))
+		h.interactor.NotifyError(ctx, metadata.TraceID, InternalError, fmt.Errorf("could not compute the proof-of-work: %w", err))
 		return nil, internalError(ErrCouldNotSignTransaction)
 	}
 	tx.Pow = &commandspb.ProofOfWork{
 		Tid:   txID,
 		Nonce: powNonce,
 	}
-	h.interactor.Log(ctx, traceID, SuccessLog, "The proof-of-work has been computed.")
+	h.interactor.Log(ctx, metadata.TraceID, SuccessLog, "The proof-of-work has been computed.")
 
-	h.interactor.NotifySuccessfulRequest(ctx, traceID, TransactionSuccessfullySigned)
+	h.interactor.NotifySuccessfulRequest(ctx, metadata.TraceID, TransactionSuccessfullySigned)
 
 	return ClientSignTransactionResult{
 		Tx: tx,
 	}, nil
 }
 
-func NewSignTransaction(interactor Interactor, nodeSelector node.Selector, sessions *Sessions) *ClientSignTransaction {
+func NewSignTransaction(interactor Interactor, nodeSelector node.Selector, sessions *session.Sessions, tp ...TimeProvider) *ClientSignTransaction {
 	return &ClientSignTransaction{
 		interactor:   interactor,
 		nodeSelector: nodeSelector,
 		sessions:     sessions,
+		time:         extractTimeProvider(tp...),
 	}
 }
 
@@ -178,13 +183,29 @@ func validateSignTransactionParams(rawParams jsonrpc.Params) (ClientParsedSignTr
 		return ClientParsedSignTransactionParams{}, ErrPublicKeyIsRequired
 	}
 
-	if params.EncodedTransaction == "" {
-		return ClientParsedSignTransactionParams{}, ErrEncodedTransactionIsRequired
+	if params.EncodedTransaction == "" && params.Transaction == nil {
+		return ClientParsedSignTransactionParams{}, ErrTransactionIsRequired
 	}
 
-	tx, err := base64.StdEncoding.DecodeString(params.EncodedTransaction)
-	if err != nil {
-		return ClientParsedSignTransactionParams{}, ErrEncodedTransactionIsNotValidBase64String
+	if params.EncodedTransaction != "" && params.Transaction != nil {
+		return ClientParsedSignTransactionParams{}, ErrEncodedTransactionAndTransactionSupplied
+	}
+
+	var tx []byte
+	var err error
+
+	if params.EncodedTransaction != "" {
+		tx, err = base64.StdEncoding.DecodeString(params.EncodedTransaction)
+		if err != nil {
+			return ClientParsedSignTransactionParams{}, ErrEncodedTransactionIsNotValidBase64String
+		}
+	}
+
+	if params.Transaction != nil {
+		tx, err = json.Marshal(params.Transaction)
+		if err != nil {
+			return ClientParsedSignTransactionParams{}, ErrEncodedTransactionIsNotValid
+		}
 	}
 
 	return ClientParsedSignTransactionParams{

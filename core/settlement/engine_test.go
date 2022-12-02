@@ -13,6 +13,7 @@
 package settlement_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -26,15 +27,17 @@ import (
 	"code.vegaprotocol.io/vega/core/settlement/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 type testEngine struct {
-	*settlement.Engine
+	*settlement.SnapshotEngine
 	ctrl      *gomock.Controller
 	prod      *mocks.MockProduct
 	positions []*mocks.MockMarketPosition
@@ -599,6 +602,18 @@ func testMarkToMarketOrdered(t *testing.T) {
 		assert.Equal(t, types.TransferTypeMTMWin, transfers[len(transfers)-1].Transfer().Type)
 		assert.Equal(t, "party2", transfers[0].Party()) // we expect party2 to have a loss
 	}
+
+	state, _, _ := engine.GetState(engine.market)
+	engineLoad := getTestEngine(t)
+	var pl snapshot.Payload
+	require.NoError(t, proto.Unmarshal(state, &pl))
+	payload := types.PayloadFromProto(&pl)
+
+	_, err := engineLoad.LoadState(context.Background(), payload)
+	require.NoError(t, err)
+
+	state2, _, _ := engineLoad.GetState(engine.market)
+	require.True(t, bytes.Equal(state, state2))
 }
 
 func testMTMNetworkZero(t *testing.T) {
@@ -837,13 +852,13 @@ func getTestEngineWithFactor(t *testing.T, f float64) *testEngine {
 	market := "BTC/DEC19"
 	prod.EXPECT().GetAsset().AnyTimes().Do(func() string { return "BTC" })
 	return &testEngine{
-		Engine:    settlement.New(logging.NewTestLogger(), conf, prod, market, tsvc, broker, num.NewDecimalFromFloat(f)),
-		ctrl:      ctrl,
-		prod:      prod,
-		tsvc:      tsvc,
-		broker:    broker,
-		positions: nil,
-		market:    market,
+		SnapshotEngine: settlement.NewSnapshotEngine(logging.NewTestLogger(), conf, prod, market, tsvc, broker, num.NewDecimalFromFloat(f)),
+		ctrl:           ctrl,
+		prod:           prod,
+		tsvc:           tsvc,
+		broker:         broker,
+		positions:      nil,
+		market:         market,
 	}
 }
 

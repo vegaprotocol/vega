@@ -66,6 +66,7 @@ var (
 		"orders_live",
 		"parties",
 		"positions",
+		"positions_current",
 		"proposals",
 		"protocol_upgrade_proposals",
 		"ranking_scores",
@@ -85,7 +86,7 @@ var (
 )
 
 func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.ConnectionSource, *bytes.Buffer),
-	postgresRuntimePath string,
+	postgresRuntimePath string, sqlFs fs.FS,
 ) int {
 	testDBSocketDir = filepath.Join(postgresRuntimePath)
 	testDBPort = 5432 // GetNextFreePort()
@@ -134,7 +135,7 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 		}
 		defer embeddedPostgres.Stop()
 
-		if err = sqlstore.WipeDatabase(log, sqlConfig.ConnectionConfig); err != nil {
+		if err = sqlstore.WipeDatabase(log, sqlConfig.ConnectionConfig, sqlFs); err != nil {
 			panic(err)
 		}
 

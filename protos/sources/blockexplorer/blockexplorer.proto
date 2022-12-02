@@ -3,6 +3,7 @@ syntax = "proto3";
 package blockexplorer.api.v1;
 
 import "vega/commands/v1/transaction.proto";
+import "vega/commands/v1/signature.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1";
@@ -71,4 +72,9 @@ message Transaction {
   string cursor = 7;
   // The actual command of the transaction
   vega.commands.v1.InputData command = 8;
+  // Submitter's signature of transaction
+  vega.commands.v1.Signature signature = 9;
+  // An optional error happening when processing / checking the transaction
+  // Should be set if error code is not 0
+  optional string error = 10;
 }

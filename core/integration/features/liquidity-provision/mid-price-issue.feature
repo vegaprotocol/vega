@@ -11,9 +11,10 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | id        | quote name | asset | risk model         | margin calculator         | auction duration | fees         | price monitoring | data source config          | decimal places |
       | DAI/DEC22 | DAI        | DAI   | dai-lognormal-risk | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 5              |
     And the following network parameters are set:
-      | name                              | value |
-      | market.auction.minimumDuration    | 1     |
-      | market.stake.target.scalingFactor | 10    |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | market.stake.target.scalingFactor       | 10    |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @MidPrice
   Scenario: Mid price works as expected

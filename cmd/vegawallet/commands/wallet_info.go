@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -36,7 +37,7 @@ func NewCmdGetInfoWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 		}
 
 		describeWallet := api.NewAdminDescribeWallet(s)
-		rawResult, errorDetails := describeWallet.Handle(context.Background(), params)
+		rawResult, errorDetails := describeWallet.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
 		if errorDetails != nil {
 			return api.AdminDescribeWalletResult{}, errors.New(errorDetails.Data)
 		}
@@ -86,7 +87,7 @@ func BuildCmdGetInfoWallet(w io.Writer, handler GetInfoWalletHandler, rf *RootFl
 		"Path to the file containing the wallet's passphrase",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }

@@ -210,6 +210,10 @@ func (s *Store) dispatchUpdate(ctx context.Context, p string) error {
 	return err
 }
 
+func (s *Store) AnyWatchers(p string) bool {
+	return len(s.watchers[p]) > 0
+}
+
 // OnTick is trigger once per blocks
 // we will send parameters update to watchers.
 func (s *Store) OnTick(ctx context.Context, _ time.Time) {

@@ -106,6 +106,49 @@ func (vs *Votes) GetByPartyConnection(ctx context.Context, partyIDStr string, pa
 	return votes, pageInfo, nil
 }
 
+func (vs *Votes) GetConnection(
+	ctx context.Context,
+	proposalIDStr, partyIDStr *string,
+	pagination entities.CursorPagination,
+) ([]entities.Vote, entities.PageInfo, error) {
+	query := `SELECT * FROM votes_current`
+	args := []interface{}{}
+
+	conditions := []string{}
+
+	if proposalIDStr != nil {
+		proposalID := entities.ProposalID(*proposalIDStr)
+		conditions = append(conditions, fmt.Sprintf("proposal_id=%s", nextBindVar(&args, proposalID)))
+	}
+
+	if partyIDStr != nil {
+		partyID := entities.PartyID(*partyIDStr)
+		conditions = append(conditions, fmt.Sprintf("party_id=%s", nextBindVar(&args, partyID)))
+	}
+
+	if len(conditions) > 0 {
+		query = fmt.Sprintf("%s WHERE %s", query, strings.Join(conditions, " AND "))
+	}
+
+	var (
+		votes    []entities.Vote
+		pageInfo entities.PageInfo
+		err      error
+	)
+
+	query, args, err = PaginateQuery[entities.VoteCursor](query, args, votesOrdering, pagination)
+	if err != nil {
+		return votes, pageInfo, err
+	}
+
+	if err = pgxscan.Select(ctx, vs.Connection, &votes, query, args...); err != nil {
+		return nil, entities.PageInfo{}, err
+	}
+
+	votes, pageInfo = entities.PageEntities[*v2.VoteEdge](votes, pagination)
+	return votes, pageInfo, nil
+}
+
 func (vs *Votes) Get(ctx context.Context,
 	proposalIDStr *string,
 	partyIDStr *string,

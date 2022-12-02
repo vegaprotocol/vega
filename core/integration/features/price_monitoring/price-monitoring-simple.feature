@@ -13,8 +13,9 @@ Feature: Price monitoring test using simple risk model
       | id        | quote name | asset | auction duration | risk model           | margin calculator         | fees         | price monitoring    | data source config          |
       | ETH/DEC20 | ETH        | ETH   | 240              | my-simple-risk-model | default-margin-calculator | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 240   |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 240   |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: Persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction.
     Given the parties deposit on asset's general account the following amount:
@@ -217,7 +218,10 @@ Feature: Price monitoring test using simple risk model
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "115" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 110        | 115               | TRADING_MODE_CONTINUOUS |
+
 
     #T0 + 01min10s
     Then time is updated to "2020-10-16T00:09:10Z"
@@ -229,7 +233,9 @@ Feature: Price monitoring test using simple risk model
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "105" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 115        | 105               | TRADING_MODE_CONTINUOUS |
 
     #T1 = T0 + 02min10s (auction start)
     Then time is updated to "2020-10-16T00:10:10Z"
@@ -285,12 +291,12 @@ Feature: Price monitoring test using simple risk model
       | aux   | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC20 | buy  | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux   | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
-   
+
    Then the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | aux   | ETH/DEC20 | 660               | 0.001 | buy  | BID              | 1          | 10     | submission |
       | lp1 | aux   | ETH/DEC20 | 660               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
-   
+
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "110" for the market "ETH/DEC20"
@@ -314,7 +320,9 @@ Feature: Price monitoring test using simple risk model
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "115" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 110        | 115               | TRADING_MODE_CONTINUOUS |
 
     #T0 + 01min10s
     Then time is updated to "2020-10-16T00:09:10Z"
@@ -326,7 +334,7 @@ Feature: Price monitoring test using simple risk model
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "105" for the market "ETH/DEC20"
+    And the mark price should be "115" for the market "ETH/DEC20"
 
     #T1 = T0 + 04min10s (auction start)
     Then time is updated to "2020-10-16T00:12:10Z"
@@ -359,7 +367,7 @@ Feature: Price monitoring test using simple risk model
 
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake |
-      | 120        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 660          | 660            |  
+      | 120        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 660          | 660            |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -410,7 +418,9 @@ Feature: Price monitoring test using simple risk model
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "115" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 110        | 115               | TRADING_MODE_CONTINUOUS |
 
     #T0 + 01min10s
     Then time is updated to "2020-10-16T00:09:10Z"
@@ -422,7 +432,9 @@ Feature: Price monitoring test using simple risk model
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "105" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 115     | 105            | TRADING_MODE_CONTINUOUS |
 
     #T1 = T0 + 02min10s (auction start)
     Then time is updated to "2020-10-16T00:10:10Z"
@@ -512,7 +524,9 @@ Feature: Price monitoring test using simple risk model
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "115" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 110        | 115               | TRADING_MODE_CONTINUOUS |
 
     #T0 + 01min10s
     Then time is updated to "2020-10-16T00:09:10Z"
@@ -524,7 +538,9 @@ Feature: Price monitoring test using simple risk model
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "105" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 115        | 105               | TRADING_MODE_CONTINUOUS |
 
     #T1 = T0 + 02min10s (auction start)
     Then time is updated to "2020-10-16T00:10:10Z"

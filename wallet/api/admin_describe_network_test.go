@@ -41,16 +41,16 @@ func testDescribingNetworkWithInvalidParamsFails(t *testing.T) {
 		{
 			name: "with empty network",
 			params: api.AdminDescribeNetworkParams{
-				Network: "",
+				Name: "",
 			},
-			expectedError: api.ErrNetworkIsRequired,
+			expectedError: api.ErrNetworkNameIsRequired,
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newDescribeNetworkHandler(tt)
@@ -78,7 +78,7 @@ func testDescribingNetworkWithValidParamsSucceeds(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeNetworkParams{
-		Network: network.Name,
+		Name: network.Name,
 	})
 
 	// then
@@ -106,7 +106,7 @@ func testDescribingNetworkThatDoesNotExistsFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeNetworkParams{
-		Network: name,
+		Name: name,
 	})
 
 	// then
@@ -127,7 +127,7 @@ func testGettingInternalErrorDuringNetworkVerificationFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeNetworkParams{
-		Network: name,
+		Name: name,
 	})
 
 	// then
@@ -149,7 +149,7 @@ func testGettingInternalErrorDuringNetworkRetrievalFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeNetworkParams{
-		Network: name,
+		Name: name,
 	})
 
 	// then
@@ -167,7 +167,7 @@ type describeNetworkHandler struct {
 func (h *describeNetworkHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminDescribeNetworkResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminDescribeNetworkResult)
 		if !ok {

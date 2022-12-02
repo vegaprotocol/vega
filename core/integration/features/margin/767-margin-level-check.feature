@@ -1,10 +1,12 @@
 Feature: Regression test for issue 767
 
   Background:
-
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | BTC        | BTC   | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: Traders place orders meeting the maintenance margin, but not the initial margin requirements, and can close out
     Given the parties deposit on asset's general account the following amount:
@@ -30,19 +32,19 @@ Feature: Regression test for issue 767
     # Trigger an auction to set the mark price
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | party1-1 |
-      | party2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party2-1 |
-      | party1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | party1-2 |
-      | party2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | party2-2 |
+      | party1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | party1-1  |
+      | party2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
+      | party1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | party1-2  |
+      | party2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | party2-2  |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "100" for the market "ETH/DEC19"
     Then the parties cancel the following orders:
       | party  | reference |
-      | party1 | party1-1 |
-      | party2 | party2-1 |
+      | party1 | party1-1  |
+      | party2 | party2-1  |
 
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+    When the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | edd    | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | edd    | ETH/DEC19 | sell | 20     | 102   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | edd    | ETH/DEC19 | sell | 10     | 103   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
@@ -54,22 +56,22 @@ Feature: Regression test for issue 767
       | barney | ETH/DEC19 | buy  | 20     | 96    | 0                | TYPE_LIMIT | TIF_GTC | ref-9     |
       | barney | ETH/DEC19 | buy  | 5      | 95    | 0                | TYPE_LIMIT | TIF_GTC | ref-10    |
     Then the parties should have the following account balances:
-      | party | asset | market id | margin | general |
+      | party  | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 848    | 152     |
       | barney | BTC   | ETH/DEC19 | 594    | 406     |
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | edd    | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | edd   | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following account balances:
-      | party | asset | market id | margin | general |
+      | party  | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 1000   | 0       |
       | barney | BTC   | ETH/DEC19 | 594    | 406     |
     And the cumulated balance for all accounts should be worth "3102000"
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | edd    | ETH/DEC19 | buy  | 115    | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | edd   | ETH/DEC19 | buy  | 115    | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following account balances:
-      | party | asset | market id | margin | general |
+      | party  | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 1000   | 0       |
       | barney | BTC   | ETH/DEC19 | 594    | 406     |
     And the cumulated balance for all accounts should be worth "3102000"

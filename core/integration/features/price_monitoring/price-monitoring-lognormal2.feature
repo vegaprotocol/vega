@@ -13,8 +13,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | data source config          |
       | ETH/DEC20 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 3600             | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 100   |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 100   |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: Auction triggered by 1st trigger (lower bound breached)
     Given the parties deposit on asset's general account the following amount:
@@ -70,20 +71,23 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    Then the mark price should be "95878" for the market "ETH/DEC20"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 100000     | 95878             | TRADING_MODE_CONTINUOUS |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    Then the mark price should be "104251" for the market "ETH/DEC20"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 100000     | 104251            | TRADING_MODE_CONTINUOUS |
+
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound |
-      | 104251     | TRADING_MODE_CONTINUOUS | 3600    | 95878     | 104251    |
-      | 104251     | TRADING_MODE_CONTINUOUS | 7200    | 90497     | 110401    |
+      | 100000     | TRADING_MODE_CONTINUOUS | 3600    | 95878     | 104251    |
+      | 100000     | TRADING_MODE_CONTINUOUS | 7200    | 90497     | 110401    |
 
     # T0
     Then time is updated to "2020-10-16T02:00:00Z"
@@ -102,7 +106,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    #T0 + 4min + 1 second 
+    #T0 + 4min + 1 second
     Then time is updated to "2020-10-16T02:04:01Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
@@ -164,26 +168,32 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    Then the mark price should be "95878" for the market "ETH/DEC20"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 100000     | 95878             | TRADING_MODE_CONTINUOUS |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
-    Then the mark price should be "104251" for the market "ETH/DEC20"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 100000     | 104251            | TRADING_MODE_CONTINUOUS |
+
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound |
-      | 104251     | TRADING_MODE_CONTINUOUS | 3600    | 95878     | 104251    |
-      | 104251     | TRADING_MODE_CONTINUOUS | 7200    | 90497     | 110401    |
+      | 100000     | TRADING_MODE_CONTINUOUS | 3600    | 95878     | 104251    |
+      | 100000     | TRADING_MODE_CONTINUOUS | 7200    | 90497     | 110401    |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 104252 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 104252 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode                   |
+      | 100000     | 104251            | TRADING_MODE_MONITORING_AUCTION |
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
@@ -197,7 +207,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "104252" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 104252     | 104252            | TRADING_MODE_CONTINUOUS |
 
   Scenario: Non-opening auction can end with wash trades
     Given the parties deposit on asset's general account the following amount:
@@ -223,7 +235,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     # Trigger an auction to set the mark price
     Then the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | party3-1  |
       | party4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | party4-1  |
@@ -242,22 +254,23 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     # T0
     Then time is updated to "2020-10-16T02:00:00Z"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
     Then the mark price should be "100000" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    Then the mark price should be "95878" for the market "ETH/DEC20"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | last traded price | trading mode            |
+      | 95878     | 95878             | TRADING_MODE_CONTINUOUS |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -268,7 +281,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | 104251     | TRADING_MODE_CONTINUOUS | 3600    | 95878     | 104251    |
       | 104251     | TRADING_MODE_CONTINUOUS | 7200    | 90497     | 110401    |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 104252 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | party2 | ETH/DEC20 | buy  | 1      | 104252 | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
@@ -293,10 +306,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
 
     # Submit trade so that auction uncrosses with wash trade
-    And the parties place the following orders:
+    And the parties place the following orders with ticks:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | buy  | 1      | 104252 | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
-  
+
     # Assure no change in target stake due to wash trade
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode                    | auction trigger       | open interest |
@@ -380,7 +393,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the mark price should be "95878" for the market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -389,7 +402,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -398,7 +411,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 104253 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 104253 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
@@ -445,10 +458,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | party4-2  |
     Then the opening auction period ends for market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
-   
+
     #T0
     Then time is updated to "2020-10-16T02:00:00Z"
-   
+
     Then the parties cancel the following orders:
       | party  | reference |
       | party3 | party3-1  |
@@ -468,7 +481,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the mark price should be "95878" for the market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -477,7 +490,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -486,11 +499,11 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 90496 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 90496 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    #T0 + 4min 
+    #T0 + 4min
     Then time is updated to "2020-10-16T02:04:00Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
@@ -500,7 +513,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
     #T0 + 10min
     Then time is updated to "2020-10-16T02:10:00Z"
@@ -545,10 +558,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | party4-2  |
     Then the opening auction period ends for market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
-   
+
     #T0
     Then time is updated to "2020-10-16T02:00:00Z"
-   
+
     Then the parties cancel the following orders:
       | party  | reference |
       | party3 | party3-1  |
@@ -568,7 +581,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the mark price should be "95878" for the market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -577,7 +590,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -586,11 +599,11 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 110402 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 110402 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    #T0 + 4min 
+    #T0 + 4min
     Then time is updated to "2020-10-16T02:04:00Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
@@ -600,9 +613,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
-    #T0 + 10min 
+    #T0 + 10min
     Then time is updated to "2020-10-16T02:10:00Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
@@ -671,7 +684,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the mark price should be "95878" for the market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -680,11 +693,11 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound |
-      | 104251     | TRADING_MODE_CONTINUOUS | 3600    | 95878     | 104251    |
-      | 104251     | TRADING_MODE_CONTINUOUS | 7200    | 90497     | 110401    |
+      | 100000     | TRADING_MODE_CONTINUOUS | 3600    | 95878     | 104251    |
+      | 100000     | TRADING_MODE_CONTINUOUS | 7200    | 90497     | 110401    |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -693,7 +706,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC | cancel-me |
       | party2 | ETH/DEC20 | buy  | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
@@ -709,7 +722,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     # Additional sell volume prevents liquidity extension
     When the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC20 | sell | 1      | 110431 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | 
+      | party1 | ETH/DEC20 | sell | 1      | 110431 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party1 | ETH/DEC20 | sell | 1      | 110430 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 110430 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
@@ -718,14 +731,14 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
     #T0 + 10min
     Then time is updated to "2020-10-16T02:10:02Z"
 
    Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | extension trigger       | target stake | supplied stake | open interest |
-      | 104251     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_PRICE | 614211       | 614212         | 4             |
+      | 100000     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_PRICE | 614211       | 614212         | 4             |
 
     #T0 + 10min01sec
     Then time is updated to "2020-10-16T02:10:03Z"

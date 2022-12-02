@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -24,6 +25,10 @@ var (
 		# Update the passphrase of the specified wallet
 		{{.Software}} passphrase update --wallet WALLET
 	`)
+
+	newWalletPassphraseOptions = flags.PassphraseOptions{
+		Name: "new",
+	}
 )
 
 type UpdatePassphraseHandler func(api.AdminUpdatePassphraseParams) error
@@ -37,7 +42,7 @@ func NewCmdUpdatePassphrase(w io.Writer, rf *RootFlags) *cobra.Command {
 
 		updatePassphrase := api.NewAdminUpdatePassphrase(s)
 
-		_, errDetails := updatePassphrase.Handle(context.Background(), params)
+		_, errDetails := updatePassphrase.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
 		if errDetails != nil {
 			return errors.New(errDetails.Data)
 		}
@@ -92,7 +97,7 @@ func BuildCmdUpdatePassphrase(w io.Writer, handler UpdatePassphraseHandler, rf *
 		"Path to the file containing the new wallet's passphrase",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }
@@ -113,7 +118,7 @@ func (f *UpdatePassphraseFlags) Validate() (api.AdminUpdatePassphraseParams, err
 		return api.AdminUpdatePassphraseParams{}, err
 	}
 
-	newPassphrase, err := flags.GetConfirmedPassphraseWithContext("new", f.NewPassphraseFile)
+	newPassphrase, err := flags.GetConfirmedPassphraseWithContext(newWalletPassphraseOptions, f.NewPassphraseFile)
 	if err != nil {
 		return api.AdminUpdatePassphraseParams{}, err
 	}

@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -38,7 +39,7 @@ func NewCmdSignMessage(w io.Writer, rf *RootFlags) *cobra.Command {
 		}
 
 		signMessage := api.NewAdminSignMessage(s)
-		rawResult, errorDetails := signMessage.Handle(context.Background(), params)
+		rawResult, errorDetails := signMessage.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
 		if errorDetails != nil {
 			return api.AdminSignMessageResult{}, errors.New(errorDetails.Data)
 		}
@@ -102,7 +103,7 @@ func BuildCmdSignMessage(w io.Writer, handler SignMessageHandler, rf *RootFlags)
 		"Path to the file containing the wallet's passphrase",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }

@@ -60,10 +60,7 @@ func getTestService(t *testing.T, consentPolicy string) *testService {
 		t.Fatalf("unknown consent policy: %s", consentPolicy)
 	}
 	// no needs of the conf or path as we do not run an actual service
-	s, err := service.NewService(zap.NewNop(), &network.Network{}, nil, handler, auth, nodeForward, policy)
-	if err != nil {
-		t.Fatalf("couldn't create service: %v", err)
-	}
+	s := service.NewService(zap.NewNop(), &network.Network{}, nil, handler, auth, nodeForward, policy)
 
 	return &testService{
 		Service:     s,

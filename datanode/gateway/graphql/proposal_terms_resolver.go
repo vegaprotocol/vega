@@ -15,7 +15,9 @@ package gql
 import (
 	"context"
 	"errors"
+	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -23,24 +25,28 @@ var ErrUnsupportedProposalTermsChanges = errors.New("unsupported proposal terms 
 
 type proposalTermsResolver VegaResolverRoot
 
-func (r *proposalTermsResolver) ClosingDatetime(ctx context.Context, obj *types.ProposalTerms) (string, error) {
-	return secondsTSToDatetime(obj.ClosingTimestamp), nil
+func (r *proposalTermsResolver) ClosingDatetime(ctx context.Context, obj *types.ProposalTerms) (int64, error) {
+	// this is a unix timestamp (specified by users)
+	// needs to convert to time then UnixNano for the Timestamp resolver to work
+	return time.Unix(obj.ClosingTimestamp, 0).UnixNano(), nil
 }
 
-func (r *proposalTermsResolver) EnactmentDatetime(ctx context.Context, obj *types.ProposalTerms) (*string, error) {
-	var dt *string
+func (r *proposalTermsResolver) EnactmentDatetime(ctx context.Context, obj *types.ProposalTerms) (*int64, error) {
+	var dt *int64
 	if obj.EnactmentTimestamp != 0 {
-		tmpdt := secondsTSToDatetime(obj.EnactmentTimestamp)
-		dt = &tmpdt
+		// this is a unix timestamp (specified by users)
+		// needs to convert to time then UnixNano for the Timestamp resolver to work
+		dt = ptr.From(time.Unix(obj.EnactmentTimestamp, 0).UnixNano())
 	}
 	return dt, nil
 }
 
-func (r *proposalTermsResolver) ValidationDatetime(ctx context.Context, obj *types.ProposalTerms) (*string, error) {
-	var dt *string
+func (r *proposalTermsResolver) ValidationDatetime(ctx context.Context, obj *types.ProposalTerms) (*int64, error) {
+	var dt *int64
 	if obj.ValidationTimestamp != 0 {
-		tmpdt := secondsTSToDatetime(obj.ValidationTimestamp)
-		dt = &tmpdt
+		// this is a unix timestamp (specified by users)
+		// needs to convert to time then UnixNano for the Timestamp resolver to work
+		dt = ptr.From(time.Unix(obj.ValidationTimestamp, 0).UnixNano())
 	}
 	return dt, nil
 }

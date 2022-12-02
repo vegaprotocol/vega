@@ -4,12 +4,15 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/georgysavva/scany/pgxscan"
 
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 
@@ -21,7 +24,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-type CreateSnapshotResult struct {
+type MetaData struct {
 	CurrentStateSnapshot     CurrentState
 	HistorySnapshot          History
 	CurrentStateSnapshotPath string
@@ -29,19 +32,30 @@ type CreateSnapshotResult struct {
 	DatabaseVersion          int64
 }
 
-func (b *Service) CreateSnapshot(ctx context.Context, chainID string, fromHeight int64, toHeight int64) (CreateSnapshotResult, error) {
+var (
+	ErrSnapshotExists = errors.New("Snapshot exists")
+	ErrNoLastSnapshot = errors.New("No last snapshot")
+)
+
+func (b *Service) CreateSnapshot(ctx context.Context, chainID string, toHeight int64) (MetaData, error) {
+	return b.createNewSnapshot(ctx, chainID, toHeight, false)
+}
+
+func (b *Service) CreateSnapshotAsynchronously(ctx context.Context, chainID string, toHeight int64) (MetaData, error) {
+	return b.createNewSnapshot(ctx, chainID, toHeight, true)
+}
+
+func (b *Service) createNewSnapshot(ctx context.Context, chainID string, toHeight int64,
+	async bool,
+) (MetaData, error) {
 	var err error
 	if len(chainID) == 0 {
-		return CreateSnapshotResult{}, fmt.Errorf("chain id is required")
+		return MetaData{}, fmt.Errorf("chain id is required")
 	}
-
-	currentSnapshot := NewCurrentSnapshot(chainID, toHeight)
-	historySnapshot := NewHistorySnapshot(chainID, fromHeight, toHeight)
-	b.log.Infof("creating snapshot for %+v", historySnapshot)
 
 	dbMetaData, err := NewDatabaseMetaData(ctx, b.connConfig)
 	if err != nil {
-		return CreateSnapshotResult{}, fmt.Errorf("failed to get data dump metadata: %w", err)
+		return MetaData{}, fmt.Errorf("failed to get data dump metadata: %w", err)
 	}
 
 	var cleanUp []func()
@@ -61,48 +75,136 @@ func (b *Service) CreateSnapshot(ctx context.Context, chainID string, fromHeight
 	conn, err := pgxpool.Connect(ctx, b.connConfig.GetConnectionString())
 	if err != nil {
 		runAllInReverseOrder(cleanUp)
-		return CreateSnapshotResult{}, fmt.Errorf("unable to connect to database: %w", err)
+		return MetaData{}, fmt.Errorf("unable to connect to database: %w", err)
 	}
 	cleanUp = append(cleanUp, func() { conn.Close() })
 
 	copyDataTx, err := conn.Begin(ctx)
 	if err != nil {
 		runAllInReverseOrder(cleanUp)
-		return CreateSnapshotResult{}, fmt.Errorf("failed to begin copy table data transaction: %w", err)
+		return MetaData{}, fmt.Errorf("failed to begin copy table data transaction: %w", err)
 	}
 	// Rolling back a committed transaction does nothing
 	cleanUp = append(cleanUp, func() { _ = copyDataTx.Rollback(ctx) })
 
 	if _, err = copyDataTx.Exec(ctx, "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"); err != nil {
 		runAllInReverseOrder(cleanUp)
-		return CreateSnapshotResult{}, fmt.Errorf("failed to set transaction isolation level to serilizable:%w", err)
+		return MetaData{}, fmt.Errorf("failed to set transaction isolation level to serilizable: %w", err)
 	}
 
 	snapshotInProgressFile := filepath.Join(b.snapshotsCopyToPath, InProgressFileName(chainID, toHeight))
 	if _, err = os.Create(snapshotInProgressFile); err != nil {
 		runAllInReverseOrder(cleanUp)
-		return CreateSnapshotResult{}, fmt.Errorf("failed to create write lock file:%w", err)
+		return MetaData{}, fmt.Errorf("failed to create write lock file:%w", err)
 	}
 	cleanUp = append(cleanUp, func() { _ = os.Remove(snapshotInProgressFile) })
 
-	// To ensure reads are isolated from this point forward execute a read on last block
-	sqlstore.GetLastBlockUsingConnection(ctx, copyDataTx)
+	nextSpan, err := getNextSnapshotSpan(ctx, toHeight, copyDataTx)
+	if err != nil {
+		runAllInReverseOrder(cleanUp)
+		if errors.Is(err, ErrSnapshotExists) {
+			return MetaData{}, ErrSnapshotExists
+		}
+		return MetaData{}, fmt.Errorf("failed to get next snapshot span:%w", err)
+	}
 
-	go func() {
+	historySnapshot := NewHistorySnapshot(chainID, nextSpan.FromHeight, nextSpan.ToHeight)
+	currentSnapshot := NewCurrentSnapshot(chainID, nextSpan.ToHeight)
+
+	b.log.Infof("creating snapshot for %+v", historySnapshot)
+
+	// To ensure reads are isolated from this point forward execute a read on last block
+	_, err = sqlstore.GetLastBlockUsingConnection(ctx, copyDataTx)
+	if err != nil {
+		return MetaData{}, fmt.Errorf("failed to get last block using connection: %w", err)
+	}
+
+	snapshotData := func() {
 		defer func() { runAllInReverseOrder(cleanUp) }()
 		err = b.snapshotData(ctx, copyDataTx, dbMetaData, currentSnapshot, historySnapshot)
 		if err != nil {
 			b.log.Panic("failed to snapshot data", logging.Error(err))
 		}
-	}()
+	}
 
-	return CreateSnapshotResult{
+	if async {
+		go snapshotData()
+	} else {
+		snapshotData()
+	}
+
+	return MetaData{
 		CurrentStateSnapshot:     currentSnapshot,
 		HistorySnapshot:          historySnapshot,
 		CurrentStateSnapshotPath: filepath.Join(b.snapshotsCopyToPath, currentSnapshot.CompressedFileName()),
 		HistorySnapshotPath:      filepath.Join(b.snapshotsCopyToPath, historySnapshot.CompressedFileName()),
 		DatabaseVersion:          dbMetaData.DatabaseVersion,
 	}, nil
+}
+
+func getNextSnapshotSpan(ctx context.Context, toHeight int64, copyDataTx pgx.Tx) (Span, error) {
+	lastSnapshotSpan, err := getLastSnapshotSpan(ctx, copyDataTx)
+
+	var nextSpan Span
+	if err != nil {
+		if errors.Is(err, ErrNoLastSnapshot) {
+			oldestHistoryBlock, err := sqlstore.GetOldestHistoryBlockUsingConnection(ctx, copyDataTx)
+			if err != nil {
+				return Span{}, fmt.Errorf("failed to get oldest history block:%w", err)
+			}
+			nextSpan = Span{
+				FromHeight: oldestHistoryBlock.Height,
+				ToHeight:   toHeight,
+			}
+		} else {
+			return nextSpan, fmt.Errorf("failed to get last snapshot span:%w", err)
+		}
+	} else {
+		if toHeight < lastSnapshotSpan.ToHeight {
+			return Span{}, fmt.Errorf("toHeight %d is less than last snapshot span %+v", toHeight, lastSnapshotSpan)
+		}
+
+		if toHeight == lastSnapshotSpan.ToHeight {
+			return Span{}, ErrSnapshotExists
+		}
+
+		nextSpan = Span{FromHeight: lastSnapshotSpan.ToHeight + 1, ToHeight: toHeight}
+	}
+
+	err = setLastSnapshotSpan(ctx, copyDataTx, nextSpan.FromHeight, nextSpan.ToHeight)
+	if err != nil {
+		return Span{}, fmt.Errorf("failed to set last snapshot span:%w", err)
+	}
+
+	return nextSpan, nil
+}
+
+type Span struct {
+	FromHeight int64
+	ToHeight   int64
+}
+
+func setLastSnapshotSpan(ctx context.Context, connection sqlstore.Connection, fromHeight, toHeight int64) error {
+	_, err := connection.Exec(ctx, `Insert into last_snapshot_span (from_height, to_height) VALUES($1, $2)
+	 on conflict(onerow_check) do update set from_height=EXCLUDED.from_height, to_height=EXCLUDED.to_height`,
+		fromHeight, toHeight)
+	if err != nil {
+		return fmt.Errorf("failed to update last_snapshot_span table:%w", err)
+	}
+	return nil
+}
+
+func getLastSnapshotSpan(ctx context.Context, connection sqlstore.Connection) (*Span, error) {
+	ls := &Span{}
+	err := pgxscan.Get(ctx, connection, ls,
+		`SELECT from_height, to_height
+		FROM last_snapshot_span`)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNoLastSnapshot
+	}
+
+	return ls, err
 }
 
 func runAllInReverseOrder(functions []func()) {
@@ -190,7 +292,7 @@ func (b *Service) snapshotData(ctx context.Context, copyDataTx pgx.Tx, dbMetaDat
 	return nil
 }
 
-func GetHistoryMd5Hash(snapshot CreateSnapshotResult) (string, error) {
+func GetHistoryMd5Hash(snapshot MetaData) (string, error) {
 	snapshotHash := md5.New()
 
 	err := hashFile(snapshotHash, snapshot.HistorySnapshotPath)

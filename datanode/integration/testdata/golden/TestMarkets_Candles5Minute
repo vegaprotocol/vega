@@ -1,1 +1,958 @@
-{"TestName":"TestMarkets_Candles5Minute","Query":"{ markets{ id, candles(since : \"2000-01-01T00:00:00Z\",interval : I5M)  {  timestamp, datetime, high, low, open, close, volume, interval} } }","Result":{"Markets":[{"Id":"7408aa4f5dd0164376a521d59b1db095682ea2e7d2f8bd96e225c43f2ab1db0d","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"0ac6b3d8c90a66f52f01e337d126ac30210b119261cd110300bb9efa6192dc82","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"96717ec9fd5910da2d0783dd2dbbb26d539f4256f8f65cce794e3bf1d364312a","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"077204316dd6d4c62d59bcdae682dd9fa7e14a05b40bef56b9845d9bfc254ef6","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"0e7ac36482f5f2c636f16cff4c594d303b83a20ce101fcc18cee12e1ac59d5d4","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"ee0794dd925f2ac5b5d88c1a1a9d419b325badce20a77a06c3447f61358e090d","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"90d70f96c62eea15f4ce776f95bbc5e58a8b466e117b5af3f8cbf844b277ff2b","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"a5517c72d6c1ebf7f1e2b3aa7f951e418a4e5372298bf72f4e20878ff8ebaf88","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"d6e1e1573225b3331204b3a75a7204259abb163f4249c7ca577fbc9f52713d2c","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"dfc850884f6be44e11cedc0a74f9f77ae3bc858f8574bf1730ba09f082d48cf8","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"3353cb91858efb127b55fe4d37e7eea3a6c4eeb96e79db0068306e9d0d80b105","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"9163f22338c25adf4003312f96d2ce059c75d08d0d825fe67905b117f0ed74f2","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"1962f1ef2b467729705ccefcec04ac478f8019a0f6e28e826e79019113ed45ce","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"451d6ee62860db49f801750ea904193ecf88faae47889a51eae0c0cc56c458c6","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"6f7933f18dc7a44c569f0c7f2f580b0b9805aaa28770a6cd133d889e4952e932","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"39a909cb0e6055cf320036ea90df637ed6ce1e17f2dcfff7cd7b6b0028fc2609","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"9c6a5d38b3e514d8a0d81fcb517ed7e5ac9fef1efbd732fe04287ecd57df1a7a","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"3434e73ac8b28670dd393d5729e769a7d582c22adc77377e13d6971636c34f92","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"5bca5ac25a4f3ab6fc002bbaacfb1f1345a042b5de2eb98659fb9a03fd524076","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"00d021abbf62cd220a59c0208df3aff0e24926c1df544e23068fb419012cfa8d","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null},{"Id":"ac5c66747f35c8fc5bce449951d93ce5d71cc8c8f704c90a8d4f97b19413a578","Name":"","Fees":{"MakerFee":"","InfrastructureFee":"","LiquidityFee":""},"Trades":null,"TradableInstrument":{"Instrument":{"Id":"","Code":"","Name":"","Metadata":{"Tags":null}},"MarginCalculator":{"ScalingFactors":{"SearchLevel":0,"InitialMargin":0,"CollateralRelease":0}}},"DecimalPlaces":0,"OpeningAuction":{"DurationSecs":0,"Volume":0},"PriceMonitoringSettings":{"Parameters":{"Triggers":null},"UpdateFrequencySecs":0},"LiquidityMonitoringParameters":{"TargetStakeParameters":{"TimeWindow":0,"ScalingFactor":0},"TriggeringRatio":0},"TradingMode":"","State":"","Proposal":{"Id":"","Reference":"","Party":{"Id":"","Orders":null,"Trades":null,"Accounts":null,"Proposals":null,"Votes":null,"LiquidityProvision":null,"Positions":null,"Withdrawals":null,"Deposits":null},"State":"","Datetime":"","Terms":{"ClosingDateTime":"","EnactmentDatetime":""},"Votes":{"Yes":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""},"No":{"Votes":null,"TotalNumber":"","TotalWeight":"","TotalTokens":""}},"RejectionReason":""},"Orders":null,"Accounts":null}]},"Duration":16756109}
+{
+	"TestName": "TestMarkets_Candles5Minute",
+	"Query": "{ marketsConnection{ edges { node { id, candlesConnection(since : \"2000-01-01T00:00:00Z\",interval : INTERVAL_I5M)  { edges { node { periodStart, lastUpdateInPeriod, high, low, open, close, volume } } } } } } }",
+	"Result": {
+		"marketsConnection": {
+			"edges": [
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": null
+						},
+						"id": "162397c1072a83001c4c6b98a414987b7b7412f25a2d1c9b94a4cf4709e1149a"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "100100000",
+										"high": "100100000",
+										"lastUpdateInPeriod": "2022-11-08T08:45:27.093232Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T08:45:00Z",
+										"volume": "1000000"
+									}
+								}
+							]
+						},
+						"id": "a612587a48a615ba3182868cd2e193b2661983cb41d8e7afa21c74d5821897a2"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "100000000",
+										"high": "100000000",
+										"lastUpdateInPeriod": "2022-11-08T08:52:55.28227Z",
+										"low": "100000000",
+										"open": "100000000",
+										"periodStart": "2022-11-08T08:50:00Z",
+										"volume": "100000"
+									}
+								}
+							]
+						},
+						"id": "6067f86da2134e56b82f2900ab9b83a97f3daf7cb16fb211c39e87f63a9853c7"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "100000000",
+										"high": "100000000",
+										"lastUpdateInPeriod": "2022-11-08T08:57:14.69176Z",
+										"low": "100000000",
+										"open": "100000000",
+										"periodStart": "2022-11-08T08:55:00Z",
+										"volume": "100000"
+									}
+								}
+							]
+						},
+						"id": "0deaa2062da090d5b165dc22a8ed748744268ab2aca801dc5e9915b69a2198ef"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "100000000",
+										"high": "100000000",
+										"lastUpdateInPeriod": "2022-11-08T09:03:49.610146Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:00:00Z",
+										"volume": "700000"
+									}
+								}
+							]
+						},
+						"id": "de20aeb7cd22fb71702f603ae0e0cafe32fcebf0c6c8ce7cfd4c9c7aa41f7d04"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": null
+						},
+						"id": "c6721a3034b19790c9f3618248c2c9b352f9e47d1c0f7f1d0febad52798044f4"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "96000000",
+										"high": "120000000",
+										"lastUpdateInPeriod": "2022-11-08T09:34:48.690538Z",
+										"low": "95000000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:30:00Z",
+										"volume": "1800000"
+									}
+								},
+								{
+									"node": {
+										"close": "94900000",
+										"high": "120000000",
+										"lastUpdateInPeriod": "2022-11-08T09:37:19.033519Z",
+										"low": "90000000",
+										"open": "120000000",
+										"periodStart": "2022-11-08T09:35:00Z",
+										"volume": "400000"
+									}
+								}
+							]
+						},
+						"id": "70a3df066de2098a63519ae66072a8c26a21be9c950ab850a516290de9f1b244"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:26:59.836674Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:25:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "625c0922eeb6fba74c5fe82f10dd460cb8c6e0e6b35d1f575a29456c972230cf"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:26:41.52944Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:25:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "a2aa9de3d9deffd9bb3d9bff1c9fe5e00b255f9140d1b97cb6dcd56a59278d5d"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:30:31.729168Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:30:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "4c3def402473719214131430f905534fa25d06e8152e82cbea1a059e63351174"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:29:31.094849Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:25:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "1894530899e87003889a139718950c218529b7c67b008b4ec815b23f92805eea"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:28:29.617133Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:25:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "74beaf7257e43c8f8443d413fccd8d092608b5926aa6e78bb17747de18cb359d"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:27:28.805922Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:25:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "47831ba264f9075387a885823ee00f66776eb39661c9c8c9b74b9eddd03d4f42"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:26:05.147181Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:25:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "6d5be5173bb643bdeb2921986a1ecb5f91a28109631babb9212031838d46d124"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:25:18.70568Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:25:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "06be6ca2fb0629b183136e2195d3a8a0cb49768faf2df8a60480a2d5cb7901f1"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:21:44.647572Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:20:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "659aca3537054a82b3d1af1fe81c405d4a9b4b4d94676e063d947b8c6c73c968"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:24:37.950188Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:20:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "210f764b1310288cd15ce1697749121642e48f278d0e2a71bf2736f20d3afb69"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:23:53.903694Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:20:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "ebf4d62ed1a7f38b675c6355d9c1920cd3fff3b0b2d20785058a1fe2b15366de"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "90000000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:20:46.650078Z",
+										"low": "90000000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:20:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "d96eee2a1947886fb2d9571fc51059c1c58bf39b4e303ecb1694b2aa0c30b44d"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "90000000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:19:34.115258Z",
+										"low": "90000000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:15:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "b92cefff4ceedd6dc766cbba13656e5fbd0d50723540636950ba79865ddcc65e"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:22:22.464583Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:20:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "33a1801e41a5c69e1e91affcb8444b8c4c8c5d12d97d9f242a6541d6ee5f6ed3"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "90000000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:19:02.022838Z",
+										"low": "90000000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:15:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "932ffd1da9e295590f41923f7b2e0bc9d12f5ab882b9513c7a77ae026241242a"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "100000000",
+										"high": "100000000",
+										"lastUpdateInPeriod": "2022-11-08T09:18:42.510644Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:15:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "52451b3a827e21c6cbfa021af0491c1130015ffac90329500d4d8f482d2bf927"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:18:16.573158Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:15:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "75d65ecb4f19c06e68b03f76c9abb04dfc3555b13b264e971d313249feccae7f"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:17:22.660914Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:15:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "866a85e287046b855952dc1cabff2b9a33cd0b2f3895014cbbc45444024d3e48"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:17:04.568089Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:15:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "97501650e5977c4852b6da07b94ccd085dc7158a462e1766d5754bd2ba3c8068"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:16:30.563397Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:15:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "210a23f8613c89af4c36d1c67c3c1ca199faaf7b48078acb6324717ff0d75027"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:15:35.93554Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:15:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "e96ce4f99707a7825a46d41648f53d5da4c157b4a9b6c1f1d51731532f3221b5"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:14:39.844601Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:10:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "527b8f3885321e4ae85ca8506b6cdbf1e43bc2b66c145e5b58775317cde86297"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:14:14.70385Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:10:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "87b05e95bfc2801e568fde2679611d9b69de3266d14f4063dc18ffd12c14d5a4"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "100046",
+										"high": "100046",
+										"lastUpdateInPeriod": "2022-11-08T09:13:50.480455Z",
+										"low": "97600",
+										"open": "97600",
+										"periodStart": "2022-11-08T09:10:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "011f1acc103c31cf9222fe12d00f7dd4d5c50b7d2b3dfae592e2a59e4c318c40"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "10004568",
+										"high": "10004568",
+										"lastUpdateInPeriod": "2022-11-08T09:13:24.342272Z",
+										"low": "9760000",
+										"open": "9760000",
+										"periodStart": "2022-11-08T09:10:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "b3c285cbdc892b50c8dfabc09a98a0562c1d04f652f049ea26872d6c8c103551"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "97600000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:12:57.877879Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:10:00Z",
+										"volume": "500000"
+									}
+								}
+							]
+						},
+						"id": "739e0a602305f55484601b23abff525030a7531f46cb2c5fbda2c78f96bfb95f"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "90000000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:11:58.015862Z",
+										"low": "90000000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:10:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "538b3d41ba96a46ca073af7549912395753ec09810e85ce0a7630a0a5f18c49e"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "90000000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:11:08.099849Z",
+										"low": "90000000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:10:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "1e3395ff90a9cd3e6dc655116cc16e1bc9c329501c88f40facd6dc3e99d05ae0"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "90000000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:10:42.510536Z",
+										"low": "90000000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:10:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "0f2d4d795e802240894581b345c2baa25cdad27c0f8ea10a2841eb40b9675a71"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "100000000",
+										"high": "100000000",
+										"lastUpdateInPeriod": "2022-11-08T09:10:22.956416Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:10:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "fbdcf37f37751447ce1cca85ed4e86a6f58e059dd0cf8181fb5642416c1edb66"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "90000000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:09:54.523472Z",
+										"low": "90000000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:05:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "982e50d022af5b2da9388130678a794017829e2087d6676a53912579cc3aa13e"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "100000000",
+										"high": "100000000",
+										"lastUpdateInPeriod": "2022-11-08T09:09:34.722861Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:05:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "e35a0e2c8737d15784623e5504bd722efd2c1f22cd54948629d3bb270669cd20"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "90000000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:08:58.025977Z",
+										"low": "90000000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:05:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "ad85f8df402c96e82c5ac2fd4571639b09b9a6f9926d135d90ed41b6279be5a6"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "90000000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:08:20.890201Z",
+										"low": "90000000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:05:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "627125d9f60ee847d5ad31dc35e3e3156167bf8bb8265dd24a2b23e2508ebebe"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "90000000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:07:44.711036Z",
+										"low": "90000000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:05:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "1efc8147aa12101ac82b4f2ab40a465c9bee82f234cf4bc06285649b9d08d983"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "90000000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:07:07.718528Z",
+										"low": "90000000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:05:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "c52efece1a48c27e1af872624ebab9e4154c8f48a58ac4382afa46743e7b9d41"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "90000000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:06:31.963466Z",
+										"low": "90000000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:05:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "a027099269ba375bd6fbe208b6b196f65ad1f9d63979d765fe3e33e77bde11e4"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "90000000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:05:55.397879Z",
+										"low": "90000000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:05:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "3c3f313d8d7e0001ce1d15eae515b2d1597cb8444954bbc7c5fbe915497430b6"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "90000000",
+										"high": "97600000",
+										"lastUpdateInPeriod": "2022-11-08T09:05:18.670996Z",
+										"low": "90000000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:05:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "4ff258ac39c4291c85af052c5c7a1e2bd51a6b9c016497c6b52dca023df94b88"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "100000000",
+										"high": "100000000",
+										"lastUpdateInPeriod": "2022-11-08T09:04:47.749402Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:00:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "6044636f22c644be52edf7d2d95fd5247deffdfbbdc138cee4e8ef145e5584a7"
+					}
+				},
+				{
+					"node": {
+						"candlesConnection": {
+							"edges": [
+								{
+									"node": {
+										"close": "100000000",
+										"high": "100000000",
+										"lastUpdateInPeriod": "2022-11-08T09:04:16.017392Z",
+										"low": "97600000",
+										"open": "97600000",
+										"periodStart": "2022-11-08T09:00:00Z",
+										"volume": "600000"
+									}
+								}
+							]
+						},
+						"id": "32d8179f8ce6965e751bd0745bfdf20bb4916546e50c080a5571fe6c3a834f4e"
+					}
+				}
+			]
+		}
+	},
+	"Duration": 33533708
+}

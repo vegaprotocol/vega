@@ -417,7 +417,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Validate that the mark price has been updated
-	assert.True(t, tm.market.GetMarketData().MarkPrice.EQ(num.NewUint(10)))
+	assert.True(t, tm.market.GetMarketData().LastTradedPrice.EQ(num.NewUint(10)))
 }
 
 func TestExpireCancelGTCOrder(t *testing.T) {
@@ -1918,11 +1918,14 @@ func testPeggedOrderOutputMessages(t *testing.T) {
 
 	limitOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "user5", 1000, 120)
 	require.NotEmpty(t, limitOrder)
-	assert.Equal(t, int(28), int(tm.orderEventCount))
+	// force reference price  checks result in more events
+	// assert.Equal(t, int(28), int(tm.orderEventCount))
+	assert.Equal(t, int(30), int(tm.orderEventCount))
 
 	limitOrder2 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user6", 1000, 80)
 	require.NotEmpty(t, limitOrder2)
-	assert.Equal(t, int(35), int(tm.orderEventCount))
+	// assert.Equal(t, int(35), int(tm.orderEventCount))
+	assert.Equal(t, int(39), int(tm.orderEventCount))
 }
 
 func testPeggedOrderOutputMessages2(t *testing.T) {
@@ -2007,7 +2010,8 @@ func testPeggedOrderOutputMessages2(t *testing.T) {
 	limitOrder3 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "user1", 1000, 80)
 	require.NotEmpty(t, limitOrder3)
 	require.Equal(t, types.OrderStatusActive, confirmation.Order.Status)
-	assert.Equal(t, int(34), int(tm.orderEventCount))
+	assert.Equal(t, int(36), int(tm.orderEventCount))
+	// assert.Equal(t, int(34), int(tm.orderEventCount))
 }
 
 func testPeggedOrderRepricing(t *testing.T) {

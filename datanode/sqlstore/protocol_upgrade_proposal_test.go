@@ -41,6 +41,9 @@ func addTestPUP(t *testing.T,
 	}
 	err := store.Add(context.Background(), pup)
 	require.NoError(t, err)
+	if pup.Approvers == nil {
+		pup.Approvers = []string{}
+	}
 	return pup
 }
 
@@ -51,13 +54,15 @@ func TestProtocolUpgradeProposal(t *testing.T) {
 
 	pupPending := entities.ProtocolUpgradeProposalStatus(eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING)
 	pupApproved := entities.ProtocolUpgradeProposalStatus(eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_APPROVED)
+	pupRejected := entities.ProtocolUpgradeProposalStatus(eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_REJECTED)
 
 	blockStore := sqlstore.NewBlocks(connectionSource)
 	block1 := addTestBlock(t, blockStore)
 	block2 := addTestBlock(t, blockStore)
+	block3 := addTestBlock(t, blockStore)
 	store := sqlstore.NewProtocolUpgradeProposals(connectionSource)
 
-	var pup1a, pup1b, pup2a, pup2b, pup3 entities.ProtocolUpgradeProposal
+	var pup1a, pup1b, pup2a, pup2b, pup3, pup4 entities.ProtocolUpgradeProposal
 
 	t.Run("adding", func(t *testing.T) {
 		pup1a = addTestPUP(t, pupPending, 1, "1.1", []string{"phil"}, store, block1)
@@ -65,13 +70,14 @@ func TestProtocolUpgradeProposal(t *testing.T) {
 		pup2a = addTestPUP(t, pupPending, 2, "2.2", []string{"dave", "jim"}, store, block1)
 		pup2b = addTestPUP(t, pupPending, 2, "2.2", []string{"jim"}, store, block2)           // Updated in next block
 		pup3 = addTestPUP(t, pupApproved, 3, "3.3", []string{"roger", "fred"}, store, block2) // Updated in next block
+		pup4 = addTestPUP(t, pupRejected, 4, "3.4", nil, store, block3)                       // Updated in next block
 	})
 
 	t.Run("list all", func(t *testing.T) {
 		fetched, _, err := store.List(ctx, nil, nil, entities.CursorPagination{})
 		require.NoError(t, err)
 
-		expected := []entities.ProtocolUpgradeProposal{pup1b, pup2b, pup3}
+		expected := []entities.ProtocolUpgradeProposal{pup1b, pup2b, pup3, pup4}
 		assert.Equal(t, expected, fetched)
 	})
 

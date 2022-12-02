@@ -130,6 +130,13 @@ func TestVotes(t *testing.T) {
 		require.NoError(t, err)
 		assertVotesMatch(t, expected, actual)
 	})
+
+	t.Run("GetConnectionByEverything", func(t *testing.T) {
+		expected := []entities.Vote{vote1}
+		actual, _, err := voteStore.GetConnection(context.Background(), &prop1ID, &party1ID, entities.DefaultCursorPagination(true))
+		require.NoError(t, err)
+		assertVotesMatch(t, expected, actual)
+	})
 }
 
 func setupPaginationTestVotes(t *testing.T) (*sqlstore.Votes, entities.Party, []entities.Vote) {

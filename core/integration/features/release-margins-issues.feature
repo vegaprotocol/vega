@@ -1,13 +1,15 @@
 Feature: Test margin release on order cancel
 
   Background:
-
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @MarginRelease
   Scenario: a party place a new order in the system, margin are updated, the order is closed, margin is 0ed
@@ -97,7 +99,7 @@ Feature: Test margin release on order cancel
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "1000" for the market "ETH/DEC19"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | partyGuy | ETH/DEC19 | sell | 1      |     0 | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
 
@@ -121,7 +123,7 @@ Feature: Test margin release on order cancel
       | party    | market id | maintenance | search | initial | release |
       | partyGuy | ETH/DEC19 | 119         | 130    | 142     | 166     |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | party1   | ETH/DEC19 | sell  | 1     |  1005 | 1                | TYPE_LIMIT  | TIF_GTC | ref-2     |
 
@@ -179,7 +181,7 @@ Feature: Test margin release on order cancel
       | party    | asset | market id | margin | general |
       | partyGuy | ETH   | ETH/DEC19 | 120    | 0       |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1   | ETH/DEC19 | sell | 1      | 500   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2   | ETH/DEC19 | buy  | 1      | 500   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -233,7 +235,7 @@ Feature: Test margin release on order cancel
       | party    | market id | maintenance | search | initial | release |
       | partyGuy | ETH/DEC19 | 100         | 110    | 120     | 140     |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party        | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | partyGuyGood | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party2-2 |
       | party1       | ETH/DEC19 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party1-2 |
@@ -245,11 +247,12 @@ Feature: Test margin release on order cancel
     And the parties should have the following account balances:
       | party        | asset | market id | margin | general |
       | partyGuy     | ETH   | ETH/DEC19 | 120    | 0       |
-      | partyGuyGood | ETH   | ETH/DEC19 | 252    | 999748  |
+      | partyGuyGood | ETH   | ETH/DEC19 | 1320   | 998680  |
+      #| partyGuyGood | ETH   | ETH/DEC19 | 252    | 999748  |
 
     # this will trade with party guy
     # which is going to get him distressed
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party2   | ETH/DEC19 | buy  | 1      | 9999  | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 

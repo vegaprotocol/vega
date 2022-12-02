@@ -22,14 +22,14 @@ func filterLedgerEntriesQuery(filter *entities.LedgerEntryFilter) ([3]string, []
 	filterQueries := [3]string{}
 
 	// AccountFrom filter
-	accountFromDBQuery, nargs, err := accountFilterToDBQuery(filter.AccountFromFilter, &args)
+	accountFromDBQuery, nargs, err := accountFilterToDBQuery(filter.SenderAccountFilter, &args, "account_from_")
 	if err != nil {
 		return [3]string{}, nil, fmt.Errorf("error parsing accountFrom filter values: %w", err)
 	}
 	args = *nargs
 
 	// AccountTo filter
-	accountToDBQuery, nargs, err := accountFilterToDBQuery(filter.AccountToFilter, &args)
+	accountToDBQuery, nargs, err := accountFilterToDBQuery(filter.ReceiverAccountFilter, &args, "account_to_")
 	if err != nil {
 		return [3]string{}, nil, fmt.Errorf("error parsing accountFrom filter values: %w", err)
 	}
@@ -46,7 +46,7 @@ func filterLedgerEntriesQuery(filter *entities.LedgerEntryFilter) ([3]string, []
 }
 
 // accountFilterToDBQuery creates a DB query section string from the given account filter values.
-func accountFilterToDBQuery(af entities.AccountFilter, args *[]interface{}) (string, *[]interface{}, error) {
+func accountFilterToDBQuery(af entities.AccountFilter, args *[]interface{}, prefix string) (string, *[]interface{}, error) {
 	var (
 		singleAccountFilter string
 		err                 error
@@ -64,9 +64,9 @@ func accountFilterToDBQuery(af entities.AccountFilter, args *[]interface{}) (str
 			return "", nil, fmt.Errorf("invalid party id: %w", err)
 		}
 		if singleAccountFilter != "" {
-			singleAccountFilter = fmt.Sprintf(`%s AND party_id=%s`, singleAccountFilter, nextBindVar(args, partyIDAsBytes))
+			singleAccountFilter = fmt.Sprintf(`%s AND %sparty_id=%s`, singleAccountFilter, prefix, nextBindVar(args, partyIDAsBytes))
 		} else {
-			singleAccountFilter = fmt.Sprintf(`party_id=%s`, nextBindVar(args, partyIDAsBytes))
+			singleAccountFilter = fmt.Sprintf(`%sparty_id=%s`, prefix, nextBindVar(args, partyIDAsBytes))
 		}
 	}
 
@@ -81,18 +81,18 @@ func accountFilterToDBQuery(af entities.AccountFilter, args *[]interface{}) (str
 		}
 
 		if singleAccountFilter != "" {
-			singleAccountFilter = fmt.Sprintf(`%s AND market_id=ANY(%s)`, singleAccountFilter, nextBindVar(args, marketIds))
+			singleAccountFilter = fmt.Sprintf(`%s AND %smarket_id=ANY(%s)`, singleAccountFilter, prefix, nextBindVar(args, marketIds))
 		} else {
-			singleAccountFilter = fmt.Sprintf(`market_id=ANY(%s)`, nextBindVar(args, marketIds))
+			singleAccountFilter = fmt.Sprintf(`%smarket_id=ANY(%s)`, prefix, nextBindVar(args, marketIds))
 		}
 	}
 
 	// Account types filtering
 	if len(af.AccountTypes) > 0 {
 		if singleAccountFilter != "" {
-			singleAccountFilter = fmt.Sprintf(`%s AND accounts.type=ANY(%s)`, singleAccountFilter, nextBindVar(args, af.AccountTypes))
+			singleAccountFilter = fmt.Sprintf(`%s AND %saccount_type=ANY(%s)`, singleAccountFilter, prefix, nextBindVar(args, af.AccountTypes))
 		} else {
-			singleAccountFilter = fmt.Sprintf(`accounts.type=ANY(%s)`, nextBindVar(args, af.AccountTypes))
+			singleAccountFilter = fmt.Sprintf(`%saccount_type=ANY(%s)`, prefix, nextBindVar(args, af.AccountTypes))
 		}
 	}
 
@@ -118,43 +118,20 @@ func transferTypeFilterToDBQuery(transferTypeFilter []entities.LedgerMovementTyp
 	return transferTypeFilterString
 }
 
-// prepareGroupFields checks columns provided for grouping results.
-func prepareGroupFields(groupByAccountField []entities.AccountField, groupByLedgerEntryField []entities.LedgerEntryField) []string {
-	fields := []string{}
-
-	for _, col := range groupByAccountField {
-		if col.String() == "type" {
-			fields = append(fields, "account_type")
-		} else {
-			fields = append(fields, col.String())
-		}
-	}
-
-	for _, col := range groupByLedgerEntryField {
-		if col.String() == "type" {
-			fields = append(fields, "transfer_type")
-		} else {
-			fields = append(fields, col.String())
-		}
-	}
-
-	return fields
-}
-
 func handlePartiesFiltering(filter *entities.LedgerEntryFilter) error {
 	var partyIDFrom entities.PartyID
 	var partyIDTo entities.PartyID
 
-	if len(filter.AccountFromFilter.PartyIDs) > 1 || len(filter.AccountToFilter.PartyIDs) > 1 {
+	if len(filter.SenderAccountFilter.PartyIDs) > 1 || len(filter.ReceiverAccountFilter.PartyIDs) > 1 {
 		return ErrLedgerEntryFilterForParty
 	}
 
-	if len(filter.AccountFromFilter.PartyIDs) > 0 {
-		partyIDFrom = filter.AccountFromFilter.PartyIDs[0]
+	if len(filter.SenderAccountFilter.PartyIDs) > 0 {
+		partyIDFrom = filter.SenderAccountFilter.PartyIDs[0]
 	}
 
-	if len(filter.AccountToFilter.PartyIDs) > 0 {
-		partyIDTo = filter.AccountToFilter.PartyIDs[0]
+	if len(filter.ReceiverAccountFilter.PartyIDs) > 0 {
+		partyIDTo = filter.ReceiverAccountFilter.PartyIDs[0]
 	}
 
 	if partyIDFrom == "" && partyIDTo == "" {

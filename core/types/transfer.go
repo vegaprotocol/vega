@@ -152,8 +152,6 @@ const (
 	TransferTypeLoss TransferType = proto.TransferType_TRANSFER_TYPE_LOSS
 	// Win.
 	TransferTypeWin TransferType = proto.TransferType_TRANSFER_TYPE_WIN
-	// Close.
-	TransferTypeClose TransferType = proto.TransferType_TRANSFER_TYPE_CLOSE
 	// Mark to market loss.
 	TransferTypeMTMLoss TransferType = proto.TransferType_TRANSFER_TYPE_MTM_LOSS
 	// Mark to market win.
@@ -180,8 +178,6 @@ const (
 	TransferTypeBondLow TransferType = proto.TransferType_TRANSFER_TYPE_BOND_LOW
 	// Bond too high.
 	TransferTypeBondHigh TransferType = proto.TransferType_TRANSFER_TYPE_BOND_HIGH
-	// Lock amount for withdraw.
-	TransferTypeWithdrawLock TransferType = proto.TransferType_TRANSFER_TYPE_WITHDRAW_LOCK
 	// Actual withdraw from system.
 	TransferTypeWithdraw TransferType = proto.TransferType_TRANSFER_TYPE_WITHDRAW
 	// Deposit funds.

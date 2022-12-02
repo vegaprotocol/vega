@@ -1,13 +1,13 @@
 Feature: Regression test for issue 596
 
   Background:
-
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @ignore
   Scenario: Traded out position but monies left in margin account
@@ -38,14 +38,14 @@ Feature: Regression test for issue 596
 
 
     # setup previous mark price
-    Then the parties place the following orders:
-      | party           | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+    Then the parties place the following orders with ticks:
+      | party            | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     # setup orderbook
-    When the parties place the following orders:
-      | party           | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+    When the parties place the following orders with ticks:
+      | party            | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 100    | 25000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | sellSideProvider | ETH/DEC19 | sell | 11     | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | sellSideProvider | ETH/DEC19 | sell | 2      | 11200000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
@@ -54,7 +54,7 @@ Feature: Regression test for issue 596
       | buySideProvider  | ETH/DEC19 | buy  | 15     | 9000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
       | buySideProvider  | ETH/DEC19 | buy  | 50     | 8700000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
 # buy 13@150
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party    | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | partyGuy | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
 # checking margins

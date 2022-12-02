@@ -108,6 +108,9 @@ type Engine struct {
 
 	// Map of all active snapshot providers that the execution engine has generated
 	generatedProviders map[string]struct{}
+
+	maxPeggedOrders        uint64
+	totalPeggedOrdersCount int64
 }
 
 type netParamsValues struct {
@@ -125,6 +128,7 @@ type netParamsValues struct {
 	minProbabilityOfTradingLPOrders num.Decimal
 	minLpStakeQuantumMultiple       num.Decimal
 	marketCreationQuantumMultiple   num.Decimal
+	markPriceUpdateMaximumFrequency time.Duration
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -143,6 +147,7 @@ func defaultNetParamsValues() netParamsValues {
 		minProbabilityOfTradingLPOrders: num.DecimalFromInt64(-1),
 		minLpStakeQuantumMultiple:       num.DecimalFromInt64(-1),
 		marketCreationQuantumMultiple:   num.DecimalFromInt64(-1),
+		markPriceUpdateMaximumFrequency: 5 * time.Second, // default is 5 seconds, should come from net params though
 	}
 }
 
@@ -395,6 +400,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.stateVarEngine,
 		e.marketActivityTracker,
 		ad,
+		e.peggedOrderCountUpdated,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -473,6 +479,9 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 	if !e.npv.maxLiquidityFee.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(e.npv.maxLiquidityFee)
 	}
+	if e.npv.markPriceUpdateMaximumFrequency > 0 {
+		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, e.npv.markPriceUpdateMaximumFrequency)
+	}
 	return nil
 }
 
@@ -485,6 +494,7 @@ func (e *Engine) removeMarket(mktID string) {
 			mkt.matching.StopSnapshots()
 			mkt.position.StopSnapshots()
 			mkt.liquidity.StopSnapshots()
+			mkt.settlement.StopSnapshots()
 			mkt.tsCalc.StopSnapshots()
 
 			copy(e.marketsCpy[i:], e.marketsCpy[i+1:])
@@ -495,6 +505,14 @@ func (e *Engine) removeMarket(mktID string) {
 			return
 		}
 	}
+}
+
+func (e *Engine) peggedOrderCountUpdated(added int64) {
+	e.totalPeggedOrdersCount += added
+}
+
+func (e *Engine) canSubmitPeggedOrder() bool {
+	return uint64(e.totalPeggedOrdersCount) < e.maxPeggedOrders
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.
@@ -517,6 +535,10 @@ func (e *Engine) SubmitOrder(
 	mkt, ok := e.markets[submission.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
+	}
+
+	if submission.PeggedOrder != nil && !e.canSubmitPeggedOrder() {
+		return nil, &types.ErrTooManyPeggedOrders
 	}
 
 	metrics.OrderGaugeAdd(1, submission.MarketID)
@@ -770,6 +792,12 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	timer.EngineTimeCounterAdd()
 }
 
+func (e *Engine) BlockEnd(ctx context.Context) {
+	for _, mkt := range e.marketsCpy {
+		mkt.blockEnd(ctx)
+	}
+}
+
 func (e *Engine) GetMarketState(mktID string) (types.MarketState, error) {
 	mkt, ok := e.markets[mktID]
 	if !ok {
@@ -791,6 +819,14 @@ func (e *Engine) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d tim
 		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, d)
 	}
 	e.npv.auctionMinDuration = d
+	return nil
+}
+
+func (e *Engine) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.Duration) error {
+	for _, mkt := range e.markets {
+		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, d)
+	}
+	e.npv.markPriceUpdateMaximumFrequency = d
 	return nil
 }
 
@@ -1050,6 +1086,16 @@ func (e *Engine) OnMarketCreationQuantumMultipleUpdate(ctx context.Context, d nu
 	return nil
 }
 
+func (e *Engine) OnMaxPeggedOrderUpdate(ctx context.Context, max *num.Uint) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update max pegged orders",
+			logging.Uint64("max-pegged-orders", max.Uint64()),
+		)
+	}
+	e.maxPeggedOrders = max.Uint64()
+	return nil
+}
+
 func (e *Engine) MarketExists(market string) bool {
 	_, ok := e.markets[market]
 	return ok
@@ -1079,4 +1125,18 @@ func (e *Engine) GetAsset(assetID string) (types.Asset, bool) {
 		return types.Asset{}, false
 	}
 	return *a.ToAssetType(), true
+}
+
+// GetMarketCounters returns the per-market counts used for gas estimation.
+func (e *Engine) GetMarketCounters() map[string]*types.MarketCounters {
+	counters := map[string]*types.MarketCounters{}
+	for k, m := range e.markets {
+		counters[k] = &types.MarketCounters{
+			PeggedOrderCounter:  m.GetTotalPeggedOrderCount(),
+			OrderbookLevelCount: m.GetTotalOrderBookLevelCount(),
+			PositionCount:       m.GetTotalOpenPositionCount(),
+			LPShapeCount:        m.GetTotalLPShapeCount(),
+		}
+	}
+	return counters
 }

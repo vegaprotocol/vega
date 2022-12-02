@@ -87,7 +87,7 @@ func CheckTransaction(tx *commandspb.Transaction, chainID string) (*commandspb.I
 		return nil, errs.ErrorOrNil()
 	}
 
-	inputData, inputErrs := checkInputData(tx.InputData)
+	inputData, inputErrs := CheckInputData(tx.InputData)
 	if !inputErrs.Empty() {
 		errs.Merge(inputErrs)
 		return nil, errs.ErrorOrNil()
@@ -155,7 +155,7 @@ func checkSignature(signature *commandspb.Signature, pubKey string, rawInputData
 	return nil
 }
 
-func checkInputData(rawInputData []byte) (*commandspb.InputData, Errors) {
+func CheckInputData(rawInputData []byte) (*commandspb.InputData, Errors) {
 	errs := NewErrors()
 
 	if len(rawInputData) == 0 {

@@ -16,14 +16,12 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/logging"
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type allResolver struct {
 	log  *logging.Logger
-	clt  TradingDataServiceClient
 	clt2 TradingDataServiceClientV2
 }
 
@@ -39,7 +37,7 @@ func (r *allResolver) getOrderByID(ctx context.Context, id string, version *int)
 	v, err := convertVersion(version)
 	if err != nil {
 		r.log.Error("tradingCore client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	orderReq := &v2.GetOrderRequest{
 		OrderId: id,
@@ -57,10 +55,10 @@ func (r *allResolver) getAssetByID(ctx context.Context, id string) (*types.Asset
 	if len(id) <= 0 {
 		return nil, ErrMissingIDOrReference
 	}
-	req := &protoapi.AssetByIDRequest{
-		Id: id,
+	req := &v2.GetAssetRequest{
+		AssetId: id,
 	}
-	res, err := r.clt.AssetByID(ctx, req)
+	res, err := r.clt2.GetAsset(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +69,8 @@ func (r *allResolver) getNodeByID(ctx context.Context, id string) (*types.Node, 
 	if len(id) <= 0 {
 		return nil, ErrMissingNodeID
 	}
-	resp, err := r.clt.GetNodeByID(
-		ctx, &protoapi.GetNodeByIDRequest{Id: id})
+	resp, err := r.clt2.GetNode(
+		ctx, &v2.GetNodeRequest{Id: id})
 	if err != nil {
 		return nil, err
 	}
@@ -80,60 +78,18 @@ func (r *allResolver) getNodeByID(ctx context.Context, id string) (*types.Node, 
 	return resp.Node, nil
 }
 
-func (r allResolver) allAssets(ctx context.Context) ([]*types.Asset, error) {
-	req := &protoapi.AssetsRequest{}
-	res, err := r.clt.Assets(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return res.Assets, nil
-}
-
 func (r *allResolver) getMarketByID(ctx context.Context, id string) (*types.Market, error) {
 	req := v2.GetMarketRequest{MarketId: id}
 	res, err := r.clt2.GetMarket(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
+		return nil, err
 	}
 	// no error / no market = we did not find it
 	if res.Market == nil {
 		return nil, nil
 	}
 	return res.Market, nil
-}
-
-func (r *allResolver) allMarkets(ctx context.Context, id *string) ([]*types.Market, error) {
-	if id != nil {
-		mkt, err := r.getMarketByID(ctx, *id)
-		if err != nil {
-			return nil, err
-		}
-		if mkt == nil {
-			return []*types.Market{}, nil
-		}
-		return []*types.Market{mkt}, nil
-	}
-	res, err := r.clt.Markets(ctx, &protoapi.MarketsRequest{})
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-	return res.Markets, nil
-}
-
-func (r *allResolver) allRewards(ctx context.Context, partyID, assetID string, skip, first, last *int) ([]*types.Reward, error) {
-	req := &protoapi.GetRewardsRequest{
-		PartyId:    partyID,
-		AssetId:    assetID,
-		Pagination: makePagination(skip, first, last),
-	}
-	resp, err := r.clt.GetRewards(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Rewards, nil
 }
 
 func (r *allResolver) transfersConnection(

@@ -8,6 +8,9 @@ Feature: MTM settlement tests
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: case 1 - LONG - MORE LONG - one trade (0003-MTMK-007)
     # setup accounts
@@ -41,13 +44,13 @@ Feature: MTM settlement tests
       | party5 | party5-1  |
 
     # setup previous volume at 20
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 20     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 20     | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
    # place trade for 10@110
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 10     | 110   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -60,7 +63,7 @@ Feature: MTM settlement tests
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
 
    # place trade for 1@111 to set new mark price
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 1      | 111   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -104,13 +107,13 @@ Feature: MTM settlement tests
       | party5 | party5-1  |
 
    # setup previous volume at 20 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 20     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 20     | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
    # place trade 1 for 10@110
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 10     | 110   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -118,7 +121,7 @@ Feature: MTM settlement tests
     And the mark price should be "110" for the market "ETH/DEC19"
 
    # place trade 2 for 2@113
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 2      | 113   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 2      | 113   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -132,7 +135,7 @@ Feature: MTM settlement tests
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 90     | BTC   |
 
    # place trade for 1@111 to set new mark price
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 1      | 111   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -178,13 +181,13 @@ Feature: MTM settlement tests
       | party5 | party5-1  |
 
    # setup previous volume at 20
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 20     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 20     | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
    # place trade 1 for -5@110
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 5      | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | buy  | 5      | 110   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -197,7 +200,7 @@ Feature: MTM settlement tests
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
 
    # place trade for 1@111 to set new mark price
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 1      | 111   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -241,13 +244,13 @@ Feature: MTM settlement tests
       | party5 | party5-1 |
 
    # setup previous volume at 20
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 20     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 20     | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     # place trade 1 for -10@110
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | buy  | 10     | 110   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -255,7 +258,7 @@ Feature: MTM settlement tests
     And the mark price should be "110" for the market "ETH/DEC19"
 
     # place trade 2 for -2@113
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 2      | 113   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | buy  | 2      | 113   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -270,7 +273,7 @@ Feature: MTM settlement tests
       | party2 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 200    | BTC   |
 
      # place trade for 1@111 to set new mark price
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 1      | 111   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -313,13 +316,13 @@ Feature: MTM settlement tests
       | party5 | party5-1  |
 
    # setup previous volume at 20
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 20     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 20     | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
    # place trade 1 for -20@110
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 20     | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | buy  | 20     | 110   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -362,13 +365,13 @@ Feature: MTM settlement tests
       | party5 | party5-1 |
 
    # setup previous volume at 20
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 20     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 20     | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
    # place trade 1 for -10@110
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | buy  | 10     | 110   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -376,7 +379,7 @@ Feature: MTM settlement tests
     And the mark price should be "110" for the market "ETH/DEC19"
 
    # place trade 2 for -10@113
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 10     | 114   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | buy  | 10     | 114   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -420,13 +423,13 @@ Feature: MTM settlement tests
       | party5 | party5-1  |
 
     # setup previous volume at 20
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 20     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 20     | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     # place trade 1 for -30@110
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 30     | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | buy  | 30     | 110   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -470,13 +473,13 @@ Feature: MTM settlement tests
       | party5 | party5-1  |
 
    # setup previous volume at 20
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 20     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 20     | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
    # place trade 1 for 5@110
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 5      | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 5      | 110   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -484,7 +487,7 @@ Feature: MTM settlement tests
     And the mark price should be "110" for the market "ETH/DEC19"
 
    # place trade 2 for -30@114
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 30     | 114   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | buy  | 30     | 114   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -498,7 +501,7 @@ Feature: MTM settlement tests
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 100    | BTC   |
 
     # place trade for 1@111 to set new mark price
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 1      | 111   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -542,13 +545,13 @@ Feature: MTM settlement tests
       | party5 | party5-1  |
 
    # setup previous volume at 20
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 20     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 20     | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     # place trade 1 for 10@110
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 10     | 110   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -556,7 +559,7 @@ Feature: MTM settlement tests
     And the mark price should be "110" for the market "ETH/DEC19"
 
    # place trade 2 for -10@114
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 10     | 114   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | buy  | 10     | 114   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -570,7 +573,7 @@ Feature: MTM settlement tests
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 120    | BTC   |
 
    # place trade for 1@111 to set new mark price
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | sell | 1      | 111   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |

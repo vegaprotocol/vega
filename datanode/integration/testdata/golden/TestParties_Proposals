@@ -1,0 +1,2517 @@
+{
+	"TestName": "TestParties_Proposals",
+	"Query": "{ partiesConnection{ edges { node { id proposalsConnection{ edges { node { id votes{ yes { totalNumber } no { totalNumber } } } } } } } } }",
+	"Result": {
+		"partiesConnection": {
+			"edges": [
+				{
+					"node": {
+						"id": "network",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "41112ad01610e67718a3c874b3ea6b9bc9cf5e47fa85ecdbd3b83be0ad44b0f3",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "fdca651fb2ec384aa6f9465b2dd2d4397407e8f5794c840d61c98f50bebb77c4",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "f8c2afceb53928104a3989983a29f6efce3c87be23c550bcb5f90fb73c9204e3",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "c22e344997eb5ea876e504d2c9ddccebef08db387c26e0ab6bb9564a468e498f",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "cc0f29bba6d318e9b2772f2c3aca0e427c23dd7206f8bd10be903318347f7d21",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "ca173c9fb0704e68e6dd2d5711eee2becb3c20271737c80be82182272ebecb07",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "f22097f8ba6723f18932337d20199ba9df700dd0782b7054b7b9747d8ca708cf",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "5ac5b716757a81a555971a6cf6a3f473816a795ac5b8a3771bf548b30554bb1c",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "8a2c1aaf25893479b4dcba1afa47d3801f0edacee16871aa9bfe872dae2f66fc",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "850efe459161be4ada14ba6261b2df863e766c0e9b3fcb915e0a115c39d53fbb",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "2f0972524c05636b491f721c281ae37b3b26c24ff5205adbcf8caa39c3cfc47a",
+						"proposalsConnection": {
+							"edges": [
+								{
+									"node": {
+										"id": "e4f3f80d89a793f527854783e6ac132cebff5e06a0c2d38a93b48fa2caf04863",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "5743f15d8f1a63da52d4cb2b9b02e56c7867fd921fb9a496b49553aca2299aa8",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "f7b377bdc516e96e5b94cf0d83a2a5de4dc7da2817461cd816ef7a3a9118c17e",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "873933a8a0cffe0a023f152671ab017503e85d695ff15783b5a4359b2bb36adf",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "561d4c5afe1dace7e384255eadc0e5e65d1979011ec603d798b0e07e5ff068c7",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "bc8dd7d99a18e5086d8562530de0f7c0e20df01677ed307f5f1c74e5b499791c",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "bddc9a2a4a745795320b2e117ff100a4029e016bc80f4a55639a61cba3b50e19",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "c6721a3034b19790c9f3618248c2c9b352f9e47d1c0f7f1d0febad52798044f4",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "f629b0979ef0bd2ed3f856a4bf3aa5a7b776a20478c7405c55177d6a653485fa",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "70a3df066de2098a63519ae66072a8c26a21be9c950ab850a516290de9f1b244",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "fa979747203d1d4729888f6650a65cfec4d9ad74427b169fbd9077deffa0d009",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "ae240ac6219c1ff96d3baec477049fc92ca3b1cfebcafc061f5a4f376a8fae0c",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "a7685ab1a8507fd36278507edaa260bf4bb8e9d6a88146758251158db868a387",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "69487704b3080c40bcf2365ef96636b54a9b6f5bb93faaef4b14145987b4b7f9",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "25f032e2eed419b9e5e5ce835a13348180a45365387855170f24075eec5deaf7",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "b8c8ed3f79f700d9eb781bcc63232e79e42fc8e520aaeb3cb994a6872265485d",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "7e435e3f5d21b103dd42f728442d4ab415bde35e73c5885e42a0e95d34363d7b",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "c84470154b135e71c1a6b83059e381b7d746b76a13a9951c9caefa60ffaa3b04",
+						"proposalsConnection": {
+							"edges": [
+								{
+									"node": {
+										"id": "45d11aa933ccf1dfd7e7569fc4372e364e6f48df2afbdde0d8a3aec105344f8e",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "06be6ca2fb0629b183136e2195d3a8a0cb49768faf2df8a60480a2d5cb7901f1",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "32ea7e57bdf96481cbec206c1de12ae2211468a0058826a568a2d3c6aa06c409",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "2e328da7e779f5d78df0cf2546ecfc15f979bc912254b1eb9b2970fa67edafd9",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "21be87c2bc308cd2d5426b0126ccc396fbdee1c862f917bc410cbc239ee4de4d",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "d53166a90671ca474affce542d5ec97aa277a777d3f0887610ec070eaf2515fe",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "830af0efa91f7948bcf81446b661763999a67655dabdf0535622c24514814887",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6c307fc4af2849be5dc6d9d3e457fced4547a017d33396315d5d7f29fefa1269",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "1b05bab9617883198545a03033657f0a72c64c3f18c5c1f72e50828ca0bf655c",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "c8ad555c366eaea39c3c7f6c6e5efbc62e7987d6de34239f8543b929a20642bb",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "4196b5c033c2feeb826a1311fa72759c4052db03f5480be56145ee3f28bdab51",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "75d504bf644dce08e6949d8956bd409dfbeeb6c780cea44a3deb9214e6123fc8",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "99c9cfc2d107611d763374de300ca269d2f68da1a59caf5c5d9f1a98a9570904",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "d5ce5ae2cd613f6b27f44230dd9d19d305b222f29029e522e7bd70c3587747d1",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "2908aa24679b57607bfae28b4e1ab855404e0299cb9525d8c02425c1b548e332",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "b1acd4256b54afc56814cdb99bf6b4458c70e07dd50e8e3c0226ee5949311c2e",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "cf04496e2bb759148673703c8b26495ef65dd5d3717cfc3fabf3fdbb6f0f185e",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "a0cfdb4563a4c789565e8808c6b07e7c91388bfadd8f3674fc722460cf945666",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "1c12b1b13871e29c9eb3b49c3bb1e0cf29e81de278f39b8ca5bcb6df646c0f66",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "cd952ab77bf588cb4a6ffe5161c95428af7ce3ca665e8243807a5a718f714f8c",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "a33f7d91070e8b67a98399ce1214b5925866331504699b023310746084b5430c",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "f44ce3876eb2b9f052a677574d327d0a16e6992ce84735fb7255597ffd215593",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "245fb222c2bf68501fe93ab1618eee58b684783755ecbeb0f8764fda15530c52",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "dd7df947e631ad7a224034581b0054605a8524009b4816dfe19333a77ef52e0a",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "da07ed6de89951ff8cbab7e23eacde4e15b72f66cade729e89a6c31e6eb01727",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "1116321b23a8a1aaff9b61c4a3d24f8c5d546de3ff741459a1a91c4d00c1345e",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "d8307ea71d19b93ece7980beeea7a97e7602c6a90e1c3db9a26a304d4f69131b",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "b645c201581149c90f132fbb1576cb9618bb2d9b378c02feaf28af2984e501e8",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "7cb61570c22fde4356a09af7207379c0bd424637987f8a03fbf0f8e6ecc29175",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "9f37dbd8054e920b295320edde33a2149195a175c65e3b5a9051b574853e6036",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "8ad6a00329422ccaa2b28ce1344825b98429efc58f947e452effc4ddbd54a1bd",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "4943abd8725e47301def88966e0df31472236ed6a8e96ac5da8ba642773f5949",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "f08fb25b8b78127b2dc84b3ad97d80ce72d73f5b3ddcf54f1a1d66f1c7e266c5",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6e96abdfd389e0894a1f2ffd613bcd6de0144251ee14068e080c82f8e9d7f016",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "840abc558a9c5336c84e31c61caf76a07c1e2cdf9c198fd66abae0631300b86d",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "94e2c009c8f95515d2dbecd2a6fef72aec55b016467cf542f4819e4e50498b45",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "427df92ab0f941073d269b655ac20b8ae7bfeeb4b4b4d19957e8cb6f08cf9d16",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "1619241089e113e4f4228edd3f63467b121a5b423247985ec3a55fa95d70a00d",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "e58a4abdf35a9bc9d09b27a8b336f0c1e89e7f6b996a18f77311d943d8480d7b",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "3a3b16a767216d711e80e88a012e022d37d206cfe221abb78df3b4d11f81a313",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "324d953e3b16faae2b99bb78074efeca41c33ca9d6fea32f7a05e452a97222c6",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6e75c5a95b204818a0ed76dc06773a278e5b2c3342e97ad764745a470be41567",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "12a9215ee5006c20f539e89b17bd67c5575e956b7cc3c66632b86a806cb6ad76",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "0cea9e286612c3a869432de69385a92144752813cfa8997c6967c32bc2211eb8",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "f789b1edc77f036717802c60eeff6b0264bf9655a21001a10a7fe7f77e3cf043",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "adadb10e45da9d281018186f0d52ad2e871a80c58b46a002491067df554c3297",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "8532cedc680bf0f9422ad646b30c8f92d00a1b536437d4924f441376bb1e3cf7",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "7d354bae6aa7b4407f9578a93dadecffaf0a0cff7f8e3688538b92ccc3062196",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "4e7265692abf3579d6c92cbee349cfdd122f2f1c797d9f67843193bc73d87148",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "e872ac3c177531f1860aff280a7418d0944816068566756fedd71f3393fe0f90",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "8b25bc49cac8ead5b19e3ecb05dc15df9ce9842be65ebd9016b8d8315cfb2a0d",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6047ec907402791f667622442a05b7c3a49fe050f826ed9999168cdf7bd72354",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "5f0325ce89f6b430645b85e2368149ff57dc831c72a48a7b91fe6fffa296ca27",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "a48459a169533b41fdd63d2c75414ece000edf89cfa91da60ad95c5483a59614",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "554b66d37db7bbaf5ec3c7b8b475b4860a4d94f285594fb661128e96a9f03299",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "d70ded8fb28ef1c0ddf82555460aba4ff8750cdf413d22dab608662927b51b33",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "78d7171067b8d4f4f20f0e9461e078ea78f667283284288ea63df8bb79ed9da8",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "857d5fd169f7d30a422849112b144e5cd3613a61f664960a9ab23989fadd653d",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "402b427d3bf867c243874b829eafe2728fcce0f0e9847809a6d4afa67063ce21",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "2de99996da204f3954fcb8539c1671b505c58d0e73dd7f1602d42c802cff79f2",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "02e1578379cbff4e83038acdb800eeeb9f71b5bd45251b787fa908cb6096665e",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "bda7dc0be1a96d4adff6f999fe39f3e85c07db1d26bc01e06a0a4244779ee3ba",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "f91639407be86445bdf50f213d9f4835f28bc06cc48eee9d1339aada429e1a39",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "98b0f5e3d4cf94774d799f3dd3f6c5454c3c85348c05aecffd5c121198664213",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "959132cb15477e5edb445b2190411a342c3708084d5be4a5e4cf240c4c149a77",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "7cf4705cf5be93563126eae64576bb6cd2c4c76225df60ae8c0f3dd55fdef7fd",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "706530e69d60c38af1a40162b8eb0241166b7326a12d8547cdae703d014000fc",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "46bc3378cdcfdf0ccf9854cf2774e69a344db5589fa83a69e0d63b84dc30cb19",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "5177f7f78ce959c3345eb28dfd7f518df8bd3fa810ce6ff16c7696cbe91470fb",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "3fcd176c2f9b8eeba51d624b7f5e0c594f2b5eb72b464f7603556e729923c901",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "99b039de0040c455fa0fb848b0fafa535c61234ce415865cf5a8ca045285f6f6",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "5739a438ab147921d2b57d1415b9a2db59a01a834374c7a71468b385282c442b",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "57ad47739268254207c51c528bff9b1218e3a53f9d5b4e38e6e9afbf98c1e3e8",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "50a5ea65a6ca4c66fb377390a1e1f4ceb70a2378aaccf86c2eee50834a96a61f",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "47ada648d07f616f6e7d1b41956b90e55d127c439a06c1c96298a0849b828d25",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "9e943ef53c200110b1d9945f35819c326671e71a20a4b60ec1d9542c65c2d7ff",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "c16e61a20d63d9314ac3ff33dfbe636d7e0e6566246ed348210060e2d6bcadbc",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "60d57f010c4cbec3e6ada27ee6b2f5c0ae648c82d1cd2615f4bf94dbad284c12",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "895cec8c306b197b4c92e8596ea01da68397b92b18c580e0cac7a4981f20d2e0",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "48c60f13c0a14325ad16eee89576ed313a206a5156672d5f2d0b863b0caf86bb",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "d108d128e9c65634e4965701466c22a867b3b1575d06eaf2dff8d6a4395bfd44",
+						"proposalsConnection": {
+							"edges": [
+								{
+									"node": {
+										"id": "4c3def402473719214131430f905534fa25d06e8152e82cbea1a059e63351174",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "1894530899e87003889a139718950c218529b7c67b008b4ec815b23f92805eea",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "74beaf7257e43c8f8443d413fccd8d092608b5926aa6e78bb17747de18cb359d",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "47831ba264f9075387a885823ee00f66776eb39661c9c8c9b74b9eddd03d4f42",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "625c0922eeb6fba74c5fe82f10dd460cb8c6e0e6b35d1f575a29456c972230cf",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "a2aa9de3d9deffd9bb3d9bff1c9fe5e00b255f9140d1b97cb6dcd56a59278d5d",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "6d5be5173bb643bdeb2921986a1ecb5f91a28109631babb9212031838d46d124",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "210f764b1310288cd15ce1697749121642e48f278d0e2a71bf2736f20d3afb69",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "ebf4d62ed1a7f38b675c6355d9c1920cd3fff3b0b2d20785058a1fe2b15366de",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "16391ff57291616991936c912637f809bbae701a3042e1d18ea422fcda175ae1",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "2a13d9ac751bc53defdbf392a08b10a39402a1bdde2c4e01d981034b9a3f1579",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "33a1801e41a5c69e1e91affcb8444b8c4c8c5d12d97d9f242a6541d6ee5f6ed3",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "3b4cd2c2eb86c8b4368edf3d5f452ee17fafb63b29308da7321daa246743bf16",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "659aca3537054a82b3d1af1fe81c405d4a9b4b4d94676e063d947b8c6c73c968",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "d96eee2a1947886fb2d9571fc51059c1c58bf39b4e303ecb1694b2aa0c30b44d",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "b92cefff4ceedd6dc766cbba13656e5fbd0d50723540636950ba79865ddcc65e",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "932ffd1da9e295590f41923f7b2e0bc9d12f5ab882b9513c7a77ae026241242a",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "52451b3a827e21c6cbfa021af0491c1130015ffac90329500d4d8f482d2bf927",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "75d65ecb4f19c06e68b03f76c9abb04dfc3555b13b264e971d313249feccae7f",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "866a85e287046b855952dc1cabff2b9a33cd0b2f3895014cbbc45444024d3e48",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "97501650e5977c4852b6da07b94ccd085dc7158a462e1766d5754bd2ba3c8068",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "210a23f8613c89af4c36d1c67c3c1ca199faaf7b48078acb6324717ff0d75027",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "e96ce4f99707a7825a46d41648f53d5da4c157b4a9b6c1f1d51731532f3221b5",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "527b8f3885321e4ae85ca8506b6cdbf1e43bc2b66c145e5b58775317cde86297",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "87b05e95bfc2801e568fde2679611d9b69de3266d14f4063dc18ffd12c14d5a4",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "011f1acc103c31cf9222fe12d00f7dd4d5c50b7d2b3dfae592e2a59e4c318c40",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "b3c285cbdc892b50c8dfabc09a98a0562c1d04f652f049ea26872d6c8c103551",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "739e0a602305f55484601b23abff525030a7531f46cb2c5fbda2c78f96bfb95f",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "829bfe932abf94baee6d91865410aca3fd639720d48e660a03555589b44727c9",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "538b3d41ba96a46ca073af7549912395753ec09810e85ce0a7630a0a5f18c49e",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "9c982564cff3369d9b470b290439bdd5f9385ce5953e34f3fdf4bccf93ef970f",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "1e3395ff90a9cd3e6dc655116cc16e1bc9c329501c88f40facd6dc3e99d05ae0",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "0f2d4d795e802240894581b345c2baa25cdad27c0f8ea10a2841eb40b9675a71",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "fbdcf37f37751447ce1cca85ed4e86a6f58e059dd0cf8181fb5642416c1edb66",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "982e50d022af5b2da9388130678a794017829e2087d6676a53912579cc3aa13e",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "e35a0e2c8737d15784623e5504bd722efd2c1f22cd54948629d3bb270669cd20",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "ad85f8df402c96e82c5ac2fd4571639b09b9a6f9926d135d90ed41b6279be5a6",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "627125d9f60ee847d5ad31dc35e3e3156167bf8bb8265dd24a2b23e2508ebebe",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "1efc8147aa12101ac82b4f2ab40a465c9bee82f234cf4bc06285649b9d08d983",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "c52efece1a48c27e1af872624ebab9e4154c8f48a58ac4382afa46743e7b9d41",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "a027099269ba375bd6fbe208b6b196f65ad1f9d63979d765fe3e33e77bde11e4",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "3c3f313d8d7e0001ce1d15eae515b2d1597cb8444954bbc7c5fbe915497430b6",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "4ff258ac39c4291c85af052c5c7a1e2bd51a6b9c016497c6b52dca023df94b88",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "6044636f22c644be52edf7d2d95fd5247deffdfbbdc138cee4e8ef145e5584a7",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "32d8179f8ce6965e751bd0745bfdf20bb4916546e50c080a5571fe6c3a834f4e",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "de20aeb7cd22fb71702f603ae0e0cafe32fcebf0c6c8ce7cfd4c9c7aa41f7d04",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "8383df951d162da5939d67b3a49eb153d4f77546eb58c43a316a3dac09259910",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "f821cf3188ebf0b38b293869ee83014ffc3167227b0d62bc206eb0dc8de6666b",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "e7992c821cd759786be5e9e11d35c35eee69701c7bc2aa5058f308db9b3bf35f",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "5e39a2390c2a56ab899bb0b8076aa99acd3e29c103177138ffcdc8f4f1cd04f9",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "b775c642226bba19b61acbd17e0e8c29cbea01e608bcbeed31260179bbc024c8",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "5a615c0fa27bb0aba364b09a5af2a5c1f05d5a0769b3bab6b98311e9194d1208",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "6853118e862988c6203b9e8f0177cbf4d89ec3235b529db85fdca5ae55ce18b9",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "20d14cd4f3a67810c895e862e583adb42d42a35bacd06add0836de798cf43467",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "e385712cd4b360392c845f9c8d67ded0e654146a50db79fcd6a852d49d8955d1",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "620654a7b9c7914495a93002034ca90aa6b337fa1ff6c6c9d3f51c14ec310d44",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "1db787e5f0e761c477234f053ea766d4c427267340544ac42c4f1bbb2e3dfa23",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "0f60547967b175eb1f1163b918f3b40d73cde94b8956860dc0abff81a8c229db",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "46fa9a5a7850eb7761bb01930a2718e119f4fec873e813dcca3443c55a155009",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "d8c29d479e6539a02a9cedacbe5dd84034fbbc3e862decfd81cb1bf4a944623f",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "0deaa2062da090d5b165dc22a8ed748744268ab2aca801dc5e9915b69a2198ef",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "2ffb845534519881b0e94edda7ee4567965cb0fb4f8c0e4dcf0049ae47a94e19",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "71ed1adfb73c79a658663f05a71f09f773b4f19869bef9e18e5163f34366faa9",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "e51e465052cfaf5f7f51e5b338213531a1f1b4271bc171474f9d0ea923252086",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "8e9ad69580968668a30ff2f4625bc10828aa2a69839240c4eea8cdda4fb48c1b",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "fd33cf01126a58d950161dcdea1d2026dc9bea6f2e8f4db54d151d852ad82388",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "6067f86da2134e56b82f2900ab9b83a97f3daf7cb16fb211c39e87f63a9853c7",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "41da6d9faa63f968015de2fdea769045414cbf2497809a6950a9b3abcd735d0a",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "5afeec63fc8c991817a7c4d15e5e2bc0e0db9f5d4b8588b8e7e5c31f19923cf0",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "d112e8ec08a8c55bc2e23bfa6f82f67f6b0918a0f69111e8e1a3b4a4cc12883a",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "5781675641430fb305a77aa02094853c8635a721b01ec18e9b49a47aedf32963",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "43fa701bea8e7e7546141973800a11782162e4a6e62e4f134b8ce795215f1a6a",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "50a1f81f9dd693babe3aee035051dd5b0b8eeecda4c370c04937c92c8a103fa8",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "b81fbe84f16898324516bc6afabd3eaab8137b05ad152ba6010ff3f5d3ed6e2a",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "dda10bbd8b2c9f9c27ec0faf3ba5e0fd4b03081d2ccf00b1afe451cdebf2beff",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "9b3889b863760fce4805150d8b77ecf0f3f8813d4daef5637f887752c807a505",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "a612587a48a615ba3182868cd2e193b2661983cb41d8e7afa21c74d5821897a2",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "955f1bca8d9680519372c7bdb8e150a7198b347d47806408fbf60e0beb004ad5",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "45d1adec55094c7d9bf1ef9974338cb0cf0db922e35cfccd32bd3ae0863f945b",
+						"proposalsConnection": {
+							"edges": [
+								{
+									"node": {
+										"id": "162397c1072a83001c4c6b98a414987b7b7412f25a2d1c9b94a4cf4709e1149a",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "eb7d4ece20231bd421fb57ddcb1f6fab181040c03ec0e7c9813612ea22cfffab",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "f3ce9c84de4ec3e24bb2ebeafd7769a2a923684499cec10d4c41ebab7f8ab957",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "efff07474cf089d2419177362fce0a60ec96e1ad15887a7dfa2a729d21830201",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "df491a2bc54e582e14dfb727c7c81e62366bba34341bd7e4b579b374c0647493",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "d84eecd8a1a9d3f8269e62f4574b63010180718a89b4fbaa83438bfa2ed494ea",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "d7bb763be6aae9636eb64930b7a5b9d94d318d2f2e0521d61a0126b141f084a4",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "bc2e8182f2d8f050bfdaa6a8cb21f8b2990d6c5727e21fde589d093af3dbb035",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "8f2397119314a701adedf77b3d855413631428bcba2a2312c2811acff86be611",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "0631de0451cca178a98e51f24b7676862bbb827e74a38d1875984e55fa12f67e",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6ece28ada42cfe804484d6d5fa0f972f00ee9fe8f3b672d37aa2a3d6960422dd",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "51d94132a09a041c34d87c01f087aacfc94cc509de15c484fea123c54a19a204",
+						"proposalsConnection": {
+							"edges": [
+								{
+									"node": {
+										"id": "2785d7ca0416be486abb606c9081e4700f03fd4930778e1cfc249bdb5c6fa930",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "4d22d34607445e93052156b78ca6c1cfad4d4f9ce613338c9929f4174b20f05b",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "48de51651ef5c14c73c6a420976a9e8c62efad74ced2c16219b93e4eb3b3d41e",
+										"votes": {
+											"no": {
+												"totalNumber": "1"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "8e76c477bfb0b8b3164dcc309b7cb9b32a0e4198a899a65fbdbd0cd27a0dde8c",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "22f4b90cc0092d4294f252a0a73c9f94e050586a280f6e9d7e9d831492ac2e38",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "4a3968b84127568452251edb0a9da1f015f8c685eb42e838cb01df8809956928",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "2fa7597349d12853413bb08cfed7c23c2aaa02189aa72e0033dadbc69c7abd4e",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "04a4298ad1377c62169a47c8b92ebedac38be178e3432a4c1daf7ab9955e17b3",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "bb9c60f5420c26f9d410e1e42e585dcbc2af4611c4939a06b6e5e7aa47129a29",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "fbb1895fd524be8ea6e8e208ff280362d2ee29cb41f6a1f98fefa38ad3f6af3d",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "726953f05255a5bbe55fba2b5ef7a0fba342ecfc60d3bdf3f22259507b4ffcff",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "462016d080484ef59862e55b61e9fa9c4d7d9796b09a74b6741da5bbedeead4f",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "366e565cecc6217f36f4000615df4ac08cba9e4c22c4e476c7ede12784285e73",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "16c60891835f48955e585b89843630864c3dc65fa3a34b375132f0024756feb3",
+						"proposalsConnection": {
+							"edges": [
+								{
+									"node": {
+										"id": "8aae4be5b878e7f3353b04a7084b299061a529d21d8860bab2a8ff0e03c9ec85",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "37c040533a4df1d68bbcb0e1dc2fafc961cdc40627cd8cc8b7d204fde2d3cbc3",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "a3dd1be1fd843cbe3461b273486d7e8004887688639f5296527398160444de85",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "cfd0ac1846e15f50b3255efaab20b682a1889594c652c0604fad0d1a38c2f627",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "0cc66e6bf0062f5014afda499728da979de287dd26454d3181e02d711180df37",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "7a43e14bdd3ae2f05613cb0ad59bca493dc8cd0a79cd95535e403c32637f4f60",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "93884bc59d09bec81c614cbfddcb94433e49935bd4a6eeeb61a0c0d0265cd2aa",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "5a23f61df3feef09b48a31fff7710d006cbe69b9a9aff4117824653ab616964d",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "63880cae33125002b9f6601eb691e47aec7cb653a9e6c1545292acebc1309062",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "75c3b031975927b2d5180c64115b89457f1d71b908831374bc6072cc7008f9f2",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "ce9dcc857ad86932b636ddda1105b10c8368443bae4f3148b8d504cd626e67d2",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "e624e09a4a01f9510519b4c5d3de24e0037aa73b04a7919b4b25f7b696b5f5a5",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "7971e5aa6349eb326d9faa3a3bc75d4a01cd0e5fe26a210a755170f795abf8ae",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "3bdc87420ecea6c6f9f9c8a0a40a0420f01b033df6b36ce6a93caf8355052439",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "13e42422949992d0480dd8fe5434cb86510f90b07f4d4f0d2ca5968111ab5177",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "280e88d572f0fa77bcc36624035450e8c303b56bbc19b0ac86c2f05a9a38c717",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "5c533642c94e03176259446afa8ad913e315ac223b1ef77fe6163712db21caa1",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "5ce4b0a1364c82429ba1d3bfe164a01fe85ceb69206b5d441a19b285b22b8de2",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "45f148aa80cba0b9c301c5e2e949a5afe54bc5922916f0b1c5abe85f30609f4e",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "c4c9f3f113f3d33166d2365240e330ac1f315b4a86ae6e5990d208a9f0e3c691",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "679ab34d5d2dc96037571d6661d1add767de675c47fe91e20d2c8d12f45c4168",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "0"
+											}
+										}
+									}
+								},
+								{
+									"node": {
+										"id": "1e742dff5284512a23dab7ecc8a5b6e369df8db06ecbc910a715fffc59b3a717",
+										"votes": {
+											"no": {
+												"totalNumber": "0"
+											},
+											"yes": {
+												"totalNumber": "1"
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "cea6239c89c68d79d00def44074b81fb7649763c5254845fb528de4fafd6109b",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "423ad165557dbcc5198427f4e86e6b2a91d908ed7123768404b76552918ea458",
+						"proposalsConnection": {
+							"edges": null
+						}
+					}
+				}
+			]
+		}
+	},
+	"Duration": 40970416
+}

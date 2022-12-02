@@ -213,6 +213,8 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	cnf, err := tm.market.SubmitOrder(ctx, newOrder)
 	assert.NoError(t, err)
 	assert.True(t, len(cnf.Trades) > 0)
+	// just trigger MTM bit
+	tm.market.OnTick(ctx, newT)
 
 	// now all our orders have been cancelled
 	t.Run("ExpectedOrderStatus", func(t *testing.T) {
@@ -249,6 +251,12 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			},
 			{
 				// this is the cancellation
+				types.OrderStatusActive,
+				833, // cancelled
+			},
+			{
+				// this is quite possibly a duplicate because we're forcing the check
+				// for reference moves
 				types.OrderStatusActive,
 				833, // cancelled
 			},

@@ -118,7 +118,8 @@ type allServices struct {
 
 	erc20BridgeView *bridges.ERC20LogicView
 
-	commander *nodewallets.Commander
+	commander  *nodewallets.Commander
+	gastimator *processor.Gastimator
 }
 
 func newServices(
@@ -226,6 +227,8 @@ func newServices(
 	svcs.executionEngine = execution.NewEngine(
 		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar, svcs.marketActivityTracker, svcs.assets,
 	)
+
+	svcs.gastimator = processor.NewGastimator(svcs.executionEngine)
 
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		// Use staking-loop to pretend a dummy builtin assets deposited with the faucet was staked
@@ -432,6 +435,18 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 
 	watchers := []netparams.WatchParam{
 		{
+			Param:   netparams.MinBlockCapacity,
+			Watcher: svcs.gastimator.OnMinBlockCapacityUpdate,
+		},
+		{
+			Param:   netparams.MaxGasPerBlock,
+			Watcher: svcs.gastimator.OnMaxGasUpdate,
+		},
+		{
+			Param:   netparams.DefaultGas,
+			Watcher: svcs.gastimator.OnDefaultGasUpdate,
+		},
+		{
 			Param:   netparams.ValidatorsVoteRequired,
 			Watcher: svcs.protocolUpgradeEngine.OnRequiredMajorityChanged,
 		},
@@ -513,6 +528,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 
 				return svcs.eventForwarderEngine.SetupEthereumEngine(svcs.ethClient, svcs.eventForwarder, svcs.conf.EvtForward.Ethereum, ethCfg, svcs.assets)
 			},
+		},
+		{
+			Param:   netparams.MaxPeggedOrders,
+			Watcher: svcs.executionEngine.OnMaxPeggedOrderUpdate,
 		},
 		{
 			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
@@ -646,6 +665,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.LimitsProposeAssetEnabledFrom,
 			Watcher: svcs.limits.OnLimitsProposeAssetEnabledFromUpdate,
+		},
+		{
+			Param:   netparams.MarkPriceUpdateMaximumFrequency,
+			Watcher: svcs.executionEngine.OnMarkPriceUpdateMaximumFrequency,
 		},
 	}
 

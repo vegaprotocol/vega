@@ -7,36 +7,44 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRunServiceFlags(t *testing.T) {
-	t.Run("Valid flags succeeds", testRunServiceFlagsValidFlagsSucceeds)
+	t.Run("Missing loads-token flag with tokens passphrase flag fails", testRunServiceFlagsTokenPassphraseWithoutWithLOngLivingTokenFails)
 	t.Run("Missing network fails", testRunServiceFlagsMissingNetworkFails)
 }
 
-func testRunServiceFlagsValidFlagsSucceeds(t *testing.T) {
-	// given
-	networkName := vgrand.RandomStr(10)
+func testRunServiceFlagsTokenPassphraseWithoutWithLOngLivingTokenFails(t *testing.T) {
+	testDir := t.TempDir()
 
+	// given
+	_, passphraseFilePath := NewPassphraseFile(t, testDir)
+	networkName := vgrand.RandomStr(10)
 	f := &cmd.RunServiceFlags{
-		Network: networkName,
+		Network:              networkName,
+		TokensPassphraseFile: passphraseFilePath,
 	}
 
 	// when
-	err := f.Validate()
+	err := f.Validate(&cmd.RootFlags{
+		Home: testDir,
+	})
 
 	// then
-	require.NoError(t, err)
+	assert.ErrorIs(t, err, flags.OneOfParentsFlagMustBeSpecifiedError("tokens-passphrase-file", "load-tokens"))
 }
 
 func testRunServiceFlagsMissingNetworkFails(t *testing.T) {
+	testDir := t.TempDir()
+
 	// given
 	f := newRunServiceFlags(t)
 	f.Network = ""
 
 	// when
-	err := f.Validate()
+	err := f.Validate(&cmd.RootFlags{
+		Home: testDir,
+	})
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("network"))

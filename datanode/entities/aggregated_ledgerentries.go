@@ -11,27 +11,31 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// AggregatedLedgerEntries represents the the summed amount of ledger entries for a set of accounts within a given time range.
+// AggregatedLedgerEntry represents the the summed amount of ledger entries for a set of accounts within a given time range.
 // VegaTime and Quantity will always be set. The others will be nil unless when
 // querying grouping by one of the corresponding fields is requested.
-type AggregatedLedgerEntries struct {
+type AggregatedLedgerEntry struct {
 	VegaTime     time.Time
 	Quantity     decimal.Decimal
 	TransferType *LedgerMovementType
-	PartyID      *PartyID
 	AssetID      *AssetID
-	MarketID     *MarketID
-	AccountType  *types.AccountType
+
+	SenderPartyID       *PartyID
+	ReceiverPartyID     *PartyID
+	SenderMarketID      *MarketID
+	ReceiverMarketID    *MarketID
+	SenderAccountType   *types.AccountType
+	ReceiverAccountType *types.AccountType
 }
 
-func (ledgerEntries *AggregatedLedgerEntries) ToProto() *v2.AggregatedLedgerEntries {
-	lep := &v2.AggregatedLedgerEntries{}
+func (ledgerEntries *AggregatedLedgerEntry) ToProto() *v2.AggregatedLedgerEntry {
+	lep := &v2.AggregatedLedgerEntry{}
 
-	if ledgerEntries.PartyID != nil {
-		partyIDString := ledgerEntries.PartyID.String()
-		if partyIDString != "" {
-			lep.PartyId = &partyIDString
-		}
+	lep.Quantity = ledgerEntries.Quantity.String()
+	lep.Timestamp = ledgerEntries.VegaTime.UnixNano()
+
+	if ledgerEntries.TransferType != nil {
+		lep.TransferType = vega.TransferType(*ledgerEntries.TransferType)
 	}
 
 	if ledgerEntries.AssetID != nil {
@@ -41,34 +45,52 @@ func (ledgerEntries *AggregatedLedgerEntries) ToProto() *v2.AggregatedLedgerEntr
 		}
 	}
 
-	if ledgerEntries.MarketID != nil {
-		marketIDString := ledgerEntries.MarketID.String()
-		if marketIDString != "" {
-			lep.MarketId = &marketIDString
+	if ledgerEntries.SenderPartyID != nil {
+		partyIDString := ledgerEntries.SenderPartyID.String()
+		if partyIDString != "" {
+			lep.SenderPartyId = &partyIDString
 		}
 	}
 
-	if ledgerEntries.AccountType != nil {
-		lep.AccountType = *ledgerEntries.AccountType
+	if ledgerEntries.ReceiverPartyID != nil {
+		partyIDString := ledgerEntries.ReceiverPartyID.String()
+		if partyIDString != "" {
+			lep.ReceiverPartyId = &partyIDString
+		}
 	}
 
-	if ledgerEntries.TransferType != nil {
-		lep.TransferType = vega.TransferType(*ledgerEntries.TransferType)
+	if ledgerEntries.SenderMarketID != nil {
+		marketIDString := ledgerEntries.SenderMarketID.String()
+		if marketIDString != "" {
+			lep.SenderMarketId = &marketIDString
+		}
 	}
 
-	lep.Quantity = ledgerEntries.Quantity.String()
-	lep.Timestamp = ledgerEntries.VegaTime.UnixNano()
+	if ledgerEntries.ReceiverMarketID != nil {
+		marketIDString := ledgerEntries.ReceiverMarketID.String()
+		if marketIDString != "" {
+			lep.ReceiverMarketId = &marketIDString
+		}
+	}
+
+	if ledgerEntries.SenderAccountType != nil {
+		lep.SenderAccountType = *ledgerEntries.SenderAccountType
+	}
+
+	if ledgerEntries.ReceiverAccountType != nil {
+		lep.ReceiverAccountType = *ledgerEntries.ReceiverAccountType
+	}
 
 	return lep
 }
 
-func (ledgerEntries AggregatedLedgerEntries) Cursor() *Cursor {
+func (ledgerEntries AggregatedLedgerEntry) Cursor() *Cursor {
 	return NewCursor(AggregatedLedgerEntriesCursor{
 		VegaTime: ledgerEntries.VegaTime,
 	}.String())
 }
 
-func (ledgerEntries AggregatedLedgerEntries) ToProtoEdge(_ ...any) (*v2.AggregatedLedgerEntriesEdge, error) {
+func (ledgerEntries AggregatedLedgerEntry) ToProtoEdge(_ ...any) (*v2.AggregatedLedgerEntriesEdge, error) {
 	return &v2.AggregatedLedgerEntriesEdge{
 		Node:   ledgerEntries.ToProto(),
 		Cursor: ledgerEntries.Cursor().Encode(),

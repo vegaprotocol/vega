@@ -35,6 +35,11 @@ type VoteStore interface {
 	GetByParty(ctx context.Context, partyIDStr string) ([]entities.Vote, error)
 	GetByPartyConnection(ctx context.Context, partyIDStr string, pagination entities.CursorPagination) ([]entities.Vote, entities.PageInfo, error)
 	Get(ctx context.Context, proposalID, partyID *string, value *entities.VoteValue) ([]entities.Vote, error)
+	GetConnection(
+		ctx context.Context,
+		proposalIDStr, partyIDStr *string,
+		pagination entities.CursorPagination,
+	) ([]entities.Vote, entities.PageInfo, error)
 }
 
 type Governance struct {
@@ -108,6 +113,14 @@ func (g *Governance) GetVotesByParty(ctx context.Context, partyID string) ([]ent
 
 func (g *Governance) GetByPartyConnection(ctx context.Context, partyID string, pagination entities.CursorPagination) ([]entities.Vote, entities.PageInfo, error) {
 	return g.vStore.GetByPartyConnection(ctx, partyID, pagination)
+}
+
+func (g *Governance) GetConnection(
+	ctx context.Context,
+	proposalID, partyID *string,
+	pagination entities.CursorPagination,
+) ([]entities.Vote, entities.PageInfo, error) {
+	return g.vStore.GetConnection(ctx, proposalID, partyID, pagination)
 }
 
 func (g *Governance) GetVotes(ctx context.Context, proposalID, partyID *string, value *entities.VoteValue) ([]entities.Vote, error) {

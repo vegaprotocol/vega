@@ -64,7 +64,6 @@ func (d DataSourceDefinition) GetSigners() []*datapb.Signer {
 	return signers
 }
 
-//
 func (d DataSourceDefinition) GetFilters() []*datapb.Filter {
 	filters := []*datapb.Filter{}
 
@@ -80,7 +79,6 @@ func (d DataSourceDefinition) GetFilters() []*datapb.Filter {
 	return filters
 }
 
-//
 func NewDataSourceDefinition(tp int) *DataSourceDefinition {
 	ds := &DataSourceDefinition{}
 
@@ -113,7 +111,6 @@ func NewDataSourceDefinition(tp int) *DataSourceDefinition {
 	return ds
 }
 
-///
 // SetOracleConfig sets a given oracle config in the receiver.
 // This method does not care about object previous contents - use with caution (currenty needed on ly for testing purposes).
 func (s *DataSourceDefinition) SetOracleConfig(oc *DataSourceSpecConfiguration) *DataSourceDefinition {
@@ -127,6 +124,18 @@ func (s *DataSourceDefinition) SetOracleConfig(oc *DataSourceSpecConfiguration) 
 					External: &DataSourceDefinitionExternal{
 						SourceType: &DataSourceDefinitionExternal_Oracle{
 							Oracle: oc,
+						},
+					},
+				},
+			}
+		case *DataSourceDefinition_Internal:
+			ds = &DataSourceDefinition{
+				SourceType: &DataSourceDefinition_Internal{
+					Internal: &DataSourceDefinitionInternal{
+						SourceType: &DataSourceDefinitionInternal_Time{
+							Time: &DataSourceSpecConfigurationTime{
+								Conditions: oc.Filters[0].Conditions,
+							},
 						},
 					},
 				},

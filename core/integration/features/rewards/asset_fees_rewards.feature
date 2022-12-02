@@ -12,6 +12,7 @@ Feature: Fees reward calculations for a single asset, single market
       | reward.staking.delegation.competitionLevel        | 1.1    |
       | reward.staking.delegation.minValidators           | 5      |
       | reward.staking.delegation.optimalStakeMultiplier  | 5.0    |
+      | network.markPriceUpdateMaximumFrequency           | 0s    |
 
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
@@ -69,7 +70,7 @@ Feature: Fees reward calculations for a single asset, single market
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -80,7 +81,7 @@ Feature: Fees reward calculations for a single asset, single market
     And the accumulated infrastructure fees should be "0" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader4 | ETH/DEC21 | sell | 4      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
 
@@ -110,7 +111,7 @@ Feature: Fees reward calculations for a single asset, single market
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1082   | 8934    |
+      | trader3 | ETH   | ETH/DEC21 | 1089   | 8927    |
       | trader4 | ETH   | ETH/DEC21 | 715    | 8961    |
 
     And the accumulated infrastructure fees should be "7" for the asset "ETH"
@@ -121,7 +122,7 @@ Feature: Fees reward calculations for a single asset, single market
     # only trader3 received the maker fees so only they get the reward of 10k
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1082   | 8934    |
+      | trader3 | ETH   | ETH/DEC21 | 1089   | 8927    |
       | trader4 | ETH   | ETH/DEC21 | 715    | 8961    |
 
     Then "trader3" should have general account balance of "10000" for asset "VEGA"
@@ -131,7 +132,7 @@ Feature: Fees reward calculations for a single asset, single market
     # expect no change to anyone
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1082   | 8934    |
+      | trader3 | ETH   | ETH/DEC21 | 1089   | 8927    |
       | trader4 | ETH   | ETH/DEC21 | 715    | 8961    |
 
     Then "trader3" should have general account balance of "10000" for asset "VEGA"
@@ -189,7 +190,7 @@ Feature: Fees reward calculations for a single asset, single market
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3b | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -202,7 +203,7 @@ Feature: Fees reward calculations for a single asset, single market
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
     And the accumulated infrastructure fees should be "0" for the asset "ETH"
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader4 | ETH/DEC21 | sell | 4      | 1002  | 2                | TYPE_LIMIT | TIF_GTC |
 
@@ -243,8 +244,8 @@ Feature: Fees reward calculations for a single asset, single market
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 721    | 9290    |
-      | trader3b | ETH   | ETH/DEC21 | 361    | 9645    |
+      | trader3a | ETH   | ETH/DEC21 | 726    | 9285    |
+      | trader3b | ETH   | ETH/DEC21 | 363    | 9643    |
       | trader4  | ETH   | ETH/DEC21 | 715    | 8958    |
 
     And the accumulated infrastructure fees should be "8" for the asset "ETH"
@@ -255,8 +256,8 @@ Feature: Fees reward calculations for a single asset, single market
     # only trader3 received the maker fees so only they get the reward of 10k
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 721    | 9290    |
-      | trader3b | ETH   | ETH/DEC21 | 361    | 9645    |
+      | trader3a | ETH   | ETH/DEC21 | 726    | 9285    |
+      | trader3b | ETH   | ETH/DEC21 | 363    | 9643    |
       | trader4  | ETH   | ETH/DEC21 | 715    | 8958    |
 
     Then "trader3a" should have general account balance of "6470" for asset "VEGA"
@@ -268,8 +269,8 @@ Feature: Fees reward calculations for a single asset, single market
     # expect no change to anyone
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 721    | 9290    |
-      | trader3b | ETH   | ETH/DEC21 | 361    | 9645    |
+      | trader3a | ETH   | ETH/DEC21 | 726    | 9285    |
+      | trader3b | ETH   | ETH/DEC21 | 363    | 9643    |
       | trader4  | ETH   | ETH/DEC21 | 715    | 8958    |
 
   Scenario: Testing fees in continuous trading with two trades and one liquidity providers with 10 and 0 s liquidity fee distribution timestep - test maker fee received, taker fee paid and lp fees rewards
@@ -337,7 +338,7 @@ Feature: Fees reward calculations for a single asset, single market
       | buy  | 910   | 210    |
       | sell | 1090  | 184    |
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3b | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -345,8 +346,8 @@ Feature: Fees reward calculations for a single asset, single market
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 480    | 9531    |
-      | trader3b | ETH   | ETH/DEC21 | 240    | 9766    |
+      | trader3a | ETH   | ETH/DEC21 | 690    | 9321    |
+      | trader3b | ETH   | ETH/DEC21 | 339    | 9667    |
 
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
@@ -388,10 +389,13 @@ Feature: Fees reward calculations for a single asset, single market
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general  |
-      | trader3a | ETH   | ETH/DEC21 | 480    | 9531     |
-      | trader3b | ETH   | ETH/DEC21 | 240    | 9766     |
-      | trader4  | ETH   | ETH/DEC21 | 679    | 9291     |
+      | trader3a | ETH   | ETH/DEC21 | 690    | 9321     |
+      | trader3b | ETH   | ETH/DEC21 | 339    | 9667     |
+      | trader4  | ETH   | ETH/DEC21 | 480    | 9490     |
       | aux1     | ETH   | ETH/DEC21 | 50978  | 99939024 |
+      #| trader3a | ETH   | ETH/DEC21 | 480    | 9531     |
+      #| trader3b | ETH   | ETH/DEC21 | 240    | 9766     |
+      #| trader4  | ETH   | ETH/DEC21 | 679    | 9291     |
 
     And the accumulated infrastructure fees should be "8" for the asset "ETH"
     And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
@@ -407,10 +411,13 @@ Feature: Fees reward calculations for a single asset, single market
     # only trader3 received the maker fees so only they get the reward of 10k
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general  |
-      | trader3a | ETH   | ETH/DEC21 | 480    | 9531     |
-      | trader3b | ETH   | ETH/DEC21 | 240    | 9766     |
-      | trader4  | ETH   | ETH/DEC21 | 679    | 9291     |
+      | trader3a | ETH   | ETH/DEC21 | 690    | 9321     |
+      | trader3b | ETH   | ETH/DEC21 | 339    | 9667     |
+      | trader4  | ETH   | ETH/DEC21 | 480    | 9490     |
       | aux1     | ETH   | ETH/DEC21 | 50978  | 99939029 |
+      #| trader3a | ETH   | ETH/DEC21 | 480    | 9531     |
+      #| trader3b | ETH   | ETH/DEC21 | 240    | 9766     |
+      #| trader4  | ETH   | ETH/DEC21 | 679    | 9291     |
 
     # 11/17 x 10000 -> maker fee received reward
     Then "trader3a" should have general account balance of "6470" for asset "VEGA"
@@ -425,7 +432,7 @@ Feature: Fees reward calculations for a single asset, single market
     # expect no change to anyone
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general  |
-      | trader3a | ETH   | ETH/DEC21 | 480    | 9531     |
-      | trader3b | ETH   | ETH/DEC21 | 240    | 9766     |
-      | trader4  | ETH   | ETH/DEC21 | 679    | 9291     |
+      | trader3a | ETH   | ETH/DEC21 | 690    | 9321     |
+      | trader3b | ETH   | ETH/DEC21 | 339    | 9667     |
+      | trader4  | ETH   | ETH/DEC21 | 480    | 9490     |
       | aux1     | ETH   | ETH/DEC21 | 50978  | 99939029 |

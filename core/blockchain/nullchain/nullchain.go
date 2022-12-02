@@ -82,6 +82,7 @@ type NullBlockchain struct {
 
 	mu        sync.Mutex
 	replaying atomic.Bool
+	replayer  *Replayer
 }
 
 func NewClient(
@@ -154,6 +155,7 @@ func (n *NullBlockchain) StartChain() error {
 	if err != nil {
 		return err
 	}
+	n.replayer = r
 
 	if n.cfg.Replay.Replay {
 		n.log.Info("nullchain is replaying chain", logging.String("replay-file", n.cfg.Replay.ReplayFile))
@@ -175,7 +177,6 @@ func (n *NullBlockchain) StartChain() error {
 
 	if n.cfg.Replay.Record {
 		n.log.Info("nullchain is recording chain data", logging.String("replay-file", n.cfg.Replay.ReplayFile))
-		n.app = r // sandwich our replayer between nullchain <-> protocol
 	}
 
 	return nil
@@ -186,6 +187,12 @@ func (n *NullBlockchain) processBlock() {
 		n.log.Debugf("processing block %d with %d transactions", n.blockHeight, len(n.pending))
 	}
 
+	resp := abci.ResponseCommit{}
+	if n.replayer != nil && n.cfg.Replay.Record {
+		n.replayer.startBlock(n.blockHeight, n.now.UnixNano(), n.pending)
+		defer func() { n.replayer.saveBlock(resp.Data) }()
+	}
+
 	n.BeginBlock()
 	for _, tx := range n.pending {
 		n.app.DeliverTx(*tx)
@@ -193,7 +200,7 @@ func (n *NullBlockchain) processBlock() {
 	n.pending = n.pending[:0]
 
 	n.EndBlock()
-	n.app.Commit()
+	resp = n.app.Commit()
 
 	// Increment time, blockheight, ready to start a new block
 	n.blockHeight++

@@ -1,4 +1,4 @@
-Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-001, 0038-OLIQ-002, 0009-MRKP-001, 0009-MRKP-002, 0009-MRKP-006, 0018-RSKM-007, 0018-RSKM-008)
+Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-001, 0038-OLIQ-002, 0009-MRKP-002, 0009-MRKP-006, 0018-RSKM-007, 0018-RSKM-008)
 
   Background:
 
@@ -9,6 +9,8 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
+      | market.liquidityProvision.shapes.maxSize            | 10    |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
 
   Scenario: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size(0034-PROB-001);Probability of trading decreases away from the mid-price (0034-PROB-005). Tested with varying decimal places.
 
@@ -91,7 +93,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | sell | 1200090000 | 1881   |
       | sell | 1200100000 | 1884   |
 
-  Scenario:  LP pegged volume is pushed inside price monitoring bounds(0034-PROB-002, 0009-MRKP-003, 0009-MRKP-004, 0009-MRKP-005);
+  Scenario:  LP pegged volume is pushed inside price monitoring bounds(0034-PROB-002, 0009-MRKP-003, 0009-MRKP-004);
 
     Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau     | mu | r | sigma |

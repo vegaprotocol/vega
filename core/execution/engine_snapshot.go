@@ -15,6 +15,7 @@ package execution
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -32,13 +33,16 @@ func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider) {
 	if prev := len(e.generatedProviders); prev < mkts {
 		mkts -= prev
 	}
-	e.newGeneratedProviders = make([]types.StateProvider, 0, mkts*4)
+	e.newGeneratedProviders = make([]types.StateProvider, 0, mkts*5)
 	for _, m := range e.marketsCpy {
+		// ensure the next MTM timestamp is set correctly:
+		am := e.markets[m.mkt.ID]
+		m.nextMTM = am.nextMTM
 		e.log.Debug("serialising market", logging.String("id", m.mkt.ID))
 		mks = append(mks, m.getState())
 
 		if _, ok := e.generatedProviders[m.GetID()]; !ok {
-			e.newGeneratedProviders = append(e.newGeneratedProviders, m.position, m.matching, m.tsCalc, m.liquidity)
+			e.newGeneratedProviders = append(e.newGeneratedProviders, m.position, m.matching, m.tsCalc, m.liquidity, m.settlement)
 			e.generatedProviders[m.GetID()] = struct{}{}
 		}
 	}
@@ -75,6 +79,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 		return nil, err
 	}
 
+	nextMTM := time.Unix(0, em.NextMTM)
 	// create market auction state
 	e.log.Info("restoring market", logging.String("id", em.Market.ID))
 	mkt, err := NewMarketFromSnapshot(
@@ -94,6 +99,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 		e.stateVarEngine,
 		ad,
 		e.marketActivityTracker,
+		e.peggedOrderCountUpdated,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -109,6 +115,8 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 	if err := e.propagateInitialNetParams(ctx, mkt); err != nil {
 		return nil, err
 	}
+	// ensure this is set correctly
+	mkt.nextMTM = nextMTM
 
 	e.publishNewMarketInfos(ctx, mkt)
 	return mkt, nil
@@ -124,7 +132,7 @@ func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMark
 			return nil, fmt.Errorf("failed to restore market: %w", err)
 		}
 
-		pvds = append(pvds, m.position, m.matching, m.tsCalc, m.liquidity)
+		pvds = append(pvds, m.position, m.matching, m.tsCalc, m.liquidity, m.settlement)
 
 		// so that we don't return them again the next state change
 		e.generatedProviders[m.GetID()] = struct{}{}

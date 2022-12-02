@@ -20,7 +20,11 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | party1 | USD   | 100000000 |
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
+    @Now
    Scenario: 001, LP gets distressed during continuous trading, no DPD setting (0044-LIME-002, 0035-LIQM-004)
 
    Given the following network parameters are set:
@@ -70,8 +74,8 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 426829 | 23171    | 50000 |
-      | party1 | USD   | ETH/MAR22 | 12190  | 99987810 | 0     |
-      | party2 | USD   | ETH/MAR22 | 51879  | 99948121 | 0     |
+      | party1 | USD   | ETH/MAR22 | 11415  | 99988585 | 0     |
+      | party2 | USD   | ETH/MAR22 | 51630  | 99948370 | 0     |
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
@@ -111,7 +115,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 426829 | 23251    | 50000 |
-      | party1 | USD   | ETH/MAR22 | 12190  | 99987810 | 0     |
+      | party1 | USD   | ETH/MAR22 | 11415  | 99988585 | 0     |
       | party2 | USD   | ETH/MAR22 | 264754 | 99734946 | 0     |
     #check the margin levels
     Then the parties should have the following margin levels:
@@ -130,7 +134,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 426829 | 23251    | 50000 |
-      | party1 | USD   | ETH/MAR22 | 12190  | 99987810 | 0     |
+      | party1 | USD   | ETH/MAR22 | 11415  | 99988585 | 0     |
       | party2 | USD   | ETH/MAR22 | 264754 | 99734946 | 0     |
       | party3 | USD   | ETH/MAR22 | 28826  | 99971294 | 0     |
 
@@ -162,7 +166,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond |
       | party0 | USD   | ETH/MAR22 | 490852 | 0        | 1074 |
-      | party1 | USD   | ETH/MAR22 | 12190  | 99987810 | 0    |
+      | party1 | USD   | ETH/MAR22 | 11415  | 99988585 | 0    |
       | party2 | USD   | ETH/MAR22 | 264754 | 99734946 | 0    |
       | party3 | USD   | ETH/MAR22 | 28826  | 99971294 | 0    |
 
@@ -170,7 +174,8 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | party  | market id | maintenance | search | initial | release |
       | party0 | ETH/MAR22 | 355691      | 391260 | 426829  | 497967  |
       | party1 | ETH/MAR22 | 10159       | 11174  | 12190   | 14222   |
-      | party2 | ETH/MAR22 | 221129      | 243241 | 265354  | 309580  |
+      | party2 | ETH/MAR22 | 220629      | 242691 | 264754  | 308880  |
+      #| party2 | ETH/MAR22 | 221129      | 243241 | 265354  | 309580  |
 
 #documented behaviour why margin account has higher value than margin initial level:
 #When an LP submits a new order, we recalculate the margin requirements as we do for any order. At this point, we don't care if the party is an LP or not. We work out the margin requirements assuming whatever position the party holds stays the same. If the margin requirement increases, we try and top up the margin balance to the initial margin level. If this means dipping in to the bond account, we slash the bond account and apply a penalty.
@@ -185,6 +190,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 213414       | 50000          | 60            |
 
+    @Now
 Scenario: 002, LP gets slashed twice during continuous trading, 0044-LIME-002, No DPD setting
 
    Given the following network parameters are set:

@@ -2,13 +2,13 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
   # https://drive.google.com/drive/folders/1BCOKaEb7LZYAKoiPfXfaqwM4BNicPpF-
 
   Background:
-
+    Given the following network parameters are set:
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
-    And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
     And the parties deposit on asset's general account the following amount:
       | party      | asset | amount     |
       | party1     | ETH   | 1000000000 |
@@ -54,9 +54,9 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
 
   Scenario:
     # no margin account created for party1, just general account
-    And "party1" should have one account per asset
+    Given "party1" should have one account per asset
     # placing test order
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 13     | 9000000 | 3                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And "party1" should have general account balance of "718400040" for asset "ETH"
@@ -74,8 +74,9 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | party  | asset | market id | margin    | general   |
       | party1 | ETH   | ETH/DEC19 | 284399960 | 718400040 |
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search    | initial   | release   |
+      | party  | market id | maintenance | search    | initial   | release  |
       | party1 | ETH/DEC19 | 71099990    | 227519968 | 284399960 | 355499950 |
+      #| party1 | ETH/DEC19 | 15100007    | 48320022 | 60400028 | 75500035 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party1 | -13    | 2800000        | 0            |
@@ -87,8 +88,8 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | sellSideMM | sell1     |
       | sellSideMM | sell2     |
       | sellSideMM | sell3     |
-    And the parties place the following orders:
-      | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+    And the parties place the following orders with ticks:
+      | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | buySideMM  | ETH/DEC19 | buy  | 45     | 7000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 50     | 7500000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | sellSideMM | ETH/DEC19 | sell | 10     | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
@@ -99,7 +100,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | party  | asset | market id | margin    | general   |
       | party1 | ETH   | ETH/DEC19 | 284399960 | 718400040 |
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search    | initial   | release   |
+      | party  | market id | maintenance | search   | initial  | release   |
       | party1 | ETH/DEC19 | 71099990    | 227519968 | 284399960 | 355499950 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
@@ -107,14 +108,14 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 80
-    When the parties place the following orders:
-      | party     | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+    When the parties place the following orders with ticks:
+      | party      | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 1      | 8000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 8000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     # MTM
     And the following transfers should happen:
-      | from   | to      | from account            | to account          | market id | amount   | asset |
+      | from   | to     | from account            | to account          | market id | amount   | asset |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 13000000 | ETH   |
 
     Then the parties should have the following account balances:
@@ -128,7 +129,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | party1 | -13    | 15800000       | 0            |
 
     # FULL CLOSEOUT BY TRADER
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 13     | 9000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And the parties should have the following profit and loss:

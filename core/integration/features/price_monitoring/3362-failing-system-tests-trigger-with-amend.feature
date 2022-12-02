@@ -13,8 +13,9 @@ Feature: Replicate failing system tests after changes to price monitoring (trigg
       | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | data source config          |
       | ETH/DEC20 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      | name                                    | value |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
   Scenario: Replicate test called test_TriggerWithMarketOrder
@@ -47,7 +48,7 @@ Feature: Replicate failing system tests after changes to price monitoring (trigg
 
     ## price bounds are 99711 - 99845 - 100156 - 100290
     ## sell order violates 1 price bound -> 6 second auction
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party2 | ETH/DEC20 | sell | 3      | 99840 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-1    |
       | party3 | ETH/DEC20 | buy  | 5      | 99600 | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |

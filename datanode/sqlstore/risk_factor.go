@@ -40,7 +40,7 @@ func (rf *RiskFactors) Upsert(ctx context.Context, factor *entities.RiskFactor) 
 	query := fmt.Sprintf(`insert into risk_factors (%s)
 values ($1, $2, $3, $4, $5)
 on conflict (market_id, vega_time) do update
-set 
+set
 	short=EXCLUDED.short,
 	long=EXCLUDED.long,
 	tx_hash=EXCLUDED.tx_hash`, sqlRiskFactorColumns)
@@ -62,7 +62,5 @@ func (rf *RiskFactors) GetMarketRiskFactors(ctx context.Context, marketID string
 		from risk_factors_current
 		where market_id = %s`, sqlRiskFactorColumns, nextBindVar(&bindVars, entities.MarketID(marketID)))
 
-	err := pgxscan.Get(ctx, rf.Connection, &riskFactor, query, bindVars...)
-
-	return riskFactor, err
+	return riskFactor, rf.wrapE(pgxscan.Get(ctx, rf.Connection, &riskFactor, query, bindVars...))
 }

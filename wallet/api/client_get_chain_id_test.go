@@ -7,8 +7,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
-	"code.vegaprotocol.io/vega/wallet/api/node/adapters"
 	nodemocks "code.vegaprotocol.io/vega/wallet/api/node/mocks"
+	"code.vegaprotocol.io/vega/wallet/api/node/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,7 +28,7 @@ func testGettingChainIDSucceeds(t *testing.T) {
 	// setup
 	handler := newGetChainIDHandler(t)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
-	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(adapters.LastBlock{
+	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
 		ChainID: expectedChainID,
 	}, nil)
 
@@ -54,7 +54,7 @@ func testNoHealthyNodeAvailableDoesNotReturnChainID(t *testing.T) {
 
 	// then
 	require.NotNil(t, errorDetails)
-	assert.Equal(t, api.ErrorCodeNodeRequestFailed, errorDetails.Code)
+	assert.Equal(t, api.ErrorCodeNodeCommunicationFailed, errorDetails.Code)
 	assert.Equal(t, "Network error", errorDetails.Message)
 	assert.Equal(t, api.ErrNoHealthyNodeAvailable.Error(), errorDetails.Data)
 	assert.Empty(t, result)
@@ -67,14 +67,14 @@ func testFailingToGetLastBlockDoesNotReturnChainID(t *testing.T) {
 	// setup
 	handler := newGetChainIDHandler(t)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
-	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(adapters.LastBlock{}, assert.AnError)
+	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{}, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx)
 
 	// then
 	require.NotNil(t, errorDetails)
-	assert.Equal(t, api.ErrorCodeNodeRequestFailed, errorDetails.Code)
+	assert.Equal(t, api.ErrorCodeNodeCommunicationFailed, errorDetails.Code)
 	assert.Equal(t, "Network error", errorDetails.Message)
 	assert.Equal(t, api.ErrCouldNotGetLastBlockInformation.Error(), errorDetails.Data)
 	assert.Empty(t, result)
@@ -89,7 +89,7 @@ type GetChainIDHandler struct {
 func (h *GetChainIDHandler) handle(t *testing.T, ctx context.Context) (api.ClientGetChainIDResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, nil)
+	rawResult, err := h.Handle(ctx, nil, requestMetadataForTest())
 	if rawResult != nil {
 		result, ok := rawResult.(api.ClientGetChainIDResult)
 		if !ok {

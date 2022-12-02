@@ -16,20 +16,14 @@ import "testing"
 
 func TestGovernance(t *testing.T) {
 	queries := map[string]string{
-		"Proposals":                  `{ proposals{ id, reference, party { id }, state, datetime, rejectionReason, errorDetails } }`,
-		"ProposalVoteSummary":        `{ proposals{ id votes{ yes{ totalNumber totalWeight totalTokens } } } }`,
-		"ProposalVoteDetails":        `{ proposals{ id votes{ yes{ votes{value party { id } datetime proposalId governanceTokenBalance governanceTokenWeight } } } } }`,
-		"NewMarketProposals":         `{ proposals: newMarketProposals { id } }`,
-		"NetworkParametersProposals": `{ proposals: networkParametersProposals { id } }`,
-		"NewAssetProposals":          `{ proposals: newAssetProposals { id } }`,
-		"NewFreeformProposals":       `{ proposals: newFreeformProposals { id } }`,
-		// Don't currently have these in test data stream
-		//"UpdateMarketProposals":      `{ updateMarketProposals { id } }`,
+		"Proposals":           `{ proposalsConnection{ edges { node { id, reference, party { id }, state, datetime, rejectionReason, errorDetails } } } }`,
+		"ProposalVoteSummary": `{ proposalsConnection{ edges { node { id votes{ yes{ totalNumber totalWeight totalTokens } } } } } }`,
+		"ProposalVoteDetails": `{ proposalsConnection{ edges { node { id votes{ yes{ votes{value party { id } datetime proposalId governanceTokenBalance governanceTokenWeight } } } } } } }`,
 	}
 
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
-			assertGraphQLQueriesReturnSame[struct{ Proposals []Proposal }](t, query)
+			assertGraphQLQueriesReturnSame(t, query)
 		})
 	}
 }

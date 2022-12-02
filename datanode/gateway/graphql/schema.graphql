@@ -68,11 +68,11 @@ type Subscription {
   ): Delegation!
 
   "Subscribe to liquidity provisioning data"
-    liquidityProvisions(
-        "The party ID to subscribe for, empty if all"
-        partyId: ID
-        "The market ID to subscribe for, empty if all"
-        marketId: ID
+  liquidityProvisions(
+    "The party ID to subscribe for, empty if all"
+    partyId: ID
+    "The market ID to subscribe for, empty if all"
+    marketId: ID
   ): [LiquidityProvisionUpdate!]
 
   "Subscribe to the margin changes"
@@ -168,7 +168,7 @@ type MarginLevels {
   """
   collateralReleaseLevel: String!
   "RFC3339Nano time from at which this margin level was relevant"
-  timestamp: String!
+  timestamp: Timestamp!
 }
 
 "Margins for a given a party"
@@ -191,7 +191,7 @@ type MarginLevelsUpdate {
   """
   collateralReleaseLevel: String!
   "RFC3339Nano time from at which this margin level was relevant"
-  timestamp: String!
+  timestamp: Timestamp!
 }
 
 "Live data of a Market"
@@ -221,7 +221,7 @@ type MarketData {
   "The arithmetic average of the best static bid price and best static offer price"
   staticMidPrice: String!
   "RFC3339Nano time at which this market price was relevant"
-  timestamp: String!
+  timestamp: Timestamp!
   "The sum of the size of all positions greater than 0."
   openInterest: String!
   "RFC3339Nano time at which the auction will stop (null if not in auction mode)"
@@ -252,6 +252,8 @@ type MarketData {
   marketValueProxy: String!
   "The equity like share of liquidity fee for each liquidity provider"
   liquidityProviderFeeShare: [LiquidityProviderFeeShare!]
+  "RFC3339Nano time indicating the next time positions will be marked to market"
+  nextMarkToMarket: String!
 }
 
 "Live data of a Market"
@@ -281,7 +283,7 @@ type ObservableMarketData {
   "The arithmetic average of the best static bid price and best static offer price"
   staticMidPrice: String!
   "RFC3339Nano time at which this market price was relevant"
-  timestamp: String!
+  timestamp: Timestamp!
   "The sum of the size of all positions greater than 0"
   openInterest: String!
   "RFC3339Nano time at which the auction will stop (null if not in auction mode)"
@@ -310,18 +312,20 @@ type ObservableMarketData {
   marketValueProxy: String!
   "The equity like share of liquidity fee for each liquidity provider"
   liquidityProviderFeeShare: [ObservableLiquidityProviderFeeShare!]
+  "RFC3339Nano time indicating the next time positions will be marked to market"
+  nextMarkToMarket: String!
 }
 
 "Timestamps for when the market changes state"
 type MarketTimestamps {
   "Time when the market is first proposed"
-  proposed: String
+  proposed: Timestamp
   "Time when the market has been voted in and waiting to be created"
-  pending: String
+  pending: Timestamp!
   "Time when the market is open and ready to accept trades"
-  open: String
+  open: Timestamp!
   "Time when the market is closed"
-  close: String
+  close: Timestamp!
 }
 
 "The equity like share of liquidity fee for each liquidity provider"
@@ -367,24 +371,16 @@ input AccountFilter {
 "Filter for historical entry ledger queries"
 input LedgerEntryFilter {
   CloseOnAccountFilters: Boolean
-  AccountFromFilter: AccountFilter
-  AccountToFilter: AccountFilter
+  SenderAccountFilter: AccountFilter
+  ReceiverAccountFilter: AccountFilter
 
   TransferTypes: [TransferType]
-}
-
-input GroupOptions{
-  ByAccountField: [AccountField]
-  ByLedgerEntryField: [LedgerEntryField]
 }
 
 "Queries allow a caller to read data and filter data via GraphQL."
 type Query {
   "An asset which is used in the vega network"
   asset("ID of the asset" id: ID!): Asset
-
-  "The list of all assets in use in the Vega network"
-  assets: [Asset!] @deprecated(reason: "Use assetsConnection instead")
 
   "The list of all assets in use in the Vega network or the specified asset if ID is provided"
   assetsConnection(id: ID, pagination: Pagination): AssetsConnection
@@ -460,7 +456,7 @@ type Query {
     "TimeInForce of the order"
     timeInForce: OrderTimeInForce!
     "Expiration of the the order"
-    expiration: String
+    expiration: Timestamp
     "Type of the order"
     type: OrderType!
   ): OrderEstimate!
@@ -476,13 +472,13 @@ type Query {
     If both the start and end date is not provided, only the latest snapshot will be returned.
     If only the start date is provided, all market data for the market from the start date forward will be returned.
     """
-    start: Int
+    start: Timestamp
     """
     Optional end date time for the historic data query.
     If both the start and end date is not provided, only the latest snapshot will be returned.
     If only the end date is provided, all market data for the market up to and including the end date will be returned.
     """
-    end: Int
+    end: Timestamp
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -499,13 +495,13 @@ type Query {
     If both the start and end date is not provided, only the latest snapshot will be returned.
     If only the start date is provided, all market data for the market from the start date forward will be returned.
     """
-    start: Int
+    start: Timestamp
     """
     Optional end date time for the historic data query.
     If both the start and end date is not provided, only the latest snapshot will be returned.
     If only the end date is provided, all market data for the market up to and including the end date will be returned.
     """
-    end: Int
+    end: Timestamp
     "Optional Pagination"
     pagination: Pagination): MarketDataConnection
 
@@ -522,13 +518,9 @@ type Query {
   "Get ledger entries by asset, market, party, account type, transfer type within the given date range."
   ledgerEntries(
     filter: LedgerEntryFilter,
-    groupOptions: GroupOptions
     dateRange: DateRange,
     pagination: Pagination
   ) : AggregatedLedgerEntriesConnection!
-
-  "Query for historic key rotations"
-  keyRotations(id: ID): [KeyRotation!] @deprecated(reason: "use keyRotationsConnection instead")
 
   "Query for historic key rotations"
   keyRotationsConnection(id: ID, pagination: Pagination): KeyRotationConnection!
@@ -538,9 +530,6 @@ type Query {
 
   "An instrument that is trading on the Vega network"
   market("Optional ID of a market" id: ID!): Market
-
-  "One or more instruments that are trading on the VEGA network"
-  markets("ID of the market" id: ID): [Market!] @deprecated(reason: "Use marketsConnection instead")
 
   "One or more instruments that are trading on the Vega network"
   marketsConnection(
@@ -563,34 +552,7 @@ type Query {
   ): NetworkParameter
 
   "Return the full list of network parameters"
-  networkParameters: [NetworkParameter!] @deprecated(reason: "Use networkParametersConnection instead")
-
-  "Return the full list of network parameters"
   networkParametersConnection(pagination: Pagination): NetworkParametersConnection!
-
-  "Governance proposals that aim to update Vega network parameters"
-  networkParametersProposals(
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
-
-  "Governance proposals that aim to create new assets in Vega"
-  newAssetProposals(
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
-
-  "Freeform governance proposals, which can be voted on but do not change the behaviour of the system, and can be used to gauge community sentiment in Vega"
-  newFreeformProposals(
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
-
-  "Governance proposals that aim to create new markets"
-  newMarketProposals(
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
   "Specific node in network"
   node("required ID of node" id: ID!): Node
@@ -599,30 +561,10 @@ type Query {
   nodeData: NodeData
 
   "All known network nodes"
-  nodes: [Node!] @deprecated(reason: "use nodesConnection instead")
-
-  "All known network nodes"
   nodesConnection(pagination: Pagination): NodesConnection!
 
   "Return a list of aggregated node signature for a given resource ID"
-  nodeSignatures(resourceId: ID!): [NodeSignature!] @deprecated(reason: "Use nodeSignaturesConnection instead")
-
-  "Return a list of aggregated node signature for a given resource ID"
   nodeSignaturesConnection(resourceId: ID!, pagination: Pagination): NodeSignaturesConnection
-
-  "All registered oracle specs"
-  oracleData(
-    "Pagination"
-    pagination: OffsetPagination
-  ): [OracleData!] @deprecated(reason: "Use oracleDataConnection instead")
-
-  "All oracle data for a given oracle spec ID"
-  oracleDataBySpec(
-    "ID for an oracle spec"
-    oracleSpecId: ID!
-    "Pagination"
-    pagination: OffsetPagination
-  ): [OracleData!] @deprecated(reason: "Use oracleDataBySpecConnection instead")
 
   "All oracle data for a given oracle spec ID"
   oracleDataBySpecConnection(
@@ -640,12 +582,6 @@ type Query {
 
   "An oracle spec for a given oracle spec ID"
   oracleSpec("ID for an oracle spec" oracleSpecId: ID!): OracleSpec
-
-  "All registered oracle specs"
-  oracleSpecs(
-    "Pagination"
-    pagination: OffsetPagination
-  ): [OracleSpec!] @deprecated(reason: "Use oracleSpecsConnection instead")
 
   "All registered oracle specs"
   oracleSpecsConnection(
@@ -666,28 +602,12 @@ type Query {
   orderByReference("Reference for an order" reference: String!): Order!
 
   "Order versions (created via amendments if any) found by orderID"
-  orderVersions(
-    "ID for an order"
-    orderId: ID!
-
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Order!] @deprecated(reason: "Use orderVersionsConnection instead")
-
-  "Order versions (created via amendments if any) found by orderID"
   orderVersionsConnection(
     "ID for an order"
     orderId: ID
     "Pagination information"
     pagination: Pagination
   ): OrderConnection
-
-  "One or more entities that are trading on the Vega network"
-  parties("Optional ID of a party" id: ID): [Party!] @deprecated(reason: "Use partiesConnection instead.")
 
   "One or more entities that are trading on the Vega network"
   partiesConnection(
@@ -709,12 +629,6 @@ type Query {
   ): Proposal
 
   "All governance proposals in the Vega network"
-  proposals(
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
-
-  "All governance proposals in the Vega network"
   proposalsConnection(
     "Optional type of proposal to retrieve data for"
     proposalType: ProposalType
@@ -730,26 +644,8 @@ type Query {
   "List protocol upgrade proposals, optionally filtering on status or approver"
   protocolUpgradeProposals(inState: ProtocolUpgradeProposalStatus, approvedBy: String, pagination: Pagination): ProtocolUpgradeProposalConnection
 
-  "Governance proposals that aim to update existing markets"
-  updateMarketProposals(
-    "Optionally, select proposals for a specific market. Leave out for all"
-    marketId: ID
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
-
   "Get statistics about the Vega node"
   statistics: Statistics!
-
-  "Get a list of all transfers for a public key"
-  transfers(
-    "The pubkey to look for"
-    pubkey: String!
-    "Is the pubkey on the sending part of the transfer"
-    isFrom: Boolean
-    "Is the pubkey in the receiving part of the transfer"
-    isTo: Boolean
-  ): [Transfer!] @deprecated(reason: "Use transfersConnection instead")
 
   "Get a list of all transfers for a public key"
   transfersConnection(
@@ -820,7 +716,7 @@ type Transfer {
   status: TransferStatus!
 
   "The time at which the transfer was submitted"
-  timestamp: String!
+  timestamp: Timestamp!
 
   "The type of transfer being made, i.e. a one-off or recurring transfer"
   kind: TransferKind!
@@ -834,7 +730,7 @@ union TransferKind = OneOffTransfer | RecurringTransfer
 "The specific details for a one-off transfer"
 type OneOffTransfer {
   "An optional time when the transfer should be delivered"
-  deliverOn: String
+  deliverOn: Timestamp
 }
 
 "The specific details for a recurring transfer"
@@ -885,11 +781,11 @@ enum NodeStatus {
 "Describes in both human readable and block time when an epoch spans."
 type EpochTimestamps {
   "RFC3339 timestamp - Vega time of epoch start, null if not started"
-  start: String
+  start: Timestamp
   "RFC3339 timestamp - Vega time of epoch expiry"
-  expiry: String
+  expiry: Timestamp
   "RFC3339 timestamp - Vega time of epoch end, null if not ended"
-  end: String
+  end: Timestamp
 
   # @TODO - blocks support
   # "Height of first block in the epoch, null if not started"
@@ -912,7 +808,7 @@ type KeyRotation {
 
 "An Ethereum key rotation record that is returned in a paginated Ethereum key rotation connection"
 type EthereumKeyRotationEdge {
-  ethereumKeyRotation: EthereumKeyRotation!
+  node: EthereumKeyRotation!
   cursor: String
 }
 
@@ -945,23 +841,7 @@ type Epoch {
   timestamps: EpochTimestamps!
 
   "Validators that participated in this epoch"
-  validators: [Node!]! @deprecated(reason: "Use validatorsConnection instead")
-
-  "Validators that participated in this epoch"
   validatorsConnection(pagination: Pagination): NodesConnection
-
-  "Delegations data for this epoch"
-  delegations(
-    "Optional party ID to filter on"
-    partyId: ID
-    "Optional node ID to filter on"
-    nodeId: ID
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int): [Delegation!]! @deprecated(reason: "Use delegationsConnection instead")
 
   "Delegations data for this epoch"
   delegationsConnection(
@@ -974,19 +854,43 @@ type Epoch {
   ): DelegationsConnection
 }
 
+"Details on the collection of nodes for particular validator status"
+type NodeSet {
+  "Total number of nodes in the node set"
+  total: Int!
+
+  "Number of nodes in the node set that had a performance score of 0 at the end of the last epoch"
+  inactive: Int!
+
+  "IDs of the nodes that were promoted into this node set at the start of the epoch"
+  promoted: [String!]
+
+  "IDs of the nodes that were demoted into this node set at the start of the epoch"
+  demoted: [String!]
+
+  "Total number of nodes allowed in the node set"
+  maximum: Int
+}
+
 "Summary of data across all nodes"
 type NodeData {
   "Total staked amount across all nodes"
   stakedTotal: String!
 
-  "Total number of nodes"
+  "Total number of nodes across all node sets"
   totalNodes: Int!
 
-  "Number of inactive nodes"
+  "Total number of nodes that had a performance score of 0 at the end of the last epoch"
   inactiveNodes: Int!
 
-  "Number of nodes validating"
-  validatingNodes: Int!
+  "Details on the set of consensus nodes in the network"
+  tendermintNodes: NodeSet!
+
+  "Details on the set of ersatz (standby) nodes in the network"
+  ersatzNodes: NodeSet
+
+  "Details on the set of pending nodes in the network"
+  pendingNodes: NodeSet
 
   # @TODO allow to query based on number of epochs uptime(epochs: Int)
   "Total uptime for all epochs across all nodes. Or specify a number of epochs"
@@ -998,10 +902,10 @@ type EpochParticipation {
   epoch: Epoch
 
   "RFC3339 timestamp"
-  offline: String
+  offline: Timestamp
 
   "RFC3339 timestamp"
-  online: String
+  online: Timestamp
 
   "Total amount rewarded for participation in the given epoch"
   totalRewards: Float
@@ -1063,16 +967,6 @@ type Node {
 
   "Validator status of the node"
   status: NodeStatus!
-
-  "All delegation for a node by a given party if specified, or all delegations."
-  delegations(
-    partyId: ID,
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
 
   "All delegation for a node by a given party if specified, or all delegations."
   delegationsConnection(
@@ -1284,16 +1178,16 @@ type Statistics {
   totalPeers: String!
 
   "RFC3339Nano genesis time of the chain"
-  genesisTime: String!
+  genesisTime: Timestamp!
 
   "RFC3339Nano current time (real)"
-  currentTime: String!
+  currentTime: Timestamp!
 
   "RFC3339Nano uptime of the node"
   upTime: String!
 
   "RFC3339Nano current time of the chain (decided through consensus)"
-  vegaTime: String!
+  vegaTime: Timestamp!
 
   "Status of the Vega application connection with the chain"
   status: String!
@@ -1365,7 +1259,7 @@ type DiscreteTrading {
 type LogNormalModelParams {
   "Mu parameter, annualised growth rate of the underlying asset"
   mu: Float!
-  "R parameter"
+  "R parameter, annualised growth rate of the risk-free asset, used for discounting of future cash flows, can be any real number"
   r: Float!
   "Sigma parameter, annualised volatility of the underlying asset, must be a strictly non-negative real number"
   sigma: Float!
@@ -1452,9 +1346,9 @@ type DataSourceSpec {
   "ID is a hash generated from the DataSourceSpec data."
   id: ID!
   "RFC3339Nano creation date time"
-  createdAt: String!
+  createdAt: Timestamp!
   "RFC3339Nano last updated timestamp"
-  updatedAt: String
+  updatedAt: Timestamp
 
   data: DataSourceDefinition!
 
@@ -1592,7 +1486,7 @@ type Data {
   with a matching data spec.
   It has no value when the source data does not match any data spec.
   """
-  broadcastAt:  String!
+  broadcastAt: Timestamp!
 }
 
 type ExternalData {
@@ -1810,28 +1704,14 @@ type Market {
   proposal: Proposal
 
   "Orders on a market"
-  orders(
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Order!] @deprecated(reason: "Use the 'ordersConnection' field instead")
-
-  "Orders on a market"
   ordersConnection(
     "Date range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     "Pagination information"
     pagination: Pagination
+    "Filter orders"
+    filter: OrderFilter
   ): OrderConnection
-
-  "Get account for a party or market"
-  accounts(
-    "ID of the party to get the margin account for"
-    partyId: ID
-  ): [AccountBalance!] @deprecated(reason: "Use the accountsConnection instead")
 
   "Get account for a party or market"
   accountsConnection(
@@ -1840,16 +1720,6 @@ type Market {
     "Pagination information"
     pagination: Pagination
   ): AccountsConnection
-
-  "Trades on a market"
-  trades(
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Trade!] @deprecated(reason: "Use tradesConnection for cursor based pagination instead")
 
   tradesConnection(
     "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
@@ -1878,12 +1748,6 @@ type Market {
 
   "marketData for the given market"
   data: MarketData
-
-  "The list of the liquidity provision commitments for this market"
-  liquidityProvisions(
-    "An optional party ID"
-    partyId: ID
-  ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
 
   "The list of the liquidity provision commitments for this market"
    liquidityProvisionsConnection(
@@ -2011,10 +1875,10 @@ type PriceLevel {
 "Candle stick representation of trading"
 type Candle {
   "RFC3339Nano formatted date and time for the candle start time"
-  periodStart: String!
+  periodStart: Timestamp!
 
   "RFC3339Nano formatted date and time for the candle end time, or last updated time if the candle is still open"
-  lastUpdateInPeriod: String!
+  lastUpdateInPeriod: Timestamp!
 
   "High price (uint64)"
   high: String!
@@ -2038,34 +1902,14 @@ type Party {
   id: ID!
 
   "Orders relating to a party"
-  orders(
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Order!] @deprecated(reason: "Use ordersConnection instead")
-
-  "Orders relating to a party"
   ordersConnection(
     "Date range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange
     "Pagination information"
     pagination: Pagination
+    "Filter orders"
+    filter: OrderFilter
   ): OrderConnection
-
-  "Trades relating to a party (specifically where party is either buyer OR seller)"
-  trades(
-    "ID of the market you want to get trades for"
-    marketId: ID
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Trade!] @deprecated(reason: "Use tradesConnection for cursor based pagination instead")
 
   tradesConnection(
     "ID of the market you want to get trades for"
@@ -2075,16 +1919,6 @@ type Party {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-
-  "Collateral accounts relating to a party"
-  accounts(
-    "Market ID - specify what market accounts for the party to return"
-    marketId: ID
-    "Asset ID"
-    assetId: ID
-    "Filter accounts by type (General account, margin account, etc...)"
-    type: AccountType
-  ): [AccountBalance!] @deprecated(reason: "Use accountsConnection instead")
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2099,16 +1933,7 @@ type Party {
   ): AccountsConnection
 
   "Trading positions relating to a party"
-  positions: [Position!] @deprecated(reason: "Use the 'positionsConnection' field instead")
-
-  "Trading positions relating to a party"
   positionsConnection(market: ID, pagination: Pagination): PositionConnection
-
-  "Margin Levels"
-  margins(
-    "market ID off the margin to get, nil if all markets"
-    marketId: ID
-  ): [MarginLevels!] @deprecated(reason: "Use marginsConnection instead")
 
   "Margin levels for a market"
   marginsConnection(
@@ -2117,11 +1942,6 @@ type Party {
     "Optional Pagination information"
     pagination: Pagination
   ): MarginConnection
-
-  proposals(
-    "Select only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal] @deprecated(reason: "Use proposalsConnection instead")
 
   "All governance proposals in the Vega network"
   proposalsConnection(
@@ -2133,16 +1953,11 @@ type Party {
     pagination: Pagination
   ): ProposalsConnection
 
-  votes: [ProposalVote] @deprecated(reason: "Use votesConnection instead")
-
   "All votes on proposals in the Vega network by the given party"
   votesConnection(
     "Optional Pagination information"
     pagination: Pagination
   ): ProposalVoteConnection
-
-  "The list of all withdrawals initiated by the party"
-  withdrawals: [Withdrawal!] @deprecated(reason: "Use withdrawalsConnection instead")
 
   "The list of all withdrawals initiated by the party"
   withdrawalsConnection(
@@ -2153,9 +1968,6 @@ type Party {
   ): WithdrawalsConnection
 
   "The list of all deposits for a party by the party"
-  deposits: [Deposit!] @deprecated(reason: "Use depositsConnection instead")
-
-  "The list of all deposits for a party by the party"
   depositsConnection(
     "Date range to retrieve deposits from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
@@ -2163,34 +1975,15 @@ type Party {
     pagination: Pagination
   ): DepositsConnection
 
-  "The list of the liquidity provision commitment from this party"
-  liquidityProvisions(
-    "An optional market"
-    market: String
+  "The list of the liquidity provision commitment for this party"
+  liquidityProvisionsConnection(
+    "An optional market ID"
+    marketId: ID
     "An optional reference"
     reference: String
-  ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
-
-   "The list of the liquidity provision commitment for this party"
-     liquidityProvisionsConnection(
-       "An optional market ID"
-       marketId: ID
-       "An optional reference"
-       reference: String
-       "Optional Pagination information"
-       pagination: Pagination
-    ): LiquidityProvisionsConnection
-
-  # All delegations for a party to a given node if node is specified, or all delegations if not
-  delegations(
-    "Optional node ID"
-    nodeId: ID
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
+    "Optional Pagination information"
+    pagination: Pagination
+  ): LiquidityProvisionsConnection
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegationsConnection(
@@ -2201,22 +1994,7 @@ type Party {
   ): DelegationsConnection
 
   "The staking information for this Party"
-  stake: PartyStake! @deprecated(reason: "Use stakingSummary instead")
-
-  "The staking information for this Party"
   stakingSummary(pagination: Pagination): StakingSummary!
-
-  "Return individual reward information"
-  rewards(
-    "An optional asset ID"
-    assetId: ID
-    "Pagination skip element"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Reward] @deprecated(reason: "Use rewardsConnection instead")
 
   "Rewards information for the party"
   rewardsConnection(
@@ -2231,9 +2009,6 @@ type Party {
     "An asset ID (optional)"
     assetId: ID
   ): [RewardSummary]
-
-  "Return reward information"
-  rewardDetails: [RewardPerAssetDetail] @deprecated(reason: "Use rewardSummaries or rewards instead.")
 
   "All transfers for a public key"
   transfersConnection(
@@ -2296,7 +2071,7 @@ type StakeLinking {
   "Type of linking: link|unlink"
   type: StakeLinkingType!
   "The time at which the request happened on ethereum"
-  timestamp: String!
+  timestamp: Timestamp!
   "The party initiating the stake linking"
   party: Party!
   "The amount linked or unlinked"
@@ -2304,7 +2079,7 @@ type StakeLinking {
   "The status of the linking"
   status: StakeLinkingStatus!
   "The time at which the stake linking was fully processed by the Vega network, null until defined"
-  finalizedAt: String
+  finalizedAt: Timestamp
   "The transaction hash (ethereum) which initiated the link/unlink"
   txHash: String!
 }
@@ -2335,13 +2110,10 @@ type Position {
   averageEntryPrice: String!
 
   "Margins of the party for the given position"
-  margins: [MarginLevels!] @deprecated(reason: "Use marginsConnection instead")
-
-  "Margins of the party for the given position"
   marginsConnection(pagination: Pagination): MarginConnection
 
   "RFC3339Nano time the position was updated"
-  updatedAt: String
+  updatedAt: Timestamp
 }
 
 """
@@ -2370,7 +2142,7 @@ type PositionUpdate {
   averageEntryPrice: String!
 
   "RFC3339Nano time the position was updated"
-  updatedAt: String
+  updatedAt: Timestamp
 }
 
 "An order in Vega, if active it will be on the order book for the market"
@@ -2400,19 +2172,16 @@ type Order {
   party: Party!
 
   "RFC3339Nano formatted date and time for when the order was created (timestamp)"
-  createdAt: String!
+  createdAt: Timestamp!
 
   "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
-  expiresAt: String
+  expiresAt: Timestamp
 
   "The status of an order, for example 'Active'"
   status: OrderStatus!
 
   "The external reference (if available) for the order"
   reference: String!
-
-  "Trades relating to this order"
-  trades: [Trade!] @deprecated(reason: "Use tradesConnection instead")
 
   "Trades relating to this order"
   tradesConnection(
@@ -2431,7 +2200,7 @@ type Order {
   version: String!
 
   "RFC3339Nano time the order was altered"
-  updatedAt: String
+  updatedAt: Timestamp
 
   "PeggedOrder contains the details about a pegged order"
   peggedOrder: PeggedOrder
@@ -2467,10 +2236,10 @@ type OrderUpdate {
   partyId: ID!
 
   "RFC3339Nano formatted date and time for when the order was created (timestamp)"
-  createdAt: String!
+  createdAt: Timestamp!
 
   "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
-  expiresAt: String
+  expiresAt: Timestamp
 
   "The status of an order, for example 'Active'"
   status: OrderStatus!
@@ -2488,7 +2257,7 @@ type OrderUpdate {
   version: String!
 
   "RFC3339Nano time the order was altered"
-  updatedAt: String
+  updatedAt: Timestamp
 
   "PeggedOrder contains the details about a pegged order"
   peggedOrder: PeggedOrder
@@ -2539,7 +2308,7 @@ type Trade {
   size: String!
 
   "RFC3339Nano time for when the trade occurred"
-  createdAt: String!
+  createdAt: Timestamp!
 
   "The type of trade"
   type: TradeType!
@@ -2587,7 +2356,7 @@ type TradeUpdate {
   size: String!
 
   "RFC3339Nano time for when the trade occurred"
-  createdAt: String!
+  createdAt: Timestamp!
 
   "The type of trade"
   type: TradeType!
@@ -2680,6 +2449,8 @@ type AccountUpdate {
   type: AccountType!
   "Market id (only relevant to margin accounts)"
   marketId: ID
+  "The party owning the account"
+  partyId: ID!
 }
 
 "All the data related to the approval of a withdrawal from the network"
@@ -2689,7 +2460,7 @@ type Erc20WithdrawalApproval {
   "The amount to be withdrawn"
   amount: String!
   "Timestamp in seconds for expiry of the approval"
-  expiry: String!
+  expiry: Timestamp!
   "The nonce to be used in the request"
   nonce: String!
   """
@@ -2697,7 +2468,7 @@ type Erc20WithdrawalApproval {
   0x + sig1 + sig2 + ... + sigN
   """
   signatures: String!
-  "The target address which will receive the funds"
+  "The target address that will receive the funds"
   targetAddress: String!
   "Timestamp at which the withdrawal was created"
   creation: String!
@@ -2806,11 +2577,11 @@ type Withdrawal {
   "A reference the foreign chain can use to refer to when processing the withdrawal"
   ref: String!
   "RFC3339Nano time until the withdrawal will be invalid"
-  expiry: String!
+  expiry: Timestamp!
   "RFC3339Nano time at which the withdrawal was created"
-  createdTimestamp: String!
+  createdTimestamp: Timestamp!
   "RFC3339Nano time at which the withdrawal was finalised"
-  withdrawnTimestamp: String
+  withdrawnTimestamp: Timestamp
   "Hash of the transaction on the foreign chain"
   txHash: String
   "Foreign chain specific details about the withdrawal"
@@ -2848,9 +2619,9 @@ type Deposit {
   "The current status of the deposit"
   status: DepositStatus!
   "RFC3339Nano time at which the deposit was created"
-  createdTimestamp: String!
+  createdTimestamp: Timestamp!
   "RFC3339Nano time at which the deposit was finalised"
-  creditedTimestamp: String
+  creditedTimestamp: Timestamp
   "Hash of the transaction on the foreign chain"
   txHash: String
 }
@@ -3280,31 +3051,55 @@ enum AccountType {
 }
 
 enum TransferType {
+  "Default value, always invalid"
   TRANSFER_TYPE_UNSPECIFIED
+  "Funds deducted after final settlement loss"
   TRANSFER_TYPE_LOSS
+  "Funds added to general account after final settlement gain"
   TRANSFER_TYPE_WIN
-  TRANSFER_TYPE_CLOSE
+  "Funds deducted from margin account after mark to market loss"
   TRANSFER_TYPE_MTM_LOSS
+  "Funds added to margin account after mark to market gain"
   TRANSFER_TYPE_MTM_WIN
+  "Funds transferred from general account to meet margin requirement"
   TRANSFER_TYPE_MARGIN_LOW
+  "Excess margin amount returned to general account"
   TRANSFER_TYPE_MARGIN_HIGH
+  "Margin confiscated from margin account to fulfil closeout"
   TRANSFER_TYPE_MARGIN_CONFISCATED
+  "Maker fee paid from general account"
   TRANSFER_TYPE_MAKER_FEE_PAY
+  "Maker fee received into general account"
   TRANSFER_TYPE_MAKER_FEE_RECEIVE
+  "Infrastructure fee paid from general account"
   TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY
+  "Infrastructure fee received into general account"
   TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE
+  "Liquidity fee paid from general account"
   TRANSFER_TYPE_LIQUIDITY_FEE_PAY
+  "Liquidity fee received into general account"
   TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE
+  "Bond account funded from general account to meet required bond amount"
   TRANSFER_TYPE_BOND_LOW
+  "Bond returned to general account after liquidity commitment was reduced"
   TRANSFER_TYPE_BOND_HIGH
-  TRANSFER_TYPE_WITHDRAW_LOCK
+  "Funds withdrawn from general account"
   TRANSFER_TYPE_WITHDRAW
+  "Funds deposited to general account"
   TRANSFER_TYPE_DEPOSIT
+  "Bond account penalised when liquidity commitment not met"
   TRANSFER_TYPE_BOND_SLASHING
+  "Staking reward received"
   TRANSFER_TYPE_STAKE_REWARD
+  "A network internal instruction for the collateral engine to move funds from a user's general account into the pending transfers pool"
   TRANSFER_TYPE_TRANSFER_FUNDS_SEND
+  "A network internal instruction for the collateral engine to move funds from the pending transfers pool account into the destination account"
   TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE
+  "Market-related accounts emptied because market has closed"
   TRANSFER_TYPE_CLEAR_ACCOUNT
+  "Balances are being restored to the user's account following a checkpoint restart of the network"
+  TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE
+
 }
 
 type FutureProduct {
@@ -3341,7 +3136,7 @@ type DataSourceSpecConfiguration {
   list.
   """
   signers: [Signer!]
- 
+
   """
   filters describes which source data are considered of interest or not for
   the product (or the risk model).
@@ -3490,16 +3285,16 @@ type ProposalTerms {
   RFC3339Nano time and date when voting closes for this proposal.
   Constrained by "minClose" and "maxClose" network parameters.
   """
-  closingDatetime: String!
+  closingDatetime: Timestamp!
   """
   RFC3339Nano time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
   Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
   Note: Optional as free form proposals do not require it.
   """
-  enactmentDatetime: String
+  enactmentDatetime: Timestamp
 
   "RFC3339Nano time and when node validation of the proposal stops, accepted only with new asset proposals"
-  validationDatetime: String
+  validationDatetime: Timestamp
 
   "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
   change: ProposalChange!
@@ -3557,7 +3352,7 @@ type Proposal {
   "State of the proposal"
   state: ProposalState!
   "RFC3339Nano time and date when the proposal reached Vega network"
-  datetime: String!
+  datetime: Timestamp!
   "Rationale behind the proposal"
   rationale: ProposalRationale!
   "Terms of the proposal"
@@ -3613,7 +3408,7 @@ type Vote {
   party: Party!
 
   "RFC3339Nano time and date when the vote reached Vega network"
-  datetime: String!
+  datetime: Timestamp!
 
   "The ID of the proposal this vote applies to"
   proposalId: ID!
@@ -3637,7 +3432,7 @@ type ProposalVote {
 
 type TimeUpdate {
   "RFC3339Nano time of new block time"
-  timestamp: String!
+  timestamp: Timestamp!
 }
 
 type MarketEvent {
@@ -3662,9 +3457,9 @@ type LedgerEntry {
   "The amount transferred"
   amount: String!
   "Type of ledger entry"
-  type: String!
+  type: TransferType!
   "RFC3339Nano time at which the transfer was made"
-  timestamp: String!
+  timestamp: Timestamp!
 }
 
 type TransferResponse {
@@ -3743,9 +3538,9 @@ type AuctionEvent {
   "Event related to opening auction"
   openingAuction: Boolean!
   "RFC3339Nano start time of auction"
-  auctionStart: String!
+  auctionStart: Timestamp!
   "RFC3339Nano optional end time of auction"
-  auctionEnd: String!
+  auctionEnd: Timestamp!
   "What triggered the auction"
   trigger: AuctionTrigger!
   "What, if anything, extended the ongoing auction"
@@ -3916,9 +3711,9 @@ type LiquidityProvision {
   "The party making this commitment"
   party: Party!
   "When the liquidity provision was initially created (formatted RFC3339)"
-  createdAt: String!
+  createdAt: Timestamp!
   "RFC3339Nano time of when the liquidity provision was updated"
-  updatedAt: String
+  updatedAt: Timestamp
   "Market for the order"
   market: Market!
   "Specified as a unit-less number that represents the amount of settlement asset of the market."
@@ -3944,9 +3739,9 @@ type LiquidityProvisionUpdate {
   "The party making this commitment"
   partyID: ID!
   "When the liquidity provision was initially created (formatted RFC3339)"
-  createdAt: String!
+  createdAt: Timestamp!
   "RFC3339Nano time of when the liquidity provision was updated"
-  updatedAt: String
+  updatedAt: Timestamp
   "Market for the order"
   marketID: ID!
   "Specified as a unit-less number that represents the amount of settlement asset of the market."
@@ -3982,7 +3777,7 @@ type Reward {
   "Percentage out of the total distributed reward"
   percentageOfTotal: String!
   "Time at which the rewards was received"
-  receivedAt: String!
+  receivedAt: Timestamp!
 }
 
 type RewardSummary {
@@ -3990,14 +3785,6 @@ type RewardSummary {
   asset: Asset!
   "Total quantity of rewards awarded in this asset"
   amount: String!
-  "List of individual reward payouts, ordered by epoch"
-  rewards (
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int): [Reward] @deprecated(reason: "Use rewardsConnection instead")
 
   "List of individual reward payouts, ordered by epoch"
   rewardsConnection(
@@ -4008,39 +3795,34 @@ type RewardSummary {
   ): RewardsConnection
 }
 
-"RewardPerAssetDetail is deprecated, use RewardSummmary instead "
-type RewardPerAssetDetail {
-  "Asset in which the reward was paid"
-  asset: Asset!
-  "ID of asset in which the reward was paid"
-  assetId: ID! @deprecated(reason: "Use asset{ID} instead")
-  "A list of rewards received for this asset"
-  rewards: [Reward]
-  "The total amount of rewards received for this asset."
-  totalAmount: String!
-}
-
 "RFC3339Nano value for time"
 scalar Timestamp
 
-type AggregatedLedgerEntries {
+type AggregatedLedgerEntry {
   "RFC3339Nano time from at which this ledger entries records were relevant"
-  vegaTime: String!
+  vegaTime: Timestamp!
   "Net amount of ledger entries for the accounts specified in the filter at this time"
   quantity: String!
-  "Party identifier, if query was grouped by party - else null"
-  partyId: ID
   "Asset identifier, if query was grouped by asset - else null"
   assetId: ID
-  "Market identifier, if query was grouped by market - else null"
-  marketId: ID
-  "Account type, if query was grouped by account type - else null"
-  accountType: AccountType
-  transferType: String
+  "Type of the transfer for this ledger entry"
+  transferType: TransferType
+  "Party identifier, if query was grouped by sender party - else null"
+  senderPartyId: ID
+  "Party identifier, if query was grouped by receiver party - else null"
+  receiverPartyId: ID
+  "Market identifier, if query was grouped by sender market - else null"
+  senderMarketId: ID
+  "Market identifier, if query was grouped by receiver market - else null"
+  receiverMarketId: ID
+  "Account type, if query was grouped by sender account type - else null"
+  senderAccountType: AccountType
+  "Account type, if query was grouped by receiver account type - else null"
+  receiverAccountType: AccountType
 }
 
 type AggregatedLedgerEntriesEdge {
-  node: AggregatedLedgerEntries!
+  node: AggregatedLedgerEntry!
   cursor: String!
 }
 
@@ -4212,6 +3994,13 @@ type OrderEdge {
   node: Order!
   "The cursor for this order"
   cursor: String
+}
+
+input OrderFilter {
+  status: [OrderStatus!]
+  types: [OrderType!]
+  timeInForce: [OrderTimeInForce!]
+  excludeLiquidity: Boolean
 }
 
 "Connection type for retrieving cursor-based paginated order information"

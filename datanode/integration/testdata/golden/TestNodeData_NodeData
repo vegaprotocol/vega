@@ -1,1 +1,27 @@
-{"TestName":"TestNodeData_NodeData","Query":"{ nodeData { stakedTotal, totalNodes, inactiveNodes, validatingNodes, uptime } }","Result":{"NodeData":{"StakedTotal":"7000000000000000000","TotalNodes":2,"InactiveNodes":0,"ValidatingNodes":2,"Uptime":229.66981506347656}},"Duration":4855965}
+{
+	"TestName": "TestNodeData_NodeData",
+	"Query": "{ nodeData { stakedTotal, totalNodes, inactiveNodes, tendermintNodes {total, inactive, maximum }, ersatzNodes {total, inactive, maximum }, pendingNodes {total, inactive}, uptime } }",
+	"Result": {
+		"nodeData": {
+			"ersatzNodes": {
+				"inactive": 0,
+				"maximum": 15,
+				"total": 0
+			},
+			"inactiveNodes": 0,
+			"pendingNodes": {
+				"inactive": 0,
+				"total": 0
+			},
+			"stakedTotal": "2000000000000000000",
+			"tendermintNodes": {
+				"inactive": 0,
+				"maximum": 30,
+				"total": 2
+			},
+			"totalNodes": 2,
+			"uptime": 61.97395324707031
+		}
+	},
+	"Duration": 2955041
+}

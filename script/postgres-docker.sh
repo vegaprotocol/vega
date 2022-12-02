@@ -1,15 +1,23 @@
 #!/bin/bash
 
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        SNAPSHOTS_COPY_TO_PATH=~/.local/state/vega/data-node/dehistory/snapshotscopyto
-        SNAPSHOTS_COPY_FROM_PATH=~/.local/state/vega/data-node/dehistory/snapshotscopyfrom
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-        SNAPSHOTS_COPY_TO_PATH="$HOME/Library/Application Support/vega/data-node/dehistory/snapshotscopyto"
-        SNAPSHOTS_COPY_FROM_PATH="$HOME/Library/Application Support/vega/data-node/dehistory/snapshotscopyfrom"
+# It is important that snapshotscopy{to|from} path is accessible at the same location in
+# the container and outside of it. If you're using a custom vega home, you must call this script
+# with VEGA_HOME set to your custom vega home when starting the database.
+
+if [ -n "$VEGA_HOME" ]; then
+        VEGA_STATE=${VEGA_HOME}/state
 else
-        echo "$OSTYPE" not supported
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+                VEGA_STATE=~/.local/state/vega
+        elif [[ "$OSTYPE" == "darwin"* ]]; then
+                VEGA_STATE="${HOME}/Library/Application Support/vega"
+        else
+                 echo "$OSTYPE" not supported
+        fi
 fi
 
+SNAPSHOTS_COPY_TO_PATH=${VEGA_STATE}/data-node/dehistory/snapshotscopyto
+SNAPSHOTS_COPY_FROM_PATH=${VEGA_STATE}/data-node/dehistory/snapshotscopyfrom
 
 mkdir -p "$SNAPSHOTS_COPY_TO_PATH"
 chmod 777 "$SNAPSHOTS_COPY_TO_PATH"

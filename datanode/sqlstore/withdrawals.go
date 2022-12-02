@@ -83,7 +83,6 @@ func (w *Withdrawals) Upsert(ctx context.Context, withdrawal *entities.Withdrawa
 func (w *Withdrawals) GetByID(ctx context.Context, withdrawalID string) (entities.Withdrawal, error) {
 	defer metrics.StartSQLQuery("Withdrawals", "GetByID")()
 	var withdrawal entities.Withdrawal
-
 	query := `select distinct on (id) id, party_id, amount, asset, status, ref, expiry,
 									  foreign_tx_hash, created_timestamp, withdrawn_timestamp,
 									  ext, tx_hash, vega_time
@@ -91,8 +90,7 @@ func (w *Withdrawals) GetByID(ctx context.Context, withdrawalID string) (entitie
 		where id = $1
 		order by id, vega_time desc`
 
-	err := pgxscan.Get(ctx, w.Connection, &withdrawal, query, entities.WithdrawalID(withdrawalID))
-	return withdrawal, err
+	return withdrawal, w.wrapE(pgxscan.Get(ctx, w.Connection, &withdrawal, query, entities.WithdrawalID(withdrawalID)))
 }
 
 func (w *Withdrawals) GetByParty(ctx context.Context, partyID string, openOnly bool, pagination entities.Pagination, dateRange entities.DateRange) (

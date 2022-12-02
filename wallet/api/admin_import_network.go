@@ -46,7 +46,7 @@ func NewReaders() Readers {
 }
 
 // Handle creates a wallet and generates its first key.
-func (h *AdminImportNetwork) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminImportNetwork) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateImportNetworkParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -62,6 +62,10 @@ func (h *AdminImportNetwork) Handle(_ context.Context, rawParams jsonrpc.Params)
 
 	if len(params.Name) != 0 {
 		net.Name = params.Name
+	}
+
+	if len(net.Name) == 0 {
+		return nil, invalidParams(ErrNetworkNameIsRequired)
 	}
 
 	if exist, err := h.networkStore.NetworkExists(net.Name); err != nil {
@@ -122,7 +126,6 @@ func readImportNetworkSource(params AdminImportNetworkParams) (*network.Network,
 		if err != nil {
 			return nil, fmt.Errorf("could not read the network configuration at %q: %w", params.FilePath, err)
 		}
-
 		return net, nil
 	}
 

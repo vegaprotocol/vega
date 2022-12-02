@@ -71,15 +71,19 @@ func (s *Store) ListTransactions(ctx context.Context,
 	if after != nil {
 		block := nextBindVar(&args, after.BlockNumber)
 		index := nextBindVar(&args, after.TxIndex)
-		predicate := fmt.Sprintf("(block_id > %s OR (block_id = %s AND index ? %s))", block, block, index)
+		predicate := fmt.Sprintf("(block_id > %s OR (block_id = %s AND index > %s))", block, block, index)
 		predicates = append(predicates, predicate)
 	}
 
 	for key, value := range filters {
 		var predicate string
-		// tx.submitter is lifted out of attributes and into tx_results by a trigger for faster access
+
 		if key == "tx.submitter" {
+			// tx.submitter is lifted out of attributes and into tx_results by a trigger for faster access
 			predicate = fmt.Sprintf("tx_results.submitter=%s", nextBindVar(&args, value))
+		} else if key == "block.height" {
+			// much quicker to filter block height by joining to the block table than looking in attributes
+			predicate = fmt.Sprintf("block_id = (select b.rowid from blocks b where b.height = %s)", nextBindVar(&args, value))
 		} else {
 			predicate = fmt.Sprintf(`
 				EXISTS (SELECT 1 FROM events e JOIN attributes a ON e.rowid = a.event_id
@@ -106,7 +110,8 @@ func (s *Store) ListTransactions(ctx context.Context,
 	for _, row := range rows {
 		tx, err := row.ToProto()
 		if err != nil {
-			return nil, err
+			s.log.Warn(fmt.Sprintf("unable to decode transaction %s: %v", row.TxHash, err))
+			continue
 		}
 		txs = append(txs, tx)
 	}

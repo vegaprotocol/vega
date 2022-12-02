@@ -16,7 +16,6 @@ import (
 	"context"
 	"strconv"
 
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
@@ -27,34 +26,6 @@ func (r *epochResolver) ID(ctx context.Context, obj *proto.Epoch) (string, error
 	id := strconv.FormatUint(obj.Seq, 10)
 
 	return id, nil
-}
-
-// Deprecated: Use DelegationsConnection instead.
-func (r *epochResolver) Delegations(
-	ctx context.Context,
-	obj *proto.Epoch,
-	partyID *string,
-	nodeID *string,
-	skip, first, last *int,
-) ([]*proto.Delegation, error) {
-	req := &protoapi.DelegationsRequest{
-		Pagination: makePagination(skip, first, last),
-	}
-
-	if partyID != nil && *partyID != "" {
-		req.Party = *partyID
-	}
-
-	if nodeID != nil && *nodeID != "" {
-		req.NodeId = *nodeID
-	}
-
-	resp, err := r.tradingDataClient.Delegations(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Delegations, nil
 }
 
 func (r *epochResolver) ValidatorsConnection(ctx context.Context, epoch *proto.Epoch, pagination *v2.Pagination) (*v2.NodesConnection, error) {

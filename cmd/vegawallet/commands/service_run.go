@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -16,21 +15,19 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 	vgzap "code.vegaprotocol.io/vega/libs/zap"
 	"code.vegaprotocol.io/vega/paths"
 	coreversion "code.vegaprotocol.io/vega/version"
 	walletapi "code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/interactor"
-	walletnode "code.vegaprotocol.io/vega/wallet/api/node"
-	"code.vegaprotocol.io/vega/wallet/network"
+	tokenStore "code.vegaprotocol.io/vega/wallet/api/session/store/v1"
 	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
-	"code.vegaprotocol.io/vega/wallet/node"
 	"code.vegaprotocol.io/vega/wallet/preferences"
 	"code.vegaprotocol.io/vega/wallet/service"
 	svcstore "code.vegaprotocol.io/vega/wallet/service/store/v1"
 	"code.vegaprotocol.io/vega/wallet/version"
-	walletversion "code.vegaprotocol.io/vega/wallet/version"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/golang/protobuf/jsonpb"
 	"golang.org/x/term"
@@ -44,12 +41,9 @@ const MaxConsentRequests = 100
 var (
 	ErrEnableAutomaticConsentFlagIsRequiredWithoutTTY = errors.New("--automatic-consent flag is required without TTY")
 	ErrMsysUnsupported                                = errors.New("this command is not supported on msys, please use a standard windows terminal")
-	ErrNoHostSpecified                                = errors.New("no host specified in the configuration")
 )
 
 var (
-	ErrProgramIsNotInitialised = errors.New("first, you need initialise the program, using the `init` command")
-
 	runServiceLong = cli.LongDesc(`
 		Start a Vega wallet service behind an HTTP server.
 
@@ -77,6 +71,8 @@ var (
 	`)
 )
 
+type ServicePreCheck func(rf *RootFlags) error
+
 type RunServiceHandler func(io.Writer, *RootFlags, *RunServiceFlags) error
 
 func NewCmdRunService(w io.Writer, rf *RootFlags) *cobra.Command {
@@ -92,7 +88,7 @@ func BuildCmdRunService(w io.Writer, handler RunServiceHandler, rf *RootFlags) *
 		Long:    runServiceLong,
 		Example: runServiceExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			if err := f.Validate(); err != nil {
+			if err := f.Validate(rf); err != nil {
 				return err
 			}
 
@@ -114,10 +110,20 @@ func BuildCmdRunService(w io.Writer, handler RunServiceHandler, rf *RootFlags) *
 		false,
 		"Automatically approve incoming transaction. Only use this flag when you have absolute trust in incoming transactions!",
 	)
+	cmd.Flags().BoolVar(&f.LoadTokens,
+		"load-tokens",
+		false,
+		"Load the sessions with long-living tokens",
+	)
 	cmd.PersistentFlags().BoolVar(&f.NoVersionCheck,
 		"no-version-check",
 		false,
 		"Do not check for new version of the Vega wallet",
+	)
+	cmd.Flags().StringVar(&f.TokensPassphraseFile,
+		"tokens-passphrase-file",
+		"",
+		"Path to the file containing the tokens database passphrase",
 	)
 
 	autoCompleteNetwork(cmd, rf.Home)
@@ -128,12 +134,30 @@ func BuildCmdRunService(w io.Writer, handler RunServiceHandler, rf *RootFlags) *
 type RunServiceFlags struct {
 	Network                string
 	EnableAutomaticConsent bool
+	LoadTokens             bool
+	TokensPassphraseFile   string
 	NoVersionCheck         bool
+	tokensPassphrase       string
 }
 
-func (f *RunServiceFlags) Validate() error {
+func (f *RunServiceFlags) Validate(rf *RootFlags) error {
 	if len(f.Network) == 0 {
 		return flags.MustBeSpecifiedError("network")
+	}
+
+	if !f.LoadTokens && f.TokensPassphraseFile != "" {
+		return flags.OneOfParentsFlagMustBeSpecifiedError("tokens-passphrase-file", "load-tokens")
+	}
+
+	if f.LoadTokens {
+		if err := ensureAPITokensStoreIsInit(rf); err != nil {
+			return err
+		}
+		passphrase, err := flags.GetPassphraseWithOptions(flags.PassphraseOptions{Name: "tokens"}, f.TokensPassphraseFile)
+		if err != nil {
+			return err
+		}
+		f.tokensPassphrase = passphrase
 	}
 
 	return nil
@@ -146,246 +170,231 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 
 	p := printer.NewInteractivePrinter(w)
 
-	if rf.Output == flags.InteractiveOutput && version.IsUnreleased() {
-		str := p.String()
-		str.CrossMark().DangerText("You are running an unreleased version of the Vega wallet (").DangerText(coreversion.Get()).DangerText(").").NextLine()
-		str.Pad().DangerText("Use it at your own risk!").NextSection()
-		p.Print(str)
-	}
-
-	walletStore, err := wallets.InitialiseStore(rf.Home)
-	if err != nil {
-		return fmt.Errorf("couldn't initialise wallets store: %w", err)
-	}
-
-	handler := wallets.NewHandler(walletStore)
-
 	vegaPaths := paths.New(rf.Home)
-	netStore, err := netstore.InitialiseStore(vegaPaths)
-	if err != nil {
-		return fmt.Errorf("couldn't initialise network store: %w", err)
-	}
 
-	exists, err := netStore.NetworkExists(f.Network)
-	if err != nil {
-		return fmt.Errorf("couldn't verify the network existence: %w", err)
-	}
-	if !exists {
-		return network.NewDoesNotExistError(f.Network)
-	}
-
-	cfg, err := netStore.GetNetwork(f.Network)
-	if err != nil {
-		return fmt.Errorf("couldn't retrieve the network configuration: %w", err)
-	}
-
-	if err := cfg.EnsureCanConnectGRPCNode(); err != nil {
-		return err
-	}
-
-	if !f.NoVersionCheck {
-		networkVersion, err := walletversion.GetNetworkVersionThroughGRPC(cfg.API.GRPC.Hosts)
-		if err != nil {
-			return err
-		}
-		if networkVersion != coreversion.Get() {
-			return fmt.Errorf("software is not compatible with this network: network is running version %s but wallet software has version %s", networkVersion, coreversion.Get())
-		}
-	}
-
-	svcLog, svcLogPath, err := buildJSONFileLogger(vegaPaths, paths.WalletServiceLogsHome, cfg.LogLevel.String())
-	if err != nil {
-		return err
-	}
-	defer vgzap.Sync(svcLog)
-
-	svcLog = svcLog.Named("service")
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	svcStore, err := svcstore.InitialiseStore(paths.New(rf.Home))
-	if err != nil {
-		return fmt.Errorf("couldn't initialise service store: %w", err)
-	}
-
-	if isInit, err := service.IsInitialised(svcStore); err != nil {
-		return fmt.Errorf("couldn't verify service initialisation state: %w", err)
-	} else if !isInit {
-		return ErrProgramIsNotInitialised
-	}
-
-	auth, err := service.NewAuth(svcLog.Named("auth"), svcStore, cfg.TokenExpiry.Get())
-	if err != nil {
-		return fmt.Errorf("couldn't initialise authentication: %w", err)
-	}
-
-	forwarder, err := node.NewForwarder(svcLog.Named("forwarder"), cfg.API.GRPC)
-	if err != nil {
-		return fmt.Errorf("couldn't initialise the node forwarder: %w", err)
-	}
-
-	cliLog, cliLogPath, err := buildJSONFileLogger(vegaPaths, paths.WalletCLILogsHome, cfg.LogLevel.String())
+	cliLog, cliLogPath, _, err := buildJSONFileLogger(vegaPaths, paths.WalletCLILogsHome, "info")
 	if err != nil {
 		return err
 	}
 	defer vgzap.Sync(cliLog)
-
 	cliLog = cliLog.Named("command")
 
-	str := p.String()
-	str.CheckMark().Text("Service logs located at: ").SuccessText(svcLogPath).NextLine()
-	str.CheckMark().Text("CLI logs located at: ").SuccessText(cliLogPath).NextLine()
-	p.Print(str)
+	if rf.Output == flags.InteractiveOutput && version.IsUnreleased() {
+		cliLog.Warn("Current software is an unreleased version", zap.String("version", coreversion.Get()))
+		str := p.String()
+		str.CrossMark().DangerText("You are running an unreleased version of the Vega wallet (").DangerText(coreversion.Get()).DangerText(").").NextLine()
+		str.Pad().DangerText("Use it at your own risk!").NextSection()
+		p.Print(str)
+	} else {
+		cliLog.Warn("Current software is a released version", zap.String("version", coreversion.Get()))
+	}
+
+	p.Print(p.String().CheckMark().Text("CLI logs located at: ").SuccessText(cliLogPath).NextLine())
+
+	walletStore, err := wallets.InitialiseStoreFromPaths(vegaPaths)
+	if err != nil {
+		cliLog.Error("Could not initialise wallets store", zap.Error(err))
+		return fmt.Errorf("could not initialise wallets store: %w", err)
+	}
+
+	netStore, err := netstore.InitialiseStore(vegaPaths)
+	if err != nil {
+		cliLog.Error("Could not initialise network store", zap.Error(err))
+		return fmt.Errorf("could not initialise network store: %w", err)
+	}
+
+	svcStore, err := svcstore.InitialiseStore(vegaPaths)
+	if err != nil {
+		cliLog.Error("Could not initialise service store", zap.Error(err))
+		return fmt.Errorf("could not initialise service store: %w", err)
+	}
+
+	var tokStore walletapi.TokenStore
+	if f.LoadTokens {
+		s, err := tokenStore.LoadStore(vegaPaths, f.tokensPassphrase)
+		if err != nil {
+			if errors.Is(err, walletapi.ErrWrongPassphrase) {
+				return err
+			}
+			return fmt.Errorf("couldn't load the tokens store: %w", err)
+		}
+		tokStore = s
+	} else {
+		s := tokenStore.NewEmptyStore()
+		tokStore = s
+	}
+
+	loggerBuilderFunc := func(path paths.StatePath, levelName string) (*zap.Logger, zap.AtomicLevel, error) {
+		svcLog, svcLogPath, level, err := buildJSONFileLogger(vegaPaths, path, levelName)
+		if err != nil {
+			return nil, zap.AtomicLevel{}, err
+		}
+
+		p.Print(p.String().CheckMark().Text("Service logs located at: ").SuccessText(svcLogPath).NextLine())
+
+		return svcLog, level, nil
+	}
 
 	consentRequests := make(chan service.ConsentRequest, MaxConsentRequests)
 	defer close(consentRequests)
 	sentTransactions := make(chan service.SentTransaction)
 	defer close(sentTransactions)
+	policyBuilderFunc, err := policyBuilder(cliLog, p, f, consentRequests, sentTransactions)
+	if err != nil {
+		return err
+	}
 
-	var policy service.Policy
+	receptionChan := make(chan interactor.Interaction, 100)
+	defer close(receptionChan)
+	responseChan := make(chan interactor.Interaction, 100)
+	defer close(responseChan)
+	interactorBuilderFunc := func(ctx context.Context) walletapi.Interactor {
+		return interactor.NewSequentialInteractor(ctx, receptionChan, responseChan)
+	}
+
+	shutdownSwitch := walletapi.NewServiceShutdownSwitch(func(err error) {
+		cliLog.Error("HTTP server encountered an error", zap.Error(err))
+		p.Print(p.String().DangerBangMark().Text("The HTTP server encountered an error: ").DangerText(err.Error()).NextLine())
+	})
+
+	shutdownSwitchBuilder := func() *walletapi.ServiceShutdownSwitch {
+		return shutdownSwitch
+	}
+
+	servicesManager := walletapi.NewServicesManager(tokStore, walletStore)
+
+	serviceStarter := walletapi.NewAdminStartService(
+		walletStore,
+		netStore,
+		svcStore,
+		policyBuilderFunc,
+		interactorBuilderFunc,
+		loggerBuilderFunc,
+		shutdownSwitchBuilder,
+		servicesManager,
+	)
+
+	// The context here is a placeholder.
+	rawResponse, errDetails := serviceStarter.Handle(context.Background(), walletapi.AdminStartServiceParams{
+		Network:        f.Network,
+		NoVersionCheck: f.NoVersionCheck,
+	}, jsonrpc.RequestMetadata{})
+	if errDetails != nil {
+		cliLog.Error("Failed to start HTTP server", zap.Error(errDetails))
+		return errDetails
+	}
+
+	response := rawResponse.(walletapi.AdminStartServiceResult)
+	cliLog.Info("Starting HTTP service", zap.String("url", response.URL))
+	p.Print(p.String().CheckMark().Text("Starting HTTP service at: ").SuccessText(response.URL).NextSection())
+
+	notifyInteractionsStopped := shutdownSwitch.BindToProcess()
+	go func() {
+		for {
+			select {
+			case <-shutdownSwitch.Flipped():
+				notifyInteractionsStopped()
+				return
+			case interaction := <-receptionChan:
+				handleAPIv2Request(interaction, responseChan, f.EnableAutomaticConsent, p)
+			case consentRequest := <-consentRequests:
+				handleAPIv1Request(consentRequest, cliLog, p, sentTransactions)
+			}
+		}
+	}()
+
+	waitUntilInterruption(shutdownSwitch, cliLog, p)
+
+	// Wait for all goroutine to exit.
+	cliLog.Info("Waiting for all processes to stop")
+	p.Print(p.String().BlueArrow().Text("Waiting for the service to stop...").NextLine())
+	servicesManager.StopService(f.Network)
+	cliLog.Info("All processes stopped")
+	p.Print(p.String().CheckMark().Text("The service stopped.").NextLine())
+
+	return nil
+}
+
+func policyBuilder(cliLog *zap.Logger, p *printer.InteractivePrinter, f *RunServiceFlags, consentRequests chan service.ConsentRequest, sentTransactions chan service.SentTransaction) (walletapi.PolicyBuilderFunc, error) {
 	if vgterm.HasTTY() {
 		cliLog.Info("TTY detected")
 		if f.EnableAutomaticConsent {
 			cliLog.Info("Automatic consent enabled")
 			p.Print(p.String().WarningBangMark().WarningText("Automatic consent enabled").NextLine())
-			policy = service.NewAutomaticConsentPolicy()
-		} else {
-			cliLog.Info("Explicit consent enabled")
-			p.Print(p.String().CheckMark().Text("Explicit consent enabled").NextLine())
-			policy = service.NewExplicitConsentPolicy(ctx, consentRequests, sentTransactions)
+			return func(_ context.Context) service.Policy {
+				return service.NewAutomaticConsentPolicy()
+			}, nil
 		}
-	} else {
-		cliLog.Info("No TTY detected")
-		if !f.EnableAutomaticConsent {
-			cliLog.Error("Explicit consent can't be used when no TTY is attached to the process")
-			return ErrEnableAutomaticConsentFlagIsRequiredWithoutTTY
-		}
-		cliLog.Info("Automatic consent enabled.")
-		policy = service.NewAutomaticConsentPolicy()
+		cliLog.Info("Explicit consent enabled")
+		p.Print(p.String().CheckMark().Text("Explicit consent enabled").NextLine())
+		return func(ctx context.Context) service.Policy {
+			return service.NewExplicitConsentPolicy(ctx, consentRequests, sentTransactions)
+		}, nil
 	}
 
-	receptionChan := make(chan interactor.Interaction, 100)
-	responseChan := make(chan interactor.Interaction, 100)
-	seqInteractor := interactor.NewSequentialInteractor(ctx, receptionChan, responseChan)
-	jsonrpcLog := svcLog.Named("json-rpc")
-	nodeSelector, err := buildNodeSelector(jsonrpcLog, cfg.API.GRPC)
-	if err != nil {
-		cliLog.Error("Couldn't instantiate node API", zap.Error(err))
-		return fmt.Errorf("couldn't instantiate node API: %w", err)
-	}
-	apiV2, err := walletapi.ClientAPI(jsonrpcLog, walletStore, seqInteractor, nodeSelector)
-	if err != nil {
-		return fmt.Errorf("couldn't instantiate JSON-RPC API: %w", err)
+	cliLog.Info("No TTY detected")
+
+	if !f.EnableAutomaticConsent {
+		cliLog.Error("Explicit consent can't be used when no TTY is attached to the process")
+		return nil, ErrEnableAutomaticConsentFlagIsRequiredWithoutTTY
 	}
 
-	srv, err := service.NewService(svcLog.Named("api"), cfg, apiV2, handler, auth, forwarder, policy)
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		defer cancel()
-		serviceHost := fmt.Sprintf("http://%v:%v", cfg.Host, cfg.Port)
-		p.Print(p.String().CheckMark().Text("Starting HTTP service at: ").SuccessText(serviceHost).NextLine())
-		cliLog.Info("starting HTTP service", zap.String("url", serviceHost))
-		if err := srv.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			cliLog.Error("failed to start HTTP server", zap.Error(err))
-			p.Print(p.String().DangerBangMark().Text("Failed to start HTTP server: ").DangerText(err.Error()).NextLine())
-		}
-	}()
-
-	defer func() {
-		if err = srv.Stop(); err != nil {
-			cliLog.Error("Failed to stop HTTP server", zap.Error(err))
-			p.Print(p.String().DangerBangMark().Text("HTTP service stopped with error: ").DangerText(err.Error()).NextLine())
-			return
-		}
-		cliLog.Info("HTTP server stopped with success")
-		p.Print(p.String().CheckMark().Text("HTTP service stopped.").NextLine())
-	}()
-
-	waitSig(ctx, cancel, cliLog, consentRequests, sentTransactions, receptionChan, responseChan, f.EnableAutomaticConsent, p)
-
-	return nil
+	cliLog.Info("Automatic consent enabled.")
+	return func(_ context.Context) service.Policy {
+		return service.NewAutomaticConsentPolicy()
+	}, nil
 }
 
-func buildJSONFileLogger(vegaPaths paths.Paths, logDir paths.StatePath, logLevel string) (*zap.Logger, string, error) {
-	loggerCfg := vgzap.WithFileOutputForDedicatedProcess(vgzap.DefaultConfig(), vegaPaths.StatePathFor(logDir))
-	logPath := loggerCfg.OutputPaths[0]
+func buildJSONFileLogger(vegaPaths paths.Paths, logDir paths.StatePath, logLevel string) (*zap.Logger, string, zap.AtomicLevel, error) {
+	loggerConfig := vgzap.DefaultConfig()
+	loggerConfig = vgzap.WithFileOutputForDedicatedProcess(loggerConfig, vegaPaths.StatePathFor(logDir))
+	logFilePath := loggerConfig.OutputPaths[0]
+	loggerConfig = vgzap.WithJSONFormat(loggerConfig)
+	loggerConfig = vgzap.WithLevel(loggerConfig, logLevel)
 
-	svcLog, err := vgzap.Build(vgzap.WithJSONFormat(vgzap.WithLevel(loggerCfg, logLevel)))
+	level := loggerConfig.Level
+
+	logger, err := vgzap.Build(loggerConfig)
 	if err != nil {
-		return nil, "", err
+		return nil, "", zap.AtomicLevel{}, fmt.Errorf("could not setup the logger: %w", err)
 	}
 
-	return svcLog, logPath, nil
+	return logger, logFilePath, level, nil
 }
 
-// waitSig will wait for a sigterm or sigint interrupt.
-func waitSig(
-	ctx context.Context,
-	cancelFunc context.CancelFunc,
-	log *zap.Logger,
-	consentRequests chan service.ConsentRequest,
-	sentTransactions chan service.SentTransaction,
-	receptionChan <-chan interactor.Interaction,
-	responseChan chan<- interactor.Interaction,
-	enableAutomaticConsent bool,
-	p *printer.InteractivePrinter,
-) {
+// waitUntilInterruption will wait for a sigterm or sigint interrupt.
+func waitUntilInterruption(shutdownSwitch *walletapi.ServiceShutdownSwitch, log *zap.Logger, p *printer.InteractivePrinter) {
 	gracefulStop := make(chan os.Signal, 1)
-	defer close(gracefulStop)
+	defer func() {
+		signal.Stop(gracefulStop)
+		close(gracefulStop)
+	}()
 
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
 	signal.Notify(gracefulStop, syscall.SIGQUIT)
 
-	go func() {
-		if err := handleRequests(ctx, log, consentRequests, sentTransactions, receptionChan, responseChan, enableAutomaticConsent, p); err != nil {
-			cancelFunc()
-		}
-	}()
-
 	for {
 		select {
 		case sig := <-gracefulStop:
-			log.Info("caught signal", zap.String("signal", fmt.Sprintf("%+v", sig)))
-			p.Print(p.String().NextSection().WarningBangMark().WarningText(fmt.Sprintf("Signal \"%+v\" received.", sig)).NextSection())
-			cancelFunc()
+			log.Info("OS signal received", zap.String("signal", fmt.Sprintf("%+v", sig)))
+			str := p.String()
+			str.NextSection().WarningBangMark().WarningText(fmt.Sprintf("Signal \"%+v\" received.", sig)).NextLine()
+			str.Pad().WarningText("Hit CTRL+C once again to forcefully exit.").NextSection()
+			p.Print(str)
 			return
-		case <-ctx.Done():
-			// nothing to do
+		case <-shutdownSwitch.Flipped():
 			return
 		}
 	}
 }
 
-func handleRequests(ctx context.Context, log *zap.Logger, consentRequests chan service.ConsentRequest, sentTransactions chan service.SentTransaction, receptionChan <-chan interactor.Interaction, responseChan chan<- interactor.Interaction, enableAutomaticConsent bool, p *printer.InteractivePrinter) error {
-	p.Print(p.String().NextLine())
-	for {
-		select {
-		case <-ctx.Done():
-			// nothing to do
-			return nil
-		case envelop := <-receptionChan:
-			if err := handleAPIv2Request(envelop, responseChan, enableAutomaticConsent, p); err != nil {
-				return err
-			}
-		case consentRequest := <-consentRequests:
-			if err := handleAPIv1Request(consentRequest, log, p, sentTransactions); err != nil {
-				return err
-			}
-		}
-	}
-}
-
-func handleAPIv1Request(consentRequest service.ConsentRequest, log *zap.Logger, p *printer.InteractivePrinter, sentTransactions chan service.SentTransaction) error {
+func handleAPIv1Request(consentRequest service.ConsentRequest, log *zap.Logger, p *printer.InteractivePrinter, sentTransactions chan service.SentTransaction) {
 	m := jsonpb.Marshaler{Indent: "    "}
 	marshalledTx, err := m.MarshalToString(consentRequest.Tx)
 	if err != nil {
-		log.Error("couldn't marshal transaction from consent request", zap.Error(err))
-		return err
+		log.Error("could not marshal transaction from consent request", zap.Error(err))
+		panic(err)
 	}
 
 	str := p.String()
@@ -413,10 +422,9 @@ func handleAPIv1Request(consentRequest service.ConsentRequest, log *zap.Logger, 
 		consentRequest.Confirmation <- service.ConsentConfirmation{Decision: false}
 		p.Print(p.String().DangerBangMark().DangerText("Transaction rejected").NextSection())
 	}
-	return nil
 }
 
-func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- interactor.Interaction, enableAutomaticConsent bool, p *printer.InteractivePrinter) error {
+func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- interactor.Interaction, enableAutomaticConsent bool, p *printer.InteractivePrinter) {
 	switch data := interaction.Data.(type) {
 	case interactor.InteractionSessionBegan:
 		p.Print(p.String().NextLine())
@@ -497,12 +505,12 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 			p.Print(p.String().CheckMark().SuccessText(data.Message).NextLine())
 		}
 	case interactor.RequestPermissionsReview:
-		str := p.String().BlueArrow().Text("The application \"").InfoText(data.Hostname).Text("\" want to update the permissions for the wallet \"").InfoText(data.Wallet).Text("\":").NextLine()
+		str := p.String().BlueArrow().Text("The application \"").InfoText(data.Hostname).Text("\" requires the following permissions for \"").InfoText(data.Wallet).Text("\":").NextLine()
 		for perm, access := range data.Permissions {
 			str.ListItem().Text("- ").InfoText(perm).Text(": ").InfoText(access).NextLine()
 		}
 		p.Print(str)
-		approved := yesOrNo(p.String().QuestionMark().Text("Do you approve this update?"), p)
+		approved := yesOrNo(p.String().QuestionMark().Text("Do you want to grant these permissions?"), p)
 		if approved {
 			p.Print(p.String().CheckMark().Text("Permissions update approved.").NextLine())
 		} else {
@@ -574,9 +582,8 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 		str.Pad().Text("Sent at: ").Text(data.SentAt.Format(time.ANSIC)).NextLine()
 		p.Print(str)
 	default:
-		panic(fmt.Sprintf("unhandled interaction: %v", data))
+		panic(fmt.Sprintf("unhandled interaction: %q", interaction.Name))
 	}
-	return nil
 }
 
 func readInput(question *printer.FormattedString, p *printer.InteractivePrinter, options []string) string {
@@ -585,7 +592,7 @@ func readInput(question *printer.FormattedString, p *printer.InteractivePrinter,
 		p.Print(question)
 		answer, err := reader.ReadString('\n')
 		if err != nil {
-			panic(fmt.Errorf("couldn't read input: %w", err))
+			panic(fmt.Errorf("could not read input: %w", err))
 		}
 
 		answer = strings.Trim(answer, " \r\n\t")
@@ -609,7 +616,7 @@ func yesOrNo(question *printer.FormattedString, p *printer.InteractivePrinter) b
 		p.Print(question)
 		answer, err := reader.ReadString('\n')
 		if err != nil {
-			panic(fmt.Errorf("couldn't read input: %w", err))
+			panic(fmt.Errorf("could not read input: %w", err))
 		}
 
 		answer = strings.ToLower(strings.Trim(answer, " \r\n\t"))
@@ -642,30 +649,8 @@ func readPassphrase(question *printer.FormattedString, p *printer.InteractivePri
 	p.Print(question)
 	passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
 	if err != nil {
-		panic(fmt.Errorf("couldn't read passphrase: %w", err))
+		panic(fmt.Errorf("could not read passphrase: %w", err))
 	}
 	p.Print(p.String().NextLine())
 	return string(passphrase)
-}
-
-func buildNodeSelector(log *zap.Logger, nodesConfig network.GRPCConfig) (walletnode.Selector, error) {
-	if len(nodesConfig.Hosts) == 0 {
-		return nil, ErrNoHostSpecified
-	}
-
-	nodes := make([]walletnode.Node, 0, len(nodesConfig.Hosts))
-	for _, host := range nodesConfig.Hosts {
-		n, err := walletnode.NewRetryingNode(log.Named("grpc-node"), host, nodesConfig.Retries)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't initialize node for %q: %w", host, err)
-		}
-		nodes = append(nodes, n)
-	}
-
-	nodeSelector, err := walletnode.NewRoundRobinSelector(log.Named("round-robin-selector"), nodes...)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't instantiate round-robin node selector: %w", err)
-	}
-
-	return nodeSelector, nil
 }

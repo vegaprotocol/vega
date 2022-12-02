@@ -123,7 +123,6 @@ func NewEngine(config Config,
 	asset string,
 	marketID string,
 	stateVarEngine StateVarEngine,
-	tickSize *num.Uint,
 	priceFactor *num.Uint,
 	positionFactor num.Decimal,
 ) *Engine {
@@ -140,7 +139,7 @@ func NewEngine(config Config,
 
 		// parameters
 		stakeToObligationFactor: num.DecimalFromInt64(1),
-		maxShapesSize:           100, // set it to the same default than the netparams
+		maxShapesSize:           5, // set it to the same default than the netparams
 		maxFee:                  num.DecimalFromInt64(1),
 		priceFactor:             priceFactor,
 		// provisions related state
@@ -825,4 +824,13 @@ func (e *Engine) IsPoTInitialised() bool {
 
 func (e *Engine) UpdateMarketConfig(model risk.Model, monitor PriceMonitor) {
 	e.suppliedEngine.UpdateMarketConfig(model, monitor)
+}
+
+// GetLPShapeCount returns the total number of LP shapes.
+func (e *Engine) GetLPShapeCount() uint64 {
+	var total uint64
+	for _, v := range e.provisions.Slice() {
+		total += uint64(len(v.Buys) + len(v.Sells))
+	}
+	return total
 }

@@ -7,13 +7,23 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
+
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/service"
+	eventsv1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
+	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/pressly/goose/v3"
 
 	"code.vegaprotocol.io/vega/cmd/data-node/commands/start"
 	"code.vegaprotocol.io/vega/datanode/broker"
@@ -24,7 +34,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/dehistory/initialise"
 	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/dehistory/store"
-	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
 	"code.vegaprotocol.io/vega/logging"
@@ -39,7 +48,8 @@ const (
 	snapshotInterval     = int64(1000)
 	chainID              = "testnet"
 	compressedEventsFile = "testdata/smoketest_to_block_5000.evts.gz"
-	numSnapshots         = 5
+	numSnapshots         = 6
+	testMigrationSQL     = "testdata/testmigration.sql"
 )
 
 var (
@@ -58,25 +68,32 @@ var (
 
 	goldenSourceHistorySegment map[int64]store.SegmentIndexEntry
 
+	expectedHistorySegmentsFromHeights = []int64{1, 1001, 2001, 2501, 3001, 4001}
+	expectedHistorySegmentsToHeights   = []int64{1000, 2000, 2500, 3000, 4000, 5000}
+
 	deHistoryStore *store.Store
 
 	postgresLog *bytes.Buffer
+
+	testMigrationsDir       string
+	testMigrationVersionNum int
+	sqlFs                   fs.FS
 )
 
 func TestMain(t *testing.M) {
 	outerCtx, cancelOuterCtx := context.WithCancel(context.Background())
 	defer cancelOuterCtx()
 
+	testMigrationVersionNum, sqlFs = setupTestSQLMigrations()
+
 	var err error
-	testID := uuid.NewV4().String()
-	snapshotsBackupDir, err = ioutil.TempDir("", testID)
+	snapshotsBackupDir, err = os.MkdirTemp("", "snapshotbackup")
 	if err != nil {
 		panic(err)
 	}
 	defer os.RemoveAll(snapshotsBackupDir)
 
-	testID = uuid.NewV4().String()
-	eventsDir, err := ioutil.TempDir("", testID)
+	eventsDir, err := os.MkdirTemp("", "eventsdir")
 	if err != nil {
 		panic(err)
 	}
@@ -87,16 +104,14 @@ func TestMain(t *testing.M) {
 	eventsFile = filepath.Join(eventsDir, "smoketest_to_block_5000_or_above.evts")
 	decompressEventFile()
 
-	testID = uuid.NewV4().String()
-	tempDir, err := ioutil.TempDir("", testID)
+	tempDir, err := os.MkdirTemp("", "dehistory")
 	if err != nil {
 		panic(err)
 	}
 	postgresRuntimePath := filepath.Join(tempDir, "sqlstore")
-	defer os.RemoveAll(postgresRuntimePath)
+	defer os.RemoveAll(tempDir)
 
-	testID = uuid.NewV4().String()
-	deHistoryHome, err := ioutil.TempDir("", testID)
+	deHistoryHome, err := os.MkdirTemp("", "dehistoryhome")
 	if err != nil {
 		panic(err)
 	}
@@ -120,14 +135,50 @@ func TestMain(t *testing.M) {
 
 		snapshotService := setupSnapshotService(sqlConfig, snapshotCopyFromPath, snapshotCopyToPath)
 
-		var snapshots []snapshot.CreateSnapshotResult
+		var snapshots []snapshot.MetaData
 
 		ctxWithCancel, cancelFn := context.WithCancel(ctx)
 
-		sqlBroker, err := setupSQLBroker(ctx, eventsFile, sqlConfig, snapshotService,
+		evtSource := newTestEventSourceWithProtocolUpdateMessage()
+
+		pus := service.NewProtocolUpgrade(nil, log)
+		puh := dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context, chainID string,
+			toHeight int64,
+		) error {
+			meta, err := snapshotService.CreateSnapshot(ctx, chainID, toHeight)
+			if err != nil {
+				panic(fmt.Errorf("failed to create snapshot: %w", err))
+			}
+
+			waitForSnapshotToCompleteUseMeta(meta)
+
+			snapshots = append(snapshots, meta)
+
+			md5Hash, err := snapshot.GetSnapshotMd5Hash(meta.CurrentStateSnapshotPath, meta.HistorySnapshotPath)
+			if err != nil {
+				panic(fmt.Errorf("failed to get snapshot hash:%w", err))
+			}
+
+			fromEventsSnapshotHashes = append(fromEventsSnapshotHashes, md5Hash)
+
+			historyMd5Hash, err := snapshot.GetHistoryMd5Hash(meta)
+			if err != nil {
+				panic(fmt.Errorf("failed to get history hash:%w", err))
+			}
+
+			fromEventsIntervalToHistoryHashes = append(fromEventsIntervalToHistoryHashes, historyMd5Hash)
+
+			summary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
+
+			fromEventsDatabaseSummaries = append(fromEventsDatabaseSummaries, summary)
+
+			return nil
+		})
+
+		preUpgradeBroker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
 			func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64) {
 				if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
-					lastSnapshot, err := service.CreateSnapshot(ctx, chainId, snapshot.GetFromHeight(lastCommittedBlockHeight, snapshotInterval), lastCommittedBlockHeight)
+					lastSnapshot, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 					if err != nil {
 						panic(fmt.Errorf("failed to create snapshot:%w", err))
 					}
@@ -156,12 +207,76 @@ func TestMain(t *testing.M) {
 						cancelFn()
 					}
 				}
-			})
+			},
+			evtSource, puh)
 		if err != nil {
-			panic(fmt.Errorf("failed to get setup sqlbroker:%w", err))
+			panic(fmt.Errorf("failed to setup pre-protocol upgrade sqlbroker:%w", err))
 		}
 
-		err = sqlBroker.Receive(ctxWithCancel)
+		err = preUpgradeBroker.Receive(ctxWithCancel)
+		if err != nil && !errors.Is(err, context.Canceled) {
+			panic(fmt.Errorf("failed to process events:%w", err))
+		}
+
+		protocolUpgradeStarted := pus.GetProtocolUpgradeStarted()
+		if !protocolUpgradeStarted {
+			panic("expected protocol upgrade to have started")
+		}
+
+		// Here after exit of the broker because of protocol upgrade, we simulate a restart of the node by recreating
+		// the broker.
+		// First simulate a schema update
+		err = migrateDatabase(int64(testMigrationVersionNum))
+		if err != nil {
+			panic(err)
+		}
+
+		pus = service.NewProtocolUpgrade(nil, log)
+		nonInterceptPuh := dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context,
+			chainID string, toHeight int64,
+		) error {
+			return nil
+		})
+
+		postUpgradeBroker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
+			func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64) {
+				if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
+					lastSnapshot, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
+					if err != nil {
+						panic(fmt.Errorf("failed to create snapshot:%w", err))
+					}
+
+					waitForSnapshotToCompleteUseMeta(lastSnapshot)
+					snapshots = append(snapshots, lastSnapshot)
+					md5Hash, err := snapshot.GetSnapshotMd5Hash(lastSnapshot.CurrentStateSnapshotPath, lastSnapshot.HistorySnapshotPath)
+					if err != nil {
+						panic(fmt.Errorf("failed to get snapshot hash:%w", err))
+					}
+
+					fromEventsSnapshotHashes = append(fromEventsSnapshotHashes, md5Hash)
+
+					historyMd5Hash, err := snapshot.GetHistoryMd5Hash(lastSnapshot)
+					if err != nil {
+						panic(fmt.Errorf("failed to get history hash:%w", err))
+					}
+
+					fromEventsIntervalToHistoryHashes = append(fromEventsIntervalToHistoryHashes, historyMd5Hash)
+
+					summary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
+
+					fromEventsDatabaseSummaries = append(fromEventsDatabaseSummaries, summary)
+
+					if lastCommittedBlockHeight == (numSnapshots-1)*snapshotInterval {
+						cancelFn()
+					}
+				}
+			},
+			evtSource, nonInterceptPuh)
+		if err != nil {
+			panic(fmt.Errorf("failed to setup post protocol upgrade sqlbroker:%w", err))
+		}
+
+		err = postUpgradeBroker.Receive(ctxWithCancel)
 		if err != nil && !errors.Is(err, context.Canceled) {
 			panic(fmt.Errorf("failed to process events:%w", err))
 		}
@@ -174,7 +289,12 @@ func TestMain(t *testing.M) {
 			panic(fmt.Errorf("expected %d database summaries, got %d", numSnapshots, len(fromEventsSnapshotHashes)))
 		}
 
-		fromEventsIntervalToHistoryTableDelta = getSnapshotIntervalToHistoryTableDeltaSummary(ctx, sqlConfig.ConnectionConfig)
+		fromEventsIntervalToHistoryTableDelta = getSnapshotIntervalToHistoryTableDeltaSummary(ctx, sqlConfig.ConnectionConfig,
+			expectedHistorySegmentsFromHeights, expectedHistorySegmentsToHeights)
+
+		if len(fromEventsIntervalToHistoryTableDelta) != numSnapshots {
+			panic(fmt.Errorf("expected %d history table deltas, got %d", numSnapshots, len(fromEventsSnapshotHashes)))
+		}
 
 		// Decentralised store setup
 		storeCfg := store.NewDefaultConfig()
@@ -184,7 +304,6 @@ func TestMain(t *testing.M) {
 		storeCfg.UseIpfsDefaultPeers = false
 		storeCfg.StartWebUI = false
 
-		storeCfg.IDSeed = strings.ReplaceAll(uuid.NewV4().String(), "-", "")
 		deHistoryStore, err = store.New(outerCtx, log, chainID, storeCfg, deHistoryHome, false)
 		if err != nil {
 			panic(err)
@@ -192,7 +311,6 @@ func TestMain(t *testing.M) {
 
 		datanodeConfig := config2.NewDefaultConfig()
 		cfg := dehistory.NewDefaultConfig()
-		cfg.AddSnapshotsInterval = encoding.Duration{Duration: 1 * time.Second}
 		cfg.WipeOnStartup = false
 		deHistoryService, err = dehistory.NewWithStore(outerCtx, log, chainID, cfg, sqlConfig.ConnectionConfig, snapshotService,
 			deHistoryStore, datanodeConfig.API.Port, snapshotCopyFromPath, snapshotCopyToPath)
@@ -203,10 +321,6 @@ func TestMain(t *testing.M) {
 
 		start := time.Now()
 		timeout := 1 * time.Minute
-		var expectedHistorySegments []int64
-		for i := int64(0); i < numSnapshots; i++ {
-			expectedHistorySegments = append(expectedHistorySegments, (i+1)*snapshotInterval)
-		}
 
 		for {
 			if time.Now().After(start.Add(timeout)) {
@@ -226,7 +340,7 @@ func TestMain(t *testing.M) {
 			}
 
 			allExpectedSegmentsFound := true
-			for _, expected := range expectedHistorySegments {
+			for _, expected := range expectedHistorySegmentsToHeights {
 				if _, ok := goldenSourceHistorySegment[expected]; !ok {
 					allExpectedSegmentsFound = false
 					break
@@ -244,20 +358,140 @@ func TestMain(t *testing.M) {
 		log.Info("expected history segment IDs:")
 		log.Infof("%s", goldenSourceHistorySegment[1000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[2000].HistorySegmentID)
+		log.Infof("%s", goldenSourceHistorySegment[2500].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[3000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmNdrVHMKW1KtyNJeZteHZJ1ka3ejY1rtT66mW3EGTWGVw", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmbG5YMPbhnVQUyaFXsVMwTWbbBoL88ahTuAVLTYr5jJAJ", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmdUrVBM71aSp8jqnAh3ttS59zGXBFstog64u3VdnC776F", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmbWEHoYfGSidkxcVyGreF2KUGLnEhc1Xh89yqN8jU7UDK", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmTNVtJNi545inFbukYgRSiyhb9DSj4H2TcvRTW6ABbpUw", snapshots)
-	}, postgresRuntimePath)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmRHYHFXTroa6haZNCj4ZCKFSNz5Y6SXpym9Dm3tahaksp", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmXr8CqxVTAp6vnftLJSU6z9pH9WM7jpeF5dxtDzkF6y2x", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmcWzgNz4kobCHDNMWL6cHsJrP6W65QuxAf7BEFcybXftb", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmRT2vvRADdhZFPCtwTBywewc3VhfJGkdNCSJVt5gw3vdU", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmNNAg4xPjzTX9BGkPEtpzkmdJ6tS125mhcwzBZ2AMqT5m", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmVjVwfs9rCMsmTuVCyLjvhWq3cvsdXyTyzmE6YmdE9z1X", snapshots)
+	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
 		log.Errorf("One or more tests failed, dumping postgres log:\n%s", postgresLog.String())
 	}
+}
+
+func setupTestSQLMigrations() (int, fs.FS) {
+	sourceMigrationsDir, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
+	sourceMigrationsDir, _ = filepath.Split(sourceMigrationsDir)
+	sourceMigrationsDir = filepath.Join(sourceMigrationsDir, "sqlstore", "migrations")
+
+	testMigrationsDir, err = os.MkdirTemp("", "migrations")
+	if err != nil {
+		panic(err)
+	}
+
+	if os.Mkdir(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir), fs.ModePerm); err != nil {
+		panic(fmt.Errorf("failed to create migrations dir: %w", err))
+	}
+
+	var highestMigrationNumber int
+	err = filepath.Walk(sourceMigrationsDir, func(path string, info os.FileInfo, err error) error {
+		if info != nil && !info.IsDir() {
+			if strings.HasSuffix(info.Name(), ".sql") {
+				split := strings.Split(info.Name(), "_")
+				if len(split) < 2 {
+					return errors.New("expected sql filename of form <version>_<name>.sql")
+				}
+
+				migrationNum, err := strconv.Atoi(split[0])
+				if err != nil {
+					return fmt.Errorf("expected first part of file name to be integer, is %s", split[0])
+				}
+
+				if migrationNum > highestMigrationNumber {
+					highestMigrationNumber = migrationNum
+				}
+
+				data, err := os.ReadFile(filepath.Join(sourceMigrationsDir, info.Name()))
+				if err != nil {
+					return fmt.Errorf("failed to read file:%w", err)
+				}
+
+				err = os.WriteFile(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir, info.Name()), data, fs.ModePerm)
+				if err != nil {
+					return fmt.Errorf("failed to write file:%w", err)
+				}
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	// Create a file with a new migration
+	sql, err := os.ReadFile(testMigrationSQL)
+	if err != nil {
+		panic(err)
+	}
+
+	testMigrationVersionNum := highestMigrationNumber + 1
+	err = os.WriteFile(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir,
+		fmt.Sprintf("%04d_testmigration.sql", testMigrationVersionNum)), sql, fs.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+
+	return testMigrationVersionNum, os.DirFS(testMigrationsDir)
+}
+
+func migrateDatabase(version int64) error {
+	poolConfig, err := sqlConfig.ConnectionConfig.GetPoolConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get pool config:%w", err)
+	}
+
+	db := stdlib.OpenDB(*poolConfig.ConnConfig)
+	defer db.Close()
+
+	goose.SetBaseFS(nil)
+	err = goose.UpTo(db, testMigrationsDir, version)
+	if err != nil {
+		return fmt.Errorf("failed to migrate up to version %d:%w", version, err)
+	}
+
+	return nil
+}
+
+func newTestEventSourceWithProtocolUpdateMessage() *TestEventSource {
+	var err error
+	var currentBlock *entities.Block
+	var m sync.RWMutex
+	evtSource, err := newTestEventSource(func(e events.Event, evtsCh chan<- events.Event) {
+		switch e.Type() {
+		case events.EndBlockEvent:
+			if currentBlock != nil && currentBlock.Height == 2500 {
+				m.RLock()
+				evtsCh <- events.NewProtocolUpgradeStarted(context.Background(), eventsv1.ProtocolUpgradeStarted{
+					LastBlockHeight: uint64(currentBlock.Height),
+				})
+				m.RUnlock()
+			}
+		case events.BeginBlockEvent:
+			m.Lock()
+			beginBlock := e.(entities.BeginBlockEvent)
+			currentBlock, err = entities.BlockFromBeginBlock(beginBlock)
+			m.Unlock()
+			if err != nil {
+				panic(err)
+			}
+		}
+	})
+	if err != nil {
+		panic(err)
+	}
+	return evtSource
 }
 
 func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {
@@ -274,21 +508,25 @@ func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {
 
 	for i := int64(0); i < numSnapshots; i++ {
 		emptyDatabase()
-		historySegment := goldenSourceHistorySegment[(i+1)*snapshotInterval]
+		fromHeight := expectedHistorySegmentsFromHeights[i]
+		toHeight := expectedHistorySegmentsToHeights[i]
 
-		blocksFetched, err := fetchBlocks(ctx, log, deHistoryStore, historySegment.HistorySegmentID, snapshotInterval)
+		historySegment := goldenSourceHistorySegment[toHeight]
+
+		expectedBlocks := toHeight - fromHeight + 1
+		blocksFetched, err := fetchBlocks(ctx, log, deHistoryStore, historySegment.HistorySegmentID, expectedBlocks)
 		if err != nil {
 			panic(err)
 		}
 
-		assert.Equal(t, snapshotInterval, blocksFetched)
+		assert.Equal(t, expectedBlocks, blocksFetched)
 		dehistoryService := setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
 
-		from, to, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
+		from, to, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx, sqlFs)
 		require.NoError(t, err)
 
 		assert.Equal(t, int64(1), from)
-		assert.Equal(t, (i+1)*snapshotInterval, to)
+		assert.Equal(t, toHeight, to)
 
 		dbSummary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
 		assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[i].currentTableSummaries, dbSummary.currentTableSummaries)
@@ -317,7 +555,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 
 	dehistoryService := setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
 
-	from, to, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
+	from, to, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx, sqlFs)
 	require.NoError(t, err)
 	assert.Equal(t, int64(2001), from)
 	assert.Equal(t, int64(3000), to)
@@ -328,17 +566,29 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 	}
 	defer connSource.Close()
 
+	evtSource, err := newTestEventSource(func(events.Event, chan<- events.Event) {})
+	if err != nil {
+		panic(err)
+	}
+
+	pus := service.NewProtocolUpgrade(nil, log)
+	puh := dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context,
+		chainID string, toHeight int64,
+	) error {
+		return nil
+	})
+
 	// Play events from 3001 to 4000
 	ctxWithCancel, cancelFn := context.WithCancel(ctx)
 
-	var snapshotMeta snapshot.CreateSnapshotResult
+	var snapshotMeta snapshot.MetaData
 	var newSnapshotFileHashAt4000 string
 	outDeHistoryHome := t.TempDir()
 	outputSnapshotService := setupSnapshotService(sqlConfig, outDeHistoryHome, t.TempDir())
-	sqlBroker, err := setupSQLBroker(ctx, eventsFile, sqlConfig, outputSnapshotService,
+	sqlBroker, err := setupSQLBroker(ctx, sqlConfig, outputSnapshotService,
 		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64) {
 			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
-				snapshotMeta, err = service.CreateSnapshot(ctx, chainId, snapshot.GetFromHeight(lastCommittedBlockHeight, snapshotInterval), lastCommittedBlockHeight)
+				snapshotMeta, err = service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 				require.NoError(t, err)
 				waitForSnapshotToCompleteUseMeta(snapshotMeta)
 
@@ -352,7 +602,8 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 					cancelFn()
 				}
 			}
-		})
+		},
+		evtSource, puh)
 	require.NoError(t, err)
 
 	err = sqlBroker.Receive(ctxWithCancel)
@@ -360,11 +611,12 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 		panic(fmt.Errorf("failed to process events:%w", err))
 	}
 
-	assert.Equal(t, fromEventsSnapshotHashes[3], newSnapshotFileHashAt4000)
+	assert.Equal(t, fromEventsSnapshotHashes[4], newSnapshotFileHashAt4000)
 
-	historyTableDelta := getSnapshotIntervalToHistoryTableDeltaSummary(ctx, sqlConfig.ConnectionConfig)
+	historyTableDelta := getSnapshotIntervalToHistoryTableDeltaSummary(ctx, sqlConfig.ConnectionConfig,
+		expectedHistorySegmentsFromHeights, expectedHistorySegmentsToHeights)
 
-	for i := 2; i < 4; i++ {
+	for i := 2; i < 5; i++ {
 		assertTableSummariesAreEqual(t, fromEventsIntervalToHistoryTableDelta[i], historyTableDelta[i])
 	}
 
@@ -393,7 +645,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 
 	dehistoryService := setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
 
-	from, to, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
+	from, to, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx, sqlFs)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), from)
 	assert.Equal(t, int64(2000), to)
@@ -410,19 +662,20 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 	outSnapshotCopyToDir := t.TempDir()
 	outputSnapshotService := setupSnapshotService(sqlConfig, outSnapshotCopyToDir, t.TempDir())
 
-	sqlBroker, err := setupSQLBroker(ctx, eventsFile, sqlConfig, outputSnapshotService,
-		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64) {
-			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
-				if lastCommittedBlockHeight == 3000 {
-					ss, err := service.CreateSnapshot(ctx, chainId, snapshot.GetFromHeight(lastCommittedBlockHeight, snapshotInterval), lastCommittedBlockHeight)
-					require.NoError(t, err)
-					waitForSnapshotToCompleteUseMeta(ss)
-					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = snapshot.GetSnapshotMd5Hash(ss.CurrentStateSnapshotPath, ss.HistorySnapshotPath)
-					require.NoError(t, err)
-					cancelFn()
-				}
-			}
+	evtSource := newTestEventSourceWithProtocolUpdateMessage()
+
+	puh := dehistory.NewProtocolUpgradeHandler(log, service.NewProtocolUpgrade(nil, log),
+		func(ctx context.Context, chainID string, toHeight int64) error {
+			return dehistoryService.CreateAndPublishSegment(ctx, chainID, toHeight)
 		})
+
+	var lastCommittedBlockHeight int64
+	sqlBroker, err := setupSQLBroker(ctx, sqlConfig, outputSnapshotService,
+		func(ctx context.Context, service *snapshot.Service, chainId string, blockHeight int64) {
+			lastCommittedBlockHeight = blockHeight
+		},
+		evtSource, puh,
+	)
 	require.NoError(t, err)
 
 	err = sqlBroker.Receive(ctxWithCancel)
@@ -430,12 +683,46 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 		panic(fmt.Errorf("failed to process events:%w", err))
 	}
 
-	require.Equal(t, fromEventsSnapshotHashes[2], snapshotFileHashAfterReloadAt2000AndEventReplayTo3000)
+	assert.Equal(t, int64(2500), lastCommittedBlockHeight)
+
+	err = migrateDatabase(int64(testMigrationVersionNum))
+	if err != nil {
+		panic(err)
+	}
+
+	// After protocol upgrade restart the broker
+	sqlBroker, err = setupSQLBroker(ctx, sqlConfig, outputSnapshotService,
+		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64) {
+			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
+				if lastCommittedBlockHeight == 3000 {
+					ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
+					require.NoError(t, err)
+					waitForSnapshotToCompleteUseMeta(ss)
+
+					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = snapshot.GetSnapshotMd5Hash(ss.CurrentStateSnapshotPath, ss.HistorySnapshotPath)
+					require.NoError(t, err)
+					cancelFn()
+				}
+			}
+		},
+		evtSource, dehistory.NewProtocolUpgradeHandler(log, service.NewProtocolUpgrade(nil, log),
+			func(ctx context.Context, chainID string, toHeight int64) error {
+				return nil
+			}),
+	)
+	require.NoError(t, err)
+
+	err = sqlBroker.Receive(ctxWithCancel)
+	if err != nil && !errors.Is(err, context.Canceled) {
+		panic(fmt.Errorf("failed to process events:%w", err))
+	}
+
+	require.Equal(t, fromEventsSnapshotHashes[3], snapshotFileHashAfterReloadAt2000AndEventReplayTo3000)
 
 	databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000 := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
 
-	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[2].currentTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.currentTableSummaries)
-	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[2].historyTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.historyTableSummaries)
+	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[3].currentTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.currentTableSummaries)
+	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[3].historyTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.historyTableSummaries)
 }
 
 func fetchBlocks(ctx context.Context, log *logging.Logger, st *store.Store, rootSegmentID string, numBlocksToFetch int64) (int64, error) {
@@ -465,7 +752,7 @@ func setupDeHistoryService(ctx context.Context, log *logging.Logger, inputSnapsh
 	snapshotCopyFromPath, snapshotCopyToPath string,
 ) *dehistory.Service {
 	cfg := dehistory.NewDefaultConfig()
-	cfg.AddSnapshotsToStore = false
+	cfg.Publish = false
 
 	datanodeConfig := config2.NewDefaultConfig()
 	deHistoryService, err := dehistory.NewWithStore(ctx, log, chainID, cfg, sqlConfig.ConnectionConfig,
@@ -484,10 +771,23 @@ type sqlStoreBroker interface {
 func emptyDatabase() {
 	// NOTE: do not use databasetest.DeleteEverything(), for these we need a totally fresh database everytime to ensure
 	// we model as closely as possible what happens in practice
-
 	var err error
+	var poolConfig *pgxpool.Config
+
+	poolConfig, err = sqlConfig.ConnectionConfig.GetPoolConfig()
+	if err != nil {
+		panic(fmt.Errorf("failed to get pool config: %w", err))
+	}
+
+	db := stdlib.OpenDB(*poolConfig.ConnConfig)
+
+	if _, err = db.Exec(`SELECT alter_job(job_id, scheduled => false) FROM timescaledb_information.jobs WHERE proc_name = 'policy_refresh_continuous_aggregate'`); err != nil {
+		panic(fmt.Errorf("failed to stop continuous aggregates: %w", err))
+	}
+	db.Close()
+
 	for i := 0; i < 5; i++ {
-		err = sqlstore.RecreateVegaDatabase(context.Background(), logging.NewTestLogger(), sqlConfig.ConnectionConfig)
+		err = sqlstore.WipeDatabase(logging.NewTestLogger(), sqlConfig.ConnectionConfig, sqlFs)
 		if err == nil {
 			break
 		}
@@ -497,14 +797,9 @@ func emptyDatabase() {
 	if err != nil {
 		panic(err)
 	}
-
-	err = sqlstore.CreateVegaSchema(logging.NewTestLogger(), sqlConfig.ConnectionConfig)
-	if err != nil {
-		panic(err)
-	}
 }
 
-func panicIfHistorySegmentIdsNotEqual(actual string, expected string, snapshots []snapshot.CreateSnapshotResult) {
+func panicIfHistorySegmentIdsNotEqual(actual string, expected string, snapshots []snapshot.MetaData) {
 	if expected != actual {
 		snapshotPaths := ""
 		for _, sn := range snapshots {
@@ -538,7 +833,7 @@ func setupSnapshotServiceWithNetworkParamFunc(testDbConfig sqlstore.Config, snap
 	snapshotServiceCfg := snapshot.NewDefaultConfig()
 
 	snapshotService, err := snapshot.NewSnapshotService(logging.NewTestLogger(), snapshotServiceCfg,
-		testDbConfig.ConnectionConfig, snapshotCopyFromPath, snapshotCopyToPath)
+		testDbConfig.ConnectionConfig, snapshotCopyFromPath, snapshotCopyToPath, migrateDatabase)
 	if err != nil {
 		panic(err)
 	}
@@ -546,9 +841,14 @@ func setupSnapshotServiceWithNetworkParamFunc(testDbConfig sqlstore.Config, snap
 	return snapshotService
 }
 
-func setupSQLBroker(ctx context.Context, eventsFile string, testDbConfig sqlstore.Config, snapshotService *snapshot.Service,
-	onBlockCommitted func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64,
-	),
+type ProtocolUpgradeHandler interface {
+	OnProtocolUpgradeEvent(ctx context.Context, chainID string, lastCommittedBlockHeight int64) error
+	GetProtocolUpgradeStarted() bool
+}
+
+func setupSQLBroker(ctx context.Context, testDbConfig sqlstore.Config, snapshotService *snapshot.Service,
+	onBlockCommitted func(ctx context.Context, service *snapshot.Service, chainId string,
+		lastCommittedBlockHeight int64), evtSource eventSource, protocolUpdateHandler ProtocolUpgradeHandler,
 ) (sqlStoreBroker, error) {
 	transactionalConnectionSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), testDbConfig.ConnectionConfig)
 	if err != nil {
@@ -570,23 +870,66 @@ func setupSQLBroker(ctx context.Context, eventsFile string, testDbConfig sqlstor
 
 	subscribers.SetupSQLSubscribers(ctx, logging.NewTestLogger())
 
+	blockStore := sqlstore.NewBlocks(transactionalConnectionSource)
+
+	config := broker.NewDefaultConfig()
+
+	sqlBroker := broker.NewSQLStoreBroker(logging.NewTestLogger(), config, chainID, evtSource,
+		transactionalConnectionSource, blockStore, func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) {
+			onBlockCommitted(ctx, snapshotService, chainId, lastCommittedBlockHeight)
+		}, protocolUpdateHandler, subscribers.GetSQLSubscribers(),
+	)
+	return sqlBroker, nil
+}
+
+type eventSource interface {
+	Listen() error
+	Receive(ctx context.Context) (<-chan events.Event, <-chan error)
+}
+
+type TestEventSource struct {
+	fileSource eventSource
+	onEvent    func(events.Event, chan<- events.Event)
+}
+
+func newTestEventSource(onEvent func(events.Event, chan<- events.Event)) (*TestEventSource, error) {
 	evtSource, err := broker.NewFileEventSource(eventsFile, 0, 0, chainID)
 	if err != nil {
 		return nil, err
 	}
 
-	blockStore := sqlstore.NewBlocks(transactionalConnectionSource)
+	return &TestEventSource{
+		fileSource: evtSource,
+		onEvent:    onEvent,
+	}, nil
+}
 
-	config := broker.NewDefaultConfig()
+func (e *TestEventSource) Listen() error {
+	e.fileSource.Listen()
+	return nil
+}
 
-	protocolUpgradeService := service.NewProtocolUpgrade(nil, nil)
+func (e *TestEventSource) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
+	sourceEventCh, sourceErrCh := e.fileSource.Receive(ctx)
 
-	sqlBroker := broker.NewSQLStoreBroker(logging.NewTestLogger(), config, chainID, evtSource,
-		transactionalConnectionSource, blockStore, protocolUpgradeService, func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) {
-			onBlockCommitted(ctx, snapshotService, chainId, lastCommittedBlockHeight)
-		}, subscribers.GetSQLSubscribers(),
-	)
-	return sqlBroker, nil
+	sinkEventCh := make(chan events.Event)
+	sinkErrCh := make(chan error)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case err := <-sourceErrCh:
+				sinkErrCh <- err
+			case event := <-sourceEventCh:
+				e.onEvent(event, sinkEventCh)
+				sinkEventCh <- event
+			}
+		}
+	}()
+
+	return sinkEventCh, sinkErrCh
 }
 
 type tableDataSummary struct {
@@ -660,7 +1003,8 @@ func getDatabaseDataSummary(ctx context.Context, connConfig sqlstore.ConnectionC
 }
 
 func getSnapshotIntervalToHistoryTableDeltaSummary(ctx context.Context,
-	connConfig sqlstore.ConnectionConfig,
+	connConfig sqlstore.ConnectionConfig, expectedHistorySegmentsFromHeights []int64,
+	expectedHistorySegmentsToHeights []int64,
 ) []map[string]tableDataSummary {
 	conn, err := pgxpool.Connect(ctx, connConfig.GetConnectionString())
 	if err != nil {
@@ -674,9 +1018,9 @@ func getSnapshotIntervalToHistoryTableDeltaSummary(ctx context.Context,
 
 	var snapshotNumToHistoryTableSummary []map[string]tableDataSummary
 
-	for i := 0; i < numSnapshots; i++ {
-		toHeight := int64(i+1) * snapshotInterval
-		fromHeight := snapshot.GetFromHeight(toHeight, snapshotInterval)
+	for i := 0; i < len(expectedHistorySegmentsFromHeights); i++ {
+		fromHeight := expectedHistorySegmentsFromHeights[i]
+		toHeight := expectedHistorySegmentsToHeights[i]
 
 		whereClause := fmt.Sprintf("Where vega_time >= (SELECT vega_time from blocks where height = %d) and  vega_time <= (SELECT vega_time from blocks where height = %d)",
 			fromHeight, toHeight)
@@ -706,7 +1050,7 @@ func getSnapshotIntervalToHistoryTableDeltaSummary(ctx context.Context,
 	return snapshotNumToHistoryTableSummary
 }
 
-func waitForSnapshotToCompleteUseMeta(sn snapshot.CreateSnapshotResult) {
+func waitForSnapshotToCompleteUseMeta(sn snapshot.MetaData) {
 	currentSnapshotFileName := sn.CurrentStateSnapshotPath
 	historySnapshotFileName := sn.HistorySnapshotPath
 	snapshotInProgressFileName := filepath.Join(path.Dir(sn.CurrentStateSnapshotPath), snapshot.InProgressFileName(sn.CurrentStateSnapshot.ChainID, sn.CurrentStateSnapshot.Height))

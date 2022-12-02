@@ -9,6 +9,8 @@ Feature: Ensure we can enter and leave liquidity auction
       | name                              | value |
       | market.auction.minimumDuration    | 1     |
       | market.stake.target.scalingFactor | 1     |
+      | limits.markets.maxPeggedOrders    | 1500  |
+
 
   Scenario: 001, LP only provides LP orders
     Given the parties deposit on asset's general account the following amount:

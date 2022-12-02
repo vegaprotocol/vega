@@ -19,15 +19,21 @@ type DatabaseMetadata struct {
 }
 
 type TableMetadata struct {
-	Name       string
-	SortOrder  string
-	Hypertable bool
+	Name            string
+	SortOrder       string
+	Hypertable      bool
+	PartitionColumn string
 }
 
 type IndexInfo struct {
 	Tablename string
 	Indexname string
 	Indexdef  string
+}
+
+type HypertablePartitionColumns struct {
+	HypertableName string
+	ColumnName     string
 }
 
 func NewDatabaseMetaData(ctx context.Context, connConfig sqlstore.ConnectionConfig) (DatabaseMetadata, error) {
@@ -52,6 +58,11 @@ func NewDatabaseMetaData(ctx context.Context, connConfig sqlstore.ConnectionConf
 		return DatabaseMetadata{}, fmt.Errorf("failed to get hyper table names:%w", err)
 	}
 
+	hypertablePartitionColumns, err := getHyperTablePartitionColumns(ctx, conn)
+	if err != nil {
+		return DatabaseMetadata{}, fmt.Errorf("failed to get hyper table partition columns:%w", err)
+	}
+
 	dbVersion, err := getDatabaseVersion(connConfig)
 	if err != nil {
 		return DatabaseMetadata{}, fmt.Errorf("failed to get database version:%w", err)
@@ -59,10 +70,20 @@ func NewDatabaseMetaData(ctx context.Context, connConfig sqlstore.ConnectionConf
 
 	result := DatabaseMetadata{TableNameToMetaData: map[string]TableMetadata{}, DatabaseVersion: dbVersion}
 	for _, tableName := range tableNames {
+		partitionCol := ""
+		ok := false
+		if hyperTableNames[tableName] {
+			partitionCol, ok = hypertablePartitionColumns[tableName]
+			if !ok {
+				return DatabaseMetadata{}, fmt.Errorf("failed to get partition column for hyper table %s", tableName)
+			}
+		}
+
 		result.TableNameToMetaData[tableName] = TableMetadata{
-			Name:       tableName,
-			SortOrder:  tableNameToSortOrder[tableName],
-			Hypertable: hyperTableNames[tableName],
+			Name:            tableName,
+			SortOrder:       tableNameToSortOrder[tableName],
+			Hypertable:      hyperTableNames[tableName],
+			PartitionColumn: partitionCol,
 		}
 	}
 
@@ -151,4 +172,19 @@ func getHyperTableNames(ctx context.Context, conn *pgxpool.Pool) (map[string]boo
 		result[tableName] = true
 	}
 	return result, nil
+}
+
+func getHyperTablePartitionColumns(ctx context.Context, conn *pgxpool.Pool) (map[string]string, error) {
+	var partitionColumns []HypertablePartitionColumns
+	err := pgxscan.Select(ctx, conn, &partitionColumns,
+		`select hypertable_name, column_name from timescaledb_information.dimensions where hypertable_schema='public' and dimension_number=1`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to partition columns:%w", err)
+	}
+
+	tableNameToPartitionColumn := map[string]string{}
+	for _, column := range partitionColumns {
+		tableNameToPartitionColumn[column.HypertableName] = column.ColumnName
+	}
+	return tableNameToPartitionColumn, nil
 }

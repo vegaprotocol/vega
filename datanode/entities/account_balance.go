@@ -29,29 +29,19 @@ type AccountBalance struct {
 }
 
 func (ab *AccountBalance) ToProto() *v2.AccountBalance {
-	marketID := ab.MarketID.String()
-	if marketID == noMarketStr {
-		marketID = ""
-	}
-
-	ownerID := ab.PartyID.String()
-	if ownerID == systemOwnerStr {
-		ownerID = ""
-	}
-
 	return &v2.AccountBalance{
-		Owner:    ownerID,
+		Owner:    ab.PartyID.String(),
 		Balance:  ab.Balance.String(),
 		Asset:    ab.AssetID.String(),
-		MarketId: marketID,
+		MarketId: ab.MarketID.String(),
 		Type:     ab.Account.Type,
 	}
 }
 
 func (ab AccountBalance) ToProtoEdge(_ ...any) (*v2.AccountEdge, error) {
 	return &v2.AccountEdge{
-		Account: ab.ToProto(),
-		Cursor:  ab.Cursor().Encode(),
+		Node:   ab.ToProto(),
+		Cursor: ab.Cursor().Encode(),
 	}, nil
 }
 

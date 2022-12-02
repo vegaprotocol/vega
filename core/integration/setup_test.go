@@ -45,16 +45,15 @@ var (
 )
 
 type tstReporter struct {
-	err  error
-	step string
+	scenario string
 }
 
 func (t tstReporter) Errorf(format string, args ...interface{}) {
-	fmt.Printf("%s ERROR: %s", t.step, fmt.Sprintf(format, args...))
+	fmt.Printf("%s ERROR: %s", t.scenario, fmt.Sprintf(format, args...))
 }
 
 func (t tstReporter) Fatalf(format string, args ...interface{}) {
-	fmt.Printf("%s FATAL: %s", t.step, fmt.Sprintf(format, args...))
+	fmt.Printf("%s FATAL: %s", t.scenario, fmt.Sprintf(format, args...))
 	os.Exit(1)
 }
 
@@ -206,6 +205,14 @@ func newExecutionTestSetup() *executionTestSetup {
 			Param:   netparams.TransferMinTransferQuantumMultiple,
 			Watcher: execsetup.banking.OnMinTransferQuantumMultiple,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MaxPeggedOrders,
+			Watcher: execsetup.executionEngine.OnMaxPeggedOrderUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarkPriceUpdateMaximumFrequency,
+			Watcher: execsetup.executionEngine.OnMarkPriceUpdateMaximumFrequency,
+		},
 	)
 	return execsetup
 }
@@ -325,6 +332,10 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketMinLpStakeQuantumMultiple,
 			Watcher: e.executionEngine.OnMinLpStakeQuantumMultipleUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketMinProbabilityOfTradingForLPOrders,
+			Watcher: e.executionEngine.OnMarketMinProbabilityOfTradingForLPOrdersUpdate,
 		},
 	)
 }

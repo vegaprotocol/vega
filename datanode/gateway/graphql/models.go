@@ -122,7 +122,7 @@ type Data struct {
 	// RFC3339Nano formatted date and time for when the data was broadcast to the markets
 	// with a matching data spec.
 	// It has no value when the source data does not match any data spec.
-	BroadcastAt string `json:"broadcastAt"`
+	BroadcastAt int64 `json:"broadcastAt"`
 }
 
 // DataSourceDefinition represents the top level object that deals with data sources.
@@ -154,9 +154,9 @@ type DataSourceSpec struct {
 	// ID is a hash generated from the DataSourceSpec data.
 	ID string `json:"id"`
 	// RFC3339Nano creation date time
-	CreatedAt string `json:"createdAt"`
+	CreatedAt int64 `json:"createdAt"`
 	// RFC3339Nano last updated timestamp
-	UpdatedAt *string               `json:"updatedAt"`
+	UpdatedAt *int64                `json:"updatedAt"`
 	Data      *DataSourceDefinition `json:"data"`
 	// Status describes the status of the data source spec
 	Status DataSourceSpecStatus `json:"status"`
@@ -283,9 +283,9 @@ func (ETHAddress) IsSignerKind() {}
 type EpochParticipation struct {
 	Epoch *vega.Epoch `json:"epoch"`
 	// RFC3339 timestamp
-	Offline *string `json:"offline"`
+	Offline *int64 `json:"offline"`
 	// RFC3339 timestamp
-	Online *string `json:"online"`
+	Online *int64 `json:"online"`
 	// Total amount rewarded for participation in the given epoch
 	TotalRewards *float64 `json:"totalRewards"`
 }
@@ -310,13 +310,13 @@ type Erc20WithdrawalApproval struct {
 	// The amount to be withdrawn
 	Amount string `json:"amount"`
 	// Timestamp in seconds for expiry of the approval
-	Expiry string `json:"expiry"`
+	Expiry int64 `json:"expiry"`
 	// The nonce to be used in the request
 	Nonce string `json:"nonce"`
 	// Signature aggregate from the nodes, in the following format:
 	// 0x + sig1 + sig2 + ... + sigN
 	Signatures string `json:"signatures"`
-	// The target address which will receive the funds
+	// The target address that will receive the funds
 	TargetAddress string `json:"targetAddress"`
 	// Timestamp at which the withdrawal was created
 	Creation string `json:"creation"`
@@ -350,11 +350,6 @@ type ExternalDataSourceSpec struct {
 	Spec *DataSourceSpec `json:"spec"`
 }
 
-type GroupOptions struct {
-	ByAccountField     []*v2.AccountField     `json:"ByAccountField"`
-	ByLedgerEntryField []*v2.LedgerEntryField `json:"ByLedgerEntryField"`
-}
-
 type LedgerEntry struct {
 	// Account from which the asset was taken
 	AccountFromID *vega.AccountDetails `json:"accountFromId"`
@@ -363,9 +358,9 @@ type LedgerEntry struct {
 	// The amount transferred
 	Amount string `json:"amount"`
 	// Type of ledger entry
-	Type string `json:"type"`
+	Type vega.TransferType `json:"type"`
 	// RFC3339Nano time at which the transfer was made
-	Timestamp string `json:"timestamp"`
+	Timestamp int64 `json:"timestamp"`
 }
 
 // Configuration of a market liquidity monitoring parameters
@@ -431,6 +426,20 @@ type MarketTick struct {
 }
 
 func (MarketTick) IsEvent() {}
+
+// Details on the collection of nodes for particular validator status
+type NodeSet struct {
+	// Total number of nodes in the node set
+	Total int `json:"total"`
+	// Number of nodes in the node set that had a performance score of 0 at the end of the last epoch
+	Inactive int `json:"inactive"`
+	// IDs of the nodes that were promoted into this node set at the start of the epoch
+	Promoted []string `json:"promoted"`
+	// IDs of the nodes that were demoted into this node set at the start of the epoch
+	Demoted []string `json:"demoted"`
+	// Total number of nodes allowed in the node set
+	Maximum *int `json:"maximum"`
+}
 
 // The equity like share of liquidity fee for each liquidity provider
 type ObservableLiquidityProviderFeeShare struct {
@@ -632,7 +641,7 @@ type TargetStakeParameters struct {
 
 type TimeUpdate struct {
 	// RFC3339Nano time of new block time
-	Timestamp string `json:"timestamp"`
+	Timestamp int64 `json:"timestamp"`
 }
 
 func (TimeUpdate) IsEvent() {}

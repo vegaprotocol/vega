@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -36,7 +37,7 @@ func NewCmdDescribePermissions(w io.Writer, rf *RootFlags) *cobra.Command {
 		}
 
 		describePermissions := api.NewAdminDescribePermissions(s)
-		rawResult, errDetails := describePermissions.Handle(context.Background(), params)
+		rawResult, errDetails := describePermissions.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
 		if errDetails != nil {
 			return api.AdminDescribePermissionsResult{}, errors.New(errDetails.Data)
 		}
@@ -90,7 +91,7 @@ func BuildCmdDescribePermissions(w io.Writer, handler DescribePermissionsHandler
 		"Path to the file containing the wallet's passphrase",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }
@@ -131,9 +132,9 @@ func PrintDescribePermissionsResult(w io.Writer, resp api.AdminDescribePermissio
 	str.Text("Public keys: ").NextLine()
 	str.Text("  Access mode: ").WarningText(fmt.Sprintf("%v", resp.Permissions.PublicKeys.Access)).NextLine()
 	if len(resp.Permissions.PublicKeys.RestrictedKeys) != 0 {
-		str.Text("  Restricted keys: ")
+		str.Text("  Restricted keys: ").NextLine()
 		for _, k := range resp.Permissions.PublicKeys.RestrictedKeys {
-			str.WarningText(fmt.Sprintf("    - %s", k)).NextLine()
+			str.Text("    - ").WarningText(k).NextLine()
 		}
 	}
 }

@@ -309,8 +309,6 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.Epoch
   EpochTimestamps:
     model: code.vegaprotocol.io/vega/protos/vega.EpochTimestamps
-  RewardPerAssetDetail:   # TODO: Depricated, remove once front end has caught up
-    model: code.vegaprotocol.io/vega/protos/vega.RewardSummary
   Reward:
     model: code.vegaprotocol.io/vega/protos/vega.Reward
   RewardSummary:
@@ -318,7 +316,7 @@ models:
   StakeLinking:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.StakeLinking
   PartyStake:
-    model: code.vegaprotocol.io/vega/protos/data-node/api/v1.PartyStakeResponse
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GetStakeResponse
   KeyRotation:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.KeyRotation
   EthereumKeyRotationsConnection:
@@ -348,8 +346,8 @@ models:
     model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.LedgerEntryField
   LedgerEntryFilter:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LedgerEntryFilter
-  AggregatedLedgerEntries:
-    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedLedgerEntries
+  AggregatedLedgerEntry:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedLedgerEntry
   AggregatedLedgerEntriesEdge:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedLedgerEntriesEdge
   AggregatedLedgerEntriesConnection:
@@ -489,3 +487,5 @@ models:
   ProtocolUpgradeProposalStatus:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.ProtocolUpgradeProposalStatus
+  OrderFilter:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.OrderFilter

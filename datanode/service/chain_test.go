@@ -34,7 +34,7 @@ func TestChainService(t *testing.T) {
 
 	t.Run("fetching unset chain", func(t *testing.T) {
 		// Should not be cached so expect another call to the store
-		store.EXPECT().Get(ctx).Return(entities.Chain{}, entities.ErrChainNotFound).Times(2)
+		store.EXPECT().Get(ctx).Return(entities.Chain{}, entities.ErrNotFound).Times(2)
 		for i := 0; i < 2; i++ {
 			chainID, err := svc.GetChainID()
 			assert.NoError(t, err)

@@ -18,11 +18,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/georgysavva/scany/pgxscan"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	"github.com/georgysavva/scany/pgxscan"
 )
 
 const (
@@ -45,7 +46,7 @@ var ordersOrdering = TableOrdering{
 	ColumnOrdering{Name: "seq_num", Sorting: ASC},
 }
 
-func NewOrders(connectionSource *ConnectionSource, logger *logging.Logger) *Orders {
+func NewOrders(connectionSource *ConnectionSource, _ *logging.Logger) *Orders {
 	a := &Orders{
 		ConnectionSource: connectionSource,
 		batcher: NewMapBatcher[entities.OrderKey, entities.Order](
@@ -92,7 +93,8 @@ func (os *Orders) GetOrder(ctx context.Context, orderIDStr string, version *int3
 		query := fmt.Sprintf("SELECT %s FROM orders_current WHERE id=$1", sqlOrderColumns)
 		err = pgxscan.Get(ctx, os.Connection, &order, query, orderID)
 	}
-	return order, err
+
+	return order, os.wrapE(err)
 }
 
 // GetByMarket returns the last update of the all the orders in a particular market.
@@ -125,7 +127,7 @@ func (os *Orders) GetByReference(ctx context.Context, reference string, p entiti
 
 // GetByReference returns the last update of orders with the specified user-suppled reference.
 func (os *Orders) GetByReferencePaged(ctx context.Context, reference string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
-	return os.ListOrders(ctx, nil, nil, &reference, false, p, entities.DateRange{})
+	return os.ListOrders(ctx, nil, nil, &reference, false, p, entities.DateRange{}, entities.OrderFilter{})
 }
 
 // GetAllVersionsByOrderID the last update to all versions (e.g. manual changes that lead to
@@ -204,7 +206,7 @@ func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagin
 }
 
 func (os *Orders) ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool, p entities.CursorPagination,
-	dateRange entities.DateRange,
+	dateRange entities.DateRange, orderFilter entities.OrderFilter,
 ) ([]entities.Order, entities.PageInfo, error) {
 	var filters []filter
 	if party != nil {
@@ -220,6 +222,7 @@ func (os *Orders) ListOrders(ctx context.Context, party *string, market *string,
 	}
 
 	where, args := buildWhereClause(filters...)
+	where, args = applyOrderFilter(where, args, orderFilter)
 
 	table := "orders_current"
 	if liveOnly {
@@ -268,4 +271,45 @@ func buildWhereClause(filters ...filter) (string, []any) {
 	}
 
 	return whereBuilder.String(), args
+}
+
+func applyOrderFilter(whereClause string, args []any, filter entities.OrderFilter) (string, []any) {
+	if filter.ExcludeLiquidity {
+		whereClause += " AND COALESCE(lp_id, '') = ''"
+	}
+
+	if len(filter.Statuses) > 0 {
+		states := strings.Builder{}
+		for i, status := range filter.Statuses {
+			if i > 0 {
+				states.WriteString(",")
+			}
+			states.WriteString(nextBindVar(&args, status))
+		}
+		whereClause += fmt.Sprintf(" AND status IN (%s)", states.String())
+	}
+
+	if len(filter.Types) > 0 {
+		types := strings.Builder{}
+		for i, orderType := range filter.Types {
+			if i > 0 {
+				types.WriteString(",")
+			}
+			types.WriteString(nextBindVar(&args, orderType))
+		}
+		whereClause += fmt.Sprintf(" AND type IN (%s)", types.String())
+	}
+
+	if len(filter.TimeInForces) > 0 {
+		timeInForces := strings.Builder{}
+		for i, timeInForce := range filter.TimeInForces {
+			if i > 0 {
+				timeInForces.WriteString(",")
+			}
+			timeInForces.WriteString(nextBindVar(&args, timeInForce))
+		}
+		whereClause += fmt.Sprintf(" AND time_in_force IN (%s)", timeInForces.String())
+	}
+
+	return whereClause, args
 }

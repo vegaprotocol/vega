@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"math/rand"
 	"net"
 	"sort"
@@ -29,7 +30,7 @@ var ErrChainNotFound = errors.New("no chain found")
 type deHistoryService interface {
 	GetActivePeerAddresses() []string
 	FetchHistorySegment(ctx context.Context, historySegmentID string) (store.SegmentIndexEntry, error)
-	LoadAllAvailableHistoryIntoDatanode(ctx context.Context) (loadedFrom int64, loadedTo int64, err error)
+	LoadAllAvailableHistoryIntoDatanode(ctx context.Context, sqlFs fs.FS) (loadedFrom int64, loadedTo int64, err error)
 }
 
 func DatanodeFromDeHistory(parentCtx context.Context, cfg Config, log *logging.Logger,
@@ -87,7 +88,7 @@ func DatanodeFromDeHistory(parentCtx context.Context, cfg Config, log *logging.L
 	log.Infof("fetched %d blocks from decentralised history", blocksFetched)
 
 	log.Infof("loading history into the datanode")
-	from, to, err := deHistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
+	from, to, err := deHistoryService.LoadAllAvailableHistoryIntoDatanode(ctx, sqlstore.EmbedMigrations)
 	if err != nil {
 		return fmt.Errorf("failed to load history into the datanode%w", err)
 	}
@@ -156,7 +157,7 @@ func GetOldestHistoryBlockAndLastBlock(ctx context.Context, connConfig sqlstore.
 
 		historyBlock, err := sqlstore.GetOldestHistoryBlockUsingConnection(ctx, conn)
 		if err != nil {
-			if !errors.Is(err, sqlstore.ErrNoHistoryBlock) {
+			if !errors.Is(err, entities.ErrNotFound) {
 				return nil, nil, fmt.Errorf("failed to get oldest history block:%w", err)
 			}
 		} else {
@@ -165,7 +166,7 @@ func GetOldestHistoryBlockAndLastBlock(ctx context.Context, connConfig sqlstore.
 
 		block, err := sqlstore.GetLastBlockUsingConnection(ctx, conn)
 		if err != nil {
-			if !errors.Is(err, sqlstore.ErrNoLastBlock) {
+			if !errors.Is(err, entities.ErrNotFound) {
 				return nil, nil, fmt.Errorf("failed to get last block:%w", err)
 			}
 		} else {
@@ -322,7 +323,7 @@ func VerifyChainID(chainID string, chainService *service.Chain) error {
 
 	currentChainID, err := chainService.GetChainID()
 	if err != nil {
-		if errors.Is(err, entities.ErrChainNotFound) {
+		if errors.Is(err, entities.ErrNotFound) {
 			return ErrChainNotFound
 		}
 

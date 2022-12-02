@@ -16,7 +16,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.62.1";
+    version: "v0.64.0";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz/datanode/rest"
@@ -87,9 +87,9 @@ service TradingDataService {
     // An account is defined a 4-tuple of (asset_id, type, party_id, market_id).
     // - Every account has associated asset and type.
     // - Certain account types (for example, the global reward pool) do not have an associated party.
-    //   These are denoted by the special party identifier '*'
+    //   These are denoted by the special party identifier 'network'
     // - Certain account types do not have an associated market (for example general party accounts)
-    //   These are denoted by the special market identifier '!'
+    //   These are denoted by the special market identifier '' (the empty string)
     //
     // `ListBalanceChangesRequest` will return a list of
     // `(vega_time, asset_id, account_type, party_id, market_id, balance)`
@@ -501,7 +501,7 @@ message AccountsConnection {
 
 message AccountEdge {
     // The actual account object
-    AccountBalance account = 1;
+    AccountBalance node = 1;
     // A cursor which can be used to fetch further pages with reference to this account
     string cursor = 2;
 }
@@ -565,6 +565,13 @@ message GetOrderResponse {
     vega.Order order = 1;
 }
 
+message OrderFilter {
+    repeated vega.Order.Status statuses = 1;
+    repeated vega.Order.Type types = 2;
+    repeated vega.Order.TimeInForce time_in_forces = 3;
+    bool exclude_liquidity = 4;
+}
+
 message ListOrdersRequest {
     // Party identifier
     optional string party_id = 1;
@@ -577,6 +584,7 @@ message ListOrdersRequest {
     // If set to true, list only live orders
     optional bool live_only = 5;
     optional DateRange date_range = 6;
+    optional OrderFilter filter = 7;
 }
 
 message ListOrdersResponse {
@@ -609,6 +617,8 @@ message ObserveOrdersRequest {
     optional string market_id = 1;
     // Party identifier
     optional string party_id = 2;
+    // exclude liquidity
+    optional bool exclude_liquidity = 3;
 }
 
 // Response sent over an orders stream
@@ -708,37 +718,37 @@ enum LedgerEntryField {
     LEDGER_ENTRY_FIELD_TRANSFER_TYPE = 3;
 }
 
-message AggregatedLedgerEntries {
+message AggregatedLedgerEntry {
     // Removing ID field as it is not used, there is no id for an aggregated ledger entry.
     reserved 1;
     // Timestamp to of block the result is referring to, in nanoseconds since the epoch
     int64 timestamp = 2;
     // The amount of ledger entries for the set of requested accounts at the time above
     string quantity = 3;
-    // If grouping by party, the party ID
-    optional string party_id = 4;
-    // If grouping by asset, the asset ID
+    // If filtering by transfer type, the transfer type
+    vega.TransferType transfer_type = 4;
+    // If filtering by asset, the asset ID
     optional string asset_id = 5;
-    // If grouping by market, the market ID
-    optional string market_id = 6;
-    // If grouping by transfer type, the transfer type
-    vega.TransferType transfer_type = 7;
-    // If grouping by account type, the acount type
-    vega.AccountType account_type = 8;
-}
-
-message GroupOptions {
-    repeated AccountField by_account_field = 1;
-    repeated LedgerEntryField by_ledger_entry_field = 2;
+    // The type of account sent from
+    vega.AccountType sender_account_type = 6;
+    // The type of account received to
+    vega.AccountType receiver_account_type = 7;
+    // If filtering by sender party, the party ID
+    optional string sender_party_id = 8;
+    // If filtering by receiver party, the party ID
+    optional string receiver_party_id = 9;
+    // If filtering by sender market, the market ID
+    optional string sender_market_id = 10;
+    // If filtering by receiver market, the market ID
+    optional string receiver_market_id = 11;
 }
 
 // -- LedgerEntries --
 message ListLedgerEntriesRequest {
     // Limit the ledger entries considered according to the filter supplied
     LedgerEntryFilter filter = 1;
-    GroupOptions group_options = 2;
-    optional Pagination pagination = 3;
-    optional DateRange date_range = 4;
+    optional Pagination pagination = 2;
+    optional DateRange date_range = 3;
 }
 
 message ListLedgerEntriesResponse {
@@ -746,7 +756,7 @@ message ListLedgerEntriesResponse {
 }
 
 message AggregatedLedgerEntriesEdge {
-    AggregatedLedgerEntries node = 1;
+    AggregatedLedgerEntry node = 1;
     string cursor = 2;
 }
 
@@ -1072,11 +1082,13 @@ message CandleDataConnection {
 // -- Votes --
 // Request for Votes
 message ListVotesRequest {
-    // Party of which the votes are requested
-    string party_id = 1;
+  // Party of which the votes are requested
+  optional string party_id = 1;
+  // A proposal id for which top list proposal for
+  optional string proposal_id = 2;
 
-    // Optional pagination control
-    optional Pagination pagination = 2;
+  // Optional pagination control
+  optional Pagination pagination = 3;
 }
 
 // Response for Votes
@@ -2034,7 +2046,7 @@ message EthereumKeyRotationsConnection {
 }
 
 message EthereumKeyRotationEdge {
-    vega.events.v1.EthereumKeyRotation ethereum_key_rotation = 1;
+    vega.events.v1.EthereumKeyRotation node = 1;
     string cursor = 2;
 }
 

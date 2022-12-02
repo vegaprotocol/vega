@@ -21,8 +21,9 @@ Feature:
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
 
- 
+
   @VirtStake
   Scenario: 001 2 LPs joining at start, unequal commitments. Checking calculation of equity-like-shares and liquidity-fee-distribution in a market with small growth (0042-LIQF-008 0042-LIQF-011)
 
@@ -100,7 +101,7 @@ Feature:
       | sell | 1001  | 75     |
       | sell | 1100  | 1      |
       | sell | 1102  | 228    |
-    
+
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
       | lp1   | 0.08              | 4000                    |
@@ -157,8 +158,8 @@ Feature:
     And the accumulated liquidity fees should be "103" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 10110        | 49000          | 101           |
+      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 10110        | 49000          | 101           |
 
     And the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -200,7 +201,7 @@ Feature:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.0612244897959184 | 4000                    |
       | lp2   | 0.9387755102040816 | 50000                   |
-    
+
     # Trigger entry into next market period
     And the network moves ahead "1" blocks:
 
@@ -299,7 +300,7 @@ Feature:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.0798085875103608 | 15628.7475              |
       | lp2   | 0.9201914124896392 | 50000                   |
-    
+
     # Trigger entry into next market period
     And the network moves ahead "1" blocks:
 
@@ -349,11 +350,11 @@ Feature:
 
     # CALCULATION:
     # liquidity_fee = ceil(volume * price * liquidity_fee_factor) =  ceil(53 * 1001 * 0.002) = ceil(106.106) = 107
-    
+
     When the following transfers should happen:
       | from   | to     | from account           | to account                  | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_GENERAL   | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 108    | USD   |
-    
+
     Then the accumulated liquidity fees should be "108" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
@@ -394,13 +395,13 @@ Feature:
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
-    
+
     # Check equity-like-shares before network moves forward
     Given the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
       | lp1   | 0.062347621397563 | 15628.7475              |
       | lp2   | 0.937652378602437 | 50000                   |
-    
+
     # Trigger entry into next market period
     When the network moves ahead "1" blocks:
 
@@ -411,11 +412,11 @@ Feature:
       | lp2   | 0.937652378602437 | 50000                   |
 
     # -------------------------------------------------------------------------------------------------------------------
-    # -------------------------------------------------------------------------------------------------------------------    
+    # -------------------------------------------------------------------------------------------------------------------
 
 
     # 4nd period: 2 LPs increase commitment, positive growth:
-    # ------------------------------------------------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------------------------------------------------
 
     # Check equity-like-shares before liquidity amendment
     Given the liquidity provider fee shares for the market "ETH/MAR22" should be:
@@ -442,7 +443,7 @@ Feature:
       | lp1   | 0.0793539352012749 | 24338.910470882276956   |
       | lp2   | 0.9206460647987251 | 50031.9434648593284309  |
 
-    # ------------------------------------------------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------------------------------------------------
 
     Given the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -495,13 +496,13 @@ Feature:
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
-    
+
     # Check equity-like-shares before network moves forward
     Given the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.0793539352012749 | 24338.910470882276956   |
       | lp2   | 0.9206460647987251 | 50031.9434648593284309  |
-    
+
     # Trigger entry into next market period
     When the network moves ahead "1" blocks:
 
@@ -512,7 +513,7 @@ Feature:
       | lp2   | 0.9206460647987251 | 50031.9434648593284309  |
 
     # -------------------------------------------------------------------------------------------------------------------
-    # ------------------------------------------------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------------------------------------------------
 
 
     # 5th period: 1 LPs decrease commitment 1 LPs increase commitment, some trades occur
@@ -596,13 +597,13 @@ Feature:
     Then the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
-    
+
     # Check equity-like-shares before network moves forward
     Given the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.0595510182668165 | 24338.910470882276956   |
       | lp2   | 0.9404489817331835 | 50072.5548801159555759  |
-    
+
     # Trigger entry into next market period
     When the network moves ahead "1" blocks:
 
@@ -680,7 +681,7 @@ Feature:
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 1000         | 30000          | 10            |
-    
+
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.3333333333333333 | 10000                   |
@@ -737,8 +738,8 @@ Feature:
     And the accumulated liquidity fees should be "17" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 2602         | 31000          | 26            |
+      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 2602         | 31000          | 26            |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -771,7 +772,7 @@ Feature:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.3548387096774194 | 11909.0909090909090909  |
       | lp2   | 0.6451612903225806 | 30000                   |
-    
+
     # Trigger entry into next market period
     And the network moves ahead "1" blocks:
 
@@ -805,7 +806,7 @@ Feature:
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.370450673687471 | 14360.4                  |
-      | lp2   | 0.629549326312529 | 30000                    |         
+      | lp2   | 0.629549326312529 | 30000                    |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -861,7 +862,7 @@ Feature:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.370450673687471 | 14360.4                  |
       | lp2   | 0.629549326312529 | 30000                    |
-    
+
     # Trigger entry into next market period
     And the network moves ahead "1" blocks:
 
@@ -919,7 +920,7 @@ Feature:
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 1000         | 20000          | 10            |
-    
+
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
       | lp1   | 0.5               | 10000                    |
@@ -951,8 +952,8 @@ Feature:
     And the accumulated liquidity fees should be "22" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 3003         | 20000          | 30            |
+      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 3003         | 20000          | 30            |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -973,7 +974,7 @@ Feature:
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
-    
+
     # Trigger entry into next market period
     When the network moves ahead "1" blocks:
 
@@ -996,7 +997,7 @@ Feature:
       | lp1 | lp3   | ETH/MAR22 | 10000             | 0.001 | buy  | MID              | 3          | 1      | amendment  |
       | lp1 | lp3   | ETH/MAR22 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment  |
       | lp1 | lp3   | ETH/MAR22 | 10000             | 0.001 | sell | MID              | 3          | 1      | amendment  |
-    
+
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.3750624687656172 | 10000                   |
@@ -1043,7 +1044,7 @@ Feature:
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
-    
+
     # Trigger entry into next market period
     And the network moves ahead "1" blocks:
 
@@ -1098,7 +1099,7 @@ Feature:
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
-    
+
     # Trigger entry into next market period
     And the network moves ahead "1" blocks:
 
@@ -1128,7 +1129,7 @@ Feature:
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
-    
+
     # Trigger entry into next market period
     And the network moves ahead "1" blocks:
 
@@ -1158,7 +1159,7 @@ Feature:
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
-    
+
     # Trigger entry into next market period
     And the network moves ahead "1" blocks:
 
@@ -1188,7 +1189,7 @@ Feature:
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
-    
+
     # Trigger entry into next market period
     And the network moves ahead "1" blocks:
 
@@ -1218,7 +1219,7 @@ Feature:
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
-    
+
     # Trigger entry into next market period
     And the network moves ahead "1" blocks:
 

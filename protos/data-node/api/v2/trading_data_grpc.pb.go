@@ -76,9 +76,9 @@ type TradingDataServiceClient interface {
 	// An account is defined a 4-tuple of (asset_id, type, party_id, market_id).
 	//   - Every account has associated asset and type.
 	//   - Certain account types (for example, the global reward pool) do not have an associated party.
-	//     These are denoted by the special party identifier '*'
+	//     These are denoted by the special party identifier 'network'
 	//   - Certain account types do not have an associated market (for example general party accounts)
-	//     These are denoted by the special market identifier '!'
+	//     These are denoted by the special market identifier ” (the empty string)
 	//
 	// `ListBalanceChangesRequest` will return a list of
 	// `(vega_time, asset_id, account_type, party_id, market_id, balance)`
@@ -1524,9 +1524,9 @@ type TradingDataServiceServer interface {
 	// An account is defined a 4-tuple of (asset_id, type, party_id, market_id).
 	//   - Every account has associated asset and type.
 	//   - Certain account types (for example, the global reward pool) do not have an associated party.
-	//     These are denoted by the special party identifier '*'
+	//     These are denoted by the special party identifier 'network'
 	//   - Certain account types do not have an associated market (for example general party accounts)
-	//     These are denoted by the special market identifier '!'
+	//     These are denoted by the special market identifier ” (the empty string)
 	//
 	// `ListBalanceChangesRequest` will return a list of
 	// `(vega_time, asset_id, account_type, party_id, market_id, balance)`

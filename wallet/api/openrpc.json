@@ -21,16 +21,7 @@
         }
       ],
       "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "hostname",
-          "description": "The name of the third-party application initiating the connection.",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
+      "params": [],
       "result": {
         "name": "Success",
         "required": true,
@@ -384,10 +375,10 @@
           }
         },
         {
-          "name": "encodedTransaction",
+          "name": "transaction",
           "required": true,
           "schema": {
-            "$ref": "#/components/schemas/encoded_transaction"
+            "$ref": "#/components/schemas/transaction"
           }
         }
       ],
@@ -495,10 +486,10 @@
           }
         },
         {
-          "name": "encodedTransaction",
+          "name": "transaction",
           "required": true,
           "schema": {
-            "$ref": "#/components/schemas/encoded_transaction"
+            "$ref": "#/components/schemas/transaction"
           }
         }
       ],
@@ -996,7 +987,7 @@
               "name": "my-wallet",
               "version": 2,
               "type": "HD Wallet",
-              "ID": "7ffa36b2fb99d8404e9448f0d2ce944055e64c36d895d1fde044c867bfdf779f"
+              "id": "7ffa36b2fb99d8404e9448f0d2ce944055e64c36d895d1fde044c867bfdf779f"
             }
           }
         }
@@ -1111,7 +1102,7 @@
           ],
           "result": {
             "name": "Success",
-            "value": {}
+            "value": null
           }
         }
       ]
@@ -1156,7 +1147,7 @@
           ],
           "result": {
             "name": "Success",
-            "value": {}
+            "value": null
           }
         }
       ]
@@ -1224,7 +1215,7 @@
       "paramStructure": "by-name",
       "params": [
         {
-          "name": "network",
+          "name": "name",
           "required": true,
           "schema": {
             "type": "string"
@@ -1279,9 +1270,9 @@
             "name": "Success",
             "value": {
               "name": "local-network",
-              "level": "info",
+              "logLevel": "info",
               "tokenExpiry": "168h0m0s",
-              "port": "1789",
+              "port": 1789,
               "host": "localhost",
               "api": {
                 "grpcConfig": {
@@ -1418,7 +1409,7 @@
           ],
           "result": {
             "name": "Success",
-            "value": {}
+            "value": null
           }
         }
       ]
@@ -1463,7 +1454,7 @@
           ],
           "result": {
             "name": "Success",
-            "value": {}
+            "value": null
           }
         }
       ]
@@ -2395,11 +2386,13 @@
           "result": {
             "name": "Success",
             "value": {
-              "publicKeys": {
-                "access": "read",
-                "restrictedKeys": [
-                  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
-                ]
+              "permissions": {
+                "publicKeys": {
+                  "access": "read",
+                  "restrictedKeys": [
+                    "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
+                  ]
+                }
               }
             }
           }
@@ -2446,8 +2439,12 @@
           "properties": {
             "permissions": {
               "type": "object",
-              "additionalProperties": {
-                "type": "string"
+              "patternProperties": {
+                ".": {
+                  "schema": {
+                    "$ref": "#/components/schemas/permissions_summary"
+                  }
+                }
               }
             }
           }
@@ -2571,11 +2568,13 @@
           "result": {
             "name": "Success",
             "value": {
-              "publicKeys": {
-                "access": "read",
-                "restrictedKeys": [
-                  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
-                ]
+              "permissions": {
+                "publicKeys": {
+                  "access": "read",
+                  "restrictedKeys": [
+                    "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
+                  ]
+                }
               }
             }
           }
@@ -2761,10 +2760,11 @@
           }
         },
         {
-          "name": "encodedCommand",
+          "name": "transaction",
           "required": true,
           "schema": {
-            "type": "string"
+            "type": "object",
+            "$ref": "#/components/schemas/transaction"
           }
         }
       ],
@@ -2842,7 +2842,36 @@
             }
           }
         }
-      }
+      },
+      "examples": [
+        {
+          "name": "Sign a message",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            },
+            {
+              "name": "pubKey",
+              "value": "0101010101010101010101010101010101010101010101010101010101010101"
+            },
+            {
+              "name": "encodedMessage",
+              "value": "U3VwZXIgc2VjcmV0IG1lc3NhZ2U="
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "encodedSignature": "6a2Ud6yuNcnOaO8jaiTJJi8dZBQzvNySV2Tt2hD+YhVnz1dNxHGUavU2a1W1z0/1uX0n91x2jWXONMRpiiNODg=="
+            }
+          }
+        }
+      ]
     },
     {
       "name": "admin.verify_message",
@@ -2900,6 +2929,100 @@
     },
     {
       "name": "admin.send_transaction",
+      "summary": "Sign & send a transaction to a network",
+      "description": "This method signs a transaction returning a base64-encoded transaction that can be sent using the method `admin.send_transaction`",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "transaction"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "pubKey",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "network",
+          "schema": {
+            "type": "integer"
+          }
+        },
+        {
+          "name": "sendingMode",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/sending_mode"
+          }
+        },
+        {
+          "name": "transaction",
+          "required": true,
+          "schema": {
+            "type": "object",
+            "$ref": "#/components/schemas/transaction"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "object",
+          "required": [
+            "receivedAt",
+            "sentAt",
+            "transactionHash",
+            "transaction"
+          ],
+          "properties": {
+            "receivedAt": {
+              "type": "string",
+              "description": "The date when the API received the request to send the transaction.\n\nThe time is a quoted string in RFC 3339 format, with sub-second precision added if present.",
+              "examples": [
+                "2021-02-18T21:54:42.123Z"
+              ]
+            },
+            "sentAt": {
+              "type": "string",
+              "description": "The date when the transaction has been sent to the network.\n\nThe time is a quoted string in RFC 3339 format, with sub-second precision added if present.",
+              "examples": [
+                "2021-02-18T21:54:42.123Z"
+              ]
+            },
+            "transactionHash": {
+              "type": "string",
+              "description": "The hash of the transaction. It's used to uniquely identify the transaction and can be used in the block explorer to retrieve it."
+            },
+            "transaction": {
+              "$ref": "#/components/schemas/signed_transaction"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "admin.send_raw_transaction",
       "summary": "Send a signed transaction to a network",
       "description": "This method sends a transaction that was signed using admin.sign_transaction into a network",
       "tags": [
@@ -2988,6 +3111,383 @@
           }
         }
       }
+    },
+    {
+      "name": "admin.start_service",
+      "summary": "Start a wallet service.",
+      "description": "This method starts a wallet service targeting the specified network.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "service"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "network",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "noVersionCheck",
+          "required": true,
+          "schema": {
+            "type": "boolean"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Start the service",
+          "params": [
+            {
+              "name": "network",
+              "value": "mainnet1"
+            },
+            {
+              "name": "noVersionCheck",
+              "value": false
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.stop_service",
+      "summary": "Stop a wallet service.",
+      "description": "This method stops the wallet service targeting the specified network. This automatically disconnects all the wallets used in the service.\n\nIt does not fail if there is no service running for this network.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "service"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "network",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Stop a running service",
+          "params": [
+            {
+              "name": "network",
+              "value": "mainnet1"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
+          }
+        },
+        {
+          "name": "Stop a non-running service",
+          "params": [
+            {
+              "name": "network",
+              "value": "network-without-running-service"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.list_connections",
+      "summary": "List all the connections of a service.",
+      "description": "This method lists all the connections of a service.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "service"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "network",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "object",
+          "required": [
+            "activeConnections"
+          ],
+          "properties": {
+            "activeConnections": {
+              "type": "array",
+              "description": "The list is sorted by hostname, then by wallet name.",
+              "items": {
+                "type": "object",
+                "required": [
+                  "hostname",
+                  "wallet"
+                ],
+                "properties": {
+                  "hostname": {
+                    "type": "string"
+                  },
+                  "wallet": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "List the connection of a service",
+          "params": [
+            {
+              "name": "network",
+              "value": "mainnet1"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "activeConnections": [
+                {
+                  "hostname": "console.vega.xyz",
+                  "wallet": "my-btc-wallet"
+                },
+                {
+                  "hostname": "vega.xyz",
+                  "wallet": "my-btc-wallet"
+                },
+                {
+                  "hostname": "vega.xyz",
+                  "wallet": "my-eth-wallet"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.close_connection",
+      "summary": "Close the connection between a third-party application and a wallet.",
+      "description": "This method closes the connection between a third-party application and a wallet opened in the service that run against the specified network.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "service"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "network",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "hostname",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Close a connection",
+          "params": [
+            {
+              "name": "network",
+              "value": "mainnet1"
+            },
+            {
+              "name": "hostname",
+              "value": "vega.xyz"
+            },
+            {
+              "name": "wallet",
+              "value": "my-btc-wallet"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.close_connections_to_hostname",
+      "summary": "Close the connection from the specified third-party application to any wallet.",
+      "description": "This method closes all the connections from the specified hostname to any wallet opened in the service that run against the specified network.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "service"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "network",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "hostname",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Close all connections to a given hostname",
+          "params": [
+            {
+              "name": "network",
+              "value": "mainnet1"
+            },
+            {
+              "name": "hostname",
+              "value": "vega.xyz"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.close_connections_to_wallet",
+      "summary": "Close the connection from any third-party application to the specified wallet.",
+      "description": "This method closes all the connections from any hostname to the specified wallet opened in the service that run against the specified network.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "service"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "network",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Close all connections to a given wallet",
+          "params": [
+            {
+              "name": "network",
+              "value": "mainnet1"
+            },
+            {
+              "name": "wallet",
+              "value": "my-btc-wallet"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
+          }
+        }
+      ]
     }
   ],
   "components": {
@@ -3076,7 +3576,7 @@
             "type": "string"
           },
           "version": {
-            "type": "string"
+            "type": "number"
           }
         }
       },
@@ -3115,6 +3615,10 @@
       "encoded_transaction": {
         "type": "string",
         "description": "The transaction encoded using base-64."
+      },
+      "transaction": {
+        "type": "object",
+        "description": "The transaction as a JSON object"
       },
       "access_mode": {
         "type": "string",

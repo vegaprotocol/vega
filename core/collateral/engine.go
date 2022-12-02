@@ -1113,7 +1113,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 
 		req, err := e.getTransferRequest(transfer, settle, nil, mevt)
 		if err != nil {
-			return nil, nil, nil, err
+			return response, closed, toPenalise, err
 		}
 
 		// calculate the marginShortFall in case of a liquidityProvider
@@ -1123,7 +1123,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 
 		res, err := e.getLedgerEntries(ctx, req)
 		if err != nil {
-			return nil, nil, nil, err
+			return response, closed, toPenalise, err
 		}
 		// we didn't manage to top up to even the minimum required system margin, close out party
 		// we need to be careful with this, only apply this to transfer for low margin
@@ -2374,31 +2374,36 @@ func (e *Engine) ClearPartyMarginAccount(ctx context.Context, party, market, ass
 	if err != nil {
 		return nil, err
 	}
+
+	// preevent returning empty ledger movements
+	if acc.Balance.IsZero() {
+		return nil, nil
+	}
+
 	resp := types.LedgerMovement{
 		Entries: []*types.LedgerEntry{},
 	}
 	now := e.timeService.GetTimeNow().UnixNano()
 
-	if !acc.Balance.IsZero() {
-		genAcc, err := e.GetAccountByID(e.accountID(noMarket, party, asset, types.AccountTypeGeneral))
-		if err != nil {
-			return nil, err
-		}
-
-		resp.Entries = append(resp.Entries, &types.LedgerEntry{
-			FromAccount: acc.ToDetails(),
-			ToAccount:   genAcc.ToDetails(),
-			Amount:      acc.Balance.Clone(),
-			Type:        types.TransferTypeMarginHigh,
-			Timestamp:   now,
-		})
-		if err := e.IncrementBalance(ctx, genAcc.ID, acc.Balance); err != nil {
-			return nil, err
-		}
-		if err := e.UpdateBalance(ctx, acc.ID, acc.Balance.SetUint64(0)); err != nil {
-			return nil, err
-		}
+	genAcc, err := e.GetAccountByID(e.accountID(noMarket, party, asset, types.AccountTypeGeneral))
+	if err != nil {
+		return nil, err
 	}
+
+	resp.Entries = append(resp.Entries, &types.LedgerEntry{
+		FromAccount: acc.ToDetails(),
+		ToAccount:   genAcc.ToDetails(),
+		Amount:      acc.Balance.Clone(),
+		Type:        types.TransferTypeMarginHigh,
+		Timestamp:   now,
+	})
+	if err := e.IncrementBalance(ctx, genAcc.ID, acc.Balance); err != nil {
+		return nil, err
+	}
+	if err := e.UpdateBalance(ctx, acc.ID, acc.Balance.SetUint64(0)); err != nil {
+		return nil, err
+	}
+
 	return &resp, nil
 }
 
