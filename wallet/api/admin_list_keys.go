@@ -29,7 +29,7 @@ type AdminListKeys struct {
 }
 
 // Handle list all the generated key from the specified wallet.
-func (h *AdminListKeys) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminListKeys) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminListKeysParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

@@ -166,7 +166,7 @@ func testRotatingKeyWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newRotateKeyHandler(tt)
@@ -430,7 +430,7 @@ type rotateKeyHandler struct {
 func (h *rotateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminRotateKeyResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminRotateKeyResult)
 		if !ok {

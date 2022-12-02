@@ -42,6 +42,9 @@
           "400": {
             "description": "The submitted request does not have a valid format, or doesn't comply with the API constraints, or failed."
           },
+          "401": {
+            "description": "The server is not able to infer the hostname of the client through the \"Origin\" and \"Referer\" headers."
+          },
           "500": {
             "description": "Something failed internally. Nothing can be done about it."
           }

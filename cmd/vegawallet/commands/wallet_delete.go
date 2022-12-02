@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
@@ -50,7 +51,7 @@ func NewCmdDeleteWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 
 		deleteWallet := api.NewAdminRemoveWallet(s)
 
-		_, errDetails := deleteWallet.Handle(context.Background(), params)
+		_, errDetails := deleteWallet.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
 		if errDetails != nil {
 			return errors.New(errDetails.Data)
 		}

@@ -21,16 +21,7 @@
         }
       ],
       "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "hostname",
-          "description": "The name of the third-party application initiating the connection.",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
+      "params": [],
       "result": {
         "name": "Success",
         "required": true,
