@@ -26,7 +26,7 @@ type Epoch struct {
 	EndTime    *time.Time
 	TxHash     TxHash
 	VegaTime   time.Time
-	FirstBlock int64
+	FirstBlock *int64
 	LastBlock  *int64
 }
 
@@ -36,11 +36,13 @@ func (e *Epoch) ToProto() *vega.Epoch {
 		Timestamps: &vega.EpochTimestamps{
 			StartTime:  e.StartTime.UnixNano(),
 			ExpiryTime: e.ExpireTime.UnixNano(),
-			FirstBlock: uint64(e.FirstBlock),
 		},
 	}
 	if e.EndTime != nil {
 		protoEpoch.Timestamps.EndTime = e.EndTime.UnixNano()
+	}
+	if e.FirstBlock != nil {
+		protoEpoch.Timestamps.FirstBlock = uint64(*e.FirstBlock)
 	}
 	if e.LastBlock != nil {
 		protoEpoch.Timestamps.LastBlock = uint64(*e.LastBlock)
@@ -48,21 +50,18 @@ func (e *Epoch) ToProto() *vega.Epoch {
 	return &protoEpoch
 }
 
-func EpochFromProto(ee eventspb.EpochEvent, txHash TxHash, blockNr int64) Epoch {
+func EpochFromProto(ee eventspb.EpochEvent, txHash TxHash) Epoch {
+	var endTime *time.Time
+	if ee.Action == vega.EpochAction_EPOCH_ACTION_END {
+		t := NanosToPostgresTimestamp(ee.EndTime)
+		endTime = &t
+	}
 	epoch := Epoch{
 		ID:         int64(ee.Seq),
 		StartTime:  NanosToPostgresTimestamp(ee.StartTime),
 		ExpireTime: NanosToPostgresTimestamp(ee.ExpireTime),
+		EndTime:    endTime,
 		TxHash:     txHash,
-	}
-	switch ee.Action {
-	case vega.EpochAction_EPOCH_ACTION_START:
-		epoch.FirstBlock = blockNr
-	case vega.EpochAction_EPOCH_ACTION_END:
-		if blockNr > 0 {
-			epoch.LastBlock = &blockNr
-		}
-		epoch.EndTime = toPtr(NanosToPostgresTimestamp(ee.EndTime))
 	}
 	return epoch
 }

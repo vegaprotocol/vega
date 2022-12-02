@@ -38,7 +38,12 @@ func addTestEpoch(t *testing.T, es *sqlstore.Epochs,
 		ExpireTime: expireTime,
 		EndTime:    endTime,
 		VegaTime:   block.VegaTime,
-		FirstBlock: block.Height,
+		FirstBlock: &block.Height,
+	}
+	if endTime == nil {
+		r.FirstBlock = &block.Height
+	} else {
+		r.LastBlock = &block.Height
 	}
 	err := es.Add(context.Background(), r)
 	require.NoError(t, err)
@@ -50,9 +55,6 @@ func TestEpochs(t *testing.T) {
 	ctx := context.Background()
 	es := sqlstore.NewEpochs(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
-	block1 := addTestBlock(t, bs)
-	block2 := addTestBlock(t, bs)
-	block3 := addTestBlock(t, bs)
 
 	epoch1Start := time.Date(2022, 1, 1, 0, 0, 0, 0, time.Local)
 	epoch1Expire := epoch1Start.Add(time.Minute)
@@ -63,13 +65,19 @@ func TestEpochs(t *testing.T) {
 	epoch3Start := epoch2End
 	epoch3Expire := epoch3Start.Add(time.Minute)
 
+	block1 := addTestBlockWithVegaTime(t, bs, epoch1Start)
+	block2 := addTestBlockWithVegaTime(t, bs, epoch2Start)
+	block3 := addTestBlockWithVegaTime(t, bs, epoch2Expire)
+
 	// Insert one epoch that gets updated in the same block
 	epoch1 := addTestEpoch(t, es, 1, epoch1Start, epoch1Expire, nil, block1)
 	epoch1b := addTestEpoch(t, es, 1, epoch1Start, epoch1Expire, &epoch1End, block1)
+	epoch1b.FirstBlock = &block1.Height
 
 	// And another which is updated in a subsequent block
 	epoch2 := addTestEpoch(t, es, 2, epoch2Start, epoch2Expire, nil, block1)
 	epoch2b := addTestEpoch(t, es, 2, epoch2Start, epoch2Expire, &epoch2End, block2)
+	epoch2b.FirstBlock = &block1.Height
 
 	// And finally one which isn't updated (e.g. hasn't ended yet)
 	epoch3 := addTestEpoch(t, es, 3, epoch3Start, epoch3Expire, nil, block3)

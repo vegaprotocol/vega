@@ -18,14 +18,20 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"github.com/stretchr/testify/assert"
 )
 
 func addTestBlock(t *testing.T, bs *sqlstore.Blocks) entities.Block {
 	t.Helper()
 	return addTestBlockForTime(t, bs, time.Now())
+}
+
+func addTestBlockWithVegaTime(t *testing.T, bs *sqlstore.Blocks, vegaTime time.Time) entities.Block {
+	t.Helper()
+	return addTestBlockForTime(t, bs, vegaTime)
 }
 
 func addTestBlockForTime(t *testing.T, bs *sqlstore.Blocks, vegaTime time.Time) entities.Block {
