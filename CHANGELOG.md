@@ -12,7 +12,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7011](https://github.com/vegaprotocol/vega/issues/7011) - Incorrect flagging of live orders when multiple updates in the same block
 
 
 ## 0.63.1
