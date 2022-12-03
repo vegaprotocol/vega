@@ -861,19 +861,6 @@ func (m *Market) closeCancelledMarket(ctx context.Context) error {
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
-	// perform last MTM settlement if needed
-	if mp := m.getLastTradedPrice(); mp != nil && mp.IsZero() && m.settlement.HasTraded() {
-		// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
-		// works as expected.
-		m.markPrice = mp.Clone()
-		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
-		dummy := &types.Order{
-			ID:            m.idgen.NextID(),
-			Price:         mp,
-			OriginalPrice: mcmp,
-		}
-		m.confirmMTM(ctx, dummy, nil)
-	}
 	positions, err := m.settlement.Settle(t, m.assetDP)
 	if err != nil {
 		m.log.Error("Failed to get settle positions on market closed",
@@ -3227,34 +3214,29 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
 
 	if m.mkt.State != types.MarketStateProposed && m.mkt.State != types.MarketStatePending {
+		// we're either going to set state to trading terminated
+		// or we'll be performing the final settlement (setting market status to settled)
+		// in both cases, we want to MTM any pending trades
+		if mp := m.getLastTradedPrice(); mp != nil && mp.IsZero() && m.settlement.HasTraded() {
+			// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
+			// works as expected.
+			m.markPrice = mp.Clone()
+			mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
+			dummy := &types.Order{
+				ID:            m.idgen.NextID(),
+				Price:         mp,
+				OriginalPrice: mcmp,
+			}
+			m.confirmMTM(ctx, dummy, nil)
+		}
+		m.mkt.State = types.MarketStateTradingTerminated
+		m.mkt.TradingMode = types.MarketTradingModeNoTrading
+		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		if m.settlementDataInMarket != nil {
 			// because we need to be able to perform the MTM settlement, only update market state now
-			m.mkt.State = types.MarketStateTradingTerminated
-			m.mkt.TradingMode = types.MarketTradingModeNoTrading
-			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 			m.settlementDataWithLock(ctx)
 		} else {
-			// if settlementDataInMarket is nil, we won't perform the last MTM settlement yet
-			// we should, however, perform this settlement ASAP, regardless of whether or not
-			// we have a settlement price at this point
 			m.log.Debug("no settlement data", logging.MarketID(m.GetID()))
-			// perform last MTM settlement if needed
-			if mp := m.getLastTradedPrice(); mp != nil && mp.IsZero() && m.settlement.HasTraded() {
-				// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
-				// works as expected.
-				m.markPrice = mp.Clone()
-				mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
-				dummy := &types.Order{
-					ID:            m.idgen.NextID(),
-					Price:         mp,
-					OriginalPrice: mcmp,
-				}
-				m.confirmMTM(ctx, dummy, nil)
-			}
-			// because we need to be able to perform the MTM settlement, only update market state now
-			m.mkt.State = types.MarketStateTradingTerminated
-			m.mkt.TradingMode = types.MarketTradingModeNoTrading
-			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		}
 		return
 	}
