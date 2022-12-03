@@ -32,7 +32,7 @@ Feature: Position resolution case 5 lognormal risk model
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book; 0012-POSR-002, 0012-POSR-005, 0013-ACCT-022
+  Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book; 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001, 0013-ACCT-022
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -140,12 +140,12 @@ Feature: Position resolution case 5 lognormal risk model
       | aux2             | -1     | 10             | 0            |
 
     Then the parties should have the following account balances:
-      | party            | asset | market id | margin  | general            |
-      | designatedLooser | USD   | ETH/DEC19 | 0       | 0                  |
-      | sellSideProvider | USD   | ETH/DEC19 | 839594  | 999999163306       |
-      | buySideProvider  | USD   | ETH/DEC19 | 81259   | 999999924541       |
-      | aux              | USD   | ETH/DEC19 | 1088    | 999999998902       |
-      | aux2             | USD   | ETH/DEC19 | 2896    | 999999997114       |
+      | party            | asset | market id | margin | general      |
+      | designatedLooser | USD   | ETH/DEC19 | 0      | 0            |
+      | sellSideProvider | USD   | ETH/DEC19 | 839594 | 999999163306 |
+      | buySideProvider  | USD   | ETH/DEC19 | 81259  | 999999924541 |
+      | aux              | USD   | ETH/DEC19 | 1088   | 999999998902 |
+      | aux2             | USD   | ETH/DEC19 | 2896   | 999999997114 |
 
     # check margin levels
     Then the parties should have the following margin levels:
@@ -169,6 +169,11 @@ Feature: Position resolution case 5 lognormal risk model
 
     And the insurance pool balance should be "12900" for the market "ETH/DEC19"
 
+    Then the parties should have the following account balances:
+      | party            | asset | market id | margin | general      |
+      | buySideProvider  | USD   | ETH/DEC19 | 81259  | 999999924541 |
+      | sellSideProvider | USD   | ETH/DEC19 | 839594 | 999999163306 |
+
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux   | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -178,9 +183,22 @@ Feature: Position resolution case 5 lognormal risk model
       | mark price | trading mode            | target stake | supplied stake | open interest |
       | 120        | TRADING_MODE_CONTINUOUS | 340728       | 0              | 291           |
 
+    And the insurance pool balance should be "12900" for the market "ETH/DEC19"
+
+    Then the parties should have the following account balances:
+      | party            | asset | market id | margin | general      |
+      | buySideProvider  | USD   | ETH/DEC19 | 75439  | 999999924541 |
+      | sellSideProvider | USD   | ETH/DEC19 | 845414 | 999999163306 |
+
+    # Double entry accounting is maintained at all points
+    # i.e. every transfer event has a source account and destination account and the balance of the source account before the transfer equals to the balance of source account minus the transfer amount after the transfer and balance of the destination account before the transfer plus the transfer amount equals to the balance of the destination account after the transfer.
+    # source account(before transfer)- transfer amount = destination account: 81259-5820=75439
+    # destination account (before transfer) + transfer amount = destination account: 839594+5820=845414
+
     Then the following transfers should happen:
-      | from            | to     | from account        | to account              | market id | amount | asset |
-      | buySideProvider | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 5820   | USD   |
+      | from            | to               | from account            | to account              | market id | amount | asset |
+      | buySideProvider | market           | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 5820   | USD   |
+      | market          | sellSideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 5820   | USD   |
 
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
