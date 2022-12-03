@@ -3229,6 +3229,10 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	if m.mkt.State != types.MarketStateProposed && m.mkt.State != types.MarketStatePending {
 
 		if m.settlementDataInMarket != nil {
+			// because we need to be able to perform the MTM settlement, only update market state now
+			m.mkt.State = types.MarketStateTradingTerminated
+			m.mkt.TradingMode = types.MarketTradingModeNoTrading
+			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 			m.settlementDataWithLock(ctx)
 		} else {
 			// if settlementDataInMarket is nil, we won't perform the last MTM settlement yet
@@ -3248,11 +3252,11 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 				}
 				m.confirmMTM(ctx, dummy, nil)
 			}
+			// because we need to be able to perform the MTM settlement, only update market state now
+			m.mkt.State = types.MarketStateTradingTerminated
+			m.mkt.TradingMode = types.MarketTradingModeNoTrading
+			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		}
-		// because we need to be able to perform the MTM settlement, only update market state now
-		m.mkt.State = types.MarketStateTradingTerminated
-		m.mkt.TradingMode = types.MarketTradingModeNoTrading
-		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		return
 	}
 	for party := range m.parties {
