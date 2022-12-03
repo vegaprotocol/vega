@@ -3227,7 +3227,6 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
 
 	if m.mkt.State != types.MarketStateProposed && m.mkt.State != types.MarketStatePending {
-
 		if m.settlementDataInMarket != nil {
 			// because we need to be able to perform the MTM settlement, only update market state now
 			m.mkt.State = types.MarketStateTradingTerminated
@@ -3272,7 +3271,6 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	}
 
 	m.log.Debug("market must not terminated before its enactment time", logging.MarketID(m.GetID()))
-	return
 }
 
 func (m *Market) settlementData(ctx context.Context, settlementData *num.Uint) {
