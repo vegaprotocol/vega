@@ -16,9 +16,9 @@ import "testing"
 
 func TestEpochs(t *testing.T) {
 	queries := map[string]string{
-		"CurrentEpoch":     `{ epoch{ id timestamps{ start, expiry, end } } }`,
+		"CurrentEpoch":     `{ epoch{ id timestamps{ start, expiry, end, firstBlock, lastBlock } } }`,
 		"EpochDelegations": `{ epoch{ delegationsConnection { edges { node { node { id }, party {id}, amount } } } } }`,
-		"SpecificEpoch":    `{ epoch(id:"10") { id timestamps{ start, expiry, end } } }`,
+		"SpecificEpoch":    `{ epoch(id:"10") { id timestamps{ start, expiry, end, firstBlock, lastBlock } } }`,
 	}
 
 	for name, query := range queries {
