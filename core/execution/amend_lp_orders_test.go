@@ -591,11 +591,11 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 	tm.events = nil
 	tm.EndOpeningAuction(t, auctionEnd, false)
 
-	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
+	t.Run("margin account is updated with the new commitment", func(t *testing.T) {
 		acc, err := tm.collateralEngine.GetPartyMarginAccount(
 			tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
-		assert.Equal(t, num.NewUint(67860), acc.Balance)
+		assert.Equal(t, num.NewUint(33930), acc.Balance)
 	})
 
 	tm.market.OnTick(ctx, auctionEnd.Add(2*time.Second))
@@ -732,11 +732,10 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 			tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
 		assert.Equal(t, num.NewUint(150000), acc.Balance)
-		// acc, err := tm.collateralEngine.GetPartyMarginAccount(
 		acc, err = tm.collateralEngine.GetPartyMarginAccount(
 			tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
-		assert.True(t, acc.Balance.EQ(num.NewUint(336872)))
+		assert.True(t, acc.Balance.EQ(num.NewUint(164800)))
 	})
 
 	tm.market.OnTick(ctx, auctionEnd.Add(2*time.Second))
@@ -773,8 +772,10 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 
 	// commitment is being updated during auction
 	lpSubmissionUpdate := &types.LiquidityProvisionAmendment{
-		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.NewUint(200000),
+		MarketID: tm.market.GetID(),
+		// Now let's raise the commitment amount to the total available balance of the party (current bond account balance + margin account balance).
+		// This will be enough to go through the updated bond balance check, but not enough to cover the new margin requirements coming from larger commitment obligation.
+		CommitmentAmount: num.NewUint(781648),
 		Reference:        "ref-lp-submission-2",
 		Buys: []*types.LiquidityOrder{
 			newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
@@ -786,11 +787,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		},
 	}
 
-	// the submission should be all OK
-	// order are not deployed while still in auction
-	require.NoError(t,
-		tm.market.AmendLiquidityProvision(
-			ctx, lpSubmissionUpdate, lpparty, vgcrypto.RandomHash()),
-		"margin would be below maintenance: insufficient margin",
-	)
+	err := tm.market.AmendLiquidityProvision(
+		ctx, lpSubmissionUpdate, lpparty, vgcrypto.RandomHash())
+	require.EqualError(t, err, "margin would be below maintenance: insufficient margin")
 }

@@ -29,7 +29,9 @@ import (
 
 func TestIssue2876(t *testing.T) {
 	now := time.Unix(10, 0)
-	tm := getTestMarketWithDP(t, now, defaultPriceMonitorSettings, &types.AuctionDuration{Duration: 30}, 3)
+	// set the range so that the old bounds are reproduced
+	lpRange := 0.0714285714
+	tm := getTestMarketWithDP(t, now, defaultPriceMonitorSettings, &types.AuctionDuration{Duration: 30}, 3, lpRange)
 	ctx := context.Background()
 	ctx = vegacontext.WithTraceID(ctx, vgcrypto.RandomHash())
 
@@ -138,12 +140,10 @@ func TestIssue2876(t *testing.T) {
 	marginAccount, err = tm.collateralEngine.GetPartyMarginAccount(tm.market.GetID(), "party-2", tm.asset)
 	assert.NoError(t, err)
 
-	expMargin := num.NewUint(24001200)
-	// expMargin := num.NewUint(30622560)
+	expMargin := num.NewUint(1507200)
 	assert.True(t, marginAccount.Balance.EQ(expMargin), "Expected: "+expMargin.String()+" got "+marginAccount.Balance.String())
 
-	expGeneral := num.NewUint(74998800)
-	// expGeneral := num.NewUint(68377440)
+	expGeneral := num.NewUint(97492800)
 	// but also some funds left in the genearal
 	generalAccount, err = tm.collateralEngine.GetPartyGeneralAccount("party-2", tm.asset)
 	assert.NoError(t, err)

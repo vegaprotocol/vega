@@ -202,7 +202,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 	// end opening auction
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
-	mainPartyInitialDeposit := uint64(199) // 199 is the minimum required amount to meet the commitment amount and maintenance margin on resulting orders
+	mainPartyInitialDeposit := uint64(347) // 348 is the minimum required amount to meet the commitment amount and maintenance margin on resulting orders
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
 	mainPartyGenAccID := transferResp.Entries[0].ToAccount
 
@@ -234,10 +234,15 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 		},
 	}
 
+	// Assure that at least the commitment amount can be covered with the initial deposit, otherwise it's a trivial failure (LP can't even afford the bond)
+	require.Greater(t, mainPartyInitialDeposit, lp1.CommitmentAmount.Uint64())
+
+	numLpsPriorToSubmission := tm.market.GetLPSCount()
+
 	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, vgcrypto.RandomHash())
 	require.Error(t, err)
 
-	assert.Equal(t, 0, tm.market.GetLPSCount())
+	assert.Equal(t, numLpsPriorToSubmission, tm.market.GetLPSCount())
 
 	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)
@@ -704,7 +709,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	now := time.Unix(10, 0)
 	ctx := context.Background()
 	openingAuctionDuration := &types.AuctionDuration{Duration: 10}
-	tm := getTestMarket2(t, now, nil, openingAuctionDuration, true)
+	tm := getTestMarket2(t, now, nil, openingAuctionDuration, true, 0.99)
 
 	mktData := tm.market.GetMarketData()
 	require.NotNil(t, mktData)
