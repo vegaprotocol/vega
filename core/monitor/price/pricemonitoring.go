@@ -149,6 +149,7 @@ type Engine struct {
 func (e *Engine) UpdateSettings(riskModel risk.Model, settings *types.PriceMonitoringSettings) {
 	e.riskModel = riskModel
 	e.fpHorizons, e.bounds = computeBoundsAndHorizons(settings)
+	e.initialised = false
 	e.boundFactorsInitialised = false
 	e.priceRangesCache = make(map[*bound]priceRange, len(e.bounds)) // clear the cache
 	// reset reference cache
