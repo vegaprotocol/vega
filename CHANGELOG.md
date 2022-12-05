@@ -19,6 +19,7 @@
 
 ### 🛠 Improvements
 - [7003](https://github.com/vegaprotocol/vega/pull/7003) - Expose bus event stream on the `REST` API
+- [7044](https://github.com/vegaprotocol/vega/issues/7044) - Proof of work improvements 
 
 ## 0.63.0
 

@@ -298,7 +298,7 @@ func newServices(
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		svcs.pow = pow.NewNoop()
 	} else {
-		pow := pow.New(svcs.log, svcs.conf.PoW, svcs.epochService)
+		pow := pow.New(svcs.log, svcs.conf.PoW, svcs.timeService)
 		svcs.pow = pow
 		svcs.snapshot.AddProviders(pow)
 		powWatchers = []netparams.WatchParam{
