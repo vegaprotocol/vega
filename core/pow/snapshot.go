@@ -115,7 +115,6 @@ func (e *Engine) statesToSnapshotStates() []*snapshot.ProofOfWorkState {
 		states = append(states, &snapshot.ProofOfWorkState{
 			PowState: e.blocksState(s.blockToPartyState),
 		})
-
 	}
 	return states
 }

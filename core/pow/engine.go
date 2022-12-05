@@ -76,7 +76,6 @@ type Engine struct {
 	bannedParties map[string]time.Time // banned party -> release time
 
 	currentBlock uint64              // the current block height
-	currentEpoch uint64              // the current epoch sequence
 	blockHeight  [ringSize]uint64    // block heights in scope ring buffer - this has a fixed size which is equal to the maximum value of the network parameter
 	blockHash    [ringSize]string    // block hashes in scope ring buffer - this has a fixed size which is equal to the maximum value of the network parameter
 	seenTx       map[string]struct{} // seen transactions in scope set
