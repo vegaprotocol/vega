@@ -630,6 +630,7 @@ type Market struct {
 	OpeningAuction                *AuctionDuration
 	PriceMonitoringSettings       *PriceMonitoringSettings
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
+	LPPriceRange                  num.Decimal
 
 	TradingMode      MarketTradingMode
 	State            MarketState

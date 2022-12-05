@@ -55,12 +55,12 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			},
 		},
 	}
-
+	partyLP := "party2"
 	tm := newTestMarket(t, now).Run(ctx, mktCfg)
 	tm.StartOpeningAuction().
 		WithAccountAndAmount("party-0", 1000000).
 		WithAccountAndAmount("party-1", 1000000).
-		WithAccountAndAmount("party-2", 10000000000).
+		WithAccountAndAmount(partyLP, 10000000000).
 		// provide stake as well but will cancel
 		WithAccountAndAmount("party-2-bis", 10000000000).
 		WithAccountAndAmount("party-3", 1000000).
@@ -108,7 +108,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			Remaining:   10,
 			Price:       num.NewUint(5500),
 			Side:        types.SideBuy,
-			Party:       "party-2",
+			Party:       partyLP,
 			TimeInForce: types.OrderTimeInForceGFA,
 		}),
 		tpl.New(types.Order{
@@ -116,7 +116,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			Remaining:   100,
 			Price:       num.NewUint(5000),
 			Side:        types.SideSell,
-			Party:       "party-2",
+			Party:       partyLP,
 			TimeInForce: types.OrderTimeInForceGTC,
 		}),
 		tpl.New(types.Order{
@@ -185,7 +185,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	tm.now = newT
 	tm.market.OnTick(ctx, newT)
 
-	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", vgcrypto.RandomHash()))
+	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, partyLP, vgcrypto.RandomHash()))
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
 	newT = newT.Add(10 * time.Second)
@@ -216,6 +216,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	// just trigger MTM bit
 	tm.market.OnTick(ctx, newT)
 
+	size := uint64(417)
 	// now all our orders have been cancelled
 	t.Run("ExpectedOrderStatus", func(t *testing.T) {
 		// First collect all the orders events
@@ -223,8 +224,8 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				if evt.Order().PartyId == "party-2" &&
-					evt.Order().Size == 833 { // "V0000000000-0000000010" {
+				if evt.Order().PartyId == partyLP &&
+					evt.Order().Size == size { // "V0000000000-0000000010" {
 					found = append(found, mustOrderFromProto(evt.Order()))
 				}
 			}
@@ -235,30 +236,30 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		// not have enough funds
 		expectedStatus := []struct {
 			status    types.OrderStatus
-			remaining int
+			remaining uint64
 		}{
 			{
 				// this is the first update indicating the order
 				// was matched
 				types.OrderStatusActive,
-				813, // size - 20
+				size - 20,
 			},
 			{
 				// this is the replacement order created
 				// by engine.
 				types.OrderStatusCancelled,
-				813, // size
+				size - 20,
 			},
 			{
-				// this is the cancellation
+				// this is the re-deployment
 				types.OrderStatusActive,
-				833, // cancelled
+				size, // original size restored
 			},
 			{
 				// this is quite possibly a duplicate because we're forcing the check
 				// for reference moves
 				types.OrderStatusActive,
-				833, // cancelled
+				size,
 			},
 		}
 
@@ -266,7 +267,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 
 		for i, expect := range expectedStatus {
 			got := found[i].Status
-			remaining := int(found[i].Remaining)
+			remaining := found[i].Remaining
 			assert.Equal(t, expect.status.String(), got.String())
 			assert.Equal(t, expect.remaining, remaining)
 		}

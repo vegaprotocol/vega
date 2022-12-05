@@ -183,27 +183,28 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	)
 
 	repriceFN := func(
-		order *types.PeggedOrder, side types.Side,
-	) (*num.Uint, *types.PeggedOrder, error) {
-		return num.NewUint(100), order, nil
+		side types.Side, ref types.PeggedReference, offset *num.Uint,
+	) (*num.Uint, error) {
+		return num.NewUint(100), nil
 	}
 
 	e2.priceMonitor.EXPECT().GetValidPriceRange().
 		Return(num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(90), num.DecimalFromInt64(110))).
 		AnyTimes()
 
-	_, _, err := e2.engine.Update(ctx, num.DecimalFromFloat(99), num.DecimalFromFloat(101),
-		repriceFN, []*types.Order{
-			{
-				ID:        "order-id-1",
-				Party:     party1,
-				MarketID:  market,
-				Side:      types.SideBuy,
-				Price:     num.NewUint(90),
-				Size:      10,
-				Remaining: 10,
-			},
-		},
+	_, _, err := e2.engine.Update(ctx, num.NewUint(99), num.NewUint(101),
+		repriceFN,
+		// []*types.Order{
+		// 	{
+		// 		ID:        "order-id-1",
+		// 		Party:     party1,
+		// 		MarketID:  market,
+		// 		Side:      types.SideBuy,
+		// 		Price:     num.NewUint(90),
+		// 		Size:      10,
+		// 		Remaining: 10,
+		// 	},
+		// },
 	)
 
 	require.NoError(t, err)
@@ -286,27 +287,28 @@ func TestSnapshotChangeOnUpdate(t *testing.T) {
 	assert.NotEmpty(t, s1)
 
 	repriceFN := func(
-		order *types.PeggedOrder, side types.Side,
-	) (*num.Uint, *types.PeggedOrder, error) {
-		return num.NewUint(100), order, nil
+		side types.Side, ref types.PeggedReference, offset *num.Uint,
+	) (*num.Uint, error) {
+		return num.NewUint(100), nil
 	}
 
 	e1.priceMonitor.EXPECT().GetValidPriceRange().
 		Return(num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(90), num.DecimalFromInt64(110))).
 		AnyTimes()
 
-	_, _, err = e1.engine.Update(ctx, num.DecimalFromFloat(99), num.DecimalFromFloat(101),
-		repriceFN, []*types.Order{
-			{
-				ID:        "order-id-1",
-				Party:     party1,
-				MarketID:  market,
-				Side:      types.SideBuy,
-				Price:     num.NewUint(90),
-				Size:      10,
-				Remaining: 10,
-			},
-		},
+	_, _, err = e1.engine.Update(ctx, num.NewUint(99), num.NewUint(101),
+		repriceFN,
+		// []*types.Order{
+		// 	{
+		// 		ID:        "order-id-1",
+		// 		Party:     party1,
+		// 		MarketID:  market,
+		// 		Side:      types.SideBuy,
+		// 		Price:     num.NewUint(90),
+		// 		Size:      10,
+		// 		Remaining: 10,
+		// 	},
+		// },
 	)
 	require.NoError(t, err)
 

@@ -325,9 +325,9 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	auxParty := "auxParty"
 	auxParty2 := "auxParty2"
 	now := time.Unix(10, 0)
-	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
+	tm := getTestMarket2(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
-	})
+	}, true, 0.95)
 
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
@@ -416,7 +416,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	assert.NotNil(t, sellConfirmation)
 	assert.NoError(t, err)
 
-	// Validate that the mark price has been updated
+	// Validate that the last traded price has been updated
 	assert.True(t, tm.market.GetMarketData().LastTradedPrice.EQ(num.NewUint(10)))
 }
 
@@ -493,7 +493,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
-	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 10000)
+	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 30)
 	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
@@ -508,6 +508,10 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, conf)
 	}
+
+	md0 := tm.market.GetMarketData()
+	require.NotNil(t, md0)
+
 	lp := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(25000),
@@ -542,22 +546,23 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	// Place an order
 	buyConfirmation, err := tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.NotNil(t, buyConfirmation)
+	assert.Zero(t, len(buyConfirmation.Trades))
 	assert.NoError(t, err)
 
-	orderSell := &types.Order{
+	marketOrderSell := &types.Order{
 		Status:      types.OrderStatusActive,
 		TimeInForce: types.OrderTimeInForceIOC,
 		Side:        types.SideSell,
 		Party:       party2,
 		MarketID:    tm.market.GetID(),
 		Size:        10,
-		Price:       num.NewUint(5),
+		Price:       num.UintZero(),
 		Remaining:   10,
 		Reference:   "party2-sell-order",
 		Type:        types.OrderTypeMarket,
 	}
 	// Partially fill the original order
-	sellConfirmation, err := tm.market.SubmitOrder(context.Background(), orderSell)
+	sellConfirmation, err := tm.market.SubmitOrder(context.Background(), marketOrderSell)
 	assert.NotNil(t, sellConfirmation)
 	assert.NoError(t, err)
 
@@ -572,8 +577,8 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 
 	// Check the values are correct
 	assert.True(t, amended.Order.Price.EQ(amend.Price))
-	assert.EqualValues(t, amended.Order.Remaining, 16)
-	assert.EqualValues(t, amended.Order.Size, 20)
+	assert.EqualValues(t, amended.Order.Remaining, orderBuy.Size-marketOrderSell.Size)
+	assert.EqualValues(t, amended.Order.Size, orderBuy.Size)
 }
 
 func TestAmendWrongPartyID(t *testing.T) {
@@ -620,9 +625,10 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	auxParty := "auxParty"
 	auxParty2 := "auxParty2"
 	now := time.Unix(10, 0)
-	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
+	tm := getTestMarket2(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
-	})
+		// increase lpRange so that LP orders don't get pushed too close to MID and test can behave as expected
+	}, true, 1.05)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	addAccount(t, tm, party1)
@@ -661,12 +667,12 @@ func TestPartialFilledWashTrade(t *testing.T) {
 		CommitmentAmount: num.NewUint(25000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 40, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 30, 13),
 		},
 		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 40, 10),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 30, 13),
 		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
@@ -723,6 +729,10 @@ func TestPartialFilledWashTrade(t *testing.T) {
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order",
 	}
+
+	md := tm.market.GetMarketData()
+	require.NotNil(t, md)
+
 	confirmation, err = tm.market.SubmitOrder(context.Background(), orderBuy1)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
@@ -1411,7 +1421,9 @@ func testPeggedOrderWithReprice(t *testing.T) {
 	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1, 110)
 
 	md := tm.market.GetMarketData()
-	assert.True(t, md.MidPrice.EQ(num.NewUint(500045)), md.MidPrice.String())
+	assert.True(t, md.StaticMidPrice.EQ(num.NewUint(500045)), md.MidPrice.String())
+	// MidPrice > StaticMidPrice as LP volume range pushes LP orders in front of best bid / ask
+	assert.True(t, md.MidPrice.EQ(num.NewUint(747559)), md.MidPrice.String())
 	// Place a valid pegged order which will be added to the order book
 	// This order will cause the MID price to move and thus a reprice multiple times until it settles
 	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
