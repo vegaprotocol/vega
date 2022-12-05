@@ -56,8 +56,8 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general       |
       | party4 | ETH   | ETH/DEC20 | 132    | 9999999999868 |
-      | party5 | ETH   | ETH/DEC20 | 1320   | 9999999998580 |
       | party3 | ETH   | ETH/DEC20 | 1220   | 0             |
+      | party5 | ETH   | ETH/DEC20 | 1320   | 9999999998580 |
       # Value before uint stuff
       # | party4 | ETH   | ETH/DEC20 | 133    | 9999999999867 |
     And the parties should have the following margin levels:

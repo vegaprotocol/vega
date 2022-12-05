@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"testing"
 
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
 	walletnode "code.vegaprotocol.io/vega/wallet/api/node"
 	nodemocks "code.vegaprotocol.io/vega/wallet/api/node/mocks"
+	"code.vegaprotocol.io/vega/wallet/api/node/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,12 +20,11 @@ import (
 func TestAdminSendTransaction(t *testing.T) {
 	t.Run("Sending transaction with invalid params fails", testAdminSendingTransactionWithInvalidParamsFails)
 	t.Run("Sending transaction with valid params succeeds", testAdminSendingTransactionWithValidParamsSucceeds)
-	t.Run("Sending transaction with network that doesn't exist fails", testAdminSendingTransactionWithNetworkThatDoesntExistFails)
-	t.Run("Sending transaction with network that fails existence check fails", testAdminSendingTransactionWithNetworkThatFailsExistenceCheckFails)
-	t.Run("Sending transaction with failure to get network", testAdminSendingTransactionWithFailureToGetNetworkFails)
-	t.Run("Getting internal error during node selector building fails", testAdminSendingTransactionGettingInternalErrorDuringNodeSelectorBuildingFails)
-	t.Run("Sending transaction without healthy node fails", testAdminSendingTransactionWithoutHealthyNodeFails)
-	t.Run("Sending transaction with failed sending fails", testAdminSendingTransactionWithFailedSendingFails)
+	t.Run("Getting internal error during wallet verification fails", testAdminSendTransactionGettingInternalErrorDuringWalletVerificationFails)
+	t.Run("Sending transaction with wallet that doesn't exist fails", testAdminSendingTransactionWithWalletThatDoesntExistFails)
+	t.Run("Getting internal error during wallet retrieval fails", testAdminSendTransactionGettingInternalErrorDuringWalletRetrievalFails)
+	t.Run("Sending transaction with malformed transaction fails", testAdminSendingTransactionWithMalformedTransactionFails)
+	t.Run("Sending transaction which is invalid fails", testAdminSendingTransactionWithInvalidTransactionFails)
 }
 
 func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
@@ -44,55 +44,78 @@ func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrParamsDoNotMatch,
 		},
 		{
-			name: "with empty sending mode",
+			name: "with empty wallet",
 			params: api.AdminSendTransactionParams{
-				Network:     "fairground",
-				SendingMode: "",
+				Wallet:      "",
+				Passphrase:  vgrand.RandomStr(5),
+				PublicKey:   vgrand.RandomStr(5),
+				Transaction: testTransaction(t),
+				Network:     vgrand.RandomStr(5),
 			},
-			expectedError: api.ErrSendingModeIsRequired,
+			expectedError: api.ErrWalletIsRequired,
+		},
+		{
+			name: "with empty passphrase",
+			params: api.AdminSendTransactionParams{
+				Wallet:      vgrand.RandomStr(5),
+				Passphrase:  "",
+				PublicKey:   vgrand.RandomStr(5),
+				Transaction: testTransaction(t),
+				Network:     vgrand.RandomStr(5),
+			},
+			expectedError: api.ErrPassphraseIsRequired,
+		},
+		{
+			name: "with empty public key",
+			params: api.AdminSendTransactionParams{
+				Wallet:      vgrand.RandomStr(5),
+				Passphrase:  vgrand.RandomStr(5),
+				PublicKey:   "",
+				Transaction: testTransaction(t),
+				Network:     vgrand.RandomStr(5),
+			},
+			expectedError: api.ErrPublicKeyIsRequired,
 		},
 		{
 			name: "with empty transaction",
 			params: api.AdminSendTransactionParams{
-				Network:            "fairground",
-				SendingMode:        "TYPE_SYNC",
-				EncodedTransaction: "",
+				Wallet:      vgrand.RandomStr(5),
+				Passphrase:  vgrand.RandomStr(5),
+				PublicKey:   vgrand.RandomStr(5),
+				Transaction: "",
+				Network:     vgrand.RandomStr(5),
 			},
-			expectedError: api.ErrEncodedTransactionIsRequired,
+			expectedError: api.ErrTransactionIsRequired,
 		},
 		{
-			name: "with non-base64 transaction",
+			name: "with no network or node address",
 			params: api.AdminSendTransactionParams{
-				Network:            "fairground",
-				SendingMode:        "TYPE_SYNC",
-				EncodedTransaction: "1234567890",
-			},
-			expectedError: api.ErrEncodedTransactionIsNotValidBase64String,
-		},
-		{
-			name: "with network and node address",
-			params: api.AdminSendTransactionParams{
-				Network:            "fairground",
-				NodeAddress:        "localhost:3002",
-				SendingMode:        "TYPE_SYNC",
-				EncodedTransaction: "Cip0ZXN0bmV0LWU5MGU2NwAI85ubpLO4mOnIARCEyogByrsBBwgCEgN7fQoSkwEKgAFlY2E4YjQ1MzNhNGNiZmFkY2VlMGNhYmZlNjdmMWRjZTAwN2RlODFlZjFlMTE3YTM4ZWVhMDJmYTNlMTcxMWM5NzI3YTQ3MmM3ZmNiNzU3ZDJmNTE4MTIxZTg2MzNiNjNlNTNmMWZjNjY0MTA1NjhmYjI5ODBmNDc4NjhiOTIwNRIMdmVnYS9lZDI1NTE5GAGAfQPCuwFGCkAxMjUzOGU0OTQ0ZjhjOWQ4MmU4MDNlNDE2YjM0MGQ2YmE0Mzk0NDIyZWQ1YWVmYmM2ZDYwNzYyZTcxMGFhNzk0ENLQAtI+QDNmZDQyZmQ1Y2ViMjJkOTlhYzQ1MDg2ZjFkODJkNTE2MTE4YTVjYjdhZDlhMmUwOTZjZDc4Y2EyYzg5NjBjODA=",
-			},
-			expectedError: api.ErrSpecifyingNetworkAndNodeAddressIsNotSupported,
-		},
-		{
-			name: "with network and node address missing",
-			params: api.AdminSendTransactionParams{
-				SendingMode:        "TYPE_SYNC",
-				EncodedTransaction: "Cip0ZXN0bmV0LWU5MGU2NwAI85ubpLO4mOnIARCEyogByrsBBwgCEgN7fQoSkwEKgAFlY2E4YjQ1MzNhNGNiZmFkY2VlMGNhYmZlNjdmMWRjZTAwN2RlODFlZjFlMTE3YTM4ZWVhMDJmYTNlMTcxMWM5NzI3YTQ3MmM3ZmNiNzU3ZDJmNTE4MTIxZTg2MzNiNjNlNTNmMWZjNjY0MTA1NjhmYjI5ODBmNDc4NjhiOTIwNRIMdmVnYS9lZDI1NTE5GAGAfQPCuwFGCkAxMjUzOGU0OTQ0ZjhjOWQ4MmU4MDNlNDE2YjM0MGQ2YmE0Mzk0NDIyZWQ1YWVmYmM2ZDYwNzYyZTcxMGFhNzk0ENLQAtI+QDNmZDQyZmQ1Y2ViMjJkOTlhYzQ1MDg2ZjFkODJkNTE2MTE4YTVjYjdhZDlhMmUwOTZjZDc4Y2EyYzg5NjBjODA=",
+				Wallet:      vgrand.RandomStr(5),
+				Passphrase:  vgrand.RandomStr(5),
+				PublicKey:   vgrand.RandomStr(5),
+				Network:     "",
+				Transaction: testTransaction(t),
 			},
 			expectedError: api.ErrNetworkOrNodeAddressIsRequired,
+		},
+		{
+			name: "with no network and node address",
+			params: api.AdminSendTransactionParams{
+				Wallet:      vgrand.RandomStr(5),
+				Passphrase:  vgrand.RandomStr(5),
+				PublicKey:   vgrand.RandomStr(5),
+				Network:     "some_network",
+				NodeAddress: "some_node_address",
+				Transaction: testTransaction(t),
+			},
+			expectedError: api.ErrSpecifyingNetworkAndNodeAddressIsNotSupported,
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newAdminSendTransactionHandler(tt, unexpectedNodeSelectorCall(tt))
@@ -109,10 +132,11 @@ func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
 
 func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
-	sendingMode := "TYPE_SYNC"
+	ctx := context.Background()
 	network := newNetwork(t)
-	txHash := vgrand.RandomStr(64)
+	passphrase := vgrand.RandomStr(5)
+	w, kp := walletWithKey(t)
+	hash := "hashy mchashface"
 
 	// setup
 	handler := newAdminSendTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
@@ -120,157 +144,44 @@ func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
 		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(node, nil)
-		node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return(txHash, nil)
+		node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
+			BlockHeight:             150,
+			BlockHash:               vgrand.RandomStr(64),
+			ProofOfWorkHashFunction: vgcrypto.Sha3,
+			ProofOfWorkDifficulty:   1,
+			ChainID:                 vgrand.RandomStr(5),
+		}, nil)
+		node.EXPECT().SendTransaction(ctx, gomock.Any(), gomock.Any()).Times(1).Return(hash, nil)
 		return nodeSelector, nil
 	})
 
 	// -- expected calls
+	handler.walletStore.EXPECT().WalletExists(ctx, w.Name()).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, w.Name(), passphrase).Times(1).Return(w, nil)
 	handler.networkStore.EXPECT().NetworkExists(network.Name).Times(1).Return(true, nil)
 	handler.networkStore.EXPECT().GetNetwork(network.Name).Times(1).Return(&network, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
-		Network:            network.Name,
-		SendingMode:        sendingMode,
-		EncodedTransaction: "Cip0ZXN0bmV0LWU5MGU2NwAI85ubpLO4mOnIARCEyogByrsBBwgCEgN7fQoSkwEKgAFlY2E4YjQ1MzNhNGNiZmFkY2VlMGNhYmZlNjdmMWRjZTAwN2RlODFlZjFlMTE3YTM4ZWVhMDJmYTNlMTcxMWM5NzI3YTQ3MmM3ZmNiNzU3ZDJmNTE4MTIxZTg2MzNiNjNlNTNmMWZjNjY0MTA1NjhmYjI5ODBmNDc4NjhiOTIwNRIMdmVnYS9lZDI1NTE5GAGAfQPCuwFGCkAxMjUzOGU0OTQ0ZjhjOWQ4MmU4MDNlNDE2YjM0MGQ2YmE0Mzk0NDIyZWQ1YWVmYmM2ZDYwNzYyZTcxMGFhNzk0ENLQAtI+QDNmZDQyZmQ1Y2ViMjJkOTlhYzQ1MDg2ZjFkODJkNTE2MTE4YTVjYjdhZDlhMmUwOTZjZDc4Y2EyYzg5NjBjODA=",
+		Wallet:      w.Name(),
+		Passphrase:  passphrase,
+		PublicKey:   kp.PublicKey(),
+		Network:     network.Name,
+		Transaction: testTransaction(t),
 	})
 
 	// then
 	assert.Nil(t, errorDetails)
+	assert.Equal(t, hash, result.TxHash)
 	assert.NotEmpty(t, result.Tx)
-	assert.Equal(t, txHash, result.TxHash)
-	assert.NotEmpty(t, result.ReceivedAt)
-	assert.NotEmpty(t, result.SentAt)
 }
 
-func testAdminSendingTransactionWithNetworkThatDoesntExistFails(t *testing.T) {
+func testAdminSendTransactionGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
-
-	// setup
-	handler := newAdminSendTransactionHandler(t, unexpectedNodeSelectorCall(t))
-
-	// -- expected calls
-	handler.networkStore.EXPECT().NetworkExists(gomock.Any()).Times(1).Return(false, nil)
-
-	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
-		Network:            "fairground",
-		SendingMode:        "TYPE_SYNC",
-		EncodedTransaction: "Cip0ZXN0bmV0LWU5MGU2NwAI85ubpLO4mOnIARCEyogByrsBBwgCEgN7fQoSkwEKgAFlY2E4YjQ1MzNhNGNiZmFkY2VlMGNhYmZlNjdmMWRjZTAwN2RlODFlZjFlMTE3YTM4ZWVhMDJmYTNlMTcxMWM5NzI3YTQ3MmM3ZmNiNzU3ZDJmNTE4MTIxZTg2MzNiNjNlNTNmMWZjNjY0MTA1NjhmYjI5ODBmNDc4NjhiOTIwNRIMdmVnYS9lZDI1NTE5GAGAfQPCuwFGCkAxMjUzOGU0OTQ0ZjhjOWQ4MmU4MDNlNDE2YjM0MGQ2YmE0Mzk0NDIyZWQ1YWVmYmM2ZDYwNzYyZTcxMGFhNzk0ENLQAtI+QDNmZDQyZmQ1Y2ViMjJkOTlhYzQ1MDg2ZjFkODJkNTE2MTE4YTVjYjdhZDlhMmUwOTZjZDc4Y2EyYzg5NjBjODA=",
-	})
-
-	// then
-	assertInvalidParams(t, errorDetails, api.ErrNetworkDoesNotExist)
-	assert.Empty(t, result)
-}
-
-func testAdminSendingTransactionWithNetworkThatFailsExistenceCheckFails(t *testing.T) {
-	// given
-	ctx, _ := contextWithTraceID()
-
-	// setup
-	handler := newAdminSendTransactionHandler(t, unexpectedNodeSelectorCall(t))
-
-	// -- expected calls
-	handler.networkStore.EXPECT().NetworkExists(gomock.Any()).Times(1).Return(false, assert.AnError)
-
-	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
-		Network:            "fairground",
-		SendingMode:        "TYPE_SYNC",
-		EncodedTransaction: "Cip0ZXN0bmV0LWU5MGU2NwAI85ubpLO4mOnIARCEyogByrsBBwgCEgN7fQoSkwEKgAFlY2E4YjQ1MzNhNGNiZmFkY2VlMGNhYmZlNjdmMWRjZTAwN2RlODFlZjFlMTE3YTM4ZWVhMDJmYTNlMTcxMWM5NzI3YTQ3MmM3ZmNiNzU3ZDJmNTE4MTIxZTg2MzNiNjNlNTNmMWZjNjY0MTA1NjhmYjI5ODBmNDc4NjhiOTIwNRIMdmVnYS9lZDI1NTE5GAGAfQPCuwFGCkAxMjUzOGU0OTQ0ZjhjOWQ4MmU4MDNlNDE2YjM0MGQ2YmE0Mzk0NDIyZWQ1YWVmYmM2ZDYwNzYyZTcxMGFhNzk0ENLQAtI+QDNmZDQyZmQ1Y2ViMjJkOTlhYzQ1MDg2ZjFkODJkNTE2MTE4YTVjYjdhZDlhMmUwOTZjZDc4Y2EyYzg5NjBjODA=",
-	})
-
-	// then
-	assertInternalError(t, errorDetails, fmt.Errorf("could not check the network existence: %w", assert.AnError))
-	assert.Empty(t, result)
-}
-
-func testAdminSendingTransactionWithFailureToGetNetworkFails(t *testing.T) {
-	// given
-	ctx, _ := contextWithTraceID()
-	network := "fairground"
-
-	// setup
-	handler := newAdminSendTransactionHandler(t, unexpectedNodeSelectorCall(t))
-
-	// -- expected calls
-	handler.networkStore.EXPECT().NetworkExists(network).Times(1).Return(true, nil)
-	handler.networkStore.EXPECT().GetNetwork(network).Times(1).Return(nil, assert.AnError)
-
-	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
-		Network:            network,
-		SendingMode:        "TYPE_SYNC",
-		EncodedTransaction: "Cip0ZXN0bmV0LWU5MGU2NwAI85ubpLO4mOnIARCEyogByrsBBwgCEgN7fQoSkwEKgAFlY2E4YjQ1MzNhNGNiZmFkY2VlMGNhYmZlNjdmMWRjZTAwN2RlODFlZjFlMTE3YTM4ZWVhMDJmYTNlMTcxMWM5NzI3YTQ3MmM3ZmNiNzU3ZDJmNTE4MTIxZTg2MzNiNjNlNTNmMWZjNjY0MTA1NjhmYjI5ODBmNDc4NjhiOTIwNRIMdmVnYS9lZDI1NTE5GAGAfQPCuwFGCkAxMjUzOGU0OTQ0ZjhjOWQ4MmU4MDNlNDE2YjM0MGQ2YmE0Mzk0NDIyZWQ1YWVmYmM2ZDYwNzYyZTcxMGFhNzk0ENLQAtI+QDNmZDQyZmQ1Y2ViMjJkOTlhYzQ1MDg2ZjFkODJkNTE2MTE4YTVjYjdhZDlhMmUwOTZjZDc4Y2EyYzg5NjBjODA=",
-	})
-
-	// then
-	assertInternalError(t, errorDetails, fmt.Errorf("could not retrieve the network configuration: %w", assert.AnError))
-	assert.Empty(t, result)
-}
-
-func testAdminSendingTransactionGettingInternalErrorDuringNodeSelectorBuildingFails(t *testing.T) {
-	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	network := newNetwork(t)
-
-	// setup
-	handler := newAdminSendTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
-		return nil, assert.AnError
-	})
-
-	// -- expected calls
-	handler.networkStore.EXPECT().NetworkExists(network.Name).Times(1).Return(true, nil)
-	handler.networkStore.EXPECT().GetNetwork(network.Name).Times(1).Return(&network, nil)
-
-	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
-		Network:            network.Name,
-		SendingMode:        "TYPE_SYNC",
-		EncodedTransaction: "Cip0ZXN0bmV0LWU5MGU2NwAI85ubpLO4mOnIARCEyogByrsBBwgCEgN7fQoSkwEKgAFlY2E4YjQ1MzNhNGNiZmFkY2VlMGNhYmZlNjdmMWRjZTAwN2RlODFlZjFlMTE3YTM4ZWVhMDJmYTNlMTcxMWM5NzI3YTQ3MmM3ZmNiNzU3ZDJmNTE4MTIxZTg2MzNiNjNlNTNmMWZjNjY0MTA1NjhmYjI5ODBmNDc4NjhiOTIwNRIMdmVnYS9lZDI1NTE5GAGAfQPCuwFGCkAxMjUzOGU0OTQ0ZjhjOWQ4MmU4MDNlNDE2YjM0MGQ2YmE0Mzk0NDIyZWQ1YWVmYmM2ZDYwNzYyZTcxMGFhNzk0ENLQAtI+QDNmZDQyZmQ1Y2ViMjJkOTlhYzQ1MDg2ZjFkODJkNTE2MTE4YTVjYjdhZDlhMmUwOTZjZDc4Y2EyYzg5NjBjODA=",
-	})
-
-	// then
-	assertInternalError(t, errorDetails, fmt.Errorf("could not initializing the node selector: %w", assert.AnError))
-	assert.Empty(t, result)
-}
-
-func testAdminSendingTransactionWithoutHealthyNodeFails(t *testing.T) {
-	// given
-	ctx, _ := contextWithTraceID()
-	network := newNetwork(t)
-
-	// setup
-	handler := newAdminSendTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
-		ctrl := gomock.NewController(t)
-		nodeSelector := nodemocks.NewMockSelector(ctrl)
-		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(nil, assert.AnError)
-		return nodeSelector, nil
-	})
-
-	// -- expected calls
-	handler.networkStore.EXPECT().NetworkExists(network.Name).Times(1).Return(true, nil)
-	handler.networkStore.EXPECT().GetNetwork(network.Name).Times(1).Return(&network, nil)
-
-	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
-		Network:            network.Name,
-		SendingMode:        "TYPE_SYNC",
-		EncodedTransaction: "Cip0ZXN0bmV0LWU5MGU2NwAI85ubpLO4mOnIARCEyogByrsBBwgCEgN7fQoSkwEKgAFlY2E4YjQ1MzNhNGNiZmFkY2VlMGNhYmZlNjdmMWRjZTAwN2RlODFlZjFlMTE3YTM4ZWVhMDJmYTNlMTcxMWM5NzI3YTQ3MmM3ZmNiNzU3ZDJmNTE4MTIxZTg2MzNiNjNlNTNmMWZjNjY0MTA1NjhmYjI5ODBmNDc4NjhiOTIwNRIMdmVnYS9lZDI1NTE5GAGAfQPCuwFGCkAxMjUzOGU0OTQ0ZjhjOWQ4MmU4MDNlNDE2YjM0MGQ2YmE0Mzk0NDIyZWQ1YWVmYmM2ZDYwNzYyZTcxMGFhNzk0ENLQAtI+QDNmZDQyZmQ1Y2ViMjJkOTlhYzQ1MDg2ZjFkODJkNTE2MTE4YTVjYjdhZDlhMmUwOTZjZDc4Y2EyYzg5NjBjODA=",
-	})
-
-	// then
-	assertNetworkError(t, errorDetails, api.ErrNoHealthyNodeAvailable)
-	assert.Empty(t, result)
-}
-
-func testAdminSendingTransactionWithFailedSendingFails(t *testing.T) {
-	// given
-	ctx, _ := contextWithTraceID()
-	sendingMode := "TYPE_SYNC"
-	network := newNetwork(t)
+	walletName := vgrand.RandomStr(5)
+	passphrase := vgrand.RandomStr(5)
 
 	// setup
 	handler := newAdminSendTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
@@ -278,55 +189,188 @@ func testAdminSendingTransactionWithFailedSendingFails(t *testing.T) {
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
 		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(node, nil)
-		node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return("", assert.AnError)
+		node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
+			BlockHeight:             150,
+			BlockHash:               vgrand.RandomStr(64),
+			ProofOfWorkHashFunction: vgcrypto.Sha3,
+			ProofOfWorkDifficulty:   1,
+			ChainID:                 vgrand.RandomStr(5),
+		}, nil)
 		return nodeSelector, nil
 	})
 
 	// -- expected calls
-	handler.networkStore.EXPECT().NetworkExists(network.Name).Times(1).Return(true, nil)
-	handler.networkStore.EXPECT().GetNetwork(network.Name).Times(1).Return(&network, nil)
+	handler.walletStore.EXPECT().WalletExists(ctx, walletName).Times(1).Return(false, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
-		Network:            network.Name,
-		SendingMode:        sendingMode,
-		EncodedTransaction: "Cip0ZXN0bmV0LWU5MGU2NwAI85ubpLO4mOnIARCEyogByrsBBwgCEgN7fQoSkwEKgAFlY2E4YjQ1MzNhNGNiZmFkY2VlMGNhYmZlNjdmMWRjZTAwN2RlODFlZjFlMTE3YTM4ZWVhMDJmYTNlMTcxMWM5NzI3YTQ3MmM3ZmNiNzU3ZDJmNTE4MTIxZTg2MzNiNjNlNTNmMWZjNjY0MTA1NjhmYjI5ODBmNDc4NjhiOTIwNRIMdmVnYS9lZDI1NTE5GAGAfQPCuwFGCkAxMjUzOGU0OTQ0ZjhjOWQ4MmU4MDNlNDE2YjM0MGQ2YmE0Mzk0NDIyZWQ1YWVmYmM2ZDYwNzYyZTcxMGFhNzk0ENLQAtI+QDNmZDQyZmQ1Y2ViMjJkOTlhYzQ1MDg2ZjFkODJkNTE2MTE4YTVjYjdhZDlhMmUwOTZjZDc4Y2EyYzg5NjBjODA=",
+		Wallet:      walletName,
+		Passphrase:  passphrase,
+		PublicKey:   vgrand.RandomStr(5),
+		Network:     network.Name,
+		Transaction: testTransaction(t),
 	})
 
 	// then
-	assertNetworkError(t, errorDetails, api.ErrTransactionFailed)
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
 	assert.Empty(t, result)
 }
 
-type adminSendTransactionHandler struct {
+func testAdminSendingTransactionWithWalletThatDoesntExistFails(t *testing.T) {
+	// given
+	ctx := context.Background()
+
+	params := api.AdminSendTransactionParams{
+		Wallet:      vgrand.RandomStr(5),
+		Passphrase:  vgrand.RandomStr(5),
+		PublicKey:   vgrand.RandomStr(5),
+		Network:     "fairground",
+		Transaction: testTransaction(t),
+	}
+
+	// setup
+	handler := newAdminSendTransactionHandler(t, unexpectedNodeSelectorCall(t))
+
+	// -- expected calls
+	handler.walletStore.EXPECT().WalletExists(ctx, params.Wallet).Times(1).Return(false, nil)
+
+	// when
+	result, errorDetails := handler.handle(t, ctx, params)
+
+	// then
+	assertInvalidParams(t, errorDetails, api.ErrWalletDoesNotExist)
+	assert.Empty(t, result)
+}
+
+func testAdminSendTransactionGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
+	// given
+	ctx := context.Background()
+	network := newNetwork(t)
+	walletName := vgrand.RandomStr(5)
+	passphrase := vgrand.RandomStr(5)
+
+	// setup
+	handler := newAdminSendTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+		ctrl := gomock.NewController(t)
+		nodeSelector := nodemocks.NewMockSelector(ctrl)
+		node := nodemocks.NewMockNode(ctrl)
+		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(node, nil)
+		node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
+			BlockHeight:             150,
+			BlockHash:               vgrand.RandomStr(64),
+			ProofOfWorkHashFunction: vgcrypto.Sha3,
+			ProofOfWorkDifficulty:   1,
+			ChainID:                 vgrand.RandomStr(5),
+		}, nil)
+		return nodeSelector, nil
+	})
+
+	// -- expected calls
+	handler.walletStore.EXPECT().WalletExists(ctx, walletName).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, walletName, passphrase).Times(1).Return(nil, assert.AnError)
+
+	// when
+	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
+		Wallet:      walletName,
+		Passphrase:  passphrase,
+		PublicKey:   vgrand.RandomStr(5),
+		Network:     network.Name,
+		Transaction: testTransaction(t),
+	})
+
+	// then
+	assertInternalError(t, errorDetails, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError))
+	assert.Empty(t, result)
+}
+
+func testAdminSendingTransactionWithMalformedTransactionFails(t *testing.T) {
+	// given
+	ctx := context.Background()
+	network := vgrand.RandomStr(5)
+	passphrase := vgrand.RandomStr(5)
+	w, kp := walletWithKey(t)
+
+	// setup
+	handler := newAdminSendTransactionHandler(t, unexpectedNodeSelectorCall(t))
+
+	// -- expected calls
+	handler.walletStore.EXPECT().WalletExists(ctx, w.Name()).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, w.Name(), passphrase).Times(1).Return(w, nil)
+
+	// when
+	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
+		Wallet:      w.Name(),
+		Passphrase:  passphrase,
+		PublicKey:   kp.PublicKey(),
+		Network:     network,
+		Transaction: map[string]int{"bob": 5},
+	})
+
+	// then
+	assertInvalidParams(t, errorDetails, api.ErrTransactionIsMalformed)
+	assert.Empty(t, result)
+}
+
+func testAdminSendingTransactionWithInvalidTransactionFails(t *testing.T) {
+	// given
+	ctx := context.Background()
+	network := newNetwork(t)
+	passphrase := vgrand.RandomStr(5)
+	w, kp := walletWithKey(t)
+
+	// setup
+	handler := newAdminSendTransactionHandler(t, unexpectedNodeSelectorCall(t))
+
+	// -- expected calls
+	handler.walletStore.EXPECT().WalletExists(ctx, w.Name()).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, w.Name(), passphrase).Times(1).Return(w, nil)
+
+	// when
+	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
+		Wallet:      w.Name(),
+		Passphrase:  passphrase,
+		PublicKey:   kp.PublicKey(),
+		Network:     network.Name,
+		Transaction: testMalformedTransaction(t),
+	})
+
+	// then
+	assertInvalidParams(t, errorDetails, fmt.Errorf("vote_submission.proposal_id (should be a valid vega ID)"))
+	assert.Empty(t, result)
+}
+
+type AdminSendTransactionHandler struct {
 	*api.AdminSendTransaction
 	ctrl         *gomock.Controller
+	walletStore  *mocks.MockWalletStore
 	networkStore *mocks.MockNetworkStore
 }
 
-func (h *adminSendTransactionHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminSendTransactionResult, *jsonrpc.ErrorDetails) {
+func (h *AdminSendTransactionHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminSendTransactionResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminSendTransactionResult)
 		if !ok {
-			t.Fatal("AdminUpdatePermissions handler result is not a AdminSignTransactionResult")
+			t.Fatal("AdminUpdatePermissions handler result is not a AdminSendTransactionResult")
 		}
 		return result, err
 	}
 	return api.AdminSendTransactionResult{}, err
 }
 
-func newAdminSendTransactionHandler(t *testing.T, builder api.NodeSelectorBuilder) *adminSendTransactionHandler {
+func newAdminSendTransactionHandler(t *testing.T, builder api.NodeSelectorBuilder) *AdminSendTransactionHandler {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
+	walletStore := mocks.NewMockWalletStore(ctrl)
 	networkStore := mocks.NewMockNetworkStore(ctrl)
 
-	return &adminSendTransactionHandler{
-		AdminSendTransaction: api.NewAdminSendTransaction(networkStore, builder),
+	return &AdminSendTransactionHandler{
+		AdminSendTransaction: api.NewAdminSendTransaction(walletStore, networkStore, builder),
 		ctrl:                 ctrl,
+		walletStore:          walletStore,
 		networkStore:         networkStore,
 	}
 }

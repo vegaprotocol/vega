@@ -118,7 +118,7 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		AssetID:  AssetID(t.Asset),
 		Type:     t.FromAccountType,
 		TxHash:   txHash,
-		VegaTime: vegaTime,
+		VegaTime: time.Unix(0, t.Timestamp),
 	}
 
 	err := accountSource.Obtain(ctx, &fromAcc)

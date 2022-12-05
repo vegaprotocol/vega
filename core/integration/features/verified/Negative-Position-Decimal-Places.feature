@@ -35,6 +35,7 @@ Feature: test negative PDP (position decimal places)
             | party3 | ETH   | 100000000 |
             | lpprov | ETH   | 100000000 |
 
+    @Now
     Scenario: 001, test negative PDP when trading mode is auction (0019-MCAL-010)
 
         Given  the parties submit the following liquidity provision:
@@ -61,17 +62,18 @@ Feature: test negative PDP (position decimal places)
 
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond |
-            | party0 | ETH   | USD/DEC22 | 89635  | 4909365  | 1000 |
-            | party1 | ETH   | USD/DEC22 | 19218  | 99980782 | 0    |
-            | party2 | ETH   | USD/DEC22 | 85368  | 99914632 | 0    |
+            | party0 | ETH   | USD/DEC22 | 46951  | 4952049  | 1000 |
+            | party1 | ETH   | USD/DEC22 | 9609   | 99990391 | 0    |
+            | party2 | ETH   | USD/DEC22 | 42684  | 99957316 | 0    |
 
         And the parties should have the following margin levels:
             | party  | market id | maintenance | search | initial | release |
-            | party0 | USD/DEC22 | 74696       | 82165  | 89635   | 122831  |
-            | party1 | USD/DEC22 | 16016       | 17616  | 19218   | 41640   |
-            | party2 | USD/DEC22 | 71140       | 78254  | 85368   | 184964  |
+            | party0 | USD/DEC22 | 39126       | 43038  | 46951   | 63424   |
+            | party1 | USD/DEC22 | 8008        | 8808   | 9609    | 20820   |
+            | party2 | USD/DEC22 | 35570       | 39127  | 42684   | 92482   |
 
 
+    @Now
     Scenario: 002, test negative PDP when trading mode is continuous (0003-MTMK-013, 0019-MCAL-010, 0029-FEES-014)
         Given the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |

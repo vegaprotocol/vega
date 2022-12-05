@@ -25,7 +25,7 @@ func testDescribeNetworkValidFlagsWithNetworkSucceeds(t *testing.T) {
 	}
 
 	expectedReq := api.AdminDescribeNetworkParams{
-		Network: networkName,
+		Name: networkName,
 	}
 	// when
 	req, err := f.Validate()

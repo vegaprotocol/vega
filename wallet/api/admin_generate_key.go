@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
@@ -26,7 +27,7 @@ type AdminGenerateKey struct {
 }
 
 // Handle generates a key of the specified wallet.
-func (h *AdminGenerateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminGenerateKey) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateGenerateKeyParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -40,6 +41,9 @@ func (h *AdminGenerateKey) Handle(ctx context.Context, rawParams jsonrpc.Params)
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet, params.Passphrase)
 	if err != nil {
+		if errors.Is(err, wallet.ErrWrongPassphrase) {
+			return nil, invalidParams(err)
+		}
 		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
 

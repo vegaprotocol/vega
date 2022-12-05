@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgzap "code.vegaprotocol.io/vega/libs/zap"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallet"
@@ -50,7 +51,7 @@ func NewCmdImportWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 
 		importWallet := api.NewAdminImportWallet(s)
 
-		rawResult, errDetails := importWallet.Handle(context.Background(), params)
+		rawResult, errDetails := importWallet.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
 		if errDetails != nil {
 			return api.AdminImportWalletResult{}, errors.New(errDetails.Data)
 		}

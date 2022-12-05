@@ -58,7 +58,7 @@ func testGeneratingKeyWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newGenerateKeyHandler(tt)
@@ -218,7 +218,7 @@ type generateKeyHandler struct {
 func (h *generateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminGenerateKeyResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminGenerateKeyResult)
 		if !ok {

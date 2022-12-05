@@ -20,6 +20,7 @@ Feature: Closeout scenarios
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
+  @EndBlock
   Scenario: 2 parties get close-out at the same time. Distressed position gets taken over by LP, distressed order gets canceled (0005-COLL-002; 0012-POSR-001; 0012-POSR-002; 0012-POSR-004; 0012-POSR-005)
     # setup accounts, we are trying to closeout trader3 first and then trader2
 
@@ -32,6 +33,7 @@ Feature: Closeout scenarios
       | trader2    | USD   | 2000          |
       | trader3    | USD   | 90            |
       | lprov      | USD   | 1000000000000 |
+      | closer     | USD   | 1000000000000 |
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -106,38 +108,52 @@ Feature: Closeout scenarios
     When the parties place the following orders with ticks:
       | party      | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | auxiliary2 | ETH/DEC19 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+    Then the mark price should be "100" for the market "ETH/DEC19"
+    Then debug detailed orderbook volumes for market "ETH/DEC19"
+    And the network moves ahead "1" blocks
+    Then debug detailed orderbook volumes for market "ETH/DEC19"
+    And debug trades
 
     Then debug orders
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | buy  | 5     | 5      |
+      | buy  | 5     | 40005  |
       | buy  | 45    | 0      |
-      | buy  | 50    | 4030   |
+      | buy  | 50    | 0      |
       | buy  | 100   | 0      |
       | sell | 1000  | 10     |
       | sell | 1055  | 223    |
     #trader3 is closed out
-    #trader2's order is canceled since mark price has moved from 10 to 100, hence margin level has increased by 10 times
-    And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC19 | 3703        | 5554   | 7406    | 11109   |
-      | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC19 | 731    | 1358    |
+      | trader2 | USD   | ETH/DEC19 | 2089   | 0       |
+      #| trader2 | USD   | ETH/DEC19 | 642    | 1358    |
+    #trader2 has enough balance to maintain their position of 10 long, but not the order
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader2 | ETH/DEC19 | 1751        | 2626   | 3502    | 5253    |
+      | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
+
+    #trader2's order is canceled since mark price has moved from 10 to 100, hence margin level has increased by 10 times
+    # trader2 sees their order cancelled, but they helped to resolve trader3's close-out, buying 10@50, and MTM that to 100
+    # So they made a bit of profit
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader2 | USD   | ETH/DEC19 | 2089   | 0       |
       | trader3 | USD   | ETH/DEC19 | 0      | 0       |
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
+    # Because trader2 does not get closed out lprov does not have to step in. The PnL is founder
+    # under trader2, not lprov
     Then the parties should have the following profit and loss:
       | party      | volume | unrealised pnl | realised pnl |
       | auxiliary1 | -10    | -900           | 0            |
       | auxiliary2 | 0      | 0              | 900          |
       | trader2    | 10     | 500            | -411         |
       | trader3    | 0      | 0              | -90          |
+      #| lprov      | 10     | 500            | -411         |
       | lprov      | 0      | 0              | 0            |
-      #| lprov      | 10     | 550            | -461         |
     And the mark price should be "100" for the market "ETH/DEC19"
 
 Scenario: Position becomes distressed upon exiting an auction (0012-POSR-007)

@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
@@ -41,7 +42,7 @@ func NewCmdRevokePermissions(w io.Writer, rf *RootFlags) *cobra.Command {
 		}
 
 		revokePermissions := api.NewAdminRevokePermissions(s)
-		_, errDetails := revokePermissions.Handle(context.Background(), params)
+		_, errDetails := revokePermissions.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
 		if errDetails != nil {
 			return errors.New(errDetails.Data)
 		}
@@ -103,7 +104,7 @@ func BuildCmdRevokePermissions(w io.Writer, handler RevokePermissionsHandler, rf
 		"Do not ask for confirmation",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }

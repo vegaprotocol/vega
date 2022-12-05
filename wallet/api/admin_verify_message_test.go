@@ -78,7 +78,7 @@ func testVerifyMessageWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newVerifyMessageHandler(tt)
@@ -101,7 +101,7 @@ type verifyMessageHandler struct {
 func (h *verifyMessageHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminSignMessageResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminSignMessageResult)
 		if !ok {

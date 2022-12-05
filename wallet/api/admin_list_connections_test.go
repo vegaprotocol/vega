@@ -8,6 +8,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
+	"code.vegaprotocol.io/vega/wallet/api/mocks"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -44,7 +46,7 @@ func testAdminListConnectionsWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newListConnectionsHandler(tt)
@@ -71,7 +73,7 @@ func testAdminListConnectionsWithValidParamsSucceeds(t *testing.T) {
 
 	// setup
 	handler := newListConnectionsHandler(t)
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 	if _, err := sessions.ConnectWallet(hostname, expectedWallet); err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +97,7 @@ func testAdminListConnectionsWithValidParamsSucceeds(t *testing.T) {
 
 	// then
 	require.Nil(t, errorDetails)
-	expectedConnections := []api.Connection{
+	expectedConnections := []session.Connection{
 		{Hostname: hostname, Wallet: expectedWallet.Name()},
 		{Hostname: otherHostname, Wallet: expectedWallet.Name()},
 		{Hostname: hostname, Wallet: otherWallet.Name()},
@@ -114,12 +116,14 @@ type adminListConnectionsHandler struct {
 	*api.AdminListConnections
 	ctrl            *gomock.Controller
 	servicesManager *api.ServicesManager
+	walletStore     *mocks.MockWalletStore
+	tokenStore      *mocks.MockTokenStore
 }
 
 func (h *adminListConnectionsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminListConnectionsResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminListConnectionsResult)
 		if !ok {
@@ -135,10 +139,16 @@ func newListConnectionsHandler(t *testing.T) *adminListConnectionsHandler {
 
 	ctrl := gomock.NewController(t)
 
-	servicesManager := api.NewServicesManager()
+	walletStore := mocks.NewMockWalletStore(ctrl)
+	tokenStore := mocks.NewMockTokenStore(ctrl)
+	tokenStore.EXPECT().ListTokens().AnyTimes().Return([]session.TokenSummary{}, nil)
+	servicesManager := api.NewServicesManager(tokenStore, walletStore)
+
 	return &adminListConnectionsHandler{
 		AdminListConnections: api.NewAdminListConnections(servicesManager),
 		ctrl:                 ctrl,
 		servicesManager:      servicesManager,
+		walletStore:          walletStore,
+		tokenStore:           tokenStore,
 	}
 }

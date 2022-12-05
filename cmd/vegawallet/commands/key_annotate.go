@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -51,7 +52,7 @@ func NewCmdAnnotateKey(w io.Writer, rf *RootFlags) *cobra.Command {
 
 		annotateKey := api.NewAdminAnnotateKey(s)
 
-		rawResult, errDetails := annotateKey.Handle(context.Background(), params)
+		rawResult, errDetails := annotateKey.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
 		if errDetails != nil {
 			return api.AdminAnnotateKeyResult{}, errors.New(errDetails.Data)
 		}
@@ -117,7 +118,7 @@ func BuildCmdAnnotateKey(w io.Writer, handler AnnotateKeyHandler, rf *RootFlags)
 		"Clear the metadata",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }

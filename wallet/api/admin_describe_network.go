@@ -10,7 +10,7 @@ import (
 )
 
 type AdminDescribeNetworkParams struct {
-	Network string `json:"network"`
+	Name string `json:"name"`
 }
 
 type AdminDescribeNetworkResult struct {
@@ -38,19 +38,19 @@ type AdminDescribeNetwork struct {
 }
 
 // Handle retrieve a wallet from its name and passphrase.
-func (h *AdminDescribeNetwork) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminDescribeNetwork) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateDescribeNetworkParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
 	}
 
-	if exist, err := h.networkStore.NetworkExists(params.Network); err != nil {
+	if exist, err := h.networkStore.NetworkExists(params.Name); err != nil {
 		return nil, internalError(fmt.Errorf("could not verify the network existence: %w", err))
 	} else if !exist {
 		return nil, invalidParams(ErrNetworkDoesNotExist)
 	}
 
-	n, err := h.networkStore.GetNetwork(params.Network)
+	n, err := h.networkStore.GetNetwork(params.Name)
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not retrieve the network: %w", err))
 	}
@@ -80,8 +80,8 @@ func validateDescribeNetworkParams(rawParams jsonrpc.Params) (AdminDescribeNetwo
 		return AdminDescribeNetworkParams{}, ErrParamsDoNotMatch
 	}
 
-	if params.Network == "" {
-		return AdminDescribeNetworkParams{}, ErrNetworkIsRequired
+	if params.Name == "" {
+		return AdminDescribeNetworkParams{}, ErrNetworkNameIsRequired
 	}
 
 	return params, nil

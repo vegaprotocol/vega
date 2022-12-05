@@ -8,9 +8,7 @@ import (
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/protos/vega"
-	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,8 +23,6 @@ func TestSendCommandFlags(t *testing.T) {
 	t.Run("Missing public key fails", testSendCommandFlagsMissingPubKeyFails)
 	t.Run("Missing request fails", testSendCommandFlagsMissingRequestFails)
 	t.Run("Malformed request fails", testSendCommandFlagsMalformedRequestFails)
-	t.Run("Invalid request fails", testSendCommandFlagsInvalidRequestFails)
-	t.Run("Request with public key set in it fails", testSendCommandFlagsRequestWithPubKeyFails)
 }
 
 func testSendCommandFlagsValidFlagsSucceeds(t *testing.T) {
@@ -38,7 +34,7 @@ func testSendCommandFlagsValidFlagsSucceeds(t *testing.T) {
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(20)
 
-	f := &cmd.SendCommandFlags{
+	f := &cmd.SendTransactionFlags{
 		Network:        network,
 		NodeAddress:    "",
 		Wallet:         walletName,
@@ -46,26 +42,18 @@ func testSendCommandFlagsValidFlagsSucceeds(t *testing.T) {
 		Retries:        10,
 		LogLevel:       "debug",
 		PassphraseFile: passphraseFilePath,
-		RawCommand:     `{"voteSubmission": {"proposalId": "ec066610abbd1736b69cadcb059b9efdfdd9e3e33560fc46b2b8b62764edf33f", "value": "VALUE_YES"}}`,
+		RawTransaction: testTransactionJSON,
 	}
 
-	expectedReq := &cmd.SendCommandRequest{
+	expectedReq := &api.AdminSendTransactionParams{
 		Network:     network,
 		NodeAddress: "",
 		Wallet:      walletName,
+		PublicKey:   pubKey,
 		Retries:     10,
-		LogLevel:    "debug",
 		Passphrase:  passphrase,
-		Request: &walletpb.SubmitTransactionRequest{
-			PubKey:    pubKey,
-			Propagate: true,
-			Command: &walletpb.SubmitTransactionRequest_VoteSubmission{
-				VoteSubmission: &v1.VoteSubmission{
-					ProposalId: "ec066610abbd1736b69cadcb059b9efdfdd9e3e33560fc46b2b8b62764edf33f",
-					Value:      vega.Vote_VALUE_YES,
-				},
-			},
-		},
+		Transaction: testTransaction(t),
+		SendingMode: "TYPE_ASYNC",
 	}
 
 	// when
@@ -92,7 +80,7 @@ func testSendCommandFlagsMissingWalletFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSendCommandFlagsMissingLogLevelFails(t *testing.T) {
@@ -107,7 +95,7 @@ func testSendCommandFlagsMissingLogLevelFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("level"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSendCommandFlagsUnsupportedLogLevelFails(t *testing.T) {
@@ -122,7 +110,7 @@ func testSendCommandFlagsUnsupportedLogLevelFails(t *testing.T) {
 
 	// then
 	assert.EqualError(t, err, fmt.Sprintf("unsupported log level %q, supported levels: debug, info, warn, error", f.LogLevel))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSendCommandFlagsMissingNetworkAndNodeAddressFails(t *testing.T) {
@@ -138,7 +126,7 @@ func testSendCommandFlagsMissingNetworkAndNodeAddressFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.OneOfFlagsMustBeSpecifiedError("network", "node-address"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSendCommandFlagsBothNetworkAndNodeAddressSpecifiedFails(t *testing.T) {
@@ -154,7 +142,7 @@ func testSendCommandFlagsBothNetworkAndNodeAddressSpecifiedFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MutuallyExclusiveError("network", "node-address"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSendCommandFlagsMissingPubKeyFails(t *testing.T) {
@@ -169,7 +157,7 @@ func testSendCommandFlagsMissingPubKeyFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSendCommandFlagsMissingRequestFails(t *testing.T) {
@@ -177,14 +165,14 @@ func testSendCommandFlagsMissingRequestFails(t *testing.T) {
 
 	// given
 	f := newSendCommandFlags(t, testDir)
-	f.RawCommand = ""
+	f.RawTransaction = ""
 
 	// when
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.ArgMustBeSpecifiedError("command"))
-	assert.Nil(t, req)
+	assert.ErrorIs(t, err, flags.ArgMustBeSpecifiedError("transaction"))
+	assert.Empty(t, req)
 }
 
 func testSendCommandFlagsMalformedRequestFails(t *testing.T) {
@@ -192,47 +180,17 @@ func testSendCommandFlagsMalformedRequestFails(t *testing.T) {
 
 	// given
 	f := newSendCommandFlags(t, testDir)
-	f.RawCommand = vgrand.RandomStr(5)
+	f.RawTransaction = vgrand.RandomStr(5)
 
 	// when
 	req, err := f.Validate()
 
 	// then
 	assert.Error(t, err)
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
-func testSendCommandFlagsInvalidRequestFails(t *testing.T) {
-	testDir := t.TempDir()
-
-	// given
-	f := newSendCommandFlags(t, testDir)
-	f.RawCommand = `{"voteSubmission": {}}`
-
-	// when
-	req, err := f.Validate()
-
-	// then
-	assert.Error(t, err)
-	assert.Nil(t, req)
-}
-
-func testSendCommandFlagsRequestWithPubKeyFails(t *testing.T) {
-	testDir := t.TempDir()
-
-	// given
-	f := newSendCommandFlags(t, testDir)
-	f.RawCommand = `{"pubKey": "qwerty123456", "voteSubmission": {"proposalId": "some-id", "value": "VALUE_YES"}}`
-
-	// when
-	req, err := f.Validate()
-
-	// then
-	assert.ErrorIs(t, err, cmd.ErrDoNotSetPubKeyInCommand)
-	assert.Nil(t, req)
-}
-
-func newSendCommandFlags(t *testing.T, testDir string) *cmd.SendCommandFlags {
+func newSendCommandFlags(t *testing.T, testDir string) *cmd.SendTransactionFlags {
 	t.Helper()
 
 	_, passphraseFilePath := NewPassphraseFile(t, testDir)
@@ -240,12 +198,12 @@ func newSendCommandFlags(t *testing.T, testDir string) *cmd.SendCommandFlags {
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(20)
 
-	return &cmd.SendCommandFlags{
+	return &cmd.SendTransactionFlags{
 		Network:        networkName,
 		NodeAddress:    "",
 		Retries:        10,
 		LogLevel:       "debug",
-		RawCommand:     `{"voteSubmission": {"proposalId": "some-id", "value": "VALUE_YES"}}`,
+		RawTransaction: `{"voteSubmission": {"proposalId": "some-id", "value": "VALUE_YES"}}`,
 		Wallet:         walletName,
 		PubKey:         pubKey,
 		PassphraseFile: passphraseFilePath,

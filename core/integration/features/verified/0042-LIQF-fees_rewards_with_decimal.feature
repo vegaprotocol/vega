@@ -150,8 +150,8 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | lp1    | USD   | USD/DEC21 | 8281752046   | 100000000000   | 1000000000 |
       | party1 | ETH   | USD/DEC19 | 1176961234   | 9996469116298  |            |
       | party1 | USD   | USD/DEC19 | 1176961234   | 10000000000    |            |
-      | party2 | ETH   | USD/DEC19 | 4815112741   | 9985554661777  |            |
-      | party2 | USD   | USD/DEC19 | 4815112741   | 10000000000    |            |
+      | party2 | ETH   | USD/DEC19 | 4737795542   | 9985786613374  |            |
+      | party2 | USD   | USD/DEC19 | 4737795542   | 10000000000    |            |
 
   Scenario: 002: 0070-MKTD-007, 0042-LIQF-001, 0038-OLIQ-002; 0038-OLIQ-006; 0019-MCAL-008, check updated version of dpd feature in 0038-OLIQ-liquidity_provision_order_type.md
 
@@ -306,8 +306,8 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | lp1    | USD   | USD/DEC21 | 8963397      | 100000000000   |         |
       | party1 | ETH   | USD/DEC19 | 1176961234   | 9996469116298  |         |
       | party1 | USD   | USD/DEC19 | 1176961234   | 10000000000    |         |
-      | party2 | ETH   | USD/DEC19 | 4815112741   | 9985554661777  |         |
-      | party2 | USD   | USD/DEC19 | 4815112741   | 10000000000    |         |
+      | party2 | ETH   | USD/DEC19 | 4737795542   | 9985786613374  |         |
+      | party2 | USD   | USD/DEC19 | 4737795542   | 10000000000    |         |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     |
@@ -459,7 +459,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | party  | asset | market id | margin | general   | bond  |
       | lp1    | USD   | ETH/MAR22 | 337195 | 999622805 | 40000 |
       | party1 | USD   | ETH/MAR22 | 11770  | 99988230  | 0     |
-      | party2 | USD   | ETH/MAR22 | 48151  | 99951849  | 0     |
+      | party2 | USD   | ETH/MAR22 | 47374  | 99952626  | 0     |
 
     Then the network moves ahead "1" blocks
 

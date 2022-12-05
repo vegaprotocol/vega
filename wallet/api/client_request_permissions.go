@@ -4,11 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/mitchellh/mapstructure"
 )
+
+var ErrCannotUpdatePermissionsWhileUsingLingLivingToken = errors.New("cannot update the permissions of the wallet connected with a long-living token")
 
 type ClientRequestPermissionsParams struct {
 	Token                string                    `json:"token"`
@@ -22,7 +26,7 @@ type ClientRequestPermissionsResult struct {
 type ClientRequestPermissions struct {
 	walletStore WalletStore
 	interactor  Interactor
-	sessions    *Sessions
+	sessions    *session.Sessions
 }
 
 // Handle allows a third-party application to request permissions to access
@@ -41,9 +45,7 @@ type ClientRequestPermissions struct {
 // updated.
 //
 // Using this handler does not require permissions.
-func (h *ClientRequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
-	traceID := TraceIDFromContext(ctx)
-
+func (h *ClientRequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Params, metadata jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateRequestPermissionsParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -54,22 +56,26 @@ func (h *ClientRequestPermissions) Handle(ctx context.Context, rawParams jsonrpc
 		return nil, invalidParams(err)
 	}
 
-	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token)
+	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token, time.Now())
 	if err != nil {
 		return nil, invalidParams(err)
 	}
 
-	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
+	if !connectedWallet.RequireInteraction() {
+		return nil, applicationError(ErrorCodeRequestNotPermitted, ErrCannotUpdatePermissionsWhileUsingLingLivingToken)
+	}
+
+	if err := h.interactor.NotifyInteractionSessionBegan(ctx, metadata.TraceID); err != nil {
 		return nil, internalError(err)
 	}
-	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
+	defer h.interactor.NotifyInteractionSessionEnded(ctx, metadata.TraceID)
 
-	approved, err := h.interactor.RequestPermissionsReview(ctx, traceID, connectedWallet.Hostname, connectedWallet.Wallet.Name(), perms.Summary())
+	approved, err := h.interactor.RequestPermissionsReview(ctx, metadata.TraceID, connectedWallet.Hostname, connectedWallet.Wallet.Name(), perms.Summary())
 	if err != nil {
-		if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
+		if errDetails := handleRequestFlowError(ctx, metadata.TraceID, h.interactor, err); errDetails != nil {
 			return nil, errDetails
 		}
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the permissions review failed: %w", err))
+		h.interactor.NotifyError(ctx, metadata.TraceID, InternalError, fmt.Errorf("requesting the permissions review failed: %w", err))
 		return nil, internalError(ErrCouldNotRequestPermissions)
 	}
 	if !approved {
@@ -83,22 +89,22 @@ func (h *ClientRequestPermissions) Handle(ctx context.Context, rawParams jsonrpc
 			return nil, requestInterruptedError(ErrRequestInterrupted)
 		}
 
-		enteredPassphrase, err := h.interactor.RequestPassphrase(ctx, traceID, connectedWallet.Wallet.Name())
+		enteredPassphrase, err := h.interactor.RequestPassphrase(ctx, metadata.TraceID, connectedWallet.Wallet.Name())
 		if err != nil {
-			if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
+			if errDetails := handleRequestFlowError(ctx, metadata.TraceID, h.interactor, err); errDetails != nil {
 				return nil, errDetails
 			}
-			h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the passphrase failed: %w", err))
+			h.interactor.NotifyError(ctx, metadata.TraceID, InternalError, fmt.Errorf("requesting the passphrase failed: %w", err))
 			return nil, internalError(ErrCouldNotRequestPermissions)
 		}
 
 		w, err := h.walletStore.GetWallet(ctx, connectedWallet.Wallet.Name(), enteredPassphrase)
 		if err != nil {
 			if errors.Is(err, wallet.ErrWrongPassphrase) {
-				h.interactor.NotifyError(ctx, traceID, UserError, wallet.ErrWrongPassphrase)
+				h.interactor.NotifyError(ctx, metadata.TraceID, UserError, wallet.ErrWrongPassphrase)
 				continue
 			}
-			h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not retrieve the wallet: %w", err))
+			h.interactor.NotifyError(ctx, metadata.TraceID, InternalError, fmt.Errorf("could not retrieve the wallet: %w", err))
 			return nil, internalError(ErrCouldNotRequestPermissions)
 		}
 		passphrase = enteredPassphrase
@@ -112,14 +118,14 @@ func (h *ClientRequestPermissions) Handle(ctx context.Context, rawParams jsonrpc
 	// We update the wallet we just loaded from the wallet store to ensure
 	// we don't overwrite changes that could have been done outside the API.
 	if err := walletFromStore.UpdatePermissions(connectedWallet.Hostname, perms); err != nil {
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not update the permissions: %w", err))
+		h.interactor.NotifyError(ctx, metadata.TraceID, InternalError, fmt.Errorf("could not update the permissions: %w", err))
 		return nil, internalError(ErrCouldNotRequestPermissions)
 	}
 
 	// Then, we update the in-memory wallet with the updated wallet, before
 	// saving it, to ensure there is no problem with the resources reloading.
 	if err := connectedWallet.ReloadWithWallet(walletFromStore); err != nil {
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not reload wallet's resources: %w", err))
+		h.interactor.NotifyError(ctx, metadata.TraceID, InternalError, fmt.Errorf("could not reload wallet's resources: %w", err))
 		return nil, internalError(ErrCouldNotRequestPermissions)
 	}
 
@@ -129,11 +135,11 @@ func (h *ClientRequestPermissions) Handle(ctx context.Context, rawParams jsonrpc
 		// There is no sane reason it fails out of the blue.
 		_ = connectedWallet.ReloadWithWallet(previousWallet)
 
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not save the wallet: %w", err))
+		h.interactor.NotifyError(ctx, metadata.TraceID, InternalError, fmt.Errorf("could not save the wallet: %w", err))
 		return nil, internalError(ErrCouldNotRequestPermissions)
 	}
 
-	h.interactor.NotifySuccessfulRequest(ctx, traceID, PermissionsSuccessfullyUpdated)
+	h.interactor.NotifySuccessfulRequest(ctx, metadata.TraceID, PermissionsSuccessfullyUpdated)
 
 	return ClientRequestPermissionsResult{
 		Permissions: perms.Summary(),
@@ -164,7 +170,7 @@ func validateRequestPermissionsParams(rawParams jsonrpc.Params) (ClientRequestPe
 func NewRequestPermissions(
 	walletStore WalletStore,
 	interactor Interactor,
-	sessions *Sessions,
+	sessions *session.Sessions,
 ) *ClientRequestPermissions {
 	return &ClientRequestPermissions{
 		walletStore: walletStore,

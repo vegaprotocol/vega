@@ -18,7 +18,12 @@ var (
 	ErrMsysPasswordInput            = errors.New("password input is not supported on msys (use --passphrase-file or a standard windows terminal)")
 )
 
-type PassphraseGetterWithOps func(string, bool) (string, error)
+type PassphraseOptions struct {
+	Name        string
+	Description string
+}
+
+type PassphraseGetterWithOps func(PassphraseOptions, bool) (string, error)
 
 // BuildPassphraseGetterWithOps builds a function that returns a passphrase.
 // If passphraseFile is set, the returned function is built to read a file. If
@@ -27,7 +32,7 @@ type PassphraseGetterWithOps func(string, bool) (string, error)
 // asks for passphrase confirmation base on its value.
 func BuildPassphraseGetterWithOps(passphraseFile string) PassphraseGetterWithOps {
 	if len(passphraseFile) != 0 {
-		return func(_ string, _ bool) (string, error) {
+		return func(_ PassphraseOptions, _ bool) (string, error) {
 			return ReadPassphraseFile(passphraseFile)
 		}
 	}
@@ -40,7 +45,15 @@ func GetPassphrase(passphraseFile string) (string, error) {
 		return ReadPassphraseFile(passphraseFile)
 	}
 
-	return ReadPassphraseInput()
+	return ReadPassphraseInput(PassphraseOptions{})
+}
+
+func GetPassphraseWithOptions(options PassphraseOptions, passphraseFile string) (string, error) {
+	if len(passphraseFile) != 0 {
+		return ReadPassphraseFile(passphraseFile)
+	}
+
+	return ReadPassphraseInput(options)
 }
 
 func GetConfirmedPassphrase(passphraseFile string) (string, error) {
@@ -48,15 +61,15 @@ func GetConfirmedPassphrase(passphraseFile string) (string, error) {
 		return ReadPassphraseFile(passphraseFile)
 	}
 
-	return ReadConfirmedPassphraseInput("")
+	return ReadConfirmedPassphraseInput(PassphraseOptions{})
 }
 
-func GetConfirmedPassphraseWithContext(passphraseContext, passphraseFile string) (string, error) {
+func GetConfirmedPassphraseWithContext(passphraseOptions PassphraseOptions, passphraseFile string) (string, error) {
 	if len(passphraseFile) != 0 {
 		return ReadPassphraseFile(passphraseFile)
 	}
 
-	return ReadConfirmedPassphraseInput(passphraseContext)
+	return ReadConfirmedPassphraseInput(passphraseOptions)
 }
 
 func ReadPassphraseFile(passphraseFilePath string) (string, error) {
@@ -75,23 +88,26 @@ func ReadPassphraseFile(passphraseFilePath string) (string, error) {
 	return cleanupPassphrase, nil
 }
 
-func ReadPassphraseInput() (string, error) {
-	return ReadPassphraseInputWithOpts("", false)
+func ReadPassphraseInput(options PassphraseOptions) (string, error) {
+	return ReadPassphraseInputWithOpts(options, false)
 }
 
-func ReadConfirmedPassphraseInput(passphraseContext string) (string, error) {
+func ReadConfirmedPassphraseInput(passphraseContext PassphraseOptions) (string, error) {
 	return ReadPassphraseInputWithOpts(passphraseContext, true)
 }
 
-func ReadPassphraseInputWithOpts(passphraseContext string, withConfirmation bool) (string, error) {
+func ReadPassphraseInputWithOpts(passphraseOptions PassphraseOptions, withConfirmation bool) (string, error) {
 	if vgterm.HasNoTTY() {
 		return "", ErrPassphraseRequiredWithoutTTY
 	}
 
-	if passphraseContext != "" {
-		passphraseContext += " "
+	if passphraseOptions.Description != "" {
+		fmt.Printf("\n" + passphraseOptions.Description + "\n")
 	}
-	passphrase, err := promptForPassphrase("Enter " + passphraseContext + "passphrase: ")
+	if passphraseOptions.Name != "" {
+		passphraseOptions.Name += " "
+	}
+	passphrase, err := promptForPassphrase("Enter " + passphraseOptions.Name + "passphrase: ")
 	if err != nil {
 		return "", fmt.Errorf("couldn't get passphrase: %w", err)
 	}

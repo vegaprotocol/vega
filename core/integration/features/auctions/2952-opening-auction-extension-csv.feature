@@ -101,8 +101,8 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party2 | ETH/DEC20 | buy  | 1      | 14000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-4    |
     # Check MTM Loss transfer happened
     Then the following transfers should happen:
-      | from   | to     | from account         | to account              | market id | amount | asset |
-      | party3 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 50587  | ETH   |
+      | from   | to     | from account         | to account              | market id | amount  | asset |
+      | party3 | market | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 1949413 | ETH   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
       | party3 | ETH   | ETH/DEC20 | 2174316 | 990775684 |

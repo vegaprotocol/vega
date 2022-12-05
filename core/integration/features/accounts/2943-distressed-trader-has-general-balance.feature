@@ -55,7 +55,7 @@ Feature: Distressed parties should not have general balance left
     When the parties place the following orders "1" blocks apart:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party4 | ETH/DEC20 | sell | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | party5 | ETH/DEC20 | buy  | 10     | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-1     |
+      | party5 | ETH/DEC20 | buy  | 10     | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-4     |
       | party3 | ETH/DEC20 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | party3 | ETH/DEC20 | sell | 10     | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
 

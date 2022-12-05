@@ -82,6 +82,9 @@ type ExecutionEngine interface {
 	CancelLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionCancellation, party string) error
 	AmendLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionAmendment, party string, deterministicID string) error
 	Hash() []byte
+
+	// End of block
+	BlockEnd(ctx context.Context)
 }
 
 type GovernanceEngine interface {

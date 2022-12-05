@@ -27,7 +27,7 @@ func testSendTxFlagsValidFlagsSucceeds(t *testing.T) {
 	network := vgrand.RandomStr(10)
 
 	encodedTx := "ChwIxZXB58qn4K06EMC2BPI+CwoHc29tZS1pZBACEpMBCoABMTM1ZDdmN2Q4MjhkMjg3ZDMyNDQzYjQ2NGEyZDQwNTkyZjQ1OTgwMGQ0MGZmMzY5Y2VhMGFkZDUzZmZjNjYzYzlkZmU2YTI4MGIxZWI4MjdiOTJmYmY2NTY3NzI3MjgwYzMwODBiNjg5NGYyMjYzZmJlYmFkN2I2M2VhN2M4MGYSDHZlZ2EvZWQyNTUxORgBgH0B0j5AZjM4MTc5NjljZDMxNmQ1NmMzN2EzYzE5MjVjMDMyOWM5ZTMxMDQ0ODI5OGZmNzYyMjMwMTVjN2QyY2RiOTFiOQ=="
-	f := &cmd.SendTxFlags{
+	f := &cmd.SendRawTransactionFlags{
 		Network:     network,
 		NodeAddress: "",
 		Retries:     10,
@@ -35,7 +35,7 @@ func testSendTxFlagsValidFlagsSucceeds(t *testing.T) {
 		RawTx:       encodedTx,
 	}
 
-	expectedReq := api.AdminSendTransactionParams{
+	expectedReq := api.AdminSendRawTransactionParams{
 		Network:            network,
 		NodeAddress:        "",
 		Retries:            10,
@@ -132,12 +132,12 @@ func testSendTxFlagsMalformedTxFails(t *testing.T) {
 	assert.Empty(t, req)
 }
 
-func newSendTxFlags(t *testing.T) *cmd.SendTxFlags {
+func newSendTxFlags(t *testing.T) *cmd.SendRawTransactionFlags {
 	t.Helper()
 
 	networkName := vgrand.RandomStr(10)
 
-	return &cmd.SendTxFlags{
+	return &cmd.SendRawTransactionFlags{
 		Network:     networkName,
 		NodeAddress: "",
 		Retries:     10,

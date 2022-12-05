@@ -1,18 +1,37 @@
 # Changelog
 
-## Unreleased 0.63.0
+## Unreleased 0.64.0
 
 ### 🚨 Breaking changes
-- [6716](https://github.com/vegaprotocol/vega/issues/6716) - Use timestamp on all times fields
-- [6887](https://github.com/vegaprotocol/vega/issues/6716) - `client.get_permissions` and `client.request_permissions` have been removed from Wallet service V2 with permissions now asked during `client.list_keys`
-- [6725](https://github.com/vegaprotocol/vega/issues/6725) - Fix inconsistent use of node field on `GraphQL` connection edges
-- [6746](https://github.com/vegaprotocol/vega/issues/6746) - The `validating_nodes` has been removed from `NodeData` and replaced with details of each node set
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.63.1
+
+### 🛠 Improvements
+- [7003](https://github.com/vegaprotocol/vega/pull/7003) - Expose bus event stream on the `REST` API
+
+## 0.63.0
+
+### 🚨 Breaking changes
+- [6898](https://github.com/vegaprotocol/vega/issues/6795) - allow `-snapshot.load-from-block-height=` to apply to `statesync` snapshots
+- [6716](https://github.com/vegaprotocol/vega/issues/6716) - Use timestamp on all times fields
+- [6887](https://github.com/vegaprotocol/vega/issues/6716) - `client.get_permissions` and `client.request_permissions` have been removed from Wallet service V2 with permissions now asked during `client.list_keys`
+- [6725](https://github.com/vegaprotocol/vega/issues/6725) - Fix inconsistent use of node field on `GraphQL` connection edges
+- [6746](https://github.com/vegaprotocol/vega/issues/6746) - The `validating_nodes` has been removed from `NodeData` and replaced with details of each node set
+
+### 🛠 Improvements
 - [6898](https://github.com/vegaprotocol/vega/issues/6898) - allow `-snapshot.load-from-block-height=` to apply to `statesync` snapshots
+- [6871](https://github.com/vegaprotocol/vega/issues/6871) - Assure integration test framework throws an error when no watchers specified for a network parameter being set/updated
 - [6795](https://github.com/vegaprotocol/vega/issues/6795) - max gas implementation
 - [6641](https://github.com/vegaprotocol/vega/issues/6641) - network wide limits
 - [6731](https://github.com/vegaprotocol/vega/issues/6731) - standardize on 'network' and '' for network party and no market identifiers
@@ -21,6 +40,8 @@
 - [6959](https://github.com/vegaprotocol/vega/issues/6959) - Fix listing transactions by block height in block explorer back end
 - [6832](https://github.com/vegaprotocol/vega/issues/6832) - Add signature to transaction information returned by block explorer API
 - [6884](https://github.com/vegaprotocol/vega/issues/6884) - Specify transaction as `JSON` rather than a base64 encoded string in `client_{sign|send}_transaction`
+- [6975](https://github.com/vegaprotocol/vega/issues/6975) - Implement `admin.sign_transaction` in the wallet
+- [6974](https://github.com/vegaprotocol/vega/issues/6974) - Make names in wallet admin `API` consistent
 - [6642](https://github.com/vegaprotocol/vega/issues/6642) - Add methods to manage the wallet service and its connections on wallet API version 2
 - [6853](https://github.com/vegaprotocol/vega/issues/6853) - Max gas and priority improvements
 - [6782](https://github.com/vegaprotocol/vega/issues/6782) - Bump embedded `postgres` version to hopefully fix `CI` instability
@@ -30,7 +51,15 @@
 - [6871](https://github.com/vegaprotocol/vega/issues/6871) - Assure integration test framework throws an error when no watchers specified for a network parameter being set/updated
 - [6908](https://github.com/vegaprotocol/vega/issues/6871) - Update default retention policy
 - [6827](https://github.com/vegaprotocol/vega/issues/6615) - Add filters to `ordersConnection`
-- [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position 
+- [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position
+- [6988](https://github.com/vegaprotocol/vega/issues/6988) - Handle 0 timestamps in `graphql` marshaller
+- [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position
+- [6949](https://github.com/vegaprotocol/vega/issues/6949) - Mark positions to market at the end of the block.
+- [6819](https://github.com/vegaprotocol/vega/issues/6819) - Support long-living token in wallet client API
+- [6964](https://github.com/vegaprotocol/vega/issues/6964) - Add support for long living tokens with expiry
+- [6991](https://github.com/vegaprotocol/vega/issues/6991) - Expose error field in explorer API
+- [5769](https://github.com/vegaprotocol/vega/issues/5769) - Automatically resolve the host name in the client wallet API
+- [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position
 
 ### 🐛 Fixes
 - [6924](https://github.com/vegaprotocol/vega/issues/6924) - Fix deterministic sorting when nodes have equal scores and we have to choose who is in the signer set
@@ -59,7 +88,13 @@
 - [6844](https://github.com/vegaprotocol/vega/issues/6844) - Unstable `CI` tests for `dehistory`
 - [6844](https://github.com/vegaprotocol/vega/issues/6844) - Add API descriptions, remove unused ledger entries and fix typos
 - [6960](https://github.com/vegaprotocol/vega/issues/6960) - Infer has traded from settlement engine rather than from an unsaved-to-snapshot flag
- 
+- [6941](https://github.com/vegaprotocol/vega/issues/6941) - Rename `admin.describe_network` parameter to `name`
+- [6976](https://github.com/vegaprotocol/vega/issues/6976) - Recalculate margins on MTM anniversary even if there were no trades.
+- [6977](https://github.com/vegaprotocol/vega/issues/6977) - Prior to final settlement, perform MTM on unsettled trades.
+- [6569](https://github.com/vegaprotocol/vega/issues/6569) - Fix margin calculations during auctions.
+- [7001](https://github.com/vegaprotocol/vega/issues/7001) - Set mark price on final settlement.
+
+
 ## 0.62.1
 
 ### 🛠 Improvements
