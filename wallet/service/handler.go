@@ -11,19 +11,19 @@ type Store interface {
 }
 
 func InitialiseService(store Store, overwrite bool) error {
-	keys, err := GenerateRSAKeys()
-	if err != nil {
-		return fmt.Errorf("couldn't generate RSA keys: %w", err)
-	}
-
 	if !overwrite {
 		rsaKeysExists, err := store.RSAKeysExists()
 		if err != nil {
 			return fmt.Errorf("couldn't verify RSA keys existence: %w", err)
 		}
 		if rsaKeysExists {
-			return ErrRSAKeysAlreadyExists
+			return nil
 		}
+	}
+
+	keys, err := GenerateRSAKeys()
+	if err != nil {
+		return fmt.Errorf("couldn't generate RSA keys: %w", err)
 	}
 
 	if err := store.SaveRSAKeys(keys); err != nil {

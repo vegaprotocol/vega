@@ -108,23 +108,26 @@ Feature: Closeout-cascades
     # check that trader3 is closed-out but trader2 is not
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC19 | 5000        | 7500   | 10000   | 15000   |
+      #| trader2 | ETH/DEC19 | 3000        | 4500   | 6000    | 9000    |
+      #| trader2 | ETH/DEC19 | 5000        | 7500   | 10000   | 15000   |
       | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
+      | trader2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
     #maintenance_margin_trader2: 50*100*0.1=500
-    Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general |
-      | trader2 | BTC   | ETH/DEC19 | 197    | 1900    |
-      | trader3 | BTC   | ETH/DEC19 | 0      | 0       |
+    #Then the parties should have the following account balances:
+    #| party   | asset | market id | margin | general |
+    #| trader2 | BTC   | ETH/DEC19 | 2097   | 0       |
+    #| trader3 | BTC   | ETH/DEC19 | 0      | 0       |
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
-      | trader2 | 50     | 2500           | -2403        |
+      | trader2 | 0      | 0              | -2000        |
+      #| trader2 | 50     | 2500           | -2403        |
       | trader3 | 0      | 0              | -100         |
 
     # check trader2 margin level, trader2 is not closed-out yet since new mark price is not updated
     # eventhough  trader2 does not have enough margin
     Then the parties should have the following account balances:
       | party      | asset | market id | margin | general      |
-      | trader2    | BTC   | ETH/DEC19 | 197    | 1900         |
+      #| trader2    | BTC   | ETH/DEC19 | 2097   | 0            |
       | trader3    | BTC   | ETH/DEC19 | 0      | 0            |
       | auxiliary1 | BTC   | ETH/DEC19 | 114800 | 999999884295 |
       | auxiliary2 | BTC   | ETH/DEC19 | 3200   | 999999997700 |

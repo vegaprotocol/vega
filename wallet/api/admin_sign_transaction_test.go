@@ -2,7 +2,6 @@ package api_test
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"testing"
 
@@ -47,84 +46,72 @@ func testAdminSigningTransactionWithInvalidParamsFails(t *testing.T) {
 		{
 			name: "with empty wallet",
 			params: api.AdminSignTransactionParams{
-				Wallet:         "",
-				Passphrase:     vgrand.RandomStr(5),
-				PublicKey:      vgrand.RandomStr(5),
-				EncodedCommand: base64.StdEncoding.EncodeToString([]byte("{}")),
-				Network:        vgrand.RandomStr(5),
-				LastBlockData:  nil,
+				Wallet:        "",
+				Passphrase:    vgrand.RandomStr(5),
+				PublicKey:     vgrand.RandomStr(5),
+				Transaction:   testTransaction(t),
+				Network:       vgrand.RandomStr(5),
+				LastBlockData: nil,
 			},
 			expectedError: api.ErrWalletIsRequired,
 		},
 		{
 			name: "with empty passphrase",
 			params: api.AdminSignTransactionParams{
-				Wallet:         vgrand.RandomStr(5),
-				Passphrase:     "",
-				PublicKey:      vgrand.RandomStr(5),
-				EncodedCommand: base64.StdEncoding.EncodeToString([]byte("{}")),
-				Network:        vgrand.RandomStr(5),
-				LastBlockData:  nil,
+				Wallet:        vgrand.RandomStr(5),
+				Passphrase:    "",
+				PublicKey:     vgrand.RandomStr(5),
+				Transaction:   testTransaction(t),
+				Network:       vgrand.RandomStr(5),
+				LastBlockData: nil,
 			},
 			expectedError: api.ErrPassphraseIsRequired,
 		},
 		{
 			name: "with empty public key",
 			params: api.AdminSignTransactionParams{
-				Wallet:         vgrand.RandomStr(5),
-				Passphrase:     vgrand.RandomStr(5),
-				PublicKey:      "",
-				EncodedCommand: base64.StdEncoding.EncodeToString([]byte("{}")),
-				Network:        vgrand.RandomStr(5),
-				LastBlockData:  nil,
+				Wallet:        vgrand.RandomStr(5),
+				Passphrase:    vgrand.RandomStr(5),
+				PublicKey:     "",
+				Transaction:   testTransaction(t),
+				Network:       vgrand.RandomStr(5),
+				LastBlockData: nil,
 			},
 			expectedError: api.ErrPublicKeyIsRequired,
 		},
 		{
-			name: "with empty encoded transaction",
+			name: "with empty transaction",
 			params: api.AdminSignTransactionParams{
-				Wallet:         vgrand.RandomStr(5),
-				Passphrase:     vgrand.RandomStr(5),
-				PublicKey:      vgrand.RandomStr(5),
-				EncodedCommand: "",
-				Network:        vgrand.RandomStr(5),
-				LastBlockData:  nil,
+				Wallet:        vgrand.RandomStr(5),
+				Passphrase:    vgrand.RandomStr(5),
+				PublicKey:     vgrand.RandomStr(5),
+				Transaction:   "",
+				Network:       vgrand.RandomStr(5),
+				LastBlockData: nil,
 			},
-			expectedError: api.ErrEncodedTransactionIsRequired,
-		},
-		{
-			name: "with badly encoded transaction",
-			params: api.AdminSignTransactionParams{
-				Wallet:         vgrand.RandomStr(5),
-				Passphrase:     vgrand.RandomStr(5),
-				PublicKey:      vgrand.RandomStr(5),
-				EncodedCommand: "{}",
-				Network:        vgrand.RandomStr(5),
-				LastBlockData:  nil,
-			},
-			expectedError: api.ErrEncodedTransactionIsNotValidBase64String,
+			expectedError: api.ErrTransactionIsRequired,
 		},
 		{
 			name: "with no network of block data",
 			params: api.AdminSignTransactionParams{
-				Wallet:         vgrand.RandomStr(5),
-				Passphrase:     vgrand.RandomStr(5),
-				PublicKey:      vgrand.RandomStr(5),
-				Network:        "",
-				LastBlockData:  nil,
-				EncodedCommand: base64.StdEncoding.EncodeToString([]byte("{}")),
+				Wallet:        vgrand.RandomStr(5),
+				Passphrase:    vgrand.RandomStr(5),
+				PublicKey:     vgrand.RandomStr(5),
+				Network:       "",
+				LastBlockData: nil,
+				Transaction:   testTransaction(t),
 			},
 			expectedError: api.ErrLastBlockDataOrNetworkIsRequired,
 		},
 		{
 			name: "with both network and block data",
 			params: api.AdminSignTransactionParams{
-				Wallet:         vgrand.RandomStr(5),
-				Passphrase:     vgrand.RandomStr(5),
-				PublicKey:      vgrand.RandomStr(5),
-				Network:        "fairground",
-				LastBlockData:  &api.AdminLastBlockData{},
-				EncodedCommand: base64.StdEncoding.EncodeToString([]byte("{}")),
+				Wallet:        vgrand.RandomStr(5),
+				Passphrase:    vgrand.RandomStr(5),
+				PublicKey:     vgrand.RandomStr(5),
+				Network:       "fairground",
+				LastBlockData: &api.AdminLastBlockData{},
+				Transaction:   testTransaction(t),
 			},
 			expectedError: api.ErrSpecifyingNetworkAndLastBlockDataIsNotSupported,
 		},
@@ -141,7 +128,7 @@ func testAdminSigningTransactionWithInvalidParamsFails(t *testing.T) {
 					ProofOfWorkHashFunction: "sha3_24_rounds",
 					ProofOfWorkDifficulty:   12,
 				},
-				EncodedCommand: base64.StdEncoding.EncodeToString([]byte("{}")),
+				Transaction: testTransaction(t),
 			},
 			expectedError: api.ErrChainIDIsRequired,
 		},
@@ -158,7 +145,7 @@ func testAdminSigningTransactionWithInvalidParamsFails(t *testing.T) {
 					ProofOfWorkHashFunction: "sha3_24_rounds",
 					ProofOfWorkDifficulty:   12,
 				},
-				EncodedCommand: base64.StdEncoding.EncodeToString([]byte("{}")),
+				Transaction: testTransaction(t),
 			},
 			expectedError: api.ErrBlockHashIsRequired,
 		},
@@ -175,7 +162,7 @@ func testAdminSigningTransactionWithInvalidParamsFails(t *testing.T) {
 					ProofOfWorkHashFunction: "sha3_24_rounds",
 					ProofOfWorkDifficulty:   0,
 				},
-				EncodedCommand: base64.StdEncoding.EncodeToString([]byte("{}")),
+				Transaction: testTransaction(t),
 			},
 			expectedError: api.ErrProofOfWorkDifficultyRequired,
 		},
@@ -192,7 +179,7 @@ func testAdminSigningTransactionWithInvalidParamsFails(t *testing.T) {
 					ProofOfWorkDifficulty:   12,
 					ProofOfWorkHashFunction: "sha3_24_rounds",
 				},
-				EncodedCommand: base64.StdEncoding.EncodeToString([]byte("{}")),
+				Transaction: testTransaction(t),
 			},
 			expectedError: api.ErrBlockHeightIsRequired,
 		},
@@ -209,7 +196,7 @@ func testAdminSigningTransactionWithInvalidParamsFails(t *testing.T) {
 					ProofOfWorkDifficulty:   12,
 					ProofOfWorkHashFunction: "",
 				},
-				EncodedCommand: base64.StdEncoding.EncodeToString([]byte("{}")),
+				Transaction: testTransaction(t),
 			},
 			expectedError: api.ErrProofOfWorkHashFunctionRequired,
 		},
@@ -218,7 +205,7 @@ func testAdminSigningTransactionWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newAdminSignTransactionHandler(tt, unexpectedNodeSelectorCall(tt))
@@ -235,11 +222,10 @@ func testAdminSigningTransactionWithInvalidParamsFails(t *testing.T) {
 
 func testAdminSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	network := newNetwork(t)
 	passphrase := vgrand.RandomStr(5)
 	w, kp := walletWithKey(t)
-	encodedCommand := base64.StdEncoding.EncodeToString([]byte("{\"voteSubmission\": {\"proposalId\": \"bbf5079b800a93c7e977547f45a7d0353aa2e52b0c745ff090fc795d9012a604\", \"value\": \"VALUE_YES\"}}"))
 
 	// setup
 	handler := newAdminSignTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
@@ -265,11 +251,11 @@ func testAdminSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminSignTransactionParams{
-		Wallet:         w.Name(),
-		Passphrase:     passphrase,
-		PublicKey:      kp.PublicKey(),
-		Network:        network.Name,
-		EncodedCommand: encodedCommand,
+		Wallet:      w.Name(),
+		Passphrase:  passphrase,
+		PublicKey:   kp.PublicKey(),
+		Network:     network.Name,
+		Transaction: testTransaction(t),
 	})
 
 	// then
@@ -280,11 +266,10 @@ func testAdminSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 
 func testAdminSignTransactionGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	network := newNetwork(t)
 	walletName := vgrand.RandomStr(5)
 	passphrase := vgrand.RandomStr(5)
-	encodedCommand := base64.StdEncoding.EncodeToString([]byte("{\"voteSubmission\": {\"proposalId\": \"bbf5079b800a93c7e977547f45a7d0353aa2e52b0c745ff090fc795d9012a604\", \"value\": \"VALUE_YES\"}}"))
 
 	// setup
 	handler := newAdminSignTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
@@ -307,11 +292,11 @@ func testAdminSignTransactionGettingInternalErrorDuringWalletVerificationFails(t
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminSignTransactionParams{
-		Wallet:         walletName,
-		Passphrase:     passphrase,
-		PublicKey:      vgrand.RandomStr(5),
-		Network:        network.Name,
-		EncodedCommand: encodedCommand,
+		Wallet:      walletName,
+		Passphrase:  passphrase,
+		PublicKey:   vgrand.RandomStr(5),
+		Network:     network.Name,
+		Transaction: testTransaction(t),
 	})
 
 	// then
@@ -321,8 +306,14 @@ func testAdminSignTransactionGettingInternalErrorDuringWalletVerificationFails(t
 
 func testAdminSigningTransactionWithWalletThatDoesntExistFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
-	params := paramsWithTransaction(t, "{\"voteSubmission\": {\"proposalId\": \"bbf5079b800a93c7e977547f45a7d0353aa2e52b0c745ff090fc795d9012a604\", \"value\": \"VALUE_YES\"}}")
+	ctx := context.Background()
+	params := api.AdminSignTransactionParams{
+		Wallet:      vgrand.RandomStr(5),
+		Passphrase:  vgrand.RandomStr(5),
+		PublicKey:   vgrand.RandomStr(5),
+		Network:     "fairground",
+		Transaction: testTransaction(t),
+	}
 
 	// setup
 	handler := newAdminSignTransactionHandler(t, unexpectedNodeSelectorCall(t))
@@ -340,11 +331,10 @@ func testAdminSigningTransactionWithWalletThatDoesntExistFails(t *testing.T) {
 
 func testAdminSignTransactionGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	network := newNetwork(t)
 	walletName := vgrand.RandomStr(5)
 	passphrase := vgrand.RandomStr(5)
-	encodedCommand := base64.StdEncoding.EncodeToString([]byte("{\"voteSubmission\": {\"proposalId\": \"bbf5079b800a93c7e977547f45a7d0353aa2e52b0c745ff090fc795d9012a604\", \"value\": \"VALUE_YES\"}}"))
 
 	// setup
 	handler := newAdminSignTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
@@ -368,11 +358,11 @@ func testAdminSignTransactionGettingInternalErrorDuringWalletRetrievalFails(t *t
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminSignTransactionParams{
-		Wallet:         walletName,
-		Passphrase:     passphrase,
-		PublicKey:      vgrand.RandomStr(5),
-		Network:        network.Name,
-		EncodedCommand: encodedCommand,
+		Wallet:      walletName,
+		Passphrase:  passphrase,
+		PublicKey:   vgrand.RandomStr(5),
+		Network:     network.Name,
+		Transaction: testTransaction(t),
 	})
 
 	// then
@@ -382,11 +372,10 @@ func testAdminSignTransactionGettingInternalErrorDuringWalletRetrievalFails(t *t
 
 func testAdminSigningTransactionWithMalformedTransactionFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	network := vgrand.RandomStr(5)
 	passphrase := vgrand.RandomStr(5)
 	w, kp := walletWithKey(t)
-	encodedCommand := base64.StdEncoding.EncodeToString([]byte("I am not a transaction"))
 
 	// setup
 	handler := newAdminSignTransactionHandler(t, unexpectedNodeSelectorCall(t))
@@ -397,11 +386,11 @@ func testAdminSigningTransactionWithMalformedTransactionFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminSignTransactionParams{
-		Wallet:         w.Name(),
-		Passphrase:     passphrase,
-		PublicKey:      kp.PublicKey(),
-		Network:        network,
-		EncodedCommand: encodedCommand,
+		Wallet:      w.Name(),
+		Passphrase:  passphrase,
+		PublicKey:   kp.PublicKey(),
+		Network:     network,
+		Transaction: map[string]int{"bob": 5},
 	})
 
 	// then
@@ -411,11 +400,10 @@ func testAdminSigningTransactionWithMalformedTransactionFails(t *testing.T) {
 
 func testAdminSigningTransactionWithInvalidTransactionFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	network := newNetwork(t)
 	passphrase := vgrand.RandomStr(5)
 	w, kp := walletWithKey(t)
-	encodedCommand := base64.StdEncoding.EncodeToString([]byte("{\"voteSubmission\": {\"proposalId\": \"not real id\", \"value\": \"VALUE_YES\"}}"))
 
 	// setup
 	handler := newAdminSignTransactionHandler(t, unexpectedNodeSelectorCall(t))
@@ -426,11 +414,11 @@ func testAdminSigningTransactionWithInvalidTransactionFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminSignTransactionParams{
-		Wallet:         w.Name(),
-		Passphrase:     passphrase,
-		PublicKey:      kp.PublicKey(),
-		Network:        network.Name,
-		EncodedCommand: encodedCommand,
+		Wallet:      w.Name(),
+		Passphrase:  passphrase,
+		PublicKey:   kp.PublicKey(),
+		Network:     network.Name,
+		Transaction: testMalformedTransaction(t),
 	})
 
 	// then
@@ -448,7 +436,7 @@ type AdminSignTransactionHandler struct {
 func (h *AdminSignTransactionHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminSignTransactionResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminSignTransactionResult)
 		if !ok {
@@ -471,18 +459,5 @@ func newAdminSignTransactionHandler(t *testing.T, builder api.NodeSelectorBuilde
 		ctrl:                 ctrl,
 		walletStore:          walletStore,
 		networkStore:         networkStore,
-	}
-}
-
-func paramsWithTransaction(t *testing.T, tx string) api.AdminSignTransactionParams {
-	t.Helper()
-
-	encoded := base64.StdEncoding.EncodeToString([]byte(tx))
-	return api.AdminSignTransactionParams{
-		Wallet:         vgrand.RandomStr(5),
-		Passphrase:     vgrand.RandomStr(5),
-		PublicKey:      vgrand.RandomStr(5),
-		Network:        "fairground",
-		EncodedCommand: encoded,
 	}
 }

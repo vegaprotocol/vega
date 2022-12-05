@@ -68,7 +68,7 @@ func testUpdatingPermissionsWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newUpdatePermissionsHandler(tt)
@@ -231,7 +231,7 @@ type updatePermissionsHandler struct {
 func (h *updatePermissionsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminUpdatePermissionsResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminUpdatePermissionsResult)
 		if !ok {

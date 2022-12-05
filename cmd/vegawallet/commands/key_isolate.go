@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -35,6 +36,11 @@ var (
 		# Isolate a key pair
 		{{.Software}} key isolate --wallet WALLET --pubkey PUBKEY
 	`)
+
+	isolatedWalletPassphraseOptions = flags.PassphraseOptions{
+		Name:        "isolated wallet",
+		Description: "When isolating the wallet, you can choose a brand-new passphrase, or reuse the original one.",
+	}
 )
 
 type IsolateKeyHandler func(api.AdminIsolateKeyParams) (api.AdminIsolateKeyResult, error)
@@ -47,7 +53,7 @@ func NewCmdIsolateKey(w io.Writer, rf *RootFlags) *cobra.Command {
 		}
 
 		isolateKey := api.NewAdminIsolateKey(s)
-		rawResult, errDetails := isolateKey.Handle(context.Background(), params)
+		rawResult, errDetails := isolateKey.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
 		if errDetails != nil {
 			return api.AdminIsolateKeyResult{}, errors.New(errDetails.Data)
 		}
@@ -108,7 +114,7 @@ func BuildCmdIsolateKey(w io.Writer, handler IsolateKeyHandler, rf *RootFlags) *
 		"Path to the file containing the new isolated wallet's passphrase",
 	)
 
-	autoCompleteWallet(cmd, rf.Home)
+	autoCompleteWallet(cmd, rf.Home, "wallet")
 
 	return cmd
 }
@@ -134,7 +140,7 @@ func (f *IsolateKeyFlags) Validate() (api.AdminIsolateKeyParams, error) {
 		return api.AdminIsolateKeyParams{}, err
 	}
 
-	newPassphrase, err := flags.GetConfirmedPassphraseWithContext("isolated wallet", f.IsolatedWalletPassphraseFile)
+	newPassphrase, err := flags.GetConfirmedPassphraseWithContext(isolatedWalletPassphraseOptions, f.IsolatedWalletPassphraseFile)
 	if err != nil {
 		return api.AdminIsolateKeyParams{}, err
 	}

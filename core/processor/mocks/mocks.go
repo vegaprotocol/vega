@@ -293,6 +293,18 @@ func (mr *MockExecutionEngineMockRecorder) AmendOrder(arg0, arg1, arg2, arg3 int
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendOrder", reflect.TypeOf((*MockExecutionEngine)(nil).AmendOrder), arg0, arg1, arg2, arg3)
 }
 
+// BlockEnd mocks base method.
+func (m *MockExecutionEngine) BlockEnd(arg0 context.Context) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "BlockEnd", arg0)
+}
+
+// BlockEnd indicates an expected call of BlockEnd.
+func (mr *MockExecutionEngineMockRecorder) BlockEnd(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BlockEnd", reflect.TypeOf((*MockExecutionEngine)(nil).BlockEnd), arg0)
+}
+
 // CancelLiquidityProvision mocks base method.
 func (m *MockExecutionEngine) CancelLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionCancellation, arg2 string) error {
 	m.ctrl.T.Helper()

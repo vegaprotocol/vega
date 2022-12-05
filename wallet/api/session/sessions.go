@@ -1,23 +1,30 @@
-package api
+package session
 
 import (
 	"errors"
 	"fmt"
 	"sort"
+	"time"
 
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
-	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 )
 
-var ErrNoWalletConnected = errors.New("no wallet connected")
+var (
+	ErrNoWalletConnected                       = errors.New("no wallet connected")
+	ErrCannotEndLongLivingSessions             = errors.New("sessions attached to long-living tokens cannot be ended")
+	ErrGeneratedTokenCollidesWithExistingToken = errors.New("the generated token collides with an existing token")
+	ErrAPITokenExpired                         = errors.New("the token has expired")
+)
 
+// Sessions holds the live sessions.
 type Sessions struct {
-	// fingerprints holds the hash of the wallet and the hostname in use in the
-	// sessions as key and the token as value. It's used to retrieve the token
-	// if the client quit the third-party application without disconnecting the
-	// wallet first.
-	fingerprints map[string]string
+	// shortLivingConnectionFingerprints holds the hash of the wallet and the
+	// hostname in use in the sessions as key and the token as value. It's used
+	// to retrieve the token if the client quit the third-party application
+	// without disconnecting the wallet first.
+	shortLivingConnectionFingerprints map[string]string
+
 	// connectedWallets holds the wallet resources and information by token.
 	connectedWallets map[string]*ConnectedWallet
 }
@@ -27,10 +34,13 @@ type Sessions struct {
 // generated.
 func (s *Sessions) ConnectWallet(hostname string, w wallet.Wallet) (string, error) {
 	fingerprint := toFingerprint(hostname, w.Name())
-	if token, ok := s.fingerprints[fingerprint]; ok {
+	if token, ok := s.shortLivingConnectionFingerprints[fingerprint]; ok {
 		// We already have a connection for that wallet and hostname, we destroy
-		// it.
-		s.DisconnectWalletWithToken(token)
+		// it, before creating a new one.
+		if err := s.DisconnectWalletWithToken(token); err != nil {
+			// This should not happen.
+			return "", fmt.Errorf("could not disconnect the wallet before reconnection: %w", err)
+		}
 	}
 
 	connectedWallet, err := NewConnectedWallet(hostname, w)
@@ -38,48 +48,80 @@ func (s *Sessions) ConnectWallet(hostname string, w wallet.Wallet) (string, erro
 		return "", fmt.Errorf("could not load the wallet: %w", err)
 	}
 
-	token := vgrand.RandomStr(64)
+	token := GenerateToken()
 
-	s.fingerprints[fingerprint] = token
+	if _, alreadyExistingToken := s.connectedWallets[token]; alreadyExistingToken {
+		return "", ErrGeneratedTokenCollidesWithExistingToken
+	}
+
+	s.shortLivingConnectionFingerprints[fingerprint] = token
 	s.connectedWallets[token] = connectedWallet
 
 	return token, nil
 }
 
+func (s *Sessions) ConnectWalletForLongLivingConnection(
+	token string, w wallet.Wallet, now time.Time, expiry *time.Time,
+) error {
+	connectedWallet, err := NewLongLivingConnectedWallet(w, now, expiry)
+	if err != nil {
+		return fmt.Errorf("could not load the wallet: %w", err)
+	}
+	s.connectedWallets[token] = connectedWallet
+	return nil
+}
+
 // DisconnectWalletWithToken looks for the connected wallet associated to the
 // token, unloads its resources, and revokes the token.
 // It does not fail. Non-existing token does nothing.
-func (s *Sessions) DisconnectWalletWithToken(token string) {
+func (s *Sessions) DisconnectWalletWithToken(token string) error {
 	connectedWallet, ok := s.connectedWallets[token]
 	if !ok {
-		return
+		return nil
+	}
+	if connectedWallet.noRestrictions {
+		return ErrCannotEndLongLivingSessions
 	}
 
 	fingerprint := toFingerprint(connectedWallet.Hostname, connectedWallet.Wallet.Name())
-	delete(s.fingerprints, fingerprint)
+	delete(s.shortLivingConnectionFingerprints, fingerprint)
 	delete(s.connectedWallets, token)
+	return nil
 }
 
 // DisconnectWallet unloads the connected wallet resources and revokes the token.
 // It does not fail. Non-existing token does nothing.
+// This doesn't work for long-living connections.
 func (s *Sessions) DisconnectWallet(hostname, wallet string) {
 	fingerprint := toFingerprint(hostname, wallet)
-	token := s.fingerprints[fingerprint]
-	delete(s.fingerprints, fingerprint)
+	token := s.shortLivingConnectionFingerprints[fingerprint]
+	delete(s.shortLivingConnectionFingerprints, fingerprint)
 	delete(s.connectedWallets, token)
 }
 
 func (s *Sessions) DisconnectAllWallets() {
-	s.connectedWallets = map[string]*ConnectedWallet{}
-	s.fingerprints = map[string]string{}
+	// Long-living connections should be kept alive.
+	longLivingConnections := map[string]*ConnectedWallet{}
+	for token, connectedWallet := range s.connectedWallets {
+		if !connectedWallet.RequireInteraction() {
+			longLivingConnections[token] = connectedWallet
+		}
+	}
+
+	s.connectedWallets = longLivingConnections
+	s.shortLivingConnectionFingerprints = map[string]string{}
 }
 
 // GetConnectedWallet retrieves the resources and information of the
 // connected wallet, associated to the specified token.
-func (s *Sessions) GetConnectedWallet(token string) (*ConnectedWallet, error) {
+func (s *Sessions) GetConnectedWallet(token string, now time.Time) (*ConnectedWallet, error) {
 	connectedWallet, ok := s.connectedWallets[token]
 	if !ok {
 		return nil, ErrNoWalletConnected
+	}
+
+	if err := connectedWallet.Expired(now); err != nil {
+		return nil, ErrAPITokenExpired
 	}
 
 	return connectedWallet, nil
@@ -110,8 +152,8 @@ func (s *Sessions) ListConnections() []Connection {
 
 func NewSessions() *Sessions {
 	return &Sessions{
-		fingerprints:     map[string]string{},
-		connectedWallets: map[string]*ConnectedWallet{},
+		shortLivingConnectionFingerprints: map[string]string{},
+		connectedWallets:                  map[string]*ConnectedWallet{},
 	}
 }
 
@@ -133,9 +175,34 @@ type ConnectedWallet struct {
 	// RestrictedKeys holds the keys that have been selected by the client
 	// during the permissions request.
 	RestrictedKeys map[string]wallet.KeyPair
+
+	// An optional expiry date for this token
+	Expiry *time.Time
+
+	// noRestrictions is a hack to know if we should skip permission
+	// verification when we are connected with a long-living API token.
+	noRestrictions bool
+}
+
+func (s *ConnectedWallet) Expired(now time.Time) error {
+	if s.Expiry != nil && s.Expiry.Before(now) {
+		return ErrAPITokenExpired
+	}
+	return nil
+}
+
+// RequireInteraction tells if an interaction with the user is needed for
+// supervision is required or not.
+// It is related to the type of API token that is used for this connection.
+// If it's a long-living token, then no interaction is required.
+func (s *ConnectedWallet) RequireInteraction() bool {
+	return !s.noRestrictions
 }
 
 func (s *ConnectedWallet) Permissions() wallet.Permissions {
+	if s.noRestrictions {
+		return wallet.PermissionsWithoutRestrictions()
+	}
 	return s.Wallet.Permissions(s.Hostname)
 }
 
@@ -208,9 +275,29 @@ func (s *ConnectedWallet) loadRestrictedKeys() error {
 
 func NewConnectedWallet(hostname string, w wallet.Wallet) (*ConnectedWallet, error) {
 	s := &ConnectedWallet{
+		noRestrictions: false,
 		Hostname:       hostname,
 		Wallet:         w,
 		RestrictedKeys: map[string]wallet.KeyPair{},
+	}
+
+	if err := s.loadRestrictedKeys(); err != nil {
+		return nil, fmt.Errorf("could not load the restricted keys: %w", err)
+	}
+
+	return s, nil
+}
+
+func NewLongLivingConnectedWallet(w wallet.Wallet, now time.Time, expiry *time.Time) (*ConnectedWallet, error) {
+	s := &ConnectedWallet{
+		noRestrictions: true,
+		Hostname:       "",
+		Wallet:         w,
+		Expiry:         expiry,
+		RestrictedKeys: map[string]wallet.KeyPair{},
+	}
+	if err := s.Expired(now); err != nil {
+		return nil, err
 	}
 
 	if err := s.loadRestrictedKeys(); err != nil {

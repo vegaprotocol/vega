@@ -2,9 +2,11 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -19,7 +21,7 @@ type AdminUpdatePassphrase struct {
 }
 
 // Handle renames the wallet.
-func (h *AdminUpdatePassphrase) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminUpdatePassphrase) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateUpdatePassphraseParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -33,6 +35,9 @@ func (h *AdminUpdatePassphrase) Handle(ctx context.Context, rawParams jsonrpc.Pa
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet, params.Passphrase)
 	if err != nil {
+		if errors.Is(err, wallet.ErrWrongPassphrase) {
+			return nil, invalidParams(err)
+		}
 		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
 

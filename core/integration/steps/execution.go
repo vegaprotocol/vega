@@ -33,4 +33,5 @@ type Execution interface {
 	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error
 	StartOpeningAuction(ctx context.Context, marketID string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
+	BlockEnd(ctx context.Context)
 }

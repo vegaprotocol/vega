@@ -112,10 +112,12 @@ Feature: Position resolution case 5 lognormal risk model
       | buySideProvider | ETH/DEC19 | buy  | 290    | 120   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
     # insurance pool generation - set new mark price (and trigger closeout)
+    #When the parties place the following orders with ticks:
     When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+    And the network moves ahead "1" blocks
 
     Then the following trades should be executed:
       | buyer           | price | size | seller           |
@@ -138,12 +140,12 @@ Feature: Position resolution case 5 lognormal risk model
       | aux2             | -1     | 10             | 0            |
 
     Then the parties should have the following account balances:
-      | party            | asset | market id | margin | general      |
-      | designatedLooser | USD   | ETH/DEC19 | 0      | 0            |
-      | sellSideProvider | USD   | ETH/DEC19 | 839594 | 999999163306 |
-      | buySideProvider  | USD   | ETH/DEC19 | 81259  | 999999924541 |
-      | aux              | USD   | ETH/DEC19 | 1088   | 999999998902 |
-      | aux2             | USD   | ETH/DEC19 | 2896   | 999999997114 |
+      | party            | asset | market id | margin  | general            |
+      | designatedLooser | USD   | ETH/DEC19 | 0       | 0                  |
+      | sellSideProvider | USD   | ETH/DEC19 | 839594  | 999999163306       |
+      | buySideProvider  | USD   | ETH/DEC19 | 81259   | 999999924541       |
+      | aux              | USD   | ETH/DEC19 | 1088    | 999999998902       |
+      | aux2             | USD   | ETH/DEC19 | 2896    | 999999997114       |
 
     # check margin levels
     Then the parties should have the following margin levels:

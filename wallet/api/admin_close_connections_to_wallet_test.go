@@ -8,6 +8,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
+	"code.vegaprotocol.io/vega/wallet/api/mocks"
+	"code.vegaprotocol.io/vega/wallet/api/session"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -54,7 +56,7 @@ func testAdminCloseConnectionsToWalletWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newCloseConnectionsToWalletHandler(tt)
@@ -81,7 +83,7 @@ func testAdminCloseConnectionsToWalletWithValidParamsSucceeds(t *testing.T) {
 
 	// setup
 	handler := newCloseConnectionsToWalletHandler(t)
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 	if _, err := sessions.ConnectWallet(hostname, expectedWallet); err != nil {
 		t.Fatal(err)
 	}
@@ -112,11 +114,11 @@ func testAdminCloseConnectionsToWalletWithValidParamsSucceeds(t *testing.T) {
 
 	// then
 	require.Nil(t, errorDetails)
-	assert.NotContains(t, sessions.ListConnections(), api.Connection{
+	assert.NotContains(t, sessions.ListConnections(), session.Connection{
 		Hostname: hostname,
 		Wallet:   expectedWallet.Name(),
 	})
-	assert.NotContains(t, sessions.ListConnections(), api.Connection{
+	assert.NotContains(t, sessions.ListConnections(), session.Connection{
 		Hostname: otherHostname,
 		Wallet:   expectedWallet.Name(),
 	})
@@ -134,7 +136,7 @@ func testAdminCloseConnectionsToWalletOnUnknownNetworkDoesNotFail(t *testing.T) 
 
 	// setup
 	handler := newCloseConnectionsToWalletHandler(t)
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 	if _, err := sessions.ConnectWallet(hostname, expectedWallet); err != nil {
 		t.Fatal(err)
 	}
@@ -161,7 +163,7 @@ func testAdminCloseConnectionsToWalletOnUnknownNetworkDoesNotFail(t *testing.T) 
 	require.Nil(t, errorDetails)
 	connections := sessions.ListConnections()
 	assert.Len(t, connections, 4)
-	expectedConnections := []api.Connection{
+	expectedConnections := []session.Connection{
 		{Hostname: hostname, Wallet: expectedWallet.Name()},
 		{Hostname: otherHostname, Wallet: expectedWallet.Name()},
 		{Hostname: hostname, Wallet: otherWallet.Name()},
@@ -188,7 +190,7 @@ func testAdminCloseConnectionsToWalletOnUnknownWalletDoesNotFail(t *testing.T) {
 
 	// setup
 	handler := newCloseConnectionsToWalletHandler(t)
-	sessions := api.NewSessions()
+	sessions := session.NewSessions()
 	if _, err := sessions.ConnectWallet(hostname, expectedWallet); err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +216,7 @@ func testAdminCloseConnectionsToWalletOnUnknownWalletDoesNotFail(t *testing.T) {
 	// then
 	require.Nil(t, errorDetails)
 	connections := sessions.ListConnections()
-	expectedConnections := []api.Connection{
+	expectedConnections := []session.Connection{
 		{Hostname: hostname, Wallet: expectedWallet.Name()},
 		{Hostname: otherHostname, Wallet: expectedWallet.Name()},
 		{Hostname: hostname, Wallet: otherWallet.Name()},
@@ -233,12 +235,14 @@ type adminCloseConnectionsToWalletHandler struct {
 	*api.AdminCloseConnectionsToWallet
 	ctrl            *gomock.Controller
 	servicesManager *api.ServicesManager
+	walletStore     *mocks.MockWalletStore
+	tokenStore      *mocks.MockTokenStore
 }
 
 func (h *adminCloseConnectionsToWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	require.Empty(t, rawResult)
 	return err
 }
@@ -248,10 +252,16 @@ func newCloseConnectionsToWalletHandler(t *testing.T) *adminCloseConnectionsToWa
 
 	ctrl := gomock.NewController(t)
 
-	servicesManager := api.NewServicesManager()
+	walletStore := mocks.NewMockWalletStore(ctrl)
+	tokenStore := mocks.NewMockTokenStore(ctrl)
+	tokenStore.EXPECT().ListTokens().AnyTimes().Return([]session.TokenSummary{}, nil)
+	servicesManager := api.NewServicesManager(tokenStore, walletStore)
+
 	return &adminCloseConnectionsToWalletHandler{
 		AdminCloseConnectionsToWallet: api.NewAdminCloseConnectionsToWallet(servicesManager),
 		ctrl:                          ctrl,
 		servicesManager:               servicesManager,
+		walletStore:                   walletStore,
+		tokenStore:                    tokenStore,
 	}
 }

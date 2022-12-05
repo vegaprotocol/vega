@@ -1,6 +1,7 @@
 package cmd_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
@@ -31,20 +32,23 @@ func testSignCommandFlagsValidFlagsSucceeds(t *testing.T) {
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(20)
 
-	f := &cmd.SignCommandFlags{
+	f := &cmd.SignTransactionFlags{
 		Wallet:         walletName,
 		PubKey:         pubKey,
 		PassphraseFile: passphraseFilePath,
 		Network:        "fairground",
-		RawCommand:     `{"voteSubmission": {"proposalId": "ec066610abbd1736b69cadcb059b9efdfdd9e3e33560fc46b2b8b62764edf33f", "value": "VALUE_YES"}}`,
+		RawTransaction: `{"voteSubmission": {"proposalId": "ec066610abbd1736b69cadcb059b9efdfdd9e3e33560fc46b2b8b62764edf33f", "value": "VALUE_YES"}}`,
 	}
 
+	expectedTx := make(map[string]any)
+	assert.NoError(t, json.Unmarshal([]byte(f.RawTransaction), &expectedTx))
+
 	expectedReq := api.AdminSignTransactionParams{
-		Wallet:         walletName,
-		Passphrase:     passphrase,
-		Network:        "fairground",
-		PublicKey:      pubKey,
-		EncodedCommand: "eyJ2b3RlU3VibWlzc2lvbiI6IHsicHJvcG9zYWxJZCI6ICJlYzA2NjYxMGFiYmQxNzM2YjY5Y2FkY2IwNTliOWVmZGZkZDllM2UzMzU2MGZjNDZiMmI4YjYyNzY0ZWRmMzNmIiwgInZhbHVlIjogIlZBTFVFX1lFUyJ9fQ==",
+		Wallet:      walletName,
+		Passphrase:  passphrase,
+		Network:     "fairground",
+		PublicKey:   pubKey,
+		Transaction: expectedTx,
 	}
 
 	// when
@@ -167,25 +171,25 @@ func testSignCommandFlagsMissingRequestFails(t *testing.T) {
 
 	// given
 	f := newSignCommandFlags(t, testDir)
-	f.RawCommand = ""
+	f.RawTransaction = ""
 
 	// when
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.ArgMustBeSpecifiedError("command"))
+	assert.ErrorIs(t, err, flags.ArgMustBeSpecifiedError("transaction"))
 	assert.Empty(t, req)
 }
 
-func newSignCommandFlags(t *testing.T, testDir string) *cmd.SignCommandFlags {
+func newSignCommandFlags(t *testing.T, testDir string) *cmd.SignTransactionFlags {
 	t.Helper()
 
 	_, passphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(20)
 
-	return &cmd.SignCommandFlags{
-		RawCommand:     `{"voteSubmission": {"proposalId": "some-id", "value": "VALUE_YES"}}`,
+	return &cmd.SignTransactionFlags{
+		RawTransaction: `{"voteSubmission": {"proposalId": "some-id", "value": "VALUE_YES"}}`,
 		Wallet:         walletName,
 		PubKey:         pubKey,
 		TxBlockHeight:  150,

@@ -487,8 +487,6 @@ Feature: Fees calculations
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 1159   | 8862    |
       | trader4  | ETH   | ETH/DEC21 | 1102   | 109     |
-      #| trader3a | ETH   | ETH/DEC21 | 1344   | 8673    |
-      #| trader4  | ETH   | ETH/DEC21 | 1108   | 109     |
 
   Scenario: S006, Testing fees in continuous trading with insufficient balance in their general account but margin covers the fees (0029-FEES-008)
 
@@ -885,8 +883,8 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 5427   | 3867    |
       | trader4  | ETH   | ETH/DEC21 | 10679  | 0       |
+      | trader3a | ETH   | ETH/DEC21 | 5427   | 3867    |
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             |
@@ -1417,6 +1415,7 @@ Feature: Fees calculations
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
+  @now
   Scenario: S018, Testing fees in continuous trading during position resolution (0029-FEES-001)
 
     Given the fees configuration named "fees-config-1":

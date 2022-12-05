@@ -321,11 +321,11 @@ type MarketTimestamps {
   "Time when the market is first proposed"
   proposed: Timestamp
   "Time when the market has been voted in and waiting to be created"
-  pending: Timestamp
+  pending: Timestamp!
   "Time when the market is open and ready to accept trades"
-  open: Timestamp
+  open: Timestamp!
   "Time when the market is closed"
-  close: Timestamp
+  close: Timestamp!
 }
 
 "The equity like share of liquidity fee for each liquidity provider"

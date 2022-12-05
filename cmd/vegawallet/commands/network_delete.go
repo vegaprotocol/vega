@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/api"
@@ -44,7 +45,7 @@ func NewCmdDeleteNetwork(w io.Writer, rf *RootFlags) *cobra.Command {
 
 		deleteNetwork := api.NewAdminRemoveNetwork(s)
 
-		_, errDetails := deleteNetwork.Handle(context.Background(), params)
+		_, errDetails := deleteNetwork.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
 		if errDetails != nil {
 			return errors.New(errDetails.Data)
 		}
