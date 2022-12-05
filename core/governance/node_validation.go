@@ -16,7 +16,6 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -58,7 +57,11 @@ type nodeProposal struct {
 }
 
 func (n *nodeProposal) GetID() string {
-	return fmt.Sprintf("proposal-node-validation-%v", n.ID)
+	return n.ID
+}
+
+func (n *nodeProposal) GetType() types.NodeVoteType {
+	return types.NodeVoteTypeGovernanceValidateAsset
 }
 
 func (n *nodeProposal) Check() error {

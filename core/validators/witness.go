@@ -61,6 +61,7 @@ type ValidatorTopology interface {
 
 type Resource interface {
 	GetID() string
+	GetType() commandspb.NodeVote_Type
 	Check() error
 }
 
@@ -361,6 +362,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			v.lastSentVote = t
 			nv := &commandspb.NodeVote{
 				Reference: v.res.GetID(),
+				Type:      v.res.GetType(),
 			}
 			w.cmd.Command(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k), nil)
 			// set new state so we do not try to validate again
