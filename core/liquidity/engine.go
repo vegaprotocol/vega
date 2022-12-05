@@ -414,7 +414,7 @@ func (e *Engine) setShapesReferencesOnLiquidityProvision(
 ) {
 	// this order is just a stub to send to the id generator,
 	// and get an ID assigned per references in the shapes
-	lp.Buys = make([]*types.LiquidityOrderReference, len(buys))
+	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(buys))
 	orderEvts := make([]events.Event, 0, len(buys)+len(sells))
 
 	for _, buy := range buys {
