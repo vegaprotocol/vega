@@ -80,6 +80,12 @@ Feature: test negative PDP (position decimal places)
             | lp2 | party0 | USD/DEC22 | 35569             | 0.001 | sell | ASK              | 500        | 20     | submission |
             | lp2 | party0 | USD/DEC22 | 35569             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
 
+        # LP places limit orders which oversupply liquidity
+        And the parties place the following orders:
+            | party  | market id | side | volume | price | type       | tif     |
+            | party0 | USD/DEC22 | sell |   1481 |    13 | TYPE_LIMIT | TIF_GTC |
+            | party0 | USD/DEC22 | buy  |   1206 |     8 | TYPE_LIMIT | TIF_GTC |
+
         And the parties place the following orders:
             | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
             | party1 | USD/DEC22 | buy  | 5      | 8     | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -108,7 +114,7 @@ Feature: test negative PDP (position decimal places)
             | party  | market id | maintenance | search | initial | release |
             | party0 | USD/DEC22 | 526778      | 579455 | 632133  | 737489  |
             | party1 | USD/DEC22 | 1482        | 1630   | 1778    | 2074    |
-            | party2 | USD/DEC22 | 5692        | 6261   | 6830    | 7968    |
+            | party2 | USD/DEC22 | 5792        | 6371   | 6950    | 8108    |
 
         #risk factor short: 3.5569036
         #risk factor long: 0.801225765

@@ -159,30 +159,24 @@ func (m *Market) repriceAllSpecialOrders(
 	// we can then just re-submit all pegged orders
 	// if we needed to re-submit peggted orders,
 	// let's do it now
-	var (
-		updatedPegged []*types.Order
-		partiesPos    = map[string]events.MarketPosition{}
-	)
+	partiesPos := map[string]events.MarketPosition{}
 	if needsPeggedUpdates {
-		updatedPegged, partiesPos = m.reSubmitPeggedOrders(ctx, toSubmit)
+		_, partiesPos = m.reSubmitPeggedOrders(ctx, toSubmit)
 	}
-
-	orderUpdates = append(orderUpdates, parked...)
-	orderUpdates = append(orderUpdates, updatedPegged...)
 
 	// now we have all the re-submitted pegged orders and the
 	// parked pegged orders from before
 	// we can call liquidityUpdate, which is going to give us the
 	// actual updates to be done on liquidity orders
-	bestBidPrice, bestAskPrice, err := m.getBestStaticPricesDecimal()
+	minLpPrice, maxLpPrice, err := m.getValidLPVolumeRange()
 	if err != nil {
-		m.log.Debug("could not get one of the static mid prices",
+		m.log.Debug("could not get valid LP volume range",
 			logging.Error(err))
 		// we do not return here, we could not get one of the prices eventually
 	}
 
 	newOrders, cancels, err := m.liquidity.Update(
-		ctx, bestBidPrice, bestAskPrice, m.repriceLiquidityOrder, orderUpdates)
+		ctx, minLpPrice, maxLpPrice, m.repriceLiquidityOrder)
 	if err != nil {
 		// TODO: figure out if error are really possible there,
 		// But I'd think not.

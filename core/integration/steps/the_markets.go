@@ -346,6 +346,7 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		OpeningAuction:                openingAuction(row),
 		PriceMonitoringSettings:       types.PriceMonitoringSettingsFromProto(priceMonitoring),
 		LiquidityMonitoringParameters: liqMon,
+		LPPriceRange:                  num.DecimalFromFloat(1),
 	}
 
 	tip := m.TradableInstrument.IntoProto()
