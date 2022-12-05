@@ -220,6 +220,34 @@ func (mr *MockValidatorTopologyMockRecorder) AllNodeIDs() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllNodeIDs", reflect.TypeOf((*MockValidatorTopology)(nil).AllNodeIDs))
 }
 
+// GetTotalVotingPower mocks base method.
+func (m *MockValidatorTopology) GetTotalVotingPower() int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotalVotingPower")
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// GetTotalVotingPower indicates an expected call of GetTotalVotingPower.
+func (mr *MockValidatorTopologyMockRecorder) GetTotalVotingPower() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalVotingPower", reflect.TypeOf((*MockValidatorTopology)(nil).GetTotalVotingPower))
+}
+
+// GetVotingPower mocks base method.
+func (m *MockValidatorTopology) GetVotingPower(arg0 string) int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVotingPower", arg0)
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// GetVotingPower indicates an expected call of GetVotingPower.
+func (mr *MockValidatorTopologyMockRecorder) GetVotingPower(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVotingPower", reflect.TypeOf((*MockValidatorTopology)(nil).GetVotingPower), arg0)
+}
+
 // IsTendermintValidator mocks base method.
 func (m *MockValidatorTopology) IsTendermintValidator(arg0 string) bool {
 	m.ctrl.T.Helper()
