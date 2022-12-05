@@ -290,20 +290,6 @@ func (mr *MockValidatorTopologyMockRecorder) IsValidatorVegaPubKey(arg0 interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsValidatorVegaPubKey", reflect.TypeOf((*MockValidatorTopology)(nil).IsValidatorVegaPubKey), arg0)
 }
 
-// Len mocks base method.
-func (m *MockValidatorTopology) Len() int {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Len")
-	ret0, _ := ret[0].(int)
-	return ret0
-}
-
-// Len indicates an expected call of Len.
-func (mr *MockValidatorTopologyMockRecorder) Len() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Len", reflect.TypeOf((*MockValidatorTopology)(nil).Len))
-}
-
 // SelfVegaPubKey mocks base method.
 func (m *MockValidatorTopology) SelfVegaPubKey() string {
 	m.ctrl.T.Helper()

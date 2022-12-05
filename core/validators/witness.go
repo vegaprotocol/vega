@@ -17,6 +17,7 @@ import (
 	"errors"
 	"math/rand"
 	"sort"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -329,9 +330,11 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			if !checkPass {
 				votesReceived := []string{}
 				votesMissing := []string{}
+				votePowers := []string{}
 				for _, k := range w.top.AllNodeIDs() {
 					if _, ok := v.votes[k]; ok {
 						votesReceived = append(votesReceived, k)
+						votePowers = append(votePowers, strconv.FormatInt(w.top.GetVotingPower(k), 10))
 						continue
 					}
 					votesMissing = append(votesMissing, k)
@@ -340,6 +343,8 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 					logging.String("resource-id", v.res.GetID()),
 					logging.Strings("votes-received", votesReceived),
 					logging.Strings("votes-missing", votesMissing),
+					logging.Strings("votes-power-received", votePowers),
+					logging.Int64("total-voting-power", w.top.GetTotalVotingPower()),
 				)
 			}
 
