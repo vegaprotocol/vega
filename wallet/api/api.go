@@ -208,6 +208,8 @@ func ClientAPI(log *zap.Logger, walletStore WalletStore, interactor Interactor, 
 	walletAPI.RegisterMethod("client.list_keys", NewListKeys(walletStore, interactor, sessions))
 	walletAPI.RegisterMethod("client.sign_transaction", NewSignTransaction(interactor, nodeSelector, sessions))
 	walletAPI.RegisterMethod("client.send_transaction", NewSendTransaction(interactor, nodeSelector, sessions))
+	walletAPI.RegisterMethod("client.request_permissions", NewRequestPermissions(walletStore, interactor, sessions))
+	walletAPI.RegisterMethod("client.get_permissions", NewGetPermissions(sessions))
 
 	log.Info("the client JSON-RPC API has been initialised")
 

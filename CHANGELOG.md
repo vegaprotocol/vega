@@ -12,7 +12,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7037](https://github.com/vegaprotocol/vega/issues/7037) - Reinstate permissions endpoints on the wallet API
 
 
 ## 0.63.1
