@@ -20,6 +20,7 @@
 
 ### 🛠 Improvements
 - [7003](https://github.com/vegaprotocol/vega/pull/7003) - Expose bus event stream on the `REST` API
+- [7041](https://github.com/vegaprotocol/vega/issues/7041) - Change witness vote count to be based on voting power
 
 ## 0.63.0
 
