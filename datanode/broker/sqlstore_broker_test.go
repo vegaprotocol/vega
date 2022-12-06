@@ -430,15 +430,21 @@ func TestSqlBrokerUpgradeBlock(t *testing.T) {
 	}()
 
 	beSource := newBlockEventSource()
+
+	// send through a full block
 	blockEvent := beSource.NextBeginBlockEvent()
 	tes.eventsCh <- blockEvent
+	tes.eventsCh <- beSource.NextEndBlockEvent()
 
+	// everything gets committed, now we start a new block
+	blockEvent = beSource.NextBeginBlockEvent()
+	tes.eventsCh <- blockEvent
+	assert.False(t, tes.protocolUpgradeSvc.GetProtocolUpgradeStarted())
+
+	// now protocol upgrade event comes through
 	tes.eventsCh <- events.NewProtocolUpgradeStarted(context.Background(), eventsv1.ProtocolUpgradeStarted{
 		LastBlockHeight: blockEvent.BeginBlock().Height,
 	})
-
-	assert.False(t, tes.protocolUpgradeSvc.GetProtocolUpgradeStarted())
-	tes.eventsCh <- beSource.NextEndBlockEvent()
 	assert.Nil(t, <-errCh)
 	assert.True(t, tes.protocolUpgradeSvc.GetProtocolUpgradeStarted())
 }
