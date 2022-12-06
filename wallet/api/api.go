@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
@@ -202,12 +203,24 @@ type SelectedWallet struct {
 // user and/or compromise his wallets.
 func ClientAPI(log *zap.Logger, walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, sessions *session.Sessions) (*jsonrpc.API, error) {
 	walletAPI := jsonrpc.New(log)
+
+	// We add this pre-check so users stop asking why they can't access the
+	// administrative endpoints.
+	walletAPI.AddDispatchPolicy(func(_ context.Context, request jsonrpc.Request, _ jsonrpc.RequestMetadata) *jsonrpc.ErrorDetails {
+		if strings.HasPrefix(request.Method, "admin.") {
+			return requestNotPermittedError(ErrAdminEndpointsNotExposed)
+		}
+		return nil
+	})
+
 	walletAPI.RegisterMethod("client.connect_wallet", NewConnectWallet(walletStore, interactor, sessions))
 	walletAPI.RegisterMethod("client.disconnect_wallet", NewDisconnectWallet(sessions))
 	walletAPI.RegisterMethod("client.get_chain_id", NewGetChainID(nodeSelector))
 	walletAPI.RegisterMethod("client.list_keys", NewListKeys(walletStore, interactor, sessions))
 	walletAPI.RegisterMethod("client.sign_transaction", NewSignTransaction(interactor, nodeSelector, sessions))
 	walletAPI.RegisterMethod("client.send_transaction", NewSendTransaction(interactor, nodeSelector, sessions))
+	walletAPI.RegisterMethod("client.request_permissions", NewRequestPermissions(walletStore, interactor, sessions))
+	walletAPI.RegisterMethod("client.get_permissions", NewGetPermissions(sessions))
 
 	log.Info("the client JSON-RPC API has been initialised")
 
