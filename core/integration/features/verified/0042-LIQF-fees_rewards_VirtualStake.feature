@@ -226,7 +226,6 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 8      | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 8      | USD   |
-
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
   
   @VirtStake
