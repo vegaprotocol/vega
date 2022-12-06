@@ -40,6 +40,8 @@ import (
 	"github.com/ipfs/kubo/plugin/loader"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/prometheus/client_golang/prometheus"
+
+	ipfslogging "github.com/ipfs/go-log"
 )
 
 const segmentMetaDataFile = "metadata.json"
@@ -86,6 +88,10 @@ type Store struct {
 var plugins *loader.PluginLoader
 
 func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, deHistoryHome string, wipeOnStartup bool) (*Store, error) {
+	if log.IsDebug() {
+		ipfslogging.SetDebugLogging()
+	}
+
 	deHistoryStorePath := filepath.Join(deHistoryHome, "store")
 
 	p := &Store{
