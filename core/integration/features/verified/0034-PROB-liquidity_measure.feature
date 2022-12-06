@@ -93,7 +93,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | sell | 1200090000 | 1881   |
       | sell | 1200100000 | 1884   |
 
-  Scenario:  LP pegged volume is pushed inside price monitoring bounds(0034-PROB-002, 0009-MRKP-003, 0009-MRKP-004);
+  Scenario:  LP pegged volume is pushed inside price monitoring bounds(0009-MRKP-003, 0009-MRKP-004);
 
     Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau     | mu | r | sigma |
@@ -225,7 +225,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | party | market id  | maintenance | search   | initial  | release  |
       | lp1   | ETH2/MAR22 | 32570956    | 35828051 | 39085147 | 45599338 |
 
-  Scenario:  LP pegged volume is pushed by Price Monitoring lower bound (0034-PROB-003);
+  Scenario:  LP pegged volume is pushed by Price Monitoring lower bound;
 
     Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau     | mu | r | sigma |
@@ -278,7 +278,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | buy  | 728   | 175050882 |
       | buy  | 900   | 1         |
 
-  Scenario:  LP Volume being pushed by limit of Probability of Trading (capped at 1e-8) (0034-PROB-004)
+  Scenario:  LP Volume being pushed by limit of Probability of Trading (capped at 1e-8)
     #Price Monitoring has been removed as Prob in Price Monitoring only take up to 15 decimal places which will prevent scenatio which will trigger the ProbOfTrading cap at 1e-8
 
     Given the log normal risk model named "log-normal-risk-model-1":
