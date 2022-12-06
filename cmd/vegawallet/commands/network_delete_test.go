@@ -28,7 +28,7 @@ func testDeleteNetworkFlagsValidFlagsSucceeds(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	require.NotNil(t, req)
-	assert.Equal(t, f.Network, req.Network)
+	assert.Equal(t, f.Network, req.Name)
 }
 
 func testDeleteNetworkFlagsMissingNetworkFails(t *testing.T) {
