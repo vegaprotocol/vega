@@ -78,7 +78,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | party2 | ETH/MAR22 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-buy  |
-
+    
     Then the following trades should be executed:
       | buyer  | price | size | seller |
       | party2 | 951   | 8    | lp1    |
@@ -101,7 +101,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 20     | USD   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
-
+ 
 
     # Move to new block
     When the network moves ahead "301" blocks
@@ -223,231 +223,9 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 8      | USD   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
-
+  
   @VirtStake
-  Scenario: 003 2 LPs joining at start, unequal commitments (0042-LIQF-003)
-
-    Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount     |
-      | lp1    | USD   | 1000000000 |
-      | lp2    | USD   | 1000000000 |
-      | party1 | USD   | 100000000  |
-      | party2 | USD   | 100000000  |
-    # set default block duration to a bit more than half hour, hence 2 blocks will make a bit more than a timewindow (1h)
-    And the average block duration is "1801"
-
-    And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | sell | MID              | 2          | 1      | amendment  |
-    And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | buy  | MID              | 2          | 1      | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | sell | ASK              | 1          | 2      | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | sell | MID              | 2          | 1      | amendment  |
-
-    Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1 | ETH/MAR22 | buy  | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/MAR22 | sell | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-
-    Then the opening auction period ends for market "ETH/MAR22"
-
-    And the following trades should be executed:
-      | buyer  | price | size | seller |
-      | party1 | 1000  | 60   | party2 |
-
-    And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 6000         | 10000          | 60            |
-
-    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share | average entry valuation |
-      | lp1   | 0.8               | 8000                    |
-      | lp2   | 0.2               | 10000                   |
-
-    # no fees in auction
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
-
-    Then the order book should have the following volumes for market "ETH/MAR22":
-      | side | price | volume |
-      | buy  | 898   | 75     |
-      | buy  | 900   | 1      |
-      | buy  | 999   | 14     |
-      | sell | 1102  | 62     |
-      | sell | 1100  | 1      |
-      | sell | 1001  | 14     |
-
-    #timewindow1
-    Then the network moves ahead "2" blocks
-    Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/MAR22 | buy  | 5      | 1001  | 1                | TYPE_LIMIT | TIF_GTC |
-
-    And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 5000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 5000              | 0.001 | sell | MID              | 2          | 1      | amendment  |
-
-    And the market data for the market "ETH/MAR22" should be:
-      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 6506         | 7000           | 65            |
-
-    #Since lp1 wants to decrease their commitment by delta < 0. Then we update: LP i virtual stake <- LP i virtual stake x (LP i stake + delta)/(LP i stake).
-    #grwoth factor for this time window is 0 since there is no fee during auction in the previous timewindow, so taking growth factor into the calculation, lp1 virtual stake stays at 5000, lp2 virtual stake stays at 2000
-    Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share    | average entry valuation |
-      | lp1   | 0.7142857142857143   | 8000                    |
-      | lp2   | 0.2857142857142857   | 10000                   |
-
-    #timewindow2
-    Then the network moves ahead "2" blocks
-    Then the order book should have the following volumes for market "ETH/MAR22":
-      | side | price | volume |
-      | buy  | 898   | 53     |
-      | buy  | 900   | 1      |
-      | buy  | 999   | 10     |
-      | sell | 1102  | 44     |
-      | sell | 1100  | 1      |
-      | sell | 1001  | 10     |
-
-    Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party2 | ETH/MAR22 | sell | 3      | 999   | 1                | TYPE_LIMIT | TIF_GTC |
-
-    And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 1980              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 1980              | 0.001 | sell | MID              | 2          | 1      | amendment  |
-
-    And the market data for the market "ETH/MAR22" should be:
-      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | 999               | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 6793         | 6980           | 68            |
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 999 x 68 x 1 x 0.1
-
-    #Since lp1 wants to decrease their commitment by delta < 0. Then we update: LP i virtual stake <- LP i virtual stake x (LP i stake + delta)/(LP i stake).
-    #grwoth factor for this time window is -0.2, so taking growth factor into the calculation, LP i virtual stake <- max(LP i physical stake, (1 + r) x (LP i virtual stake)), lp1 virtual stake stays at 5000, lp2 virtual stake stays at 1980
-    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share    | average entry valuation |
-      | lp1   | 0.7163323782234957   | 8000                    |
-      | lp2   | 0.2836676217765043   | 10000                   |
-
-    #timewindow3
-    Then the network moves ahead "2" blocks
-
-    Then the order book should have the following volumes for market "ETH/MAR22":
-      | side | price | volume |
-      | buy  | 898   | 53     |
-      | buy  | 900   | 1      |
-      | buy  | 999   | 10     |
-      | sell | 1102  | 43     |
-      | sell | 1100  | 1      |
-      | sell | 1001  | 10     |
-
-    Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/MAR22 | sell | 2      | 999   | 1                | TYPE_LIMIT | TIF_GTC |
-
-    And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 1880              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 1880              | 0.001 | sell | MID              | 2          | 1      | amendment  |
-
-    And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 999        | TRADING_MODE_CONTINUOUS | 1       | 500       | 1498      | 6793         | 6880           | 66            |
-
-    #Since lp2 wants to decrease their commitment by delta < 0. Then we update: LP i virtual stake <- LP i virtual stake x (LP i stake + delta)/(LP i stake).
-    #grwoth factor for this time window is -0.17, so taking growth factor into the calculation, LP i virtual stake <- max(LP i physical stake, (1 + r) x (LP i virtual stake)), lp1 virtual stake stays at 5000, lp2 virtual stake stays at 1880
-    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share    | average entry valuation |
-      | lp1   | 0.7267441860465116   | 8000                    |
-      | lp2   | 0.2732558139534884   | 10000                   |
-
-    #Then time is updated to "2019-11-30T08:22:10Z"
-    #timewindow4
-    Then the network moves ahead "2" blocks
-    Then the order book should have the following volumes for market "ETH/MAR22":
-      | side | price | volume |
-      | buy  | 898   | 52     |
-      | buy  | 900   | 1      |
-      | buy  | 999   | 10     |
-      | sell | 1102  | 43     |
-      | sell | 1100  | 1      |
-      | sell | 1001  | 10     |
-
-    Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/MAR22 | sell | 2      | 999   | 1                | TYPE_LIMIT | TIF_GTC |
-
-    And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 999        | TRADING_MODE_CONTINUOUS | 1       | 500       | 1498      | 6793         | 6880           | 64            |
-
-    #grwoth factor for this time window is -0.1, no change on commitment, so no change on virtual stake
-    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share    | average entry valuation |
-      | lp1   | 0.7267441860465116   | 8000                    |
-      | lp2   | 0.2732558139534884   | 10000                   |
-
-    #Then time is updated to "2019-11-30T10:22:10Z"
-    #timewindow5
-    Then the network moves ahead "2" blocks
-    And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.001 | sell | MID              | 2          | 1      | amendment  |
-
-    And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 999        | TRADING_MODE_CONTINUOUS | 1       | 500       | 1498      | 6793         | 7000           | 64            |
-
-    #lp2 wants to increase stake, we use this formula for lp2 virtual satke: LP i virtual stake <- LP i virtual stake + delta.
-    #growth rate is -0.2
-    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share    | average entry valuation |
-      | lp1   | 0.7142857142857143   | 8000                    |
-      | lp2   | 0.2857142857142857   | 9820                    |
-
-    Then the order book should have the following volumes for market "ETH/MAR22":
-      | side | price | volume |
-      | buy  | 898   | 53     |
-      | buy  | 900   | 1      |
-      | buy  | 999   | 10     |
-      | sell | 1102  | 44     |
-      | sell | 1100  | 1      |
-      | sell | 1001  | 10     |
-
-    #Then time is updated to "2019-11-30T12:22:10Z"
-    #timewindow6
-    Then the network moves ahead "2" blocks
-    Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/MAR22 | sell | 1      | 999   | 1                | TYPE_LIMIT | TIF_GTC |
-
-    And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 3000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 3000              | 0.001 | sell | MID              | 2          | 1      | amendment  |
-
-    And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 999        | TRADING_MODE_CONTINUOUS | 1       | 500       | 1498      | 6793         | 8000           | 63            |
-
-    #lp2 wants to increase stake, we use this formula for lp2 virtual satke: LP i virtual stake <- LP i virtual stake + delta.
-    #growth rate is -0.1
-    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share    | average entry valuation |
-      | lp1   | 0.625                | 8000                    |
-      | lp2   | 0.375                | 9213.3333333333333334   |
-
-  @VirtStake
-  Scenario: 004 2 LPs joining at start, unequal commitments. Checking calculation of equity-like-shares and liquidity-fee-distribution in a shrinking market. (0042-LIQF-008 0042-LIQF-011)
+  Scenario: 003 2 LPs joining at start, unequal commitments. Checking calculation of equity-like-shares and liquidity-fee-distribution in a shrinking market. (0042-LIQF-008 0042-LIQF-011)
 
     # Scenario has 6 market periods:
 
@@ -773,7 +551,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
   @VirtStake
-  Scenario: 005 2 LPs joining at start, 1 LP forcibly closed out (0042-LIQF-008)
+  Scenario: 004 2 LPs joining at start, 1 LP forcibly closed out (0042-LIQF-008)
 
     Given the average block duration is "601"
 
