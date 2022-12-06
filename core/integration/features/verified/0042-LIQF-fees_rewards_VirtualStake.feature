@@ -84,6 +84,11 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party2 | 951   | 8    | lp1    |
       | party2 | 1000  | 12   | party1 |
 
+    Then the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party2 | 951   | 8    | lp1    |
+      | party2 | 1000  | 12   | party1 |
+
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
       | lp1    | USD   | ETH/MAR22 | 2870   | 999986742 | 10000 |
