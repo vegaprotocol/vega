@@ -88,6 +88,7 @@ const (
 )
 
 var (
+	ErrAdminEndpointsNotExposed                           = errors.New("administrative endpoints are not exposed, for security reasons")
 	ErrApplicationCanceledTheRequest                      = errors.New("the application canceled the request")
 	ErrBlockHashIsRequired                                = errors.New("the block hash is required")
 	ErrBlockHeightIsRequired                              = errors.New("the block-height is required")

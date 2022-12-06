@@ -113,7 +113,7 @@ func (f *DeleteNetworkFlags) Validate() (api.AdminRemoveNetworkParams, error) {
 	if len(f.Network) == 0 {
 		return api.AdminRemoveNetworkParams{}, flags.MustBeSpecifiedError("network")
 	}
-	req.Network = f.Network
+	req.Name = f.Network
 
 	return req, nil
 }
