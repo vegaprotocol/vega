@@ -149,7 +149,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | sell | ASK              | 1          | 2      | amendment  |
       | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | sell | MID              | 2          | 1      | amendment  |
 
-    Then the parties place the following orders:
+    When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/MAR22 | buy  | 90     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -162,68 +162,67 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | buyer  | price | size | seller |
       | party1 | 1000  | 90   | party2 |
 
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
-    And the mark price should be "1000" for the market "ETH/MAR22"
-    And the open interest should be "90" for the market "ETH/MAR22"
-    And the target stake should be "9000" for the market "ETH/MAR22"
-    And the supplied stake should be "10000" for the market "ETH/MAR22"
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 9000         | 10000          | 90            |
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
       | lp1   | 0.5               | 5000                    |
       | lp2   | 0.5               | 10000                   |
 
-    And the price monitoring bounds for the market "ETH/MAR22" should be:
-      | min bound | max bound |
-      | 500       | 1500      |
-
     And the liquidity fee factor should be "0.002" for the market "ETH/MAR22"
 
-    # no fees in auction
+    # No fees in auction
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
-    Then the parties place the following orders:
+
+    When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | party2 | ETH/MAR22 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
-    And the following trades should be executed:
+    Then the following trades should be executed:
       | buyer  | price | size | seller |
-      | party2 | 951   | 8    | lp1    |
-      | party2 | 951   | 8    | lp2    |
-      | party2 | 1000  | 4    | party1 |
+      | party2 | 951   | 4    | lp1    |
+      | party2 | 951   | 4    | lp2    |
+      | party2 | 1000  | 12   | party1 |
 
     And the accumulated liquidity fees should be "40" for the market "ETH/MAR22"
 
-    # opening auction + time window
+    # Trigger fee distribution
     When the network moves ahead "301" blocks
 
-    # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 20     | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 20     | USD   |
 
-    Then the parties place the following orders:
+    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+
+
+    When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | buy  | 40     | 1100  | 2                | TYPE_LIMIT | TIF_GTC | party1-buy  |
       | party2 | ETH/MAR22 | sell | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell |
 
-    And the following trades should be executed:
+    Then the following trades should be executed:
       | buyer  | price | size | seller |
-      | party1 | 951   | 8    | lp1    |
-      | party1 | 951   | 8    | lp2    |
+      | party1 | 951   | 4    | lp1    |
+      | party1 | 951   | 4    | lp2    |
 
-    And the accumulated liquidity fees should be "32" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "16" for the market "ETH/MAR22"
 
-    # opening auction + time window
+
+    # Trigger fee distribution
     When the network moves ahead "301" blocks
 
-    # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 16     | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 16     | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 8      | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 8      | USD   |
+
+    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
   @VirtStake
   Scenario: 003 2 LPs joining at start, unequal commitments (0042-LIQF-003)
