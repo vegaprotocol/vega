@@ -31,7 +31,7 @@ const (
 	minBanDuration = time.Second * 30 // minimum ban duration
 )
 
-var banDurationAsEpochFaction = num.DecimalOne().Div(num.DecimalFromInt64(48)) // 1/48 of an epoch will be the default 30 minutes ban
+var banDurationAsEpochFraction = num.DecimalOne().Div(num.DecimalFromInt64(48)) // 1/48 of an epoch will be the default 30 minutes ban
 
 type EpochEngine interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
@@ -117,7 +117,7 @@ func New(log *logging.Logger, config Config, timeService TimeService) *Engine {
 
 // OnEpochDurationChanged updates the ban duration as a fraction of the epoch duration.
 func (e *Engine) OnEpochDurationChanged(_ context.Context, duration time.Duration) error {
-	epochImpliedDurationNano, _ := num.UintFromDecimal(num.DecimalFromInt64(duration.Nanoseconds()).Mul(banDurationAsEpochFaction))
+	epochImpliedDurationNano, _ := num.UintFromDecimal(num.DecimalFromInt64(duration.Nanoseconds()).Mul(banDurationAsEpochFraction))
 	epochImpliedDurationDuration := time.Duration(epochImpliedDurationNano.Uint64())
 	if epochImpliedDurationDuration < minBanDuration {
 		e.banDuration = minBanDuration
