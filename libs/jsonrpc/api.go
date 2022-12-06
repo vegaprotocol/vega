@@ -11,32 +11,44 @@ import (
 
 const JSONRPC2 string = "2.0"
 
+type DispatchPolicyFunc func(ctx context.Context, request Request, metadata RequestMetadata) *ErrorDetails
+
 type API struct {
 	log *zap.Logger
 	// commands maps a method to a command.
 	commands map[string]Command
+	// dispatchPolicies holds the pre-checks to run before dispatching a request.
+	dispatchPolicies []DispatchPolicyFunc
 }
 
 func New(log *zap.Logger) *API {
 	return &API{
-		log:      log,
-		commands: map[string]Command{},
+		log:              log,
+		commands:         map[string]Command{},
+		dispatchPolicies: []DispatchPolicyFunc{},
 	}
 }
 
-func (a *API) DispatchRequest(ctx context.Context, request *Request, metadata RequestMetadata) *Response {
+func (a *API) DispatchRequest(ctx context.Context, request Request, metadata RequestMetadata) *Response {
 	if err := request.Check(); err != nil {
 		a.log.Info("invalid request",
 			zap.String("trace-id", metadata.TraceID),
 			zap.Error(err))
-		return invalidRequestResponse(request, err)
+		return NewErrorResponse(request.ID, NewInvalidRequest(err))
 	}
+
+	for _, dispatchPolicy := range a.dispatchPolicies {
+		if errDetails := dispatchPolicy(ctx, request, metadata); errDetails != nil {
+			return NewErrorResponse(request.ID, errDetails)
+		}
+	}
+
 	command, ok := a.commands[request.Method]
 	if !ok {
 		a.log.Info("invalid method",
 			zap.String("trace-id", metadata.TraceID),
 			zap.String("method", request.Method))
-		return unsupportedMethodResponse(request)
+		return NewErrorResponse(request.ID, NewMethodNotFound(fmt.Errorf("method %q is not supported", request.Method)))
 	}
 
 	result, errorDetails := command.Handle(ctx, request.Params, metadata)
@@ -78,10 +90,6 @@ func (a *API) RegisteredMethods() []string {
 	return methods
 }
 
-func invalidRequestResponse(request *Request, err error) *Response {
-	return NewErrorResponse(request.ID, NewInvalidRequest(err))
-}
-
-func unsupportedMethodResponse(request *Request) *Response {
-	return NewErrorResponse(request.ID, NewMethodNotFound(fmt.Errorf("method %q is not supported", request.Method)))
+func (a *API) AddDispatchPolicy(dispatchPolicy DispatchPolicyFunc) {
+	a.dispatchPolicies = append(a.dispatchPolicies, dispatchPolicy)
 }
