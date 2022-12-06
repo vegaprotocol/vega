@@ -216,6 +216,7 @@ func TestVerifyWithMultipleConfigs(t *testing.T) {
 	e.UpdateSpamPoWHashFunction(context.Background(), "sha3_24_rounds")
 	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
 	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(0))
+	e.OnEpochDurationChanged(context.Background(), 24*time.Hour)
 
 	block9Hash := "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4"
 	e.BeginBlock(9, block9Hash)

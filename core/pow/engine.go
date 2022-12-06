@@ -27,9 +27,11 @@ import (
 )
 
 const (
-	ringSize = 500
-	banTime  = time.Minute * 30
+	ringSize       = 500
+	minBanDuration = time.Second * 30 // minimum ban duration
 )
+
+var banDurationAsEpochFaction = num.DecimalOne().Div(num.DecimalFromInt64(48)) // 1/48 of an epoch will be the default 30 minutes ban
 
 type EpochEngine interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
@@ -86,9 +88,10 @@ type Engine struct {
 	mempoolSeenTid map[string]struct{} // tids seen already in this node's mempool, cleared at the end of the block
 
 	// snapshot key
-	hashKeys []string
-	log      *logging.Logger
-	lock     sync.RWMutex
+	hashKeys    []string
+	log         *logging.Logger
+	lock        sync.RWMutex
+	banDuration time.Duration
 }
 
 // New instantiates the proof of work engine.
@@ -110,6 +113,18 @@ func New(log *logging.Logger, config Config, timeService TimeService) *Engine {
 	}
 	e.log.Info("PoW spam protection started")
 	return e
+}
+
+// OnEpochDurationChanged updates the ban duration as a fraction of the epoch duration.
+func (e *Engine) OnEpochDurationChanged(_ context.Context, duration time.Duration) error {
+	epochImpliedDurationNano, _ := num.UintFromDecimal(num.DecimalFromInt64(duration.Nanoseconds()).Mul(banDurationAsEpochFaction))
+	epochImpliedDurationDuration := time.Duration(epochImpliedDurationNano.Uint64())
+	if epochImpliedDurationDuration < minBanDuration {
+		e.banDuration = minBanDuration
+	} else {
+		e.banDuration = epochImpliedDurationDuration
+	}
+	return nil
 }
 
 // OnBeginBlock updates the block height and block hash and clears any out of scope parameters set and states.
@@ -272,7 +287,7 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 
 	// if we've seen already enough transactions and `spamPoWIncreasingDifficulty` is not enabled then fail the transaction and ban the party
 	if !params.spamPoWIncreasingDifficulty {
-		e.bannedParties[tx.Party()] = e.timeService.GetTimeNow().Add(banTime)
+		e.bannedParties[tx.Party()] = e.timeService.GetTimeNow().Add(e.banDuration)
 		return errors.New("too many transactions per block")
 	}
 
@@ -281,7 +296,7 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 
 	// if the observed difficulty sum is less than the expected difficulty, ban the party and reject the tx
 	if partyState.observedDifficulty+uint(d) < totalExpectedDifficulty {
-		banTime := e.timeService.GetTimeNow().Add(banTime)
+		banTime := e.timeService.GetTimeNow().Add(e.banDuration)
 		e.bannedParties[tx.Party()] = banTime
 		e.log.Info("banning party for not respecting required difficulty rules", logging.String("party", tx.Party()), logging.Time("until", banTime))
 		return errors.New("too many transactions per block")

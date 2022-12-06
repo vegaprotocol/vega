@@ -27,6 +27,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestUpdateBanDuration(t *testing.T) {
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), mocks.NewMockTimeService(gomock.NewController(t)))
+	e.OnEpochDurationChanged(context.Background(), time.Hour*10)
+	require.Equal(t, float64(750), e.banDuration.Round(time.Second).Seconds()) // 10h/48 = 10 * 60 * 60 / 48 = 750s
+
+	e.OnEpochDurationChanged(context.Background(), time.Second*10)
+	require.Equal(t, float64(30), e.banDuration.Round(time.Second).Seconds()) // minimum of 30s applies
+}
+
 func TestSpamPoWNumberOfPastBlocks(t *testing.T) {
 	e := New(logging.NewTestLogger(), NewDefaultConfig(), mocks.NewMockTimeService(gomock.NewController(t)))
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(200))
@@ -197,6 +206,7 @@ func TestBan(t *testing.T) {
 	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
 	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
 	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(1))
+	e.OnEpochDurationChanged(context.Background(), 24*time.Hour)
 
 	// test happy days first - 4 transactions with increasing difficulty results in no ban - regardless of the order they come in
 	party := crypto.RandomHash()
@@ -215,7 +225,7 @@ func TestBan(t *testing.T) {
 		{txID: "11", party: party, powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 431336},  // 000001c297318619efd60b9197f89e36fea83ca8d7461cf7b7c78af84e0a3b51 - 23
 	}
 	testBanWithTxPermutations(t, e, txs, true, 126, party, now)
-	now = now.Add(banTime)
+	now = now.Add(e.banDuration)
 	ts.EXPECT().GetTimeNow().Times(1).Return(now)
 	e.BeginBlock(129, crypto.RandomHash())
 	require.Equal(t, 0, len(e.bannedParties))
@@ -302,7 +312,7 @@ func testBanWithTxPermutations(t *testing.T, e *Engine, txs []*testTx, expectedB
 		// verify expected ban
 		if expectedBan {
 			require.Equal(t, 1, len(e.bannedParties))
-			require.Equal(t, now.Add(banTime), e.bannedParties[party])
+			require.Equal(t, now.Add(e.banDuration), e.bannedParties[party])
 		} else {
 			require.Equal(t, 0, len(e.bannedParties))
 		}

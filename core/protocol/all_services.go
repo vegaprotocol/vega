@@ -322,6 +322,10 @@ func newServices(
 				Param:   netparams.SpamPoWNumberOfTxPerBlock,
 				Watcher: pow.UpdateSpamPoWNumberOfTxPerBlock,
 			},
+			{
+				Param:   netparams.ValidatorsEpochLength,
+				Watcher: pow.OnEpochDurationChanged,
+			},
 		}
 	}
 
