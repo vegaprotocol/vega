@@ -9,7 +9,7 @@ import (
 )
 
 type AdminRemoveNetworkParams struct {
-	Network string `json:"network"`
+	Name string `json:"name"`
 }
 
 type AdminRemoveNetwork struct {
@@ -23,13 +23,13 @@ func (h *AdminRemoveNetwork) Handle(_ context.Context, rawParams jsonrpc.Params,
 		return nil, invalidParams(err)
 	}
 
-	if exist, err := h.networkStore.NetworkExists(params.Network); err != nil {
+	if exist, err := h.networkStore.NetworkExists(params.Name); err != nil {
 		return nil, internalError(fmt.Errorf("could not verify the network existence: %w", err))
 	} else if !exist {
 		return nil, invalidParams(ErrNetworkDoesNotExist)
 	}
 
-	if err := h.networkStore.DeleteNetwork(params.Network); err != nil {
+	if err := h.networkStore.DeleteNetwork(params.Name); err != nil {
 		return nil, internalError(fmt.Errorf("could not remove the wallet: %w", err))
 	}
 
@@ -46,8 +46,8 @@ func validateRemoveNetworkParams(rawParams jsonrpc.Params) (AdminRemoveNetworkPa
 		return AdminRemoveNetworkParams{}, ErrParamsDoNotMatch
 	}
 
-	if params.Network == "" {
-		return AdminRemoveNetworkParams{}, ErrNetworkIsRequired
+	if params.Name == "" {
+		return AdminRemoveNetworkParams{}, ErrNetworkNameIsRequired
 	}
 
 	return params, nil
