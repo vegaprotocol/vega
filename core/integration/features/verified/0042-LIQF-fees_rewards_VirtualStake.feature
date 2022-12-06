@@ -790,8 +790,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | lp1 | lp1   | ETH/MAR22 | 1000              | 0.001 | sell | ASK              | 1          | 51     | amendment  |
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 9000              | 0.002 | buy  | BID             | 1           | 51     | submission |
-      | lp2 | lp2   | ETH/MAR22 | 9000              | 0.002 | sell | ASK             | 1           | 51     | amendment  |
+      | lp2 | lp2   | ETH/MAR22 | 9000              | 0.002 | buy  | BID              | 1           | 51     | submission |
+      | lp2 | lp2   | ETH/MAR22 | 9000              | 0.002 | sell | ASK              | 1           | 51     | amendment  |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -804,7 +804,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 7308   | 1692    | 1000 |
+      | lp1   | USD   | ETH/MAR22 | 5334   | 3666    | 1000 |
 
 
     # 1st set of trades: market moves against lp1s position, margin-insufficient, margin topped up from general and bond
@@ -830,7 +830,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 6924   | 0       | 76   |
+      | lp1   | USD   | ETH/MAR22 | 4818   | 1182    | 1000 |
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
@@ -848,7 +848,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
 
-    # 2nd set of trades: market moves against LP1s position, margin-insufficient, position partly closed out
+    # 2nd set of trades: market moves against LP1s position, margin-insufficient, margin topped up from general and bond
     When the network moves ahead "1" blocks:
 
     When the parties amend the following orders:
@@ -875,6 +875,47 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
+      | lp1   | 0.1               | 1000                    |
+      | lp2   | 0.9               | 10000                   |
+
+    # Trigger liquidity distribution
+    When the network moves ahead "1" blocks:
+
+    Then the following transfers should happen:
+      | from   | to  | from account                | to account           | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 7      | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 71     | USD   |
+
+    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+
+
+    # 3rd set of trades: market moves against LP1s position, margin-insufficient, margin topped up from general and bond
+    When the network moves ahead "1" blocks:
+
+    When the parties amend the following orders:
+      | party  | reference | price | size delta | tif     |
+      | party1 | pa1-b1    | 1350  | 0          | TIF_GTC |
+      | party2 | pa2-s1    | 1550  | 0          | TIF_GTC |
+
+    And the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | buy  | 30     | 1450  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 30     | 1450  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    Then the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party1 | 1450  | 30   | party2 |
+
+    # liquidity_fee = ceil(volume * price * liquidity_fee_factor) =  ceil(1450 * 30 * 0.002) = 87
+
+    And the accumulated liquidity fees should be "87" for the market "ETH/MAR22"
+
+    Then the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond |
+      | lp1   | USD   | ETH/MAR22 | 2513   | 0       | 0    |
+
+    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party | equity like share | average entry valuation |
       | lp2   | 1                 | 10000                   |
 
     # Trigger liquidity distribution
@@ -882,6 +923,6 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 78     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 87     | USD   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
