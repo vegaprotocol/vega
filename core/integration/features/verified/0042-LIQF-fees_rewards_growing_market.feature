@@ -720,11 +720,11 @@ Feature:
 
     Then the following trades should be executed:
       | buyer  | price | size | seller |
-      | party1 | 1001  | 19   | lp2    |
-      | party1 | 1001  | 11   | lp1    |
+      | party1 | 1001  | 19   | lp1    |
+      | party1 | 1001  | 1    | lp2    |
 
     # CALCULATION:
-    # liquidity_fee = trades * ceil(volume/trades * price * liquidity_fee_factor) = ceil(19 * 1001 * 0.001) + ceil(11 * 1001 * 0.001) = 32
+    # liquidity_fee = trades * ceil(volume/trades * price * liquidity_fee_factor) = ceil(19 * 1001 * 0.001) + ceil(1 * 1001 * 0.001) = 32
 
     And the following transfers should happen:
       | from   | to     | from account           | to account                  | market id | amount | asset |
