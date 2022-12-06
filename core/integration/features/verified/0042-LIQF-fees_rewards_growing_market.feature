@@ -852,17 +852,17 @@ Feature:
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | buy  | MID              | 3          | 1      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | sell | MID              | 3          | 1      | amendment  |
+      | lp1 | lp1   | ETH/MAR22 | 25000             | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp1 | lp1   | ETH/MAR22 | 25000             | 0.001 | buy  | MID              | 3          | 1      | amendment  |
+      | lp1 | lp1   | ETH/MAR22 | 25000             | 0.001 | sell | ASK              | 1          | 2      | amendment  |
+      | lp1 | lp1   | ETH/MAR22 | 25000             | 0.001 | sell | MID              | 3          | 1      | amendment  |
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 10000             | 0.001 | buy  | MID              | 3          | 1      | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 10000             | 0.001 | sell | MID              | 3          | 1      | amendment  |
+      | lp2 | lp2   | ETH/MAR22 | 25000             | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp2 | lp2   | ETH/MAR22 | 25000             | 0.001 | buy  | MID              | 3          | 1      | amendment  |
+      | lp2 | lp2   | ETH/MAR22 | 25000             | 0.001 | sell | ASK              | 1          | 2      | amendment  |
+      | lp2 | lp2   | ETH/MAR22 | 25000             | 0.001 | sell | MID              | 3          | 1      | amendment  |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -881,12 +881,12 @@ Feature:
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 1000         | 20000          | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 2500         | 50000          | 10            |
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
-      | lp1   | 0.5               | 10000                    |
-      | lp2   | 0.5               | 20000                    |
+      | lp1   | 0.5                | 25000                  |
+      | lp2   | 0.5                | 50000                  |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
@@ -904,8 +904,13 @@ Feature:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 20     | 1001  | 2                | TYPE_LIMIT | TIF_GTC |
 
+    Then the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party1 | 1001  | 19   | lp1    |
+      | party1 | 1001  | 1    | lp2    |
+
     # CALCULATION:
-    # liquidity_fee = trades * ceil(volume/trades * price * liquidity_fee_factor) =  2 * ceil(20/2 * 1001 * 0.001) = 2 * ceil(10.001) = 22
+    # liquidity_fee = trades * ceil(volume/trades * price * liquidity_fee_factor) = ceil(19 * 1001 * 0.001) + ceil(1 * 1001 * 0.001) = 22
 
     And the following transfers should happen:
       | from   | to     | from account           | to account                  | market id | amount | asset |
@@ -915,7 +920,7 @@ Feature:
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 3003         | 20000          | 30            |
+      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 7507         | 50000          | 30            |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -925,8 +930,8 @@ Feature:
     # Confirm equity-like-shares are unchanged by network moving forwards (as new market period not entered)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.5                | 10000                   |
-      | lp2   | 0.5                | 20000                   |
+      | lp1   | 0.5                | 25000                   |
+      | lp2   | 0.5                | 50000                   |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -943,8 +948,8 @@ Feature:
     # Confirm equity-like-shares are unchanged by the network moving forwards (as virtual-stakes scaled by same factor, r)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.5                | 10000                   |
-      | lp2   | 0.5                | 20000                   |
+      | lp1   | 0.5                | 25000                   |
+      | lp2   | 0.5                | 50000                   |
 
     # -------------------------------------------------------------------------------------------------------------------
     # -------------------------------------------------------------------------------------------------------------------
@@ -955,16 +960,16 @@ Feature:
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp3   | ETH/MAR22 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp3   | ETH/MAR22 | 10000             | 0.001 | buy  | MID              | 3          | 1      | amendment  |
-      | lp1 | lp3   | ETH/MAR22 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | lp3   | ETH/MAR22 | 10000             | 0.001 | sell | MID              | 3          | 1      | amendment  |
+      | lp1 | lp3   | ETH/MAR22 | 25000             | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp1 | lp3   | ETH/MAR22 | 25000             | 0.001 | buy  | MID              | 3          | 1      | amendment  |
+      | lp1 | lp3   | ETH/MAR22 | 25000             | 0.001 | sell | ASK              | 1          | 2      | amendment  |
+      | lp1 | lp3   | ETH/MAR22 | 25000             | 0.001 | sell | MID              | 3          | 1      | amendment  |
 
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.3750624687656172 | 10000                   |
-      | lp2   | 0.3750624687656172 | 20000                   |
-      | lp3   | 0.2498750624687656 | 40020                   |
+      | lp1   | 0.3750624687656172 | 25000                   |
+      | lp2   | 0.3750624687656172 | 50000                   |
+      | lp3   | 0.2498750624687656 | 100050                  |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -972,18 +977,23 @@ Feature:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 30     | 1001  | 2                | TYPE_LIMIT | TIF_GTC |
 
+    Then the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party1 | 1001  | 19   | lp1    |
+      | party1 | 1001  | 1    | lp2    |
+
     # CALCULATION:
-    # liquidity_fee = trades * ceil(volume/trades * price * liquidity_fee_factor) =  2 * ceil(30/2 * 1001 * 0.001) = 2 * ceil(15.015) = 32
+    # liquidity_fee = trades * ceil(volume/trades * price * liquidity_fee_factor) = ceil(19 * 1001 * 0.001) + ceil(1 * 1001 * 0.001) = 32
 
     And the following transfers should happen:
       | from   | to     | from account           | to account                  | market id | amount | asset |
-      | party1 | market | ACCOUNT_TYPE_GENERAL   | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 32    | USD   |
+      | party1 | market | ACCOUNT_TYPE_GENERAL   | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 32     | USD   |
 
     And the accumulated liquidity fees should be "32" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 6006         | 30000          | 60           |
+      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 15015        | 75000          | 60           |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -993,9 +1003,9 @@ Feature:
     # Confirm equity-like-shares are unchanged by network moving forwards (as new market period not entered)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.3750624687656172 | 10000                   |
-      | lp2   | 0.3750624687656172 | 20000                   |
-      | lp3   | 0.2498750624687656 | 40020                   |
+      | lp1   | 0.3750624687656172 | 25000                   |
+      | lp2   | 0.3750624687656172 | 50000                   |
+      | lp3   | 0.2498750624687656 | 100050                  |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -1013,9 +1023,9 @@ Feature:
     # Confirm equity-like-shares are unchanged by the network moving forwards (as virtual-stakes scaled by same factor, r)
     When the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.3750624687656172 | 10000                   |
-      | lp2   | 0.3750624687656172 | 20000                   |
-      | lp3   | 0.2498750624687656 | 40020                   |
+      | lp1   | 0.3750624687656172 | 25000                   |
+      | lp2   | 0.3750624687656172 | 50000                   |
+      | lp3   | 0.2498750624687656 | 100050                  |
 
     # -------------------------------------------------------------------------------------------------------------------
     # -------------------------------------------------------------------------------------------------------------------
@@ -1038,7 +1048,7 @@ Feature:
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 7007         | 30000          | 70           |
+      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 17517        | 75000          | 70           |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -1048,9 +1058,9 @@ Feature:
     # Confirm equity-like-shares are unchanged by network moving forwards (as new market period not entered)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.3750624687656172 | 10000                   |
-      | lp2   | 0.3750624687656172 | 20000                   |
-      | lp3   | 0.2498750624687656 | 40020                   |
+      | lp1   | 0.3750624687656172 | 25000                   |
+      | lp2   | 0.3750624687656172 | 50000                   |
+      | lp3   | 0.2498750624687656 | 100050                  |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -1068,9 +1078,9 @@ Feature:
     # Confirm equity-like-shares are unchanged by the network moving forwards (as virtual-stakes scaled by same factor, r)
     When the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.3750624687656172 | 10000                   |
-      | lp2   | 0.3750624687656172 | 20000                   |
-      | lp3   | 0.2498750624687656 | 40020                   |
+      | lp1   | 0.3750624687656172 | 25000                   |
+      | lp2   | 0.3750624687656172 | 50000                   |
+      | lp3   | 0.2498750624687656 | 100050                  |
 
     # -------------------------------------------------------------------------------------------------------------------
     # -------------------------------------------------------------------------------------------------------------------
@@ -1084,9 +1094,9 @@ Feature:
     # Confirm equity-like-shares are unchanged by network moving forwards (as new market period not entered)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.3750624687656172 | 10000                   |
-      | lp2   | 0.3750624687656172 | 20000                   |
-      | lp3   | 0.2498750624687656 | 40020                   |
+      | lp1   | 0.3750624687656172 | 25000                   |
+      | lp2   | 0.3750624687656172 | 50000                   |
+      | lp3   | 0.2498750624687656 | 100050                  |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
@@ -1098,9 +1108,9 @@ Feature:
     # Confirm equity-like-shares are unchanged by the network moving forwards (as virtual-stakes scaled by same factor, r)
     When the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.3685041026719966 | 10000                   |
-      | lp2   | 0.3685041026719966 | 20000                   |
-      | lp3   | 0.2629917946560067 | 40020                   |
+      | lp1   | 0.3685041026719966 | 25000                   |
+      | lp2   | 0.3685041026719966 | 50000                   |
+      | lp3   | 0.2629917946560067 | 100050                  |
 
     # -------------------------------------------------------------------------------------------------------------------
     # -------------------------------------------------------------------------------------------------------------------
@@ -1114,9 +1124,9 @@ Feature:
     # Confirm equity-like-shares are unchanged by network moving forwards (as new market period not entered)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.3685041026719966 | 10000                   |
-      | lp2   | 0.3685041026719966 | 20000                   |
-      | lp3   | 0.2629917946560067 | 40020                   |
+      | lp1   | 0.3685041026719966 | 25000                   |
+      | lp2   | 0.3685041026719966 | 50000                   |
+      | lp3   | 0.2629917946560067 | 100050                  |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
@@ -1128,9 +1138,9 @@ Feature:
     # Confirm equity-like-shares are unchanged by the network moving forwards (as virtual-stakes scaled by same factor, r)
     When the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.3500899460323806 | 10000                   |
-      | lp2   | 0.3500899460323806 | 20000                   |
-      | lp3   | 0.2998201079352388 | 40020                   |
+      | lp1   | 0.3500899460323806 | 25000                   |
+      | lp2   | 0.3500899460323806 | 50000                   |
+      | lp3   | 0.2998201079352388 | 100050                  |
 
     # -------------------------------------------------------------------------------------------------------------------
     # -------------------------------------------------------------------------------------------------------------------
@@ -1144,9 +1154,9 @@ Feature:
     # Confirm equity-like-shares are unchanged by network moving forwards (as new market period not entered)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.3500899460323806 | 10000                   |
-      | lp2   | 0.3500899460323806 | 20000                   |
-      | lp3   | 0.2998201079352388 | 40020                   |
+      | lp1   | 0.3500899460323806 | 25000                   |
+      | lp2   | 0.3500899460323806 | 50000                   |
+      | lp3   | 0.2998201079352388 | 100050                  |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
@@ -1158,9 +1168,9 @@ Feature:
     # Confirm equity-like-shares are unchanged by the network moving forwards (as virtual-stakes scaled by same factor, r)
     When the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.3334285170378831 | 10000                   |
-      | lp2   | 0.3334285170378831 | 20000                   |
-      | lp3   | 0.3331429659242338 | 40020                   |
+      | lp1   | 0.3334285170378831 | 25000                   |
+      | lp2   | 0.3334285170378831 | 50000                   |
+      | lp3   | 0.3331429659242338 | 100050                  |
 
     # -------------------------------------------------------------------------------------------------------------------
     # -------------------------------------------------------------------------------------------------------------------
@@ -1174,9 +1184,9 @@ Feature:
     # Confirm equity-like-shares are unchanged by network moving forwards (as new market period not entered)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.3334285170378831 | 10000                   |
-      | lp2   | 0.3334285170378831 | 20000                   |
-      | lp3   | 0.3331429659242338 | 40020                   |
+      | lp1   | 0.3334285170378831 | 25000                   |
+      | lp2   | 0.3334285170378831 | 50000                   |
+      | lp3   | 0.3331429659242338 | 100050                  |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
@@ -1188,9 +1198,9 @@ Feature:
     # Confirm equity-like-shares are unchanged by the network moving forwards (as virtual-stakes scaled by same factor, r)
     When the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.3333333333333333 | 10000                   |
-      | lp2   | 0.3333333333333333 | 20000                   |
-      | lp3   | 0.3333333333333333 | 40020                   |
+      | lp1   | 0.3333333333333333 | 25000                   |
+      | lp2   | 0.3333333333333333 | 50000                   |
+      | lp3   | 0.3333333333333333 | 100050                  |
 
     # -------------------------------------------------------------------------------------------------------------------
     # -------------------------------------------------------------------------------------------------------------------
