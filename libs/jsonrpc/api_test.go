@@ -20,6 +20,8 @@ func TestAPI(t *testing.T) {
 	t.Run("API only supports JSON-RPC 2.0 requests", testAPIOnlySupportsJSONRPC2Request)
 	t.Run("Method is required", testMethodIsRequired)
 	t.Run("Dispatching a request succeeds", testDispatchingRequestSucceeds)
+	t.Run("Dispatching a request with unsatisfied policy fails", testDispatchingRequestWithUnsatisfiedPolicyFails)
+	t.Run("Dispatching a request with satisfied policy fails", testDispatchingRequestWithSatisfiedPolicyFails)
 	t.Run("Dispatching an unknown request fails", testDispatchingUnknownRequestFails)
 	t.Run("Failed commands return an error response", testFailedCommandReturnErrorResponse)
 	t.Run("Listing registered methods succeeds", testListingRegisteredMethodsSucceeds)
@@ -46,7 +48,7 @@ func testAPIOnlySupportsJSONRPC2Request(t *testing.T) {
 	jsonrpcAPI.command2.EXPECT().Handle(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	response := jsonrpcAPI.DispatchRequest(ctx, &request, jsonrpc.RequestMetadata{})
+	response := jsonrpcAPI.DispatchRequest(ctx, request, jsonrpc.RequestMetadata{})
 
 	// then
 	require.NotNil(t, response)
@@ -81,7 +83,7 @@ func testMethodIsRequired(t *testing.T) {
 	jsonrpcAPI.command2.EXPECT().Handle(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	response := jsonrpcAPI.DispatchRequest(ctx, &request, jsonrpc.RequestMetadata{})
+	response := jsonrpcAPI.DispatchRequest(ctx, request, jsonrpc.RequestMetadata{})
 
 	// then
 	require.NotNil(t, response)
@@ -117,7 +119,81 @@ func testDispatchingRequestSucceeds(t *testing.T) {
 	jsonrpcAPI.command2.EXPECT().Handle(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	response := jsonrpcAPI.DispatchRequest(ctx, &request, jsonrpc.RequestMetadata{})
+	response := jsonrpcAPI.DispatchRequest(ctx, request, jsonrpc.RequestMetadata{})
+
+	// then
+	require.NotNil(t, response)
+	assert.Equal(t, jsonrpc.JSONRPC2, response.Version)
+	assert.Equal(t, request.ID, response.ID)
+	assert.Equal(t, expectedResult, response.Result)
+	assert.Nil(t, response.Error)
+}
+
+func testDispatchingRequestWithUnsatisfiedPolicyFails(t *testing.T) {
+	// given
+	jsonrpcAPI := newAPI(t)
+	ctx := context.Background()
+	params := struct {
+		Name string `json:"name"`
+	}{
+		Name: vgrand.RandomStr(5),
+	}
+	request := jsonrpc.Request{
+		Version: jsonrpc.JSONRPC2,
+		Method:  vgrand.RandomStr(5), // Unregistered method.
+		Params:  params,
+		ID:      vgrand.RandomStr(5),
+	}
+	expectedErrDetails := &jsonrpc.ErrorDetails{
+		Code:    jsonrpc.ErrorCode(1234),
+		Message: vgrand.RandomStr(10),
+		Data:    vgrand.RandomStr(10),
+	}
+
+	// setup
+	jsonrpcAPI.AddDispatchPolicy(func(_ context.Context, _ jsonrpc.Request, _ jsonrpc.RequestMetadata) *jsonrpc.ErrorDetails {
+		return expectedErrDetails
+	})
+	jsonrpcAPI.command1.EXPECT().Handle(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	jsonrpcAPI.command2.EXPECT().Handle(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+	// when
+	response := jsonrpcAPI.DispatchRequest(ctx, request, jsonrpc.RequestMetadata{})
+
+	// then
+	require.NotNil(t, response)
+	assert.Equal(t, jsonrpc.JSONRPC2, response.Version)
+	assert.Equal(t, request.ID, response.ID)
+	assert.Nil(t, response.Result)
+	assert.Equal(t, expectedErrDetails, response.Error)
+}
+
+func testDispatchingRequestWithSatisfiedPolicyFails(t *testing.T) {
+	// given
+	jsonrpcAPI := newAPI(t)
+	ctx := context.Background()
+	params := struct {
+		Name string `json:"name"`
+	}{
+		Name: vgrand.RandomStr(5),
+	}
+	request := jsonrpc.Request{
+		Version: jsonrpc.JSONRPC2,
+		Method:  jsonrpcAPI.method1,
+		Params:  params,
+		ID:      vgrand.RandomStr(5),
+	}
+	expectedResult := vgrand.RandomStr(5)
+
+	// setup
+	jsonrpcAPI.AddDispatchPolicy(func(_ context.Context, _ jsonrpc.Request, _ jsonrpc.RequestMetadata) *jsonrpc.ErrorDetails {
+		return nil
+	})
+	jsonrpcAPI.command1.EXPECT().Handle(ctx, request.Params, gomock.Any()).Times(1).Return(expectedResult, nil)
+	jsonrpcAPI.command2.EXPECT().Handle(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+	// when
+	response := jsonrpcAPI.DispatchRequest(ctx, request, jsonrpc.RequestMetadata{})
 
 	// then
 	require.NotNil(t, response)
@@ -148,7 +224,7 @@ func testDispatchingUnknownRequestFails(t *testing.T) {
 	jsonrpcAPI.command2.EXPECT().Handle(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	response := jsonrpcAPI.DispatchRequest(ctx, &request, jsonrpc.RequestMetadata{})
+	response := jsonrpcAPI.DispatchRequest(ctx, request, jsonrpc.RequestMetadata{})
 
 	// then
 	require.NotNil(t, response)
@@ -188,7 +264,7 @@ func testFailedCommandReturnErrorResponse(t *testing.T) {
 	jsonrpcAPI.command2.EXPECT().Handle(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	response := jsonrpcAPI.DispatchRequest(ctx, &request, jsonrpc.RequestMetadata{})
+	response := jsonrpcAPI.DispatchRequest(ctx, request, jsonrpc.RequestMetadata{})
 
 	// then
 	require.NotNil(t, response)
