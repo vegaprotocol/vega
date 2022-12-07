@@ -28,7 +28,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | 100000  | 0.99        | 3                 |
 
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          | decimal places | position decimal places |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       |
       | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       |
       | USD/DEC20 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       |
@@ -102,31 +102,31 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
     # max_oi: max open interest
 
     Then the order book should have the following volumes for market "USD/DEC19":
-      | side | price    | volume   |
-      | buy  | 898000   | 119372   |
-      | buy  | 900000   | 1000     |
-      | buy  | 999000   | 13347    |
-      | sell | 1102000  | 6082     |
-      | sell | 1100000  | 1000     |
-      | sell | 1001000  | 113222   |
+      | side | price    | volume |
+      | buy  | 898000   | 59392  |
+      | buy  | 900000   | 1000   |
+      | buy  | 999000   | 6674   |
+      | sell | 1001000  | 56612  |
+      | sell | 1100000  | 1000   |
+      | sell | 1102000  | 3025   |
 
     Then the order book should have the following volumes for market "USD/DEC20":
-      | side | price      | volume   |
-      | buy  | 89800000   | 11937071 |
-      | buy  | 90000000   | 100000   |
-      | buy  | 99900000   | 1334669  |
-      | sell | 110200000  | 608108   |
-      | sell | 110000000  | 100000   |
-      | sell | 100100000  | 11322012 |
+      | side | price      | volume  |
+      | buy  | 89800000   | 5939125 |
+      | buy  | 90000000   | 100000  |
+      | buy  | 99900000   | 667335  |      
+      | sell | 100100000  | 5661006 |
+      | sell | 110000000  | 100000  |
+      | sell | 110200000  | 302481  |
 
     Then the order book should have the following volumes for market "USD/DEC21":
-      | side | price      | volume   |
-      | buy  | 89800000   | 119372   |
-      | buy  | 90000000   | 1000     |
-      | buy  | 99900000   | 13347    |
-      | sell | 110200000  | 6082     |
-      | sell | 110000000  | 1000     |
-      | sell | 100100000  | 113222   |
+      | side | price      | volume |
+      | buy  | 89800000   | 59392  |
+      | buy  | 90000000   | 1000   |
+      | buy  | 99900000   | 6674   |      
+      | sell | 100100000  | 56612  |
+      | sell | 110000000  | 1000   |
+      | sell | 110200000  | 3025   |
 
     And the liquidity provider fee shares for the market "USD/DEC19" should be:
       | party | equity like share  | average entry valuation |
@@ -142,12 +142,12 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin       | general        | bond       |
-      | lp1    | ETH   | USD/DEC19 | 8281752046   | 99972155554835 | 1000000000 |
-      | lp1    | USD   | USD/DEC19 | 8281752046   | 100000000000   |            |
-      | lp1    | ETH   | USD/DEC20 | 8280941073   | 99972155554835 | 1000000000 |
-      | lp1    | USD   | USD/DEC20 | 8280941073   | 100000000000   |            |
-      | lp1    | ETH   | USD/DEC21 | 8281752046   | 99972155554835 | 1000000000 |
-      | lp1    | USD   | USD/DEC21 | 8281752046   | 100000000000   | 1000000000 |
+      | lp1    | ETH   | USD/DEC19 | 4134260182   | 99984597723110 | 1000000000 |
+      | lp1    | USD   | USD/DEC19 | 4134260182   | 100000000000   |            |
+      | lp1    | ETH   | USD/DEC20 | 4133756526   | 99984597723110 | 1000000000 |
+      | lp1    | USD   | USD/DEC20 | 4133756526   | 100000000000   |            |
+      | lp1    | ETH   | USD/DEC21 | 4134260182   | 99984597723110 | 1000000000 |
+      | lp1    | USD   | USD/DEC21 | 4134260182   | 100000000000   | 1000000000 |
       | party1 | ETH   | USD/DEC19 | 1176961234   | 9996469116298  |            |
       | party1 | USD   | USD/DEC19 | 1176961234   | 10000000000    |            |
       | party2 | ETH   | USD/DEC19 | 4737795542   | 9985786613374  |            |
