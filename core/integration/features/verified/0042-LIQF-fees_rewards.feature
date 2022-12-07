@@ -412,7 +412,6 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 19     | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1      | USD   |
-  
   @STTest
   Scenario: 005: 2 LP distribution at settlement
 
