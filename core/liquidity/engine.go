@@ -400,18 +400,20 @@ func (e *Engine) SubmitLiquidityProvision(
 	lp.CommitmentAmount = lps.CommitmentAmount
 	lp.Status = types.LiquidityProvisionStatusPending
 
-	e.setShapesReferencesOnLiquidityProvision(ctx, lp, lps.Buys, lps.Sells, idgen)
+	orderEvts := e.SetShapesReferencesOnLiquidityProvision(ctx, lp, lps.Buys, lps.Sells, idgen)
+	// seed the dummy orders with the generated IDs in order to avoid broken references
+	e.broker.SendBatch(orderEvts)
 
 	return nil
 }
 
-func (e *Engine) setShapesReferencesOnLiquidityProvision(
+func (e *Engine) SetShapesReferencesOnLiquidityProvision(
 	ctx context.Context,
 	lp *types.LiquidityProvision,
 	buys []*types.LiquidityOrder,
 	sells []*types.LiquidityOrder,
 	idGen IDGen,
-) {
+) []events.Event {
 	// this order is just a stub to send to the id generator,
 	// and get an ID assigned per references in the shapes
 	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(buys))
@@ -455,8 +457,8 @@ func (e *Engine) setShapesReferencesOnLiquidityProvision(
 		})
 		orderEvts = append(orderEvts, events.NewOrderEvent(ctx, order))
 	}
-	// seed the dummy orders with the generated IDs in order to avoid broken references
-	e.broker.SendBatch(orderEvts)
+
+	return orderEvts
 }
 
 // LiquidityProvisionByPartyID returns the LP associated to a Party if any.

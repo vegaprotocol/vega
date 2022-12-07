@@ -22,6 +22,10 @@ import (
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/liquidity"
@@ -31,9 +35,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // eq implements a gomock.Matcher with a better diff output.
@@ -155,10 +156,6 @@ func testSubmissionCRUD(t *testing.T) {
 	idGen := idgeneration.New(deterministicID)
 
 	lpID := idGen.NextID()
-	order1 := &types.Order{}
-	order2 := &types.Order{}
-	order1.ID = idGen.NextID()
-	order2.ID = idGen.NextID()
 
 	expected := &types.LiquidityProvision{
 		ID:               lpID,
@@ -171,14 +168,18 @@ func testSubmissionCRUD(t *testing.T) {
 		Status:           types.LiquidityProvisionStatusPending,
 		Version:          1,
 		Buys: []*types.LiquidityOrderReference{
-			{LiquidityOrder: buyShape[0], OrderID: order1.ID},
+			{LiquidityOrder: buyShape[0]},
 		},
 
 		Sells: []*types.LiquidityOrderReference{
-			{LiquidityOrder: sellShape[0], OrderID: order2.ID},
+			{LiquidityOrder: sellShape[0]},
 		},
 	}
 
+	orderEvts := tng.engine.SetShapesReferencesOnLiquidityProvision(ctx, expected, lps.Buys, lps.Sells, idGen)
+
+	// Create orders should fire a batch event
+	tng.broker.EXPECT().SendBatch(orderEvts).Times(1)
 	// Create a submission should fire an event
 	tng.broker.EXPECT().Send(
 		events.NewLiquidityProvisionEvent(ctx, expected),
@@ -407,6 +408,7 @@ func TestUpdateAndUndeploy(t *testing.T) {
 
 	// We don't care about the following calls
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	tng.orderbook.EXPECT().GetLiquidityOrders(gomock.Any()).Times(2)
 
 	// Send a submission to create the shape
@@ -475,7 +477,6 @@ func TestUpdateAndUndeploy(t *testing.T) {
 	require.Len(t, toCancels, 0)
 
 	tng.orderbook.EXPECT().GetLiquidityOrders(gomock.Any()).Times(2)
-	tng.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	tng.engine.UndeployLPs(ctx, nil)
 	lp := tng.engine.LiquidityProvisionByPartyID(party)
 	require.Equal(t, types.LiquidityProvisionStatusUndeployed, lp.Status)
@@ -494,6 +495,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 
 	// We don't care about the following calls
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
 	// Send a submission to create the shape
 	lp1pb := &commandspb.LiquidityProvisionSubmission{
