@@ -495,7 +495,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 19     | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1      | USD   |
 
-  Scenario: Cut the market value window short with a parameter change (0042-LIQF-022)
+  Scenario: 006 Cut the market value window short with a parameter change (0042-LIQF-022)
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | lp1    | USD   | 1000000000 |
@@ -506,15 +506,11 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | buy  | MID              | 2          | 1      | submission |
       | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | sell | MID              | 2          | 1      | submission |
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | buy  | MID              | 2          | 1      | submission |
       | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | sell | ASK              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | sell | MID              | 2          | 1      | submission |
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -529,8 +525,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/MAR22 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/MAR22 | sell | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | buy  | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
@@ -538,12 +534,13 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/MAR22 | buy  | 15     | 1000  | 2                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/MAR22 | buy  | 15     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 15     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
     Then then the network moves ahead "5" blocks
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
-      | 951        | TRADING_MODE_CONTINUOUS | 6657         | 10000          | 70            | 12070800           |
+      | 1000       | TRADING_MODE_CONTINUOUS | 7000         | 10000          | 70            | 7200000            |
 
 
     # Move the current market value window beyond 30 min
@@ -552,7 +549,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     # Assure that trades are registered
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
-      | 951        | TRADING_MODE_CONTINUOUS | 6657         | 10000          | 70            | 65247              |
+      | 1000       | TRADING_MODE_CONTINUOUS | 7000         | 10000          | 70            | 38918              |
 
     # Decrease the window length to 30 min
     Then the following network parameters are set:
@@ -564,38 +561,40 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     # Now market value proxy == supplied stake (we started a new window and had no trades yet)
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
-      | 951        | TRADING_MODE_CONTINUOUS | 6657         | 10000          | 70            | 10000              |
+      | 1000       | TRADING_MODE_CONTINUOUS | 7000         | 10000          | 70            | 10000              |
 
     # Place another trade and observe that it gets picked up by the market value proxy
     Then the parties place the following orders:
-      | party  | market id | side  | volume | price | resulting trades | type        | tif     |
-      | party2 | ETH/MAR22 | sell  | 10     | 1000  | 2                | TYPE_MARKET | TIF_FOK |
+      | party  | market id | side  | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | buy   | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the market data for the market "ETH/MAR22" should be:
-      | mark price | last traded price | trading mode            | target stake | supplied stake | open interest | market value proxy |
-      | 951        | 949               | TRADING_MODE_CONTINUOUS | 6643         | 10000          | 70            | 10000              |
+      | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
+      | 1000       | TRADING_MODE_CONTINUOUS | 8000         | 10000          | 80            | 10000              |
 
     Then the network moves ahead "1" blocks
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
-      | 949        | TRADING_MODE_CONTINUOUS | 6643         | 10000          | 70            | 8541000            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 8000         | 10000          | 80            | 9000000            |
 
     # Moving beyond 30min starts a new time window (market value proxy == supplied stake again as there weren't any trades in that window yet)
     Then the network moves ahead "900" blocks
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
-      | 949        | TRADING_MODE_CONTINUOUS | 6643         | 10000          | 70            | 10000              |
+      | 1000       | TRADING_MODE_CONTINUOUS | 8000         | 10000          | 80            | 10000              |
 
 
     # Place another trade and observe that it gets picked up by the market value proxy
     Then the parties place the following orders:
-      | party  | market id | side  | volume | price | resulting trades | type        | tif     |
-      | party2 | ETH/MAR22 | buy   | 10     | 1000  | 2                | TYPE_MARKET | TIF_FOK |
+      | party  | market id | side  | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | sell  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | buy   | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
     Then the network moves ahead "100" blocks
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
-      | 951        | TRADING_MODE_CONTINUOUS | 6657         | 10000          | 70            | 85590              |
+      | 1000       | TRADING_MODE_CONTINUOUS | 8000         | 10000          | 70            | 90000              |
 
     # Increase the window length to 40 min
     Then the following network parameters are set:
@@ -606,9 +605,9 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     Then the network moves ahead "1000" blocks
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
-      | 951        | TRADING_MODE_CONTINUOUS | 6657         | 10000          | 70            | 10374              |
+      | 1000       | TRADING_MODE_CONTINUOUS | 8000         | 10000          | 70            | 10909              |
 
     Then the network moves ahead "100" blocks
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
-      | 951        | TRADING_MODE_CONTINUOUS | 6657         | 10000          | 70            | 10000              |
+      | 1000       | TRADING_MODE_CONTINUOUS | 8000         | 10000          | 70            | 10000              |
