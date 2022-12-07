@@ -17,19 +17,21 @@ import (
 	"encoding/hex"
 	"errors"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 const (
-	banPeriod = 4
-	ringSize  = 500
+	ringSize       = 500
+	minBanDuration = time.Second * 30 // minimum ban duration
 )
+
+var banDurationAsEpochFraction = num.DecimalOne().Div(num.DecimalFromInt64(48)) // 1/48 of an epoch will be the default 30 minutes ban
 
 type EpochEngine interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
@@ -53,18 +55,29 @@ func (p *params) isActive(blockHeight uint64) bool {
 	return p.untilBlock == nil || *p.untilBlock+p.spamPoWNumberOfPastBlocks > blockHeight
 }
 
+// represents the number of transactions seen from a party and the total observed difficulty
+// of transactions generated with a given block height.
+type partyStateForBlock struct {
+	observedDifficulty uint
+	seenCount          uint
+}
+
 type state struct {
-	blockPartyToObservedDifficulty map[string]uint // party observed total difficulty in block
-	blockPartyToSeenCount          map[string]uint // party observed transactions in block
+	blockToPartyState map[uint64]map[string]*partyStateForBlock
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/pow TimeService
+type TimeService interface {
+	GetTimeNow() time.Time
 }
 
 type Engine struct {
-	activeParams  []*params         // active sets of parameters
-	activeStates  []*state          // active states corresponding to the sets of parameters
-	bannedParties map[string]uint64 // banned party to last epoch of ban
+	timeService   TimeService
+	activeParams  []*params            // active sets of parameters
+	activeStates  []*state             // active states corresponding to the sets of parameters
+	bannedParties map[string]time.Time // banned party -> release time
 
 	currentBlock uint64              // the current block height
-	currentEpoch uint64              // the current epoch sequence
 	blockHeight  [ringSize]uint64    // block heights in scope ring buffer - this has a fixed size which is equal to the maximum value of the network parameter
 	blockHash    [ringSize]string    // block hashes in scope ring buffer - this has a fixed size which is equal to the maximum value of the network parameter
 	seenTx       map[string]struct{} // seen transactions in scope set
@@ -75,17 +88,18 @@ type Engine struct {
 	mempoolSeenTid map[string]struct{} // tids seen already in this node's mempool, cleared at the end of the block
 
 	// snapshot key
-	hashKeys []string
-	log      *logging.Logger
-	lock     sync.RWMutex
+	hashKeys    []string
+	log         *logging.Logger
+	lock        sync.RWMutex
+	banDuration time.Duration
 }
 
 // New instantiates the proof of work engine.
-func New(log *logging.Logger, config Config, epochEngine EpochEngine) *Engine {
+func New(log *logging.Logger, config Config, timeService TimeService) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
-		bannedParties:  map[string]uint64{},
+		bannedParties:  map[string]time.Time{},
 		log:            log,
 		hashKeys:       []string{(&types.PayloadProofOfWork{}).Key()},
 		activeParams:   []*params{},
@@ -95,35 +109,22 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine) *Engine {
 		seenTid:        map[string]struct{}{},
 		mempoolSeenTid: map[string]struct{}{},
 		heightToTid:    map[uint64][]string{},
+		timeService:    timeService,
 	}
-	epochEngine.NotifyOnEpoch(e.OnEpochEvent, e.OnEpochRestore)
-
 	e.log.Info("PoW spam protection started")
 	return e
 }
 
-// OnEpochRestore is called when we restore the epoch from snapshot.
-func (e *Engine) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
-	e.currentEpoch = epoch.Seq
-}
-
-// OnEpochEvent is called on epoch events. It only cares about new epoch events.
-func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
-	if epoch.Action != vega.EpochAction_EPOCH_ACTION_START {
-		return
+// OnEpochDurationChanged updates the ban duration as a fraction of the epoch duration.
+func (e *Engine) OnEpochDurationChanged(_ context.Context, duration time.Duration) error {
+	epochImpliedDurationNano, _ := num.UintFromDecimal(num.DecimalFromInt64(duration.Nanoseconds()).Mul(banDurationAsEpochFraction))
+	epochImpliedDurationDuration := time.Duration(epochImpliedDurationNano.Uint64())
+	if epochImpliedDurationDuration < minBanDuration {
+		e.banDuration = minBanDuration
+	} else {
+		e.banDuration = epochImpliedDurationDuration
 	}
-	e.currentEpoch = epoch.Seq
-
-	e.lock.Lock()
-	defer e.lock.Unlock()
-
-	// check if there are banned parties who can be released
-	for k, v := range e.bannedParties {
-		if epoch.Seq > v {
-			delete(e.bannedParties, k)
-			e.log.Info("released proof of work spam ban from", logging.String("party", k))
-		}
-	}
+	return nil
 }
 
 // OnBeginBlock updates the block height and block hash and clears any out of scope parameters set and states.
@@ -135,6 +136,16 @@ func (e *Engine) BeginBlock(blockHeight uint64, blockHash string) {
 	idx := blockHeight % ringSize
 	e.blockHeight[idx] = blockHeight
 	e.blockHash[idx] = blockHash
+
+	tm := e.timeService.GetTimeNow()
+
+	// check if there are banned parties who can be released
+	for k, v := range e.bannedParties {
+		if !tm.Before(v) {
+			delete(e.bannedParties, k)
+			e.log.Info("released proof of work spam ban from", logging.String("party", k))
+		}
+	}
 }
 
 // EndOfBlock clears up block data structures at the end of the block.
@@ -152,7 +163,7 @@ func (e *Engine) EndOfBlock() {
 		}
 	}
 
-	for _, p := range e.activeParams {
+	for i, p := range e.activeParams {
 		outOfScopeBlock := int64(e.currentBlock) + 1 - int64(p.spamPoWNumberOfPastBlocks)
 		if outOfScopeBlock < 0 {
 			continue
@@ -170,17 +181,13 @@ func (e *Engine) EndOfBlock() {
 		}
 		delete(e.heightToTx, uOutOfScopeBlock)
 		delete(e.heightToTid, uOutOfScopeBlock)
+		delete(e.activeStates[i].blockToPartyState, uOutOfScopeBlock)
 	}
 
 	// delete all out of scope configurations and states
 	for i := len(toDelete) - 1; i >= 0; i-- {
 		e.activeParams = append(e.activeParams[:toDelete[i]], e.activeParams[toDelete[i]+1:]...)
 		e.activeStates = append(e.activeStates[:toDelete[i]], e.activeStates[toDelete[i]+1:]...)
-	}
-
-	for _, s := range e.activeStates {
-		s.blockPartyToObservedDifficulty = map[string]uint{}
-		s.blockPartyToSeenCount = map[string]uint{}
 	}
 }
 
@@ -251,20 +258,27 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 	e.heightToTid[tx.BlockHeight()] = append(e.heightToTid[tx.BlockHeight()], tx.GetPoWTID())
 	e.seenTid[tx.GetPoWTID()] = struct{}{}
 
-	// if we've not seen any transactions from this party this block then let it pass and save the observed difficulty
-	if _, ok := state.blockPartyToSeenCount[tx.Party()]; !ok {
-		state.blockPartyToObservedDifficulty[tx.Party()] = uint(d)
-		state.blockPartyToSeenCount[tx.Party()] = 1
+	// if it's the first transaction we're seeing from any party for this block height, initialise the state
+	if _, ok := state.blockToPartyState[txBlock]; !ok {
+		state.blockToPartyState[txBlock] = map[string]*partyStateForBlock{tx.Party(): {observedDifficulty: uint(d), seenCount: uint(1)}}
 		if e.log.IsDebug() {
 			e.log.Debug("transaction accepted", logging.String("tid", tx.GetPoWTID()))
 		}
 		return nil
 	}
 
-	// if we've seen less than the allow number of transactions per block, take a note and let it pass
-	if state.blockPartyToSeenCount[tx.Party()] < uint(params.spamPoWNumberOfTxPerBlock) {
-		state.blockPartyToObservedDifficulty[tx.Party()] += uint(d)
-		state.blockPartyToSeenCount[tx.Party()]++
+	// if it's the first transaction for the party for this block height
+	if _, ok := state.blockToPartyState[txBlock][tx.Party()]; !ok {
+		state.blockToPartyState[txBlock] = map[string]*partyStateForBlock{tx.Party(): {observedDifficulty: uint(d), seenCount: uint(1)}}
+		return nil
+	}
+
+	// it's not the first transaction for the party for the given block height
+	// if we've seen less than the allowed number of transactions per block, take a note and let it pass
+	partyState := state.blockToPartyState[txBlock][tx.Party()]
+	if partyState.seenCount < uint(params.spamPoWNumberOfTxPerBlock) {
+		partyState.observedDifficulty += uint(d)
+		partyState.seenCount++
 		if e.log.IsDebug() {
 			e.log.Debug("transaction accepted", logging.String("tid", tx.GetPoWTID()))
 		}
@@ -273,32 +287,52 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 
 	// if we've seen already enough transactions and `spamPoWIncreasingDifficulty` is not enabled then fail the transaction and ban the party
 	if !params.spamPoWIncreasingDifficulty {
-		e.bannedParties[tx.Party()] = e.currentEpoch + banPeriod
+		e.bannedParties[tx.Party()] = e.timeService.GetTimeNow().Add(e.banDuration)
 		return errors.New("too many transactions per block")
 	}
 
-	// calculate the expected difficulty as `e.spamPoWDifficulty` * `e.spamPoWNumberOfTxPerBlock` + sigma((e.spamPoWDifficulty + i) for i in {`blockTransactions` - `e.spamPoWNumberOfTxPerBlock`}
-	totalExpectedDifficulty := calculateExpectedDifficulty(params.spamPoWDifficulty, uint(params.spamPoWNumberOfTxPerBlock), state.blockPartyToSeenCount[tx.Party()]+1)
+	// calculate the expected difficulty - allow spamPoWNumberOfTxPerBlock for every level of increased difficulty
+	totalExpectedDifficulty := calculateExpectedDifficulty(params.spamPoWDifficulty, uint(params.spamPoWNumberOfTxPerBlock), partyState.seenCount+1)
 
 	// if the observed difficulty sum is less than the expected difficulty, ban the party and reject the tx
-	if state.blockPartyToObservedDifficulty[tx.Party()]+uint(d) < totalExpectedDifficulty {
-		e.bannedParties[tx.Party()] = e.currentEpoch + banPeriod
+	if partyState.observedDifficulty+uint(d) < totalExpectedDifficulty {
+		banTime := e.timeService.GetTimeNow().Add(e.banDuration)
+		e.bannedParties[tx.Party()] = banTime
+		e.log.Info("banning party for not respecting required difficulty rules", logging.String("party", tx.Party()), logging.Time("until", banTime))
 		return errors.New("too many transactions per block")
 	}
 
-	state.blockPartyToObservedDifficulty[tx.Party()] = state.blockPartyToObservedDifficulty[tx.Party()] + uint(d)
-	state.blockPartyToSeenCount[tx.Party()]++
-
+	partyState.observedDifficulty += +uint(d)
+	partyState.seenCount++
 	return nil
 }
 
-// calculateExpectedDifficulty calculates the expected difficulty of the transaction with index `seenTx`, i.e. having seen already `seenTx`-1 transactions.
-// `spamPoWDifficulty * i for i == 0..min(seenTx, spamPoWNumberOfTxPerBlock) + sum(spamPoWDifficulty + i) for i = spamPoWNumberOfTxPerBlock..seenTx if seenTx > spamPoWNumberOfTxPerBlock`.
+// calculateExpectedDifficulty calculates the expected total difficulty given the default difficulty, the max batch size and the number of seen transactions
+// such that for each difficulty we allow batch size transactions.
+// e.g.  spamPoWDifficulty = 5
+//
+//			 spamPoWNumberOfTxPerBlock = 10
+//	      seenTx = 33
+//
+// expected difficulty = 10 * 5 + 10 * 6 + 10 * 7 + 3 * 8 = 204.
 func calculateExpectedDifficulty(spamPoWDifficulty uint, spamPoWNumberOfTxPerBlock uint, seenTx uint) uint {
 	if seenTx <= spamPoWNumberOfTxPerBlock {
 		return seenTx * spamPoWDifficulty
 	}
-	return spamPoWDifficulty*seenTx + (seenTx-spamPoWNumberOfTxPerBlock)*(1+seenTx-spamPoWNumberOfTxPerBlock)/2
+	total := uint(0)
+	diff := spamPoWDifficulty
+	d := seenTx
+	for {
+		if d > spamPoWNumberOfTxPerBlock {
+			total += diff * spamPoWNumberOfTxPerBlock
+			d -= spamPoWNumberOfTxPerBlock
+		} else {
+			total += diff * d
+			break
+		}
+		diff++
+	}
+	return total
 }
 
 func (e *Engine) findParamsForBlockHeight(height uint64) int {
@@ -408,8 +442,7 @@ func (e *Engine) updateWithLock(netParamName, netParamValue string) {
 		}
 		e.activeParams = append(e.activeParams, p)
 		newState := &state{
-			blockPartyToObservedDifficulty: map[string]uint{},
-			blockPartyToSeenCount:          map[string]uint{},
+			blockToPartyState: map[uint64]map[string]*partyStateForBlock{},
 		}
 		e.activeStates = append(e.activeStates, newState)
 		e.updateParam(netParamName, netParamValue, p)
@@ -435,8 +468,7 @@ func (e *Engine) updateWithLock(netParamName, netParamValue string) {
 	e.activeParams = append(e.activeParams, newParams)
 
 	newState := &state{
-		blockPartyToObservedDifficulty: map[string]uint{},
-		blockPartyToSeenCount:          map[string]uint{},
+		blockToPartyState: map[uint64]map[string]*partyStateForBlock{},
 	}
 	e.activeStates = append(e.activeStates, newState)
 }
