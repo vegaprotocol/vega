@@ -3227,31 +3227,48 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
 
 	if m.mkt.State != types.MarketStateProposed && m.mkt.State != types.MarketStatePending {
+
+		if m.settlementDataInMarket != nil {
+			m.settlementDataWithLock(ctx)
+		} else {
+			// if settlementDataInMarket is nil, we won't perform the last MTM settlement yet
+			// we should, however, perform this settlement ASAP, regardless of whether or not
+			// we have a settlement price at this point
+			m.log.Debug("no settlement data", logging.MarketID(m.GetID()))
+			// perform last MTM settlement if needed
+			if mp := m.getLastTradedPrice(); mp != nil && mp.IsZero() && m.settlement.HasTraded() {
+				// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
+				// works as expected.
+				m.markPrice = mp.Clone()
+				mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
+				dummy := &types.Order{
+					ID:            m.idgen.NextID(),
+					Price:         mp,
+					OriginalPrice: mcmp,
+				}
+				m.confirmMTM(ctx, dummy, nil)
+			}
+		}
+		// because we need to be able to perform the MTM settlement, only update market state now
 		m.mkt.State = types.MarketStateTradingTerminated
 		m.mkt.TradingMode = types.MarketTradingModeNoTrading
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-
-		if m.settlementDataInMarket == nil {
-			m.log.Debug("no settlement data", logging.MarketID(m.GetID()))
-			return
-		}
-		m.settlementDataWithLock(ctx)
-	} else {
-		for party := range m.parties {
-			_, err := m.CancelAllOrders(ctx, party)
-			if err != nil {
-				m.log.Debug("could not cancel orders for party", logging.PartyID(party), logging.Error(err))
-			}
-		}
-		err := m.closeCancelledMarket(ctx)
-		if err != nil {
-			m.log.Debug("could not close market", logging.MarketID(m.GetID()))
-			return
-		}
-
-		m.log.Debug("market must not terminated before its enactment time", logging.MarketID(m.GetID()))
 		return
 	}
+	for party := range m.parties {
+		_, err := m.CancelAllOrders(ctx, party)
+		if err != nil {
+			m.log.Debug("could not cancel orders for party", logging.PartyID(party), logging.Error(err))
+		}
+	}
+	err := m.closeCancelledMarket(ctx)
+	if err != nil {
+		m.log.Debug("could not close market", logging.MarketID(m.GetID()))
+		return
+	}
+
+	m.log.Debug("market must not terminated before its enactment time", logging.MarketID(m.GetID()))
+	return
 }
 
 func (m *Market) settlementData(ctx context.Context, settlementData *num.Uint) {

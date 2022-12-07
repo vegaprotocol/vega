@@ -16,6 +16,7 @@
 - [7034](https://github.com/vegaprotocol/vega/issues/7034) - Rename `network` to `name` in `admin.remove_network`
 - [7031](https://github.com/vegaprotocol/vega/issues/7031) - `datanode` expects protocol upgrade event in the right sequence
 - [7017](https://github.com/vegaprotocol/vega/issues/7017) - Fix issue with market update during opening auction
+- [7021](https://github.com/vegaprotocol/vega/issues/7021) - MTM settlement on trading terminated fix.
 
 
 ## 0.63.1
