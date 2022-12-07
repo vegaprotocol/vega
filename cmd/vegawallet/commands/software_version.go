@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	versionLong = cli.LongDesc(`
+	softwareVersionLong = cli.LongDesc(`
 		Get the version of the software and checks if its compatibility with the
 		registered networks.
 
@@ -24,16 +24,16 @@ var (
 		use the "info" command.
 	`)
 
-	versionExample = cli.Examples(`
+	softwareVersionExample = cli.Examples(`
 		# Get the version of the software
-		{{.Software}} version
+		{{.Software}} software version
 	`)
 )
 
-type GetVersionHandler func() (*wversion.GetVersionResponse, error)
+type GetSoftwareVersionHandler func() (*wversion.GetSoftwareVersionResponse, error)
 
-func NewCmdVersion(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func() (*wversion.GetVersionResponse, error) {
+func NewCmdSoftwareVersion(w io.Writer, rf *RootFlags) *cobra.Command {
+	h := func() (*wversion.GetSoftwareVersionResponse, error) {
 		s, err := netv1.InitialiseStore(paths.New(rf.Home))
 		if err != nil {
 			return nil, fmt.Errorf("couldn't initialise network store: %w", err)
@@ -45,12 +45,12 @@ func NewCmdVersion(w io.Writer, rf *RootFlags) *cobra.Command {
 	return BuildCmdGetVersion(w, h, rf)
 }
 
-func BuildCmdGetVersion(w io.Writer, handler GetVersionHandler, rf *RootFlags) *cobra.Command {
+func BuildCmdGetVersion(w io.Writer, handler GetSoftwareVersionHandler, rf *RootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "version",
 		Short:   "Get the version of the software",
-		Long:    versionLong,
-		Example: versionExample,
+		Long:    softwareVersionLong,
+		Example: softwareVersionExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			resp, err := handler()
 			if err != nil {
@@ -59,7 +59,7 @@ func BuildCmdGetVersion(w io.Writer, handler GetVersionHandler, rf *RootFlags) *
 
 			switch rf.Output {
 			case flags.InteractiveOutput:
-				PrintGetVersionResponse(w, resp)
+				PrintGetSoftwareVersionResponse(w, resp)
 			case flags.JSONOutput:
 				return printer.FprintJSON(w, resp)
 			}
@@ -71,14 +71,14 @@ func BuildCmdGetVersion(w io.Writer, handler GetVersionHandler, rf *RootFlags) *
 	return cmd
 }
 
-func PrintGetVersionResponse(w io.Writer, resp *wversion.GetVersionResponse) {
+func PrintGetSoftwareVersionResponse(w io.Writer, resp *wversion.GetSoftwareVersionResponse) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
 	defer p.Print(str)
 
 	if wversion.IsUnreleased() {
-		str.CrossMark().DangerText("You are running an unreleased version of the Vega wallet (").DangerText(coreversion.Get()).DangerText(").").NextLine()
+		str.CrossMark().DangerText("You are running an unreleased version of the software (").DangerText(coreversion.Get()).DangerText(").").NextLine()
 		str.Pad().DangerText("Use it at your own risk!").NextSection()
 	}
 

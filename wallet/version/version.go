@@ -22,7 +22,7 @@ func IsUnreleased() bool {
 	return vgversion.IsUnreleased(coreversion.Get())
 }
 
-type GetVersionResponse struct {
+type GetSoftwareVersionResponse struct {
 	Version               string                 `json:"version"`
 	GitHash               string                 `json:"gitHash"`
 	NetworksCompatibility []NetworkCompatibility `json:"networksCompatibility"`
@@ -35,8 +35,8 @@ type NetworkCompatibility struct {
 	Error            error  `json:"error"`
 }
 
-func GetVersionInfo(netStore NetworkStore, requestVersionFn RequestVersionFn) *GetVersionResponse {
-	response := &GetVersionResponse{
+func GetVersionInfo(netStore NetworkStore, requestVersionFn RequestVersionFn) *GetSoftwareVersionResponse {
+	response := &GetSoftwareVersionResponse{
 		Version: coreversion.Get(),
 		GitHash: coreversion.GetCommitHash(),
 	}
