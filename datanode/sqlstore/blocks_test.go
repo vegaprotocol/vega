@@ -29,12 +29,12 @@ func addTestBlock(t *testing.T, bs *sqlstore.Blocks) entities.Block {
 	return addTestBlockForTime(t, bs, time.Now())
 }
 
-func addTestBlockWithVegaTime(t *testing.T, bs *sqlstore.Blocks, vegaTime time.Time) entities.Block {
+func addTestBlockForTime(t *testing.T, bs *sqlstore.Blocks, vegaTime time.Time) entities.Block {
 	t.Helper()
-	return addTestBlockForTime(t, bs, vegaTime)
+	return addTestBlockForHeightAndTime(t, bs, 2, vegaTime)
 }
 
-func addTestBlockForTime(t *testing.T, bs *sqlstore.Blocks, vegaTime time.Time) entities.Block {
+func addTestBlockForHeightAndTime(t *testing.T, bs *sqlstore.Blocks, height int64, vegaTime time.Time) entities.Block {
 	t.Helper()
 	// Make a block
 	hash, err := hex.DecodeString("deadbeef")
@@ -43,7 +43,7 @@ func addTestBlockForTime(t *testing.T, bs *sqlstore.Blocks, vegaTime time.Time) 
 	// Postgres only stores timestamps in microsecond resolution
 	block1 := entities.Block{
 		VegaTime: vegaTime.Truncate(time.Microsecond),
-		Height:   2,
+		Height:   height,
 		Hash:     hash,
 	}
 
