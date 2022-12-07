@@ -10,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -47,7 +46,7 @@ func NewCmdTaintKey(w io.Writer, rf *RootFlags) *cobra.Command {
 		}
 
 		taintKey := api.NewAdminTaintKey(s)
-		_, errDetails := taintKey.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		_, errDetails := taintKey.Handle(context.Background(), params)
 		if errDetails != nil {
 			return errors.New(errDetails.Data)
 		}

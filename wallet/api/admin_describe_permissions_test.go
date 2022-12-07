@@ -16,14 +16,14 @@ import (
 )
 
 func TestAdminDescribePermissions(t *testing.T) {
-	t.Run("Describing permissions with invalid params fails", testDescribingPermissionsWithInvalidParamsFails)
-	t.Run("Describing permissions with valid params succeeds", testDescribingPermissionsWithValidParamsSucceeds)
-	t.Run("Describing permissions from wallet that does not exists fails", testDescribingPermissionsFromWalletThatDoesNotExistsFails)
+	t.Run("Describing permissions with invalid params fails", testAdminDescribingPermissionsWithInvalidParamsFails)
+	t.Run("Describing permissions with valid params succeeds", testAdminDescribingPermissionsWithValidParamsSucceeds)
+	t.Run("Describing permissions from wallet that does not exists fails", testAdminDescribingPermissionsFromWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during wallet verification fails", testAdminDescribePermissionsGettingInternalErrorDuringWalletVerificationFails)
 	t.Run("Getting internal error during wallet retrieval fails", testAdminDescribePermissionsGettingInternalErrorDuringWalletRetrievalFails)
 }
 
-func testDescribingPermissionsWithInvalidParamsFails(t *testing.T) {
+func testAdminDescribingPermissionsWithInvalidParamsFails(t *testing.T) {
 	tcs := []struct {
 		name          string
 		params        interface{}
@@ -82,7 +82,7 @@ func testDescribingPermissionsWithInvalidParamsFails(t *testing.T) {
 	}
 }
 
-func testDescribingPermissionsWithValidParamsSucceeds(t *testing.T) {
+func testAdminDescribingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
@@ -103,7 +103,8 @@ func testDescribingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	handler := newDescribePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribePermissionsParams{
@@ -126,7 +127,7 @@ func testDescribingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	}, result)
 }
 
-func testDescribingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
+func testAdminDescribingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
@@ -184,7 +185,8 @@ func testAdminDescribePermissionsGettingInternalErrorDuringWalletRetrievalFails(
 	handler := newDescribePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(nil, assert.AnError)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribePermissionsParams{
@@ -205,10 +207,10 @@ type describePermissionsHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *describePermissionsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminDescribePermissionsResult, *jsonrpc.ErrorDetails) {
+func (h *describePermissionsHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminDescribePermissionsResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminDescribePermissionsResult)
 		if !ok {

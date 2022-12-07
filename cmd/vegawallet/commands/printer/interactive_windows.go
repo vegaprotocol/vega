@@ -31,7 +31,8 @@ func NewInteractivePrinter(w io.Writer) *InteractivePrinter {
 // by default.
 //
 // Thanks for LipGloss for the hack:
-// 		https://github.com/charmbracelet/lipgloss
+//
+//	https://github.com/charmbracelet/lipgloss
 func enableLegacyWindowsANSI() {
 	enableANSI.Do(func() {
 		stdout := windows.Handle(os.Stdout.Fd())

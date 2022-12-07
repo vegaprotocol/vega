@@ -89,7 +89,11 @@ func (l *WalletLoader) Import(sourceFilePath string, passphrase string) (*Wallet
 		return nil, nil, fmt.Errorf("couldn't initialise source wallet store: %w", err)
 	}
 
-	w, err := sourceStore.GetWallet(ctx, sourceWalletName, passphrase)
+	if err := sourceStore.UnlockWallet(ctx, sourceWalletName, passphrase); err != nil {
+		return nil, nil, fmt.Errorf("couldn't unlock the source wallet: %w", err)
+	}
+
+	w, err := sourceStore.GetWallet(ctx, sourceWalletName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't get source wallet %s: %w", sourceWalletName, err)
 	}
@@ -101,7 +105,7 @@ func (l *WalletLoader) Import(sourceFilePath string, passphrase string) (*Wallet
 
 	destWalletName := fmt.Sprintf("vega.%v", time.Now().UnixNano())
 	w.SetName(destWalletName)
-	err = destStore.SaveWallet(ctx, w, passphrase)
+	err = destStore.CreateWallet(ctx, w, passphrase)
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't save the wallet %s: %w", destWalletName, err)
 	}
@@ -120,9 +124,13 @@ func (l *WalletLoader) Import(sourceFilePath string, passphrase string) (*Wallet
 
 func newWallet(loader loader, store *storev1.Store, walletName, passphrase string) (*Wallet, error) {
 	ctx := context.Background()
-	w, err := store.GetWallet(ctx, walletName, passphrase)
+	if err := store.UnlockWallet(ctx, walletName, passphrase); err != nil {
+		return nil, fmt.Errorf("could not unlock the wallet %q: %w", walletName, err)
+	}
+
+	w, err := store.GetWallet(ctx, walletName)
 	if err != nil {
-		return nil, fmt.Errorf("could not get wallet `%s`: %w", walletName, err)
+		return nil, fmt.Errorf("could not get wallet %q: %w", walletName, err)
 	}
 
 	keyPairs := w.ListKeyPairs()

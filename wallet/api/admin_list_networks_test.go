@@ -56,10 +56,10 @@ type listNetworksHandler struct {
 	networkStore *mocks.MockNetworkStore
 }
 
-func (h *listNetworksHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminListNetworksResult, *jsonrpc.ErrorDetails) {
+func (h *listNetworksHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminListNetworksResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminListNetworksResult)
 		if !ok {

@@ -19,8 +19,8 @@ func TestAdminDescribeWallet(t *testing.T) {
 	t.Run("Describing a wallet with invalid params fails", testDescribingWalletWithInvalidParamsFails)
 	t.Run("Describing a wallet with valid params succeeds", testDescribingWalletWithValidParamsSucceeds)
 	t.Run("Describing a wallet that does not exists fails", testDescribingWalletThatDoesNotExistsFails)
-	t.Run("Getting internal error during verification fails", testGettingInternalErrorDuringVerificationFails)
-	t.Run("Getting internal error during retrieval fails", testGettingInternalErrorDuringRetrievalFails)
+	t.Run("Getting internal error during verification fails", testAdminDescribeWalletGettingInternalErrorDuringVerificationFails)
+	t.Run("Getting internal error during retrieval fails", testAdminDescribeWalletGettingInternalErrorDuringRetrievalFails)
 }
 
 func testDescribingWalletWithInvalidParamsFails(t *testing.T) {
@@ -86,7 +86,8 @@ func testDescribingWalletWithValidParamsSucceeds(t *testing.T) {
 	handler := newDescribeWalletHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeWalletParams{
@@ -128,7 +129,7 @@ func testDescribingWalletThatDoesNotExistsFails(t *testing.T) {
 	assertInvalidParams(t, errorDetails, api.ErrWalletDoesNotExist)
 }
 
-func testGettingInternalErrorDuringVerificationFails(t *testing.T) {
+func testAdminDescribeWalletGettingInternalErrorDuringVerificationFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
@@ -151,7 +152,7 @@ func testGettingInternalErrorDuringVerificationFails(t *testing.T) {
 	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
 }
 
-func testGettingInternalErrorDuringRetrievalFails(t *testing.T) {
+func testAdminDescribeWalletGettingInternalErrorDuringRetrievalFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
@@ -161,7 +162,8 @@ func testGettingInternalErrorDuringRetrievalFails(t *testing.T) {
 	handler := newDescribeWalletHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(nil, assert.AnError)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeWalletParams{
@@ -181,10 +183,10 @@ type describeWalletHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *describeWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminDescribeWalletResult, *jsonrpc.ErrorDetails) {
+func (h *describeWalletHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminDescribeWalletResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminDescribeWalletResult)
 		if !ok {

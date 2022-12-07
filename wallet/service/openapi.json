@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Wallet API",
-    "description": "The version 2 of the wallet HTTP API leverages the wallet JSON-RPC API.\n\nSome useful links:\n- [JSON-RPC 2.0 Specification](https://www.jsonrpc.org/specification)",
+    "description": "The version 2 of the wallet HTTP API leverages the wallet JSON-RPC API.\n\n## Workflow\n1. Use `GET /v2/methods` to ensure the JSON-RPC API exposes all the methods your application requires.\n\n2. Use `POST /v2/requests` endpoint to submit requests to the JSON-RPC API.\n## Useful links\n- [JSON-RPC 2.0 Specification](https://www.jsonrpc.org/specification)",
     "version": "2.0.0"
   },
   "externalDocs": {
@@ -13,11 +13,35 @@
     "/v2/requests": {
       "post": {
         "summary": "Submit a JSON-RPC request to the wallet API.",
-        "description": "This endpoint is the main entrypoint to submit the JSON-RPC requests. The body of the HTTP request should be formatted as a JSON-RPC v2 request. The HTTP response is formatted as the JSON-RPC v2 response.\n\nBe sure to specify the `ID` if you are interested in the response. See [the JSON-RPC notification documentation](https://www.jsonrpc.org/specification#notification) for more details.",
+        "description": "This endpoint is the main entrypoint to submit the JSON-RPC requests. The body of the HTTP request should be formatted as a JSON-RPC v2 request. The HTTP response is formatted as the JSON-RPC v2 response.\n\nBe sure to specify the `id` if you are interested in the response. See [the JSON-RPC notification documentation](https://www.jsonrpc.org/specification#notification) for more details.\n\n# Content type\nThis endpoint returns a response with a specific `Content-Type` header: `application/json-rpc`.\n\nThis content type is used to help third-party applications differentiate the different JSON format return by the \n\nNote that `application/json-rpc` is not a standard HTTP content type.\n\n# Authentication\n\n## Workflow\nWhen connecting to a wallet, you will receive a connection token back through the `Authorization` header.\n\nWhen accessing protected JSON-RPC methods, the connection token must be set to the `Authorization` header. If the connection token is not valid, the server returns a response with the HTTP code 401, and the `WWW-Authenticate` header set to `VWT` as required by the HTTP standards.\n\n### Community implementation of the wallet service\nPeople might be willing to implement their own wallet service with their own authentication system. We recommend the community implementations to follow the same workflow.\n\nThis will save third-party applications from having to _explicitly_ support different authentication schemes, and make the community implementation fully interoperable with all third-party application, out of the box.\n\n### Token format\n\n\nThe token will be formatted as follow:\n`VWT <TOKEN>`\n\n`VWT` scheme stands for \"Vega Wallet Token\" and is not a standard authorization scheme.\n\nThe `<TOKEN>` is a randomly generated string of 64 characters with numbers and letters. Each session generates a unique one.\n\n# Request\nSee the [OpenRPC documentation of the wallet](https://docs.vega.xyz) for more details..",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Origin",
+            "description": "The origin of the request. If this header is missing, the request will be rejected as an unauthorized request (401 Unauthorized).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Authorization",
+            "description": "The token used to access the protected methods. The format is `VWT <TOKEN>`. VWT is a non-standard scheme that stands for Vega Wallet Token. If this header is missing when accessing protected methods, the request will be rejected as an unauthorized request (401 Unauthorized).",
+            "schema": {
+              "type": "string"
+            },
+            "examples": {
+              "test": {
+                "value": "VWT stuTxgheMY8RZyISS9voyLjXHBaQFS7DRqDyXCM7Xx6rcj8zP84U1XNAIhf8110S"
+              }
+            }
+          }
+        ],
         "requestBody": {
           "description": "The JSON-RPC v2 request",
           "content": {
-            "application/json": {
+            "application/json-rpc": {
               "schema": {
                 "$ref": "#/components/schemas/JsonRpcRequest"
               }
@@ -27,9 +51,9 @@
         },
         "responses": {
           "200": {
-            "description": "Successful operation",
+            "description": "The request is successful. On this endpoint, only such response format should be expected.",
             "content": {
-              "application/json": {
+              "application/json-rpc": {
                 "schema": {
                   "$ref": "#/components/schemas/JsonRpcResponse"
                 }
@@ -37,16 +61,50 @@
             }
           },
           "204": {
-            "description": "The request is considered as a notification because it doesn't have an ID. As a result, no result shall be expected, even in case of failure."
+            "description": "This response is returned when there is no `id` property valued in the JSON-RPC request. Concretely, when a JSON-RPC request doesn't have an ID, it is considered as a JSON-RPC notification and, as such, no result shall be expected, even in case of failure."
           },
           "400": {
-            "description": "The submitted request does not have a valid format, or doesn't comply with the API constraints, or failed."
+            "description": "Something went wrong",
+            "content": {
+              "application/json-rpc": {
+                "schema": {
+                  "type": "object",
+                  "description": "This payload is returned when an error occurs at the JSON-RPC API level. See [the JSON-RPC response documentation](https://www.jsonrpc.org/specification#response_object) for more details.",
+                  "properties": {
+                    "jsonrpc": {
+                      "type": "string",
+                      "required": true,
+                      "enum": [
+                        "2.0"
+                      ]
+                    },
+                    "errors": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "number"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "data": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
-            "description": "The server is not able to infer the hostname of the client through the \"Origin\" and \"Referer\" headers."
+            "description": "This error code is returned when the authentication failed."
           },
           "500": {
-            "description": "Something failed internally. Nothing can be done about it."
+            "description": "Something failed internally. Nothing can be done about it on the client side. Reporting the issue to the wallet software developers is encouraged."
           }
         }
       }
@@ -60,10 +118,56 @@
             "description": "Successful listing",
             "content": {
               "application/json": {
+                "examples": {
+                  "Example 1": {
+                    "summary" : "Listing the registered methods",
+                    "value" : {
+                      "result": {
+                        "registeredMethods": [
+                          "client.connect_wallet",
+                          "client.disconnect_wallet",
+                          "client.list_keys",
+                          "client.send_transaction"
+                        ]
+                      }
+                    }
+                  }
+                },
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "registeredMethods": {
+                          "type": "array",
+                          "required": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Something went wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string"
+                        },
+                        "data": {
+                          "type": "string"
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -92,33 +196,57 @@
   },
   "components": {
     "schemas": {
+      "JsonResponse": {
+        "type": "object",
+        "description": "This payload is returned by HTTP handlers. It's the generic envelop for all HTTP response that are not coming from the JSON-RPC API.",
+        "properties": {
+          "result": {
+            "type": "object"
+          },
+          "errors": {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "data": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
       "JsonRpcRequest": {
         "type": "object",
-        "description": "See [the JSON-RPC request documentation](https://www.jsonrpc.org/specification#request_object) for more details.",
+        "description": "This request payload is used to query the JSON-RPC API. See [the JSON-RPC request documentation](https://www.jsonrpc.org/specification#request_object) for more details.",
         "properties": {
           "jsonrpc": {
+            "required": true,
             "type": "string",
             "enum": [
               "2.0"
             ]
           },
           "method": {
+            "required": true,
             "type": "string"
           },
           "params": {
             "type": "object"
           },
           "id": {
+            "description": "According to the JSON-RPC v2 standard, if the ID is not specified, an empty response should be returned, whatever the state is (success or error). In our implementation, this empty response corresponds to `204 No content`.",
             "type": "string"
           }
         }
       },
       "JsonRpcResponse": {
         "type": "object",
-        "description": "See [the JSON-RPC response documentation](https://www.jsonrpc.org/specification#response_object) for more details.",
+        "description": "This payload is returned by the JSON-RPC API sitting behind the `/v2/requests` endpoint. See [the JSON-RPC response documentation](https://www.jsonrpc.org/specification#response_object) for more details.",
         "properties": {
           "jsonrpc": {
             "type": "string",
+            "required": true,
             "enum": [
               "2.0"
             ]

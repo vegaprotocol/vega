@@ -28,8 +28,7 @@ type AdminListKeys struct {
 	walletStore WalletStore
 }
 
-// Handle list all the generated key from the specified wallet.
-func (h *AdminListKeys) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminListKeys) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminListKeysParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -41,11 +40,15 @@ func (h *AdminListKeys) Handle(ctx context.Context, rawParams jsonrpc.Params, _ 
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
-	w, err := h.walletStore.GetWallet(ctx, params.Wallet, params.Passphrase)
-	if err != nil {
+	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
 		if errors.Is(err, wallet.ErrWrongPassphrase) {
 			return nil, invalidParams(err)
 		}
+		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	}
+
+	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
+	if err != nil {
 		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
 

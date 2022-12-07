@@ -89,7 +89,7 @@ type GetChainIDHandler struct {
 func (h *GetChainIDHandler) handle(t *testing.T, ctx context.Context) (api.ClientGetChainIDResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, nil, requestMetadataForTest())
+	rawResult, err := h.Handle(ctx)
 	if rawResult != nil {
 		result, ok := rawResult.(api.ClientGetChainIDResult)
 		if !ok {

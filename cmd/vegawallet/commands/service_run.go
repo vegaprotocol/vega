@@ -15,18 +15,22 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
+	vgclose "code.vegaprotocol.io/vega/libs/close"
+	vgjob "code.vegaprotocol.io/vega/libs/job"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 	vgzap "code.vegaprotocol.io/vega/libs/zap"
 	"code.vegaprotocol.io/vega/paths"
 	coreversion "code.vegaprotocol.io/vega/version"
 	walletapi "code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/interactor"
-	tokenStore "code.vegaprotocol.io/vega/wallet/api/session/store/v1"
-	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
+	netStoreV1 "code.vegaprotocol.io/vega/wallet/network/store/v1"
 	"code.vegaprotocol.io/vega/wallet/preferences"
 	"code.vegaprotocol.io/vega/wallet/service"
-	svcstore "code.vegaprotocol.io/vega/wallet/service/store/v1"
+	svcStoreV1 "code.vegaprotocol.io/vega/wallet/service/store/v1"
+	serviceV1 "code.vegaprotocol.io/vega/wallet/service/v1"
+	serviceV2 "code.vegaprotocol.io/vega/wallet/service/v2"
+	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
+	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/v1"
 	"code.vegaprotocol.io/vega/wallet/version"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/golang/protobuf/jsonpb"
@@ -150,7 +154,7 @@ func (f *RunServiceFlags) Validate(rf *RootFlags) error {
 	}
 
 	if f.LoadTokens {
-		if err := ensureAPITokensStoreIsInit(rf); err != nil {
+		if err := ensureAPITokenStoreIsInit(rf); err != nil {
 			return err
 		}
 		passphrase, err := flags.GetPassphraseWithOptions(flags.PassphraseOptions{Name: "tokens"}, f.TokensPassphraseFile)
@@ -197,31 +201,33 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		return fmt.Errorf("could not initialise wallets store: %w", err)
 	}
 
-	netStore, err := netstore.InitialiseStore(vegaPaths)
+	netStore, err := netStoreV1.InitialiseStore(vegaPaths)
 	if err != nil {
 		cliLog.Error("Could not initialise network store", zap.Error(err))
 		return fmt.Errorf("could not initialise network store: %w", err)
 	}
 
-	svcStore, err := svcstore.InitialiseStore(vegaPaths)
+	svcStore, err := svcStoreV1.InitialiseStore(vegaPaths)
 	if err != nil {
 		cliLog.Error("Could not initialise service store", zap.Error(err))
 		return fmt.Errorf("could not initialise service store: %w", err)
 	}
 
-	var tokStore walletapi.TokenStore
+	var tokenStore connections.TokenStore
 	if f.LoadTokens {
-		s, err := tokenStore.LoadStore(vegaPaths, f.tokensPassphrase)
+		cliLog.Warn("Long-living tokens enabled")
+		p.Print(p.String().WarningBangMark().WarningText("Long-living tokens enabled").NextLine())
+		s, err := tokenStoreV1.LoadStore(vegaPaths, f.tokensPassphrase)
 		if err != nil {
 			if errors.Is(err, walletapi.ErrWrongPassphrase) {
 				return err
 			}
-			return fmt.Errorf("couldn't load the tokens store: %w", err)
+			return fmt.Errorf("couldn't load the token store: %w", err)
 		}
-		tokStore = s
+		tokenStore = s
 	} else {
-		s := tokenStore.NewEmptyStore()
-		tokStore = s
+		s := tokenStoreV1.NewEmptyStore()
+		tokenStore = s
 	}
 
 	loggerBuilderFunc := func(path paths.StatePath, levelName string) (*zap.Logger, zap.AtomicLevel, error) {
@@ -235,65 +241,57 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		return svcLog, level, nil
 	}
 
-	consentRequests := make(chan service.ConsentRequest, MaxConsentRequests)
-	defer close(consentRequests)
-	sentTransactions := make(chan service.SentTransaction)
-	defer close(sentTransactions)
+	closer := vgclose.NewCloser()
+	defer closer.CloseAll()
+
+	consentRequests := make(chan serviceV1.ConsentRequest, MaxConsentRequests)
+	sentTransactions := make(chan serviceV1.SentTransaction)
+	closer.Add(func() {
+		close(consentRequests)
+		close(sentTransactions)
+	})
+
 	policyBuilderFunc, err := policyBuilder(cliLog, p, f, consentRequests, sentTransactions)
 	if err != nil {
 		return err
 	}
 
 	receptionChan := make(chan interactor.Interaction, 100)
-	defer close(receptionChan)
 	responseChan := make(chan interactor.Interaction, 100)
-	defer close(responseChan)
+	closer.Add(func() {
+		close(receptionChan)
+		close(responseChan)
+	})
+
 	interactorBuilderFunc := func(ctx context.Context) walletapi.Interactor {
 		return interactor.NewSequentialInteractor(ctx, receptionChan, responseChan)
 	}
 
-	shutdownSwitch := walletapi.NewServiceShutdownSwitch(func(err error) {
-		cliLog.Error("HTTP server encountered an error", zap.Error(err))
-		p.Print(p.String().DangerBangMark().Text("The HTTP server encountered an error: ").DangerText(err.Error()).NextLine())
-	})
+	connectionsManager, err := connections.NewManager(serviceV2.NewStdTime(), walletStore, tokenStore)
+	if err != nil {
+		return err
+	}
+	closer.Add(connectionsManager.EndAllSessionConnections)
 
-	shutdownSwitchBuilder := func() *walletapi.ServiceShutdownSwitch {
-		return shutdownSwitch
+	serviceStarter := service.NewStarter(walletStore, netStore, svcStore, connectionsManager, policyBuilderFunc, interactorBuilderFunc, loggerBuilderFunc)
+
+	jobRunner := vgjob.NewRunner(context.Background())
+
+	svcURL, errChan, err := serviceStarter.Start(jobRunner, f.Network, f.NoVersionCheck)
+	if err != nil {
+		cliLog.Error("Failed to start HTTP server", zap.Error(err))
+		jobRunner.StopAllJobs()
+		return err
 	}
 
-	servicesManager := walletapi.NewServicesManager(tokStore, walletStore)
+	cliLog.Info("Starting HTTP service", zap.String("url", svcURL))
+	p.Print(p.String().CheckMark().Text("Starting HTTP service at: ").SuccessText(svcURL).NextSection())
 
-	serviceStarter := walletapi.NewAdminStartService(
-		walletStore,
-		netStore,
-		svcStore,
-		policyBuilderFunc,
-		interactorBuilderFunc,
-		loggerBuilderFunc,
-		shutdownSwitchBuilder,
-		servicesManager,
-	)
-
-	// The context here is a placeholder.
-	rawResponse, errDetails := serviceStarter.Handle(context.Background(), walletapi.AdminStartServiceParams{
-		Network:        f.Network,
-		NoVersionCheck: f.NoVersionCheck,
-	}, jsonrpc.RequestMetadata{})
-	if errDetails != nil {
-		cliLog.Error("Failed to start HTTP server", zap.Error(errDetails))
-		return errDetails
-	}
-
-	response := rawResponse.(walletapi.AdminStartServiceResult)
-	cliLog.Info("Starting HTTP service", zap.String("url", response.URL))
-	p.Print(p.String().CheckMark().Text("Starting HTTP service at: ").SuccessText(response.URL).NextSection())
-
-	notifyInteractionsStopped := shutdownSwitch.BindToProcess()
-	go func() {
+	jobRunner.Go(func(jobCtx context.Context) {
 		for {
 			select {
-			case <-shutdownSwitch.Flipped():
-				notifyInteractionsStopped()
+			case <-jobCtx.Done():
+				cliLog.Info("Stop listening to incoming interactions")
 				return
 			case interaction := <-receptionChan:
 				handleAPIv2Request(interaction, responseChan, f.EnableAutomaticConsent, p)
@@ -301,34 +299,34 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 				handleAPIv1Request(consentRequest, cliLog, p, sentTransactions)
 			}
 		}
-	}()
+	})
 
-	waitUntilInterruption(shutdownSwitch, cliLog, p)
+	waitUntilInterruption(jobRunner.Ctx(), cliLog, p, errChan)
 
 	// Wait for all goroutine to exit.
-	cliLog.Info("Waiting for all processes to stop")
+	cliLog.Info("Waiting for the service to stop")
 	p.Print(p.String().BlueArrow().Text("Waiting for the service to stop...").NextLine())
-	servicesManager.StopService(f.Network)
-	cliLog.Info("All processes stopped")
+	jobRunner.StopAllJobs()
+	cliLog.Info("The service stopped")
 	p.Print(p.String().CheckMark().Text("The service stopped.").NextLine())
 
 	return nil
 }
 
-func policyBuilder(cliLog *zap.Logger, p *printer.InteractivePrinter, f *RunServiceFlags, consentRequests chan service.ConsentRequest, sentTransactions chan service.SentTransaction) (walletapi.PolicyBuilderFunc, error) {
+func policyBuilder(cliLog *zap.Logger, p *printer.InteractivePrinter, f *RunServiceFlags, consentRequests chan serviceV1.ConsentRequest, sentTransactions chan serviceV1.SentTransaction) (service.PolicyBuilderFunc, error) {
 	if vgterm.HasTTY() {
 		cliLog.Info("TTY detected")
 		if f.EnableAutomaticConsent {
 			cliLog.Info("Automatic consent enabled")
 			p.Print(p.String().WarningBangMark().WarningText("Automatic consent enabled").NextLine())
-			return func(_ context.Context) service.Policy {
-				return service.NewAutomaticConsentPolicy()
+			return func(_ context.Context) serviceV1.Policy {
+				return serviceV1.NewAutomaticConsentPolicy()
 			}, nil
 		}
 		cliLog.Info("Explicit consent enabled")
 		p.Print(p.String().CheckMark().Text("Explicit consent enabled").NextLine())
-		return func(ctx context.Context) service.Policy {
-			return service.NewExplicitConsentPolicy(ctx, consentRequests, sentTransactions)
+		return func(ctx context.Context) serviceV1.Policy {
+			return serviceV1.NewExplicitConsentPolicy(ctx, consentRequests, sentTransactions)
 		}, nil
 	}
 
@@ -340,8 +338,8 @@ func policyBuilder(cliLog *zap.Logger, p *printer.InteractivePrinter, f *RunServ
 	}
 
 	cliLog.Info("Automatic consent enabled.")
-	return func(_ context.Context) service.Policy {
-		return service.NewAutomaticConsentPolicy()
+	return func(_ context.Context) serviceV1.Policy {
+		return serviceV1.NewAutomaticConsentPolicy()
 	}, nil
 }
 
@@ -363,7 +361,7 @@ func buildJSONFileLogger(vegaPaths paths.Paths, logDir paths.StatePath, logLevel
 }
 
 // waitUntilInterruption will wait for a sigterm or sigint interrupt.
-func waitUntilInterruption(shutdownSwitch *walletapi.ServiceShutdownSwitch, log *zap.Logger, p *printer.InteractivePrinter) {
+func waitUntilInterruption(ctx context.Context, cliLog *zap.Logger, p *printer.InteractivePrinter, errChan <-chan error) {
 	gracefulStop := make(chan os.Signal, 1)
 	defer func() {
 		signal.Stop(gracefulStop)
@@ -377,19 +375,23 @@ func waitUntilInterruption(shutdownSwitch *walletapi.ServiceShutdownSwitch, log 
 	for {
 		select {
 		case sig := <-gracefulStop:
-			log.Info("OS signal received", zap.String("signal", fmt.Sprintf("%+v", sig)))
+			cliLog.Info("OS signal received", zap.String("signal", fmt.Sprintf("%+v", sig)))
 			str := p.String()
 			str.NextSection().WarningBangMark().WarningText(fmt.Sprintf("Signal \"%+v\" received.", sig)).NextLine()
-			str.Pad().WarningText("Hit CTRL+C once again to forcefully exit.").NextSection()
+			str.Pad().WarningText("You can hit CTRL+C once again to forcefully exit, but some resources may not be properly cleaned up.").NextSection()
 			p.Print(str)
 			return
-		case <-shutdownSwitch.Flipped():
+		case err := <-errChan:
+			cliLog.Error("Initiating shutdown due to an internal error reported by the service", zap.Error(err))
+			return
+		case <-ctx.Done():
+			cliLog.Info("Stop listening to OS signals")
 			return
 		}
 	}
 }
 
-func handleAPIv1Request(consentRequest service.ConsentRequest, log *zap.Logger, p *printer.InteractivePrinter, sentTransactions chan service.SentTransaction) {
+func handleAPIv1Request(consentRequest serviceV1.ConsentRequest, log *zap.Logger, p *printer.InteractivePrinter, sentTransactions chan serviceV1.SentTransaction) {
 	m := jsonpb.Marshaler{Indent: "    "}
 	marshalledTx, err := m.MarshalToString(consentRequest.Tx)
 	if err != nil {
@@ -404,7 +406,7 @@ func handleAPIv1Request(consentRequest service.ConsentRequest, log *zap.Logger, 
 
 	if flags.DoYouApproveTx() {
 		log.Info("user approved the signing of the transaction", zap.Any("transaction", marshalledTx))
-		consentRequest.Confirmation <- service.ConsentConfirmation{Decision: true}
+		consentRequest.Confirmation <- serviceV1.ConsentConfirmation{Decision: true}
 		p.Print(p.String().CheckMark().SuccessText("Transaction approved").NextLine())
 
 		sentTx := <-sentTransactions
@@ -419,7 +421,7 @@ func handleAPIv1Request(consentRequest service.ConsentRequest, log *zap.Logger, 
 		}
 	} else {
 		log.Info("user rejected the signing of the transaction", zap.Any("transaction", marshalledTx))
-		consentRequest.Confirmation <- service.ConsentConfirmation{Decision: false}
+		consentRequest.Confirmation <- serviceV1.ConsentConfirmation{Decision: false}
 		p.Print(p.String().DangerBangMark().DangerText("Transaction rejected").NextSection())
 	}
 }

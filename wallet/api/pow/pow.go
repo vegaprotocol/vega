@@ -16,11 +16,11 @@ var (
 
 type txCounter struct {
 	// slice of maps from pubKey->nTxnSent where size is the numbers of past blocks a pow is valid for
-	// the transcation count for party p sent in block b is store[b%size][p]
+	// the transaction count for party p sent in block b is store[b%size][p].
 	store []map[string]uint32
 	size  int64
 
-	lastBlock int64 // the highest last block we've counted against
+	lastBlock int64 // the highest last block we've counted against.
 }
 
 // add increments the counter for the number of times pubkey has sent in a transaction with pow against a particular height.
@@ -29,8 +29,8 @@ func (t *txCounter) add(pubKey string, height int64) (uint32, error) {
 		return 0, ErrBlockHeightTooHistoric
 	}
 
-	// our new height might be more than 1 bigger than the lastBlock we sent a transaction for
-	// so we need to scrub all those heights in between because we sent 0 transactions in those
+	// our new height might be more than 1 bigger than the lastBlock we sent a transaction for,
+	// so we need to scrub all those heights in between because we sent 0 transactions in those.
 	for i := t.lastBlock + 1; i <= height; i++ {
 		t.store[i%t.size] = nil
 	}

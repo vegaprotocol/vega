@@ -245,7 +245,8 @@ func testAdminSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, w.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, w.Name(), passphrase).Times(1).Return(w, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, w.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, w.Name()).Times(1).Return(w, nil)
 	handler.networkStore.EXPECT().NetworkExists(network.Name).Times(1).Return(true, nil)
 	handler.networkStore.EXPECT().GetNetwork(network.Name).Times(1).Return(&network, nil)
 
@@ -354,7 +355,8 @@ func testAdminSignTransactionGettingInternalErrorDuringWalletRetrievalFails(t *t
 
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, walletName).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, walletName, passphrase).Times(1).Return(nil, assert.AnError)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, walletName, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, walletName).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminSignTransactionParams{
@@ -382,7 +384,8 @@ func testAdminSigningTransactionWithMalformedTransactionFails(t *testing.T) {
 
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, w.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, w.Name(), passphrase).Times(1).Return(w, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, w.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, w.Name()).Times(1).Return(w, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminSignTransactionParams{
@@ -410,7 +413,8 @@ func testAdminSigningTransactionWithInvalidTransactionFails(t *testing.T) {
 
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, w.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, w.Name(), passphrase).Times(1).Return(w, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, w.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, w.Name()).Times(1).Return(w, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminSignTransactionParams{
@@ -433,10 +437,10 @@ type AdminSignTransactionHandler struct {
 	networkStore *mocks.MockNetworkStore
 }
 
-func (h *AdminSignTransactionHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminSignTransactionResult, *jsonrpc.ErrorDetails) {
+func (h *AdminSignTransactionHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminSignTransactionResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminSignTransactionResult)
 		if !ok {

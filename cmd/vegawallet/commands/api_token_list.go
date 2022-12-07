@@ -1,18 +1,18 @@
 package cmd
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/api"
-	tokenStore "code.vegaprotocol.io/vega/wallet/api/session/store/v1"
+	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
+	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/v1"
 	"github.com/spf13/cobra"
 )
 
@@ -27,29 +27,24 @@ var (
 	`)
 )
 
-type ListAPITokensHandler func(f ListAPITokensFlags) (api.AdminListAPITokensResult, error)
+type ListAPITokensHandler func(f ListAPITokensFlags) (connections.ListAPITokensResult, error)
 
 func NewCmdListAPITokens(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(f ListAPITokensFlags) (api.AdminListAPITokensResult, error) {
+	h := func(f ListAPITokensFlags) (connections.ListAPITokensResult, error) {
 		vegaPaths := paths.New(rf.Home)
 
-		store, err := tokenStore.LoadStore(vegaPaths, f.passphrase)
+		store, err := tokenStoreV1.LoadStore(vegaPaths, f.passphrase)
 		if err != nil {
 			if errors.Is(err, api.ErrWrongPassphrase) {
-				return api.AdminListAPITokensResult{}, err
+				return connections.ListAPITokensResult{}, err
 			}
-			return api.AdminListAPITokensResult{}, fmt.Errorf("couldn't load the tokens store: %w", err)
+			return connections.ListAPITokensResult{}, fmt.Errorf("couldn't load the token store: %w", err)
 		}
 
-		listAPITokens := api.NewAdminListAPITokens(store)
-		rawResult, errorDetails := listAPITokens.Handle(context.Background(), nil, jsonrpc.RequestMetadata{})
-		if errorDetails != nil {
-			return api.AdminListAPITokensResult{}, errors.New(errorDetails.Data)
-		}
-		return rawResult.(api.AdminListAPITokensResult), nil
+		return connections.ListAPITokens(store)
 	}
 
-	return BuildCmdListAPITokens(w, ensureAPITokensStoreIsInit, h, rf)
+	return BuildCmdListAPITokens(w, ensureAPITokenStoreIsInit, h, rf)
 }
 
 func BuildCmdListAPITokens(w io.Writer, preCheck APITokePreCheck, handler ListAPITokensHandler, rf *RootFlags) *cobra.Command {
@@ -107,7 +102,7 @@ func (f *ListAPITokensFlags) Validate() error {
 	return nil
 }
 
-func printListAPITokens(w io.Writer, resp api.AdminListAPITokensResult) {
+func printListAPITokens(w io.Writer, resp connections.ListAPITokensResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
@@ -119,11 +114,17 @@ func printListAPITokens(w io.Writer, resp api.AdminListAPITokensResult) {
 	}
 
 	for i, token := range resp.Tokens {
-		str.Text("- ").WarningText(token.Token).NextLine()
+		str.Text("- ").WarningText(token.Token.String()).NextLine()
 		if token.Description != "" {
 			str.Text("  ").Text(token.Description).NextLine()
 		}
-		str.Pad().Text("Created at: ").Text(token.CreateAt.String())
+		str.Pad().Text("Created at: ").Text(token.CreationDate.String())
+		if token.ExpirationDate != nil {
+			str.NextLine().Pad().Text("Expiration date: ").Text(token.ExpirationDate.String())
+			if !token.ExpirationDate.After(time.Now()) {
+				str.Text(" (expired)")
+			}
+		}
 
 		if i == len(resp.Tokens)-1 {
 			str.NextLine()
