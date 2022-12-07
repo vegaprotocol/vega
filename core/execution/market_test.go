@@ -7694,3 +7694,70 @@ func TestAmendTrade(t *testing.T) {
 	assert.Equal(t, int(ps[p1].Size()), 10)
 	assert.Equal(t, int(ps[p2].Size()), -10)
 }
+
+func Test_7017_UpdatingMarketDuringOpeningAuction(t *testing.T) {
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	pMonitorSettings := &types.PriceMonitoringSettings{
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{},
+		},
+	}
+	openingAuctionDuration := 10 * time.Minute
+	mktCfg := getMarket(pMonitorSettings, &types.AuctionDuration{
+		Duration: int64(openingAuctionDuration.Seconds()),
+	})
+	lpParty := "party-LP"
+	trader1 := "party-trader-1"
+	trader2 := "party-trader-2"
+	tm := newTestMarket(t, time.Unix(10, 0)).Run(ctx, mktCfg)
+	tm.market.OnTick(ctx, tm.now)
+	tm.StartOpeningAuction().
+		WithAccountAndAmount(lpParty, 1000000).
+		WithAccountAndAmount(trader1, 100000).
+		WithAccountAndAmount(trader2, 100000)
+
+	// submit limit orders
+	midPrice := uint64(1000)
+	limitOrders := []*types.Order{
+		getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "lo-1", types.SideBuy, trader1, 10, midPrice-uint64(250)),
+		getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "lo-2", types.SideBuy, trader1, 10, midPrice),
+		getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "lo-3", types.SideSell, trader2, 10, midPrice),
+		getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "lo-4", types.SideSell, trader2, 10, midPrice+uint64(250)),
+	}
+	for _, o := range limitOrders {
+		conf, err := tm.market.SubmitOrder(ctx, o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+
+	tm.now = tm.now.Add(time.Minute)
+	tm.market.OnTick(ctx, tm.now)
+
+	tm.market.Update(ctx, &mktCfg, tm.oracleEngine)
+
+	tm.now = tm.now.Add(time.Minute)
+	tm.market.OnTick(ctx, tm.now)
+
+	lps := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(70000),
+		Fee:              num.DecimalFromFloat(0.05),
+		Reference:        "ref-lp-submission-1",
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 1),
+		},
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 1),
+		},
+	}
+
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lps, lpParty, vgcrypto.RandomHash()),
+	)
+
+	// leave opening auction
+	tm.now = tm.now.Add(openingAuctionDuration)
+	tm.market.OnTick(ctx, tm.now)
+	require.Equal(t, types.MarketTradingModeContinuous, tm.market.GetMarketData().MarketTradingMode)
+}

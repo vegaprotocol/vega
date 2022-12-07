@@ -35,7 +35,7 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
     Given the average block duration is "2"
 
   @Now
-  Scenario: All liquidity providers in the market receive a greater than zero amount of liquidity fee, 0042-LIQF-010
+  Scenario: All liquidity providers in the market receive a greater than zero amount of liquidity fee
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount         |
       | lp1    | USD   | 10000000000000 |

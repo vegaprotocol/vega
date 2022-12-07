@@ -80,8 +80,9 @@ type PayloadProofOfWork struct {
 	BlockHash     []string
 	HeightToTx    map[uint64][]string
 	HeightToTid   map[uint64][]string
-	BannedParties map[string]uint64
+	BannedParties map[string]int64
 	ActiveParams  []*snapshot.ProofOfWorkParams
+	ActiveStates  []*snapshot.ProofOfWorkState
 }
 
 type PayloadActiveAssets struct {
@@ -3846,14 +3847,15 @@ func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofO
 	pow := &PayloadProofOfWork{
 		BlockHeight:   s.ProofOfWork.BlockHeight,
 		BlockHash:     s.ProofOfWork.BlockHash,
-		BannedParties: make(map[string]uint64, len(s.ProofOfWork.Banned)),
+		BannedParties: make(map[string]int64, len(s.ProofOfWork.Banned)),
 		HeightToTx:    make(map[uint64][]string, len(s.ProofOfWork.TxAtHeight)),
 		HeightToTid:   make(map[uint64][]string, len(s.ProofOfWork.TidAtHeight)),
 		ActiveParams:  s.ProofOfWork.PowParams,
+		ActiveStates:  s.ProofOfWork.PowState,
 	}
 
 	for _, bp := range s.ProofOfWork.Banned {
-		pow.BannedParties[bp.Party] = bp.UntilEpoch
+		pow.BannedParties[bp.Party] = bp.Until
 	}
 	for _, tah := range s.ProofOfWork.TxAtHeight {
 		pow.HeightToTx[tah.Height] = tah.Transactions
@@ -3865,9 +3867,9 @@ func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofO
 }
 
 func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
-	banned := make([]*snapshot.BannedParty, 0, len(p.BannedParties))
+	banned := make([]*snapshot.PowBannedParty, 0, len(p.BannedParties))
 	for k, v := range p.BannedParties {
-		banned = append(banned, &snapshot.BannedParty{Party: k, UntilEpoch: v})
+		banned = append(banned, &snapshot.PowBannedParty{Party: k, Until: v})
 	}
 	sort.Slice(banned, func(i, j int) bool { return banned[i].Party < banned[j].Party })
 
@@ -3890,6 +3892,7 @@ func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
 			TxAtHeight:  txAtHeight,
 			TidAtHeight: tidAtHeight,
 			PowParams:   p.ActiveParams,
+			PowState:    p.ActiveStates,
 		},
 	}
 }

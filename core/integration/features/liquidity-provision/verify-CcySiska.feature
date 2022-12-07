@@ -1,6 +1,6 @@
 Feature: check the impact from change of market parameter: market.liquidity.stakeToCcySiskas
 
-  Scenario: 001, market.liquidity.stakeToCcySiskas=2, 0044-LIME-004, 0007-POSN-010, 0013-ACCT-020
+  Scenario: 001, market.liquidity.stakeToCcySiskas=2, 0007-POSN-010, 0013-ACCT-020
 
     Given time is updated to "2020-11-30T00:00:00Z"
 
@@ -90,8 +90,8 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
       | party0 | USD   | ETH/MAR22 | 85148004 | 409851996 |
-      | party1 | USD   | ETH/MAR22 | 49815  | 99950185 |
-      | party2 | USD   | ETH/MAR22 | 222172 | 99777828 |
+      | party1 | USD   | ETH/MAR22 | 49815    | 99950185  |
+      | party2 | USD   | ETH/MAR22 | 222172   | 99777828  |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -103,7 +103,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party1 | 52     | 704            | 0            |
       | party2 | -51    | -704           | 0            |
 
-  Scenario: 002, market.liquidity.stakeToCcySiskas=0.5, 0044-LIME-004
+  Scenario: 002, market.liquidity.stakeToCcySiskas=0.5,
 
     Given time is updated to "2020-11-30T00:00:00Z"
 
@@ -193,8 +193,8 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
       | party0 | USD   | ETH/MAR22 | 21290203 | 473709797 |
-      | party1 | USD   | ETH/MAR22 | 49815  | 99950185 |
-      | party2 | USD   | ETH/MAR22 | 222172 | 99777828 |
+      | party1 | USD   | ETH/MAR22 | 49815    | 99950185  |
+      | party2 | USD   | ETH/MAR22 | 222172   | 99777828  |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -206,7 +206,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party1 | 52     | 704            | 0            |
       | party2 | -51    | -704           | 0            |
 
-  Scenario: 003, market.liquidity.stakeToCcySiskas=0, 0044-LIME-007
+  Scenario: 003, market.liquidity.stakeToCcySiskas=0
 
     Given time is updated to "2020-11-30T00:00:00Z"
 
