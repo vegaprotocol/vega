@@ -260,16 +260,14 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 				}
 				b.slowTimeUpdateTicker.Reset(slowTimeUpdateThreshold)
 				betweenBlocks = true
-				if b.receivedProtocolUpgradeEvent {
-					// we've received a protocol upgrade event so now that we've got the end block event
-					// we should exit the loop
-					return nil, nil
-				}
 			case events.BeginBlockEvent:
 				beginBlock := e.(entities.BeginBlockEvent)
 				return entities.BlockFromBeginBlock(beginBlock)
 			case events.ProtocolUpgradeStartedEvent:
 				b.receivedProtocolUpgradeEvent = true
+				// we've received a protocol upgrade event which is the last event core will have sent out
+				// so we can leave now
+				return nil, nil
 			default:
 				if betweenBlocks {
 					// we should only be receiving a BeginBlockEvent immediately after an EndBlockEvent
