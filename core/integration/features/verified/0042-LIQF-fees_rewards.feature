@@ -149,7 +149,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
-  Scenario: 2 LPs joining at start, equal commitments (0042-LIQF-002)
+  Scenario: 002: 2 LPs joining at start, equal commitments (0042-LIQF-002)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -211,9 +211,9 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the following trades should be executed:
       | buyer  | price | size | seller |
-      | party2 | 951   | 8    | lp1    |
-      | party2 | 951   | 8    | lp2    |
-      | party2 | 1000  | 4    | party1 |
+      | party2 | 951   | 4    | lp1    |
+      | party2 | 951   | 4    | lp2    |
+      | party2 | 1000  | 12   | party1 |
 
     And the accumulated liquidity fees should be "40" for the market "ETH/MAR22"
 
@@ -231,12 +231,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party1 | ETH/MAR22 | buy  | 40     | 1100  | 2                | TYPE_LIMIT | TIF_GTC | party1-buy  |
       | party2 | ETH/MAR22 | sell | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell |
 
-    And the following trades should be executed:
-      | buyer  | price | size | seller |
-      | party1 | 951   | 8    | lp1    |
-      | party1 | 951   | 8    | lp2    |
-
-    And the accumulated liquidity fees should be "32" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "16" for the market "ETH/MAR22"
 
     # opening auction + time window
     Then time is updated to "2019-11-30T00:20:08Z"
@@ -244,8 +239,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 16     | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 16     | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 8      | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 8      | USD   |
 
   Scenario: 2 LPs joining at start, unequal commitments (0042-LIQF-003)
 
