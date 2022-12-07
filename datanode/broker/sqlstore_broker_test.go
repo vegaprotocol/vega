@@ -451,16 +451,16 @@ func TestSqlBrokerUpgradeBlock(t *testing.T) {
 
 func createTestBroker(transactionManager broker.TransactionManager, blockStore broker.BlockStore, subs []broker.SQLBrokerSubscriber) (*testEventSource, broker.SQLStoreEventBroker) {
 	conf := broker.NewDefaultConfig()
-
+	log := logging.NewTestLogger()
 	tes := &testEventSource{
 		eventsCh:           make(chan events.Event),
 		errorsCh:           make(chan error, 1),
-		protocolUpgradeSvc: service.NewProtocolUpgrade(nil, nil),
+		protocolUpgradeSvc: service.NewProtocolUpgrade(nil, log),
 	}
 
 	blockCommitedFunc := func(context.Context, string, int64) {}
 
-	protocolUpgradeHandler := dehistory.NewProtocolUpgradeHandler(logging.NewTestLogger(),
+	protocolUpgradeHandler := dehistory.NewProtocolUpgradeHandler(log,
 		tes.protocolUpgradeSvc, func(ctx context.Context, chainID string, toHeight int64) error {
 			return nil
 		})
