@@ -471,15 +471,14 @@ func newTestEventSourceWithProtocolUpdateMessage() *TestEventSource {
 	evtSource, err := newTestEventSource(func(e events.Event, evtsCh chan<- events.Event) {
 		switch e.Type() {
 		case events.EndBlockEvent:
+
+		case events.BeginBlockEvent:
+			m.Lock()
 			if currentBlock != nil && currentBlock.Height == 2500 {
-				m.RLock()
 				evtsCh <- events.NewProtocolUpgradeStarted(context.Background(), eventsv1.ProtocolUpgradeStarted{
 					LastBlockHeight: uint64(currentBlock.Height),
 				})
-				m.RUnlock()
 			}
-		case events.BeginBlockEvent:
-			m.Lock()
 			beginBlock := e.(entities.BeginBlockEvent)
 			currentBlock, err = entities.BlockFromBeginBlock(beginBlock)
 			m.Unlock()

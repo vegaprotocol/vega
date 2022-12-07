@@ -14,6 +14,7 @@
 ### 🐛 Fixes
 - [7037](https://github.com/vegaprotocol/vega/issues/7037) - Reinstate permissions endpoints on the wallet API
 - [7034](https://github.com/vegaprotocol/vega/issues/7034) - Rename `network` to `name` in `admin.remove_network`
+- [7031](https://github.com/vegaprotocol/vega/issues/7031) - `datanode` expects protocol upgrade event in the right sequence
 
 
 ## 0.63.1
