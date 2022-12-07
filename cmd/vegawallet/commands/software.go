@@ -14,5 +14,6 @@ func NewCmdSoftware(w io.Writer, rf *RootFlags) *cobra.Command {
 	}
 
 	cmd.AddCommand(NewCmdSoftwareVersion(w, rf))
+	cmd.AddCommand(NewCmdSoftwareCompatibility(w, rf))
 	return cmd
 }
