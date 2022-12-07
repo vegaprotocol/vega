@@ -109,6 +109,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | sell | 1001000  | 56612  |
       | sell | 1100000  | 1000   |
       | sell | 1102000  | 3025   |
+      
     Then the order book should have the following volumes for market "USD/DEC20":
       | side | price      | volume  |
       | buy  | 89800000   | 5939125 |
