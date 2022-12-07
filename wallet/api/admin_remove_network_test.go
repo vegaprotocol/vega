@@ -38,9 +38,9 @@ func testRemovingNetworkWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty name",
 			params: api.AdminRemoveNetworkParams{
-				Network: "",
+				Name: "",
 			},
-			expectedError: api.ErrNetworkIsRequired,
+			expectedError: api.ErrNetworkNameIsRequired,
 		},
 	}
 
@@ -75,7 +75,7 @@ func testRemovingNetworkWithValidParamsSucceeds(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRemoveNetworkParams{
-		Network: name,
+		Name: name,
 	})
 
 	// then
@@ -95,7 +95,7 @@ func testRemovingNetworkThatDoesNotExistsFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRemoveNetworkParams{
-		Network: name,
+		Name: name,
 	})
 
 	// then
@@ -116,7 +116,7 @@ func testGettingInternalErrorDuringVerificationDoesNotRemoveNetwork(t *testing.T
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRemoveNetworkParams{
-		Network: name,
+		Name: name,
 	})
 
 	// then

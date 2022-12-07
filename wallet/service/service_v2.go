@@ -88,7 +88,7 @@ func (s *Service) HandleRequestV2(w http.ResponseWriter, r *http.Request, _ http
 		return
 	}
 
-	response := s.apiV2.DispatchRequest(r.Context(), request, jsonrpc.RequestMetadata{
+	response := s.apiV2.DispatchRequest(r.Context(), *request, jsonrpc.RequestMetadata{
 		TraceID:  traceID,
 		Hostname: hostname,
 	})
