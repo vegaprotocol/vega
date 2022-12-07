@@ -109,7 +109,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | sell | 1001000  | 56612  |
       | sell | 1100000  | 1000   |
       | sell | 1102000  | 3025   |
-
+      
     Then the order book should have the following volumes for market "USD/DEC20":
       | side | price      | volume  |
       | buy  | 89800000   | 5939125 |
@@ -444,12 +444,12 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
-      | buy  | 898   | 30     |
+      | buy  | 898   | 15     |
       | buy  | 900   | 1      |
-      | buy  | 999   | 54     |
-      | sell | 1102  | 25     |
+      | buy  | 999   | 27     |
+      | sell | 1001  | 27     |
       | sell | 1100  | 1      |
-      | sell | 1001  | 54     |
+      | sell | 1102  | 13     |
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
@@ -457,7 +457,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
-      | lp1    | USD   | ETH/MAR22 | 337195 | 999622805 | 40000 |
+      | lp1    | USD   | ETH/MAR22 | 170732 | 999789268 | 40000 |
       | party1 | USD   | ETH/MAR22 | 11770  | 99988230  | 0     |
       | party2 | USD   | ETH/MAR22 | 47374  | 99952626  | 0     |
 
