@@ -242,7 +242,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 8      | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 8      | USD   |
 
-  Scenario: 2 LPs joining at start, unequal commitments (0042-LIQF-003)
+  Scenario: 003: 2 LPs joining at start, unequal commitments (0042-LIQF-003)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -325,10 +325,10 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the following trades should be executed:
       | buyer  | price | size | seller |
-      | party1 | 951   | 12   | lp1    |
-      | party1 | 951   | 3    | lp2    |
+      | party1 | 951   | 6    | lp1    |
+      | party1 | 951   | 2    | lp2    |
 
-    And the accumulated liquidity fees should be "15" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "8" for the market "ETH/MAR22"
 
     # opening auction + time window
     Then time is updated to "2019-11-30T00:20:06Z"
@@ -336,8 +336,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     # these are different from the tests, but again, we end up with a 0.8 vs 0.2 fee share here.
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 12     | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 3      | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 6     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 2      | USD   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
