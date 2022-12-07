@@ -413,7 +413,7 @@ type NetworkResponse struct {
 //nolint:interfacebloat
 type WalletHandler interface {
 	CreateWallet(name, passphrase string) (string, error)
-	ImportWallet(name, passphrase, recoveryPhrase string, version uint32) error
+	ImportWallet(name, passphrase, recoveryPhrase string, keyDerivationVersion uint32) error
 	LoginWallet(name, passphrase string) error
 	LogoutWallet(name string)
 	SecureGenerateKeyPair(name, passphrase string, meta []wallet.Metadata) (string, error)
@@ -536,7 +536,7 @@ func (s *Service) ImportWallet(w http.ResponseWriter, r *http.Request, _ httprou
 		return
 	}
 
-	err := s.handler.ImportWallet(req.Wallet, req.Passphrase, req.RecoveryPhrase, req.Version)
+	err := s.handler.ImportWallet(req.Wallet, req.Passphrase, req.RecoveryPhrase, req.KeyDerivationVersion)
 	if err != nil {
 		s.writeBadRequestErr(w, err)
 		return

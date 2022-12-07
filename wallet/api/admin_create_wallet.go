@@ -22,9 +22,10 @@ type AdminCreateWalletResult struct {
 type AdminCreatedWallet struct {
 	Name                 string `json:"name"`
 	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
-	Version              uint32 `json:"version"`
 	RecoveryPhrase       string `json:"recoveryPhrase"`
 	FilePath             string `json:"filePath"`
+	// DEPRECATED: Use KeyDerivationVersion instead
+	Version uint32 `json:"version"`
 }
 
 type AdminFirstPublicKey struct {
