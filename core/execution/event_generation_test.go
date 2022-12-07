@@ -967,8 +967,7 @@ func TestEvents_LPOrderRecalculationDueToFill(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check we have the right amount of events
-	// assert.Equal(t, uint64(11), tm.orderEventCount)
-	assert.Equal(t, uint64(4), tm.orderEventCount)
+	assert.Equal(t, uint64(6), tm.orderEventCount)
 	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 
 	processEvents(t, tm, mdb)

@@ -5935,6 +5935,11 @@ func TestLPOrdersRollback(t *testing.T) {
 		// the first order we try to place, the party does
 		// not have enough funds
 		expectedStatus := []types.OrderStatus{
+			// seeded orders
+			types.OrderStatusStopped,
+			types.OrderStatusStopped,
+			types.OrderStatusStopped,
+			types.OrderStatusStopped,
 			// first order is active
 			types.OrderStatusActive,
 			// second one fails margin check
@@ -6294,7 +6299,12 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, mustOrderFromProto(evt.Order()))
+				order := evt.Order()
+				// skip the seeded orders
+				if order.Status == types.OrderStatusStopped {
+					continue
+				}
+				found = append(found, mustOrderFromProto(order))
 			}
 		}
 
@@ -6785,7 +6795,12 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, mustOrderFromProto(evt.Order()))
+				order := evt.Order()
+				// skip the seeded orders
+				if order.Status == types.OrderStatusStopped {
+					continue
+				}
+				found = append(found, mustOrderFromProto(order))
 			}
 		}
 
