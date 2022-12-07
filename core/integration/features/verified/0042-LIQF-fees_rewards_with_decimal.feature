@@ -183,7 +183,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | 100000  | 0.99        | 3                 |
 
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          | decimal places | position decimal places |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       |
       | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       |
       | USD/DEC20 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       |
@@ -258,31 +258,31 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
 
     # could be improved: as we do have fractional order, if we do the position scaling before we divide by price we can get a more sensible result
     Then the order book should have the following volumes for market "USD/DEC19":
-      | side | price    | volume   |
-      | buy  | 898000   | 111919   |
-      | buy  | 900000   | 1000     |
-      | buy  | 999000   | 14       |
-      | sell | 1102000  | 7        |
-      | sell | 1100000  | 1000     |
-      | sell | 1001000  | 99915    |
+      | side | price    | volume |
+      | buy  | 898000   | 55684  |
+      | buy  | 900000   | 1000   |
+      | buy  | 999000   | 7      |
+      | sell | 1001000  | 49958  |
+      | sell | 1100000  | 1000   |
+      | sell | 1102000  | 4      |
 
     Then the order book should have the following volumes for market "USD/DEC20":
-      | side | price      | volume   |
-      | buy  | 89800000   | 11191751 |
-      | buy  | 90000000   | 100000   |
-      | buy  | 99900000   | 1335     |
-      | sell | 110200000  | 609      |
-      | sell | 110000000  | 100000   |
-      | sell | 100100000  | 9991343  |
+      | side | price      | volume  |
+      | buy  | 89800000   | 5568301 |
+      | buy  | 90000000   | 100000  |
+      | buy  | 99900000   | 668     |
+      | sell | 100100000  | 4995672 |
+      | sell | 110000000  | 100000  |
+      | sell | 110200000  | 303     |
 
     Then the order book should have the following volumes for market "USD/DEC21":
-      | side | price      | volume   |
-      | buy  | 89800000   | 111919   |
-      | buy  | 90000000   | 1000     |
-      | buy  | 99900000   | 14       |
-      | sell | 110200000  | 7        |
-      | sell | 110000000  | 1000     |
-      | sell | 100100000  | 99915    |
+      | side | price      | volume |
+      | buy  | 89800000   | 55684  |
+      | buy  | 90000000   | 1000   |
+      | buy  | 99900000   | 7      |
+      | sell | 100100000  | 49958  |
+      | sell | 110000000  | 1000   |
+      | sell | 110200000  | 4      |
 
     And the liquidity provider fee shares for the market "USD/DEC19" should be:
       | party | equity like share  | average entry valuation |
@@ -298,12 +298,12 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin       | general        | bond    |
-      | lp1    | ETH   | USD/DEC19 | 8963397      | 99999970784198 | 1000000 |
-      | lp1    | USD   | USD/DEC19 | 8963397      | 100000000000   |         |
-      | lp1    | ETH   | USD/DEC20 | 8289008      | 99999970784198 | 1000000 |
-      | lp1    | USD   | USD/DEC20 | 8289008      | 100000000000   |         |
-      | lp1    | ETH   | USD/DEC21 | 8963397      | 99999970784198 | 1000000 |
-      | lp1    | USD   | USD/DEC21 | 8963397      | 100000000000   |         |
+      | lp1    | ETH   | USD/DEC19 | 4695112      | 99999983469540 | 1000000 |
+      | lp1    | USD   | USD/DEC19 | 4695112      | 100000000000   |         |
+      | lp1    | ETH   | USD/DEC20 | 4140236      | 99999983469540 | 1000000 |
+      | lp1    | USD   | USD/DEC20 | 4140236      | 100000000000   |         |
+      | lp1    | ETH   | USD/DEC21 | 4695112      | 99999983469540 | 1000000 |
+      | lp1    | USD   | USD/DEC21 | 4695112      | 100000000000   |         |
       | party1 | ETH   | USD/DEC19 | 1176961234   | 9996469116298  |         |
       | party1 | USD   | USD/DEC19 | 1176961234   | 10000000000    |         |
       | party2 | ETH   | USD/DEC19 | 4737795542   | 9985786613374  |         |
@@ -336,8 +336,8 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin       | general        | bond    |
-      | lp1    | ETH   | USD/DEC21 | 8963397      | 99999968638958 | 1000000 |
-      | lp1    | USD   | USD/DEC21 | 8963397      | 100000000000   |         |
+      | lp1    | ETH   | USD/DEC21 | 5127063      | 99999980896617 | 1000000 |
+      | lp1    | USD   | USD/DEC21 | 5127063      | 100000000000   |         |
 
     # amend LP commintment amount
     And the parties submit the following liquidity provision:
