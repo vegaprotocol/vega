@@ -47,6 +47,7 @@ func TheFollowingTradesShouldBeExecuted(
 		data := broker.GetTrades()
 		var found bool
 		for _, v := range data {
+			fmt.Println(v)
 			if v.Buyer == buyer &&
 				v.Seller == seller &&
 				stringToU64(v.Price) == price &&
