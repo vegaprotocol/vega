@@ -118,7 +118,7 @@ func BuildCmdRunService(w io.Writer, handler RunServiceHandler, rf *RootFlags) *
 	cmd.PersistentFlags().BoolVar(&f.NoVersionCheck,
 		"no-version-check",
 		false,
-		"Do not check for new version of the Vega wallet",
+		"Do not check the network version compatibility",
 	)
 	cmd.Flags().StringVar(&f.TokensPassphraseFile,
 		"tokens-passphrase-file",
