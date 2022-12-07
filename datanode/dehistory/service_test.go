@@ -768,8 +768,8 @@ type sqlStoreBroker interface {
 }
 
 func emptyDatabase() {
-	// NOTE: do not use databasetest.DeleteEverything(), for these we need a totally fresh database everytime to ensure
-	// we model as closely as possible what happens in practice
+	// For these we need a totally fresh database every time to ensure we model as closely as
+	// possible what happens in practice
 	var err error
 	var poolConfig *pgxpool.Config
 
