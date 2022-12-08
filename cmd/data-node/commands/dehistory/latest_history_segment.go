@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/datanode/dehistory"
+
 	"code.vegaprotocol.io/vega/datanode/config"
-	"code.vegaprotocol.io/vega/datanode/dehistory/initialise"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -57,7 +58,7 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 
 	grpcAPIPorts := []int{cmd.Config.API.Port}
 	grpcAPIPorts = append(grpcAPIPorts, cmd.Config.DeHistory.Initialise.GrpcAPIPorts...)
-	suggestedRootSegment, peerToSegment, err := initialise.GetMostRecentHistorySegmentFromPeers(context.Background(), peerAddresses,
+	suggestedRootSegment, peerToSegment, err := dehistory.GetMostRecentHistorySegmentFromPeerAddresses(context.Background(), peerAddresses,
 		grpcAPIPorts)
 
 	segmentsInfo := "Most Recent History Segments:\n\n"
