@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	pb "code.vegaprotocol.io/vega/protos/blockexplorer"
 	types "code.vegaprotocol.io/vega/protos/vega"
+	"code.vegaprotocol.io/vega/version"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -45,6 +46,13 @@ func NewBlockExplorerAPI(store *store.Store, config Config, log *logging.Logger)
 		log:    log.Named(namedLogger),
 	}
 	return &be
+}
+
+func (t *blockExplorerAPI) Info(ctx context.Context, _ *pb.InfoRequest) (*pb.InfoResponse, error) {
+	return &pb.InfoResponse{
+		Version:    version.Get(),
+		CommitHash: version.GetCommitHash(),
+	}, nil
 }
 
 func (b *blockExplorerAPI) GetTransaction(ctx context.Context, req *pb.GetTransactionRequest) (*pb.GetTransactionResponse, error) {
