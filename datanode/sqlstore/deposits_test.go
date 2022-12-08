@@ -26,7 +26,6 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -69,27 +68,18 @@ func TestDepositsPagination(t *testing.T) {
 	t.Run("should return the specified page of results between dates if last and before are provided - newest first", testDepositsPaginationBetweenDatesLastBeforeNewestFirst)
 }
 
-func setupDepositStoreTests(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.Deposits, *pgx.Conn) {
+func setupDepositStoreTests(t *testing.T) (*sqlstore.Blocks, *sqlstore.Deposits, sqlstore.Connection) {
 	t.Helper()
-	DeleteEverything()
-
 	bs := sqlstore.NewBlocks(connectionSource)
 	ds := sqlstore.NewDeposits(connectionSource)
-
-	config := NewTestConfig()
-
-	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
-	require.NoError(t, err)
-
-	return bs, ds, conn
+	return bs, ds, connectionSource.Connection
 }
 
 func testAddDepositForNewBlock(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, conn := setupDepositStoreTests(t, ctx)
+	bs, ds, conn := setupDepositStoreTests(t)
 
 	var rowCount int
 
@@ -97,14 +87,14 @@ func testAddDepositForNewBlock(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 
 	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 
 	deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(context.Background(), deposit)
+	err = ds.Upsert(ctx, deposit)
 	require.NoError(t, err)
 	err = conn.QueryRow(ctx, `select count(*) from deposits`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -112,11 +102,10 @@ func testAddDepositForNewBlock(t *testing.T) {
 }
 
 func testUpdateDepositForBlockIfExists(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, conn := setupDepositStoreTests(t, ctx)
+	bs, ds, conn := setupDepositStoreTests(t)
 
 	var rowCount int
 
@@ -124,13 +113,13 @@ func testUpdateDepositForBlockIfExists(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 
 	deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(context.Background(), deposit)
+	err = ds.Upsert(ctx, deposit)
 	require.NoError(t, err)
 	err = conn.QueryRow(ctx, `select count(*) from deposits`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -138,7 +127,7 @@ func testUpdateDepositForBlockIfExists(t *testing.T) {
 
 	deposit.Status = entities.DepositStatus(vega.Deposit_STATUS_FINALIZED)
 
-	err = ds.Upsert(context.Background(), deposit)
+	err = ds.Upsert(ctx, deposit)
 	require.NoError(t, err)
 	err = conn.QueryRow(ctx, `select count(*) from deposits`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -151,11 +140,10 @@ func testUpdateDepositForBlockIfExists(t *testing.T) {
 }
 
 func testInsertDepositUpdatesIfNewBlock(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, conn := setupDepositStoreTests(t, ctx)
+	bs, ds, conn := setupDepositStoreTests(t)
 
 	var rowCount int
 
@@ -163,13 +151,13 @@ func testInsertDepositUpdatesIfNewBlock(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 
 	deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(context.Background(), deposit)
+	err = ds.Upsert(ctx, deposit)
 	require.NoError(t, err)
 	err = conn.QueryRow(ctx, `select count(*) from deposits`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -177,12 +165,12 @@ func testInsertDepositUpdatesIfNewBlock(t *testing.T) {
 
 	time.Sleep(time.Second)
 
-	block = addTestBlock(t, bs)
+	block = addTestBlock(t, ctx, bs)
 	depositProto.Status = vega.Deposit_STATUS_FINALIZED
 	deposit, err = entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(context.Background(), deposit)
+	err = ds.Upsert(ctx, deposit)
 	require.NoError(t, err)
 	err = conn.QueryRow(ctx, `select count(*) from deposits`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -195,11 +183,9 @@ func testInsertDepositUpdatesIfNewBlock(t *testing.T) {
 }
 
 func testDepositsGetByID(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	bs, ds, conn := setupDepositStoreTests(t, ctx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, conn := setupDepositStoreTests(t)
 
 	var rowCount int
 
@@ -207,13 +193,13 @@ func testDepositsGetByID(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 
 	deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(context.Background(), deposit)
+	err = ds.Upsert(ctx, deposit)
 	require.NoError(t, err)
 	err = conn.QueryRow(ctx, `select count(*) from deposits`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -221,12 +207,12 @@ func testDepositsGetByID(t *testing.T) {
 
 	time.Sleep(time.Second)
 
-	block = addTestBlock(t, bs)
+	block = addTestBlock(t, ctx, bs)
 	depositProto.Status = vega.Deposit_STATUS_FINALIZED
 	deposit, err = entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(context.Background(), deposit)
+	err = ds.Upsert(ctx, deposit)
 	require.NoError(t, err)
 
 	got, err := ds.GetByID(ctx, depositProto.Id)
@@ -240,11 +226,9 @@ func testDepositsGetByID(t *testing.T) {
 }
 
 func testDepositsGetByParty(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	bs, ds, conn := setupDepositStoreTests(t, ctx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, conn := setupDepositStoreTests(t)
 
 	var rowCount int
 
@@ -252,7 +236,7 @@ func testDepositsGetByParty(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	depositProto1 := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 	depositProto1.Id = "deadbeef01"
 
@@ -264,17 +248,17 @@ func testDepositsGetByParty(t *testing.T) {
 	deposit, err := entities.DepositFromProto(depositProto1, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(context.Background(), deposit)
+	err = ds.Upsert(ctx, deposit)
 	require.NoError(t, err)
 
 	time.Sleep(time.Millisecond * 500)
 
-	block = addTestBlock(t, bs)
+	block = addTestBlock(t, ctx, bs)
 	depositProto1.Status = vega.Deposit_STATUS_FINALIZED
 	deposit, err = entities.DepositFromProto(depositProto1, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(context.Background(), deposit)
+	err = ds.Upsert(ctx, deposit)
 	require.NoError(t, err)
 
 	deposit.CreatedTimestamp = deposit.CreatedTimestamp.Truncate(time.Microsecond)
@@ -284,21 +268,21 @@ func testDepositsGetByParty(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 500)
 
-	block = addTestBlock(t, bs)
+	block = addTestBlock(t, ctx, bs)
 	deposit, err = entities.DepositFromProto(depositProto2, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(context.Background(), deposit)
+	err = ds.Upsert(ctx, deposit)
 	require.NoError(t, err)
 
 	time.Sleep(time.Millisecond * 500)
 
-	block = addTestBlock(t, bs)
+	block = addTestBlock(t, ctx, bs)
 	deposit, err = entities.DepositFromProto(depositProto2, generateTxHash(), block.VegaTime)
 	depositProto2.Status = vega.Deposit_STATUS_FINALIZED
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(context.Background(), deposit)
+	err = ds.Upsert(ctx, deposit)
 	require.NoError(t, err)
 
 	deposit.CreatedTimestamp = deposit.CreatedTimestamp.Truncate(time.Microsecond)
@@ -330,7 +314,7 @@ func addDeposits(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ds *sql
 	amount := int64(1000)
 	deposits := make([]entities.Deposit, 0, 10)
 	for i := 0; i < 10; i++ {
-		addTestBlockForTime(t, bs, vegaTime)
+		addTestBlockForTime(t, ctx, bs, vegaTime)
 
 		depositProto := getTestDeposit(fmt.Sprintf("deadbeef%02d", i+1), testID, testID,
 			strconv.FormatInt(amount, 10), helpers.GenerateID(), vegaTime.UnixNano())
@@ -348,15 +332,15 @@ func addDeposits(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ds *sql
 }
 
 func testDepositsPaginationNoPagination(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+	testDeposits := addDeposits(ctx, t, bs, ds)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	assert.Equal(t, testDeposits, got)
@@ -369,16 +353,16 @@ func testDepositsPaginationNoPagination(t *testing.T) {
 }
 
 func testDepositsPaginationFirst(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+	testDeposits := addDeposits(ctx, t, bs, ds)
 
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	want := testDeposits[:3]
@@ -392,16 +376,16 @@ func testDepositsPaginationFirst(t *testing.T) {
 }
 
 func testDepositsPaginationLast(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+	testDeposits := addDeposits(ctx, t, bs, ds)
 
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	want := testDeposits[7:]
@@ -415,17 +399,17 @@ func testDepositsPaginationLast(t *testing.T) {
 }
 
 func testDepositsPaginationFirstAfter(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+	testDeposits := addDeposits(ctx, t, bs, ds)
 
 	first := int32(3)
 	after := testDeposits[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	want := testDeposits[3:6]
@@ -439,17 +423,17 @@ func testDepositsPaginationFirstAfter(t *testing.T) {
 }
 
 func testDepositsPaginationLastBefore(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+	testDeposits := addDeposits(ctx, t, bs, ds)
 
 	last := int32(3)
 	before := testDeposits[7].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	want := testDeposits[4:7]
@@ -463,15 +447,15 @@ func testDepositsPaginationLastBefore(t *testing.T) {
 }
 
 func testDepositsPaginationNoPaginationNewestFirst(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := entities.ReverseSlice(addDeposits(timeoutCtx, t, bs, ds))
+	testDeposits := entities.ReverseSlice(addDeposits(ctx, t, bs, ds))
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	assert.Equal(t, testDeposits, got)
@@ -484,16 +468,16 @@ func testDepositsPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationFirstNewestFirst(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := entities.ReverseSlice(addDeposits(timeoutCtx, t, bs, ds))
+	testDeposits := entities.ReverseSlice(addDeposits(ctx, t, bs, ds))
 
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	want := testDeposits[:3]
@@ -507,16 +491,16 @@ func testDepositsPaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationLastNewestFirst(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := entities.ReverseSlice(addDeposits(timeoutCtx, t, bs, ds))
+	testDeposits := entities.ReverseSlice(addDeposits(ctx, t, bs, ds))
 
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	want := testDeposits[7:]
@@ -530,17 +514,17 @@ func testDepositsPaginationLastNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationFirstAfterNewestFirst(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := entities.ReverseSlice(addDeposits(timeoutCtx, t, bs, ds))
+	testDeposits := entities.ReverseSlice(addDeposits(ctx, t, bs, ds))
 
 	first := int32(3)
 	after := testDeposits[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	want := testDeposits[3:6]
@@ -554,17 +538,17 @@ func testDepositsPaginationFirstAfterNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationLastBeforeNewestFirst(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := entities.ReverseSlice(addDeposits(timeoutCtx, t, bs, ds))
+	testDeposits := entities.ReverseSlice(addDeposits(ctx, t, bs, ds))
 
 	last := int32(3)
 	before := testDeposits[7].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	want := testDeposits[4:7]
@@ -578,11 +562,11 @@ func testDepositsPaginationLastBeforeNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesNoPagination(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+	testDeposits := addDeposits(ctx, t, bs, ds)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
@@ -591,7 +575,7 @@ func testDepositsPaginationBetweenDatesNoPagination(t *testing.T) {
 	endDate := testDeposits[8].VegaTime
 
 	t.Run("Between start and end dates", func(t *testing.T) {
-		got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+		got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{
 			Start: &startDate,
 			End:   &endDate,
 		})
@@ -609,7 +593,7 @@ func testDepositsPaginationBetweenDatesNoPagination(t *testing.T) {
 	})
 
 	t.Run("From start date only", func(t *testing.T) {
-		got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+		got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{
 			Start: &startDate,
 		})
 
@@ -626,7 +610,7 @@ func testDepositsPaginationBetweenDatesNoPagination(t *testing.T) {
 	})
 
 	t.Run("To end date only", func(t *testing.T) {
-		got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+		got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{
 			End: &endDate,
 		})
 
@@ -644,11 +628,11 @@ func testDepositsPaginationBetweenDatesNoPagination(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesFirst(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+	testDeposits := addDeposits(ctx, t, bs, ds)
 
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
@@ -657,7 +641,7 @@ func testDepositsPaginationBetweenDatesFirst(t *testing.T) {
 	startDate := testDeposits[2].VegaTime
 	endDate := testDeposits[8].VegaTime
 
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{
 		Start: &startDate,
 		End:   &endDate,
 	})
@@ -674,11 +658,11 @@ func testDepositsPaginationBetweenDatesFirst(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesLast(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+	testDeposits := addDeposits(ctx, t, bs, ds)
 
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
@@ -687,7 +671,7 @@ func testDepositsPaginationBetweenDatesLast(t *testing.T) {
 	startDate := testDeposits[2].VegaTime
 	endDate := testDeposits[8].VegaTime
 
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{
 		Start: &startDate,
 		End:   &endDate,
 	})
@@ -704,11 +688,11 @@ func testDepositsPaginationBetweenDatesLast(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesFirstAfter(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+	testDeposits := addDeposits(ctx, t, bs, ds)
 
 	first := int32(3)
 	after := testDeposits[4].Cursor().Encode()
@@ -718,7 +702,7 @@ func testDepositsPaginationBetweenDatesFirstAfter(t *testing.T) {
 	startDate := testDeposits[2].VegaTime
 	endDate := testDeposits[8].VegaTime
 
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{
 		Start: &startDate,
 		End:   &endDate,
 	})
@@ -735,11 +719,11 @@ func testDepositsPaginationBetweenDatesFirstAfter(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesLastBefore(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+	testDeposits := addDeposits(ctx, t, bs, ds)
 
 	last := int32(3)
 	before := testDeposits[6].Cursor().Encode()
@@ -749,7 +733,7 @@ func testDepositsPaginationBetweenDatesLastBefore(t *testing.T) {
 	startDate := testDeposits[2].VegaTime
 	endDate := testDeposits[8].VegaTime
 
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{
 		Start: &startDate,
 		End:   &endDate,
 	})
@@ -766,18 +750,18 @@ func testDepositsPaginationBetweenDatesLastBefore(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesNoPaginationNewestFirst(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+	testDeposits := addDeposits(ctx, t, bs, ds)
 	startDate := testDeposits[2].VegaTime
 	endDate := testDeposits[8].VegaTime
 	want := entities.ReverseSlice(testDeposits[2:8])
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{
 		Start: &startDate,
 		End:   &endDate,
 	})
@@ -793,11 +777,11 @@ func testDepositsPaginationBetweenDatesNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesFirstNewestFirst(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+	testDeposits := addDeposits(ctx, t, bs, ds)
 	startDate := testDeposits[2].VegaTime
 	endDate := testDeposits[8].VegaTime
 	want := entities.ReverseSlice(testDeposits[2:8])
@@ -805,7 +789,7 @@ func testDepositsPaginationBetweenDatesFirstNewestFirst(t *testing.T) {
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{
 		Start: &startDate,
 		End:   &endDate,
 	})
@@ -822,11 +806,11 @@ func testDepositsPaginationBetweenDatesFirstNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesLastNewestFirst(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+	testDeposits := addDeposits(ctx, t, bs, ds)
 
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
@@ -835,7 +819,7 @@ func testDepositsPaginationBetweenDatesLastNewestFirst(t *testing.T) {
 	startDate := testDeposits[2].VegaTime
 	endDate := testDeposits[8].VegaTime
 
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{
 		Start: &startDate,
 		End:   &endDate,
 	})
@@ -853,11 +837,11 @@ func testDepositsPaginationBetweenDatesLastNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesFirstAfterNewestFirst(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+	testDeposits := addDeposits(ctx, t, bs, ds)
 	want := entities.ReverseSlice(testDeposits[2:8])
 
 	first := int32(3)
@@ -868,7 +852,7 @@ func testDepositsPaginationBetweenDatesFirstAfterNewestFirst(t *testing.T) {
 	startDate := testDeposits[2].VegaTime
 	endDate := testDeposits[8].VegaTime
 
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{
 		Start: &startDate,
 		End:   &endDate,
 	})
@@ -885,11 +869,11 @@ func testDepositsPaginationBetweenDatesFirstAfterNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesLastBeforeNewestFirst(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, _ := setupDepositStoreTests(t)
 
-	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+	testDeposits := addDeposits(ctx, t, bs, ds)
 	want := entities.ReverseSlice(testDeposits[2:8])
 
 	last := int32(3)
@@ -900,7 +884,7 @@ func testDepositsPaginationBetweenDatesLastBeforeNewestFirst(t *testing.T) {
 	startDate := testDeposits[2].VegaTime
 	endDate := testDeposits[8].VegaTime
 
-	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+	got, pageInfo, err := ds.GetByParty(ctx, testID, false, pagination, entities.DateRange{
 		Start: &startDate,
 		End:   &endDate,
 	})

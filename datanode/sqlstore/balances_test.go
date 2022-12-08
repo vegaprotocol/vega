@@ -13,7 +13,6 @@
 package sqlstore_test
 
 import (
-	"context"
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -56,8 +55,8 @@ func assertBalanceCorrect(t *testing.T, expected, actual *[]entities.AggregatedB
 }
 
 func TestBalances(t *testing.T) {
-	defer DeleteEverything()
-	ctx := context.Background()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	blockStore := sqlstore.NewBlocks(connectionSource)
 	assetStore := sqlstore.NewAssets(connectionSource)
@@ -66,15 +65,15 @@ func TestBalances(t *testing.T) {
 	partyStore := sqlstore.NewParties(connectionSource)
 
 	// Set up a test environment with a bunch of blocks/parties/accounts
-	asset := addTestAsset(t, assetStore, addTestBlock(t, blockStore))
+	asset := addTestAsset(t, ctx, assetStore, addTestBlock(t, ctx, blockStore))
 
 	var blocks []entities.Block
 	var parties []entities.Party
 	var accounts []entities.Account
 	for i := 0; i < 5; i++ {
-		blocks = append(blocks, addTestBlock(t, blockStore))
-		parties = append(parties, addTestParty(t, partyStore, blocks[0]))
-		accounts = append(accounts, helpers.AddTestAccount(t, accountStore, parties[i], asset, types.AccountTypeGeneral, blocks[0]))
+		blocks = append(blocks, addTestBlock(t, ctx, blockStore))
+		parties = append(parties, addTestParty(t, ctx, partyStore, blocks[0]))
+		accounts = append(accounts, helpers.AddTestAccount(t, ctx, accountStore, parties[i], asset, types.AccountTypeGeneral, blocks[0]))
 	}
 
 	// And add some dummy balances
@@ -111,7 +110,7 @@ func TestBalances(t *testing.T) {
 
 	t.Run("Query should return all balances", func(t *testing.T) {
 		// Query all the balances (they're all for the same asset)
-		actual, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, dateRange, pagination)
+		actual, _, err := balanceStore.Query(ctx, entities.AccountFilter{AssetID: asset.ID}, dateRange, pagination)
 		require.NoError(t, err)
 		assertBalanceCorrect(t, &allExpected, actual)
 	})
@@ -122,7 +121,7 @@ func TestBalances(t *testing.T) {
 			AssetID:  asset.ID,
 			PartyIDs: []entities.PartyID{parties[0].ID},
 		}
-		actual, _, err := balanceStore.Query(filter, dateRange, pagination)
+		actual, _, err := balanceStore.Query(ctx, filter, dateRange, pagination)
 		require.NoError(t, err)
 
 		// only accounts[0] is for  party[0]
@@ -139,7 +138,7 @@ func TestBalances(t *testing.T) {
 		after := allExpected[2].Cursor().Encode()
 		p, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 		require.NoError(t, err)
-		actual, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, dateRange, p)
+		actual, _, err := balanceStore.Query(ctx, entities.AccountFilter{AssetID: asset.ID}, dateRange, p)
 		require.NoError(t, err)
 		expected := allExpected[3:5]
 		assertBalanceCorrect(t, &expected, actual)
@@ -154,7 +153,7 @@ func TestBalances(t *testing.T) {
 			Start: &startTime,
 			End:   &endTime,
 		}
-		actual, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, dateRange, p)
+		actual, _, err := balanceStore.Query(ctx, entities.AccountFilter{AssetID: asset.ID}, dateRange, p)
 		require.NoError(t, err)
 
 		expected := allExpected[1:4]
@@ -171,7 +170,7 @@ func TestBalances(t *testing.T) {
 			Start: &startTime,
 			End:   &endTime,
 		}
-		actual, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, dateRange, p)
+		actual, _, err := balanceStore.Query(ctx, entities.AccountFilter{AssetID: asset.ID}, dateRange, p)
 		require.NoError(t, err)
 
 		expected := allExpected[1:4]

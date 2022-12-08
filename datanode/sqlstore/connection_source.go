@@ -116,14 +116,16 @@ func (s *ConnectionSource) WithConnection(ctx context.Context) (context.Context,
 func (s *ConnectionSource) WithTransaction(ctx context.Context) (context.Context, error) {
 	var tx pgx.Tx
 	var err error
-	if conn, ok := ctx.Value(connectionContextKey{}).(*pgx.Conn); ok {
+	if outerTx, ok := ctx.Value(transactionContextKey{}).(pgx.Tx); ok {
+		tx, err = outerTx.Begin(ctx)
+	} else if conn, ok := ctx.Value(connectionContextKey{}).(*pgx.Conn); ok {
 		tx, err = conn.Begin(ctx)
 	} else {
 		tx, err = s.pool.Begin(ctx)
 	}
 
 	if err != nil {
-		return context.Background(), errors.Errorf("failed to start transaction:%s", err)
+		return ctx, errors.Errorf("failed to start transaction:%s", err)
 	}
 
 	return context.WithValue(ctx, transactionContextKey{}, tx), nil
@@ -155,6 +157,18 @@ func (s *ConnectionSource) Commit(ctx context.Context) error {
 			f()
 		}
 		s.postCommitHooks = s.postCommitHooks[:0]
+	} else {
+		return fmt.Errorf("no transaction is associated with the context")
+	}
+
+	return nil
+}
+
+func (s *ConnectionSource) Rollback(ctx context.Context) error {
+	if tx, ok := ctx.Value(transactionContextKey{}).(pgx.Tx); ok {
+		if err := tx.Rollback(ctx); err != nil {
+			return fmt.Errorf("failed to rollback transaction for context:%s, error:%w", ctx, err)
+		}
 	} else {
 		return fmt.Errorf("no transaction is associated with the context")
 	}

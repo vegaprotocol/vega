@@ -56,8 +56,9 @@ func (e *Engine) ReloadConf(config Config) {
 		)
 		e.log.SetLevel(config.Level.Get())
 	}
-
-	e.ethEngine.ReloadConf(config.Ethereum)
+	if e.ethEngine != nil {
+		e.ethEngine.ReloadConf(config.Ethereum)
+	}
 }
 
 func (e *Engine) UpdateStakingStartingBlock(b uint64) {
