@@ -22,7 +22,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
-	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,38 +31,30 @@ func TestOracleData(t *testing.T) {
 	t.Run("GetOracleDataBySpecID should return all data where matched spec ids contains the provided id", testGetOracleDataBySpecID)
 }
 
-func setupOracleDataTest(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.OracleData, *pgx.Conn) {
+func setupOracleDataTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.OracleData, sqlstore.Connection) {
 	t.Helper()
-	DeleteEverything()
-
 	bs := sqlstore.NewBlocks(connectionSource)
 	od := sqlstore.NewOracleData(connectionSource)
-
-	config := NewTestConfig()
-	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
-	require.NoError(t, err)
-
-	return bs, od, conn
+	return bs, od, connectionSource.Connection
 }
 
 func testAddOracleData(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, od, conn := setupOracleDataTest(t, ctx)
+	bs, od, conn := setupOracleDataTest(t)
 
 	var rowCount int
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_data").Scan(&rowCount))
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	dataProtos := getTestOracleData()
 
 	for i, proto := range dataProtos {
 		data, err := entities.OracleDataFromProto(proto, generateTxHash(), block.VegaTime, uint64(i))
 		require.NoError(t, err)
-		assert.NoError(t, od.Add(context.Background(), data))
+		assert.NoError(t, od.Add(ctx, data))
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_data").Scan(&rowCount))
@@ -71,11 +62,10 @@ func testAddOracleData(t *testing.T) {
 }
 
 func testGetOracleDataBySpecID(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, od, conn := setupOracleDataTest(t, ctx)
+	bs, od, conn := setupOracleDataTest(t)
 
 	var rowCount int
 	err := conn.QueryRow(ctx, "select count(*) from oracle_data").Scan(&rowCount)
@@ -86,10 +76,10 @@ func testGetOracleDataBySpecID(t *testing.T) {
 	dataProtos := getTestOracleData()
 
 	for i, proto := range dataProtos {
-		block := addTestBlockForTime(t, bs, testTime)
+		block := addTestBlockForTime(t, ctx, bs, testTime)
 		data, err := entities.OracleDataFromProto(proto, generateTxHash(), block.VegaTime, uint64(i))
 		require.NoError(t, err)
-		err = od.Add(context.Background(), data)
+		err = od.Add(ctx, data)
 		require.NoError(t, err)
 		testTime = testTime.Add(time.Minute)
 	}
@@ -278,7 +268,7 @@ func getTestPaginationOracleData(t *testing.T, ctx context.Context, bs *sqlstore
 	blockTime := time.Now()
 
 	for i, item := range protoData {
-		block := addTestBlockForTime(t, bs, blockTime)
+		block := addTestBlockForTime(t, ctx, bs, blockTime)
 		odEntity, err := entities.OracleDataFromProto(item, generateTxHash(), block.VegaTime, uint64(i))
 		require.NoError(t, err)
 
@@ -301,10 +291,10 @@ func TestOracleData_GetOracleDataBySpecIDCursorPagination(t *testing.T) {
 }
 
 func testOracleDataGetBySpecNoPagination(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, _ := setupOracleDataTest(t, ctx)
+	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -322,10 +312,10 @@ func testOracleDataGetBySpecNoPagination(t *testing.T) {
 }
 
 func testOracleDataGetBySpecFirst(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, _ := setupOracleDataTest(t, ctx)
+	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
 
 	first := int32(3)
@@ -344,10 +334,10 @@ func testOracleDataGetBySpecFirst(t *testing.T) {
 }
 
 func testOracleDataGetBySpecLast(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, _ := setupOracleDataTest(t, ctx)
+	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
 
 	last := int32(3)
@@ -366,10 +356,10 @@ func testOracleDataGetBySpecLast(t *testing.T) {
 }
 
 func testOracleDataGetBySpecFirstAfter(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, _ := setupOracleDataTest(t, ctx)
+	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
 
 	first := int32(3)
@@ -389,10 +379,10 @@ func testOracleDataGetBySpecFirstAfter(t *testing.T) {
 }
 
 func testOracleDataGetBySpecLastBefore(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, _ := setupOracleDataTest(t, ctx)
+	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
 
 	last := int32(3)
@@ -426,10 +416,10 @@ func TestOracleData_ListOracleDataCursorPagination(t *testing.T) {
 }
 
 func testOracleDataListNoPagination(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, _ := setupOracleDataTest(t, ctx)
+	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
 	want := []entities.OracleData{data[0]}
 	want = append(want, data[2:]...)
@@ -449,10 +439,10 @@ func testOracleDataListNoPagination(t *testing.T) {
 }
 
 func testOracleDataListFirst(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, _ := setupOracleDataTest(t, ctx)
+	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
 	want := []entities.OracleData{data[0]}
 	want = append(want, data[2:]...)
@@ -473,10 +463,10 @@ func testOracleDataListFirst(t *testing.T) {
 }
 
 func testOracleDataListLast(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, _ := setupOracleDataTest(t, ctx)
+	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
 	want := []entities.OracleData{data[0]}
 	want = append(want, data[2:]...)
@@ -497,10 +487,10 @@ func testOracleDataListLast(t *testing.T) {
 }
 
 func testOracleDataListFirstAfter(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, _ := setupOracleDataTest(t, ctx)
+	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
 	want := []entities.OracleData{data[0]}
 	want = append(want, data[2:]...)
@@ -522,10 +512,10 @@ func testOracleDataListFirstAfter(t *testing.T) {
 }
 
 func testOracleDataListLastBefore(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, _ := setupOracleDataTest(t, ctx)
+	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
 	want := []entities.OracleData{data[0]}
 	want = append(want, data[2:]...)
@@ -547,10 +537,10 @@ func testOracleDataListLastBefore(t *testing.T) {
 }
 
 func testOracleDataListNoPaginationNewestFirst(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, _ := setupOracleDataTest(t, ctx)
+	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
 	want := []entities.OracleData{data[0]}
 	want = entities.ReverseSlice(append(want, data[2:]...))
@@ -570,10 +560,10 @@ func testOracleDataListNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testOracleDataListFirstNewestFirst(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, _ := setupOracleDataTest(t, ctx)
+	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
 	want := []entities.OracleData{data[0]}
 	want = entities.ReverseSlice(append(want, data[2:]...))
@@ -594,10 +584,10 @@ func testOracleDataListFirstNewestFirst(t *testing.T) {
 }
 
 func testOracleDataListLastNewestFirst(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, _ := setupOracleDataTest(t, ctx)
+	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
 	want := []entities.OracleData{data[0]}
 	want = entities.ReverseSlice(append(want, data[2:]...))
@@ -618,10 +608,10 @@ func testOracleDataListLastNewestFirst(t *testing.T) {
 }
 
 func testOracleDataListFirstAfterNewestFirst(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, _ := setupOracleDataTest(t, ctx)
+	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
 	want := []entities.OracleData{data[0]}
 	want = entities.ReverseSlice(append(want, data[2:]...))
@@ -643,10 +633,10 @@ func testOracleDataListFirstAfterNewestFirst(t *testing.T) {
 }
 
 func testOracleDataListLastBeforeNewestFirst(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, ds, _ := setupOracleDataTest(t, ctx)
+	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
 	want := []entities.OracleData{data[0]}
 	want = entities.ReverseSlice(append(want, data[2:]...))

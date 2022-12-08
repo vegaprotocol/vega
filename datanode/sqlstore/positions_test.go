@@ -28,6 +28,7 @@ import (
 )
 
 func addTestPosition(t *testing.T,
+	ctx context.Context,
 	ps *sqlstore.Positions,
 	market entities.Market,
 	party entities.Party,
@@ -44,7 +45,7 @@ func addTestPosition(t *testing.T,
 	pos.AverageEntryMarketPrice = decimal.New(0, 0)
 	pos.Adjustment = decimal.New(0, 0)
 	pos.Loss = decimal.New(0, 0)
-	err := ps.Add(context.Background(), pos)
+	err := ps.Add(ctx, pos)
 	require.NoError(t, err)
 	return pos
 }
@@ -63,56 +64,38 @@ func assertPositionsMatch(t *testing.T, expected, actual []entities.Position) {
 }
 
 func TestPosition(t *testing.T) {
-	defer DeleteEverything()
-	ctx := context.Background()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewPositions(connectionSource)
 	qs := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	block1 := addTestBlockForTime(t, bs, time.Now().Add((-26*time.Hour)-(2*time.Second)))
-	block2 := addTestBlockForTime(t, bs, time.Now().Add((-26*time.Hour)-(1*time.Second)))
-	block3 := addTestBlockForTime(t, bs, time.Now().Add(-26*time.Hour))
+	block1 := addTestBlockForTime(t, ctx, bs, time.Now().Add((-26*time.Hour)-(2*time.Second)))
+	block2 := addTestBlockForTime(t, ctx, bs, time.Now().Add((-26*time.Hour)-(1*time.Second)))
+	block3 := addTestBlockForTime(t, ctx, bs, time.Now().Add(-26*time.Hour))
 
 	market1 := entities.Market{ID: entities.MarketID("dead")}
 	market2 := entities.Market{ID: entities.MarketID("beef")}
-	party1 := addTestParty(t, qs, block1)
-	party2 := addTestParty(t, qs, block1)
+	party1 := addTestParty(t, ctx, qs, block1)
+	party2 := addTestParty(t, ctx, qs, block1)
 
-	pos1a := addTestPosition(t, ps, market1, party1, 100, block1)
-	pos1b := addTestPosition(t, ps, market1, party1, 200, block1)
+	pos1a := addTestPosition(t, ctx, ps, market1, party1, 100, block1)
+	pos1b := addTestPosition(t, ctx, ps, market1, party1, 200, block1)
 
-	pos2 := addTestPosition(t, ps, market1, party2, 300, block2)
-	pos3 := addTestPosition(t, ps, market2, party1, 400, block2)
+	pos2 := addTestPosition(t, ctx, ps, market1, party2, 300, block2)
+	pos3 := addTestPosition(t, ctx, ps, market2, party1, 400, block2)
 
 	_, err := ps.Flush(ctx)
 	require.NoError(t, err)
 
 	_, _ = pos1a, pos1b
 
-	// Conflate the data and add some new positions so all tests run against a mix of conflated and non-conflated data
-	now := time.Now()
-	_, err = connectionSource.Connection.Exec(context.Background(), fmt.Sprintf("CALL refresh_continuous_aggregate('conflated_positions', '%s', '%s');",
-		now.Add(-48*time.Hour).Format("2006-01-02"),
-		time.Now().Format("2006-01-02")))
-
 	assert.NoError(t, err)
 
-	// The refresh of the continuous aggregate completes asynchronously so the following loop is necessary to ensure the data has been materialized
-	// before the test continues
-	for {
-		var counter int
-		connectionSource.Connection.QueryRow(context.Background(), "SELECT count(*) FROM conflated_positions").Scan(&counter)
-		if counter == 3 {
-			break
-		}
-	}
-
-	_, err = connectionSource.Connection.Exec(context.Background(), "delete from positions")
-	assert.NoError(t, err)
-
-	// Add some new positions to the non-conflated data
-	pos1c := addTestPosition(t, ps, market1, party1, 200, block3)
-	pos4 := addTestPosition(t, ps, market2, party2, 500, block3)
+	// Add some new positions
+	pos1c := addTestPosition(t, ctx, ps, market1, party1, 200, block3)
+	pos4 := addTestPosition(t, ctx, ps, market2, party2, 500, block3)
 	ps.Flush(ctx)
 
 	t.Run("GetAll", func(t *testing.T) {
@@ -156,11 +139,11 @@ func setupPositionPaginationData(t *testing.T, ctx context.Context, bs *sqlstore
 	for i := 0; i < 10; i++ {
 		market := entities.Market{ID: entities.MarketID(fmt.Sprintf("deadbeef%02d", i))}
 		for j := 0; j < 10; j++ {
-			block := addTestBlockForTime(t, bs, blockTime)
+			block := addTestBlockForTime(t, ctx, bs, blockTime)
 			party := entities.Party{ID: entities.PartyID(fmt.Sprintf("deadbeef%02d", j)), VegaTime: &block.VegaTime}
 			err := pts.Add(ctx, party)
 			require.NoError(t, err)
-			position := addTestPosition(t, ps, market, party, int64(i), block)
+			position := addTestPosition(t, ctx, ps, market, party, int64(i), block)
 			positions = append(positions, position)
 			blockTime = blockTime.Add(time.Minute)
 		}
@@ -189,9 +172,8 @@ func TestPositions_CursorPagination(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyNoCursor(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -230,9 +212,8 @@ func testPositionCursorPaginationPartyNoCursor(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyFirstCursor(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -265,9 +246,8 @@ func testPositionCursorPaginationPartyFirstCursor(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyLastCursor(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -300,9 +280,8 @@ func testPositionCursorPaginationPartyLastCursor(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyFirstAfterCursor(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -336,9 +315,8 @@ func testPositionCursorPaginationPartyFirstAfterCursor(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyLastBeforeCursor(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -372,9 +350,8 @@ func testPositionCursorPaginationPartyLastBeforeCursor(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyMarketNoCursor(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -404,9 +381,8 @@ func testPositionCursorPaginationPartyMarketNoCursor(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyNoCursorNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -447,9 +423,8 @@ func testPositionCursorPaginationPartyNoCursorNewestFirst(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyFirstCursorNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -482,9 +457,8 @@ func testPositionCursorPaginationPartyFirstCursorNewestFirst(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyLastCursorNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -517,9 +491,8 @@ func testPositionCursorPaginationPartyLastCursorNewestFirst(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyFirstAfterCursorNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -553,9 +526,8 @@ func testPositionCursorPaginationPartyFirstAfterCursorNewestFirst(t *testing.T) 
 }
 
 func testPositionCursorPaginationPartyLastBeforeCursorNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -589,9 +561,8 @@ func testPositionCursorPaginationPartyLastBeforeCursorNewestFirst(t *testing.T) 
 }
 
 func testPositionCursorPaginationPartyMarketNoCursorNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
