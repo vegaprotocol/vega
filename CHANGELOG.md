@@ -20,15 +20,16 @@
 - [7031](https://github.com/vegaprotocol/vega/issues/7031) - `datanode` expects protocol upgrade event in the right sequence
 - [7072](https://github.com/vegaprotocol/vega/issues/7072) - Check if event forwarding engine is started before reloading
 - [7017](https://github.com/vegaprotocol/vega/issues/7017) - Fix issue with market update during opening auction
+- [7040](https://github.com/vegaprotocol/vega/issues/7040) - Block explorer use different codes than 500 on error
 
 
 ## 0.63.1
 
 ### 🛠 Improvements
 - [7003](https://github.com/vegaprotocol/vega/pull/7003) - Expose bus event stream on the `REST` API
-- [7044](https://github.com/vegaprotocol/vega/issues/7044) - Proof of work improvements 
+- [7044](https://github.com/vegaprotocol/vega/issues/7044) - Proof of work improvements
 - [7041](https://github.com/vegaprotocol/vega/issues/7041) - Change witness vote count to be based on voting power
-- [7073](https://github.com/vegaprotocol/vega/issues/7073) - Upgrade `btcd` library 
+- [7073](https://github.com/vegaprotocol/vega/issues/7073) - Upgrade `btcd` library
 
 ## 0.63.0
 
