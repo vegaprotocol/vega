@@ -518,8 +518,7 @@ func (m *Market) repriceLiquidityOrder(side types.Side, reference types.PeggedRe
 	if err != nil {
 		return num.UintZero(), err
 	}
-	adjustedPrice := m.adjustPrice(side, refPrice, offset, minLpPrice, maxLpPrice)
-	return adjustedPrice, nil
+	return m.adjustPrice(side, refPrice, offset, minLpPrice, maxLpPrice), nil
 }
 
 func (m *Market) adjustPrice(side types.Side, referencePrice, offset, minLpPrice, maxLpPrice *num.Uint) *num.Uint {
@@ -585,7 +584,7 @@ func (m *Market) getValidLPVolumeRange() (*num.Uint, *num.Uint, error) {
 
 	if lb.GTE(ub) {
 		// if we ended up with overlapping upper and lower bound we set the upper bound to lower bound plus one.
-		ub = num.UintZero().Add(lb, num.UintOne())
+		ub = ub.Add(lb, num.UintOne())
 	}
 
 	return lb, ub, nil
