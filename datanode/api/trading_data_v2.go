@@ -224,7 +224,7 @@ func (t *tradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.Li
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid cursor: %w", err))
 	}
 
-	entries, pageInfo, err := t.ledgerService.Query(leFilter, dateRange, pagination)
+	entries, pageInfo, err := t.ledgerService.Query(ctx, leFilter, dateRange, pagination)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("could not query ledger entries: %w", err))
 	}
@@ -259,7 +259,7 @@ func (t *tradingDataServiceV2) ListBalanceChanges(ctx context.Context, req *v2.L
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid cursor: %w", err))
 	}
 
-	balances, pageInfo, err := t.accountService.QueryAggregatedBalances(filter, dateRange, pagination)
+	balances, pageInfo, err := t.accountService.QueryAggregatedBalances(ctx, filter, dateRange, pagination)
 	if err != nil {
 		return nil, fmt.Errorf("querying balances: %w", err)
 	}
@@ -1303,7 +1303,7 @@ func (t *tradingDataServiceV2) ListMarginLevels(ctx context.Context, in *v2.List
 		return nil, apiError(codes.Internal, err)
 	}
 
-	edges, err := makeEdges[*v2.MarginEdge](marginLevels, t.accountService)
+	edges, err := makeEdges[*v2.MarginEdge](marginLevels, ctx, t.accountService)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1338,7 +1338,7 @@ func (t *tradingDataServiceV2) ObserveMarginLevels(req *v2.ObserveMarginLevelsRe
 	}
 
 	return observe(ctx, t.log, "MarginLevel", marginLevelsChan, ref, func(ml entities.MarginLevels) error {
-		protoMl, err := ml.ToProto(t.accountService)
+		protoMl, err := ml.ToProto(ctx, t.accountService)
 		if err != nil {
 			return apiError(codes.Internal, err)
 		}
@@ -1908,7 +1908,7 @@ func (t *tradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 		return nil, apiError(codes.Internal, err)
 	}
 
-	edges, err := makeEdges[*v2.TransferEdge](transfers, t.accountService)
+	edges, err := makeEdges[*v2.TransferEdge](transfers, ctx, t.accountService)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -2980,6 +2980,12 @@ func (t *tradingDataServiceV2) GetMostRecentDeHistorySegment(context.Context, *v
 
 	segment, err := t.deHistoryService.GetHighestBlockHeightHistorySegment()
 	if err != nil {
+		if errors.Is(err, store.ErrSegmentNotFound) {
+			return &v2.GetMostRecentDeHistorySegmentResponse{
+				Segment: nil,
+			}, nil
+		}
+
 		return nil, apiError(codes.Internal, ErrGetMostRecentHistorySegment, err)
 	}
 

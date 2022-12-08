@@ -43,7 +43,7 @@ func NewDatabaseMetaData(ctx context.Context, connConfig sqlstore.ConnectionConf
 	}
 	defer conn.Close()
 
-	tableNames, err := GetAllTableNames(ctx, conn)
+	tableNames, err := sqlstore.GetAllTableNames(ctx, conn)
 	if err != nil {
 		return DatabaseMetadata{}, fmt.Errorf("failed to get names of tables to copy:%w", err)
 	}
@@ -115,24 +115,6 @@ func getDatabaseVersion(connConfig sqlstore.ConnectionConfig) (int64, error) {
 		return 0, fmt.Errorf("failed to get goose database version:%w", err)
 	}
 	return dbVersion, nil
-}
-
-func GetAllTableNames(ctx context.Context, conn *pgxpool.Pool) ([]string, error) {
-	tableNameRows, err := conn.Query(ctx, "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' and table_type = 'BASE TABLE' and table_name != 'goose_db_version' order by table_name")
-	if err != nil {
-		return nil, fmt.Errorf("failed to query table names:%w", err)
-	}
-
-	var tableNames []string
-	for tableNameRows.Next() {
-		tableName := ""
-		err = tableNameRows.Scan(&tableName)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan table Name:%w", err)
-		}
-		tableNames = append(tableNames, tableName)
-	}
-	return tableNames, nil
 }
 
 func getTableSortOrders(ctx context.Context, conn *pgxpool.Pool) (map[string]string, error) {

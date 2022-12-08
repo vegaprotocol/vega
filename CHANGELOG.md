@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.64.0
+## Unreleased 0.65.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -9,12 +9,28 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [7052](https://github.com/vegaprotocol/vega/issues/7052) - Add a specific error message when trying to access administrative endpoints on wallet API
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.64.0
+
+### 🗑️ Deprecation
+- [7065](https://github.com/vegaprotocol/vega/issues/7065) - Scope technical commands on wallet command line
+- [7066](https://github.com/vegaprotocol/vega/issues/7066) - Move network compatibility check to a dedicated wallet command line
+
+### 🛠 Improvements
+- [7052](https://github.com/vegaprotocol/vega/issues/7052) - Add a specific error message when trying to access administrative endpoints on wallet API
+- [7064](https://github.com/vegaprotocol/vega/issues/7064) - Make `SQL` store tests run in temporary transactions instead of truncating all tables for each test
+
+### 🐛 Fixes
+- [7011](https://github.com/vegaprotocol/vega/issues/7011) - Incorrect flagging of live orders when multiple updates in the same block
 - [7037](https://github.com/vegaprotocol/vega/issues/7037) - Reinstate permissions endpoints on the wallet API
 - [7034](https://github.com/vegaprotocol/vega/issues/7034) - Rename `network` to `name` in `admin.remove_network`
 - [7031](https://github.com/vegaprotocol/vega/issues/7031) - `datanode` expects protocol upgrade event in the right sequence
+- [7072](https://github.com/vegaprotocol/vega/issues/7072) - Check if event forwarding engine is started before reloading
 - [7017](https://github.com/vegaprotocol/vega/issues/7017) - Fix issue with market update during opening auction
 - [7021](https://github.com/vegaprotocol/vega/issues/7021) - MTM settlement on trading terminated fix.
 
@@ -23,8 +39,9 @@
 
 ### 🛠 Improvements
 - [7003](https://github.com/vegaprotocol/vega/pull/7003) - Expose bus event stream on the `REST` API
-- [7044](https://github.com/vegaprotocol/vega/issues/7044) - Proof of work improvements 
+- [7044](https://github.com/vegaprotocol/vega/issues/7044) - Proof of work improvements
 - [7041](https://github.com/vegaprotocol/vega/issues/7041) - Change witness vote count to be based on voting power
+- [7073](https://github.com/vegaprotocol/vega/issues/7073) - Upgrade `btcd` library
 
 ## 0.63.0
 

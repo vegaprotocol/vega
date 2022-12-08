@@ -64,10 +64,9 @@ func (ls *Ledger) Add(le entities.LedgerEntry) error {
 	return nil
 }
 
-func (ls *Ledger) GetByLedgerEntryTime(ledgerEntryTime time.Time) (entities.LedgerEntry, error) {
+func (ls *Ledger) GetByLedgerEntryTime(ctx context.Context, ledgerEntryTime time.Time) (entities.LedgerEntry, error) {
 	defer metrics.StartSQLQuery("Ledger", "GetByID")()
 	le := entities.LedgerEntry{}
-	ctx := context.Background()
 
 	return le, ls.wrapE(pgxscan.Get(ctx, ls.Connection, &le,
 		`SELECT ledger_entry_time, quantity, tx_hash, vega_time, transfer_time, type
@@ -75,9 +74,8 @@ func (ls *Ledger) GetByLedgerEntryTime(ledgerEntryTime time.Time) (entities.Ledg
 		ledgerEntryTime))
 }
 
-func (ls *Ledger) GetAll() ([]entities.LedgerEntry, error) {
+func (ls *Ledger) GetAll(ctx context.Context) ([]entities.LedgerEntry, error) {
 	defer metrics.StartSQLQuery("Ledger", "GetAll")()
-	ctx := context.Background()
 	ledgerEntries := []entities.LedgerEntry{}
 	err := pgxscan.Select(ctx, ls.Connection, &ledgerEntries, `
 		SELECT ledger_entry_time, quantity, tx_hash, vega_time, transfer_time, type
@@ -97,6 +95,7 @@ func (ls *Ledger) GetAll() ([]entities.LedgerEntry, error) {
 //   - listing ledger entries with filtering on the sending AND receiving account
 //   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 func (ls *Ledger) Query(
+	ctx context.Context,
 	filter *entities.LedgerEntryFilter,
 	dateRange entities.DateRange,
 	pagination entities.CursorPagination,
@@ -144,7 +143,7 @@ func (ls *Ledger) Query(
 	queryLedgerEntries = fmt.Sprintf("%s %s", queryLedgerEntries, pageQuery)
 
 	defer metrics.StartSQLQuery("Ledger", "Query")()
-	rows, err := ls.Connection.Query(context.Background(), queryLedgerEntries, args...)
+	rows, err := ls.Connection.Query(ctx, queryLedgerEntries, args...)
 	if err != nil {
 		return nil, pageInfo, fmt.Errorf("querying ledger entries: %w", err)
 	}

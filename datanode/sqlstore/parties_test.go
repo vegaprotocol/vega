@@ -24,25 +24,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func addTestParty(t *testing.T, ps *sqlstore.Parties, block entities.Block) entities.Party {
+func addTestParty(t *testing.T, ctx context.Context, ps *sqlstore.Parties, block entities.Block) entities.Party {
 	t.Helper()
 	party := entities.Party{
 		ID:       entities.PartyID(helpers.GenerateID()),
 		VegaTime: &block.VegaTime,
 	}
 
-	err := ps.Add(context.Background(), party)
+	err := ps.Add(ctx, party)
 	require.NoError(t, err)
 	return party
 }
 
 func TestParty(t *testing.T) {
-	defer DeleteEverything()
-	ctx := context.Background()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	ps := sqlstore.NewParties(connectionSource)
-	ps.Initialise()
+	ps.Initialise(ctx)
 	bs := sqlstore.NewBlocks(connectionSource)
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 
 	// Make sure we're starting with an empty set of parties (except network party)
 	parties, err := ps.GetAll(ctx)
@@ -51,7 +51,7 @@ func TestParty(t *testing.T) {
 	assert.Equal(t, "network", parties[0].ID.String())
 
 	// Make a new party
-	party := addTestParty(t, ps, block)
+	party := addTestParty(t, ctx, ps, block)
 
 	// Add it again, we shouldn't get a primary key violation (we just ignore)
 	err = ps.Add(ctx, party)
@@ -72,20 +72,12 @@ func TestParty(t *testing.T) {
 	assert.ErrorIs(t, err, entities.ErrNotFound)
 }
 
-func setupPartyTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Parties, func(t *testing.T)) {
+func setupPartyTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Parties) {
 	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 	pt := sqlstore.NewParties(connectionSource)
 
-	DeleteEverything()
-
-	config := sqlstore.NewDefaultConfig()
-	config.ConnectionConfig.Port = testDBPort
-
-	return bs, pt, func(t *testing.T) {
-		t.Helper()
-		DeleteEverything()
-	}
+	return bs, pt
 }
 
 func populateTestParties(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ps *sqlstore.Parties, blockTimes map[string]time.Time) {
@@ -124,7 +116,7 @@ func populateTestParties(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 	}
 
 	for _, party := range parties {
-		block := addTestBlock(t, bs)
+		block := addTestBlock(t, ctx, bs)
 		party.VegaTime = &block.VegaTime
 		blockTimes[party.ID.String()] = block.VegaTime
 		err := ps.Add(ctx, party)
@@ -150,10 +142,9 @@ func TestPartyPagination(t *testing.T) {
 }
 
 func testPartyPaginationReturnsTheSpecifiedParty(t *testing.T) {
-	bs, pt, cleanup := setupPartyTest(t)
-	defer cleanup(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	bs, pt := setupPartyTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -180,10 +171,9 @@ func testPartyPaginationReturnsTheSpecifiedParty(t *testing.T) {
 }
 
 func testPartyPaginationReturnAllParties(t *testing.T) {
-	bs, pt, cleanup := setupPartyTest(t)
-	defer cleanup(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	bs, pt := setupPartyTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -216,10 +206,9 @@ func testPartyPaginationReturnAllParties(t *testing.T) {
 }
 
 func testPartyPaginationReturnsFirstPage(t *testing.T) {
-	bs, pt, cleanup := setupPartyTest(t)
-	defer cleanup(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	bs, pt := setupPartyTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -254,10 +243,9 @@ func testPartyPaginationReturnsFirstPage(t *testing.T) {
 }
 
 func testPartyPaginationReturnsLastPage(t *testing.T) {
-	bs, pt, cleanup := setupPartyTest(t)
-	defer cleanup(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	bs, pt := setupPartyTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -292,10 +280,9 @@ func testPartyPaginationReturnsLastPage(t *testing.T) {
 }
 
 func testPartyPaginationReturnsPageTraversingForward(t *testing.T) {
-	bs, pt, cleanup := setupPartyTest(t)
-	defer cleanup(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	bs, pt := setupPartyTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -336,10 +323,9 @@ func testPartyPaginationReturnsPageTraversingForward(t *testing.T) {
 }
 
 func testPartyPaginationReturnsPageTraversingBackward(t *testing.T) {
-	bs, pt, cleanup := setupPartyTest(t)
-	defer cleanup(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	bs, pt := setupPartyTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -380,10 +366,9 @@ func testPartyPaginationReturnsPageTraversingBackward(t *testing.T) {
 }
 
 func testPartyPaginationReturnsTheSpecifiedPartyNewestFirst(t *testing.T) {
-	bs, pt, cleanup := setupPartyTest(t)
-	defer cleanup(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	bs, pt := setupPartyTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -415,10 +400,9 @@ func testPartyPaginationReturnsTheSpecifiedPartyNewestFirst(t *testing.T) {
 }
 
 func testPartyPaginationReturnAllPartiesNewestFirst(t *testing.T) {
-	bs, pt, cleanup := setupPartyTest(t)
-	defer cleanup(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	bs, pt := setupPartyTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -451,10 +435,9 @@ func testPartyPaginationReturnAllPartiesNewestFirst(t *testing.T) {
 }
 
 func testPartyPaginationReturnsFirstPageNewestFirst(t *testing.T) {
-	bs, pt, cleanup := setupPartyTest(t)
-	defer cleanup(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	bs, pt := setupPartyTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -489,10 +472,9 @@ func testPartyPaginationReturnsFirstPageNewestFirst(t *testing.T) {
 }
 
 func testPartyPaginationReturnsLastPageNewestFirst(t *testing.T) {
-	bs, pt, cleanup := setupPartyTest(t)
-	defer cleanup(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	bs, pt := setupPartyTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -527,10 +509,9 @@ func testPartyPaginationReturnsLastPageNewestFirst(t *testing.T) {
 }
 
 func testPartyPaginationReturnsPageTraversingForwardNewestFirst(t *testing.T) {
-	bs, pt, cleanup := setupPartyTest(t)
-	defer cleanup(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	bs, pt := setupPartyTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -571,10 +552,9 @@ func testPartyPaginationReturnsPageTraversingForwardNewestFirst(t *testing.T) {
 }
 
 func testPartyPaginationReturnsPageTraversingBackwardNewestFirst(t *testing.T) {
-	bs, pt, cleanup := setupPartyTest(t)
-	defer cleanup(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	bs, pt := setupPartyTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
