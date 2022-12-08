@@ -13,8 +13,6 @@
 package steps
 
 import (
-	"fmt"
-
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"github.com/cucumber/godog"
 )
@@ -33,7 +31,6 @@ func TheOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *godo
 		match := false
 		for _, e := range data {
 			o := e.Order()
-			fmt.Println(o)
 			if o.PartyId != party || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != size || stringToU64(o.Price) != price {
 				continue
 			}
