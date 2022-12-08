@@ -26,7 +26,7 @@ Feature: Test margin for lp near price monitoring boundaries
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config          |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
@@ -57,7 +57,6 @@ Feature: Test margin for lp near price monitoring boundaries
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1       | 900       | 1100      | 1000         | 78000000       | 10            |
 
-
     # at this point what's left on the book is the buy @ 900 and sell @ 1100
     # so the best bid/ask coincides with the price monitoring bounds.
     # Since the lp1 offset is +/- 100 (depending on side) the lp1 volume "should" go to 800 and 1200
@@ -67,11 +66,11 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the parties should have the following margin levels:
       | party | market id | maintenance | search   | initial  | release  |
-      | lp1   | ETH/DEC21 | 17333400    | 19066740 | 20800080 | 24266760 |
+      | lp1   | ETH/DEC21 | 9750000     | 10725000 | 11700000 | 13650000 |
 
     And the parties should have the following account balances:
-      | party | asset | market id | margin   | general | bond     |
-      | lp1   | ETH   | ETH/DEC21 | 20800080 | 1199920 | 78000000 |
+      | party | asset | market id | margin   | general  | bond     |
+      | lp1   | ETH   | ETH/DEC21 | 11700000 | 10300000 | 78000000 |
 
 
     Then the parties place the following orders:
@@ -80,7 +79,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the parties should have the following margin levels:
       | party | market id | maintenance | search   | initial  | release  |
-      | lp1   | ETH/DEC21 | 17333400    | 19066740 | 20800080 | 24266760 |
+      | lp1   | ETH/DEC21 | 9750000     | 10725000 | 11700000 | 13650000 |
 
     # now we place an order which makes the best bid 901.
     Then the parties place the following orders:
@@ -92,14 +91,16 @@ Feature: Test margin for lp near price monitoring boundaries
     # Hence a lot more volume is required to meet commitment and thus the margin requirement jumps substantially.
 
     And the parties should have the following margin levels:
-      | party | market id | maintenance | search   | initial   | release   |
-      | lp1   | ETH/DEC21 | 86666700    | 95333370 | 104000040 | 121333380 |
+      | party | market id | maintenance | search   | initial  | release  |
+      | lp1   | ETH/DEC21 | 9737900     | 10711690 | 11685480 | 13633060 |
 
   Scenario: second scenario for volume at near price monitoring bounds with log-normal
 
     Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau     | mu | r | sigma |
       | 0.000001      | 0.00273 | 0  | 0 | 1.2   |
+    #rf_short = 0.3611932
+    #rf_long = 0.268130582
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
@@ -107,7 +108,7 @@ Feature: Test margin for lp near price monitoring boundaries
       | horizon | probability | auction extension |
       | 43200   | 0.982       | 300               |
     And the markets:
-      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          |
+      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
       | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
@@ -140,25 +141,22 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price | volume |
-      | sell | 1109  | 90173  |
+      | sell | 1209  | 41357  |
+      | sell | 1109  | 1      |
       | buy  | 901   | 0      |
-      | buy  | 900   | 111113 |
-
-
-    # at this point what's left on the book is the buy @ 900 and sell @ 1109
-    # so the best bid/ask coincides with the price monitoring bounds.
-    # Since the lp1 offset is +/- 100 (depending on side) the lp1 volume "should" go to 800 and 1209
-    # but because the price monitoring bounds are 900 and 1109 the volume gets pushed to these
-    # i.e. it's placed at 900 / 1109.
-    # As these are the best bid / best ask the probability of trading used is 1/2.
+      | buy  | 900   | 1      |
+      | buy  | 800   | 62500  |
+    # LP_vol: 50000000/1209=41357
+    # LP_vol: 50000000/800=62500
 
     And the parties should have the following margin levels:
       | party | market id  | maintenance | search   | initial  | release  |
-      | lp1   | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |
+      | lp1   | ETH2/MAR22 | 16758162    | 18433978 | 20109794 | 23461426 |
 
+    # Maitenance_margin: 41457*1000*0.3611932+62500*1000*0.268130582=31732147.87
     And the parties should have the following account balances:
       | party | asset | market id  | margin   | general  | bond     |
-      | lp1   | ETH2  | ETH2/MAR22 | 39083413 | 10916587 | 50000000 |
+      | lp1   | ETH2  | ETH2/MAR22 | 20109794 | 29890206 | 50000000 |
 
     Then the parties place the following orders:
       | party  | market id  | side | volume | price | resulting trades | type       | tif     | reference |
@@ -169,14 +167,15 @@ Feature: Test margin for lp near price monitoring boundaries
       | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3611         | 50000000       | 10            |
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price | volume |
-      | sell | 1109  | 90173  |
+      | sell | 1209  | 41357  |
+      | sell | 1109  | 1      |
       | buy  | 901   | 0      |
-      | buy  | 900   | 111114 |
-
+      | buy  | 900   | 2      |
+      | buy  | 800   | 62500  |
 
     And the parties should have the following margin levels:
       | party | market id  | maintenance | search   | initial  | release  |
-      | lp1   | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |
+      | lp1   | ETH2/MAR22 | 16758162    | 18433978 | 20109794 | 23461426 |
 
     # now we place an order which makes the best bid 901.
     Then the parties place the following orders:
@@ -187,18 +186,15 @@ Feature: Test margin for lp near price monitoring boundaries
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3611         | 50000000       | 10            |
 
-
-    # the lp1 one volume on this side should go to 801 but because price monitoring bound is still 900 it gets pushed to 900.
-    # but 900 is no longer the best bid, so the risk model is used to get prob of trading. This now given by the log-normal model
-    # Hence a bit volume is required to meet commitment and thus the margin requirement moves but not much.
-
     Then the order book should have the following volumes for market "ETH2/MAR22":
       | side | price | volume |
-      | sell | 1109  | 90173  |
+      | sell | 1209  | 41357  |
+      | sell | 1109  | 1      |
       | buy  | 901   | 1      |
-      | buy  | 900   | 112667 |
-      | buy  | 899   | 0      |
+      | buy  | 900   | 2      |
+      | buy  | 801   | 62422  |
 
     And the parties should have the following margin levels:
       | party | market id  | maintenance | search   | initial  | release  |
-      | lp1   | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |
+      | lp1   | ETH2/MAR22 | 16737248    | 18410972 | 20084697 | 23432147 |
+
