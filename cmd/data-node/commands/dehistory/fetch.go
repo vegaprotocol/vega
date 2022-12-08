@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/datanode/dehistory"
+	"google.golang.org/grpc/status"
 
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
@@ -112,4 +113,13 @@ func verifyChainID(log *logging.Logger, connConfig sqlstore.ConnectionConfig, ch
 		return fmt.Errorf("failed to verify chain id:%w", err)
 	}
 	return nil
+}
+
+func errorFromGrpcError(msg string, err error) error {
+	s, ok := status.FromError(err)
+	if !ok {
+		return fmt.Errorf("%s:%s", msg, err)
+	}
+
+	return fmt.Errorf("%s:%s", msg, s.Details())
 }
