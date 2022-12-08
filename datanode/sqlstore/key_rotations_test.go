@@ -39,9 +39,8 @@ func TestKeyRotationsCursorPagination(t *testing.T) {
 }
 
 func testKeyRotationPaginationNoPagination(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -61,9 +60,8 @@ func testKeyRotationPaginationNoPagination(t *testing.T) {
 }
 
 func testKeyRotationPaginationFirstPage(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	first := int32(3)
@@ -84,9 +82,8 @@ func testKeyRotationPaginationFirstPage(t *testing.T) {
 }
 
 func testKeyRotationPaginationLastPage(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	last := int32(3)
@@ -107,9 +104,8 @@ func testKeyRotationPaginationLastPage(t *testing.T) {
 }
 
 func testKeyRotationPaginationFirstAndAfter(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	first := int32(3)
@@ -131,9 +127,8 @@ func testKeyRotationPaginationFirstAndAfter(t *testing.T) {
 }
 
 func testKeyRotationPaginationLastAndBefore(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	last := int32(3)
@@ -156,9 +151,8 @@ func testKeyRotationPaginationLastAndBefore(t *testing.T) {
 }
 
 func testKeyRotationPaginationNoPaginationNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -178,9 +172,8 @@ func testKeyRotationPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationFirstPageNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	first := int32(3)
@@ -201,9 +194,8 @@ func testKeyRotationPaginationFirstPageNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationLastPageNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	last := int32(3)
@@ -224,9 +216,8 @@ func testKeyRotationPaginationLastPageNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationFirstAndAfterNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	first := int32(3)
@@ -248,9 +239,8 @@ func testKeyRotationPaginationFirstAndAfterNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationLastAndBeforeNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	last := int32(3)
@@ -272,9 +262,8 @@ func testKeyRotationPaginationLastAndBeforeNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeNoPagination(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -294,9 +283,8 @@ func testKeyRotationPaginationForNodeNoPagination(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeFirstPage(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	first := int32(3)
@@ -317,9 +305,8 @@ func testKeyRotationPaginationForNodeFirstPage(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeLastPage(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	last := int32(3)
@@ -340,9 +327,8 @@ func testKeyRotationPaginationForNodeLastPage(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeFirstAndAfter(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	first := int32(3)
@@ -364,9 +350,8 @@ func testKeyRotationPaginationForNodeFirstAndAfter(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeLastAndBefore(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	last := int32(3)
@@ -388,9 +373,8 @@ func testKeyRotationPaginationForNodeLastAndBefore(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeNoPaginationNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -410,9 +394,8 @@ func testKeyRotationPaginationForNodeNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeFirstPageNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	first := int32(3)
@@ -433,9 +416,8 @@ func testKeyRotationPaginationForNodeFirstPageNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeLastPageNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	last := int32(3)
@@ -456,9 +438,8 @@ func testKeyRotationPaginationForNodeLastPageNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeFirstAndAfterNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	first := int32(3)
@@ -480,9 +461,8 @@ func testKeyRotationPaginationForNodeFirstAndAfterNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeLastAndBeforeNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	last := int32(3)
@@ -511,15 +491,15 @@ func setKeyRotationStoreTest(t *testing.T, ctx context.Context) (*sqlstore.KeyRo
 
 	keyRotations := make([]entities.KeyRotation, 20)
 	blockTime := time.Date(2022, 8, 2, 9, 0, 0, 0, time.Local)
-	block := addTestBlockForTime(t, bs, blockTime)
+	block := addTestBlockForTime(t, ctx, bs, blockTime)
 
-	addTestNode(t, ns, block, "deadbeef01")
-	addTestNode(t, ns, block, "deadbeef02")
+	addTestNode(t, ctx, ns, block, "deadbeef01")
+	addTestNode(t, ctx, ns, block, "deadbeef02")
 
 	for i := 0; i < 2; i++ {
 		for j := 0; j < 10; j++ {
 			blockTime = blockTime.Add(time.Minute)
-			block := addTestBlockForTime(t, bs, blockTime)
+			block := addTestBlockForTime(t, ctx, bs, blockTime)
 
 			kr := entities.KeyRotation{
 				NodeID:      entities.NodeID(fmt.Sprintf("deadbeef%02d", i+1)),

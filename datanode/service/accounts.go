@@ -22,10 +22,10 @@ import (
 )
 
 type AccountStore interface {
-	GetByID(id entities.AccountID) (entities.Account, error)
-	GetAll() ([]entities.Account, error)
+	GetByID(ctx context.Context, id entities.AccountID) (entities.Account, error)
+	GetAll(ctx context.Context) ([]entities.Account, error)
 	Obtain(ctx context.Context, a *entities.Account) error
-	Query(filter entities.AccountFilter) ([]entities.Account, error)
+	Query(ctx context.Context, filter entities.AccountFilter) ([]entities.Account, error)
 	QueryBalancesV1(ctx context.Context, filter entities.AccountFilter, pagination entities.OffsetPagination) ([]entities.AccountBalance, error)
 	QueryBalances(ctx context.Context, filter entities.AccountFilter, pagination entities.CursorPagination) ([]entities.AccountBalance, entities.PageInfo, error)
 }
@@ -33,7 +33,7 @@ type AccountStore interface {
 type BalanceStore interface {
 	Flush(ctx context.Context) ([]entities.AccountBalance, error)
 	Add(b entities.AccountBalance) error
-	Query(filter entities.AccountFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedBalance, entities.PageInfo, error)
+	Query(ctx context.Context, filter entities.AccountFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedBalance, entities.PageInfo, error)
 }
 
 type Account struct {
@@ -52,20 +52,20 @@ func NewAccount(aStore AccountStore, bStore BalanceStore, log *logging.Logger) *
 	}
 }
 
-func (a *Account) GetByID(id entities.AccountID) (entities.Account, error) {
-	return a.aStore.GetByID(id)
+func (a *Account) GetByID(ctx context.Context, id entities.AccountID) (entities.Account, error) {
+	return a.aStore.GetByID(ctx, id)
 }
 
-func (a *Account) GetAll() ([]entities.Account, error) {
-	return a.aStore.GetAll()
+func (a *Account) GetAll(ctx context.Context) ([]entities.Account, error) {
+	return a.aStore.GetAll(ctx)
 }
 
 func (a *Account) Obtain(ctx context.Context, acc *entities.Account) error {
 	return a.aStore.Obtain(ctx, acc)
 }
 
-func (a *Account) Query(filter entities.AccountFilter) ([]entities.Account, error) {
-	return a.aStore.Query(filter)
+func (a *Account) Query(ctx context.Context, filter entities.AccountFilter) ([]entities.Account, error) {
+	return a.aStore.Query(ctx, filter)
 }
 
 func (a *Account) QueryBalancesV1(ctx context.Context, filter entities.AccountFilter, pagination entities.OffsetPagination) ([]entities.AccountBalance, error) {
@@ -89,8 +89,8 @@ func (a *Account) Flush(ctx context.Context) error {
 	return nil
 }
 
-func (a *Account) QueryAggregatedBalances(filter entities.AccountFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedBalance, entities.PageInfo, error) {
-	return a.bStore.Query(filter, dateRange, pagination)
+func (a *Account) QueryAggregatedBalances(ctx context.Context, filter entities.AccountFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedBalance, entities.PageInfo, error) {
+	return a.bStore.Query(ctx, filter, dateRange, pagination)
 }
 
 func (a *Account) ObserveAccountBalances(ctx context.Context, retries int, marketID string,
