@@ -340,7 +340,16 @@ func (p *Store) AddSnapshotData(ctx context.Context, historySnapshot snapshot.Hi
 }
 
 func (p *Store) GetHighestBlockHeightEntry() (SegmentIndexEntry, error) {
-	return p.index.GetHighestBlockHeightEntry()
+	entry, err := p.index.GetHighestBlockHeightEntry()
+	if err != nil {
+		if errors.Is(err, ErrIndexEntryNotFound) {
+			return SegmentIndexEntry{}, ErrSegmentNotFound
+		}
+
+		return SegmentIndexEntry{}, fmt.Errorf("failed to get highest block height entry from index:%w", err)
+	}
+
+	return entry, nil
 }
 
 func (p *Store) ListAllHistorySegmentsOldestFirst() ([]SegmentIndexEntry, error) {
