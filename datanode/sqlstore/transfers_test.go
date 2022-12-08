@@ -47,18 +47,15 @@ func TestTransfersPagination(t *testing.T) {
 }
 
 func testTransfersGetTransferToOrFromParty(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	now := time.Now()
-	block := getTestBlock(t, now)
+	block := getTestBlock(t, ctx, now)
 	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, accounts, block)
+	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
 
 	transfers := sqlstore.NewTransfers(connectionSource)
-
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
 
 	sourceTransferProto := &eventspb.Transfer{
 		Id:              "deadd0d0",
@@ -83,9 +80,9 @@ func testTransfersGetTransferToOrFromParty(t *testing.T) {
 		}},
 	}
 
-	transfer, err := entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
+	transfer, err := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
 	assert.NoError(t, err)
-	err = transfers.Upsert(context.Background(), transfer)
+	err = transfers.Upsert(ctx, transfer)
 	assert.NoError(t, err)
 
 	sourceTransferProto2 := &eventspb.Transfer{
@@ -106,9 +103,9 @@ func testTransfersGetTransferToOrFromParty(t *testing.T) {
 		}},
 	}
 
-	transfer, err = entities.TransferFromProto(context.Background(), sourceTransferProto2, generateTxHash(), block.VegaTime, accounts)
+	transfer, err = entities.TransferFromProto(ctx, sourceTransferProto2, generateTxHash(), block.VegaTime, accounts)
 	assert.NoError(t, err)
-	err = transfers.Upsert(context.Background(), transfer)
+	err = transfers.Upsert(ctx, transfer)
 	assert.NoError(t, err)
 
 	retrieved, _, err := transfers.GetTransfersToOrFromParty(ctx, accountTo.PartyID, entities.CursorPagination{})
@@ -116,26 +113,23 @@ func testTransfersGetTransferToOrFromParty(t *testing.T) {
 		t.Fatalf("f%s", err)
 	}
 	assert.Equal(t, 2, len(retrieved))
-	retrievedTransferProto, _ := retrieved[0].ToProto(accounts)
+	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
 	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
 
-	retrievedTransferProto, _ = retrieved[1].ToProto(accounts)
+	retrievedTransferProto, _ = retrieved[1].ToProto(ctx, accounts)
 	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
 }
 
 func testTransfersGetTransfersByParty(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	now := time.Now()
-	block := getTestBlock(t, now)
+	block := getTestBlock(t, ctx, now)
 	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, accounts, block)
+	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
 
 	transfers := sqlstore.NewTransfers(connectionSource)
-
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
 
 	reason := "some terrible reason"
 	sourceTransferProto := &eventspb.Transfer{
@@ -162,8 +156,8 @@ func testTransfersGetTransfersByParty(t *testing.T) {
 		Reason: &reason,
 	}
 
-	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(context.Background(), transfer)
+	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
+	transfers.Upsert(ctx, transfer)
 
 	sourceTransferProto2 := &eventspb.Transfer{
 		Id:              "deadd0d0",
@@ -183,15 +177,15 @@ func testTransfersGetTransfersByParty(t *testing.T) {
 		}},
 	}
 
-	transfer, _ = entities.TransferFromProto(context.Background(), sourceTransferProto2, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(context.Background(), transfer)
+	transfer, _ = entities.TransferFromProto(ctx, sourceTransferProto2, generateTxHash(), block.VegaTime, accounts)
+	transfers.Upsert(ctx, transfer)
 
 	retrieved, _, err := transfers.GetTransfersFromParty(ctx, accountFrom.PartyID, entities.CursorPagination{})
 	if err != nil {
 		t.Fatalf("f%s", err)
 	}
 	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ := retrieved[0].ToProto(accounts)
+	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
 	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
 
 	retrieved, _, err = transfers.GetTransfersToParty(ctx, accountTo.PartyID, entities.CursorPagination{})
@@ -199,23 +193,20 @@ func testTransfersGetTransfersByParty(t *testing.T) {
 		t.Fatalf("f%s", err)
 	}
 	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ = retrieved[0].ToProto(accounts)
+	retrievedTransferProto, _ = retrieved[0].ToProto(ctx, accounts)
 	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
 }
 
 func testTransfersGetFromAccountAndGetToAccount(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	now := time.Now()
-	block := getTestBlock(t, now)
+	block := getTestBlock(t, ctx, now)
 	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, accounts, block)
+	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
 
 	transfers := sqlstore.NewTransfers(connectionSource)
-
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
 
 	sourceTransferProto1 := &eventspb.Transfer{
 		Id:              "deadd0d0",
@@ -235,8 +226,8 @@ func testTransfersGetFromAccountAndGetToAccount(t *testing.T) {
 		}},
 	}
 
-	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto1, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(context.Background(), transfer)
+	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto1, generateTxHash(), block.VegaTime, accounts)
+	transfers.Upsert(ctx, transfer)
 
 	sourceTransferProto2 := &eventspb.Transfer{
 		Id:              "deadd0d1",
@@ -256,46 +247,43 @@ func testTransfersGetFromAccountAndGetToAccount(t *testing.T) {
 		}},
 	}
 
-	transfer, _ = entities.TransferFromProto(context.Background(), sourceTransferProto2, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(context.Background(), transfer)
+	transfer, _ = entities.TransferFromProto(ctx, sourceTransferProto2, generateTxHash(), block.VegaTime, accounts)
+	transfers.Upsert(ctx, transfer)
 
 	retrieved, _, _ := transfers.GetAll(ctx, entities.CursorPagination{})
 	assert.Equal(t, 2, len(retrieved))
 
 	retrieved, _, _ = transfers.GetTransfersFromAccount(ctx, accountFrom.ID, entities.CursorPagination{})
 	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ := retrieved[0].ToProto(accounts)
+	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
 	assert.Equal(t, sourceTransferProto1, retrievedTransferProto)
 
 	retrieved, _, _ = transfers.GetTransfersToAccount(ctx, accountTo.ID, entities.CursorPagination{})
 	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ = retrieved[0].ToProto(accounts)
+	retrievedTransferProto, _ = retrieved[0].ToProto(ctx, accounts)
 	assert.Equal(t, sourceTransferProto1, retrievedTransferProto)
 
 	retrieved, _, _ = transfers.GetTransfersFromAccount(ctx, accountTo.ID, entities.CursorPagination{})
 	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ = retrieved[0].ToProto(accounts)
+	retrievedTransferProto, _ = retrieved[0].ToProto(ctx, accounts)
 	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
 
 	retrieved, _, _ = transfers.GetTransfersToAccount(ctx, accountFrom.ID, entities.CursorPagination{})
 	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ = retrieved[0].ToProto(accounts)
+	retrievedTransferProto, _ = retrieved[0].ToProto(ctx, accounts)
 	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
 }
 
 func testTransfersUpdatesInDifferentBlocks(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	now := time.Now()
-	block := getTestBlock(t, now)
+	block := getTestBlock(t, ctx, now)
 	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, accounts, block)
+	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
 
 	transfers := sqlstore.NewTransfers(connectionSource)
-
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
 
 	deliverOn := block.VegaTime.Add(1 * time.Hour)
 
@@ -313,10 +301,10 @@ func testTransfersUpdatesInDifferentBlocks(t *testing.T) {
 		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
 	}
 
-	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(context.Background(), transfer)
+	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
+	transfers.Upsert(ctx, transfer)
 
-	block = getTestBlock(t, block.VegaTime.Add(1*time.Microsecond))
+	block = getTestBlock(t, ctx, block.VegaTime.Add(1*time.Microsecond))
 	deliverOn = deliverOn.Add(1 * time.Minute)
 	sourceTransferProto = &eventspb.Transfer{
 		Id:              "deadd0d0",
@@ -331,28 +319,25 @@ func testTransfersUpdatesInDifferentBlocks(t *testing.T) {
 		Timestamp:       block.VegaTime.UnixNano(),
 		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
 	}
-	transfer, _ = entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(context.Background(), transfer)
+	transfer, _ = entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
+	transfers.Upsert(ctx, transfer)
 
 	retrieved, _, _ := transfers.GetAll(ctx, entities.CursorPagination{})
 	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ := retrieved[0].ToProto(accounts)
+	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
 	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
 }
 
 func testTransfersUpdateInSameBlock(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	now := time.Now()
-	block := getTestBlock(t, now)
+	block := getTestBlock(t, ctx, now)
 	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, accounts, block)
+	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
 
 	transfers := sqlstore.NewTransfers(connectionSource)
-
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
 
 	deliverOn := block.VegaTime.Add(1 * time.Hour)
 
@@ -370,8 +355,8 @@ func testTransfersUpdateInSameBlock(t *testing.T) {
 		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
 	}
 
-	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(context.Background(), transfer)
+	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
+	transfers.Upsert(ctx, transfer)
 
 	deliverOn = deliverOn.Add(1 * time.Minute)
 	sourceTransferProto = &eventspb.Transfer{
@@ -387,28 +372,25 @@ func testTransfersUpdateInSameBlock(t *testing.T) {
 		Timestamp:       block.VegaTime.UnixNano(),
 		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
 	}
-	transfer, _ = entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(context.Background(), transfer)
+	transfer, _ = entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
+	transfers.Upsert(ctx, transfer)
 
 	retrieved, _, _ := transfers.GetAll(ctx, entities.CursorPagination{})
 	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ := retrieved[0].ToProto(accounts)
+	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
 	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
 }
 
 func testTransfersAddAndRetrieveOneOffTransfer(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	now := time.Now()
-	block := getTestBlock(t, now)
+	block := getTestBlock(t, ctx, now)
 	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, accounts, block)
+	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
 
 	transfers := sqlstore.NewTransfers(connectionSource)
-
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
 
 	deliverOn := block.VegaTime.Add(1 * time.Hour)
 
@@ -426,27 +408,24 @@ func testTransfersAddAndRetrieveOneOffTransfer(t *testing.T) {
 		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
 	}
 
-	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(context.Background(), transfer)
+	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
+	transfers.Upsert(ctx, transfer)
 	retrieved, _, _ := transfers.GetAll(ctx, entities.CursorPagination{})
 	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ := retrieved[0].ToProto(accounts)
+	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
 	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
 }
 
 func testTransfersAddAndRetrieveRecurringTransfer(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	now := time.Now()
-	block := getTestBlock(t, now)
+	block := getTestBlock(t, ctx, now)
 	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, accounts, block)
+	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
 
 	transfers := sqlstore.NewTransfers(connectionSource)
-
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
 
 	sourceTransferProto := &eventspb.Transfer{
 		Id:              "deadd0d0",
@@ -466,24 +445,24 @@ func testTransfersAddAndRetrieveRecurringTransfer(t *testing.T) {
 		}},
 	}
 
-	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(context.Background(), transfer)
+	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
+	transfers.Upsert(ctx, transfer)
 
 	retrieved, _, _ := transfers.GetAll(ctx, entities.CursorPagination{})
 	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ := retrieved[0].ToProto(accounts)
+	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
 	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
 }
 
-func getTestBlock(t *testing.T, testTime time.Time) entities.Block {
+func getTestBlock(t *testing.T, ctx context.Context, testTime time.Time) entities.Block {
 	t.Helper()
 	blocks := sqlstore.NewBlocks(connectionSource)
 	vegaTime := time.UnixMicro(testTime.UnixMicro())
-	block := addTestBlockForTime(t, blocks, vegaTime)
+	block := addTestBlockForTime(t, ctx, blocks, vegaTime)
 	return block
 }
 
-func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.Block) (accountFrom entities.Account,
+func getTestAccounts(t *testing.T, ctx context.Context, accounts *sqlstore.Accounts, block entities.Block) (accountFrom entities.Account,
 	accountTo entities.Account,
 ) {
 	t.Helper()
@@ -501,7 +480,7 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 		VegaTime:      block.VegaTime,
 	}
 
-	err := assets.Add(context.Background(), testAsset)
+	err := assets.Add(ctx, testAsset)
 	if err != nil {
 		t.Fatalf("failed to add test asset:%s", err)
 	}
@@ -512,7 +491,7 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 		Type:     vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
 		VegaTime: block.VegaTime,
 	}
-	err = accounts.Obtain(context.Background(), &accountFrom)
+	err = accounts.Obtain(ctx, &accountFrom)
 	if err != nil {
 		t.Fatalf("failed to obtain from account:%s", err)
 	}
@@ -524,7 +503,7 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 		Type:     vega.AccountType_ACCOUNT_TYPE_GENERAL,
 		VegaTime: block.VegaTime,
 	}
-	err = accounts.Obtain(context.Background(), &accountTo)
+	err = accounts.Obtain(ctx, &accountTo)
 	if err != nil {
 		t.Fatalf("failed to obtain to account:%s", err)
 	}
@@ -533,17 +512,17 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 }
 
 func testTransferPaginationNoPagination(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	transfers := sqlstore.NewTransfers(connectionSource)
 
-	testTransfers := addTransfers(timeoutCtx, t, bs, transfers)
+	testTransfers := addTransfers(ctx, t, bs, transfers)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := transfers.GetAll(timeoutCtx, pagination)
+	got, pageInfo, err := transfers.GetAll(ctx, pagination)
 
 	require.NoError(t, err)
 	assert.Equal(t, testTransfers, got)
@@ -560,17 +539,17 @@ func testTransferPaginationNoPagination(t *testing.T) {
 }
 
 func testTransferPaginationFirst(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	bs := sqlstore.NewBlocks(connectionSource)
 	transfers := sqlstore.NewTransfers(connectionSource)
 
-	testTransfers := addTransfers(timeoutCtx, t, bs, transfers)
+	testTransfers := addTransfers(ctx, t, bs, transfers)
 
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := transfers.GetAll(timeoutCtx, pagination)
+	got, pageInfo, err := transfers.GetAll(ctx, pagination)
 
 	require.NoError(t, err)
 	want := testTransfers[:3]
@@ -588,17 +567,17 @@ func testTransferPaginationFirst(t *testing.T) {
 }
 
 func testTransferPaginationLast(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	transfers := sqlstore.NewTransfers(connectionSource)
-	testTransfers := addTransfers(timeoutCtx, t, bs, transfers)
+	testTransfers := addTransfers(ctx, t, bs, transfers)
 
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := transfers.GetAll(timeoutCtx, pagination)
+	got, pageInfo, err := transfers.GetAll(ctx, pagination)
 
 	require.NoError(t, err)
 	want := testTransfers[7:]
@@ -616,18 +595,18 @@ func testTransferPaginationLast(t *testing.T) {
 }
 
 func testTransferPaginationFirstAfter(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	transfers := sqlstore.NewTransfers(connectionSource)
-	testTransfers := addTransfers(timeoutCtx, t, bs, transfers)
+	testTransfers := addTransfers(ctx, t, bs, transfers)
 
 	first := int32(3)
 	after := testTransfers[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := transfers.GetAll(timeoutCtx, pagination)
+	got, pageInfo, err := transfers.GetAll(ctx, pagination)
 
 	require.NoError(t, err)
 	want := testTransfers[3:6]
@@ -645,12 +624,12 @@ func testTransferPaginationFirstAfter(t *testing.T) {
 }
 
 func testTransferPaginationLastBefore(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	transfers := sqlstore.NewTransfers(connectionSource)
-	testTransfers := addTransfers(timeoutCtx, t, bs, transfers)
+	testTransfers := addTransfers(ctx, t, bs, transfers)
 
 	last := int32(3)
 	before := entities.NewCursor(entities.TransferCursor{
@@ -659,7 +638,7 @@ func testTransferPaginationLastBefore(t *testing.T) {
 	}.String()).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	got, pageInfo, err := transfers.GetAll(timeoutCtx, pagination)
+	got, pageInfo, err := transfers.GetAll(ctx, pagination)
 
 	require.NoError(t, err)
 	want := testTransfers[4:7]
@@ -679,14 +658,14 @@ func testTransferPaginationLastBefore(t *testing.T) {
 func addTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transferStore *sqlstore.Transfers) []entities.Transfer {
 	t.Helper()
 	vegaTime := time.Now().Truncate(time.Microsecond)
-	block := addTestBlockForTime(t, bs, vegaTime)
+	block := addTestBlockForTime(t, ctx, bs, vegaTime)
 	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, accounts, block)
+	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
 
 	transfers := make([]entities.Transfer, 0, 10)
 	for i := 0; i < 10; i++ {
 		vegaTime = vegaTime.Add(time.Second)
-		addTestBlockForTime(t, bs, vegaTime)
+		addTestBlockForTime(t, ctx, bs, vegaTime)
 
 		amount, _ := decimal.NewFromString("10")
 		transfer := entities.Transfer{

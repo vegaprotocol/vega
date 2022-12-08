@@ -26,7 +26,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func addTestReward(t *testing.T, rs *sqlstore.Rewards,
+func addTestReward(t *testing.T,
+	ctx context.Context,
+	rs *sqlstore.Rewards,
 	party entities.Party,
 	asset entities.Asset,
 	marketID entities.MarketID,
@@ -49,7 +51,7 @@ func addTestReward(t *testing.T, rs *sqlstore.Rewards,
 		VegaTime:       block.VegaTime,
 		SeqNum:         seqNum,
 	}
-	err := rs.Add(context.Background(), r)
+	err := rs.Add(ctx, r)
 	require.NoError(t, err)
 	return r
 }
@@ -73,20 +75,21 @@ func assertRewardsMatch(t *testing.T, expected, actual []entities.Reward) {
 }
 
 func TestRewards(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	ps := sqlstore.NewParties(connectionSource)
 	as := sqlstore.NewAssets(connectionSource)
 	rs := sqlstore.NewRewards(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 
-	asset1 := addTestAsset(t, as, block)
-	asset2 := addTestAsset(t, as, block)
+	asset1 := addTestAsset(t, ctx, as, block)
+	asset2 := addTestAsset(t, ctx, as, block)
 
 	market1 := entities.MarketID("deadbeef")
 	market2 := entities.MarketID("")
-	party1 := addTestParty(t, ps, block)
-	party2 := addTestParty(t, ps, block)
+	party1 := addTestParty(t, ctx, ps, block)
+	party2 := addTestParty(t, ctx, ps, block)
 
 	party1ID := party1.ID.String()
 	asset1ID := asset1.ID.String()
@@ -94,36 +97,36 @@ func TestRewards(t *testing.T) {
 	asset2ID := asset2.ID.String()
 
 	now := time.Now()
-	reward1 := addTestReward(t, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block, 1)
-	reward2 := addTestReward(t, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 2)
-	reward3 := addTestReward(t, rs, party2, asset1, market2, 3, "GlobalReward", now, block, 3)
-	reward4 := addTestReward(t, rs, party2, asset2, market2, 4, "GlobalReward", now, block, 4)
-	reward5 := addTestReward(t, rs, party2, asset2, market2, 5, "GlobalReward", now, block, 5)
+	reward1 := addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block, 1)
+	reward2 := addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 2)
+	reward3 := addTestReward(t, ctx, rs, party2, asset1, market2, 3, "GlobalReward", now, block, 3)
+	reward4 := addTestReward(t, ctx, rs, party2, asset2, market2, 4, "GlobalReward", now, block, 4)
+	reward5 := addTestReward(t, ctx, rs, party2, asset2, market2, 5, "GlobalReward", now, block, 5)
 
 	t.Run("GetAll", func(t *testing.T) {
 		expected := []entities.Reward{reward1, reward2, reward3, reward4, reward5}
-		actual, err := rs.GetAll(context.Background())
+		actual, err := rs.GetAll(ctx)
 		require.NoError(t, err)
 		assertRewardsMatch(t, expected, actual)
 	})
 
 	t.Run("GetByParty", func(t *testing.T) {
 		expected := []entities.Reward{reward1, reward2}
-		actual, err := rs.GetByOffset(context.Background(), &party1ID, nil, nil)
+		actual, err := rs.GetByOffset(ctx, &party1ID, nil, nil)
 		require.NoError(t, err)
 		assertRewardsMatch(t, expected, actual)
 	})
 
 	t.Run("GetByAsset", func(t *testing.T) {
 		expected := []entities.Reward{reward1, reward3}
-		actual, err := rs.GetByOffset(context.Background(), nil, &asset1ID, nil)
+		actual, err := rs.GetByOffset(ctx, nil, &asset1ID, nil)
 		require.NoError(t, err)
 		assertRewardsMatch(t, expected, actual)
 	})
 
 	t.Run("GetByAssetAndParty", func(t *testing.T) {
 		expected := []entities.Reward{reward1}
-		actual, err := rs.GetByOffset(context.Background(), &party1ID, &asset1ID, nil)
+		actual, err := rs.GetByOffset(ctx, &party1ID, &asset1ID, nil)
 		require.NoError(t, err)
 		assertRewardsMatch(t, expected, actual)
 	})
@@ -131,7 +134,7 @@ func TestRewards(t *testing.T) {
 	t.Run("GetPagination", func(t *testing.T) {
 		expected := []entities.Reward{reward4, reward3, reward2}
 		p := entities.OffsetPagination{Skip: 1, Limit: 3, Descending: true}
-		actual, err := rs.GetByOffset(context.Background(), nil, nil, &p)
+		actual, err := rs.GetByOffset(ctx, nil, nil, &p)
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual) // Explicitly check the order on this one
 	})
@@ -142,7 +145,7 @@ func TestRewards(t *testing.T) {
 			PartyID: party2.ID,
 			Amount:  decimal.NewFromInt(200),
 		}}
-		actual, err := rs.GetSummaries(context.Background(), &party2ID, &asset2ID)
+		actual, err := rs.GetSummaries(ctx, &party2ID, &asset2ID)
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	})
@@ -154,10 +157,6 @@ func setupRewardsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Rewards, *sqlst
 	rs := sqlstore.NewRewards(connectionSource)
 	ps := sqlstore.NewParties(connectionSource)
 	as := sqlstore.NewAssets(connectionSource)
-	DeleteEverything()
-
-	config := sqlstore.NewDefaultConfig()
-	config.ConnectionConfig.Port = testDBPort
 
 	return bs, rs, ps, as
 }
@@ -280,7 +279,7 @@ func populateTestRewards(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 		},
 	}
 
-	b := addTestBlock(t, bs)
+	b := addTestBlock(t, ctx, bs)
 	err := ps.Add(ctx, entities.Party{ID: partyID, VegaTime: &b.VegaTime})
 	require.NoError(t, err)
 
@@ -288,7 +287,7 @@ func populateTestRewards(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 	require.NoError(t, err)
 
 	for _, reward := range rewards {
-		addTestBlockForTime(t, bs, reward.VegaTime)
+		addTestBlockForTime(t, ctx, bs, reward.VegaTime)
 		err := rs.Add(ctx, reward)
 		require.NoError(t, err)
 	}
@@ -310,8 +309,8 @@ func TestRewardsPagination(t *testing.T) {
 
 func testRewardsCursorPaginationNoPagination(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
@@ -333,8 +332,8 @@ func testRewardsCursorPaginationNoPagination(t *testing.T) {
 
 func testRewardsCursorPaginationFirstPage(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
@@ -357,8 +356,8 @@ func testRewardsCursorPaginationFirstPage(t *testing.T) {
 
 func testRewardsCursorPaginationLastPage(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
@@ -381,8 +380,8 @@ func testRewardsCursorPaginationLastPage(t *testing.T) {
 
 func testRewardsCursorPaginationFirstPageAfter(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
@@ -407,8 +406,8 @@ func testRewardsCursorPaginationFirstPageAfter(t *testing.T) {
 
 func testRewardsCursorPaginationLastPageBefore(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
@@ -432,8 +431,8 @@ func testRewardsCursorPaginationLastPageBefore(t *testing.T) {
 
 func testRewardsCursorPaginationNoPaginationNewestFirst(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
@@ -455,8 +454,8 @@ func testRewardsCursorPaginationNoPaginationNewestFirst(t *testing.T) {
 
 func testRewardsCursorPaginationFirstPageNewestFirst(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
@@ -479,8 +478,8 @@ func testRewardsCursorPaginationFirstPageNewestFirst(t *testing.T) {
 
 func testRewardsCursorPaginationLastPageNewestFirst(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
@@ -503,8 +502,8 @@ func testRewardsCursorPaginationLastPageNewestFirst(t *testing.T) {
 
 func testRewardsCursorPaginationFirstPageAfterNewestFirst(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
@@ -529,8 +528,8 @@ func testRewardsCursorPaginationFirstPageAfterNewestFirst(t *testing.T) {
 
 func testRewardsCursorPaginationLastPageBeforeNewestFirst(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"

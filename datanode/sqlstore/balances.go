@@ -49,7 +49,7 @@ func (bs *Balances) Add(b entities.AccountBalance) error {
 	return nil
 }
 
-func (bs *Balances) Query(filter entities.AccountFilter, dateRange entities.DateRange,
+func (bs *Balances) Query(ctx context.Context, filter entities.AccountFilter, dateRange entities.DateRange,
 	pagination entities.CursorPagination,
 ) (*[]entities.AggregatedBalance, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
@@ -96,7 +96,7 @@ func (bs *Balances) Query(filter entities.AccountFilter, dateRange entities.Date
 	}
 
 	defer metrics.StartSQLQuery("Balances", "Query")()
-	rows, err := bs.Connection.Query(context.Background(), query, args...)
+	rows, err := bs.Connection.Query(ctx, query, args...)
 	if err != nil {
 		return nil, pageInfo, fmt.Errorf("querying balances: %w", err)
 	}
