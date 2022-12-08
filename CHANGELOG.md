@@ -14,6 +14,7 @@
 - [7064](https://github.com/vegaprotocol/vega/issues/7064) - Make `SQL` store tests run in temporary transactions instead of truncating all tables for each test
 
 ### 🐛 Fixes
+- [7011](https://github.com/vegaprotocol/vega/issues/7011) - Incorrect flagging of live orders when multiple updates in the same block
 - [7037](https://github.com/vegaprotocol/vega/issues/7037) - Reinstate permissions endpoints on the wallet API
 - [7034](https://github.com/vegaprotocol/vega/issues/7034) - Rename `network` to `name` in `admin.remove_network`
 - [7031](https://github.com/vegaprotocol/vega/issues/7031) - `datanode` expects protocol upgrade event in the right sequence
