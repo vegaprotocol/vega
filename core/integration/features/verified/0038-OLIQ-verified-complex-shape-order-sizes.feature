@@ -14,7 +14,7 @@ Feature: Verify the order size is correctly cumulated.
       | market.liquidityProvision.shapes.maxSize            | 10    |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
 
-  Scenario: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size (0038-OLIQ-003, 0038-OLIQ-004, 0038-OLIQ-005)
+  Scenario: 001: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size (0038-OLIQ-003, 0038-OLIQ-004, 0038-OLIQ-005)
 
     Given the parties deposit on asset's general account the following amount:
       | party      | asset | amount       |
@@ -64,22 +64,22 @@ Feature: Verify the order size is correctly cumulated.
 
     And the orders should have the following states:
       | party      | market id | side | volume | price    | status        |
-      | party-lp-1 | ETH/DEC19 | sell | 17     | 12000014 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | sell | 17     | 12000015 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | sell | 17     | 12000016 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | sell | 17     | 12000017 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | sell | 17     | 12000018 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | sell | 17     | 12000019 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | sell | 17     | 12000020 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | buy  | 19     | 12000008 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | buy  | 19     | 12000007 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | buy  | 19     | 12000006 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | buy  | 19     | 12000005 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | buy  | 19     | 12000004 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | buy  | 19     | 12000003 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | buy  | 19     | 12000002 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | buy  | 19     | 12000001 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | buy  | 19     | 12000000 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | sell | 5      | 12000020 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | sell | 5      | 12000019 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | sell | 5      | 12000018 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | sell | 5      | 12000017 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | sell | 5      | 12000016 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | sell | 5      | 12000015 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | sell | 5      | 12000014 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | buy  | 10     | 12000008 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | buy  | 10     | 12000007 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | buy  | 10     | 12000006 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | buy  | 10     | 12000005 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | buy  | 10     | 12000004 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | buy  | 10     | 12000003 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | buy  | 10     | 12000002 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | buy  | 10     | 12000001 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | buy  | 10     | 12000000 | STATUS_ACTIVE |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference  |
@@ -99,21 +99,20 @@ Feature: Verify the order size is correctly cumulated.
       | party3 | ETH/DEC19 | buy  | 167    | 12000000 | 0                | TYPE_LIMIT | TIF_GTC | party3-14 |
 
     Then the order book should have the following volumes for market "ETH/DEC19":
-      | side | price    | volume |
-      | sell | 12000020 | 185    |
-      | sell | 12000019 | 67     |
-      | sell | 12000018 | 67     |
-      | sell | 12000017 | 67     |
-      | sell | 12000016 | 67     |
-      | sell | 12000015 | 67     |
-      | sell | 12000014 | 27     |
-      | sell | 12000013 | 50     |
-      | buy  | 12000008 | 19     |
-      | buy  | 12000007 | 20     | # +1 here for the order used to set the midprice
-      | buy  | 12000006 | 20     |
-      | buy  | 12000005 | 69     |
-      | buy  | 12000004 | 69     |
-      | buy  | 12000003 | 69     |
-      | buy  | 12000002 | 69     |
-      | buy  | 12000001 | 69     |
-      | buy  | 12000000 | 186    |
+      | side | volume | price    |
+      | sell | 173    | 12000020 |
+      | sell | 55     | 12000019 |
+      | sell | 55     | 12000018 |
+      | sell | 55     | 12000017 |
+      | sell | 55     | 12000016 |
+      | sell | 55     | 12000015 |
+      | sell | 15     | 12000014 |
+      | buy  | 10     | 12000008 |
+      | buy  | 11     | 12000007 |
+      | buy  | 11     | 12000006 |
+      | buy  | 60     | 12000005 |
+      | buy  | 60     | 12000004 |
+      | buy  | 60     | 12000003 |
+      | buy  | 60     | 12000002 |
+      | buy  | 60     | 12000001 |
+      | buy  | 177    | 12000000 |
