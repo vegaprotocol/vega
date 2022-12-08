@@ -1,9 +1,21 @@
 # Changelog
 
-## Unreleased 0.64.0
+## Unreleased 0.65.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.64.0
 
 ### 🗑️ Deprecation
 - [7065](https://github.com/vegaprotocol/vega/issues/7065) - Scope technical commands on wallet command line
@@ -26,9 +38,9 @@
 
 ### 🛠 Improvements
 - [7003](https://github.com/vegaprotocol/vega/pull/7003) - Expose bus event stream on the `REST` API
-- [7044](https://github.com/vegaprotocol/vega/issues/7044) - Proof of work improvements 
+- [7044](https://github.com/vegaprotocol/vega/issues/7044) - Proof of work improvements
 - [7041](https://github.com/vegaprotocol/vega/issues/7041) - Change witness vote count to be based on voting power
-- [7073](https://github.com/vegaprotocol/vega/issues/7073) - Upgrade `btcd` library 
+- [7073](https://github.com/vegaprotocol/vega/issues/7073) - Upgrade `btcd` library
 
 ## 0.63.0
 
