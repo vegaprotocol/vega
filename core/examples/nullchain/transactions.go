@@ -106,6 +106,7 @@ func MarketProposalTxn(now time.Time, oraclePubkey string) (*walletpb.SubmitTran
 									ProbabilityOfTrading: 0.1,
 								},
 							},
+							LpPriceRange: "0.95",
 						},
 					},
 				},

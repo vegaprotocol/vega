@@ -28,6 +28,11 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a market change with position decimal places equal to 0 succeeds", testNewMarketChangeSubmissionWithPositionDecimalPlacesEqualTo0Succeeds)
 	t.Run("Submitting a market change with position decimal places above or equal to 6 fails", testNewMarketChangeSubmissionWithPositionDecimalPlacesAboveOrEqualTo7Fails)
 	t.Run("Submitting a market change with position decimal places below 6 succeeds", testNewMarketChangeSubmissionWithPositionDecimalPlacesBelow7Succeeds)
+	t.Run("Submitting a market change with lp price range 'banana' fails", testNewMarketChangeSubmissionWithLpRangeBananaFails)
+	t.Run("Submitting a market change with lp price range below 0 fails", testNewMarketChangeSubmissionWithLpRangeNegativeFails)
+	t.Run("Submitting a market change with lp price range equal to 0 fails", testNewMarketChangeSubmissionWithLpRangeZeroFails)
+	t.Run("Submitting a market change with lp price range in [0,100] range succeeds", testNewMarketChangeSubmissionWithLpRangeGreaterThan100)
+	t.Run("Submitting a market change with lp price range above 100 fails", testNewMarketChangeSubmissionWithLpRangePositiveSucceeds)
 	t.Run("Submitting a new market without price monitoring succeeds", testNewMarketChangeSubmissionWithoutPriceMonitoringSucceeds)
 	t.Run("Submitting a new market with price monitoring succeeds", testNewMarketChangeSubmissionWithPriceMonitoringSucceeds)
 	t.Run("Submitting a price monitoring change without triggers succeeds", testPriceMonitoringChangeSubmissionWithoutTriggersSucceeds)
@@ -279,6 +284,120 @@ func testNewMarketChangeSubmissionWithPositionDecimalPlacesBelow7Succeeds(t *tes
 	})
 
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.position_decimal_places"), commands.ErrMustBeWithinRange7)
+}
+
+func testNewMarketChangeSubmissionWithLpRangeBananaFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						LpPriceRange: "banana",
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrIsNotValidNumber)
+}
+
+func testNewMarketChangeSubmissionWithLpRangeNegativeFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						LpPriceRange: "-1e-17",
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBePositive)
+}
+
+func testNewMarketChangeSubmissionWithLpRangeGreaterThan100(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						LpPriceRange: "100.0000000000001",
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBeAtMost100)
+}
+
+func testNewMarketChangeSubmissionWithLpRangeZeroFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						LpPriceRange: "0",
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBePositive)
+}
+
+func testNewMarketChangeSubmissionWithLpRangePositiveSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						LpPriceRange: "1e-17",
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrIsNotValidNumber)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBePositive)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBeAtMost100)
+
+	err = checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						LpPriceRange: "0.95",
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrIsNotValidNumber)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBePositive)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBeAtMost100)
+
+	err = checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						LpPriceRange: "100",
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrIsNotValidNumber)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBePositive)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBeAtMost100)
 }
 
 func testNewMarketChangeSubmissionWithoutLiquidityMonitoringSucceeds(t *testing.T) {
