@@ -26,9 +26,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var (
-	ErrNotMapped = errors.New("error not mapped")
-)
+var ErrNotMapped = errors.New("error not mapped")
 
 type blockExplorerAPI struct {
 	Config
@@ -116,7 +114,7 @@ var errorMap = map[string]int32{
 // can be returned by gRPC API and therefore also REST, GraphQL will be mapped too.
 // It takes a standardised grpcCode, a Vega specific apiError, and optionally one
 // or more internal errors (error from the core, rather than API).
-func apiError(grpcCode codes.Code, apiError error, innerErrors ...error) error {
+func apiError(grpcCode codes.Code, apiError error) error {
 	s := status.Newf(grpcCode, "%v error", grpcCode)
 	// Create the API specific error detail for error e.g. missing party ID
 	detail := types.ErrorDetail{
@@ -130,16 +128,6 @@ func apiError(grpcCode codes.Code, apiError error, innerErrors ...error) error {
 		detail.Code = vegaCode
 	} else {
 		detail.Code = errorMap[ErrNotMapped.Error()]
-	}
-	// If there is an inner error (and possibly in the future, a config to turn this
-	// level of detail on/off) then process and append to inner.
-	first := true
-	for _, err := range innerErrors {
-		if !first {
-			detail.Inner += ", "
-		}
-		detail.Inner += err.Error()
-		first = false
 	}
 	// Pack the Vega domain specific errorDetails into the status returned by gRPC domain.
 	s, _ = s.WithDetails(&detail)
