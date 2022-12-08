@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7032](https://github.com/vegaprotocol/vega/issues/7032) - Make deposits and withdrawals `hypertables` and change `deposits_current` and `withdrawals_current` into views to improve resource usage
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -36,7 +36,7 @@
 
 
 ## 0.63.1
-
+ 
 ### 🛠 Improvements
 - [7003](https://github.com/vegaprotocol/vega/pull/7003) - Expose bus event stream on the `REST` API
 - [7044](https://github.com/vegaprotocol/vega/issues/7044) - Proof of work improvements
