@@ -156,6 +156,7 @@ func NewMarketFromSnapshot(
 		positionFactor:             positionFactor,
 		stateVarEngine:             stateVarEngine,
 		settlementDataInMarket:     em.SettlementData,
+		lpPriceRange:               mkt.LPPriceRange,
 	}
 
 	market.assetDP = uint32(assetDetails.DecimalPlaces())

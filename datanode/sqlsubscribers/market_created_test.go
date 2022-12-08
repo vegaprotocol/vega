@@ -150,5 +150,6 @@ func getTestMarket() types.Market {
 			Open:     0,
 			Close:    0,
 		},
+		LPPriceRange: num.DecimalFromFloat(0.95),
 	}
 }

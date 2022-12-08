@@ -33,6 +33,10 @@ func (r *newMarketResolver) PositionDecimalPlaces(ctx context.Context, obj *type
 	return int(obj.Changes.PositionDecimalPlaces), nil
 }
 
+func (r *newMarketResolver) LpPriceRange(ctx context.Context, obj *types.NewMarket) (string, error) {
+	return obj.Changes.LpPriceRange, nil
+}
+
 func (r *newMarketResolver) RiskParameters(ctx context.Context, obj *types.NewMarket) (RiskModel, error) {
 	switch rm := obj.Changes.RiskParameters.(type) {
 	case *types.NewMarketConfiguration_LogNormal:
