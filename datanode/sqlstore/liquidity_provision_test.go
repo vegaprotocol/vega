@@ -22,7 +22,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -45,38 +44,31 @@ func TestLiquidityProvisionPagination(t *testing.T) {
 	t.Run("should return the specified page of results if last and before are provided", testLiquidityProvisionPaginationLastBefore)
 }
 
-func setupLPTests(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.LiquidityProvision, *pgx.Conn) {
+func setupLPTests(t *testing.T) (*sqlstore.Blocks, *sqlstore.LiquidityProvision, sqlstore.Connection) {
 	t.Helper()
-
-	DeleteEverything()
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	lp := sqlstore.NewLiquidityProvision(connectionSource, logging.NewTestLogger())
 
-	config := NewTestConfig()
-	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
-	require.NoError(t, err)
-
-	return bs, lp, conn
+	return bs, lp, connectionSource.Connection
 }
 
 func testInsertNewInCurrentBlock(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, lp, conn := setupLPTests(t, ctx)
+	bs, lp, conn := setupLPTests(t)
 
 	var rowCount int
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	lpProto := getTestLiquidityProvision()
 
 	data, err := entities.LiquidityProvisionFromProto(lpProto[0], generateTxHash(), block.VegaTime)
 	require.NoError(t, err)
-	assert.NoError(t, lp.Upsert(context.Background(), data))
+	assert.NoError(t, lp.Upsert(ctx, data))
 	err = lp.Flush(ctx)
 	require.NoError(t, err)
 
@@ -85,25 +77,24 @@ func testInsertNewInCurrentBlock(t *testing.T) {
 }
 
 func testUpdateExistingInCurrentBlock(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, lp, conn := setupLPTests(t, ctx)
+	bs, lp, conn := setupLPTests(t)
 
 	var rowCount int
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	lpProto := getTestLiquidityProvision()
 
 	data, err := entities.LiquidityProvisionFromProto(lpProto[0], generateTxHash(), block.VegaTime)
 	require.NoError(t, err)
-	assert.NoError(t, lp.Upsert(context.Background(), data))
+	assert.NoError(t, lp.Upsert(ctx, data))
 
 	data.Reference = "Updated"
-	assert.NoError(t, lp.Upsert(context.Background(), data))
+	assert.NoError(t, lp.Upsert(ctx, data))
 	err = lp.Flush(ctx)
 	require.NoError(t, err)
 
@@ -112,11 +103,10 @@ func testUpdateExistingInCurrentBlock(t *testing.T) {
 }
 
 func testGetLPByReferenceAndParty(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, lp, conn := setupLPTests(t, ctx)
+	bs, lp, conn := setupLPTests(t)
 
 	var rowCount int
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
@@ -125,11 +115,11 @@ func testGetLPByReferenceAndParty(t *testing.T) {
 	lpProto := getTestLiquidityProvision()
 
 	for _, lpp := range lpProto {
-		block := addTestBlock(t, bs)
+		block := addTestBlock(t, ctx, bs)
 
 		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
-		assert.NoError(t, lp.Upsert(context.Background(), data))
+		assert.NoError(t, lp.Upsert(ctx, data))
 		err = lp.Flush(ctx)
 		require.NoError(t, err)
 
@@ -151,11 +141,10 @@ func testGetLPByReferenceAndParty(t *testing.T) {
 }
 
 func testGetLPByPartyOnly(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, lp, conn := setupLPTests(t, ctx)
+	bs, lp, conn := setupLPTests(t)
 
 	var rowCount int
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
@@ -166,11 +155,11 @@ func testGetLPByPartyOnly(t *testing.T) {
 	want := make([]entities.LiquidityProvision, 0)
 
 	for _, lpp := range lpProto {
-		block := addTestBlock(t, bs)
+		block := addTestBlock(t, ctx, bs)
 
 		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
-		assert.NoError(t, lp.Upsert(context.Background(), data))
+		assert.NoError(t, lp.Upsert(ctx, data))
 		err = lp.Flush(ctx)
 		require.NoError(t, err)
 
@@ -194,11 +183,10 @@ func testGetLPByPartyOnly(t *testing.T) {
 }
 
 func testGetLPByPartyAndMarket(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, lp, conn := setupLPTests(t, ctx)
+	bs, lp, conn := setupLPTests(t)
 
 	var rowCount int
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
@@ -211,11 +199,11 @@ func testGetLPByPartyAndMarket(t *testing.T) {
 	want := make([]entities.LiquidityProvision, 0)
 
 	for _, lpp := range lpProto {
-		block := addTestBlock(t, bs)
+		block := addTestBlock(t, ctx, bs)
 
 		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
-		assert.NoError(t, lp.Upsert(context.Background(), data))
+		assert.NoError(t, lp.Upsert(ctx, data))
 		err = lp.Flush(ctx)
 		require.NoError(t, err)
 
@@ -241,11 +229,10 @@ func testGetLPByPartyAndMarket(t *testing.T) {
 }
 
 func testGetLPNoPartyAndMarketErrors(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	_, lp, _ := setupLPTests(t, ctx)
+	_, lp, _ := setupLPTests(t)
 	partyID := entities.PartyID("")
 	marketID := entities.MarketID("")
 	_, _, err := lp.Get(ctx, partyID, marketID, "", entities.OffsetPagination{})
@@ -253,11 +240,10 @@ func testGetLPNoPartyAndMarketErrors(t *testing.T) {
 }
 
 func testGetLPNoPartyWithMarket(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, lp, conn := setupLPTests(t, ctx)
+	bs, lp, conn := setupLPTests(t)
 
 	var rowCount int
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
@@ -268,11 +254,11 @@ func testGetLPNoPartyWithMarket(t *testing.T) {
 	want := make([]entities.LiquidityProvision, 0)
 
 	for _, lpp := range lpProto {
-		block := addTestBlock(t, bs)
+		block := addTestBlock(t, ctx, bs)
 
 		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
-		assert.NoError(t, lp.Upsert(context.Background(), data))
+		assert.NoError(t, lp.Upsert(ctx, data))
 		err = lp.Flush(ctx)
 		require.NoError(t, err)
 
@@ -344,14 +330,14 @@ func getTestLiquidityProvision() []*vega.LiquidityProvision {
 }
 
 func testLiquidityProvisionPaginationNoPagination(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, lpStore, _ := setupLPTests(t, timeoutCtx)
-	testLps := addLiquidityProvisions(timeoutCtx, t, bs, lpStore)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, lpStore, _ := setupLPTests(t)
+	testLps := addLiquidityProvisions(ctx, t, bs, lpStore)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID("deadbaad"), entities.MarketID(""), "", pagination)
+	got, pageInfo, err := lpStore.Get(ctx, entities.PartyID("deadbaad"), entities.MarketID(""), "", pagination)
 
 	require.NoError(t, err)
 	assert.Equal(t, testLps, got)
@@ -368,15 +354,16 @@ func testLiquidityProvisionPaginationNoPagination(t *testing.T) {
 }
 
 func testLiquidityProvisionPaginationFirst(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, lpStore, _ := setupLPTests(t, timeoutCtx)
-	testLps := addLiquidityProvisions(timeoutCtx, t, bs, lpStore)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	bs, lpStore, _ := setupLPTests(t)
+	testLps := addLiquidityProvisions(ctx, t, bs, lpStore)
 
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID("deadbaad"), entities.MarketID(""), "", pagination)
+	got, pageInfo, err := lpStore.Get(ctx, entities.PartyID("deadbaad"), entities.MarketID(""), "", pagination)
 
 	require.NoError(t, err)
 	want := testLps[:3]
@@ -394,15 +381,15 @@ func testLiquidityProvisionPaginationFirst(t *testing.T) {
 }
 
 func testLiquidityProvisionPaginationLast(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, lpStore, _ := setupLPTests(t, timeoutCtx)
-	testLps := addLiquidityProvisions(timeoutCtx, t, bs, lpStore)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, lpStore, _ := setupLPTests(t)
+	testLps := addLiquidityProvisions(ctx, t, bs, lpStore)
 
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID("deadbaad"), entities.MarketID(""), "", pagination)
+	got, pageInfo, err := lpStore.Get(ctx, entities.PartyID("deadbaad"), entities.MarketID(""), "", pagination)
 
 	require.NoError(t, err)
 	want := testLps[7:]
@@ -420,16 +407,16 @@ func testLiquidityProvisionPaginationLast(t *testing.T) {
 }
 
 func testLiquidityProvisionPaginationFirstAfter(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, lpStore, _ := setupLPTests(t, timeoutCtx)
-	testLps := addLiquidityProvisions(timeoutCtx, t, bs, lpStore)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, lpStore, _ := setupLPTests(t)
+	testLps := addLiquidityProvisions(ctx, t, bs, lpStore)
 
 	first := int32(3)
 	after := testLps[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID("deadbaad"), entities.MarketID(""), "", pagination)
+	got, pageInfo, err := lpStore.Get(ctx, entities.PartyID("deadbaad"), entities.MarketID(""), "", pagination)
 
 	require.NoError(t, err)
 	want := testLps[3:6]
@@ -447,10 +434,10 @@ func testLiquidityProvisionPaginationFirstAfter(t *testing.T) {
 }
 
 func testLiquidityProvisionPaginationLastBefore(t *testing.T) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, lsStore, _ := setupLPTests(t, timeoutCtx)
-	testLps := addLiquidityProvisions(timeoutCtx, t, bs, lsStore)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, lsStore, _ := setupLPTests(t)
+	testLps := addLiquidityProvisions(ctx, t, bs, lsStore)
 
 	last := int32(3)
 	before := entities.NewCursor(entities.LiquidityProvisionCursor{
@@ -459,7 +446,7 @@ func testLiquidityProvisionPaginationLastBefore(t *testing.T) {
 	}.String()).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	got, pageInfo, err := lsStore.Get(timeoutCtx, entities.PartyID("deadbaad"), entities.MarketID(""), "", pagination)
+	got, pageInfo, err := lsStore.Get(ctx, entities.PartyID("deadbaad"), entities.MarketID(""), "", pagination)
 
 	require.NoError(t, err)
 	want := testLps[4:7]
@@ -482,7 +469,7 @@ func addLiquidityProvisions(ctx context.Context, t *testing.T, bs *sqlstore.Bloc
 	amount := int64(1000)
 	lps := make([]entities.LiquidityProvision, 0, 10)
 	for i := 0; i < 10; i++ {
-		addTestBlockForTime(t, bs, vegaTime)
+		addTestBlockForTime(t, ctx, bs, vegaTime)
 
 		lp := &vega.LiquidityProvision{
 			Id:               fmt.Sprintf("deadbeef%02d", i+1),

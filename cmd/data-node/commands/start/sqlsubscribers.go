@@ -171,7 +171,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.assetStore = sqlstore.NewAssets(transactionalConnectionSource)
 	s.blockStore = sqlstore.NewBlocks(transactionalConnectionSource)
 	s.partyStore = sqlstore.NewParties(transactionalConnectionSource)
-	s.partyStore.Initialise()
+	s.partyStore.Initialise(ctx)
 	s.accountStore = sqlstore.NewAccounts(transactionalConnectionSource)
 	s.balanceStore = sqlstore.NewBalances(transactionalConnectionSource)
 	s.ledger = sqlstore.NewLedger(transactionalConnectionSource)

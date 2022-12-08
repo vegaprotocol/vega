@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func addTestNode(t *testing.T, ps *sqlstore.Node, block entities.Block, id string) entities.Node {
+func addTestNode(t *testing.T, ctx context.Context, ps *sqlstore.Node, block entities.Block, id string) entities.Node {
 	t.Helper()
 	node := entities.Node{
 		ID:              entities.NodeID(id),
@@ -36,22 +36,22 @@ func addTestNode(t *testing.T, ps *sqlstore.Node, block entities.Block, id strin
 		Status:          entities.NodeStatusNonValidator,
 	}
 
-	err := ps.UpsertNode(context.Background(), &node)
+	err := ps.UpsertNode(ctx, &node)
 	require.NoError(t, err)
 	return node
 }
 
-func addNodeAnnounced(t *testing.T, ps *sqlstore.Node, nodeID entities.NodeID, added bool, epochSeq uint64, vegatime time.Time) {
+func addNodeAnnounced(t *testing.T, ctx context.Context, ps *sqlstore.Node, nodeID entities.NodeID, added bool, epochSeq uint64, vegatime time.Time) {
 	t.Helper()
 	aux := entities.ValidatorUpdateAux{
 		Added:    added,
 		EpochSeq: epochSeq,
 	}
-	err := ps.AddNodeAnnouncedEvent(context.Background(), nodeID.String(), vegatime, &aux)
+	err := ps.AddNodeAnnouncedEvent(ctx, nodeID.String(), vegatime, &aux)
 	require.NoError(t, err)
 }
 
-func addRankingScore(t *testing.T, ps *sqlstore.Node, node entities.Node, r entities.RankingScore) {
+func addRankingScore(t *testing.T, ctx context.Context, ps *sqlstore.Node, node entities.Node, r entities.RankingScore) {
 	t.Helper()
 
 	aux := entities.RankingScoreAux{
@@ -59,21 +59,21 @@ func addRankingScore(t *testing.T, ps *sqlstore.Node, node entities.Node, r enti
 		EpochSeq: r.EpochSeq,
 	}
 
-	err := ps.UpsertRanking(context.Background(), &r, &aux)
+	err := ps.UpsertRanking(ctx, &r, &aux)
 	require.NoError(t, err)
 }
 
 func TestUpdateNodePubKey(t *testing.T) {
-	DeleteEverything()
-	defer DeleteEverything()
-	ctx := context.Background()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 
 	now := time.Now()
-	node1 := addTestNode(t, ns, block, helpers.GenerateID())
-	addNodeAnnounced(t, ns, node1.ID, true, 0, now)
+	node1 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
+	addNodeAnnounced(t, ctx, ns, node1.ID, true, 0, now)
 
 	kr := entities.KeyRotation{
 		NodeID:    node1.ID,
@@ -90,18 +90,18 @@ func TestUpdateNodePubKey(t *testing.T) {
 }
 
 func TestGetNodes(t *testing.T) {
-	DeleteEverything()
-	defer DeleteEverything()
-	ctx := context.Background()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 
 	now := time.Now()
-	node1 := addTestNode(t, ns, block, helpers.GenerateID())
-	addNodeAnnounced(t, ns, node1.ID, true, 0, now)
-	addNodeAnnounced(t, ns, node1.ID, false, 7, now)
-	addRankingScore(t, ns, node1,
+	node1 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
+	addNodeAnnounced(t, ctx, ns, node1.ID, true, 0, now)
+	addNodeAnnounced(t, ctx, ns, node1.ID, false, 7, now)
+	addRankingScore(t, ctx, ns, node1,
 		entities.RankingScore{
 			StakeScore:       decimal.NewFromFloat(0.5),
 			PerformanceScore: decimal.NewFromFloat(0.25),
@@ -132,7 +132,7 @@ func TestGetNodes(t *testing.T) {
 
 	// check the value can be changed, since this happens during a checkpoint restore
 	// we were need to remove genesis validators if they aren't in the checkpoint
-	addNodeAnnounced(t, ns, node1.ID, true, 7, now)
+	addNodeAnnounced(t, ctx, ns, node1.ID, true, 7, now)
 	// get all nodes
 	found, _, err = ns.GetNodes(ctx, 7, entities.CursorPagination{})
 	require.NoError(t, err)
@@ -140,25 +140,25 @@ func TestGetNodes(t *testing.T) {
 }
 
 func TestGetNodesJoiningAndLeaving(t *testing.T) {
-	DeleteEverything()
-	defer DeleteEverything()
-	ctx := context.Background()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 
-	node1 := addTestNode(t, ns, block, helpers.GenerateID())
-	node2 := addTestNode(t, ns, block, helpers.GenerateID())
+	node1 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
+	node2 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
 
 	// The node1 will exist int the epochs [2,3] and [6,7]
 	exists := map[int]bool{2: true, 3: true, 6: true, 7: true}
-	addNodeAnnounced(t, ns, node1.ID, true, 2, time.Now())
-	addNodeAnnounced(t, ns, node1.ID, false, 4, time.Now())
-	addNodeAnnounced(t, ns, node1.ID, true, 6, time.Now())
-	addNodeAnnounced(t, ns, node1.ID, false, 8, time.Now())
+	addNodeAnnounced(t, ctx, ns, node1.ID, true, 2, time.Now())
+	addNodeAnnounced(t, ctx, ns, node1.ID, false, 4, time.Now())
+	addNodeAnnounced(t, ctx, ns, node1.ID, true, 6, time.Now())
+	addNodeAnnounced(t, ctx, ns, node1.ID, false, 8, time.Now())
 
 	// node2 will always exist
-	addNodeAnnounced(t, ns, node2.ID, true, 0, time.Now())
+	addNodeAnnounced(t, ctx, ns, node2.ID, true, 0, time.Now())
 
 	nodeID1 := node1.ID.String()
 	nodeID2 := node2.ID.String()
@@ -172,28 +172,28 @@ func TestGetNodesJoiningAndLeaving(t *testing.T) {
 }
 
 func TestGetNodeData(t *testing.T) {
-	DeleteEverything()
-	defer DeleteEverything()
-	ctx := context.Background()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)
 	es := sqlstore.NewEpochs(connectionSource)
 	ds := sqlstore.NewDelegations(connectionSource)
 	ps := sqlstore.NewParties(connectionSource)
 
-	block := addTestBlock(t, bs)
-	party1 := addTestParty(t, ps, block)
-	node1 := addTestNode(t, ns, block, helpers.GenerateID())
-	node2 := addTestNode(t, ns, block, helpers.GenerateID())
+	block := addTestBlock(t, ctx, bs)
+	party1 := addTestParty(t, ctx, ps, block)
+	node1 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
+	node2 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
 
-	addTestDelegation(t, ds, party1, node1, 3, block, 0)
-	addTestDelegation(t, ds, party1, node1, 4, block, 1)
-	addTestDelegation(t, ds, party1, node2, 3, block, 2)
-	addTestDelegation(t, ds, party1, node2, 4, block, 3)
+	addTestDelegation(t, ctx, ds, party1, node1, 3, block, 0)
+	addTestDelegation(t, ctx, ds, party1, node1, 4, block, 1)
+	addTestDelegation(t, ctx, ds, party1, node2, 3, block, 2)
+	addTestDelegation(t, ctx, ds, party1, node2, 4, block, 3)
 
 	// node1 goes from pending -> ersatz -> tendermint
 	// then gets demoted straight to pending with a zero perf score
-	addRankingScore(t, ns, node1,
+	addRankingScore(t, ctx, ns, node1,
 		entities.RankingScore{
 			StakeScore:       decimal.NewFromFloat(0.5),
 			PerformanceScore: decimal.NewFromFloat(0.25),
@@ -202,7 +202,7 @@ func TestGetNodeData(t *testing.T) {
 			EpochSeq:         2,
 			VegaTime:         block.VegaTime,
 		})
-	addRankingScore(t, ns, node1,
+	addRankingScore(t, ctx, ns, node1,
 		entities.RankingScore{
 			StakeScore:       decimal.NewFromFloat(0.5),
 			PerformanceScore: decimal.NewFromFloat(0.25),
@@ -211,7 +211,7 @@ func TestGetNodeData(t *testing.T) {
 			EpochSeq:         3,
 			VegaTime:         block.VegaTime,
 		})
-	addRankingScore(t, ns, node1,
+	addRankingScore(t, ctx, ns, node1,
 		entities.RankingScore{
 			StakeScore:       decimal.NewFromFloat(0.5),
 			PerformanceScore: decimal.Zero,
@@ -223,7 +223,7 @@ func TestGetNodeData(t *testing.T) {
 
 	// node 2 is always a happy tendermint node
 	for i := 0; i < 6; i++ {
-		addRankingScore(t, ns, node2, entities.RankingScore{
+		addRankingScore(t, ctx, ns, node2, entities.RankingScore{
 			StakeScore:       decimal.NewFromFloat(0.5),
 			PerformanceScore: decimal.NewFromFloat(0.25),
 			PreviousStatus:   entities.ValidatorNodeStatusTendermint,
@@ -234,15 +234,15 @@ func TestGetNodeData(t *testing.T) {
 	}
 
 	// The node1 will exist int the epochs [2,3,4]
-	addNodeAnnounced(t, ns, node1.ID, true, 2, time.Now())
-	addNodeAnnounced(t, ns, node1.ID, false, 5, time.Now())
+	addNodeAnnounced(t, ctx, ns, node1.ID, true, 2, time.Now())
+	addNodeAnnounced(t, ctx, ns, node1.ID, false, 5, time.Now())
 
 	// node2 will always exist
-	addNodeAnnounced(t, ns, node2.ID, true, 0, time.Now())
+	addNodeAnnounced(t, ctx, ns, node2.ID, true, 0, time.Now())
 
 	// move to epoch 2 both nodes should exist
 	now := time.Unix(2000, 4)
-	addTestEpoch(t, es, 2, now, now, &now, block)
+	addTestEpoch(t, ctx, es, 2, now, now, &now, block)
 	nodeData, err := ns.GetNodeData(ctx, 2)
 	require.NoError(t, err)
 	require.Equal(t, uint32(2), nodeData.TotalNodes)
@@ -256,7 +256,7 @@ func TestGetNodeData(t *testing.T) {
 	require.Equal(t, entities.NodeSet{}, nodeData.PendingNodes)
 
 	// move to epoch 3 and check promotions
-	addTestEpoch(t, es, 3, now, now, &now, block)
+	addTestEpoch(t, ctx, es, 3, now, now, &now, block)
 	nodeData, err = ns.GetNodeData(ctx, 3)
 	require.NoError(t, err)
 	require.Equal(t, uint32(2), nodeData.TotalNodes)
@@ -269,7 +269,7 @@ func TestGetNodeData(t *testing.T) {
 
 	// move to epoch 4 and check demotions
 	now = now.Add(time.Hour)
-	addTestEpoch(t, es, 4, now, now, &now, block)
+	addTestEpoch(t, ctx, es, 4, now, now, &now, block)
 	nodeData, err = ns.GetNodeData(ctx, 4)
 	require.NoError(t, err)
 	require.Equal(t, uint32(2), nodeData.TotalNodes)
@@ -286,7 +286,7 @@ func TestGetNodeData(t *testing.T) {
 
 	// move to epoch 5 just have one tendermint node
 	now = now.Add(time.Hour)
-	addTestEpoch(t, es, 5, now, now, &now, block)
+	addTestEpoch(t, ctx, es, 5, now, now, &now, block)
 	nodeData, err = ns.GetNodeData(ctx, 5)
 	require.NoError(t, err)
 	require.Equal(t, uint32(1), nodeData.TotalNodes)
@@ -330,56 +330,55 @@ func TestNodePagination(t *testing.T) {
 	t.Run("Should return requested page of results if last and before is provided", testNodePaginationLastBefore)
 }
 
-func addPaginationTestNodes(t *testing.T, ns *sqlstore.Node) (nodes []entities.Node) {
+func addPaginationTestNodes(t *testing.T, ctx context.Context, ns *sqlstore.Node) (nodes []entities.Node) {
 	t.Helper()
 	blockTime := time.Now().Add(-time.Hour)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	nodes = append(nodes, addTestNode(t, ns, addTestBlockForTime(t, bs, blockTime), "deadbeef01"))
+	nodes = append(nodes, addTestNode(t, ctx, ns, addTestBlockForTime(t, ctx, bs, blockTime), "deadbeef01"))
 	blockTime = blockTime.Add(time.Minute)
-	nodes = append(nodes, addTestNode(t, ns, addTestBlockForTime(t, bs, blockTime), "deadbeef02"))
+	nodes = append(nodes, addTestNode(t, ctx, ns, addTestBlockForTime(t, ctx, bs, blockTime), "deadbeef02"))
 	blockTime = blockTime.Add(time.Minute)
-	nodes = append(nodes, addTestNode(t, ns, addTestBlockForTime(t, bs, blockTime), "deadbeef03"))
+	nodes = append(nodes, addTestNode(t, ctx, ns, addTestBlockForTime(t, ctx, bs, blockTime), "deadbeef03"))
 	blockTime = blockTime.Add(time.Minute)
-	nodes = append(nodes, addTestNode(t, ns, addTestBlockForTime(t, bs, blockTime), "deadbeef04"))
+	nodes = append(nodes, addTestNode(t, ctx, ns, addTestBlockForTime(t, ctx, bs, blockTime), "deadbeef04"))
 	blockTime = blockTime.Add(time.Minute)
-	nodes = append(nodes, addTestNode(t, ns, addTestBlockForTime(t, bs, blockTime), "deadbeef05"))
+	nodes = append(nodes, addTestNode(t, ctx, ns, addTestBlockForTime(t, ctx, bs, blockTime), "deadbeef05"))
 	blockTime = blockTime.Add(time.Minute)
-	nodes = append(nodes, addTestNode(t, ns, addTestBlockForTime(t, bs, blockTime), "deadbeef06"))
+	nodes = append(nodes, addTestNode(t, ctx, ns, addTestBlockForTime(t, ctx, bs, blockTime), "deadbeef06"))
 	blockTime = blockTime.Add(time.Minute)
-	nodes = append(nodes, addTestNode(t, ns, addTestBlockForTime(t, bs, blockTime), "deadbeef07"))
+	nodes = append(nodes, addTestNode(t, ctx, ns, addTestBlockForTime(t, ctx, bs, blockTime), "deadbeef07"))
 	blockTime = blockTime.Add(time.Minute)
-	nodes = append(nodes, addTestNode(t, ns, addTestBlockForTime(t, bs, blockTime), "deadbeef08"))
+	nodes = append(nodes, addTestNode(t, ctx, ns, addTestBlockForTime(t, ctx, bs, blockTime), "deadbeef08"))
 	blockTime = blockTime.Add(time.Minute)
-	nodes = append(nodes, addTestNode(t, ns, addTestBlockForTime(t, bs, blockTime), "deadbeef09"))
+	nodes = append(nodes, addTestNode(t, ctx, ns, addTestBlockForTime(t, ctx, bs, blockTime), "deadbeef09"))
 	blockTime = blockTime.Add(time.Minute)
-	nodes = append(nodes, addTestNode(t, ns, addTestBlockForTime(t, bs, blockTime), "deadbeef10"))
-	addNodeAnnounced(t, ns, nodes[0].ID, true, 1, nodes[0].VegaTime)
-	addNodeAnnounced(t, ns, nodes[1].ID, true, 1, nodes[1].VegaTime)
-	addNodeAnnounced(t, ns, nodes[2].ID, true, 1, nodes[2].VegaTime)
-	addNodeAnnounced(t, ns, nodes[3].ID, true, 1, nodes[3].VegaTime)
-	addNodeAnnounced(t, ns, nodes[4].ID, true, 1, nodes[4].VegaTime)
-	addNodeAnnounced(t, ns, nodes[5].ID, true, 1, nodes[5].VegaTime)
-	addNodeAnnounced(t, ns, nodes[6].ID, true, 1, nodes[6].VegaTime)
-	addNodeAnnounced(t, ns, nodes[7].ID, true, 1, nodes[7].VegaTime)
-	addNodeAnnounced(t, ns, nodes[8].ID, true, 1, nodes[8].VegaTime)
-	addNodeAnnounced(t, ns, nodes[9].ID, true, 1, nodes[9].VegaTime)
+	nodes = append(nodes, addTestNode(t, ctx, ns, addTestBlockForTime(t, ctx, bs, blockTime), "deadbeef10"))
+	addNodeAnnounced(t, ctx, ns, nodes[0].ID, true, 1, nodes[0].VegaTime)
+	addNodeAnnounced(t, ctx, ns, nodes[1].ID, true, 1, nodes[1].VegaTime)
+	addNodeAnnounced(t, ctx, ns, nodes[2].ID, true, 1, nodes[2].VegaTime)
+	addNodeAnnounced(t, ctx, ns, nodes[3].ID, true, 1, nodes[3].VegaTime)
+	addNodeAnnounced(t, ctx, ns, nodes[4].ID, true, 1, nodes[4].VegaTime)
+	addNodeAnnounced(t, ctx, ns, nodes[5].ID, true, 1, nodes[5].VegaTime)
+	addNodeAnnounced(t, ctx, ns, nodes[6].ID, true, 1, nodes[6].VegaTime)
+	addNodeAnnounced(t, ctx, ns, nodes[7].ID, true, 1, nodes[7].VegaTime)
+	addNodeAnnounced(t, ctx, ns, nodes[8].ID, true, 1, nodes[8].VegaTime)
+	addNodeAnnounced(t, ctx, ns, nodes[9].ID, true, 1, nodes[9].VegaTime)
 
 	return nodes
 }
 
 func testNodePaginationNoPagination(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ns := sqlstore.NewNode(connectionSource)
-	nodes := addPaginationTestNodes(t, ns)
+	nodes := addPaginationTestNodes(t, ctx, ns)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-
-	got, pageInfo, err := ns.GetNodes(timeoutCtx, 1, pagination)
+	got, pageInfo, err := ns.GetNodes(ctx, 1, pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, len(nodes))
 	assert.Equal(t, nodes[0].ID, got[0].ID)
@@ -401,17 +400,16 @@ func testNodePaginationNoPagination(t *testing.T) {
 }
 
 func testNodePaginationFirst(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ns := sqlstore.NewNode(connectionSource)
-	nodes := addPaginationTestNodes(t, ns)
+	nodes := addPaginationTestNodes(t, ctx, ns)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-
-	got, pageInfo, err := ns.GetNodes(timeoutCtx, 1, pagination)
+	got, pageInfo, err := ns.GetNodes(ctx, 1, pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	assert.Equal(t, nodes[0].ID, got[0].ID)
@@ -426,18 +424,17 @@ func testNodePaginationFirst(t *testing.T) {
 }
 
 func testNodePaginationLast(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ns := sqlstore.NewNode(connectionSource)
-	nodes := addPaginationTestNodes(t, ns)
+	nodes := addPaginationTestNodes(t, ctx, ns)
 
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-
-	got, pageInfo, err := ns.GetNodes(timeoutCtx, 1, pagination)
+	got, pageInfo, err := ns.GetNodes(ctx, 1, pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	assert.Equal(t, nodes[7].ID, got[0].ID)
@@ -452,19 +449,18 @@ func testNodePaginationLast(t *testing.T) {
 }
 
 func testNodePaginationFirstAfter(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ns := sqlstore.NewNode(connectionSource)
-	nodes := addPaginationTestNodes(t, ns)
+	nodes := addPaginationTestNodes(t, ctx, ns)
 
 	first := int32(3)
 	after := nodes[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-
-	got, pageInfo, err := ns.GetNodes(timeoutCtx, 1, pagination)
+	got, pageInfo, err := ns.GetNodes(ctx, 1, pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	assert.Equal(t, nodes[3].ID, got[0].ID)
@@ -479,19 +475,18 @@ func testNodePaginationFirstAfter(t *testing.T) {
 }
 
 func testNodePaginationLastBefore(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ns := sqlstore.NewNode(connectionSource)
-	nodes := addPaginationTestNodes(t, ns)
+	nodes := addPaginationTestNodes(t, ctx, ns)
 
 	last := int32(3)
 	before := nodes[7].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-
-	got, pageInfo, err := ns.GetNodes(timeoutCtx, 1, pagination)
+	got, pageInfo, err := ns.GetNodes(ctx, 1, pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	assert.Equal(t, nodes[4].ID, got[0].ID)

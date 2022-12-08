@@ -116,7 +116,7 @@ linters = ["exhaustruct", "noctx"]
 
 # Don't complain about context not being first argument in tests (convention is to use *testing.T)
 [[issues.exclude-rules]]
-path = "_test.go"
+paths = ["_test.go", "helpers.go"]
 linters = ["revive"]
 text = "context-as-argument"
 

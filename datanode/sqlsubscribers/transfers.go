@@ -33,7 +33,7 @@ type TransferStore interface {
 
 type AccountSource interface {
 	Obtain(ctx context.Context, a *entities.Account) error
-	GetByID(id entities.AccountID) (entities.Account, error)
+	GetByID(ctx context.Context, id entities.AccountID) (entities.Account, error)
 }
 
 type Transfer struct {

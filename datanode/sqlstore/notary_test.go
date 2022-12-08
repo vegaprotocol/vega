@@ -16,12 +16,10 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,27 +30,18 @@ func TestNotary(t *testing.T) {
 	t.Run("Getting a non-existing resource signatures", testNoResource)
 }
 
-func setupNotaryStoreTests(t *testing.T, ctx context.Context) (*sqlstore.Notary, *sqlstore.Blocks, *pgx.Conn) {
+func setupNotaryStoreTests(t *testing.T) (*sqlstore.Notary, *sqlstore.Blocks, sqlstore.Connection) {
 	t.Helper()
-	DeleteEverything()
-
 	ns := sqlstore.NewNotary(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
-
-	config := NewTestConfig()
-
-	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
-	require.NoError(t, err)
-
-	return ns, bs, conn
+	return ns, bs, connectionSource.Connection
 }
 
 func testAddSignatures(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	ws, bs, conn := setupNotaryStoreTests(t, ctx)
+	ws, bs, conn := setupNotaryStoreTests(t)
 
 	var rowCount int
 
@@ -60,8 +49,8 @@ func testAddSignatures(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	ns := getTestNodeSignature(t, bs, "deadbeef", "iamsig")
-	err = ws.Add(context.Background(), ns)
+	ns := getTestNodeSignature(t, ctx, bs, "deadbeef", "iamsig")
+	err = ws.Add(ctx, ns)
 	require.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from node_signatures`).Scan(&rowCount)
@@ -70,30 +59,29 @@ func testAddSignatures(t *testing.T) {
 }
 
 func testAddMultipleSignatures(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	ws, bs, _ := setupNotaryStoreTests(t, ctx)
+	ws, bs, _ := setupNotaryStoreTests(t)
 
-	nodeSig1 := getTestNodeSignature(t, bs, "deadbeef", "iamsig")
-	nodeSig2 := getTestNodeSignature(t, bs, "deadbeef", "iamsig")         // this will have a different sig
-	nodeSig3 := getTestNodeSignature(t, bs, "deadbeef", "iamsig")         // this will be a dupe of ns2
-	nodeSig4 := getTestNodeSignature(t, bs, "deadbeefdeadbeef", "iamsig") // this will have a different sig and id
+	nodeSig1 := getTestNodeSignature(t, ctx, bs, "deadbeef", "iamsig")
+	nodeSig2 := getTestNodeSignature(t, ctx, bs, "deadbeef", "iamsig")         // this will have a different sig
+	nodeSig3 := getTestNodeSignature(t, ctx, bs, "deadbeef", "iamsig")         // this will be a dupe of ns2
+	nodeSig4 := getTestNodeSignature(t, ctx, bs, "deadbeefdeadbeef", "iamsig") // this will have a different sig and id
 
 	nodeSig2.Sig = []byte("iamdifferentsig")
 	nodeSig4.Sig = []byte("iamdifferentsigagain")
 
-	err := ws.Add(context.Background(), nodeSig1)
+	err := ws.Add(ctx, nodeSig1)
 	require.NoError(t, err)
 
-	err = ws.Add(context.Background(), nodeSig2)
+	err = ws.Add(ctx, nodeSig2)
 	require.NoError(t, err)
 
-	err = ws.Add(context.Background(), nodeSig3)
+	err = ws.Add(ctx, nodeSig3)
 	require.NoError(t, err)
 
-	err = ws.Add(context.Background(), nodeSig4)
+	err = ws.Add(ctx, nodeSig4)
 	require.NoError(t, err)
 
 	res, _, err := ws.GetByResourceID(ctx, "deadbeef", entities.CursorPagination{})
@@ -105,9 +93,9 @@ func testAddMultipleSignatures(t *testing.T) {
 	require.Len(t, res, 1)
 }
 
-func getTestNodeSignature(t *testing.T, bs *sqlstore.Blocks, id string, sig string) *entities.NodeSignature {
+func getTestNodeSignature(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, id string, sig string) *entities.NodeSignature {
 	t.Helper()
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	ns, err := entities.NodeSignatureFromProto(
 		&v1.NodeSignature{
 			Id:   id,
@@ -122,11 +110,10 @@ func getTestNodeSignature(t *testing.T, bs *sqlstore.Blocks, id string, sig stri
 }
 
 func testNoResource(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	ws, _, _ := setupNotaryStoreTests(t, ctx)
+	ws, _, _ := setupNotaryStoreTests(t)
 
 	res, _, err := ws.GetByResourceID(ctx, "deadbeefdeadbeef", entities.CursorPagination{})
 	require.NoError(t, err)
@@ -148,9 +135,8 @@ func TestNodeSignaturePagination(t *testing.T) {
 }
 
 func testNodeSignaturePaginationNoPagination(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -169,9 +155,8 @@ func testNodeSignaturePaginationNoPagination(t *testing.T) {
 }
 
 func testNodeSignaturePaginationFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	first := int32(3)
@@ -191,9 +176,8 @@ func testNodeSignaturePaginationFirst(t *testing.T) {
 }
 
 func testNodeSignaturePaginationLast(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	last := int32(3)
@@ -213,9 +197,8 @@ func testNodeSignaturePaginationLast(t *testing.T) {
 }
 
 func testNodeSignaturePaginationFirstAfter(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	first := int32(3)
@@ -236,9 +219,8 @@ func testNodeSignaturePaginationFirstAfter(t *testing.T) {
 }
 
 func testNodeSignaturePaginationLastBefore(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	last := int32(3)
@@ -259,9 +241,8 @@ func testNodeSignaturePaginationLastBefore(t *testing.T) {
 }
 
 func testNodeSignaturePaginationNoPaginationNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -280,9 +261,8 @@ func testNodeSignaturePaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testNodeSignaturePaginationFirstNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	first := int32(3)
@@ -302,9 +282,8 @@ func testNodeSignaturePaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testNodeSignaturePaginationLastNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	last := int32(3)
@@ -324,9 +303,8 @@ func testNodeSignaturePaginationLastNewestFirst(t *testing.T) {
 }
 
 func testNodeSignaturePaginationFirstAfterNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	first := int32(3)
@@ -347,9 +325,8 @@ func testNodeSignaturePaginationFirstAfterNewestFirst(t *testing.T) {
 }
 
 func testNodeSignaturePaginationLastBeforeNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	last := int32(3)
@@ -376,7 +353,7 @@ func setupNodeSignaturePaginationTest(t *testing.T, ctx context.Context) (*sqlst
 	signatures := make([]entities.NodeSignature, 10)
 
 	for i := 0; i < 10; i++ {
-		signature := getTestNodeSignature(t, bs, "deadbeef", fmt.Sprintf("sig%02d", i+1))
+		signature := getTestNodeSignature(t, ctx, bs, "deadbeef", fmt.Sprintf("sig%02d", i+1))
 		signatures[i] = *signature
 		err := ns.Add(ctx, signature)
 		require.NoError(t, err)
