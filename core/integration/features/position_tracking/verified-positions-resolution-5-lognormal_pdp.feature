@@ -119,11 +119,3 @@ Feature: Position resolution case 5 lognormal risk model
       | buySideProvider  | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-
-
-
-
-
-
-
-

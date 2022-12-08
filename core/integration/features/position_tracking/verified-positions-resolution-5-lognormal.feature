@@ -144,6 +144,3 @@ Feature: Position resolution case 5 lognormal risk model
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
 
-
-
-
