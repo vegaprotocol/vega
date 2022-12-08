@@ -7,6 +7,7 @@
 
 ### 🗑️ Deprecation
 - [7065](https://github.com/vegaprotocol/vega/issues/7065) - Scope technical commands on wallet command line
+- [7066](https://github.com/vegaprotocol/vega/issues/7066) - Move network compatibility check to a dedicated wallet command line
 
 ### 🛠 Improvements
 - [7052](https://github.com/vegaprotocol/vega/issues/7052) - Add a specific error message when trying to access administrative endpoints on wallet API
