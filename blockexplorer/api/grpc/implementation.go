@@ -48,7 +48,7 @@ func NewBlockExplorerAPI(store *store.Store, config Config, log *logging.Logger)
 	return &be
 }
 
-func (t *blockExplorerAPI) Info(ctx context.Context, _ *pb.InfoRequest) (*pb.InfoResponse, error) {
+func (b *blockExplorerAPI) Info(ctx context.Context, _ *pb.InfoRequest) (*pb.InfoResponse, error) {
 	return &pb.InfoResponse{
 		Version:    version.Get(),
 		CommitHash: version.GetCommitHash(),
