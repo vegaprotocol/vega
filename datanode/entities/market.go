@@ -19,6 +19,7 @@ import (
 	"math"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/shopspring/decimal"
@@ -43,6 +44,7 @@ type Market struct {
 	State                         MarketState
 	MarketTimestamps              MarketTimestamps
 	PositionDecimalPlaces         int
+	LpPriceRange                  string
 }
 
 type MarketCursor struct {
@@ -103,6 +105,11 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		return nil, fmt.Errorf("%d is not a valid number for position decimal places", market.PositionDecimalPlaces)
 	}
 
+	lppr, err := num.DecimalFromString(market.LpPriceRange)
+	if err != nil || lppr.IsNegative() || lppr.IsZero() || lppr.GreaterThan(num.DecimalFromInt64(100)) {
+		return nil, fmt.Errorf("%v is not a valid number for LP price range", market.LpPriceRange)
+	}
+
 	dps := int(market.DecimalPlaces)
 	positionDps := int(market.PositionDecimalPlaces)
 
@@ -121,6 +128,7 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		State:                         MarketState(market.State),
 		MarketTimestamps:              marketTimestamps,
 		PositionDecimalPlaces:         positionDps,
+		LpPriceRange:                  market.LpPriceRange,
 	}, nil
 }
 
@@ -140,6 +148,7 @@ func (m Market) ToProto() *vega.Market {
 		State:                         vega.Market_State(m.State),
 		MarketTimestamps:              m.MarketTimestamps.ToProto(),
 		PositionDecimalPlaces:         int64(m.PositionDecimalPlaces),
+		LpPriceRange:                  m.LpPriceRange,
 	}
 }
 

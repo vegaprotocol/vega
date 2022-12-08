@@ -1762,6 +1762,9 @@ type Market {
 
   "Risk factors for the market"
   riskFactors: RiskFactor
+
+  "Liquidity Provision order price range"
+  lpPriceRange: String!
 }
 
 """
@@ -3162,6 +3165,8 @@ type NewMarket {
   riskParameters: RiskModel!
   "Metadata for this instrument, tags"
   metadata: [String!]
+  "Liquidity Provision order price range"
+  lpPriceRange: String!
 }
 
 """
