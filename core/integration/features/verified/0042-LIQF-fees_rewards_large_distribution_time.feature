@@ -1,4 +1,4 @@
-Feature: Test liquidity provider reward distribution; Check what happens when distribution period is large(both in genesis)
+Feature: Test liquidity provider reward distribution; Check what happens when distribution period is large (both in genesis)
 
   Background:
 
@@ -26,7 +26,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     Given the average block duration is "2"
 
-  Scenario: 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades (0042-LIQF-006)
+  Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades (0042-LIQF-006)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -62,20 +62,20 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
-      | buy  | 898   | 75     |
+      | buy  | 898   | 4     |
       | buy  | 900   | 1      |
-      | buy  | 999   | 14     |
-      | sell | 1102  | 61     |
+      | buy  | 999   | 7     |
+      | sell | 1001  | 7     |
       | sell | 1100  | 1      |
-      | sell | 1001  | 14     |
+      | sell | 1102  | 4     |
 
     #volume = ceiling(liquidity_obligation x liquidity-normalised-proportion / probability_of_trading / price)
     #for any price better than the bid price or better than the ask price it returns 0.5
     #for any price in within 500 price ticks from the best bid/ask (i.e. worse than) it returns the probability as returned by the risk model (in this case 0.1 scaled by 0.5.
-    #priceLvel at 898:10000*(1/3)/0.05/898=74.23
-    #priceLvel at 999:10000*(2/3)/0.5/999=13.34
-    #priceLvel at 1102:10000*(1/3)/0.05/1102=60.49
-    #priceLvel at 1001:10000*(2/3)/0.5/1001=13.32
+    #priceLvel at 898:10000*(1/3)/898=4
+    #priceLvel at 999:10000*(2/3)/999=7
+    #priceLvel at 1001:10000*(2/3)/1001=7
+    #priceLvel at 1102:10000*(1/3)/1102=4
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
@@ -83,7 +83,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
-      | lp1    | USD   | ETH/MAR22 | 10680  | 999979320 | 10000 |
+      | lp1    | USD   | ETH/MAR22 | 1320   | 999988680 | 10000 |
       | party1 | USD   | ETH/MAR22 | 2520   | 99997480  | 0     |
       | party2 | USD   | ETH/MAR22 | 2520   | 99997480  | 0     |
 
@@ -102,24 +102,23 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
-      | lp1    | USD   | ETH/MAR22 | 11787  | 999977484 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 1800   | 99998202  | 0     |
-      | party2 | USD   | ETH/MAR22 | 1812   | 99998875  | 0     |
+      | lp1    | USD   | ETH/MAR22 | 2870   | 999986742 | 10000 |
+      | party1 | USD   | ETH/MAR22 | 1317   | 99998688  | 0     |
+      | party2 | USD   | ETH/MAR22 | 1932   | 99998411  | 0     |
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
-      | buy  | 898   | 75     |
+      | buy  | 898   | 4      |
       | buy  | 900   | 1      |
-      | buy  | 1000  | 0      |
-      | sell | 1000  | 15     |
-      | sell | 1001  | 0      |
-      | sell | 1102  | 0      |
+      | buy  | 949   | 8      |
+      | sell | 951   | 8      |
+      | sell | 1000  | 8      |
+      | sell | 1002  | 4      |
       | sell | 1100  | 1      |
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general   |
-      #| lp1   | USD   | ETH/MAR22 | 12522  | 999976749 |
-      | lp1   | USD   | ETH/MAR22 | 11787  | 999977484 |
+      | lp1   | USD   | ETH/MAR22 | 2870   | 999986742 |
 
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
@@ -145,15 +144,14 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     And the following trades should be executed:
       | buyer  | price | size | seller |
-      | party1 | 951   | 15   | lp1    |
+      | party1 | 951   | 8    | lp1    |
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general   |
-      | lp1   | USD   | ETH/MAR22 | 14381  | 999975631 |
-      #| lp1   | USD   | ETH/MAR22 | 13257  | 999976755 |
+      | lp1   | USD   | ETH/MAR22 | 4048   | 999985960 |
 
     # lp fee got cumulated since the distribution period is large
-    And the accumulated liquidity fees should be "35" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "28" for the market "ETH/MAR22"
 
     # lp fee got paid to lp1 when time is over the "fee.distributionTimeStep"
     Then time is updated to "2024-12-30T00:30:05Z"
@@ -162,9 +160,8 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 35     | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 28     | USD   |
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general   |
-      | lp1   | USD   | ETH/MAR22 | 14381  | 999975666 |
-      #| lp1   | USD   | ETH/MAR22 | 13257  | 999976790 |
+      | lp1   | USD   | ETH/MAR22 | 4048   | 999985988 |
