@@ -3057,20 +3057,6 @@ func (t *tradingDataServiceV2) GetActiveDeHistoryPeerAddresses(_ context.Context
 	}, nil
 }
 
-func (t *tradingDataServiceV2) CopyHistorySegmentToFile(ctx context.Context, req *v2.CopyHistorySegmentToFileRequest) (*v2.CopyHistorySegmentToFileResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("CopyHistorySegmentToFile")()
-	if t.deHistoryService == nil {
-		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
-	}
-
-	err := t.deHistoryService.CopyHistorySegmentToFile(ctx, req.HistorySegmentId, req.TargetFile)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrCopyHistorySegmentToFile, err)
-	}
-
-	return &v2.CopyHistorySegmentToFileResponse{}, nil
-}
-
 func batch[T any](in []T, batchSize int) [][]T {
 	batches := make([][]T, 0, (len(in)+batchSize-1)/batchSize)
 	for batchSize < len(in) {

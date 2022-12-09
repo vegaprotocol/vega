@@ -8,7 +8,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"google.golang.org/grpc"
 
-	"code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"code.vegaprotocol.io/vega/datanode/config"
 )
@@ -20,7 +20,6 @@ type Cmd struct {
 	Fetch                         fetchCmd             `command:"fetch" description:"fetch <start from history segment id> <blocks to fetch>, fetches the given number of blocks into this node's decentralised history"`
 	LatestHistorySegmentFromPeers latestHistorySegment `command:"latest-history-segment-from-peers" description:"latest-history-segment returns the id of the networks latest history segment"`
 	ListActivePeers               listActivePeers      `command:"list-active-peers" description:"list the active datanode peers"`
-	DumpSegment                   dumpSegment          `command:"dump-segment" description:"dumps the specified segment to disk"`
 }
 
 var dehistoryCmd Cmd
@@ -32,7 +31,6 @@ func DeHistory(ctx context.Context, parser *flags.Parser) error {
 		Fetch:                         fetchCmd{},
 		LatestHistorySegmentFromPeers: latestHistorySegment{},
 		ListActivePeers:               listActivePeers{},
-		DumpSegment:                   dumpSegment{},
 	}
 
 	desc := "commands for managing decentralised history"
