@@ -2990,7 +2990,8 @@ func (t *tradingDataServiceV2) GetMostRecentDeHistorySegment(context.Context, *v
 	}
 
 	return &v2.GetMostRecentDeHistorySegmentResponse{
-		Segment: toHistorySegment(segment),
+		Segment:  toHistorySegment(segment),
+		SwarmKey: t.deHistoryService.GetSwarmKey(),
 	}, nil
 }
 
