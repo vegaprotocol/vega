@@ -60,6 +60,11 @@ Feature: Position resolution case 5 lognormal risk model
       | party  | asset | market id | margin  | general      | bond  |
       | lpprov | USD   | ETH/DEC19 | 6821442 | 999993088558 | 90000 |
 
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 2001  | 45     |
+      | sell | 2000  | 10     |
+      | buy  | 1     | 90010  |
 
     # insurance pool generation - setup orderbook
     When the parties place the following orders with ticks:
@@ -67,11 +72,23 @@ Feature: Position resolution case 5 lognormal risk model
       | sellSideProvider | ETH/DEC19 | sell | 290    | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
 
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 250   | 360    |
+      | sell | 2000  | 10     |
+      | buy  | 1     | 10     |
+      | buy  | 40    | 2250   |
+
     # insurance pool generation - trade
     When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 2001  | 45     |
+      | sell | 2000  | 10     |
+      | buy  | 1     | 90010  |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general      | bond  |
@@ -81,15 +98,9 @@ Feature: Position resolution case 5 lognormal risk model
       | party            | asset | market id | margin | general |
       | designatedLooser | USD   | ETH/DEC19 | 0      | 0       |
 
-    Then the order book should have the following volumes for market "ETH/DEC19":
-      | side | price | volume |
-      | sell | 2100  | 0      |
-      | sell | 2000  | 10     |
-      | buy  | 1     | 90010  |
-
     #designatedLooser has position of vol 290; price 150; calculated risk factor long: 0.336895684; risk factor short: 0.4878731
-    #what's on the order book to cover the position is shown above, which makes the exit price 13 =(1*10+140*1)/11, slippage per unit is 150-13=137
-    #margin level is PositionVol*(markPrice*RiskFactor+SlippagePerUnit) = 290*(150*0.336895684+137)=54384
+    #what's on the order book to cover the position is shown above, which makes the exit price 1, slippage per unit is 150-1=149
+    #margin level is PositionVol*(markPrice*RiskFactor+SlippagePerUnit) = 290*(150*0.336895684+149)=57865
 
     Then the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
