@@ -12,6 +12,7 @@
 - [7032](https://github.com/vegaprotocol/vega/issues/7032) - Make deposits and withdrawals `hypertables` and change `deposits_current` and `withdrawals_current` into views to improve resource usage
 
 ### 🐛 Fixes
+- [7021](https://github.com/vegaprotocol/vega/issues/7021) - MTM settlement on trading terminated fix.
 - [7102](https://github.com/vegaprotocol/vega/issues/7102) - Ensure the `api-token init -f` wipes the tokens file
 
 
