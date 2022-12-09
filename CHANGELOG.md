@@ -6,12 +6,14 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7068](https://github.com/vegaprotocol/vega/issues/7068) - Alias `vegawallet info` to `vegawallet describe`, before definitive renaming.
 
 ### 🛠 Improvements
 - [7032](https://github.com/vegaprotocol/vega/issues/7032) - Make deposits and withdrawals `hypertables` and change `deposits_current` and `withdrawals_current` into views to improve resource usage
 
 ### 🐛 Fixes
+- [7040](https://github.com/vegaprotocol/vega/issues/7040) - Block explorer use different codes than 500 on error
+- [7099](https://github.com/vegaprotocol/vega/issues/7099) - Remove undelegate method `IN_ANGER`
 - [7021](https://github.com/vegaprotocol/vega/issues/7021) - MTM settlement on trading terminated fix.
 - [7102](https://github.com/vegaprotocol/vega/issues/7102) - Ensure the `api-token init -f` wipes the tokens file
 
@@ -21,7 +23,6 @@
 ### 🗑️ Deprecation
 - [7065](https://github.com/vegaprotocol/vega/issues/7065) - Scope technical commands on wallet command line
 - [7066](https://github.com/vegaprotocol/vega/issues/7066) - Move network compatibility check to a dedicated wallet command line
-- [7068](https://github.com/vegaprotocol/vega/issues/7068) - Alias `vegawallet info` to `vegawallet describe`, before definitive renaming.
 
 ### 🛠 Improvements
 - [7052](https://github.com/vegaprotocol/vega/issues/7052) - Add a specific error message when trying to access administrative endpoints on wallet API
@@ -35,11 +36,10 @@
 - [7031](https://github.com/vegaprotocol/vega/issues/7031) - `datanode` expects protocol upgrade event in the right sequence
 - [7072](https://github.com/vegaprotocol/vega/issues/7072) - Check if event forwarding engine is started before reloading
 - [7017](https://github.com/vegaprotocol/vega/issues/7017) - Fix issue with market update during opening auction
-- [7040](https://github.com/vegaprotocol/vega/issues/7040) - Block explorer use different codes than 500 on error
 
 
 ## 0.63.1
- 
+
 ### 🛠 Improvements
 - [7003](https://github.com/vegaprotocol/vega/pull/7003) - Expose bus event stream on the `REST` API
 - [7044](https://github.com/vegaprotocol/vega/issues/7044) - Proof of work improvements
