@@ -2124,6 +2124,7 @@ message GetMostRecentDeHistorySegmentRequest {
 // Get most recent history segment response
 message GetMostRecentDeHistorySegmentResponse {
     HistorySegment segment = 1;
+    string swarm_key  = 2;
 }
 
 // Request to list all the nodes history segments

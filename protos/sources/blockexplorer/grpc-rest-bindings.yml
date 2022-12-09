@@ -15,3 +15,5 @@ http:
       get: '/transactions'
     - selector: blockexplorer.api.v1.BlockExplorerService.GetTransaction
       get: '/transactions/{hash}'
+    - selector: blockexplorer.api.v1.BlockExplorerService.Info
+      get: '/info'

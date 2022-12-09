@@ -3,6 +3,7 @@ package v1
 import (
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
@@ -149,6 +150,25 @@ func (s *Store) writeFile(tokens tokensFile) error {
 	return nil
 }
 
+func (s *Store) wipeOut() error {
+	exists, err := vgfs.FileExists(s.tokensFilePath)
+	if err != nil {
+		return fmt.Errorf("could not verify the existence of the tokens file: %w", err)
+	}
+
+	if exists {
+		if err := os.Remove(s.tokensFilePath); err != nil {
+			return fmt.Errorf("could not remove the tokens file: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (s *Store) initDefault() error {
+	return s.writeFile(defaultTokensFileContent())
+}
+
 func LoadStore(p paths.Paths, passphrase string) (*Store, error) {
 	tokensFilePath, err := p.CreateDataPathFor(paths.WalletServiceTokensDataFile)
 	if err != nil {
@@ -194,15 +214,12 @@ func InitializeStore(p paths.Paths, passphrase string) (*Store, error) {
 		passphrase:     passphrase,
 	}
 
-	exists, err := vgfs.FileExists(tokensFilePath)
-	if err != nil || !exists {
-		if err := store.writeFile(defaultTokensFileContent()); err != nil {
-			return nil, err
-		}
-	} else {
-		if _, err := store.readFile(); err != nil {
-			return nil, err
-		}
+	if err := store.wipeOut(); err != nil {
+		return nil, err
+	}
+
+	if err := store.initDefault(); err != nil {
+		return nil, err
 	}
 
 	return store, nil

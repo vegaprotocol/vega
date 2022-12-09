@@ -9,6 +9,7 @@ import (
 	fs "io/fs"
 	reflect "reflect"
 
+	dehistory "code.vegaprotocol.io/vega/datanode/dehistory"
 	snapshot "code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
 	store "code.vegaprotocol.io/vega/datanode/dehistory/store"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -54,11 +55,11 @@ func (mr *MockDeHistoryMockRecorder) FetchHistorySegment(arg0, arg1 interface{})
 }
 
 // GetMostRecentHistorySegmentFromPeers mocks base method.
-func (m *MockDeHistory) GetMostRecentHistorySegmentFromPeers(arg0 context.Context, arg1 []int) (*v2.HistorySegment, map[string]*v2.HistorySegment, error) {
+func (m *MockDeHistory) GetMostRecentHistorySegmentFromPeers(arg0 context.Context, arg1 []int) (*dehistory.PeerResponse, map[string]*v2.GetMostRecentDeHistorySegmentResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMostRecentHistorySegmentFromPeers", arg0, arg1)
-	ret0, _ := ret[0].(*v2.HistorySegment)
-	ret1, _ := ret[1].(map[string]*v2.HistorySegment)
+	ret0, _ := ret[0].(*dehistory.PeerResponse)
+	ret1, _ := ret[1].(map[string]*v2.GetMostRecentDeHistorySegmentResponse)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }

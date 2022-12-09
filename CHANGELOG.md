@@ -14,6 +14,8 @@
 ### 🐛 Fixes
 - [7040](https://github.com/vegaprotocol/vega/issues/7040) - Block explorer use different codes than 500 on error
 - [7099](https://github.com/vegaprotocol/vega/issues/7099) - Remove undelegate method `IN_ANGER`
+- [7021](https://github.com/vegaprotocol/vega/issues/7021) - MTM settlement on trading terminated fix.
+- [7102](https://github.com/vegaprotocol/vega/issues/7102) - Ensure the `api-token init -f` wipes the tokens file
 
 
 ## 0.64.0
@@ -25,6 +27,7 @@
 ### 🛠 Improvements
 - [7052](https://github.com/vegaprotocol/vega/issues/7052) - Add a specific error message when trying to access administrative endpoints on wallet API
 - [7064](https://github.com/vegaprotocol/vega/issues/7064) - Make `SQL` store tests run in temporary transactions instead of truncating all tables for each test
+- [7053](https://github.com/vegaprotocol/vega/issues/7053) - Add info endpoint for the block explorer
 
 ### 🐛 Fixes
 - [7011](https://github.com/vegaprotocol/vega/issues/7011) - Incorrect flagging of live orders when multiple updates in the same block
