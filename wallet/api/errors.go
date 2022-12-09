@@ -170,7 +170,7 @@ var (
 	ErrWalletIsRequired                                   = errors.New("the wallet is required")
 	ErrWalletNameIsRequired                               = errors.New("the wallet name is required")
 	ErrWalletPassphraseIsRequired                         = errors.New("the wallet passphrase is required")
-	ErrWalletVersionIsRequired                            = errors.New("the wallet version is required")
+	ErrWalletKeyDerivationVersionIsRequired               = errors.New("the wallet key derivation version is required")
 	ErrWrongPassphrase                                    = errors.New("wrong passphrase")
 	ErrAPITokenExpirationCannotBeInThePast                = errors.New("the token expiration date cannot be set to a past date")
 )

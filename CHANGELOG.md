@@ -9,10 +9,10 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7032](https://github.com/vegaprotocol/vega/issues/7032) - Make deposits and withdrawals `hypertables` and change `deposits_current` and `withdrawals_current` into views to improve resource usage
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7021](https://github.com/vegaprotocol/vega/issues/7021) - MTM settlement on trading terminated fix.
 
 
 ## 0.64.0
@@ -20,10 +20,12 @@
 ### 🗑️ Deprecation
 - [7065](https://github.com/vegaprotocol/vega/issues/7065) - Scope technical commands on wallet command line
 - [7066](https://github.com/vegaprotocol/vega/issues/7066) - Move network compatibility check to a dedicated wallet command line
+- [7068](https://github.com/vegaprotocol/vega/issues/7068) - Alias `vegawallet info` to `vegawallet describe`, before definitive renaming.
 
 ### 🛠 Improvements
 - [7052](https://github.com/vegaprotocol/vega/issues/7052) - Add a specific error message when trying to access administrative endpoints on wallet API
 - [7064](https://github.com/vegaprotocol/vega/issues/7064) - Make `SQL` store tests run in temporary transactions instead of truncating all tables for each test
+- [7053](https://github.com/vegaprotocol/vega/issues/7053) - Add info endpoint for the block explorer
 
 ### 🐛 Fixes
 - [7011](https://github.com/vegaprotocol/vega/issues/7011) - Incorrect flagging of live orders when multiple updates in the same block
@@ -32,11 +34,11 @@
 - [7031](https://github.com/vegaprotocol/vega/issues/7031) - `datanode` expects protocol upgrade event in the right sequence
 - [7072](https://github.com/vegaprotocol/vega/issues/7072) - Check if event forwarding engine is started before reloading
 - [7017](https://github.com/vegaprotocol/vega/issues/7017) - Fix issue with market update during opening auction
-- [7021](https://github.com/vegaprotocol/vega/issues/7021) - MTM settlement on trading terminated fix.
+- [7040](https://github.com/vegaprotocol/vega/issues/7040) - Block explorer use different codes than 500 on error
 
 
 ## 0.63.1
-
+ 
 ### 🛠 Improvements
 - [7003](https://github.com/vegaprotocol/vega/pull/7003) - Expose bus event stream on the `REST` API
 - [7044](https://github.com/vegaprotocol/vega/issues/7044) - Proof of work improvements
