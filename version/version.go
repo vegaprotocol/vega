@@ -19,7 +19,7 @@ import (
 
 var (
 	cliVersionHash = ""
-	cliVersion     = "v0.63.1"
+	cliVersion     = "v0.64.0"
 )
 
 func init() {
