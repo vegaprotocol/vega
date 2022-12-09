@@ -155,8 +155,8 @@ Scenario: Testing fees when network parameters are changed (in continuous tradin
     # Trader4 margin + general account balance = 10000 - 151 ( Maker fees) - 1503 (Infra fee) = 8346
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1089   | 9062    | 
-      | trader4 | ETH   | ETH/DEC21 | 715    | 7330    | 
+      | trader3 | ETH   | ETH/DEC21 | 1330   | 8821    | 
+      | trader4 | ETH   | ETH/DEC21 | 718    | 7327    | 
       
     And the accumulated infrastructure fees should be "1503" for the asset "ETH"
     And the accumulated liquidity fees should be "301" for the market "ETH/DEC21"
