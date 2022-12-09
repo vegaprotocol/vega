@@ -16,6 +16,7 @@
 - [7099](https://github.com/vegaprotocol/vega/issues/7099) - Remove undelegate method `IN_ANGER`
 - [7021](https://github.com/vegaprotocol/vega/issues/7021) - MTM settlement on trading terminated fix.
 - [7102](https://github.com/vegaprotocol/vega/issues/7102) - Ensure the `api-token init -f` wipes the tokens file
+- [7106](https://github.com/vegaprotocol/vega/issues/7106) - Properties of oracle data sent in non-deterministic order 
 
 
 ## 0.64.0
