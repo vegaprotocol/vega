@@ -90,10 +90,12 @@ type CreateWalletResponse struct {
 
 // ImportWalletRequest describes the request for ImportWallet.
 type ImportWalletRequest struct {
-	Wallet         string `json:"wallet"`
-	Passphrase     string `json:"passphrase"`
-	RecoveryPhrase string `json:"recoveryPhrase"`
-	Version        uint32 `json:"version"`
+	Wallet               string `json:"wallet"`
+	Passphrase           string `json:"passphrase"`
+	RecoveryPhrase       string `json:"recoveryPhrase"`
+	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
+	// DEPRECATED: Use KeyDerivationVersion instead
+	Version uint32 `json:"version"`
 }
 
 func ParseImportWalletRequest(r *http.Request) (*ImportWalletRequest, commands.Errors) {
@@ -116,8 +118,12 @@ func ParseImportWalletRequest(r *http.Request) (*ImportWalletRequest, commands.E
 		errs.AddForProperty("recoveryPhrase", commands.ErrIsRequired)
 	}
 
-	if req.Version == 0 {
-		req.Version = wallet.LatestVersion
+	if req.KeyDerivationVersion == 0 {
+		req.KeyDerivationVersion = req.Version
+	}
+
+	if req.KeyDerivationVersion == 0 {
+		req.KeyDerivationVersion = wallet.LatestVersion
 	}
 
 	if !errs.Empty() {
@@ -407,7 +413,7 @@ type NetworkResponse struct {
 //nolint:interfacebloat
 type WalletHandler interface {
 	CreateWallet(name, passphrase string) (string, error)
-	ImportWallet(name, passphrase, recoveryPhrase string, version uint32) error
+	ImportWallet(name, passphrase, recoveryPhrase string, keyDerivationVersion uint32) error
 	LoginWallet(name, passphrase string) error
 	LogoutWallet(name string)
 	SecureGenerateKeyPair(name, passphrase string, meta []wallet.Metadata) (string, error)
@@ -530,7 +536,7 @@ func (s *Service) ImportWallet(w http.ResponseWriter, r *http.Request, _ httprou
 		return
 	}
 
-	err := s.handler.ImportWallet(req.Wallet, req.Passphrase, req.RecoveryPhrase, req.Version)
+	err := s.handler.ImportWallet(req.Wallet, req.Passphrase, req.RecoveryPhrase, req.KeyDerivationVersion)
 	if err != nil {
 		s.writeBadRequestErr(w, err)
 		return

@@ -32,7 +32,7 @@ func TestImportWalletV1(t *testing.T) {
 		LocatedUnder(home)
 
 	// when
-	walletInfoResp, err := WalletInfo(t, []string{
+	walletInfoResp, err := WalletDescribe(t, []string{
 		"--home", home,
 		"--output", "json",
 		"--wallet", walletName,
@@ -112,7 +112,7 @@ func TestImportWalletV2(t *testing.T) {
 		LocatedUnder(home)
 
 	// when
-	walletInfoResp, err := WalletInfo(t, []string{
+	walletInfoResp, err := WalletDescribe(t, []string{
 		"--home", home,
 		"--output", "json",
 		"--wallet", walletName,
