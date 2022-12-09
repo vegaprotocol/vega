@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [7032](https://github.com/vegaprotocol/vega/issues/7032) - Make deposits and withdrawals `hypertables` and change `deposits_current` and `withdrawals_current` into views to improve resource usage
+- [7099](https://github.com/vegaprotocol/vega/issues/7099) - Get rid of un-delegate in anger
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
