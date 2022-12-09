@@ -120,6 +120,8 @@ Feature: Position resolution case 5 lognormal risk model
       | sellSideProvider | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-4     |
 
+    And the mark price should be "140" for the market "ETH/DEC19"
+
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
       | designatedLooser | USD   | ETH/DEC19 | 0      | 0       |
