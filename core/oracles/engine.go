@@ -15,6 +15,7 @@ package oracles
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -189,6 +190,10 @@ func (e *Engine) sendMatchedOracleData(ctx context.Context, data OracleData, spe
 			Value: value,
 		})
 	}
+
+	sort.Slice(payload, func(i, j int) bool {
+		return strings.Compare(payload[i].Name, payload[j].Name) < 0
+	})
 
 	ids := make([]string, 0, len(specIDs))
 	for _, specID := range specIDs {
