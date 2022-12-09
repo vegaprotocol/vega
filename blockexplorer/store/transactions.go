@@ -24,8 +24,8 @@ import (
 )
 
 var (
-	ErrTxNotFound      = errors.New("Transaction not found")
-	ErrMultipleTxFound = errors.New("Multiple transactions found")
+	ErrTxNotFound      = errors.New("transaction not found")
+	ErrMultipleTxFound = errors.New("multiple transactions found")
 )
 
 func (s *Store) GetTransaction(ctx context.Context, txID string) (*pb.Transaction, error) {
