@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 
+	"code.vegaprotocol.io/vega/logging"
+
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
 
 	"github.com/ipfs/kubo/config"
@@ -53,6 +55,17 @@ func NewDefaultConfig() Config {
 
 		HistoryRetentionBlockSpan: 604800, // One week of history at 1s per block
 	}
+}
+
+func (c Config) GetSwarmKey(log *logging.Logger, chainID string) string {
+	swarmKey := chainID
+	if len(c.SwarmKeyOverride) > 0 {
+		swarmKey = c.SwarmKeyOverride
+		log.Info("Using swarm key override as the swarm key", logging.String("swarm key", c.SwarmKeyOverride))
+	} else {
+		log.Infof("Using chain id as the swarm key", logging.String("swarm key", c.SwarmKeyOverride))
+	}
+	return swarmKey
 }
 
 func GenerateIdentityFromSeed(seed []byte) (config.Identity, error) {
