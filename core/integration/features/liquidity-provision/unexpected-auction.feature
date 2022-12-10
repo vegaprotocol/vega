@@ -1,4 +1,4 @@
-Feature: Replicate unexpected margin issues.
+Feature: Replicate unexpected margin issues
 
   Background:
     Given the following assets are registered:

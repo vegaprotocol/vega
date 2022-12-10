@@ -21,8 +21,8 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | horizon | probability | auction extension |
       | 1000    | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config | lp price range |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     |          0.014 |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party0 | USD   | 500000000 |
@@ -67,12 +67,12 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | sell | 1100  | 1      |
-      | sell | 1014  | 19949  |
+      | sell | 1014  | 9862   |
       | sell | 1010  | 1      |
       | sell | 1000  | 0      |
       | buy  | 1000  | 0      |
       | buy  | 990   | 1      |
-      | buy  | 986   | 20468  |
+      | buy  | 986   | 10142  |
       | buy  | 900   | 1      |
 
     #check position (party0 has no position)
@@ -82,16 +82,16 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party2 | -50    | 0              | 0            |
 
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search   | initial  | release  |
-      | party0 | ETH/MAR22 | 70956670    | 78052337 | 85148004 | 99339338 |
-      | party1 | ETH/MAR22 | 44388       | 48826    | 53265    | 62143    |
-      | party2 | ETH/MAR22 | 187709      | 206479   | 225250   | 262792   |
+      | party  | market id | maintenance |  initial |
+      | party0 | ETH/MAR22 |    35078184 | 42093820 |
+      | party1 | ETH/MAR22 |       44388 |    53265 | 
+      | party2 | ETH/MAR22 |      187709 |   225250 |
 
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin   | general   |
-      | party0 | USD   | ETH/MAR22 | 85148004 | 409851996 |
-      | party1 | USD   | ETH/MAR22 | 49815    | 99950185  |
-      | party2 | USD   | ETH/MAR22 | 222172   | 99777828  |
+      | party  | asset | market id | margin   |   general |
+      | party0 | USD   | ETH/MAR22 | 42093820 | 452906180 |
+      | party1 | USD   | ETH/MAR22 |    49815 |  99950185 |
+      | party2 | USD   | ETH/MAR22 |   222172 |  99777828 |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -124,8 +124,8 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | horizon | probability | auction extension |
       | 1000    | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config | lp price range |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     |          0.014 |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party0 | USD   | 500000000 |
@@ -170,12 +170,12 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | sell | 1100  | 1      |
-      | sell | 1014  | 4988   |
+      | sell | 1014  | 2466   |
       | sell | 1010  | 1      |
       | sell | 1000  | 0      |
       | buy  | 1000  | 0      |
       | buy  | 990   | 1      |
-      | buy  | 986   | 5117   |
+      | buy  | 986   | 2536   |
       | buy  | 900   | 1      |
 
     #check position (party0 has no position)
@@ -185,16 +185,16 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party2 | -50    | 0              | 0            |
 
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search   | initial  | release  |
-      | party0 | ETH/MAR22 | 17741836    | 19516019 | 21290203 | 24838570 |
-      | party1 | ETH/MAR22 | 44388       | 48826    | 53265    | 62143    |
-      | party2 | ETH/MAR22 | 187709      | 206479   | 225250   | 262792   |
+      | party  | market id | maintenance | initial  |
+      | party0 | ETH/MAR22 |     8771325 | 10525590 |
+      | party1 | ETH/MAR22 |       44388 | 53265    |
+      | party2 | ETH/MAR22 |      187709 | 225250   |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
-      | party0 | USD   | ETH/MAR22 | 21290203 | 473709797 |
-      | party1 | USD   | ETH/MAR22 | 49815    | 99950185  |
-      | party2 | USD   | ETH/MAR22 | 222172   | 99777828  |
+      | party0 | USD   | ETH/MAR22 | 10525590 | 484474410 |
+      | party1 | USD   | ETH/MAR22 |    49815 |  99950185 |
+      | party2 | USD   | ETH/MAR22 |   222172 |  99777828 |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |

@@ -242,7 +242,7 @@ func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 				})
 		}
 	}
-	// don't like this use of floats here, still
+
 	sort.SliceStable(ret,
 		func(i, j int) bool {
 			return ret[i].Trigger.Horizon <= ret[j].Trigger.Horizon &&
