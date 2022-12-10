@@ -39,12 +39,12 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 100    | amendment  |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | sell | ASK              | 50         | 100    | amendment  |
 
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin | general      | bond  |
-      | lpprov | USD   | ETH/DEC19 | 0      | 999999910000 | 90000 |
+      | party  | asset | market id | margin | general      | bond |
+      | lpprov | USD   | ETH/DEC19 | 0      | 999999991000 | 9000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -59,13 +59,13 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 2100  | 0      |
+      | sell | 2001  | 5      |
       | sell | 2000  | 10     |
-      | buy  | 1     | 90010  |
+      | buy  | 1     | 9010   |
 
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin  | general      | bond  |
-      | lpprov | USD   | ETH/DEC19 | 6821442 | 999993088558 | 90000 |
+      | party  | asset | market id | margin | general      | bond |
+      | lpprov | USD   | ETH/DEC19 | 682144 | 999999308856 | 9000 |
 
     # insurance pool generation - setup orderbook
     When the parties place the following orders:
@@ -79,8 +79,8 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | designatedLoser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin | general      | bond  |
-      | lpprov | USD   | ETH/DEC19 | 170536 | 999999739464 | 90000 |
+      | party  | asset | market id | margin | general      | bond |
+      | lpprov | USD   | ETH/DEC19 | 17055  | 999999973945 | 9000 |
 
     Then the parties should have the following account balances:
       | party           | asset | market id | margin | general |
@@ -88,10 +88,10 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 2100  | 43     |
+      | sell | 2100  | 5      |
       | sell | 2000  | 10     |
       | buy  | 1     | 10     |
-      | buy  | 40    | 2250   |
+      | buy  | 40    | 225    |
       | buy  | 140   | 1      |
 
     #designatedLoser has position of vol 290; price 150; calculated risk factor long: 0.336895684; risk factor short: 0.4878731
@@ -112,5 +112,64 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     When the network moves ahead "4" blocks
     Then the parties should have the following margin levels:
       | party           | market id | maintenance | search | initial | release |
+      | designatedLoser | ETH/DEC19 | 47134       | 56560  | 70701   | 94268   |
+
+    # insurance pool generation - modify order book
+    And the parties cancel the following orders:
+      | party           | reference      |
+      | buySideProvider | buy-provider-1 |
+    And the parties place the following orders:
+      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference      |
+      | buySideProvider | ETH/DEC19 | buy  | 290    | 20    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
+
+    # insurance pool generation - set new mark price (and trigger closeout)
+    When the parties place the following orders:
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | sellSideProvider | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+    And the network moves ahead "6" blocks
+
+    Then the following trades should be executed:
+      | buyer           | price | size | seller           |
+      | buySideProvider | 140   | 1    | sellSideProvider |
+      | buySideProvider | 20    | 290  | network          |
+      | network         | 20    | 290  | designatedLoser  |
+
+    Then the following network trades should be executed:
+      | party           | aggressor side | volume |
+      | buySideProvider | sell           | 290    |
+      | designatedLoser | buy            | 290    |
+
+    # check positions and verify loss socialisation is reflected in realised P&L (0007-POSN-013)
+    Then the parties should have the following profit and loss:
+      | party           | volume | unrealised pnl | realised pnl |
+      | designatedLoser | 0      | 0              | -17250       |
+      | buySideProvider | 291    | 34800          | -21030       |
+
+    # check margin levels
+    Then the parties should have the following margin levels:
+      | party           | market id | maintenance | search | initial | release |
       | designatedLoser | ETH/DEC19 | 0           | 0      | 0       | 0       |
+    # checking margins
+    Then the parties should have the following account balances:
+      | party           | asset | market id | margin | general |
+      | designatedLoser | USD   | ETH/DEC19 | 0      | 0       |
+
+    # then we make sure the insurance pool collected the funds (however they get later spent on MTM payment to closeout-facilitating party)
+    Then the following transfers should happen:
+      | from            | to              | from account            | to account                       | market id | amount | asset |
+      | designatedLoser | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 | 0      | USD   |
+      | buySideProvider | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC19 | 14     | USD   |
+      | designatedLoser |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 | 0      | USD   |
+      | market          | buySideProvider | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC19 | 0      | USD   |
+      | designatedLoser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 13770  | USD   |
+      | market          | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 13770  | USD   |
+      | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 13770  | USD   |
+      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |
+      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 21981  | USD   |
+      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 75     | USD   |
+      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 45433  | USD   |
+
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+
 
