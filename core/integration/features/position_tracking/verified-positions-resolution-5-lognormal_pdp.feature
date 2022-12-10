@@ -119,3 +119,39 @@ Feature: Position resolution case 5 lognormal risk model
       | buySideProvider  | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
+
+
+
+
+
+
+
+    Then the parties cancel the following orders:
+      | party           | reference      |
+      | buySideProvider | buy-provider-1 |
+
+    When the parties place the following orders with ticks:
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | sellSideProvider | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-4     |
+
+    And the mark price should be "140" for the market "ETH/DEC19"
+
+    Then the parties should have the following account balances:
+      | party            | asset | market id | margin | general |
+      | designatedLooser | USD   | ETH/DEC19 | 0      | 0       |
+
+    # then we make sure the insurance pool collected the funds (however they get later spent on MTM payment to closeout-facilitating party)
+    Then the following transfers should happen:
+      | from             | to              | from account            | to account                       | market id | amount | asset |
+      | designatedLooser | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 | 0      | USD   |
+      | buySideProvider  | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 | 0      | USD   |
+      | buySideProvider  | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC19 | 1      | USD   |
+      | designatedLooser |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 | 0      | USD   |
+      | market           | lpprov          | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC19 | 0      | USD   |
+      | designatedLooser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 14321  | USD   |
+      | market           | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 14321  | USD   |
+      | market           | lpprov          | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 13828  | USD   |
+      | buySideProvider  | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |
+
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
