@@ -10,8 +10,9 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.000001      | 0.00011407711613050422 | 0  | 0.016 | 2.0   |
     And the markets:
-      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | data source config     |
-      | ETH/DEC20 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring | data source config     |
+      # | ETH/DEC20 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
+      | ETH/DEC20 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
@@ -45,6 +46,11 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
     Then the mark price should be "100000" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
+    # And the market data for the market "ETH/DEC20" should be:
+    #   | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+    #   | 100000     | TRADING_MODE_CONTINUOUS | 5       | 99845     | 100156    | 111240       | 16000000       | 1             |
+    #   | 100000     | TRADING_MODE_CONTINUOUS | 10      | 99711     | 100290    | 111240       | 16000000       | 1             |
+
     ## price bounds are 99771 to 100290
     When the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     |
@@ -75,10 +81,20 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | party  | market id | side | volume | price | resulting trades | type        | tif     | error                                                       |
       | party2 | ETH/DEC20 | sell | 156    | 0     | 0                | TYPE_MARKET | TIF_FOK | OrderError: non-persistent order trades out of price bounds |
 
-    Then the market data for the market "ETH/DEC20" should be:
-      | mark price | last traded price | trading mode            | horizon | min bound | max bound |
-      | 100000     | 100150            | TRADING_MODE_CONTINUOUS | 5       | 99845     | 100156    |
-      | 100000     | 100150            | TRADING_MODE_CONTINUOUS | 10      | 99711     | 100290    |
+    # Then the market data for the market "ETH/DEC20" should be:
+    #   | mark price | last traded price | trading mode            | horizon | min bound | max bound |
+    #   | 100000     | 95000             | TRADING_MODE_CONTINUOUS | 5       | 99845     | 100156    |
+    #   | 100000     | 95000             | TRADING_MODE_CONTINUOUS | 10      | 99711     | 100290    |
+
+    # Now place the order for the same volume again, but set price to 100,000 -> the buy at 95,000 doesn't uncross
+    # We'll see the mark price move as we've uncrossed with the orders at 100213 and 100050 we've just placed
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     |
+      | party2 | ETH/DEC20 | sell | 156    | 0     | 3                | TYPE_MARKET | TIF_FOK |
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+
+    Then the network moves ahead "10" blocks
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
     # Now set the volume so that the order generates a trade that's still within price monitoring bounds
     When the parties place the following orders:
