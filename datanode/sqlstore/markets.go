@@ -36,7 +36,7 @@ var marketOrdering = TableOrdering{
 const (
 	sqlMarketsColumns = `id, tx_hash, vega_time, instrument_id, tradable_instrument, decimal_places,
 		fees, opening_auction, price_monitoring_settings, liquidity_monitoring_parameters,
-		trading_mode, state, market_timestamps, position_decimal_places`
+		trading_mode, state, market_timestamps, position_decimal_places, lp_price_range`
 )
 
 func NewMarkets(connectionSource *ConnectionSource) *Markets {
@@ -48,7 +48,7 @@ func NewMarkets(connectionSource *ConnectionSource) *Markets {
 
 func (m *Markets) Upsert(ctx context.Context, market *entities.Market) error {
 	query := fmt.Sprintf(`insert into markets(%s)
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 on conflict (id, vega_time) do update
 set
 	instrument_id=EXCLUDED.instrument_id,
@@ -62,12 +62,13 @@ set
 	state=EXCLUDED.state,
 	market_timestamps=EXCLUDED.market_timestamps,
 	position_decimal_places=EXCLUDED.position_decimal_places,
+	lp_price_range=EXCLUDED.lp_price_range,
 	tx_hash=EXCLUDED.tx_hash;`, sqlMarketsColumns)
 
 	defer metrics.StartSQLQuery("Markets", "Upsert")()
 	if _, err := m.Connection.Exec(ctx, query, market.ID, market.TxHash, market.VegaTime, market.InstrumentID, market.TradableInstrument, market.DecimalPlaces,
 		market.Fees, market.OpeningAuction, market.PriceMonitoringSettings, market.LiquidityMonitoringParameters,
-		market.TradingMode, market.State, market.MarketTimestamps, market.PositionDecimalPlaces); err != nil {
+		market.TradingMode, market.State, market.MarketTimestamps, market.PositionDecimalPlaces, market.LpPriceRange); err != nil {
 		err = fmt.Errorf("could not insert market into database: %w", err)
 		return err
 	}

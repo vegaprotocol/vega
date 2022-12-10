@@ -35,7 +35,7 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
     Given the average block duration is "2"
 
   @Now
-  Scenario: All liquidity providers in the market receive a greater than zero amount of liquidity fee
+  Scenario: 001: All liquidity providers in the market receive a greater than zero amount of liquidity fee
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount         |
       | lp1    | USD   | 10000000000000 |
@@ -72,10 +72,10 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
-      | buy  | 880   | 0      |
-      | buy  | 900   | 235    |
-      | sell | 1100  | 194    |
-      | sell | 1120  | 0      |
+      | buy  | 880   | 116    |
+      | buy  | 900   | 10     |
+      | sell | 1100  | 10     |
+      | sell | 1120  | 92     |
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
@@ -87,7 +87,7 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | party  | asset | market id | margin     | general       | bond       |
       | lp1    | USD   | ETH/MAR22 | 53353554   | 9999946636446 | 10000      |
       | lp2    | USD   | ETH/MAR22 | 53353554   | 9999945646446 | 1000000    |
-      | lp3    | USD   | ETH/MAR22 | 9710346805 | 9989289653195 | 1000000000 |
+      | lp3    | USD   | ETH/MAR22 | 4801819849 | 9994198180151 | 1000000000 |
       | party1 | USD   | ETH/MAR22 | 228207540  | 999771792460  | 0          |
       | party2 | USD   | ETH/MAR22 | 1120424632 | 98879575368   | 0          |
 
@@ -104,17 +104,16 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | party  | asset | market id | margin     | general       | bond       |
       | lp1    | USD   | ETH/MAR22 | 53353554   | 9999946636446 | 10000      |
       | lp2    | USD   | ETH/MAR22 | 53353554   | 9999945646446 | 1000000    |
-      | lp3    | USD   | ETH/MAR22 | 9710346805 | 9989289653195 | 1000000000 |
+      | lp3    | USD   | ETH/MAR22 | 4801819849 | 9994198180151 | 1000000000 |
       | party1 | USD   | ETH/MAR22 | 548535540  | 999451544460  | 0          |
-      #| party1 | USD   | ETH/MAR22 | 536535540  | 999463544460  | 0          |
       | party2 | USD   | ETH/MAR22 | 135109231  | 99864010769   | 0          |
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
-      | buy  | 880   | 0      |
-      | buy  | 900   | 235    |
-      | sell | 1100  | 194    |
-      | sell | 1120  | 0      |
+      | buy  | 880   | 116    |
+      | buy  | 900   | 10     |
+      | sell | 1100  | 10     |
+      | sell | 1120  | 92     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
     And the accumulated liquidity fees should be "600000" for the market "ETH/MAR22"

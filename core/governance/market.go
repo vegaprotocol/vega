@@ -196,6 +196,7 @@ func buildMarketFromProposal(
 			Parameters: definition.Changes.PriceMonitoringParameters,
 		},
 		LiquidityMonitoringParameters: definition.Changes.LiquidityMonitoringParameters,
+		LPPriceRange:                  definition.Changes.LpPriceRange,
 	}
 	if err := assignRiskModel(definition.Changes, market.TradableInstrument); err != nil {
 		return nil, types.ProposalErrorUnspecified, err
@@ -352,6 +353,13 @@ func validateAuctionDuration(proposedDuration time.Duration, netp NetParams) (ty
 	return types.ProposalErrorUnspecified, nil
 }
 
+func validateLpPriceRange(lpPriceRange num.Decimal) (types.ProposalError, error) {
+	if lpPriceRange.IsZero() || lpPriceRange.IsNegative() || lpPriceRange.GreaterThan(num.DecimalFromInt64(100)) {
+		return types.ProposalErrorLpPriceRangeNonpositive, fmt.Errorf("proposal LP price range has incorrect value, expected value in (0,100], got %s", lpPriceRange.String())
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
 // ValidateNewMarket checks new market proposal terms.
 func validateNewMarketChange(
 	terms *types.NewMarket,
@@ -374,6 +382,9 @@ func validateNewMarketChange(
 		return types.ProposalErrorTooManyPriceMonitoringTriggers,
 			fmt.Errorf("%v price monitoring triggers set, maximum allowed is 5", len(terms.Changes.PriceMonitoringParameters.Triggers) > 5)
 	}
+	if perr, err := validateLpPriceRange(terms.Changes.LpPriceRange); err != nil {
+		return perr, err
+	}
 
 	return types.ProposalErrorUnspecified, nil
 }
@@ -384,6 +395,9 @@ func validateUpdateMarketChange(terms *types.UpdateMarket, etu *enactmentTime) (
 		return perr, err
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
+		return perr, err
+	}
+	if perr, err := validateLpPriceRange(terms.Changes.LpPriceRange); err != nil {
 		return perr, err
 	}
 

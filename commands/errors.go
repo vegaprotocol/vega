@@ -14,6 +14,7 @@ var (
 	ErrMustBePositiveOrZero         = errors.New("must be positive or zero")
 	ErrMustBeNegativeOrZero         = errors.New("must be negative or zero")
 	ErrMustBeLessThan150            = errors.New("must be less than 150")
+	ErrMustBeAtMost100              = errors.New("must be at most 100")
 	ErrMustBeWithinRange7           = errors.New("must be between -7 and 7")
 	ErrIsNotValid                   = errors.New("is not a valid value")
 	ErrIsNotValidNumber             = errors.New("is not a valid number")
