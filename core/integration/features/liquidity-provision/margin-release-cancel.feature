@@ -44,10 +44,10 @@ Feature: Replicate unexpected margin issues - no mid price pegs
     And the mark price should be "3500000000" for the market "DAI/DEC22"
     And the order book should have the following volumes for market "DAI/DEC22":
       | side | price      | volume |
-      | sell | 4500000010 | 9      |
-      | sell | 8200000000 | 1      |
-      | buy  | 4499999990 | 9      |
-      | buy  | 800000000  | 1      |
+      | sell | 8200000000 |      1 |
+      | sell | 4500000010 |      5 |
+      | buy  | 4499999990 |      5 |
+      | buy  | 800000000  |      1 |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee  | side | pegged reference | proportion | offset | reference | lp type    |
@@ -55,23 +55,23 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | lp2 | party4 | DAI/DEC22 | 10000000000       | 0.01 | sell | ASK              | 1          | 12     | lp-2      | submission |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin     | general     | bond        |
-      | party4 | DAI   | DAI/DEC22 | 2121827800 | 97878172200 | 10000000000 |
+      | party4 | DAI   | DAI/DEC22 | 1060913900 | 98939086100 | 10000000000 |
     And the order book should have the following volumes for market "DAI/DEC22":
       | side | price      | volume |
-      | sell | 4500000010 | 9      |
-      | sell | 8200000000 | 1      |
-      | sell | 8200000012 | 3      |
-      | buy  | 4499999990 | 9      |
-      | buy  | 800000000  | 1      |
-      | buy  | 799999988  | 26     |
+      | sell | 8200000012 |      2 |
+      | sell | 8200000000 |      1 |
+      | sell | 4500000010 |      5 |
+      | buy  | 4499999990 |      5 |
+      | buy  | 800000000  |      1 |
+      | buy  | 799999988  |     13 |
 
     # LP cancel -> orders are gone from the book + margin balance is released
     When party "party4" cancels their liquidity provision for market "DAI/DEC22"
     Then the order book should have the following volumes for market "DAI/DEC22":
       | side | price      | volume |
-      | sell | 4500000010 | 9      |
       | sell | 8200000000 | 1      |
-      | buy  | 4499999990 | 9      |
+      | sell | 4500000010 | 5      |
+      | buy  | 4499999990 | 5      |
       | buy  | 800000000  | 1      |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general      | bond |
@@ -105,10 +105,10 @@ Feature: Replicate unexpected margin issues - no mid price pegs
     And the mark price should be "3500000000" for the market "DAI/DEC22"
     And the order book should have the following volumes for market "DAI/DEC22":
       | side | price      | volume |
-      | sell | 4500000010 | 9      |
-      | sell | 8200000000 | 1      |
-      | buy  | 4499999990 | 9      |
-      | buy  | 800000000  | 1      |
+      | sell | 8200000000 |      1 |
+      | sell | 4500000010 |      5 |
+      | buy  | 4499999990 |      5 |
+      | buy  | 800000000  |      1 |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee  | side | pegged reference | proportion | offset | reference | lp type    |
@@ -116,15 +116,15 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | lp2 | party4 | DAI/DEC22 | 10000000000       | 0.01 | sell | ASK              | 1          | 12     | lp-2      | submission |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin     | general     | bond        |
-      | party4 | DAI   | DAI/DEC22 | 2121827800 | 97878172200 | 10000000000 |
+      | party4 | DAI   | DAI/DEC22 | 1060913900 | 98939086100 | 10000000000 |
     And the order book should have the following volumes for market "DAI/DEC22":
       | side | price      | volume |
-      | sell | 4500000010 | 9      |
-      | sell | 8200000000 | 1      |
-      | sell | 8200000012 | 3      |
-      | buy  | 4499999990 | 9      |
-      | buy  | 800000000  | 1      |
-      | buy  | 799999988  | 26     |
+      | sell | 8200000012 |      2 |
+      | sell | 8200000000 |      1 |
+      | sell | 4500000010 |      5 |
+      | buy  | 4499999990 |      5 |
+      | buy  | 800000000  |      1 |
+      | buy  | 799999988  |     13 |
 
     # Amending the LP should result in LP versions being different
     When the parties submit the following liquidity provision:
@@ -133,7 +133,7 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | lp2 | party4 | DAI/DEC22 | 10000000010       | 0.01 | sell | ASK              | 1          | 12     | lp-2      | amendment |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin     | general     | bond        |
-      | party4 | DAI   | DAI/DEC22 | 2121827800 | 97878172190 | 10000000010 |
+      | party4 | DAI   | DAI/DEC22 | 1060913900 | 98939086090 | 10000000010 |
     And the following LP events should be emitted:
       | party  | id  | version | commitment amount | final |
       | party4 | lp2 | 1       | 10000000000       | false |
@@ -143,10 +143,10 @@ Feature: Replicate unexpected margin issues - no mid price pegs
     When party "party4" cancels their liquidity provision for market "DAI/DEC22"
     Then the order book should have the following volumes for market "DAI/DEC22":
       | side | price      | volume |
-      | sell | 4500000010 | 9      |
-      | sell | 8200000000 | 1      |
-      | buy  | 4499999990 | 9      |
-      | buy  | 800000000  | 1      |
+      | sell | 8200000000 |      1 |
+      | sell | 4500000010 |      5 |
+      | buy  | 4499999990 |      5 |
+      | buy  | 800000000  |      1 |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general      | bond |
       | party4 | DAI   | DAI/DEC22 | 0      | 110000000000 | 0    |

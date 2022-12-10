@@ -13,6 +13,8 @@
 package steps
 
 import (
+	"fmt"
+
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"github.com/cucumber/godog"
 )
@@ -27,10 +29,21 @@ func TheOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *godo
 		size := row.MustU64("volume")
 		price := row.MustU64("price")
 		status := row.MustOrderStatus("status")
+		ref, hasRef := row.StrB("reference")
 
 		match := false
 		for _, e := range data {
 			o := e.Order()
+			if hasRef {
+				if ref != o.Reference {
+					continue
+				}
+				if o.PartyId == party && o.Status == status && o.MarketId == marketID && o.Side == side {
+					if o.Size != size || stringToU64(o.Price) != price {
+						return fmt.Errorf("side: %s, expected price: %v actual: %v, expected volume: %v, actual %v", side.String(), price, o.Price, size, o.Size)
+					}
+				}
+			}
 			if o.PartyId != party || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != size || stringToU64(o.Price) != price {
 				continue
 			}
@@ -52,5 +65,5 @@ func parseOrdersStatesTable(table *godog.Table) []RowWrapper {
 		"volume",
 		"price",
 		"status",
-	}, []string{})
+	}, []string{"reference"})
 }
