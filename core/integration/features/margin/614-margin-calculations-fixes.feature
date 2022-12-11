@@ -2,7 +2,7 @@ Feature: test bugfix 614 for margin calculations
 
   Background:
     Given the markets:
-      | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config          |
+      | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config     |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
       | name                                    | value |
@@ -27,7 +27,7 @@ Feature: test bugfix 614 for margin calculations
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
 
- # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux   | ETH/DEC19 | buy  | 1      | 87    | 0                | TYPE_LIMIT | TIF_GTC |
@@ -36,8 +36,8 @@ Feature: test bugfix 614 for margin calculations
     # Trigger an auction to set the mark price
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | buy  | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | party1-2 |
-      | party2 | ETH/DEC19 | sell | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | party2-2 |
+      | party1 | ETH/DEC19 | buy  | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | party1-2  |
+      | party2 | ETH/DEC19 | sell | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | party2-2  |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "94" for the market "ETH/DEC19"
 
@@ -50,20 +50,18 @@ Feature: test bugfix 614 for margin calculations
       | edd     | ETH/DEC19 | buy  | 3      | 96    | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
       | chris   | ETH/DEC19 | buy  | 15     | 90    | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
       | rebecca | ETH/DEC19 | buy  | 50     | 87    | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
-      # this is now the actual party that we are testing
+    # this is now the actual party that we are testing
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tamlyn | ETH/DEC19 | buy  | 13     | 150   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | tamlyn | ETH/DEC19 | 884         | 2828   | 3536    | 4420    |
+      | tamlyn | ETH/DEC19 | 988         | 3161   | 3952    | 4940    |
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | tamlyn  | ETH   | ETH/DEC19 | 3536   | 6343    |
+      | tamlyn  | ETH   | ETH/DEC19 | 3952   | 6104    |
       | chris   | ETH   | ETH/DEC19 | 5600   | 4400    |
       | edd     | ETH   | ETH/DEC19 | 5456   | 4544    |
-      #| edd     | ETH   | ETH/DEC19 | 3784   | 6216    |
       | barney  | ETH   | ETH/DEC19 | 992    | 8952    |
-      #| barney  | ETH   | ETH/DEC19 | 688    | 9256    |
       | rebecca | ETH   | ETH/DEC19 | 5600   | 4400    |
     And the cumulated balance for all accounts should be worth "3051000"
