@@ -671,6 +671,9 @@ func (m *Market) PostRestore(ctx context.Context) error {
 		parties[p] = struct{}{}
 	}
 	m.parties = parties
+
+	// tell the matching engine about the markets price factor so it can finish restoring orders
+	m.matching.RestoreWithMarketPriceFactor(m.priceFactor)
 	return nil
 }
 
@@ -3221,7 +3224,13 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 		// we're either going to set state to trading terminated
 		// or we'll be performing the final settlement (setting market status to settled)
 		// in both cases, we want to MTM any pending trades
-		if mp := m.getLastTradedPrice(); mp != nil && mp.IsZero() && m.settlement.HasTraded() {
+		if mp := m.getLastTradedPrice(); mp != nil && !mp.IsZero() && m.settlement.HasTraded() {
+			// we need the ID-gen
+			_, blockHash := vegacontext.TraceIDFromContext(ctx)
+			m.idgen = idgeneration.New(blockHash + crypto.HashStrToHex("finalmtm"+m.GetID()))
+			defer func() {
+				m.idgen = nil
+			}()
 			// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
 			// works as expected.
 			m.markPrice = mp.Clone()
