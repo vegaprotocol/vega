@@ -58,15 +58,15 @@ Feature: Closeout scenarios
       | trader2 | ETH/DEC19 | buy  | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTC | buy-order-3 |
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | buy  | 5     | 5      |
-      | buy  | 50    | 4040   |
+      | buy  | 1     | 100000 |
+      | buy  | 50    | 40     |
       | sell | 1000  | 10     |
-      | sell | 1055  | 223    |
+      | sell | 1050  | 96     |
 
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC19 | 321         | 481    | 642     | 963     |
-      | lprov   | ETH/DEC19 | 32030       | 48045  | 64060   | 96090   |
+      | party   | market id | maintenance | search    | initial | release |
+      | trader2 | ETH/DEC19 | 321         | 481       | 642     | 963     |
+      | lprov   | ETH/DEC19 | 800729      | 1201093   | 1601458 | 2402187 |
     # margin level_trader2= OrderSize*MarkPrice*RF = 40*10*0.801225765=321
     # margin level_Lprov= OrderSize*MarkPrice*RF = max(223*10*3.55690359157934000,4040*10*0.801225765)=32370
 
@@ -83,11 +83,11 @@ Feature: Closeout scenarios
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | buy  | 5     | 5      |
-      | buy  | 45    | 278966 |
+      | buy  | 45    | 2223   |
       | buy  | 50    | 40     |
       | buy  | 100   | 10     |
       | sell | 1000  | 10     |
-      | sell | 1055  | 223    |
+      | sell | 1055  | 95     |
 
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
@@ -109,21 +109,14 @@ Feature: Closeout scenarios
       | party      | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | auxiliary2 | ETH/DEC19 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
     Then the mark price should be "100" for the market "ETH/DEC19"
-    Then debug detailed orderbook volumes for market "ETH/DEC19"
     And the network moves ahead "1" blocks
-    Then debug detailed orderbook volumes for market "ETH/DEC19"
-    And debug trades
-
-    Then debug orders
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | buy  | 5     | 40005  |
-      | buy  | 45    | 0      |
-      | buy  | 50    | 0      |
-      | buy  | 100   | 0      |
+      | buy  | 5     | 5      |
+      | buy  | 1     | 100000 |
       | sell | 1000  | 10     |
-      | sell | 1055  | 223    |
+      | sell | 1005  | 100    |
     #trader3 is closed out
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
@@ -132,7 +125,7 @@ Feature: Closeout scenarios
     #trader2 has enough balance to maintain their position of 10 long, but not the order
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC19 | 1751        | 2626   | 3502    | 5253    |
+      | trader2 | ETH/DEC19 | 1771        | 2656   | 3542    | 5313    |
       | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
 
     #trader2's order is canceled since mark price has moved from 10 to 100, hence margin level has increased by 10 times
