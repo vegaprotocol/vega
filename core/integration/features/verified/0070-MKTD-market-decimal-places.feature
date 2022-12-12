@@ -183,14 +183,14 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | buyer  | price  | size | seller |
             | party1 | 100000 | 10   | party2 |
 
-    Scenario: User tops up markets with differing precisions with the same asset + amount, should result in identical margin changes, (0070-MKTD-004)
+    Scenario: 005: User tops up markets with differing precisions with the same asset + amount, should result in identical margin changes, (0070-MKTD-004)
 
         Given  the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
             | lp1 | party0 | USD/DEC20 | 100000            | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp1 | party0 | USD/DEC20 | 100000            | 0.001 | buy  | BID              | 100        | -20    | amendment  |
+            | lp1 | party0 | USD/DEC20 | 100000            | 0.001 | buy  | BID              | 100        | 20     | amendment  |
             | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | buy  | BID              | 100        | -20    | amendment  |
+            | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | buy  | BID              | 100        | 20     | amendment  |
 
         And the parties place the following orders:
             | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
@@ -218,10 +218,10 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
 
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond   |
-            | party0 | ETH   | USD/DEC20 | 845206 | 4007110  | 100000 |
+            | party0 | ETH   | USD/DEC20 | 422522 | 4451564  | 100000 |
             | party1 | ETH   | USD/DEC20 | 12     | 99998715 | 0      |
             | party2 | ETH   | USD/DEC20 | 52     | 99994779 | 0      |
-            | party0 | ETH   | USD/DEC19 | 42684  | 4007110  | 5000   |
+            | party0 | ETH   | USD/DEC19 | 20914  | 4451564  | 5000   |
             | party1 | ETH   | USD/DEC19 | 1273   | 99998715 | 0      |
             | party2 | ETH   | USD/DEC19 | 5169   | 99994779 | 0      |
 
@@ -232,10 +232,10 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party2 | ETH   | 1000   |
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond   |
-            | party0 | ETH   | USD/DEC20 | 845206 | 4008110  | 100000 |
+            | party0 | ETH   | USD/DEC20 | 422522 | 4452564  | 100000 |
             | party1 | ETH   | USD/DEC20 | 12     | 99999715 | 0      |
             | party2 | ETH   | USD/DEC20 | 52     | 99995779 | 0      |
-            | party0 | ETH   | USD/DEC19 | 42684  | 4008110  | 5000   |
+            | party0 | ETH   | USD/DEC19 | 20914  | 4452564  | 5000   |
             | party1 | ETH   | USD/DEC19 | 1273   | 99999715 | 0      |
             | party2 | ETH   | USD/DEC19 | 5169   | 99995779 | 0      |
 
