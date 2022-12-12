@@ -62,12 +62,10 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | sell | 1100  | 1      |
-      | sell | 1014  | 9975   |
+      | sell | 1030  | 4855   |
       | sell | 1010  | 1      |
-      | sell | 1000  | 0      |
-      | buy  | 1000  | 0      |
       | buy  | 990   | 1      |
-      | buy  | 986   | 10234  |
+      | buy  | 970   | 5155   |
       | buy  | 900   | 1      |
 
     #check position (party0 has no position)
@@ -171,12 +169,10 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | sell | 1100  | 1      |
-      | sell | 1014  | 9975   |
+      | sell | 1030  | 4855   |
       | sell | 1010  | 1      |
-      | sell | 1000  | 0      |
-      | buy  | 1000  | 0      |
       | buy  | 990   | 1      |
-      | buy  | 986   | 10234  |
+      | buy  | 970   | 5155   |
       | buy  | 900   | 1      |
 
     #check position (party0 has no position)
@@ -235,10 +231,10 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
       | party1 | USD   | ETH/MAR22 | 21534  | 99978826 |
-      | party2 | USD   | ETH/MAR22 | 4921   | 99994719 |
+      | party2 | USD   | ETH/MAR22 | 4993   | 99994647 |
 
-    #margin+general-initial = 21534+99978826=360 which is matching with realised pnl for party1
-    #margin+general-initial = 4921+99994719=-360 which is matching with realised pnl for party2
+    #margin+general-initial = 21534+99978826-100000000=360 which is matching with realised pnl for party1
+    #margin+general-initial = 4993+99994647-100000000=-360 which is matching with realised pnl for party2
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
@@ -269,3 +265,4 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | party  | asset | market id | margin | general   |
       | party1 | USD   | ETH/MAR22 | 0      | 100001375 |
       | party2 | USD   | ETH/MAR22 | 0      | 99998625  |
+
