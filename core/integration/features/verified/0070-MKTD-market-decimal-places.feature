@@ -103,11 +103,11 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party1 | ETH   | USD/DEC19 | 1081   | 99996757 | 0    |
             | party2 | ETH   | USD/DEC19 | 4268   | 99987196 | 0    |
 
-    Scenario: Users engage in a USD market auction, (0070-MKTD-003, 0070-MKTD-008)
+    Scenario: 002: Users engage in a USD market auction, (0070-MKTD-003, 0070-MKTD-008)
         Given the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
             | lp1 | party0 | ETH/MAR22 | 35569             | 0.001 | sell | ASK              | 500        | 20     | submission |
-            | lp1 | party0 | ETH/MAR22 | 35569             | 0.001 | buy  | BID              | 500        | -20    | amendment  |
+            | lp1 | party0 | ETH/MAR22 | 35569             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
 
         And the parties place the following orders:
             | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -123,7 +123,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         And the auction ends with a traded volume of "10" at a price of "10"
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond  |
-            | party0 | USD   | ETH/MAR22 | 307317 | 4657114  | 35569 |
+            | party0 | USD   | ETH/MAR22 | 342072 | 4622359  | 35569 |
             | party1 | USD   | ETH/MAR22 | 12730  | 99987270 | 0     |
             | party2 | USD   | ETH/MAR22 | 51630  | 99948370 | 0     |
         And the following trades should be executed:
