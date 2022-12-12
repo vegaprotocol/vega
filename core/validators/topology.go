@@ -61,7 +61,7 @@ type MultiSigTopology interface {
 }
 
 type ValidatorPerformance interface {
-	ValidatorPerformanceScore(address string, votingPower, totalPower int64) num.Decimal
+	ValidatorPerformanceScore(address string, votingPower, totalPower int64, performanceScalingFactor num.Decimal) num.Decimal
 	BeginBlock(ctx context.Context, proposer string)
 	Serialize() *v1.ValidatorPerformance
 	Deserialize(*v1.ValidatorPerformance)
@@ -174,6 +174,8 @@ type Topology struct {
 	blocksToKeepMalperforming int64
 	timeBetweenHeartbeats     time.Duration
 	timeToSendHeartbeat       time.Duration
+
+	performanceScalingFactor num.Decimal
 }
 
 func (t *Topology) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
@@ -457,6 +459,12 @@ func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlo
 	t.signatures.ClearStaleSignatures()
 	t.keyRotationBeginBlockLocked(ctx)
 	t.ethereumKeyRotationBeginBlockLocked(ctx)
+}
+
+// OnPerformanceScalingChanged updates the network parameter for performance scaling factor.
+func (t *Topology) OnPerformanceScalingChanged(ctx context.Context, scalingFactor num.Decimal) error {
+	t.performanceScalingFactor = scalingFactor
+	return nil
 }
 
 func (t *Topology) AddNewNode(ctx context.Context, nr *commandspb.AnnounceNode, status ValidatorStatus) error {
