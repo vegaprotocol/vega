@@ -183,7 +183,6 @@ func OrderFromProto(o *proto.Order) (*Order, error) {
 		Party:                o.PartyId,
 		Side:                 o.Side,
 		Price:                price,
-		OriginalPrice:        price.Clone(),
 		Size:                 o.Size,
 		Remaining:            o.Remaining,
 		TimeInForce:          o.TimeInForce,
