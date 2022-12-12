@@ -74,14 +74,14 @@ Feature: test risk model parameter sigma
 
     Then the order book should have the following volumes for market "ETH/MAR53":
       | side | price | volume    |
-      | sell | 31    | 22580646  |
+      | sell | 20    | 5000000   |
       | sell | 11    | 10        |
       | buy  | 9     | 10        |
-      | buy  | 1     | 200000001 |
+      | buy  | 1     | 100000000 |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin          | general                     | bond      |
-      | party0 | USD   | ETH/MAR53 | 338709351290310 | 499999999999661290548709690 | 100000000 |
+      | party0 | USD   | ETH/MAR53 | 74999925000000  | 499999999999924999975000000 | 100000000 |
       | party1 | USD   | ETH/MAR53 | 148             | 4999999852                  | 0         |
       | party2 | USD   | ETH/MAR53 | 164999835       | 4835000165                  | 0         |
 
@@ -90,7 +90,7 @@ Feature: test risk model parameter sigma
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance     | search          | initial         | release         |
-      | party0 | ETH/MAR53 | 225806234193540 | 270967481032248 | 338709351290310 | 383870598129018 |
+      | party0 | ETH/MAR53 | 49999950000000  | 59999940000000  | 74999925000000  | 84999915000000  |
 
   @Now
   Scenario: 002, test market ETH/MAR0 (kind of "normal" risk parameters setting),
@@ -125,14 +125,14 @@ Feature: test risk model parameter sigma
 
     Then the order book should have the following volumes for market "ETH/MAR0":
       | side | price | volume |
-      | sell | 110   | 181829 |
+      | sell | 110   | 10     |
       | sell | 109   | 0      |
       | buy  | 91    | 0      |
-      | buy  | 90    | 222233 |
+      | buy  | 90    | 10     |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin   | general                     | bond     |
-      | party0 | USD   | ETH/MAR0  | 97006899 | 499999999999999999892993101 | 10000000 |
+      | party0 | USD   | ETH/MAR0  | 41041689 | 499999999999999999948958311 | 10000000 |
       | party1 | USD   | ETH/MAR0  | 1189     | 4999998811                  | 0        |
       | party2 | USD   | ETH/MAR0  | 6397     | 4999993603                  | 0        |
 
@@ -141,7 +141,7 @@ Feature: test risk model parameter sigma
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search   | initial  | release   |
-      | party0 | ETH/MAR0  | 64671266    | 77605519 | 97006899 | 109941152 |
+      | party0 | ETH/MAR0  | 27361126    | 32833351 | 41041689 | 46513914 |
 
 # Scenario: 003, test market ETH/MAR54(sigma=100),
 #   And the following network parameters are set:

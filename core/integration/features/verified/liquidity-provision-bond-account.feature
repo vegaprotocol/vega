@@ -62,24 +62,22 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | sell | 1100  | 1      |
-      | sell | 1020  | 0      |
-      | sell | 1010  | 101    |
-      | sell | 1000  | 0      |
-      | buy  | 1000  | 0      |
-      | buy  | 990   | 103    |
-      | buy  | 980   | 0      |
+      | sell | 1030  | 49     |
+      | sell | 1010  | 1      |
+      | buy  | 990   | 1      |
+      | buy  | 970   | 52     |
       | buy  | 900   | 1      |
 
     # check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
-      | party0 | USD   | ETH/MAR22 | 426829 | 23171    | 50000 |
+      | party0 | USD   | ETH/MAR22 | 209146 | 240854   | 50000 |
       | party1 | USD   | ETH/MAR22 | 11415  | 99988585 | 0     |
       | party2 | USD   | ETH/MAR22 | 51630  | 99948370 | 0     |
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party0 | ETH/MAR22 | 355691      | 391260 | 426829  | 497967  |
+      | party0 | ETH/MAR22 | 174289      | 191717 | 209146  | 244004  |
       | party1 | ETH/MAR22 | 10159       | 11174  | 12190   | 14222   |
       | party2 | ETH/MAR22 | 43233       | 47556  | 51879   | 60526   |
     #check position (party0 has no position)
@@ -94,87 +92,48 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
 
-    # #check the volume on the order book
-    Then the order book should have the following volumes for market "ETH/MAR22":
-      | side | price | volume |
-      | sell | 1100  | 1      |
-      | sell | 1010  | 101    |
-      | buy  | 1000  | 130    |
-      | buy  | 990   | 1      |
-      | buy  | 900   | 1      |
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
-      | party2 | ETH/MAR22 | sell | 50     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-sell-4 |
+      | party2 | ETH/MAR22 | sell | 50     | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party2-sell-4 |
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1000      | 213414       | 50000          | 60            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1000      | 142276       | 50000          | 40            |
     # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1010 x 13 x 1 x 0.1
     # target stake 1313 with target trigger on 0.6 -> ~788 triggers liquidity auction
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
-      | party0 | USD   | ETH/MAR22 | 426829 | 23251    | 50000 |
+      | party0 | USD   | ETH/MAR22 | 209146 | 240854   | 50000 |
       | party1 | USD   | ETH/MAR22 | 11415  | 99988585 | 0     |
-      | party2 | USD   | ETH/MAR22 | 264754 | 99734946 | 0     |
+      | party2 | USD   | ETH/MAR22 | 264970 | 99734850 | 0     |
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party0 | ETH/MAR22 | 355691      | 391260 | 426829  | 497967  |
-
-    Then the order book should have the following volumes for market "ETH/MAR22":
-      | side | price | volume |
-      | sell | 1100  | 1      |
-      | sell | 1010  | 101    |
-      | sell | 1000  | 0      |
-      | buy  | 1000  | 0      |
-      | buy  | 990   | 103    |
-      | buy  | 900   | 1      |
-
-    And the parties should have the following account balances:
-      | party  | asset | market id | margin | general  | bond  |
-      | party0 | USD   | ETH/MAR22 | 426829 | 23251    | 50000 |
-      | party1 | USD   | ETH/MAR22 | 11415  | 99988585 | 0     |
-      | party2 | USD   | ETH/MAR22 | 264754 | 99734946 | 0     |
-      | party3 | USD   | ETH/MAR22 | 28826  | 99971294 | 0     |
+      | party0 | ETH/MAR22 | 177846      | 195630 | 213415  | 248984  |
 
     And the insurance pool balance should be "0" for the market "ETH/MAR22"
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
-      | party0 | ETH/MAR22 | sell | 15     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party0-sell-3 |
+      | party0 | ETH/MAR22 | sell | 70     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party0-sell-3 |
+      | party1 | ETH/MAR22 | buy  | 100    | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party1-buy-4  |
 
-    Then debug transfers
-    Then debug orders
-
-    And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1000      | 213414       | 50000          | 60            |
-
-    And the insurance pool balance should be "8154" for the market "ETH/MAR22"
-    #check the volume on the order book
-    Then the order book should have the following volumes for market "ETH/MAR22":
-      | side | price | volume |
-      | sell | 1100  | 1      |
-      | sell | 1010  | 1      |
-      | sell | 1000  | 100    |
-      | buy  | 1000  | 0      |
-      | buy  | 990   | 103    |
-      | buy  | 900   | 1      |
+    And the insurance pool balance should be "16958" for the market "ETH/MAR22"
 
   #check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond |
-      | party0 | USD   | ETH/MAR22 | 490852 | 0        | 1074 |
-      | party1 | USD   | ETH/MAR22 | 11415  | 99988585 | 0    |
-      | party2 | USD   | ETH/MAR22 | 264754 | 99734946 | 0    |
+      | party0 | USD   | ETH/MAR22 | 483322 | 0        | 0    |
+      | party1 | USD   | ETH/MAR22 | 107954 | 99891506 | 0    |
+      | party2 | USD   | ETH/MAR22 | 264970 | 99734930 | 0    |
       | party3 | USD   | ETH/MAR22 | 28826  | 99971294 | 0    |
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party0 | ETH/MAR22 | 355691      | 391260 | 426829  | 497967  |
-      | party1 | ETH/MAR22 | 10159       | 11174  | 12190   | 14222   |
-      | party2 | ETH/MAR22 | 220629      | 242691 | 264754  | 308880  |
+      | party0 | ETH/MAR22 | 425372      | 467909 | 510446  | 595520  |
+      | party1 | ETH/MAR22 | 89962       | 98958  | 107954  | 125946  |
+      | party2 | ETH/MAR22 | 220809      | 242889 | 264970  | 309132  |
       #| party2 | ETH/MAR22 | 221129      | 243241 | 265354  | 309580  |
 
 #documented behaviour why margin account has higher value than margin initial level:
@@ -188,7 +147,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     # open interest updates to include buy order of size 20
     And the market data for the market "ETH/MAR22" should be:
       | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 213414       | 50000          | 60            |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 462397       | 50000          | 130           |
 
     @Now
 Scenario: 002, LP gets slashed twice during continuous trading, 0044-LIME-002, No DPD setting
@@ -228,23 +187,21 @@ Scenario: 002, LP gets slashed twice during continuous trading, 0044-LIME-002, N
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | sell | 1100  | 1      |
-      | sell | 1020  | 0      |
-      | sell | 1010  | 101    |
-      | sell | 1000  | 0      |
-      | buy  | 1000  | 0      |
-      | buy  | 990   | 103    |
-      | buy  | 980   | 0      |
+      | sell | 1030  | 49     |
+      | sell | 1010  | 1      |
+      | buy  | 990   | 1      |
+      | buy  | 970   | 52     |
       | buy  | 900   | 2      |
 
     # check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
-      | party0 | USD   | ETH/MAR22 | 426829 | 23171    | 50000 |
+      | party0 | USD   | ETH/MAR22 | 209146 | 240854   | 50000 |
 
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party0 | ETH/MAR22 | 355691      | 391260 | 426829  | 497967  |
+      | party0 | ETH/MAR22 | 174289      | 191717 | 209146  | 244004  |
 
     #check position (party0 has no position)
     Then the parties should have the following profit and loss:
@@ -261,77 +218,62 @@ Scenario: 002, LP gets slashed twice during continuous trading, 0044-LIME-002, N
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | sell | 1100  | 1      |
-      | sell | 1010  | 101    |
-      | buy  | 1000  | 130    |
+      | sell | 1010  | 1      |
+      | buy  | 1000  | 30     |
       | buy  | 990   | 1      |
       | buy  | 900   | 2      |
+
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
-      | party2 | ETH/MAR22 | sell | 50     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-sell-4 |
+      | party2 | ETH/MAR22 | sell | 50     | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party2-sell-4 |
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1000      | 213414       | 50000          | 60            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1000      | 142276       | 50000          | 40            |
     # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1010 x 13 x 1 x 0.1
     # target stake 1313 with target trigger on 0.6 -> ~788 triggers liquidity auction
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
-      | party0 | USD   | ETH/MAR22 | 426829 | 23251    | 50000 |
+      | party0 | USD   | ETH/MAR22 | 209146 | 240854   | 50000 |
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party0 | ETH/MAR22 | 355691      | 391260 | 426829  | 497967  |
-
-    Then the order book should have the following volumes for market "ETH/MAR22":
-      | side | price | volume |
-      | sell | 1100  | 1      |
-      | sell | 1010  | 101    |
-      | sell | 1000  | 0      |
-      | buy  | 1000  | 0      |
-      | buy  | 990   | 103    |
-      | buy  | 900   | 2      |
-
+      | party0 | ETH/MAR22 | 177846      | 195630 | 213415  | 248984  |
+  
     And the insurance pool balance should be "0" for the market "ETH/MAR22"
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
-      | party0 | ETH/MAR22 | sell | 15     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party0-sell-3 |
+      | party0 | ETH/MAR22 | sell | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party0-sell-3 |
+      | party1 | ETH/MAR22 | buy  | 100    | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party1-buy-4  |
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1000      | 213414       | 50000          | 60            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1000      | 426828       | 50000          | 120            |
 
-    And the insurance pool balance should be "20386" for the market "ETH/MAR22"
+    And the insurance pool balance should be "9756" for the market "ETH/MAR22"
     #check the volume on the order book
-    Then the order book should have the following volumes for market "ETH/MAR22":
-      | side | price | volume |
-      | sell | 1100  | 1      |
-      | sell | 1010  | 1      |
-      | sell | 1000  | 100    |
-      | buy  | 1000  | 0      |
-      | buy  | 990   | 103    |
-      | buy  | 900   | 2      |
 
   #check the requried balances
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general  | bond |
-      | party0 | USD   | ETH/MAR22 | 479694 | 0        |      |
+      | party  | asset | market id | margin | general  | bond  |
+      | party0 | USD   | ETH/MAR22 | 467403 | 2349     | 20732 |
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party0 | ETH/MAR22 | 355691      | 391260 | 426829  | 497967  |
+      | party0 | ETH/MAR22 | 389503      | 428453 | 467403  | 545304  |
 
     # Lp provider party0 keeps on putting order, and more bond slashing is done
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
-      | party0 | ETH/MAR22 | sell | 30     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party0-sell-3 |
+      | party0 | ETH/MAR22 | sell | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party0-sell-3 |
 
-    And the insurance pool balance should be "57977" for the market "ETH/MAR22"
+    And the insurance pool balance should be "19252" for the market "ETH/MAR22"
 
     # margin levels stays the same as there is no new trade to trigger new mark price
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond |
-      | party0 | USD   | ETH/MAR22 | 442103 | 0        | 0    |
+      | party0 | USD   | ETH/MAR22 | 480958 | 0        | 0    |
 
 #documented behavier why margin account has higher value than margin initial level:
 #When an LP submits a new order, we recalculate the margin requirements as we do for any order. At this point, we don't care if the party is an LP or not. We work out the margin requirements assuming whatever position the party holds stays the same. If the margin requirement increases, we try and top up the margin balance to the initial margin level. If this means dipping in to the bond account, we slash the bond account and apply a penalty.
