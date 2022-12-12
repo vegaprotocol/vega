@@ -278,7 +278,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | buy  | 728   | 175050882 |
       | buy  | 900   | 1         |
 
-  Scenario:  LP Volume being pushed by limit of Probability of Trading (capped at 1e-8)
+  Scenario: 004: LP Volume being pushed by limit of Probability of Trading (capped at 1e-8)
     #Price Monitoring has been removed as Prob in Price Monitoring only take up to 15 decimal places which will prevent scenatio which will trigger the ProbOfTrading cap at 1e-8
 
     Given the log normal risk model named "log-normal-risk-model-1":
@@ -324,11 +324,11 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
     # ProbOfTrading is floored at 1e-8 when LP pegged ref offset from 500 onward, we use 600 in this test case
 
     And the order book should have the following volumes for market "ETH2/MAR22":
-      | side | price | volume         |
-      | sell | 1709  | 2925687536572  |
-      | sell | 1109  | 1              |
-      | buy  | 300   | 16666666666667 |
-      | buy  | 900   | 1              |
+      | side | price | volume |
+      | buy  | 300   | 166667 |
+      | buy  | 900   | 1      |
+      | sell | 1109  | 1      |
+      | sell | 1709  | 29257  |
 
   # vol_LP_Short= 50000000/1709/1e-8=2.925e12
   # vol_LP_Long= 50000000/300/1e-8=1.66e13
