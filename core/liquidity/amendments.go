@@ -136,16 +136,13 @@ func (e *Engine) GetPotentialShapeOrders(
 		}
 	}
 
-	// now try to calculate the implied volume for our shape,
-	// any error would exit straight away
-	if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
+	// now calculate the implied volume for our shape
+	e.suppliedEngine.CalculateLiquidityImpliedVolumes(
 		obligation,
 		orders,
 		minLpPrice, maxLpPrice,
 		buyShape, sellShape,
-	); err != nil {
-		return nil, err
-	}
+	)
 
 	// from this point we should have no error possible, let's just
 	// make the order shapes
