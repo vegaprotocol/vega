@@ -2,14 +2,11 @@ package dehistory_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/dehistory"
 
-	"code.vegaprotocol.io/vega/core/netparams"
-	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/stretchr/testify/assert"
@@ -18,37 +15,22 @@ import (
 func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
 	log := logging.NewTestLogger()
 
-	snapshotInterval := &struct {
-		interval int
-	}{
-		interval: 1000,
-	}
-
 	var snapshots []int64
 
 	snapshotData := func(ctx context.Context, chainID string, toHeight int64) error {
-		if toHeight >= 5000 {
-			snapshotInterval.interval = 300
-		}
-
 		snapshots = append(snapshots, toHeight)
 		return nil
 	}
 
-	getNetworkParameter := func(ctx context.Context, key string) (entities.NetworkParameter, error) {
-		assert.Equal(t, netparams.SnapshotIntervalLength, key)
-
-		return entities.NetworkParameter{
-			Key:   netparams.SnapshotIntervalLength,
-			Value: strconv.Itoa(snapshotInterval.interval),
-		}, nil
-	}
-
-	commitHandler := dehistory.NewBlockCommitHandler(log, dehistory.NewDefaultConfig(), snapshotData, getNetworkParameter, true, time.Duration(0))
+	commitHandler := dehistory.NewBlockCommitHandler(log, dehistory.NewDefaultConfig(), snapshotData, true, time.Duration(0))
 
 	ctx := context.Background()
 	for blockHeight := int64(0); blockHeight < 6100; blockHeight++ {
-		commitHandler.OnBlockCommitted(ctx, "", blockHeight)
+		snapshotTaken := blockHeight%1000 == 0
+		if blockHeight >= 5000 {
+			snapshotTaken = blockHeight%300 == 0
+		}
+		commitHandler.OnBlockCommitted(ctx, "", blockHeight, snapshotTaken)
 	}
 
 	assert.Equal(t, 6, len(snapshots))
@@ -63,37 +45,22 @@ func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
 func TestAlteringBlockCommitHandlerSnapshotInterval(t *testing.T) {
 	log := logging.NewTestLogger()
 
-	snapshotInterval := &struct {
-		interval int
-	}{
-		interval: 1000,
-	}
-
 	var snapshots []int64
 
 	snapshotData := func(ctx context.Context, chainID string, toHeight int64) error {
-		if toHeight >= 5000 {
-			snapshotInterval.interval = 500
-		}
-
 		snapshots = append(snapshots, toHeight)
 		return nil
 	}
-
-	getNetworkParameter := func(ctx context.Context, key string) (entities.NetworkParameter, error) {
-		assert.Equal(t, netparams.SnapshotIntervalLength, key)
-
-		return entities.NetworkParameter{
-			Key:   netparams.SnapshotIntervalLength,
-			Value: strconv.Itoa(snapshotInterval.interval),
-		}, nil
-	}
-
-	commitHandler := dehistory.NewBlockCommitHandler(log, dehistory.NewDefaultConfig(), snapshotData, getNetworkParameter, false, time.Duration(0))
-
+	commitHandler := dehistory.NewBlockCommitHandler(log, dehistory.NewDefaultConfig(), snapshotData, false, time.Duration(0))
 	ctx := context.Background()
+
 	for blockHeight := int64(0); blockHeight < 6100; blockHeight++ {
-		commitHandler.OnBlockCommitted(ctx, "", blockHeight)
+		snapshotTaken := blockHeight%1000 == 0
+		if blockHeight >= 5000 {
+			snapshotTaken = blockHeight%500 == 0
+		}
+
+		commitHandler.OnBlockCommitted(ctx, "", blockHeight, snapshotTaken)
 	}
 
 	assert.Equal(t, 7, len(snapshots))
@@ -126,23 +93,13 @@ func TestPublishingOff(t *testing.T) {
 		return nil
 	}
 
-	getNetworkParameter := func(ctx context.Context, key string) (entities.NetworkParameter, error) {
-		assert.Equal(t, netparams.SnapshotIntervalLength, key)
-
-		return entities.NetworkParameter{
-			Key:   netparams.SnapshotIntervalLength,
-			Value: strconv.Itoa(snapshotInterval.interval),
-		}, nil
-	}
-
 	cfg := dehistory.NewDefaultConfig()
 	cfg.Publish = false
-	commitHandler := dehistory.NewBlockCommitHandler(log, cfg, snapshotData,
-		getNetworkParameter, false, 0)
+	commitHandler := dehistory.NewBlockCommitHandler(log, cfg, snapshotData, false, 0)
 
 	ctx := context.Background()
 	for blockHeight := int64(0); blockHeight < 6100; blockHeight++ {
-		commitHandler.OnBlockCommitted(ctx, "", blockHeight)
+		commitHandler.OnBlockCommitted(ctx, "", blockHeight, true) // show that regardless of what the core says about snapshot taken, none is taken here as publish is false.
 	}
 
 	assert.Equal(t, 0, len(snapshots))

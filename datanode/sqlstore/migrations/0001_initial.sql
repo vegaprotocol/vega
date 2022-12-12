@@ -1467,6 +1467,15 @@ CREATE VIEW protocol_upgrade_proposals_current AS (
       FROM protocol_upgrade_proposals
   ORDER BY upgrade_block_height, vega_release_tag, vega_time DESC);
 
+CREATE TABLE IF NOT EXISTS core_snapshots(
+    block_height BIGINT NOT NULL,
+    block_hash bytea not null,
+    vega_core_version bytea not null,
+    tx_hash bytea not null,
+    vega_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    PRIMARY KEY(vega_time, block_height)
+);
+
 create table last_snapshot_span
 (
     onerow_check  bool PRIMARY KEY DEFAULT TRUE,
@@ -1485,7 +1494,7 @@ DROP FUNCTION IF EXISTS public.last_agg(anyelement, anyelement);
 DROP VIEW IF EXISTS protocol_upgrade_proposals_current;
 DROP TABLE IF EXISTS protocol_upgrade_proposals;
 DROP TYPE IF EXISTS protocol_upgrade_proposal_status;
-
+DROP TABLE IF EXISTS core_snapshots;
 DROP TABLE IF EXISTS ethereum_key_rotations;
 
 DROP TABLE IF EXISTS key_rotations;
