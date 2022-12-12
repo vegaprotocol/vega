@@ -330,10 +330,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | sell | 1109  | 1      |
       | sell | 1709  | 29257  |
 
-  # vol_LP_Short= 50000000/1709/1e-8=2.925e12
-  # vol_LP_Long= 50000000/300/1e-8=1.66e13
-
-  Scenario:  Create LP shape that pegs to mid and deploys volumes and price between best ask and best bid (0034-PROB-005)
+  Scenario: 005: Create LP shape that pegs to mid and deploys volumes and price between best ask and best bid (0034-PROB-005)
 
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -379,19 +376,12 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
 
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price | volume |
-      | buy  | 95    | 221607 |
-      #50000000*(20/95)/0.5/95
-      | buy  | 90    | 350878 |
-      #50000000*(30/95)/0.5/90
-      | buy  | 85    | 495357 |
-      #50000000*(40/95)/0.5/85
-      | buy  | 80    | 65790  |
-      #50000000*(5/95)/0.5/80
-      | sell | 105   | 200502 |
-      #50000000*(20/95)/0.5/105
-      | sell | 110   | 287082 |
-      #50000000*(30/95)/0.5/110
-      | sell | 115   | 366133 |
-      #50000000*(40/95)/0.5/115
-      | sell | 120   | 43860  |
-#50000000*(5/95)/0.5/120
+      | buy  | 80    | 32895  |
+      | buy  | 85    | 247679 |
+      | buy  | 90    | 175439 |
+      | buy  | 95    | 110804 |
+      | sell | 105   | 100251 |
+      | sell | 110   | 143541 |
+      | sell | 115   | 183067 |
+      | sell | 120   | 21930  |
+
