@@ -667,6 +667,9 @@ func (m *Market) PostRestore(ctx context.Context) error {
 		parties[p] = struct{}{}
 	}
 	m.parties = parties
+
+	// tell the matching engine about the markets price factor so it can finish restoring orders
+	m.matching.RestoreWithMarketPriceFactor(m.priceFactor)
 	return nil
 }
 
