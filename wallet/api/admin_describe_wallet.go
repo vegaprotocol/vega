@@ -16,10 +16,11 @@ type AdminDescribeWalletParams struct {
 }
 
 type AdminDescribeWalletResult struct {
-	Name    string `json:"name"`
-	ID      string `json:"id"`
-	Type    string `json:"type"`
-	Version uint32 `json:"version"`
+	Name                 string `json:"name"`
+	ID                   string `json:"id"`
+	Type                 string `json:"type"`
+	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
+	Version              uint32 `json:"version"`
 }
 
 type AdminDescribeWallet struct {
@@ -48,10 +49,11 @@ func (h *AdminDescribeWallet) Handle(ctx context.Context, rawParams jsonrpc.Para
 	}
 
 	return AdminDescribeWalletResult{
-		Name:    w.Name(),
-		ID:      w.ID(),
-		Type:    w.Type(),
-		Version: w.Version(),
+		Name:                 w.Name(),
+		ID:                   w.ID(),
+		Type:                 w.Type(),
+		KeyDerivationVersion: w.KeyDerivationVersion(),
+		Version:              w.KeyDerivationVersion(),
 	}, nil
 }
 

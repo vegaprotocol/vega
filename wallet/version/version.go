@@ -1,12 +1,15 @@
 package version
 
 import (
+	"errors"
 	"sort"
 
 	vgversion "code.vegaprotocol.io/vega/libs/version"
 	coreversion "code.vegaprotocol.io/vega/version"
 	"code.vegaprotocol.io/vega/wallet/network"
 )
+
+var ErrCouldNotListNetworks = errors.New("couldn't list the networks")
 
 // RequestVersionFn is the function in charge of retrieving the network version
 // ran by the host lists.
@@ -22,9 +25,21 @@ func IsUnreleased() bool {
 	return vgversion.IsUnreleased(coreversion.Get())
 }
 
-type GetVersionResponse struct {
-	Version               string                 `json:"version"`
-	GitHash               string                 `json:"gitHash"`
+type GetSoftwareVersionResponse struct {
+	Version string `json:"version"`
+	GitHash string `json:"gitHash"`
+}
+
+func GetSoftwareVersionInfo() *GetSoftwareVersionResponse {
+	response := &GetSoftwareVersionResponse{
+		Version: coreversion.Get(),
+		GitHash: coreversion.GetCommitHash(),
+	}
+
+	return response
+}
+
+type CheckSoftwareCompatibilityResponse struct {
 	NetworksCompatibility []NetworkCompatibility `json:"networksCompatibility"`
 }
 
@@ -35,18 +50,13 @@ type NetworkCompatibility struct {
 	Error            error  `json:"error"`
 }
 
-func GetVersionInfo(netStore NetworkStore, requestVersionFn RequestVersionFn) *GetVersionResponse {
-	response := &GetVersionResponse{
-		Version: coreversion.Get(),
-		GitHash: coreversion.GetCommitHash(),
-	}
-
+func CheckSoftwareCompatibility(netStore NetworkStore, requestVersionFn RequestVersionFn) (*CheckSoftwareCompatibilityResponse, error) {
 	networks, err := netStore.ListNetworks()
 	// If there's an error we don't fail the command as the compatibility matrix
 	// is just a nice to have.
 	if err != nil {
 		// Best-effort, so we don't fail.
-		return response
+		return nil, ErrCouldNotListNetworks
 	}
 
 	networksCompatibility := make([]NetworkCompatibility, 0, len(networks))
@@ -96,7 +106,7 @@ func GetVersionInfo(netStore NetworkStore, requestVersionFn RequestVersionFn) *G
 		return networksCompatibility[a].Network < networksCompatibility[b].Network
 	})
 
-	response.NetworksCompatibility = networksCompatibility
-
-	return response
+	return &CheckSoftwareCompatibilityResponse{
+		NetworksCompatibility: networksCompatibility,
+	}, nil
 }

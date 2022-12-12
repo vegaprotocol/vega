@@ -97,10 +97,11 @@ func testDescribingWalletWithValidParamsSucceeds(t *testing.T) {
 	// then
 	require.Nil(t, errorDetails)
 	assert.Equal(t, api.AdminDescribeWalletResult{
-		Name:    expectedWallet.Name(),
-		ID:      expectedWallet.ID(),
-		Type:    expectedWallet.Type(),
-		Version: expectedWallet.Version(),
+		Name:                 expectedWallet.Name(),
+		ID:                   expectedWallet.ID(),
+		Type:                 expectedWallet.Type(),
+		Version:              expectedWallet.KeyDerivationVersion(),
+		KeyDerivationVersion: expectedWallet.KeyDerivationVersion(),
 	}, result)
 }
 

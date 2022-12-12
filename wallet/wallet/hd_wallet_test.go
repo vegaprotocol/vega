@@ -18,7 +18,7 @@ func TestHDWallet(t *testing.T) {
 	t.Run("Creating wallet succeeds", testHDWalletCreateWalletSucceeds)
 	t.Run("Importing wallet succeeds", testHDWalletImportingWalletSucceeds)
 	t.Run("Importing wallet with invalid recovery phrase fails", testHDWalletImportingWalletWithInvalidRecoveryPhraseFails)
-	t.Run("Importing wallet with unsupported version fails", testHDWalletImportingWalletWithUnsupportedVersionFails)
+	t.Run("Importing wallet with unsupported key derivation version fails", testHDWalletImportingWalletWithUnsupportedKeyDerivationVersionFails)
 	t.Run("Generating key pair succeeds", testHDWalletGeneratingKeyPairSucceeds)
 	t.Run("Generating key pair on isolated wallet fails", testHDWalletGeneratingKeyPairOnIsolatedWalletFails)
 	t.Run("Tainting key pair succeeds", testHDWalletTaintingKeyPairSucceeds)
@@ -71,7 +71,7 @@ func testHDWalletCreateWalletSucceeds(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, recoveryPhrase)
 	assert.NotNil(t, w)
-	assert.Equal(t, uint32(2), w.Version())
+	assert.Equal(t, uint32(2), w.KeyDerivationVersion())
 }
 
 func testHDWalletImportingWalletSucceeds(t *testing.T) {
@@ -99,7 +99,7 @@ func testHDWalletImportingWalletSucceeds(t *testing.T) {
 			// then
 			require.NoError(tt, err)
 			assert.NotNil(tt, w)
-			assert.Equal(tt, tc.version, w.Version())
+			assert.Equal(tt, tc.version, w.KeyDerivationVersion())
 		})
 	}
 }
@@ -133,7 +133,7 @@ func testHDWalletImportingWalletWithInvalidRecoveryPhraseFails(t *testing.T) {
 	}
 }
 
-func testHDWalletImportingWalletWithUnsupportedVersionFails(t *testing.T) {
+func testHDWalletImportingWalletWithUnsupportedKeyDerivationVersionFails(t *testing.T) {
 	// given
 	name := vgrand.RandomStr(5)
 
@@ -1447,7 +1447,7 @@ func testHDWalletUnmarshalingWalletSucceeds(t *testing.T) {
 
 			// then
 			require.NoError(tt, err)
-			assert.Equal(tt, tc.expectedVersion, w.Version())
+			assert.Equal(tt, tc.expectedVersion, w.KeyDerivationVersion())
 			keyPairs := w.ListKeyPairs()
 			assert.Len(tt, keyPairs, 1)
 			assert.Equal(tt, tc.expectedPublicKey, keyPairs[0].PublicKey())
@@ -1489,7 +1489,7 @@ func testHDWalletGettingWalletInfoSucceeds(t *testing.T) {
 			require.NotNil(tt, w)
 			assert.Equal(tt, "9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e", w.ID())
 			assert.Equal(tt, "HD wallet", w.Type())
-			assert.Equal(tt, tc.version, w.Version())
+			assert.Equal(tt, tc.version, w.KeyDerivationVersion())
 		})
 	}
 }
@@ -1535,7 +1535,7 @@ func testHDWalletGettingIsolatedWalletInfoSucceeds(t *testing.T) {
 			require.NotNil(tt, isolatedWallet)
 			assert.Equal(tt, "9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e", w.ID())
 			assert.Equal(tt, "HD wallet", w.Type())
-			assert.Equal(tt, tc.version, w.Version())
+			assert.Equal(tt, tc.version, w.KeyDerivationVersion())
 		})
 	}
 }

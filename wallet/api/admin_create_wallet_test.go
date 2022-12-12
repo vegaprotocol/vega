@@ -108,7 +108,7 @@ func testCreatingWalletWithValidParamsSucceeds(t *testing.T) {
 	// Verify the result.
 	assert.Equal(t, name, result.Wallet.Name)
 	assert.NotEmpty(t, result.Wallet.RecoveryPhrase)
-	assert.Equal(t, uint32(2), result.Wallet.Version)
+	assert.Equal(t, uint32(2), result.Wallet.KeyDerivationVersion)
 	assert.Equal(t, expectedPath, result.Wallet.FilePath)
 	assert.Equal(t, keyPair.PublicKey(), result.Key.PublicKey)
 	assert.Equal(t, keyPair.AlgorithmName(), result.Key.Algorithm.Name)
