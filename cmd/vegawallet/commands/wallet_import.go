@@ -109,12 +109,12 @@ func BuildCmdImportWallet(w io.Writer, handler ImportWalletHandler, rf *RootFlag
 	cmd.Flags().Uint32Var(&f.Version,
 		"version",
 		wallet.LatestVersion,
-		fmt.Sprintf("Version of the wallet to import: %v", wallet.SupportedVersions),
+		fmt.Sprintf("Version of the wallet to import: %v", wallet.SupportedKeyDerivationVersions),
 	)
 
 	_ = cmd.RegisterFlagCompletionFunc("version", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		vs := make([]string, 0, len(wallet.SupportedVersions))
-		for i, v := range wallet.SupportedVersions {
+		vs := make([]string, 0, len(wallet.SupportedKeyDerivationVersions))
+		for i, v := range wallet.SupportedKeyDerivationVersions {
 			vs[i] = strconv.FormatUint(uint64(v), 10) //nolint:gomnd
 		}
 		return vgzap.SupportedLogLevels, cobra.ShellCompDirectiveDefault
@@ -132,7 +132,7 @@ type ImportWalletFlags struct {
 
 func (f *ImportWalletFlags) Validate() (api.AdminImportWalletParams, error) {
 	params := api.AdminImportWalletParams{
-		Version: f.Version,
+		KeyDerivationVersion: f.Version,
 	}
 
 	if len(f.Wallet) == 0 {

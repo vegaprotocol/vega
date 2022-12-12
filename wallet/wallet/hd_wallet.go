@@ -25,9 +25,9 @@ const (
 var ErrCannotSetRestrictedKeysWithNoAccess = errors.New("can't set restricted keys with \"none\" access")
 
 type HDWallet struct {
-	version uint32
-	name    string
-	keyRing *HDKeyRing
+	keyDerivationVersion uint32
+	name                 string
+	keyRing              *HDKeyRing
 
 	// node is the node from which the cryptographic keys are generated. This is
 	// not the master node. This is a node derived from the master. Its
@@ -58,13 +58,13 @@ func NewHDWallet(name string) (*HDWallet, string, error) {
 
 // ImportHDWallet creates a wallet based on the recovery phrase in input. This
 // is useful import or retrieve a wallet.
-func ImportHDWallet(name, recoveryPhrase string, version uint32) (*HDWallet, error) {
+func ImportHDWallet(name, recoveryPhrase string, keyDerivationVersion uint32) (*HDWallet, error) {
 	if !bip39.IsMnemonicValid(recoveryPhrase) {
 		return nil, ErrInvalidRecoveryPhrase
 	}
 
-	if !IsVersionSupported(version) {
-		return nil, NewUnsupportedWalletVersionError(version)
+	if !IsKeyDerivationVersionSupported(keyDerivationVersion) {
+		return nil, NewUnsupportedWalletVersionError(keyDerivationVersion)
 	}
 
 	walletNode, err := deriveWalletNodeFromRecoveryPhrase(recoveryPhrase)
@@ -73,17 +73,17 @@ func ImportHDWallet(name, recoveryPhrase string, version uint32) (*HDWallet, err
 	}
 
 	return &HDWallet{
-		version:     version,
-		name:        name,
-		node:        walletNode,
-		id:          walletID(walletNode),
-		keyRing:     NewHDKeyRing(),
-		permissions: map[string]Permissions{},
+		keyDerivationVersion: keyDerivationVersion,
+		name:                 name,
+		node:                 walletNode,
+		id:                   walletID(walletNode),
+		keyRing:              NewHDKeyRing(),
+		permissions:          map[string]Permissions{},
 	}, nil
 }
 
-func (w *HDWallet) Version() uint32 {
-	return w.version
+func (w *HDWallet) KeyDerivationVersion() uint32 {
+	return w.keyDerivationVersion
 }
 
 func (w *HDWallet) Name() string {
@@ -281,11 +281,11 @@ func (w *HDWallet) IsolateWithKey(pubKey string) (Wallet, error) {
 	}
 
 	return &HDWallet{
-		version:     w.version,
-		name:        fmt.Sprintf("%s.%s.isolated", w.name, keyPair.PublicKey()[0:8]),
-		keyRing:     LoadHDKeyRing([]HDKeyPair{keyPair}),
-		id:          w.id,
-		permissions: w.permissions,
+		keyDerivationVersion: w.keyDerivationVersion,
+		name:                 fmt.Sprintf("%s.%s.isolated", w.name, keyPair.PublicKey()[0:8]),
+		keyRing:              LoadHDKeyRing([]HDKeyPair{keyPair}),
+		id:                   w.id,
+		permissions:          w.permissions,
 	}, nil
 }
 
@@ -334,11 +334,11 @@ func (w *HDWallet) UpdatePermissions(hostname string, perms Permissions) error {
 
 func (w *HDWallet) MarshalJSON() ([]byte, error) {
 	jsonW := jsonHDWallet{
-		Version:     w.Version(),
-		Node:        w.node,
-		ID:          w.id,
-		Keys:        w.keyRing.ListKeyPairs(),
-		Permissions: w.permissions,
+		KeyDerivationVersion: w.KeyDerivationVersion(),
+		Node:                 w.node,
+		ID:                   w.id,
+		Keys:                 w.keyRing.ListKeyPairs(),
+		Permissions:          w.permissions,
 	}
 
 	if jsonW.Permissions == nil {
@@ -359,11 +359,11 @@ func (w *HDWallet) UnmarshalJSON(data []byte) error {
 	}
 
 	*w = HDWallet{
-		version:     jsonW.Version,
-		node:        jsonW.Node,
-		id:          jsonW.ID,
-		keyRing:     LoadHDKeyRing(jsonW.Keys),
-		permissions: jsonW.Permissions,
+		keyDerivationVersion: jsonW.KeyDerivationVersion,
+		node:                 jsonW.Node,
+		id:                   jsonW.ID,
+		keyRing:              LoadHDKeyRing(jsonW.Keys),
+		permissions:          jsonW.Permissions,
 	}
 
 	for hostname, perms := range w.permissions {
@@ -381,13 +381,13 @@ func (w *HDWallet) UnmarshalJSON(data []byte) error {
 
 func (w *HDWallet) deriveKeyNode(nextIndex uint32) (*slip10.Node, error) {
 	var derivationFn func(uint32) (*slip10.Node, error)
-	switch w.version {
+	switch w.keyDerivationVersion {
 	case Version1:
 		derivationFn = w.deriveKeyNodeV1
 	case Version2:
 		derivationFn = w.deriveKeyNodeV2
 	default:
-		return nil, NewUnsupportedWalletVersionError(w.version)
+		return nil, NewUnsupportedWalletVersionError(w.keyDerivationVersion)
 	}
 
 	return derivationFn(nextIndex)
@@ -484,11 +484,11 @@ type jsonHDWallet struct {
 	// The wallet name is retrieved from the file name it is stored in, so no
 	// need to serialize it.
 
-	Version     uint32                 `json:"version"`
-	Node        *slip10.Node           `json:"node,omitempty"`
-	ID          string                 `json:"id,omitempty"`
-	Keys        []HDKeyPair            `json:"keys"`
-	Permissions map[string]Permissions `json:"permissions"`
+	KeyDerivationVersion uint32                 `json:"version"`
+	Node                 *slip10.Node           `json:"node,omitempty"`
+	ID                   string                 `json:"id,omitempty"`
+	Keys                 []HDKeyPair            `json:"keys"`
+	Permissions          map[string]Permissions `json:"permissions"`
 }
 
 // NewRecoveryPhrase generates a recovery phrase with an entropy of 256 bits.

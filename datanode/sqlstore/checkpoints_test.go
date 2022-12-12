@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func addCheckpoint(t *testing.T, ns *sqlstore.Checkpoints, hash, blockHash string, blockHeight int64, block entities.Block,
+func addCheckpoint(t *testing.T, ctx context.Context, ns *sqlstore.Checkpoints, hash, blockHash string, blockHeight int64, block entities.Block,
 	seqNum uint64,
 ) entities.Checkpoint {
 	t.Helper()
@@ -35,20 +35,21 @@ func addCheckpoint(t *testing.T, ns *sqlstore.Checkpoints, hash, blockHash strin
 		VegaTime:    block.VegaTime,
 		SeqNum:      seqNum,
 	}
-	ns.Add(context.Background(), c)
+	ns.Add(ctx, c)
 	return c
 }
 
 func TestCheckpoints(t *testing.T) {
-	defer DeleteEverything()
-	ctx := context.Background()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	checkpointStore := sqlstore.NewCheckpoints(connectionSource)
 	blockStore := sqlstore.NewBlocks(connectionSource)
-	block1 := addTestBlock(t, blockStore)
-	block2 := addTestBlock(t, blockStore)
+	block1 := addTestBlock(t, ctx, blockStore)
+	block2 := addTestBlock(t, ctx, blockStore)
 
-	checkpoint1 := addCheckpoint(t, checkpointStore, "myHash", "myBlockHash", 1, block1, 0)
-	checkpoint2 := addCheckpoint(t, checkpointStore, "myOtherHash", "myOtherBlockHash", 2, block2, 0)
+	checkpoint1 := addCheckpoint(t, ctx, checkpointStore, "myHash", "myBlockHash", 1, block1, 0)
+	checkpoint2 := addCheckpoint(t, ctx, checkpointStore, "myOtherHash", "myOtherBlockHash", 2, block2, 0)
 
 	t.Run("GetAll", func(t *testing.T) {
 		expected := []entities.Checkpoint{checkpoint2, checkpoint1}
@@ -60,14 +61,15 @@ func TestCheckpoints(t *testing.T) {
 }
 
 func TestCheckpointsSameHashAndBlock(t *testing.T) {
-	defer DeleteEverything()
-	ctx := context.Background()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	checkpointStore := sqlstore.NewCheckpoints(connectionSource)
 	blockStore := sqlstore.NewBlocks(connectionSource)
-	block1 := addTestBlock(t, blockStore)
+	block1 := addTestBlock(t, ctx, blockStore)
 
-	checkpoint1 := addCheckpoint(t, checkpointStore, "myHash", "myBlockHash", 1, block1, 0)
-	checkpoint2 := addCheckpoint(t, checkpointStore, "myHash", "myBlockHash", 1, block1, 1)
+	checkpoint1 := addCheckpoint(t, ctx, checkpointStore, "myHash", "myBlockHash", 1, block1, 0)
+	checkpoint2 := addCheckpoint(t, ctx, checkpointStore, "myHash", "myBlockHash", 1, block1, 1)
 
 	t.Run("GetAll", func(t *testing.T) {
 		expected := []entities.Checkpoint{checkpoint1, checkpoint2}
@@ -93,15 +95,14 @@ func TestCheckpointPagination(t *testing.T) {
 }
 
 func testCheckpointPaginationNoPagination(t *testing.T) {
-	defer DeleteEverything()
-	cs, checkpoints := setupCheckpointPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := cs.GetAll(timeoutCtx, pagination)
+	got, pageInfo, err := cs.GetAll(ctx, pagination)
 	require.NoError(t, err)
 	want := checkpoints
 	assert.Equal(t, want, got)
@@ -114,16 +115,15 @@ func testCheckpointPaginationNoPagination(t *testing.T) {
 }
 
 func testCheckpointPaginationFirst(t *testing.T) {
-	defer DeleteEverything()
-	cs, checkpoints := setupCheckpointPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := cs.GetAll(timeoutCtx, pagination)
+	got, pageInfo, err := cs.GetAll(ctx, pagination)
 	require.NoError(t, err)
 	want := checkpoints[:3]
 	assert.Equal(t, want, got)
@@ -136,16 +136,15 @@ func testCheckpointPaginationFirst(t *testing.T) {
 }
 
 func testCheckpointPaginationLast(t *testing.T) {
-	defer DeleteEverything()
-	cs, checkpoints := setupCheckpointPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := cs.GetAll(timeoutCtx, pagination)
+	got, pageInfo, err := cs.GetAll(ctx, pagination)
 	require.NoError(t, err)
 	want := checkpoints[7:]
 	assert.Equal(t, want, got)
@@ -158,17 +157,16 @@ func testCheckpointPaginationLast(t *testing.T) {
 }
 
 func testCheckpointPaginationFirstAndAfter(t *testing.T) {
-	defer DeleteEverything()
-	cs, checkpoints := setupCheckpointPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 
 	first := int32(3)
 	after := checkpoints[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := cs.GetAll(timeoutCtx, pagination)
+	got, pageInfo, err := cs.GetAll(ctx, pagination)
 	require.NoError(t, err)
 	want := checkpoints[3:6]
 	assert.Equal(t, want, got)
@@ -181,17 +179,16 @@ func testCheckpointPaginationFirstAndAfter(t *testing.T) {
 }
 
 func testCheckpointPaginationLastAndBefore(t *testing.T) {
-	defer DeleteEverything()
-	cs, checkpoints := setupCheckpointPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 
 	last := int32(3)
 	before := checkpoints[7].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	got, pageInfo, err := cs.GetAll(timeoutCtx, pagination)
+	got, pageInfo, err := cs.GetAll(ctx, pagination)
 	require.NoError(t, err)
 	want := checkpoints[4:7]
 	assert.Equal(t, want, got)
@@ -204,15 +201,15 @@ func testCheckpointPaginationLastAndBefore(t *testing.T) {
 }
 
 func testCheckpointPaginationNoPaginationNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	cs, checkpoints := setupCheckpointPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 	checkpoints = entities.ReverseSlice(checkpoints)
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
-	got, pageInfo, err := cs.GetAll(timeoutCtx, pagination)
+	got, pageInfo, err := cs.GetAll(ctx, pagination)
 	require.NoError(t, err)
 	want := checkpoints
 	assert.Equal(t, want, got)
@@ -225,16 +222,16 @@ func testCheckpointPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testCheckpointPaginationFirstNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	cs, checkpoints := setupCheckpointPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 	checkpoints = entities.ReverseSlice(checkpoints)
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
-	got, pageInfo, err := cs.GetAll(timeoutCtx, pagination)
+	got, pageInfo, err := cs.GetAll(ctx, pagination)
 	require.NoError(t, err)
 	want := checkpoints[:3]
 	assert.Equal(t, want, got)
@@ -247,16 +244,16 @@ func testCheckpointPaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testCheckpointPaginationLastNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	cs, checkpoints := setupCheckpointPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 	checkpoints = entities.ReverseSlice(checkpoints)
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
-	got, pageInfo, err := cs.GetAll(timeoutCtx, pagination)
+	got, pageInfo, err := cs.GetAll(ctx, pagination)
 	require.NoError(t, err)
 	want := checkpoints[7:]
 	assert.Equal(t, want, got)
@@ -269,17 +266,17 @@ func testCheckpointPaginationLastNewestFirst(t *testing.T) {
 }
 
 func testCheckpointPaginationFirstAndAfterNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	cs, checkpoints := setupCheckpointPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 	checkpoints = entities.ReverseSlice(checkpoints)
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	first := int32(3)
 	after := checkpoints[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
-	got, pageInfo, err := cs.GetAll(timeoutCtx, pagination)
+	got, pageInfo, err := cs.GetAll(ctx, pagination)
 	require.NoError(t, err)
 	want := checkpoints[3:6]
 	assert.Equal(t, want, got)
@@ -292,17 +289,17 @@ func testCheckpointPaginationFirstAndAfterNewestFirst(t *testing.T) {
 }
 
 func testCheckpointPaginationLastAndBeforeNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	cs, checkpoints := setupCheckpointPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 	checkpoints = entities.ReverseSlice(checkpoints)
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	last := int32(3)
 	before := checkpoints[7].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
-	got, pageInfo, err := cs.GetAll(timeoutCtx, pagination)
+	got, pageInfo, err := cs.GetAll(ctx, pagination)
 	require.NoError(t, err)
 	want := checkpoints[4:7]
 	assert.Equal(t, want, got)
@@ -314,19 +311,18 @@ func testCheckpointPaginationLastAndBeforeNewestFirst(t *testing.T) {
 	}, pageInfo)
 }
 
-func setupCheckpointPaginationTest(t *testing.T) (*sqlstore.Checkpoints, []entities.Checkpoint) {
+func setupCheckpointPaginationTest(t *testing.T, ctx context.Context) (*sqlstore.Checkpoints, []entities.Checkpoint) {
 	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 	cs := sqlstore.NewCheckpoints(connectionSource)
-
 	blockTime := time.Date(2022, 7, 27, 8, 0, 0, 0, time.Local)
 	checkPoints := make([]entities.Checkpoint, 10)
 
 	for i := 0; i < 10; i++ {
 		blockTime = blockTime.Add(time.Minute)
-		block := addTestBlockForTime(t, bs, blockTime)
+		block := addTestBlockForTime(t, ctx, bs, blockTime)
 		hash := int64(i + 1)
-		checkPoints[i] = addCheckpoint(t, cs, fmt.Sprintf("TestHash%02d", hash), fmt.Sprintf("TestBlockHash%02d", hash), hash, block, uint64(i))
+		checkPoints[i] = addCheckpoint(t, ctx, cs, fmt.Sprintf("TestHash%02d", hash), fmt.Sprintf("TestBlockHash%02d", hash), hash, block, uint64(i))
 	}
 
 	return cs, checkPoints

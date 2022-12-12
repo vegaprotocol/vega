@@ -13,7 +13,6 @@
 package sqlstore_test
 
 import (
-	"context"
 	"strconv"
 	"testing"
 	"time"
@@ -50,8 +49,8 @@ func addTestLedgerEntry(t *testing.T, ledger *sqlstore.Ledger,
 }
 
 func TestLedger(t *testing.T) {
-	defer DeleteEverything()
-	ctx := context.Background()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	// Prepare environment entities.
 	blockStore := sqlstore.NewBlocks(connectionSource)
@@ -62,9 +61,9 @@ func TestLedger(t *testing.T) {
 	ledgerStore := sqlstore.NewLedger(connectionSource)
 
 	// Setup 4 assets
-	asset1 := addTestAsset(t, assetStore, addTestBlock(t, blockStore))
-	asset2 := addTestAsset(t, assetStore, addTestBlock(t, blockStore))
-	asset3 := addTestAsset(t, assetStore, addTestBlock(t, blockStore))
+	asset1 := addTestAsset(t, ctx, assetStore, addTestBlock(t, ctx, blockStore))
+	asset2 := addTestAsset(t, ctx, assetStore, addTestBlock(t, ctx, blockStore))
+	asset3 := addTestAsset(t, ctx, assetStore, addTestBlock(t, ctx, blockStore))
 
 	var blocks []entities.Block
 	var parties []entities.Party
@@ -105,9 +104,9 @@ func TestLedger(t *testing.T) {
 		accounts[21] => asset3, parties[10], markets[11], vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY
 	*/
 	for i := 0; i < 17; i++ {
-		blocks = append(blocks, addTestBlockForTime(t, blockStore, time.Now().Add((-26*time.Hour)-(time.Duration(5-i)*time.Second))))
-		parties = append(parties, addTestParty(t, partyStore, blocks[i]))
-		markets = append(markets, helpers.GenerateMarkets(t, 1, blocks[0], marketStore)[0])
+		blocks = append(blocks, addTestBlockForTime(t, ctx, blockStore, time.Now().Add((-26*time.Hour)-(time.Duration(5-i)*time.Second))))
+		parties = append(parties, addTestParty(t, ctx, partyStore, blocks[i]))
+		markets = append(markets, helpers.GenerateMarkets(t, ctx, 1, blocks[0], marketStore)[0])
 	}
 
 	for i := 0; i < 11; i++ {
@@ -120,8 +119,8 @@ func TestLedger(t *testing.T) {
 
 		if i < 2 {
 			// accounts 0, 1, 2, 3
-			accountFrom := helpers.AddTestAccountWithMarketAndType(t, accountStore, parties[i], asset1, blocks[i], markets[i].ID, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-			accountTo := helpers.AddTestAccountWithMarketAndType(t, accountStore, parties[i], asset1, blocks[i], markets[mt].ID, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+			accountFrom := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset1, blocks[i], markets[i].ID, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+			accountTo := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset1, blocks[i], markets[mt].ID, vega.AccountType_ACCOUNT_TYPE_GENERAL)
 			accounts = append(accounts, accountFrom)
 			accounts = append(accounts, accountTo)
 			continue
@@ -129,16 +128,16 @@ func TestLedger(t *testing.T) {
 
 		// accounts 4, 5, 6, 7, 8, 9, 10, 11
 		if i >= 2 && i < 6 {
-			accountFrom := helpers.AddTestAccountWithMarketAndType(t, accountStore, parties[i], asset2, blocks[i], markets[i].ID, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-			accountTo := helpers.AddTestAccountWithMarketAndType(t, accountStore, parties[i], asset2, blocks[i], markets[mt].ID, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+			accountFrom := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset2, blocks[i], markets[i].ID, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+			accountTo := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset2, blocks[i], markets[mt].ID, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
 			accounts = append(accounts, accountFrom)
 			accounts = append(accounts, accountTo)
 			continue
 		}
 
 		// accounts 12, 13, 14, 15, 16, 17, 18, 19, 20, 21
-		accountFrom := helpers.AddTestAccountWithMarketAndType(t, accountStore, parties[i], asset3, blocks[i], markets[i].ID, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
-		accountTo := helpers.AddTestAccountWithMarketAndType(t, accountStore, parties[i], asset3, blocks[i], markets[mt].ID, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+		accountFrom := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset3, blocks[i], markets[i].ID, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+		accountTo := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset3, blocks[i], markets[mt].ID, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
 		accounts = append(accounts, accountFrom)
 		accounts = append(accounts, accountTo)
 	}
@@ -188,7 +187,7 @@ func TestLedger(t *testing.T) {
 
 	t.Run("get all ledger records", func(t *testing.T) {
 		// Account store should be empty to begin with
-		ledgerEntries, err := ledgerStore.GetAll()
+		ledgerEntries, err := ledgerStore.GetAll(ctx)
 		assert.NoError(t, err)
 		assert.Empty(t, ledgerEntries)
 	})
@@ -203,7 +202,7 @@ func TestLedger(t *testing.T) {
 			ReceiverAccountFilter: entities.AccountFilter{},
 		}
 
-		entries, _, err := ledgerStore.Query(
+		entries, _, err := ledgerStore.Query(ctx,
 			filter,
 			entities.DateRange{Start: &tStart, End: &tEnd},
 			entities.CursorPagination{},
@@ -225,7 +224,7 @@ func TestLedger(t *testing.T) {
 				ReceiverAccountFilter: entities.AccountFilter{},
 			}
 
-			entries, _, err := ledgerStore.Query(
+			entries, _, err := ledgerStore.Query(ctx,
 				filter,
 				entities.DateRange{Start: &tStart, End: &tEnd},
 				entities.CursorPagination{},
@@ -237,7 +236,7 @@ func TestLedger(t *testing.T) {
 			assert.Nil(t, entries)
 
 			filter.SenderAccountFilter.PartyIDs = []entities.PartyID{parties[3].ID}
-			entries, _, err = ledgerStore.Query(
+			entries, _, err = ledgerStore.Query(ctx,
 				filter,
 				entities.DateRange{Start: &tStart, End: &tEnd},
 				entities.CursorPagination{},
@@ -249,7 +248,7 @@ func TestLedger(t *testing.T) {
 			assert.Equal(t, 0, len(*entries))
 
 			filter.SenderAccountFilter.AssetID = asset2.ID
-			entries, _, err = ledgerStore.Query(
+			entries, _, err = ledgerStore.Query(ctx,
 				filter,
 				entities.DateRange{Start: &tStart, End: &tEnd},
 				entities.CursorPagination{},
@@ -277,7 +276,7 @@ func TestLedger(t *testing.T) {
 
 			filter.SenderAccountFilter.PartyIDs = append(filter.SenderAccountFilter.PartyIDs, parties[4].ID)
 
-			entries, _, err = ledgerStore.Query(
+			entries, _, err = ledgerStore.Query(ctx,
 				filter,
 				entities.DateRange{Start: &tStart, End: &tEnd},
 				entities.CursorPagination{},
@@ -291,7 +290,7 @@ func TestLedger(t *testing.T) {
 			filter.SenderAccountFilter.PartyIDs = []entities.PartyID{}
 			filter.SenderAccountFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL}
 
-			entries, _, err = ledgerStore.Query(
+			entries, _, err = ledgerStore.Query(ctx,
 				filter,
 				entities.DateRange{Start: &tStart, End: &tEnd},
 				entities.CursorPagination{},
@@ -313,7 +312,7 @@ func TestLedger(t *testing.T) {
 				},
 			}
 
-			entries, _, err := ledgerStore.Query(
+			entries, _, err := ledgerStore.Query(ctx,
 				filter,
 				entities.DateRange{Start: &tStart, End: &tEnd},
 				entities.CursorPagination{},
@@ -340,7 +339,7 @@ func TestLedger(t *testing.T) {
 
 			filter.ReceiverAccountFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
 
-			entries, _, err = ledgerStore.Query(
+			entries, _, err = ledgerStore.Query(ctx,
 				filter,
 				entities.DateRange{Start: &tStart, End: &tEnd},
 				entities.CursorPagination{},
@@ -364,7 +363,7 @@ func TestLedger(t *testing.T) {
 					},
 				}
 
-				entries, _, err := ledgerStore.Query(
+				entries, _, err := ledgerStore.Query(ctx,
 					filter,
 					entities.DateRange{Start: &tStart, End: &tEnd},
 					entities.CursorPagination{},
@@ -376,7 +375,7 @@ func TestLedger(t *testing.T) {
 				assert.Nil(t, entries)
 
 				filter.ReceiverAccountFilter.PartyIDs = append(filter.ReceiverAccountFilter.PartyIDs, []entities.PartyID{parties[4].ID}...)
-				entries, _, err = ledgerStore.Query(
+				entries, _, err = ledgerStore.Query(ctx,
 					filter,
 					entities.DateRange{Start: &tStart, End: &tEnd},
 					entities.CursorPagination{},
@@ -407,7 +406,7 @@ func TestLedger(t *testing.T) {
 				}
 
 				filter.ReceiverAccountFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
-				entries, _, err = ledgerStore.Query(
+				entries, _, err = ledgerStore.Query(ctx,
 					filter,
 					entities.DateRange{Start: &tStart, End: &tEnd},
 					entities.CursorPagination{},
@@ -448,7 +447,7 @@ func TestLedger(t *testing.T) {
 				}
 
 				filter.CloseOnAccountFilters = true
-				entries, _, err := ledgerStore.Query(
+				entries, _, err := ledgerStore.Query(ctx,
 					filter,
 					entities.DateRange{Start: &tStart, End: &tEnd},
 					entities.CursorPagination{},
@@ -460,7 +459,7 @@ func TestLedger(t *testing.T) {
 				assert.Nil(t, entries)
 
 				filter.SenderAccountFilter.PartyIDs = []entities.PartyID{parties[5].ID}
-				entries, _, err = ledgerStore.Query(
+				entries, _, err = ledgerStore.Query(ctx,
 					filter,
 					entities.DateRange{Start: &tStart, End: &tEnd},
 					entities.CursorPagination{},
@@ -484,7 +483,7 @@ func TestLedger(t *testing.T) {
 
 				// Add some grouping options
 				filter.ReceiverAccountFilter = entities.AccountFilter{AssetID: asset3.ID}
-				entries, _, err = ledgerStore.Query(
+				entries, _, err = ledgerStore.Query(ctx,
 					filter,
 					entities.DateRange{Start: &tStart, End: &tEnd},
 					entities.CursorPagination{},
@@ -498,7 +497,7 @@ func TestLedger(t *testing.T) {
 				filter.SenderAccountFilter = entities.AccountFilter{AssetID: asset3.ID}
 				filter.SenderAccountFilter.PartyIDs = []entities.PartyID{parties[7].ID}
 				filter.ReceiverAccountFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
-				entries, _, err = ledgerStore.Query(
+				entries, _, err = ledgerStore.Query(ctx,
 					filter,
 					entities.DateRange{Start: &tStart, End: &tEnd},
 					entities.CursorPagination{},
@@ -538,7 +537,7 @@ func TestLedger(t *testing.T) {
 				},
 			}
 
-			entries, _, err := ledgerStore.Query(
+			entries, _, err := ledgerStore.Query(ctx,
 				filter,
 				entities.DateRange{Start: &tStart, End: &tEnd},
 				entities.CursorPagination{},
@@ -578,7 +577,7 @@ func TestLedger(t *testing.T) {
 
 			// closed on account filters
 			filter.CloseOnAccountFilters = true
-			entries, _, err = ledgerStore.Query(
+			entries, _, err = ledgerStore.Query(ctx,
 				filter,
 				entities.DateRange{Start: &tStart, End: &tEnd},
 				entities.CursorPagination{},
@@ -594,7 +593,7 @@ func TestLedger(t *testing.T) {
 				AccountTypes: []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY},
 			}
 
-			entries, _, err = ledgerStore.Query(
+			entries, _, err = ledgerStore.Query(ctx,
 				filter,
 				entities.DateRange{Start: &tStart, End: &tEnd},
 				entities.CursorPagination{},

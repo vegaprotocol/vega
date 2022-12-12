@@ -9,6 +9,7 @@ Feature: Test party accounts
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: 001: A party place a new order in the system, margin are calculated (0011-MARA-001, 0011-MARA-002)
+
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount       |
       | partyGuy | ETH   | 1000         |
@@ -75,6 +76,7 @@ Feature: Test party accounts
       | sell | 1000  |    3   |
 
   Scenario: 002: An order is rejected if a party have insufficient margin (0011-MARA-002)
+
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount  |
       | partyGuy | ETH   | 1       |

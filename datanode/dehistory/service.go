@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+
 	"code.vegaprotocol.io/vega/datanode/dehistory/aggregation"
 	"code.vegaprotocol.io/vega/datanode/dehistory/fsutil"
 	"github.com/multiformats/go-multiaddr"
@@ -19,6 +21,8 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
 )
+
+var ErrNoActivePeersFound = errors.New("no active peers found")
 
 type Service struct {
 	log *logging.Logger
@@ -158,52 +162,62 @@ func (d *Service) GetActivePeerAddresses() []string {
 	return activePeerIPAddresses
 }
 
-func (d *Service) LoadAllAvailableHistoryIntoDatanode(ctx context.Context, sqlFs fs.FS) (loadedFrom int64, loadedTo int64, err error) {
+func (d *Service) GetSwarmKey() string {
+	return d.store.GetSwarmKey()
+}
+
+func (d *Service) LoadAllAvailableHistoryIntoDatanode(ctx context.Context, sqlFs fs.FS) (snapshot.LoadResult, error) {
 	defer func() { _ = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromDir) }()
 
-	err = os.MkdirAll(d.snapshotsCopyFromDir, fs.ModePerm)
+	err := os.MkdirAll(d.snapshotsCopyFromDir, fs.ModePerm)
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to create staging directory:%w", err)
+		return snapshot.LoadResult{}, fmt.Errorf("failed to create staging directory:%w", err)
 	}
 
 	err = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromDir)
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to empty staging directory:%w", err)
+		return snapshot.LoadResult{}, fmt.Errorf("failed to empty staging directory:%w", err)
 	}
 
 	start := time.Now()
 
 	currentStateSnapshot, contiguousHistory, err := d.copyAllAvailableHistoryIntoDir(ctx, d.snapshotsCopyFromDir)
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to copy all available data into copy from path: %w", err)
+		return snapshot.LoadResult{}, fmt.Errorf("failed to copy all available data into copy from path: %w", err)
 	}
 
 	if len(contiguousHistory) == 0 {
-		return 0, 0, fmt.Errorf("no data available to load: %w", err)
+		return snapshot.LoadResult{}, fmt.Errorf("no data available to load: %w", err)
 	}
 
-	d.log.Infof("creating database")
-	if err = sqlstore.WipeDatabase(d.log, d.connConfig, sqlFs); err != nil {
-		return 0, 0, fmt.Errorf("failed to create vega database: %w", err)
-	}
-
-	d.log.Infof("creating schema")
-	if err = sqlstore.CreateVegaSchema(d.log, d.connConfig); err != nil {
-		return 0, 0, fmt.Errorf("failed to create vega schema: %w", err)
-	}
-
-	totalRowsCopied, err := d.snapshotService.LoadAllSnapshotData(ctx, currentStateSnapshot, contiguousHistory, d.snapshotsCopyFromDir)
+	loadResult, err := d.snapshotService.LoadAllSnapshotData(ctx, currentStateSnapshot, contiguousHistory, d.snapshotsCopyFromDir)
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to load snapshot data:%w", err)
+		return snapshot.LoadResult{}, fmt.Errorf("failed to load snapshot data:%w", err)
 	}
 
-	loadedFrom = contiguousHistory[0].HeightFrom
-	loadedTo = contiguousHistory[len(contiguousHistory)-1].HeightTo
+	d.log.Info("loaded all available data into datanode", logging.String("result", fmt.Sprintf("%+v", loadResult)),
+		logging.Duration("time taken", time.Since(start)))
+	return loadResult, err
+}
 
-	d.log.Info("loaded all available data into datanode", logging.Int64("from height", loadedFrom),
-		logging.Int64("to height", loadedTo), logging.Duration("time taken", time.Since(start)),
-		logging.Int64("rows copied", totalRowsCopied))
-	return loadedFrom, loadedTo, err
+func (d *Service) GetMostRecentHistorySegmentFromPeers(ctx context.Context,
+	grpcAPIPorts []int,
+) (*PeerResponse, map[string]*v2.GetMostRecentDeHistorySegmentResponse, error) {
+	var activePeerAddresses []string
+	// Time for connections to be established
+	time.Sleep(5 * time.Second)
+	for retries := 0; retries < 5; retries++ {
+		activePeerAddresses = d.GetActivePeerAddresses()
+		if len(activePeerAddresses) == 0 {
+			time.Sleep(5 * time.Second)
+		}
+	}
+
+	if len(activePeerAddresses) == 0 {
+		return nil, nil, ErrNoActivePeersFound
+	}
+
+	return GetMostRecentHistorySegmentFromPeersAddresses(ctx, activePeerAddresses, d.GetSwarmKey(), grpcAPIPorts)
 }
 
 func (d *Service) publishSnapshots(ctx context.Context) error {

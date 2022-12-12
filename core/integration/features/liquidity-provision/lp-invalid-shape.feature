@@ -178,3 +178,17 @@ Feature: Test LP orders invalid shapes
       | lp3 | lpprov3 | ETH/DEC19 | 900000            | 0.1 | sell | ASK              | 50         | 400    | amendment  |                                     |
       | lp3 | lpprov3 | ETH/DEC19 | 900000            | 0.1 | sell | ASK              | 50         | 500    | amendment  | SIDE_SELL shape size exceed max (4) |
     And the supplied stake should be "1800000" for the market "ETH/DEC19"
+
+  Scenario: liquidity provision submission with all proportions set to 0 results in an error
+    Given the parties deposit on asset's general account the following amount:
+      | party            | asset | amount    |
+      | lpprov           | ETH   | 100000000 |
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    | error                               |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | buy  | BID              |  0         | 100    | submission |                                     |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              |  0         | 100    | amendment  |                                     |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              |  0         | 200    | amendment  |                                     |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              |  0         | 300    | amendment  |                                     |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              |  0         | 400    | amendment  |                                     |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              |  0         | 500    | amendment  | order in shape without a proportion |
+    Then the supplied stake should be "0" for the market "ETH/DEC19"

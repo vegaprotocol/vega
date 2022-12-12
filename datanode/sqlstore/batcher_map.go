@@ -17,10 +17,11 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v4"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
 
 type MapBatcher[K entityKey, V entity[K]] struct {
-	pending     map[K]V
+	pending     *orderedmap.OrderedMap[K, V]
 	tableName   string
 	columnNames []string
 }
@@ -29,7 +30,7 @@ func NewMapBatcher[K entityKey, V entity[K]](tableName string, columnNames []str
 	return MapBatcher[K, V]{
 		tableName:   tableName,
 		columnNames: columnNames,
-		pending:     make(map[K]V),
+		pending:     orderedmap.New[K, V](),
 	}
 }
 
@@ -43,19 +44,24 @@ type entity[K entityKey] interface {
 }
 
 func (b *MapBatcher[K, V]) Add(e V) {
-	b.pending[e.Key()] = e
+	key := e.Key()
+	_, present := b.pending.Set(key, e)
+	if present {
+		b.pending.MoveToBack(key)
+	}
 }
 
 func (b *MapBatcher[K, V]) Flush(ctx context.Context, connection Connection) ([]V, error) {
-	if len(b.pending) == 0 {
+	nPending := b.pending.Len()
+	if nPending == 0 {
 		return nil, nil
 	}
 
-	rows := make([][]interface{}, 0, len(b.pending))
-	values := make([]V, 0, len(b.pending))
-	for _, entity := range b.pending {
-		rows = append(rows, entity.ToRow())
-		values = append(values, entity)
+	rows := make([][]interface{}, 0, nPending)
+	values := make([]V, 0, nPending)
+	for kv := b.pending.Oldest(); kv != nil; kv = kv.Next() {
+		rows = append(rows, kv.Value.ToRow())
+		values = append(values, kv.Value)
 	}
 
 	copyCount, err := connection.CopyFrom(
@@ -68,16 +74,13 @@ func (b *MapBatcher[K, V]) Flush(ctx context.Context, connection Connection) ([]
 		return nil, fmt.Errorf("failed to copy %s entries into database:%w", b.tableName, err)
 	}
 
-	if copyCount != int64(len(b.pending)) {
+	if copyCount != int64(nPending) {
 		return nil, fmt.Errorf("copied %d %s rows into the database, expected to copy %d",
 			copyCount,
 			b.tableName,
-			len(b.pending))
+			nPending)
 	}
 
-	for k := range b.pending {
-		delete(b.pending, k)
-	}
-
+	b.pending = orderedmap.New[K, V]()
 	return values, nil
 }
