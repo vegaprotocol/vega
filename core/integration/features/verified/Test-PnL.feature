@@ -233,7 +233,7 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | party1 | USD   | ETH/MAR22 | 21534  | 99978826 |
       | party2 | USD   | ETH/MAR22 | 4993   | 99994647 |
 
-    #margin+general-initial = 21534+99978826=360 which is matching with realised pnl for party1
+    #margin+general-initial = 21534+99978826-100000000=360 which is matching with realised pnl for party1
     #margin+general-initial = 4993+99994647-100000000=-360 which is matching with realised pnl for party2
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
