@@ -304,16 +304,16 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party1 | USD/DEC20 | sell | 5      | ASK       | 5      | 101005 | STATUS_ACTIVE |
             | party1 | USD/DEC19 | sell | 5      | ASK       | 5      | 1015   | STATUS_ACTIVE |
 
-    Scenario: Price monitoring bounds are calculated at asset precision but displayed rounded, (0070-MKTD-006)
+    Scenario: 008: Price monitoring bounds are calculated at asset precision but displayed rounded, (0070-MKTD-006)
 
         Given  the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
             | lp1 | party0 | USD/DEC20 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp1 | party0 | USD/DEC20 | 1000              | 0.001 | buy  | BID              | 100        | -20    | amendment  |
+            | lp1 | party0 | USD/DEC20 | 1000              | 0.001 | buy  | BID              | 100        | 20     | amendment  |
             | lp1 | party0 | USD/DEC21 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp1 | party0 | USD/DEC21 | 1000              | 0.001 | buy  | BID              | 100        | -20    | amendment  |
+            | lp1 | party0 | USD/DEC21 | 1000              | 0.001 | buy  | BID              | 100        | 20     | amendment  |
             | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | buy  | BID              | 100        | -20    | amendment  |
+            | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | buy  | BID              | 100        | 20     | amendment  |
 
         And the parties place the following orders:
             | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
