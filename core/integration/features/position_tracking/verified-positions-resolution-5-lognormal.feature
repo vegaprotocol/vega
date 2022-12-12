@@ -24,7 +24,8 @@ Feature: Position resolution case 5 lognormal risk model
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @MTMDelta
-  Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book (0007-POSN-013)
+  Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book (0007-POSN-013, 0038-OLIQ-011)
+
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -60,6 +61,7 @@ Feature: Position resolution case 5 lognormal risk model
       | party  | asset | market id | margin | general      | bond |
       | lpprov | USD   | ETH/DEC19 | 682144 | 999999308856 | 9000 |
 
+    # If an LP order has offset set such that the resulting price falls outside [1,2001] then the system adjusts it automatically so that it's placed on the bound
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 2001  | 5      |
