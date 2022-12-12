@@ -684,10 +684,10 @@ Feature: Fees calculations
 
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
-      | sell | 1080  | 10     |
+      | buy  | 910   | 1      |
       | buy  | 920   | 10     |
-      | buy  | 910   | 119    |
-      | sell | 1090  | 184    |
+      | sell | 1080  | 10     |
+      | sell | 1090  | 10     |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
