@@ -93,60 +93,6 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | sell | 1200090000 | 926    |
       | sell | 1200100000 | 926    |
 
-
-  Scenario:  LP pegged volume is pushed by Price Monitoring lower bound;
-
-    Given the log normal risk model named "log-normal-risk-model-1":
-      | risk aversion | tau     | mu | r | sigma |
-      | 0.000001      | 0.00273 | 0  | 0 | 1.2   |
-    And the fees configuration named "fees-config-1":
-      | maker fee | infrastructure fee |
-      | 0.004     | 0.001              |
-    And the price monitoring named "price-monitoring-2":
-      | horizon | probability    | auction extension |
-      | 43200   | 0.999999999999 | 300               |
-    And the markets:
-      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
-      | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future |
-    And the parties deposit on asset's general account the following amount:
-      | party  | asset | amount          |
-      | lp1    | ETH2  | 100000000000000 |
-      | party1 | ETH2  | 10000000        |
-      | party2 | ETH2  | 10000000        |
-
-    And the parties submit the following liquidity provision:
-      | id          | party | market id  | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy  | BID              | 500        | 250    | submission |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell | ASK              | 500        | 250    | amendment  |
-
-    And the parties place the following orders:
-      | party  | market id  | side | volume | price | resulting trades | type       | tif     | reference  |
-      | party1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
-      | party1 | ETH2/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
-      | party2 | ETH2/MAR22 | sell | 1      | 1109  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
-      | party2 | ETH2/MAR22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
-
-    When the opening auction period ends for market "ETH2/MAR22"
-    Then the auction ends with a traded volume of "10" at a price of "1000"
-
-    And the parties should have the following profit and loss:
-      | party  | volume | unrealised pnl | realised pnl |
-      | party1 | 10     | 0              | 0            |
-      | party2 | -10    | 0              | 0            |
-
-    And the market data for the market "ETH2/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 728       | 1371      | 3611         | 50000000       | 10            |
-
-    And the order book should have the following volumes for market "ETH2/MAR22":
-      | side | price | volume    |
-      | sell | 1359  | 67560669  |
-      | sell | 1109  | 1         |
-      | sell | 909   | 0         |
-      | buy  | 1000  | 0         |
-      | buy  | 728   | 175050882 |
-      | buy  | 900   | 1         |
-
   Scenario: 004: LP Volume being pushed by limit of Probability of Trading (capped at 1e-8)
     #Price Monitoring has been removed as Prob in Price Monitoring only take up to 15 decimal places which will prevent scenatio which will trigger the ProbOfTrading cap at 1e-8
 
