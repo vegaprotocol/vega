@@ -13,7 +13,6 @@
 package sqlstore_test
 
 import (
-	"context"
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -26,9 +25,8 @@ import (
 )
 
 func TestAccount(t *testing.T) {
-	defer DeleteEverything()
-
-	ctx := context.Background()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	blockStore := sqlstore.NewBlocks(connectionSource)
 	assetStore := sqlstore.NewAssets(connectionSource)
@@ -37,48 +35,44 @@ func TestAccount(t *testing.T) {
 	balanceStore := sqlstore.NewBalances(connectionSource)
 
 	// Account store should be empty to begin with
-	accounts, err := accountStore.GetAll()
+	accounts, err := accountStore.GetAll(ctx)
 	assert.NoError(t, err)
 	assert.Empty(t, accounts)
 
 	// Add an account
-	block := addTestBlock(t, blockStore)
-	asset := addTestAsset(t, assetStore, block)
-	party := addTestParty(t, partyStore, block)
-	account := helpers.AddTestAccount(t, accountStore, party, asset, types.AccountTypeInsurance, block)
+	block := addTestBlock(t, ctx, blockStore)
+	asset := addTestAsset(t, ctx, assetStore, block)
+	party := addTestParty(t, ctx, partyStore, block)
+	account := helpers.AddTestAccount(t, ctx, accountStore, party, asset, types.AccountTypeInsurance, block)
 
 	// Add a second account, same asset - different party
-	party2 := addTestParty(t, partyStore, block)
-	account2 := helpers.AddTestAccount(t, accountStore, party2, asset, types.AccountTypeInsurance, block)
+	party2 := addTestParty(t, ctx, partyStore, block)
+	account2 := helpers.AddTestAccount(t, ctx, accountStore, party2, asset, types.AccountTypeInsurance, block)
 
 	// Add a couple of test balances
 	addTestBalance(t, balanceStore, block, account, 10)
 	addTestBalance(t, balanceStore, block, account2, 100)
-	balanceStore.Flush(ctx)
-
-	t.Run("fails if accounts are not unique", func(t *testing.T) {
-		err = accountStore.Add(ctx, &account)
-		assert.Error(t, err)
-	})
+	_, err = balanceStore.Flush(ctx)
+	require.NoError(t, err)
 
 	t.Run("check we get same info back as we put in", func(t *testing.T) {
-		fetchedAccount, err := accountStore.GetByID(account.ID)
-		assert.NoError(t, err)
+		fetchedAccount, err := accountStore.GetByID(ctx, account.ID)
+		require.NoError(t, err)
 		assert.Equal(t, account, fetchedAccount)
 	})
 
 	t.Run("query by asset", func(t *testing.T) {
 		// Query by asset, should have 2 accounts
 		filter := entities.AccountFilter{AssetID: asset.ID}
-		accs, err := accountStore.Query(filter)
-		assert.NoError(t, err)
+		accs, err := accountStore.Query(ctx, filter)
+		require.NoError(t, err)
 		assert.Len(t, accs, 2)
 	})
 
 	t.Run("query by asset + party", func(t *testing.T) {
 		// Query by asset + party should have only 1 account
 		filter := entities.AccountFilter{AssetID: asset.ID, PartyIDs: []entities.PartyID{party2.ID}}
-		accs, err := accountStore.Query(filter)
+		accs, err := accountStore.Query(ctx, filter)
 		require.NoError(t, err)
 		assert.Len(t, accs, 1)
 		assert.Equal(t, accs[0], account2)
@@ -87,15 +81,15 @@ func TestAccount(t *testing.T) {
 	t.Run("query by asset + invalid type", func(t *testing.T) {
 		// Query by asset + invalid type, should have 0 accounts
 		filter := entities.AccountFilter{AssetID: asset.ID, AccountTypes: []types.AccountType{100}}
-		accs, err := accountStore.Query(filter)
-		assert.NoError(t, err)
+		accs, err := accountStore.Query(ctx, filter)
+		require.NoError(t, err)
 		assert.Len(t, accs, 0)
 	})
 
 	t.Run("query by asset + invalid market", func(t *testing.T) {
 		// Query by asset + invalid market, should have 0 accounts
 		filter := entities.AccountFilter{AssetID: asset.ID, MarketIDs: []entities.MarketID{entities.MarketID("ffff")}}
-		accs, err := accountStore.Query(filter)
+		accs, err := accountStore.Query(ctx, filter)
 		require.NoError(t, err)
 		assert.Len(t, accs, 0)
 	})
@@ -153,5 +147,11 @@ func TestAccount(t *testing.T) {
 		require.True(t, lastPageAccBal.Equal(balances[0]))
 		require.False(t, pageInfo.HasNextPage)
 		require.True(t, pageInfo.HasPreviousPage)
+	})
+
+	// Do this last as it will abort the transaction
+	t.Run("fails if accounts are not unique", func(t *testing.T) {
+		err = accountStore.Add(ctx, &account)
+		assert.Error(t, err)
 	})
 }

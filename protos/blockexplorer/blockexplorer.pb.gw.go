@@ -119,6 +119,24 @@ func local_request_BlockExplorerService_ListTransactions_0(ctx context.Context, 
 
 }
 
+func request_BlockExplorerService_Info_0(ctx context.Context, marshaler runtime.Marshaler, client BlockExplorerServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq InfoRequest
+	var metadata runtime.ServerMetadata
+
+	msg, err := client.Info(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_BlockExplorerService_Info_0(ctx context.Context, marshaler runtime.Marshaler, server BlockExplorerServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq InfoRequest
+	var metadata runtime.ServerMetadata
+
+	msg, err := server.Info(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 // RegisterBlockExplorerServiceHandlerServer registers the http handlers for service BlockExplorerService to "mux".
 // UnaryRPC     :call BlockExplorerServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -168,6 +186,29 @@ func RegisterBlockExplorerServiceHandlerServer(ctx context.Context, mux *runtime
 		}
 
 		forward_BlockExplorerService_ListTransactions_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("GET", pattern_BlockExplorerService_Info_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/blockexplorer.api.v1.BlockExplorerService/Info", runtime.WithHTTPPathPattern("/info"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_BlockExplorerService_Info_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_BlockExplorerService_Info_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -252,6 +293,26 @@ func RegisterBlockExplorerServiceHandlerClient(ctx context.Context, mux *runtime
 
 	})
 
+	mux.Handle("GET", pattern_BlockExplorerService_Info_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/blockexplorer.api.v1.BlockExplorerService/Info", runtime.WithHTTPPathPattern("/info"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_BlockExplorerService_Info_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_BlockExplorerService_Info_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -259,10 +320,14 @@ var (
 	pattern_BlockExplorerService_GetTransaction_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"transactions", "hash"}, ""))
 
 	pattern_BlockExplorerService_ListTransactions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"transactions"}, ""))
+
+	pattern_BlockExplorerService_Info_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"info"}, ""))
 )
 
 var (
 	forward_BlockExplorerService_GetTransaction_0 = runtime.ForwardResponseMessage
 
 	forward_BlockExplorerService_ListTransactions_0 = runtime.ForwardResponseMessage
+
+	forward_BlockExplorerService_Info_0 = runtime.ForwardResponseMessage
 )

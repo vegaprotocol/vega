@@ -131,22 +131,16 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(
 	orders []*types.Order,
 	minLpPrice, maxLpPrice *num.Uint,
 	buyShapes, sellShapes []*LiquidityOrder,
-) error {
+) {
 	buySupplied, sellSupplied := e.calculateBuySellLiquidityWithMinMaxLpPrice(orders, minLpPrice, maxLpPrice)
 
 	buyRemaining := liquidityObligation.Clone()
 	buyRemaining.Sub(buyRemaining, buySupplied)
-	if err := e.updateSizes(buyRemaining, buyShapes); err != nil {
-		return err
-	}
+	e.updateSizes(buyRemaining, buyShapes)
 
 	sellRemaining := liquidityObligation.Clone()
 	sellRemaining.Sub(sellRemaining, sellSupplied)
-	if err := e.updateSizes(sellRemaining, sellShapes); err != nil {
-		return err
-	}
-
-	return nil
+	e.updateSizes(sellRemaining, sellShapes)
 }
 
 // calculateBuySellLiquidityWithMinMaxLpPrice returns the current supplied liquidity per market specified in the constructor.
@@ -173,10 +167,10 @@ func (e *Engine) calculateBuySellLiquidityWithMinMaxLpPrice(orders []*types.Orde
 	return bl, sl
 }
 
-func (e *Engine) updateSizes(liquidityObligation *num.Uint, orders []*LiquidityOrder) error {
+func (e *Engine) updateSizes(liquidityObligation *num.Uint, orders []*LiquidityOrder) {
 	if liquidityObligation.IsZero() || liquidityObligation.IsNegative() {
 		setSizesTo0(orders)
-		return nil
+		return
 	}
 	sum := num.DecimalZero()
 	proportionsD := make([]num.Decimal, 0, len(orders))
@@ -184,10 +178,6 @@ func (e *Engine) updateSizes(liquidityObligation *num.Uint, orders []*LiquidityO
 		prop := num.DecimalFromUint(num.NewUint(uint64(o.Details.Proportion)))
 		proportionsD = append(proportionsD, prop)
 		sum = sum.Add(prop)
-	}
-	if sum.IsZero() {
-		// TODO: This can probably be removed now and a lot of upstream code can be simplified (no error handling)
-		return ErrNoValidOrders
 	}
 
 	for i, o := range orders {
@@ -197,7 +187,6 @@ func (e *Engine) updateSizes(liquidityObligation *num.Uint, orders []*LiquidityO
 		liv, _ := num.UintFromDecimal(d.Mul(e.positionFactor).Div(num.DecimalFromUint(o.Price)).Ceil())
 		o.LiquidityImpliedVolume = liv.Uint64()
 	}
-	return nil
 }
 
 func setSizesTo0(orders []*LiquidityOrder) {

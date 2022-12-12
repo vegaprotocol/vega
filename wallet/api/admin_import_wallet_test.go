@@ -41,39 +41,48 @@ func testImportingWalletWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty name",
 			params: api.AdminImportWalletParams{
-				Wallet:         "",
-				RecoveryPhrase: "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
-				Version:        2,
-				Passphrase:     vgrand.RandomStr(5),
+				Wallet:               "",
+				RecoveryPhrase:       "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
+				KeyDerivationVersion: 2,
+				Passphrase:           vgrand.RandomStr(5),
 			},
 			expectedError: api.ErrWalletIsRequired,
 		}, {
 			name: "with empty passphrase",
 			params: api.AdminImportWalletParams{
-				Wallet:         vgrand.RandomStr(5),
-				RecoveryPhrase: "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
-				Version:        2,
-				Passphrase:     "",
+				Wallet:               vgrand.RandomStr(5),
+				RecoveryPhrase:       "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
+				KeyDerivationVersion: 2,
+				Passphrase:           "",
 			},
 			expectedError: api.ErrPassphraseIsRequired,
 		}, {
 			name: "with empty recovery phrase",
 			params: api.AdminImportWalletParams{
-				Wallet:         vgrand.RandomStr(5),
-				RecoveryPhrase: "",
-				Version:        2,
-				Passphrase:     vgrand.RandomStr(5),
+				Wallet:               vgrand.RandomStr(5),
+				RecoveryPhrase:       "",
+				KeyDerivationVersion: 2,
+				Passphrase:           vgrand.RandomStr(5),
 			},
 			expectedError: api.ErrRecoveryPhraseIsRequired,
 		}, {
-			name: "with unset version phrase",
+			name: "with unset key derivation version",
+			params: api.AdminImportWalletParams{
+				Wallet:               vgrand.RandomStr(5),
+				RecoveryPhrase:       "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
+				KeyDerivationVersion: 0,
+				Passphrase:           vgrand.RandomStr(5),
+			},
+			expectedError: api.ErrWalletKeyDerivationVersionIsRequired,
+		}, {
+			name: "with unset key derivation version",
 			params: api.AdminImportWalletParams{
 				Wallet:         vgrand.RandomStr(5),
 				RecoveryPhrase: "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
 				Version:        0,
 				Passphrase:     vgrand.RandomStr(5),
 			},
-			expectedError: api.ErrWalletVersionIsRequired,
+			expectedError: api.ErrWalletKeyDerivationVersionIsRequired,
 		},
 	}
 
@@ -115,10 +124,10 @@ func testImportingWalletWithValidParamsSucceeds(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportWalletParams{
-		Wallet:         name,
-		Passphrase:     passphrase,
-		RecoveryPhrase: "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
-		Version:        2,
+		Wallet:               name,
+		Passphrase:           passphrase,
+		RecoveryPhrase:       "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
+		KeyDerivationVersion: 2,
 	})
 
 	// then
@@ -152,10 +161,10 @@ func testImportingWalletThatAlreadyExistsFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportWalletParams{
-		Wallet:         name,
-		Passphrase:     passphrase,
-		RecoveryPhrase: "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
-		Version:        2,
+		Wallet:               name,
+		Passphrase:           passphrase,
+		RecoveryPhrase:       "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
+		KeyDerivationVersion: 2,
 	})
 
 	// then
@@ -177,10 +186,10 @@ func testGettingInternalErrorDuringVerificationDoesNotImportWallet(t *testing.T)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportWalletParams{
-		Wallet:         name,
-		Passphrase:     passphrase,
-		RecoveryPhrase: "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
-		Version:        2,
+		Wallet:               name,
+		Passphrase:           passphrase,
+		RecoveryPhrase:       "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
+		KeyDerivationVersion: 2,
 	})
 
 	// then
@@ -203,10 +212,10 @@ func testGettingInternalErrorDuringSavingDoesNotImportWallet(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportWalletParams{
-		Wallet:         name,
-		Passphrase:     passphrase,
-		RecoveryPhrase: "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
-		Version:        2,
+		Wallet:               name,
+		Passphrase:           passphrase,
+		RecoveryPhrase:       "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
+		KeyDerivationVersion: 2,
 	})
 
 	// then

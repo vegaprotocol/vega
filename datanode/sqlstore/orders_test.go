@@ -65,25 +65,26 @@ func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block 
 const numTestOrders = 30
 
 func TestOrders(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	logger := logging.NewTestLogger()
 	ps := sqlstore.NewParties(connectionSource)
 	os := sqlstore.NewOrders(connectionSource, logger)
 	bs := sqlstore.NewBlocks(connectionSource)
-	block := addTestBlock(t, bs)
-	block2 := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
+	block2 := addTestBlock(t, ctx, bs)
 
 	// Make sure we're starting with an empty set of orders
-	ctx := context.Background()
 	emptyOrders, err := os.GetAll(ctx)
 	assert.NoError(t, err)
 	assert.Empty(t, emptyOrders)
 
 	// Add other stuff order will use
 	parties := []entities.Party{
-		addTestParty(t, ps, block),
-		addTestParty(t, ps, block),
-		addTestParty(t, ps, block),
+		addTestParty(t, ctx, ps, block),
+		addTestParty(t, ctx, ps, block),
+		addTestParty(t, ctx, ps, block),
 	}
 
 	markets := []entities.Market{
@@ -251,21 +252,21 @@ func reverseOrderSlice(input []entities.Order) (output []entities.Order) {
 	return output
 }
 
-func generateTestBlocks(t *testing.T, numBlocks int, bs *sqlstore.Blocks) []entities.Block {
+func generateTestBlocks(t *testing.T, ctx context.Context, numBlocks int, bs *sqlstore.Blocks) []entities.Block {
 	t.Helper()
 	blocks := make([]entities.Block, numBlocks)
 	for i := 0; i < numBlocks; i++ {
-		blocks[i] = addTestBlock(t, bs)
+		blocks[i] = addTestBlock(t, ctx, bs)
 		time.Sleep(time.Millisecond)
 	}
 	return blocks
 }
 
-func generateParties(t *testing.T, numParties int, block entities.Block, ps *sqlstore.Parties) []entities.Party {
+func generateParties(t *testing.T, ctx context.Context, numParties int, block entities.Block, ps *sqlstore.Parties) []entities.Party {
 	t.Helper()
 	parties := make([]entities.Party, numParties)
 	for i := 0; i < numParties; i++ {
-		parties[i] = addTestParty(t, ps, block)
+		parties[i] = addTestParty(t, ctx, ps, block)
 	}
 	return parties
 }
@@ -280,7 +281,7 @@ func generateOrderIDs(t *testing.T, numIDs int) []entities.OrderID {
 	return orderIDs
 }
 
-func generateTestOrders(t *testing.T, blocks []entities.Block, parties []entities.Party,
+func generateTestOrders(t *testing.T, ctx context.Context, blocks []entities.Block, parties []entities.Party,
 	markets []entities.Market, orderIDs []entities.OrderID, os *sqlstore.Orders,
 ) []entities.Order {
 	t.Helper()
@@ -411,7 +412,7 @@ func generateTestOrders(t *testing.T, blocks []entities.Block, parties []entitie
 		// It's important for order triggers that orders are inserted in order. The batcher in the
 		// order store does not preserve insert order, so manually flush each block.
 		if to.block.VegaTime != lastBlockTime {
-			os.Flush(context.Background())
+			os.Flush(ctx)
 			lastBlockTime = to.block.VegaTime
 		}
 		ref := fmt.Sprintf("reference-%d", i)
@@ -423,28 +424,27 @@ func generateTestOrders(t *testing.T, blocks []entities.Block, parties []entitie
 }
 
 func TestOrders_GetLiveOrders(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	logger := logging.NewTestLogger()
 	bs := sqlstore.NewBlocks(connectionSource)
 	ps := sqlstore.NewParties(connectionSource)
 	ms := sqlstore.NewMarkets(connectionSource)
 	os := sqlstore.NewOrders(connectionSource, logger)
 
-	t.Logf("test store port: %d", testDBPort)
-
 	// set up the blocks, parties and markets we need to generate the orders
-	blocks := generateTestBlocks(t, 3, bs)
-	parties := generateParties(t, 5, blocks[0], ps)
-	markets := helpers.GenerateMarkets(t, 3, blocks[0], ms)
+	blocks := generateTestBlocks(t, ctx, 3, bs)
+	parties := generateParties(t, ctx, 5, blocks[0], ps)
+	markets := helpers.GenerateMarkets(t, ctx, 3, blocks[0], ms)
 	orderIDs := generateOrderIDs(t, 8)
-	testOrders := generateTestOrders(t, blocks, parties, markets, orderIDs, os)
+	testOrders := generateTestOrders(t, ctx, blocks, parties, markets, orderIDs, os)
 
 	// Make sure we flush the batcher and write the orders to the database
-	_, err := os.Flush(context.Background())
+	_, err := os.Flush(ctx)
 	require.NoError(t, err)
 
 	want := append(testOrders[:3], testOrders[4:6]...)
-	got, err := os.GetLiveOrders(context.Background())
+	got, err := os.GetLiveOrders(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 5, len(got))
 	assert.ElementsMatch(t, want, got)
@@ -512,11 +512,10 @@ func TestOrdersFiltering(t *testing.T) {
 }
 
 type orderTestStores struct {
-	bs     *sqlstore.Blocks
-	ps     *sqlstore.Parties
-	ms     *sqlstore.Markets
-	os     *sqlstore.Orders
-	config sqlstore.Config
+	bs *sqlstore.Blocks
+	ps *sqlstore.Parties
+	ms *sqlstore.Markets
+	os *sqlstore.Orders
 }
 
 type orderTestData struct {
@@ -527,31 +526,24 @@ type orderTestData struct {
 	cursors []*entities.Cursor
 }
 
-func setupOrderCursorPaginationTests(t *testing.T) (*orderTestStores, func(t *testing.T)) {
+func setupOrderCursorPaginationTests(t *testing.T) *orderTestStores {
 	t.Helper()
-	DeleteEverything()
 	logger := logging.NewTestLogger()
 	stores := &orderTestStores{
-		bs:     sqlstore.NewBlocks(connectionSource),
-		ps:     sqlstore.NewParties(connectionSource),
-		ms:     sqlstore.NewMarkets(connectionSource),
-		os:     sqlstore.NewOrders(connectionSource, logger),
-		config: sqlstore.NewDefaultConfig(),
+		bs: sqlstore.NewBlocks(connectionSource),
+		ps: sqlstore.NewParties(connectionSource),
+		ms: sqlstore.NewMarkets(connectionSource),
+		os: sqlstore.NewOrders(connectionSource, logger),
 	}
 
-	stores.config.ConnectionConfig.Port = testDBPort
-	return stores, func(t *testing.T) {
-		t.Helper()
-		DeleteEverything()
-	}
+	return stores
 }
 
-func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores) orderTestData {
+func generateTestOrdersForCursorPagination(t *testing.T, ctx context.Context, stores *orderTestStores) orderTestData {
 	t.Helper()
-
-	blocks := generateTestBlocks(t, 12, stores.bs)
-	parties := generateParties(t, 2, blocks[0], stores.ps)
-	markets := helpers.GenerateMarkets(t, 2, blocks[0], stores.ms)
+	blocks := generateTestBlocks(t, ctx, 12, stores.bs)
+	parties := generateParties(t, ctx, 2, blocks[0], stores.ps)
+	markets := helpers.GenerateMarkets(t, ctx, 2, blocks[0], stores.ms)
 	orderIDs := generateOrderIDs(t, 20)
 
 	// Order with multiple versions orderIDs[1]
@@ -842,7 +834,7 @@ func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores
 		// It's important for order triggers that orders are inserted in order. The batcher in the
 		// order store does not preserve insert order, so manually flush each block.
 		if order.block.VegaTime != lastBlockTime {
-			stores.os.Flush(context.Background())
+			stores.os.Flush(ctx)
 			lastBlockTime = order.block.VegaTime
 		}
 
@@ -857,7 +849,7 @@ func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores
 	}
 
 	// Make sure we flush the batcher and write the orders to the database
-	_, err := stores.os.Flush(context.Background())
+	_, err := stores.os.Flush(ctx)
 	require.NoError(t, err, "Could not insert test order data to the test database")
 
 	return orderTestData{
@@ -870,14 +862,12 @@ func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores
 }
 
 func testOrdersCursorPaginationByMarketNoCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
@@ -905,14 +895,12 @@ func testOrdersCursorPaginationByMarketNoCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByPartyNoCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
@@ -940,14 +928,12 @@ func testOrdersCursorPaginationByPartyNoCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByOrderIDNoCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
@@ -966,14 +952,12 @@ func testOrdersCursorPaginationByOrderIDNoCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByMarketAndPartyNoCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
@@ -993,14 +977,12 @@ func testOrdersCursorPaginationByMarketAndPartyNoCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByMarketNoCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 
@@ -1027,14 +1009,12 @@ func testOrdersCursorPaginationByMarketNoCursorNewestFirst(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByPartyNoCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 
@@ -1062,14 +1042,12 @@ func testOrdersCursorPaginationByPartyNoCursorNewestFirst(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByOrderIDNoCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 
@@ -1095,14 +1073,12 @@ func testOrdersCursorPaginationByOrderIDNoCursorNewestFirst(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByMarketAndPartyNoCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 
@@ -1128,14 +1104,12 @@ func testOrdersCursorPaginationByMarketAndPartyNoCursorNewestFirst(t *testing.T)
 // -- First Cursor Tests --
 
 func testOrdersCursorPaginationByMarketFirstCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
@@ -1155,14 +1129,12 @@ func testOrdersCursorPaginationByMarketFirstCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByPartyFirstCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
@@ -1182,14 +1154,12 @@ func testOrdersCursorPaginationByPartyFirstCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByOrderIDFirstCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
@@ -1209,14 +1179,12 @@ func testOrdersCursorPaginationByOrderIDFirstCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByMarketAndPartyFirstCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(2)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
@@ -1237,14 +1205,12 @@ func testOrdersCursorPaginationByMarketAndPartyFirstCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByMarketFirstCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(5)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
@@ -1270,14 +1236,12 @@ func testOrdersCursorPaginationByMarketFirstCursorNewestFirst(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByPartyFirstCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(5)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
@@ -1303,14 +1267,12 @@ func testOrdersCursorPaginationByPartyFirstCursorNewestFirst(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByOrderIDFirstCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
@@ -1334,14 +1296,12 @@ func testOrdersCursorPaginationByOrderIDFirstCursorNewestFirst(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByMarketAndPartyFirstCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(2)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
@@ -1367,14 +1327,12 @@ func testOrdersCursorPaginationByMarketAndPartyFirstCursorNewestFirst(t *testing
 // -- Last Cursor Tests --
 
 func testOrdersCursorPaginationByMarketLastCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	last := int32(5)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
@@ -1400,14 +1358,12 @@ func testOrdersCursorPaginationByMarketLastCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByPartyLastCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	last := int32(5)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
@@ -1433,14 +1389,12 @@ func testOrdersCursorPaginationByPartyLastCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByOrderIDLastCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
@@ -1460,14 +1414,12 @@ func testOrdersCursorPaginationByOrderIDLastCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByMarketAndPartyLastCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	last := int32(2)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
@@ -1488,14 +1440,12 @@ func testOrdersCursorPaginationByMarketAndPartyLastCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByMarketLastCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
@@ -1519,14 +1469,12 @@ func testOrdersCursorPaginationByMarketLastCursorNewestFirst(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByPartyLastCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
@@ -1550,14 +1498,12 @@ func testOrdersCursorPaginationByPartyLastCursorNewestFirst(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByOrderIDLastCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
@@ -1581,14 +1527,12 @@ func testOrdersCursorPaginationByOrderIDLastCursorNewestFirst(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByMarketAndPartyLastCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	last := int32(2)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
@@ -1614,14 +1558,12 @@ func testOrdersCursorPaginationByMarketAndPartyLastCursorNewestFirst(t *testing.
 // -- First and After tests --
 
 func testOrdersCursorPaginationByMarketFirstAndAfterCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(3)
 	after := testData.cursors[0].Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
@@ -1642,14 +1584,12 @@ func testOrdersCursorPaginationByMarketFirstAndAfterCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByPartyFirstAndAfterCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(3)
 	after := testData.cursors[5].Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
@@ -1670,14 +1610,12 @@ func testOrdersCursorPaginationByPartyFirstAndAfterCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByOrderIDFirstAndAfterCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(3)
 	after := testData.cursors[2].Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
@@ -1698,14 +1636,12 @@ func testOrdersCursorPaginationByOrderIDFirstAndAfterCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByMarketAndPartyFirstAndAfterCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(1)
 	after := testData.cursors[5].Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
@@ -1727,14 +1663,12 @@ func testOrdersCursorPaginationByMarketAndPartyFirstAndAfterCursor(t *testing.T)
 }
 
 func testOrdersCursorPaginationByMarketFirstAndAfterCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(3)
 	after := testData.cursors[14].Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
@@ -1759,14 +1693,12 @@ func testOrdersCursorPaginationByMarketFirstAndAfterCursorNewestFirst(t *testing
 }
 
 func testOrdersCursorPaginationByPartyFirstAndAfterCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(3)
 	after := testData.cursors[12].Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
@@ -1791,14 +1723,12 @@ func testOrdersCursorPaginationByPartyFirstAndAfterCursorNewestFirst(t *testing.
 }
 
 func testOrdersCursorPaginationByOrderIDFirstAndAfterCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(3)
 	after := testData.cursors[11].Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
@@ -1823,14 +1753,12 @@ func testOrdersCursorPaginationByOrderIDFirstAndAfterCursorNewestFirst(t *testin
 }
 
 func testOrdersCursorPaginationByMarketAndPartyFirstAndAfterCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(1)
 	after := testData.cursors[12].Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
@@ -1856,14 +1784,12 @@ func testOrdersCursorPaginationByMarketAndPartyFirstAndAfterCursorNewestFirst(t 
 // -- Last and Before tests --
 
 func testOrdersCursorPaginationByMarketLastAndBeforeCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	last := int32(3)
 	before := testData.cursors[14].Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
@@ -1884,14 +1810,12 @@ func testOrdersCursorPaginationByMarketLastAndBeforeCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByPartyLastAndBeforeCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	last := int32(3)
 	before := testData.cursors[12].Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
@@ -1912,14 +1836,12 @@ func testOrdersCursorPaginationByPartyLastAndBeforeCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByOrderIDLastAndBeforeCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	last := int32(3)
 	before := testData.cursors[11].Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
@@ -1940,14 +1862,12 @@ func testOrdersCursorPaginationByOrderIDLastAndBeforeCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByMarketAndPartyLastAndBeforeCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	last := int32(1)
 	before := testData.cursors[12].Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
@@ -1969,14 +1889,12 @@ func testOrdersCursorPaginationByMarketAndPartyLastAndBeforeCursor(t *testing.T)
 }
 
 func testOrdersCursorPaginationByMarketLastAndBeforeCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	last := int32(3)
 	before := testData.cursors[0].Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
@@ -2001,14 +1919,12 @@ func testOrdersCursorPaginationByMarketLastAndBeforeCursorNewestFirst(t *testing
 }
 
 func testOrdersCursorPaginationByPartyLastAndBeforeCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	last := int32(3)
 	before := testData.cursors[5].Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
@@ -2033,14 +1949,12 @@ func testOrdersCursorPaginationByPartyLastAndBeforeCursorNewestFirst(t *testing.
 }
 
 func testOrdersCursorPaginationByOrderIDLastAndBeforeCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	last := int32(3)
 	before := testData.cursors[2].Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
@@ -2065,14 +1979,12 @@ func testOrdersCursorPaginationByOrderIDLastAndBeforeCursorNewestFirst(t *testin
 }
 
 func testOrdersCursorPaginationByMarketAndPartyLastAndBeforeCursorNewestFirst(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	last := int32(1)
 	before := testData.cursors[5].Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
@@ -2096,14 +2008,12 @@ func testOrdersCursorPaginationByMarketAndPartyLastAndBeforeCursorNewestFirst(t 
 }
 
 func testOrdersCursorPaginationBetweenDatesByMarketNoCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
@@ -2128,14 +2038,12 @@ func testOrdersCursorPaginationBetweenDatesByMarketNoCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationBetweenDatesByMarketFirstCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
@@ -2160,14 +2068,12 @@ func testOrdersCursorPaginationBetweenDatesByMarketFirstCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationBetweenDatesByMarketFirstAndAfterCursor(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	t.Logf("Test DB Port: %d", testDBPort)
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	first := int32(3)
 	after := testData.cursors[0].Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
@@ -2214,11 +2120,11 @@ func testOrdersFilter(t *testing.T) {
 }
 
 func testOrdersFilterByMarketAndStates(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -2252,11 +2158,11 @@ func testOrdersFilterByMarketAndStates(t *testing.T) {
 }
 
 func testOrdersFilterByPartyAndStates(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -2292,11 +2198,11 @@ func testOrdersFilterByPartyAndStates(t *testing.T) {
 }
 
 func testOrdersFilterByReferenceAndStates(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -2327,11 +2233,11 @@ func testOrdersFilterByReferenceAndStates(t *testing.T) {
 }
 
 func testOrdersFilterByMarketAndTypes(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         nil,
@@ -2366,11 +2272,11 @@ func testOrdersFilterByMarketAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterByPartyAndTypes(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         nil,
@@ -2405,11 +2311,11 @@ func testOrdersFilterByPartyAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterByReferenceAndTypes(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         nil,
@@ -2440,11 +2346,11 @@ func testOrdersFilterByReferenceAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterByMarketAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         nil,
@@ -2478,11 +2384,11 @@ func testOrdersFilterByMarketAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterByPartyAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         nil,
@@ -2518,11 +2424,11 @@ func testOrdersFilterByPartyAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterByReferenceAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         nil,
@@ -2553,11 +2459,11 @@ func testOrdersFilterByReferenceAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterByMarketStatesAndTypes(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -2590,11 +2496,11 @@ func testOrdersFilterByMarketStatesAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterByPartyStatesAndTypes(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -2628,11 +2534,11 @@ func testOrdersFilterByPartyStatesAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterByReferenceStatesAndTypes(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -2662,11 +2568,11 @@ func testOrdersFilterByReferenceStatesAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterByMarketStatesAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -2699,11 +2605,11 @@ func testOrdersFilterByMarketStatesAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterByPartyStatesAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -2738,11 +2644,11 @@ func testOrdersFilterByPartyStatesAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterByReferenceStatesAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -2772,11 +2678,11 @@ func testOrdersFilterByReferenceStatesAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterByMarketStatesTypesAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -2808,11 +2714,11 @@ func testOrdersFilterByMarketStatesTypesAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterByPartyStatesTypesAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -2845,11 +2751,11 @@ func testOrdersFilterByPartyStatesTypesAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterByReferenceStatesTypesAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -2900,11 +2806,11 @@ func testOrdersFilterLiquidityOrders(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByMarketAndStates(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -2936,11 +2842,11 @@ func testOrdersFilterExcludeLiquidityByMarketAndStates(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByPartyAndStates(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -2974,11 +2880,11 @@ func testOrdersFilterExcludeLiquidityByPartyAndStates(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByReferenceAndStates(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -3005,11 +2911,11 @@ func testOrdersFilterExcludeLiquidityByReferenceAndStates(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByMarketAndTypes(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         nil,
@@ -3041,11 +2947,11 @@ func testOrdersFilterExcludeLiquidityByMarketAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByPartyAndTypes(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         nil,
@@ -3078,11 +2984,11 @@ func testOrdersFilterExcludeLiquidityByPartyAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByReferenceAndTypes(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         nil,
@@ -3112,11 +3018,11 @@ func testOrdersFilterExcludeLiquidityByReferenceAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByMarketAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         nil,
@@ -3148,11 +3054,11 @@ func testOrdersFilterExcludeLiquidityByMarketAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByPartyAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         nil,
@@ -3186,11 +3092,11 @@ func testOrdersFilterExcludeLiquidityByPartyAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByReferenceAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         nil,
@@ -3220,11 +3126,11 @@ func testOrdersFilterExcludeLiquidityByReferenceAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByMarketStatesAndTypes(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -3255,11 +3161,11 @@ func testOrdersFilterExcludeLiquidityByMarketStatesAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByPartyStatesAndTypes(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -3291,11 +3197,11 @@ func testOrdersFilterExcludeLiquidityByPartyStatesAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByReferenceStatesAndTypes(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -3324,11 +3230,11 @@ func testOrdersFilterExcludeLiquidityByReferenceStatesAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByMarketStatesAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -3359,11 +3265,11 @@ func testOrdersFilterExcludeLiquidityByMarketStatesAndTimeInForce(t *testing.T) 
 }
 
 func testOrdersFilterExcludeLiquidityByPartyStatesAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -3396,11 +3302,11 @@ func testOrdersFilterExcludeLiquidityByPartyStatesAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByReferenceStatesAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -3427,11 +3333,11 @@ func testOrdersFilterExcludeLiquidityByReferenceStatesAndTimeInForce(t *testing.
 }
 
 func testOrdersFilterExcludeLiquidityByMarketStatesTypesAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -3461,11 +3367,11 @@ func testOrdersFilterExcludeLiquidityByMarketStatesTypesAndTimeInForce(t *testin
 }
 
 func testOrdersFilterExcludeLiquidityByPartyStatesTypesAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},
@@ -3496,11 +3402,11 @@ func testOrdersFilterExcludeLiquidityByPartyStatesTypesAndTimeInForce(t *testing
 }
 
 func testOrdersFilterExcludeLiquidityByReferenceStatesTypesAndTimeInForce(t *testing.T) {
-	stores, teardown := setupOrderCursorPaginationTests(t)
-	defer teardown(t)
-	testData := generateTestOrdersForCursorPagination(t, stores)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	stores := setupOrderCursorPaginationTests(t)
+	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
 
 	filter := entities.OrderFilter{
 		Statuses:         []vega.Order_Status{vega.Order_STATUS_ACTIVE, vega.Order_STATUS_PARTIALLY_FILLED},

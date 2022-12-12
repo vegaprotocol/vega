@@ -15,81 +15,21 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/cenkalti/backoff/v4"
-	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jackc/pgx/v4"
 )
 
 var (
-	embeddedPostgres *embeddedpostgres.EmbeddedPostgres
-	connectionSource *sqlstore.ConnectionSource
-	sqlTestsEnabled  = true
-	minPort          = 30000
-	maxPort          = 40000
-	testDBPort       int
-	testDBSocketDir  string
-
-	tableNames = [...]string{
-		"accounts",
-		"assets",
-		"balances",
-		"blocks",
-		"chain",
-		"checkpoints",
-		"current_balances",
-		"current_liquidity_provisions",
-		"current_margin_levels",
-		"delegations",
-		"delegations_current",
-		"deposits",
-		"deposits_current",
-		"epochs",
-		"erc20_multisig_signer_events",
-		"ethereum_key_rotations",
-		"key_rotations",
-		"last_block",
-		"ledger",
-		"liquidity_provisions",
-		"margin_levels",
-		"market_data",
-		"markets",
-		"markets_current",
-		"network_limits",
-		"network_parameters",
-		"network_parameters_current",
-		"node_signatures",
-		"nodes",
-		"nodes_announced",
-		"oracle_data",
-		"oracle_data_current",
-		"oracle_specs",
-		"orders",
-		"orders_live",
-		"parties",
-		"positions",
-		"positions_current",
-		"proposals",
-		"protocol_upgrade_proposals",
-		"ranking_scores",
-		"reward_scores",
-		"rewards",
-		"risk_factors",
-		"stake_linking",
-		"stake_linking_current",
-		"trades",
-		"transfers",
-		"votes",
-		"withdrawals",
-		"withdrawals_current",
-	}
-
+	sqlTestsEnabled       = true
+	minPort               = 30000
+	maxPort               = 40000
 	postgresServerTimeout = time.Second * 10
 )
 
 func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.ConnectionSource, *bytes.Buffer),
 	postgresRuntimePath string, sqlFs fs.FS,
 ) int {
-	testDBSocketDir = filepath.Join(postgresRuntimePath)
-	testDBPort = 5432 // GetNextFreePort()
+	testDBSocketDir := filepath.Join(postgresRuntimePath)
+	testDBPort := 5432 // GetNextFreePort()
 	sqlConfig := NewTestConfig(testDBPort, testDBSocketDir)
 
 	if sqlTestsEnabled {
@@ -102,7 +42,7 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 		defer os.RemoveAll(postgresRuntimePath)
 
 		postgresLog := &bytes.Buffer{}
-		embeddedPostgres, err = sqlstore.StartEmbeddedPostgres(log, sqlConfig, postgresRuntimePath, postgresLog)
+		embeddedPostgres, err := sqlstore.StartEmbeddedPostgres(log, sqlConfig, postgresRuntimePath, postgresLog)
 		if err != nil {
 			log.Errorf("failed to start postgres: %s", postgresLog.String())
 			panic(err)
@@ -129,7 +69,7 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 		}
 
 		cancel()
-		connectionSource, err = sqlstore.NewTransactionalConnectionSource(log, sqlConfig.ConnectionConfig)
+		connectionSource, err := sqlstore.NewTransactionalConnectionSource(log, sqlConfig.ConnectionConfig)
 		if err != nil {
 			panic(err)
 		}
@@ -149,30 +89,6 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 	}
 
 	return 0
-}
-
-func DeleteEverything() {
-	ctx, cancelFn := context.WithTimeout(context.Background(), postgresServerTimeout)
-	defer cancelFn()
-	sqlConfig := NewTestConfig(testDBPort, testDBSocketDir)
-	connStr := sqlConfig.ConnectionConfig.GetConnectionString()
-	conn, err := pgx.Connect(ctx, connStr)
-	defer func() {
-		err = conn.Close(context.Background())
-		if err != nil {
-			log := logging.NewTestLogger()
-			log.Errorf("failed to close connection:%w", err)
-		}
-	}()
-	if err != nil {
-		panic(fmt.Errorf("failed to delete everything:%w", err))
-	}
-
-	for _, table := range tableNames {
-		if _, err := conn.Exec(context.Background(), "truncate table "+table+" CASCADE"); err != nil {
-			panic(fmt.Errorf("error truncating table: %s %w", table, err))
-		}
-	}
 }
 
 func NewTestConfig(port int, socketDir string) sqlstore.Config {

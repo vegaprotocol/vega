@@ -32,5 +32,5 @@ func NewUnsupportedWalletVersionError(v uint32) UnsupportedWalletVersionError {
 }
 
 func (e UnsupportedWalletVersionError) Error() string {
-	return fmt.Sprintf("wallet with version %d isn't supported", e.UnsupportedVersion)
+	return fmt.Sprintf("wallet with key derivation version %d isn't supported", e.UnsupportedVersion)
 }

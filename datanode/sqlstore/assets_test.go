@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
@@ -28,7 +27,7 @@ import (
 
 var testAssetCount int
 
-func addTestAsset(t *testing.T, as *sqlstore.Assets, block entities.Block, idPrefix ...string) entities.Asset {
+func addTestAsset(t *testing.T, ctx context.Context, as *sqlstore.Assets, block entities.Block, idPrefix ...string) entities.Asset {
 	t.Helper()
 	// Make an asset
 	testAssetCount++
@@ -53,7 +52,7 @@ func addTestAsset(t *testing.T, as *sqlstore.Assets, block entities.Block, idPre
 	}
 
 	// Add it to the database
-	err := as.Add(context.Background(), asset)
+	err := as.Add(ctx, asset)
 	require.NoError(t, err)
 	return asset
 }
@@ -62,17 +61,17 @@ func addTestAsset(t *testing.T, as *sqlstore.Assets, block entities.Block, idPre
 // it had been updated but before the transaction was committed led to a poisoned cache that
 // returned stale values.
 func TestAssetCache(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	as := sqlstore.NewAssets(connectionSource)
-	block := addTestBlock(t, bs)
-	ctx := context.Background()
+	block := addTestBlock(t, ctx, bs)
 
 	// A make a lovely asset
-	asset := addTestAsset(t, as, block, "")
+	asset := addTestAsset(t, ctx, as, block, "")
 
-	// Try updating the asset to have a new symbol *without* using a transaction
+	// Try updating the asset to have a new symbol in the top level transaction
 	asset2 := asset
 	asset2.Symbol = "TEST2"
 	err := as.Add(ctx, asset2)
@@ -83,7 +82,7 @@ func TestAssetCache(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, asset2, fetched)
 
-	// Now in a transaction, update the asset to have another different symbol
+	// Now in a sub-transaction, update the asset to have another different symbol
 	txCtx, err := connectionSource.WithTransaction(ctx)
 	require.NoError(t, err)
 	asset3 := asset
@@ -105,20 +104,20 @@ func TestAssetCache(t *testing.T) {
 }
 
 func TestAsset(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	bs := sqlstore.NewBlocks(connectionSource)
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 
 	as := sqlstore.NewAssets(connectionSource)
-	ctx := context.Background()
 
 	// Get all assets, there shouldn't be any yet
 	assets, err := as.GetAll(ctx)
 	require.NoError(t, err)
 	require.Empty(t, assets)
 
-	asset := addTestAsset(t, as, block)
+	asset := addTestAsset(t, ctx, as, block)
 
 	// Query and check we've got back an asset the same as the one we put in
 	fetchedAsset, err := as.GetByID(ctx, asset.ID.String())
@@ -139,10 +138,10 @@ func TestAsset(t *testing.T) {
 	assert.Len(t, assets, 1)
 }
 
-func setupAssetPaginationTest(t *testing.T) (*sqlstore.Assets, []entities.Asset) {
+func setupAssetPaginationTest(t *testing.T, ctx context.Context) (*sqlstore.Assets, []entities.Asset) {
 	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 
 	as := sqlstore.NewAssets(connectionSource)
 
@@ -151,7 +150,7 @@ func setupAssetPaginationTest(t *testing.T) (*sqlstore.Assets, []entities.Asset)
 	testAssetCount = 0
 
 	for i := 0; i < 10; i++ {
-		asset := addTestAsset(t, as, block, "deadbeef")
+		asset := addTestAsset(t, ctx, as, block, "deadbeef")
 		assets = append(assets, asset)
 	}
 
@@ -173,11 +172,10 @@ func TestAssets_GetAllWithCursorPagination(t *testing.T) {
 }
 
 func testAssetsPaginationNoPagination(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	as, assets := setupAssetPaginationTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	as, assets := setupAssetPaginationTest(t, ctx)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	assert.NoError(t, err)
@@ -194,11 +192,10 @@ func testAssetsPaginationNoPagination(t *testing.T) {
 }
 
 func testAssetPaginationFirst(t *testing.T) {
-	defer DeleteEverything()
-	as, assets := setupAssetPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	as, assets := setupAssetPaginationTest(t, ctx)
 
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
@@ -216,10 +213,10 @@ func testAssetPaginationFirst(t *testing.T) {
 }
 
 func testAssetPaginationLast(t *testing.T) {
-	defer DeleteEverything()
-	as, assets := setupAssetPaginationTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	as, assets := setupAssetPaginationTest(t, ctx)
 
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
@@ -237,10 +234,10 @@ func testAssetPaginationLast(t *testing.T) {
 }
 
 func testAssetPaginationFirstAndAfter(t *testing.T) {
-	defer DeleteEverything()
-	as, assets := setupAssetPaginationTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	as, assets := setupAssetPaginationTest(t, ctx)
 
 	first := int32(3)
 	after := assets[2].Cursor().Encode()
@@ -260,10 +257,10 @@ func testAssetPaginationFirstAndAfter(t *testing.T) {
 }
 
 func testAssetPaginationLastAndBefore(t *testing.T) {
-	defer DeleteEverything()
-	as, assets := setupAssetPaginationTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	as, assets := setupAssetPaginationTest(t, ctx)
 
 	last := int32(3)
 	before := assets[7].Cursor().Encode()
@@ -283,12 +280,11 @@ func testAssetPaginationLastAndBefore(t *testing.T) {
 }
 
 func testAssetsPaginationNoPaginationNewestFirst(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	as, assets := setupAssetPaginationTest(t)
+	as, assets := setupAssetPaginationTest(t, ctx)
 	assets = entities.ReverseSlice(assets)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	assert.NoError(t, err)
@@ -305,12 +301,11 @@ func testAssetsPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testAssetPaginationFirstNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	as, assets := setupAssetPaginationTest(t)
-	assets = entities.ReverseSlice(assets)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	as, assets := setupAssetPaginationTest(t, ctx)
+	assets = entities.ReverseSlice(assets)
 
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
@@ -328,11 +323,11 @@ func testAssetPaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testAssetPaginationLastNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	as, assets := setupAssetPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	as, assets := setupAssetPaginationTest(t, ctx)
 	assets = entities.ReverseSlice(assets)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
@@ -350,11 +345,11 @@ func testAssetPaginationLastNewestFirst(t *testing.T) {
 }
 
 func testAssetPaginationFirstAndAfterNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	as, assets := setupAssetPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	as, assets := setupAssetPaginationTest(t, ctx)
 	assets = entities.ReverseSlice(assets)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	first := int32(3)
 	after := assets[2].Cursor().Encode()
@@ -374,11 +369,11 @@ func testAssetPaginationFirstAndAfterNewestFirst(t *testing.T) {
 }
 
 func testAssetPaginationLastAndBeforeNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	as, assets := setupAssetPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	as, assets := setupAssetPaginationTest(t, ctx)
 	assets = entities.ReverseSlice(assets)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	last := int32(3)
 	before := assets[7].Cursor().Encode()

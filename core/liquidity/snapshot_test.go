@@ -192,22 +192,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		Return(num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(90), num.DecimalFromInt64(110))).
 		AnyTimes()
 
-	_, _, err := e2.engine.Update(ctx, num.NewUint(99), num.NewUint(101),
-		repriceFN,
-		// []*types.Order{
-		// 	{
-		// 		ID:        "order-id-1",
-		// 		Party:     party1,
-		// 		MarketID:  market,
-		// 		Side:      types.SideBuy,
-		// 		Price:     num.NewUint(90),
-		// 		Size:      10,
-		// 		Remaining: 10,
-		// 	},
-		// },
-	)
-
-	require.NoError(t, err)
+	e2.engine.Update(ctx, num.NewUint(99), num.NewUint(101), repriceFN)
 
 	for _, key := range keys {
 		s, _, err := e2.engine.GetState(key)
@@ -296,21 +281,7 @@ func TestSnapshotChangeOnUpdate(t *testing.T) {
 		Return(num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(90), num.DecimalFromInt64(110))).
 		AnyTimes()
 
-	_, _, err = e1.engine.Update(ctx, num.NewUint(99), num.NewUint(101),
-		repriceFN,
-		// []*types.Order{
-		// 	{
-		// 		ID:        "order-id-1",
-		// 		Party:     party1,
-		// 		MarketID:  market,
-		// 		Side:      types.SideBuy,
-		// 		Price:     num.NewUint(90),
-		// 		Size:      10,
-		// 		Remaining: 10,
-		// 	},
-		// },
-	)
-	require.NoError(t, err)
+	e1.engine.Update(ctx, num.NewUint(99), num.NewUint(101), repriceFN)
 
 	// Get new hash, it should have changed
 	s2, _, err := e1.engine.GetState(key)
