@@ -265,3 +265,4 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | party  | asset | market id | margin | general   |
       | party1 | USD   | ETH/MAR22 | 0      | 100001375 |
       | party2 | USD   | ETH/MAR22 | 0      | 99998625  |
+
