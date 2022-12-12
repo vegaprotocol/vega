@@ -545,6 +545,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
+  @STTest
   Scenario: 2 LP distribution at settlement
 
     Given the parties deposit on asset's general account the following amount:
