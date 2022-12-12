@@ -78,31 +78,30 @@ Feature: Closeout-cascades
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 1055  | 948    |
+      | sell | 1050  | 96     |
       | sell | 1000  | 10     |
-      | buy  | 50    | 4050   |
-      | buy  | 10    | 50     |
+      | buy  | 50    | 50     |
+      | buy  | 1     | 100000 |
     And the network moves ahead "1" blocks
     Then the mark price should be "100" for the market "ETH/DEC19"
-    Then debug transfers
+
     # trader3 got close-out, trader3's order has been sold to network, and then trader2 bought the order from the network
     # as it had the highest buy price
-    Then debug trades
-    Then debug orders
+
     # This step currently doesn't work. Looking at the debug order/trade output, the party does get closed out
     # but we can't detect the events at this point. This needs to be fixed.
-    #And the following trades should be executed:
-    #| buyer   | price | size | seller  |
-    #| network |  100  | 50   | trader3 |
-    #| lpprov  |  100  | 50   | network |
+    # And the following trades should be executed:
+    # | buyer   | price | size | seller  |
+    # | network |  100  | 50   | trader3 |
+    # | lpprov  |  100  | 50   | network |
 
     And the cumulated balance for all accounts should be worth "3000000002100"
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 1055  | 948    |
+      | sell | 1005  | 100    |
       | sell | 1000  | 10     |
-      | buy  | 50    | 0      |
-      | buy  | 10    | 20050  |
+      | buy  | 5     | 5      |
+      | buy  | 1     | 100000 |
     Then the mark price should be "100" for the market "ETH/DEC19"
 
     # check that trader3 is closed-out but trader2 is not
@@ -129,8 +128,8 @@ Feature: Closeout-cascades
       | party      | asset | market id | margin | general      |
       #| trader2    | BTC   | ETH/DEC19 | 2097   | 0            |
       | trader3    | BTC   | ETH/DEC19 | 0      | 0            |
-      | auxiliary1 | BTC   | ETH/DEC19 | 114800 | 999999884295 |
-      | auxiliary2 | BTC   | ETH/DEC19 | 3200   | 999999997700 |
+      | auxiliary1 | BTC   | ETH/DEC19 | 114320 | 999999884775 |
+      | auxiliary2 | BTC   | ETH/DEC19 | 13180  | 999999989816 |
 
     # setup new mark price, which is the same as when trader2 traded with network
     Then the parties place the following orders:
