@@ -24,7 +24,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | horizon | probability | auction extension |
             | 1       | 0.99        | 300               |
         And the markets:
-            | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          | decimal places | position decimal places |
+            | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places |
             | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       |
             | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       |
             | USD/DEC20 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       |
@@ -41,22 +41,22 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | lpprov | ETH   | 100000000 |
             | lpprov | USD   | 100000000 |
 
-    Scenario: Markets with different precisions trade at the same price
+    Scenario: 001: Markets with different precisions trade at the same price
 
         Given  the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
             | lp0 | party0 | USD/DEC20 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp0 | party0 | USD/DEC20 | 1000              | 0.001 | buy  | BID              | 100        | -20    | submission |
+            | lp0 | party0 | USD/DEC20 | 1000              | 0.001 | buy  | BID              | 100        | 20     | submission |
             | lp1 | party0 | USD/DEC21 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp1 | party0 | USD/DEC21 | 1000              | 0.001 | buy  | BID              | 100        | -20    | submission |
+            | lp1 | party0 | USD/DEC21 | 1000              | 0.001 | buy  | BID              | 100        | 20     | submission |
             | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | buy  | BID              | 100        | -20    | submission |
+            | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | buy  | BID              | 100        | 20     | submission |
             | lp3 | lpprov | USD/DEC20 | 4000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp3 | lpprov | USD/DEC20 | 4000              | 0.001 | buy  | BID              | 100        | -20    | submission |
+            | lp3 | lpprov | USD/DEC20 | 4000              | 0.001 | buy  | BID              | 100        | 20     | submission |
             | lp4 | lpprov | USD/DEC21 | 4000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp4 | lpprov | USD/DEC21 | 4000              | 0.001 | buy  | BID              | 100        | -20    | submission |
+            | lp4 | lpprov | USD/DEC21 | 4000              | 0.001 | buy  | BID              | 100        | 20     | submission |
             | lp5 | lpprov | USD/DEC19 | 4000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp5 | lpprov | USD/DEC19 | 4000              | 0.001 | buy  | BID              | 100        | -20    | submission |
+            | lp5 | lpprov | USD/DEC19 | 4000              | 0.001 | buy  | BID              | 100        | 20     | submission |
 
         And the parties place the following orders:
             | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
@@ -93,13 +93,13 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
 
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond |
-            | party0 | ETH   | USD/DEC21 | 8110   | 4973012  | 1000 |
+            | party0 | ETH   | USD/DEC21 | 4268   | 4985006  | 1000 |
             | party1 | ETH   | USD/DEC21 | 1081   | 99996757 | 0    |
             | party2 | ETH   | USD/DEC21 | 4268   | 99987196 | 0    |
-            | party0 | ETH   | USD/DEC20 | 7768   | 4973012  | 1000 |
+            | party0 | ETH   | USD/DEC20 | 3884   | 4985006  | 1000 |
             | party1 | ETH   | USD/DEC20 | 1081   | 99996757 | 0    |
             | party2 | ETH   | USD/DEC20 | 4268   | 99987196 | 0    |
-            | party0 | ETH   | USD/DEC19 | 8110   | 4973012  | 1000 |
+            | party0 | ETH   | USD/DEC19 | 3842   | 4985006  | 1000 |
             | party1 | ETH   | USD/DEC19 | 1081   | 99996757 | 0    |
             | party2 | ETH   | USD/DEC19 | 4268   | 99987196 | 0    |
 
