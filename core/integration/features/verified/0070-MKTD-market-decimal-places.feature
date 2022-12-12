@@ -268,14 +268,14 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         Then the mark price should be "100000" for the market "USD/DEC20"
         And the mark price should be "1000" for the market "USD/DEC19"
 
-    Scenario: Offsets are calculated in market units, (0070-MKTD-007)
+    Scenario: 007: Offsets are calculated in market units, (0070-MKTD-007)
 
         Given  the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
             | lp1 | party0 | USD/DEC20 | 5000              | 0.001 | sell | MID              | 100        | 20     | submission |
-            | lp1 | party0 | USD/DEC20 | 5000              | 0.001 | buy  | MID              | 100        | -20    | amendment  |
+            | lp1 | party0 | USD/DEC20 | 5000              | 0.001 | buy  | MID              | 100        | 20     | amendment  |
             | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | sell | MID              | 100        | 20     | submission |
-            | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | buy  | MID              | 100        | -20    | amendment  |
+            | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | buy  | MID              | 100        | 20     | amendment  |
 
         And the parties place the following orders:
             | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
