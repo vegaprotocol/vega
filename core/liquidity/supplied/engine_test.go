@@ -134,8 +134,7 @@ func Test_InteralConsistency(t *testing.T) {
 
 	// Negative liquidity obligation -> 0 sizes on all orders
 	liquidityObligation := num.NewUint(100)
-	err := engine.CalculateLiquidityImpliedVolumes(liquidityObligation.Clone(), limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
-	require.NoError(t, err)
+	engine.CalculateLiquidityImpliedVolumes(liquidityObligation.Clone(), limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
 
 	var zero uint64
 	require.Less(t, zero, buy.LiquidityImpliedVolume)
@@ -189,8 +188,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 
 	// No liquidity obligation -> 0 sizes on all orders
 	liquidityObligation := num.NewUint(0)
-	err := engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
-	require.NoError(t, err)
+	engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
 
 	var zero uint64
 	require.Equal(t, zero, validBuy1.LiquidityImpliedVolume)
@@ -205,8 +203,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 
 	// 0 liquidity obligation -> 0 sizes on all orders
 	liquidityObligation = num.NewUint(0)
-	err = engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
-	require.NoError(t, err)
+	engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
 
 	require.Equal(t, zero, validBuy1.LiquidityImpliedVolume)
 	require.Equal(t, zero, validBuy2.LiquidityImpliedVolume)
@@ -220,8 +217,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 
 	// Positive liquidity obligation -> positive sizes on orders -> suplied liquidity >= liquidity obligation
 	liquidityObligation = num.NewUint(250)
-	err = engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
-	require.NoError(t, err)
+	engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
 
 	loDec := liquidityObligation.ToDecimal()
 	vb1Prop := num.DecimalFromFloat(float64(validBuy1.Details.Proportion))
@@ -317,8 +313,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	limitOrdersSuppliedLiquidity := engine.CalculateSuppliedLiquidity(collateOrders(limitOrders, nil, nil), minLpPrice, maxLpPrice)
 	require.True(t, limitOrdersSuppliedLiquidity.LT(liquidityObligation))
 
-	err := engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
-	require.NoError(t, err)
+	engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
 
 	var zero uint64
 	require.Less(t, zero, validBuy1.LiquidityImpliedVolume)
@@ -357,8 +352,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	limitOrdersSuppliedLiquidity = engine.CalculateSuppliedLiquidity(collateOrders(limitOrders, nil, nil), minLpPrice, maxLpPrice)
 	require.True(t, limitOrdersSuppliedLiquidity.LT(liquidityObligation))
 
-	err = engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
-	require.NoError(t, err)
+	engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
 
 	require.Equal(t, zero, validBuy1.LiquidityImpliedVolume)
 	require.Equal(t, zero, validBuy2.LiquidityImpliedVolume)
@@ -396,8 +390,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	limitOrdersSuppliedLiquidity = engine.CalculateSuppliedLiquidity(collateOrders(limitOrders, nil, nil), minLpPrice, maxLpPrice)
 	require.True(t, limitOrdersSuppliedLiquidity.LT(liquidityObligation))
 
-	err = engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
-	require.NoError(t, err)
+	engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
 
 	require.Less(t, zero, validBuy1.LiquidityImpliedVolume)
 	require.Less(t, zero, validBuy2.LiquidityImpliedVolume)
@@ -437,8 +430,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	limitOrdersSuppliedLiquidity = engine.CalculateSuppliedLiquidity(collateOrders(limitOrders, nil, nil), minLpPrice, maxLpPrice)
 	require.True(t, limitOrdersSuppliedLiquidity.GT(liquidityObligation))
 
-	err = engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
-	require.NoError(t, err)
+	engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
 
 	require.Equal(t, zero, validBuy1.LiquidityImpliedVolume)
 	require.Equal(t, zero, validBuy2.LiquidityImpliedVolume)
@@ -481,13 +473,10 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 	require.NotNil(t, engine)
 
 	liquidityObligation := num.NewUint(20)
-	// Expecting no error now (other component assures orders get shifted to valid price range, failsafe in place to safeguard against near-zero probability of trading)
-	err := engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
-	require.NoError(t, err)
+	engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
 
-	// We do expect an error when no orders specified though.
-	err = engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, []*supplied.LiquidityOrder{}, []*supplied.LiquidityOrder{})
-	require.Error(t, err)
+	// Expecting no failure with empty shapes
+	engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, []*supplied.LiquidityOrder{}, []*supplied.LiquidityOrder{})
 }
 
 func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
