@@ -1291,10 +1291,13 @@ func migrateDatabase(version int64) error {
 }
 
 func newTestEventSourceWithProtocolUpdateMessage() *TestEventSource {
-	var err error
 	var currentBlock *entities.Block
 	var m sync.RWMutex
 	evtSource, err := newTestEventSource(func(e events.Event, evtsCh chan<- events.Event) {
+		if e == nil {
+			return
+		}
+		var err error
 		switch e.Type() {
 		case events.EndBlockEvent:
 
