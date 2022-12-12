@@ -73,15 +73,15 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party0 | USD/DEC19 | buy  | 1      | 900    | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1a  |
             | party0 | USD/DEC19 | sell | 1      | 1100   | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2a |
 
-    Then the market data for the market "USD/DEC19" should be:
-      | target stake | supplied stake |
-      | 3556         | 5000           |
-    Then the market data for the market "USD/DEC20" should be:
-      | target stake | supplied stake |
-      | 3556         | 5000           |
-    Then the market data for the market "USD/DEC21" should be:
-      | target stake | supplied stake |
-      | 3556         | 5000           |
+        Then the market data for the market "USD/DEC19" should be:
+            | target stake | supplied stake |
+            | 3556         | 5000           |
+        Then the market data for the market "USD/DEC20" should be:
+            | target stake | supplied stake |
+            | 3556         | 5000           |
+        Then the market data for the market "USD/DEC21" should be:
+            | target stake | supplied stake |
+            | 3556         | 5000           |
 
         When the opening auction period ends for market "USD/DEC21"
         And the opening auction period ends for market "USD/DEC20"
@@ -207,9 +207,9 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party2 | USD/DEC19 | sell | 1      | 1010   | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1a |
             | party2 | USD/DEC19 | sell | 1      | 1100   | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2a |
 
-    Then the market data for the market "USD/DEC19" should be:
-      | target stake | supplied stake |
-      | 3556         | 5000           |
+        Then the market data for the market "USD/DEC19" should be:
+            | target stake | supplied stake |
+            | 3556         | 5000           |
 
         When the opening auction period ends for market "USD/DEC20"
         And the opening auction period ends for market "USD/DEC19"
