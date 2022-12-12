@@ -91,5 +91,6 @@ func parseExpectedMarginsTable(table *godog.Table) []RowWrapper {
 	}, []string{
 		"search",
 		"initial",
-		"release"})
+		"release",
+	})
 }
