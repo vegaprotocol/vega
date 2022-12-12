@@ -18,7 +18,7 @@ Feature: Fees calculations
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
 
-Scenario: Testing fees get collected when amended order trades (0029-FEES-005)
+Scenario: 001: Testing fees get collected when amended order trades (0029-FEES-005)
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
       | aux1     | ETH   | 100000000 |
@@ -43,10 +43,10 @@ Scenario: Testing fees get collected when amended order trades (0029-FEES-005)
 
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
-      | sell | 1080  | 1      |
+      | buy  | 910   | 10     |
       | buy  | 920   | 1      |
-      | buy  | 910   | 210    |
-      | sell | 1090  | 184    |
+      | sell | 1080  | 1      |
+      | sell | 1090  | 10     |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
