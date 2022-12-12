@@ -66,7 +66,7 @@ Feature: check margin account with partially filled order
 
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 45234       | 54280  | 67851   | 90468   |tr
+      | trader2 | ETH/DEC20 | 45234       | 54280  | 67851   | 90468   |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
