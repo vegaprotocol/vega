@@ -248,10 +248,10 @@ Feature: Fees calculations
 
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
-      | sell | 1080  | 1      |
+      | buy  | 910   | 10     |
       | buy  | 920   | 1      |
-      | buy  | 910   | 210    |
-      | sell | 1090  | 184    |
+      | sell | 1080  | 1      |
+      | sell | 1090  | 10     |
 
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
@@ -262,9 +262,7 @@ Feature: Fees calculations
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 690    | 9321    |
-      #| trader3a | ETH   | ETH/DEC21 | 480    | 9531    |
       | trader3b | ETH   | ETH/DEC21 | 339    | 9667    |
-      #| trader3b | ETH   | ETH/DEC21 | 240    | 9766    |
 
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
