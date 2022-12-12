@@ -12,7 +12,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | market.liquidityProvision.shapes.maxSize            | 10    |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
 
-  Scenario: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size(0034-PROB-001);Probability of trading decreases away from the mid-price (0034-PROB-005). Tested with varying decimal places.
+  Scenario: 001: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size(0034-PROB-001);Probability of trading decreases away from the mid-price (0034-PROB-005). Tested with varying decimal places.
 
     And the log normal risk model named "my-log-normal-risk-model":
       | risk aversion | tau                    | mu | r     | sigma |
@@ -75,23 +75,23 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price      | volume |
       | buy  | 1199990000 | 1      |
-      | buy  | 1199970000 | 1859   |
-      | buy  | 1199960000 | 1863   |
-      | buy  | 1199950000 | 1867   |
-      | buy  | 1199940000 | 1870   |
-      | buy  | 1199930000 | 1874   |
-      | buy  | 1199920000 | 1877   |
-      | buy  | 1199910000 | 1881   |
-      | buy  | 1199900000 | 1885   |
+      | buy  | 1199970000 | 926    |
+      | buy  | 1199960000 | 926    |
+      | buy  | 1199950000 | 926    |
+      | buy  | 1199940000 | 926    |
+      | buy  | 1199930000 | 926    |
+      | buy  | 1199920000 | 926    |
+      | buy  | 1199910000 | 926    |
+      | buy  | 1199900000 | 927    |
       | sell | 1200010000 | 1      |
-      | sell | 1200030000 | 1859   |
-      | sell | 1200040000 | 1863   |
-      | sell | 1200050000 | 1866   |
-      | sell | 1200060000 | 1870   |
-      | sell | 1200070000 | 1874   |
-      | sell | 1200080000 | 1877   |
-      | sell | 1200090000 | 1881   |
-      | sell | 1200100000 | 1884   |
+      | sell | 1200030000 | 926    |
+      | sell | 1200040000 | 926    |
+      | sell | 1200050000 | 926    |
+      | sell | 1200060000 | 926    |
+      | sell | 1200070000 | 926    |
+      | sell | 1200080000 | 926    |
+      | sell | 1200090000 | 926    |
+      | sell | 1200100000 | 926    |
 
   Scenario:  LP pegged volume is pushed inside price monitoring bounds(0009-MRKP-003, 0009-MRKP-004);
 
