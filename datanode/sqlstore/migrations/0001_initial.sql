@@ -1469,8 +1469,8 @@ CREATE VIEW protocol_upgrade_proposals_current AS (
 
 CREATE TABLE IF NOT EXISTS core_snapshots(
     block_height BIGINT NOT NULL,
-    block_hash bytea not null,
-    vega_core_version bytea not null,
+    block_hash TEXT null,
+    vega_core_version TEXT null,
     tx_hash bytea not null,
     vega_time TIMESTAMP WITH TIME ZONE NOT NULL,
     PRIMARY KEY(vega_time, block_height)
