@@ -144,8 +144,7 @@ func (e *Engine) getScheduledTransfers() []*checkpoint.ScheduledTransferAtTime {
 		}
 
 		// k is a Unix nano timestamp, and we want a Unix timestamp.
-		// So we divide it by (time.Second / time.Nanosecond).
-		deliverOnAsUnix := k / 1e9
+		deliverOnAsUnix := k / int64(time.Second)
 
 		out = append(out, &checkpoint.ScheduledTransferAtTime{DeliverOn: deliverOnAsUnix, Transfers: transfers})
 	}
