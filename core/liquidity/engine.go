@@ -447,11 +447,11 @@ func (e *Engine) CreateInitialOrders(
 	minLpPrice, maxLpPrice *num.Uint,
 	party string,
 	repriceFn RepriceOrder,
-) ([]*types.Order, error) {
+) []*types.Order {
 	// ignoring amends as there won't be any since we kill all the orders first
-	creates, _, err := e.createOrUpdateForParty(ctx,
+	creates, _ := e.createOrUpdateForParty(ctx,
 		minLpPrice, maxLpPrice, party, repriceFn)
-	return creates, err
+	return creates
 }
 
 // UndeployLPs is called when a reference price is no longer available. LP orders should all be parked/set to pending
@@ -499,22 +499,19 @@ func (e *Engine) Update(
 	ctx context.Context,
 	minLpPrice, maxLpPrice *num.Uint,
 	repriceFn RepriceOrder,
-) ([]*types.Order, []*ToCancel, error) {
+) ([]*types.Order, []*ToCancel) {
 	var (
 		newOrders []*types.Order
 		toCancel  []*ToCancel
 	)
 	for _, lp := range e.provisions.Slice() {
-		creates, cancels, err := e.createOrUpdateForParty(ctx, minLpPrice, maxLpPrice, lp.Party, repriceFn)
-		if err != nil {
-			return nil, nil, err
-		}
+		creates, cancels := e.createOrUpdateForParty(ctx, minLpPrice, maxLpPrice, lp.Party, repriceFn)
 		newOrders = append(newOrders, creates...)
 		if !cancels.Empty() {
 			toCancel = append(toCancel, cancels)
 		}
 	}
-	return newOrders, toCancel, nil
+	return newOrders, toCancel
 }
 
 // CalculateSuppliedStake returns the sum of commitment amounts from all the liquidity providers.
@@ -531,10 +528,10 @@ func (e *Engine) createOrUpdateForParty(
 	minLpPrice, maxLpPrice *num.Uint,
 	party string,
 	repriceFn RepriceOrder,
-) (ordres []*types.Order, _ *ToCancel, errr error) {
+) (ordres []*types.Order, _ *ToCancel) {
 	lp := e.LiquidityProvisionByPartyID(party)
 	if lp == nil {
-		return nil, nil, nil
+		return nil, nil
 	}
 
 	var (
@@ -601,14 +598,12 @@ func (e *Engine) createOrUpdateForParty(
 			}
 		}
 
-		if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
+		e.suppliedEngine.CalculateLiquidityImpliedVolumes(
 			obligation,
 			orders,
 			minLpPrice, maxLpPrice,
 			buysShape, sellsShape,
-		); err != nil {
-			return nil, nil, err
-		}
+		)
 
 		needsCreateBuys, needsUpdateBuys = e.createOrdersFromShape(
 			party, buysShape, types.SideBuy)
@@ -627,8 +622,7 @@ func (e *Engine) createOrUpdateForParty(
 		e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 	}
 	return append(needsCreateBuys, needsCreateSells...),
-		needsUpdateBuys.Merge(needsUpdateSells),
-		nil
+		needsUpdateBuys.Merge(needsUpdateSells)
 }
 
 func (e *Engine) buildOrder(side types.Side, price *num.Uint, partyID, marketID string, size uint64, ref string, lpID string) *types.Order {

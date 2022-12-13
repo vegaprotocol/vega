@@ -248,8 +248,7 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 		return retPrice.Sub(retPrice, offset), nil
 	}
 
-	newOrders, amendments, err := tng.engine.Update(context.Background(), num.UintOne(), num.NewUint(100), fn)
-	require.NoError(t, err)
+	newOrders, amendments := tng.engine.Update(context.Background(), num.UintOne(), num.NewUint(100), fn)
 	require.Len(t, newOrders, 3)
 	require.Len(t, amendments, 0)
 }
@@ -437,8 +436,7 @@ func TestUpdateAndUndeploy(t *testing.T) {
 		{ID: "2", Party: party, Price: num.NewUint(11), Size: 1, Side: types.SideSell, Status: types.OrderStatusActive},
 	}
 	tng.orderbook.EXPECT().GetOrdersPerParty(party).Times(3).Return(orders)
-	creates, err := tng.engine.CreateInitialOrders(ctx, num.UintOne(), num.NewUint(100), party, fn)
-	require.NoError(t, err)
+	creates := tng.engine.CreateInitialOrders(ctx, num.UintOne(), num.NewUint(100), party, fn)
 	require.Len(t, creates, 3)
 
 	tng.orderbook.EXPECT().GetLiquidityOrders(gomock.Any()).Times(2).Return(creates)
@@ -446,15 +444,13 @@ func TestUpdateAndUndeploy(t *testing.T) {
 	// Manual order satisfies the commitment, LiqOrders should be removed
 	orders[0].Remaining, orders[0].Size = 1000, 1000
 	orders[1].Remaining, orders[1].Size = 1000, 1000
-	newOrders, toCancels, err := tng.engine.Update(ctx, num.UintOne(), num.NewUint(100), fn)
-	require.NoError(t, err)
+	newOrders, toCancels := tng.engine.Update(ctx, num.UintOne(), num.NewUint(100), fn)
 	require.Len(t, newOrders, 0)
 	require.Len(t, toCancels[0].OrderIDs, 3)
 	require.Equal(t, toCancels[0].Party, party)
 
 	tng.orderbook.EXPECT().GetLiquidityOrders(gomock.Any()).Times(2)
-	newOrders, toCancels, err = tng.engine.Update(ctx, num.UintOne(), num.NewUint(100), fn)
-	require.NoError(t, err)
+	newOrders, toCancels = tng.engine.Update(ctx, num.UintOne(), num.NewUint(100), fn)
 	require.Len(t, newOrders, 0)
 	require.Len(t, toCancels, 0)
 
