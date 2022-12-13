@@ -78,9 +78,9 @@ Feature: Test closeout type 1: margin >= cost of closeout
        #original vol
       | sell | 150   | 1000   |
       #LP pegged vol
-      | sell | 123   | 2082   |
+      | sell | 123   | 81     |
         #LP pegged vol
-      | sell | 110   | 440    |
+      | sell | 110   | 91     |
       #original vol
       | sell | 105   | 1      | 
 
@@ -96,9 +96,9 @@ Feature: Test closeout type 1: margin >= cost of closeout
        #original vol
       | sell | 150   | 1000   |
       #LP pegged vol
-      | sell | 126   | 1320   |
+      | sell | 126   | 79     |
         #LP pegged vol
-      | sell | 115   | 400    |
+      | sell | 115   | 87     |
       #original vol
       | sell | 105   | 1      | 
 
@@ -110,10 +110,10 @@ Feature: Test closeout type 1: margin >= cost of closeout
    # party1 maintenance margin should be: position_vol* slippage + vol * riskfactor * markprice= 100*14 + 100*0.48787313795861700*100=6278.73 rounded up to 6279
     And the parties should have the following margin levels:
       | party   | market id  | maintenance | search | initial | release |
-      | party1  | ETH/DEC19  | 6279        | 12558  | 15697   | 18837   |
+      | party1  | ETH/DEC19  | 6479        | 12958  | 16197   | 19437   |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general  |
-      | party1 | USD   | ETH/DEC19 | 15697     | 14303    |
+      | party1 | USD   | ETH/DEC19 | 16197     | 13803       |
     
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -123,7 +123,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
 
     Then the parties should have the following account balances:
       | party     | asset | market id | margin    | general     |
-      | party1    | USD   | ETH/DEC19 | 19370     |  8030       |
+      | party1    | USD   | ETH/DEC19 | 21370     | 6030        |
       
 
 

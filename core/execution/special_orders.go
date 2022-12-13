@@ -175,13 +175,8 @@ func (m *Market) repriceAllSpecialOrders(
 		// we do not return here, we could not get one of the prices eventually
 	}
 
-	newOrders, cancels, err := m.liquidity.Update(
+	newOrders, cancels := m.liquidity.Update(
 		ctx, minLpPrice, maxLpPrice, m.repriceLiquidityOrder)
-	if err != nil {
-		// TODO: figure out if error are really possible there,
-		// But I'd think not.
-		m.log.Error("could not update liquidity", logging.Error(err))
-	}
 
 	m.liquidity.ClearLPOrders()
 	return m.updateLPOrders(ctx, lpOrders, newOrders, cancels, partiesPos)

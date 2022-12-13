@@ -372,13 +372,10 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 	lppr, err := num.DecimalFromString(changes.LpPriceRange)
 	if err != nil {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.lp_price_range", ErrIsNotValidNumber)
-	} else {
-		if lppr.IsNegative() || lppr.IsZero() {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.lp_price_range", ErrMustBePositive)
-		}
-		if lppr.GreaterThan(num.DecimalFromInt64(100)) {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.lp_price_range", ErrMustBeAtMost100)
-		}
+	} else if lppr.IsNegative() || lppr.IsZero() {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.lp_price_range", ErrMustBePositive)
+	} else if lppr.GreaterThan(num.DecimalFromInt64(100)) {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.lp_price_range", ErrMustBeAtMost100)
 	}
 
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
@@ -410,13 +407,10 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 	lppr, err := num.DecimalFromString(changes.LpPriceRange)
 	if err != nil {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrIsNotValidNumber)
-	} else {
-		if lppr.IsNegative() || lppr.IsZero() {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrMustBePositive)
-		}
-		if lppr.GreaterThan(num.DecimalFromInt64(100)) {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrMustBeAtMost100)
-		}
+	} else if lppr.IsNegative() || lppr.IsZero() {
+		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrMustBePositive)
+	} else if lppr.GreaterThan(num.DecimalFromInt64(100)) {
+		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrMustBeAtMost100)
 	}
 
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.update_market.changes"))
