@@ -139,7 +139,7 @@ func testCommandPreRejectBannedParty(t *testing.T) {
 
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, errors.New("party is banned from submitting simple until the earlier between 2022-12-12 05:05:00 +0000 GMT and the beginning of the next epoch"), err)
+	require.Equal(t, errors.New("party is banned from submitting simple until the earlier between 2022-12-12 05:05:00 +0000 UTC and the beginning of the next epoch"), err)
 
 	// advance epochs - verify still banned until epoch 4 (including)
 	policy.Reset(types.Epoch{Seq: uint64(2)})
@@ -308,12 +308,12 @@ func testCommandReset(t *testing.T) {
 	policy.EndOfBlock(1, tm.Add(10*time.Minute), time.Minute*30)
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, errors.New("party is banned from submitting simple until the earlier between 2022-12-12 05:05:00 +0000 GMT and the beginning of the next epoch"), err)
+	require.Equal(t, errors.New("party is banned from submitting simple until the earlier between 2022-12-12 05:05:00 +0000 UTC and the beginning of the next epoch"), err)
 
 	policy.EndOfBlock(1, tm.Add(20*time.Minute), time.Minute*30)
 	accept, err = policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, errors.New("party is banned from submitting simple until the earlier between 2022-12-12 05:05:00 +0000 GMT and the beginning of the next epoch"), err)
+	require.Equal(t, errors.New("party is banned from submitting simple until the earlier between 2022-12-12 05:05:00 +0000 UTC and the beginning of the next epoch"), err)
 
 	// advance time until the ban is lifted fro party1
 	policy.EndOfBlock(1, tm.Add(30*time.Minute), time.Minute*30)

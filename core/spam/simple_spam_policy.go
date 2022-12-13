@@ -256,7 +256,7 @@ func (ssp *SimpleSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 		if ssp.log.GetLevel() <= logging.DebugLevel {
 			ssp.log.Debug("Spam pre: party is banned from "+ssp.policyName, logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("party", party))
 		}
-		return false, ssp.banErr(time.Unix(0, until))
+		return false, ssp.banErr(time.Unix(0, until).UTC())
 	}
 
 	// check if the party has enough balance to submit commands

@@ -277,13 +277,14 @@ func testPreRejectBannedParty(t *testing.T) {
 
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, "party is banned from submitting votes until the earlier between 2022-12-12 05:05:00 +0000 GMT and the beginning of the next epoch", err.Error())
+	print(tm.String())
+	require.Equal(t, "party is banned from submitting votes until the earlier between 2022-12-12 05:05:00 +0000 UTC and the beginning of the next epoch", err.Error())
 
 	// advance 30 minutes - verify still banned until 30 minutes pass
 	for i := 0; i < 3; i++ {
 		accept, err := policy.PreBlockAccept(tx)
 		require.Equal(t, false, accept)
-		require.Equal(t, "party is banned from submitting votes until the earlier between 2022-12-12 05:05:00 +0000 GMT and the beginning of the next epoch", err.Error())
+		require.Equal(t, "party is banned from submitting votes until the earlier between 2022-12-12 05:05:00 +0000 UTC and the beginning of the next epoch", err.Error())
 		adjustment := 10 * time.Minute * time.Duration(i+1)
 		policy.EndOfBlock(1, tm.Add(adjustment), time.Minute*30)
 	}
@@ -502,12 +503,12 @@ func testReset(t *testing.T) {
 	tx := &testTx{party: "party1", proposal: "proposal1"}
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, "party is banned from submitting votes until the earlier between 2022-12-12 05:05:00 +0000 GMT and the beginning of the next epoch", err.Error())
+	require.Equal(t, "party is banned from submitting votes until the earlier between 2022-12-12 05:05:00 +0000 UTC and the beginning of the next epoch", err.Error())
 
 	policy.EndOfBlock(1, tm.Add(20*time.Minute), time.Minute*30)
 	accept, err = policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, "party is banned from submitting votes until the earlier between 2022-12-12 05:05:00 +0000 GMT and the beginning of the next epoch", err.Error())
+	require.Equal(t, "party is banned from submitting votes until the earlier between 2022-12-12 05:05:00 +0000 UTC and the beginning of the next epoch", err.Error())
 
 	policy.EndOfBlock(1, tm.Add(30*time.Minute), time.Minute*30)
 	accept, err = policy.PostBlockAccept(tx)

@@ -403,7 +403,7 @@ func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 		if vsp.log.GetLevel() <= logging.DebugLevel {
 			vsp.log.Debug("Spam pre: party is banned from voting", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("party", party))
 		}
-		return false, errors.New("party is banned from submitting votes until the earlier between " + time.Unix(0, until).String() + " and the beginning of the next epoch")
+		return false, errors.New("party is banned from submitting votes until the earlier between " + time.Unix(0, until).UTC().String() + " and the beginning of the next epoch")
 	}
 
 	// check if the party has enough balance to submit votes
