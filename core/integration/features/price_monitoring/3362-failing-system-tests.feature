@@ -87,14 +87,5 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     Then the network moves ahead "10" blocks
-    And the mark price should be "100000" for the market "ETH/DEC20"
-
-    # Now set the volume so that the order generates a trade that's still within price monitoring bounds
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type        | tif     |
-      | party2 | ETH/DEC20 | sell | 1      | 0     | 1                | TYPE_MARKET | TIF_FOK |
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-
-    Then the network moves ahead "10" blocks
 
     And the mark price should be "99845" for the market "ETH/DEC20"
