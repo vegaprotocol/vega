@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/tyler-smith/go-bip39"
 	"github.com/vegaprotocol/go-slip10"
@@ -59,6 +60,8 @@ func NewHDWallet(name string) (*HDWallet, string, error) {
 // ImportHDWallet creates a wallet based on the recovery phrase in input. This
 // is useful import or retrieve a wallet.
 func ImportHDWallet(name, recoveryPhrase string, keyDerivationVersion uint32) (*HDWallet, error) {
+	recoveryPhrase = sanitizeRecoveryPhrase(recoveryPhrase)
+
 	if !bip39.IsMnemonicValid(recoveryPhrase) {
 		return nil, ErrInvalidRecoveryPhrase
 	}
@@ -501,7 +504,25 @@ func NewRecoveryPhrase() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("couldn't create recovery phrase: %w", err)
 	}
+
+	sanitizedRecoveryPhrase := sanitizeRecoveryPhrase(recoveryPhrase)
+
+	if recoveryPhrase != sanitizedRecoveryPhrase {
+		panic("The format of the recovery phrase changed in the bip39 we are using. This may cause problems for the key generation if we import a recovery phrase that is not what the bip39 library is expecting.")
+	}
+
 	return recoveryPhrase, nil
+}
+
+// sanitizeRecoveryPhrase ensures the recovery phrase always has the right
+// format:
+//
+//	(WORD + " ") * 23 + WORD
+//
+// This format is what our bip39 library is expecting at the moment we write this
+// code. If it ever comes to change, this need to be carefully tested.
+func sanitizeRecoveryPhrase(originalRecoveryPhrase string) string {
+	return strings.Join(strings.Fields(originalRecoveryPhrase), " ")
 }
 
 func deriveWalletNodeFromRecoveryPhrase(recoveryPhrase string) (*slip10.Node, error) {
