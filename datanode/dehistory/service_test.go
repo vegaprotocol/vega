@@ -175,7 +175,7 @@ func TestMain(t *testing.M) {
 		})
 
 		preUpgradeBroker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
-			func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64) {
+			func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 				if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 					lastSnapshot, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 					if err != nil {
@@ -238,7 +238,7 @@ func TestMain(t *testing.M) {
 		})
 
 		postUpgradeBroker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
-			func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64) {
+			func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 				if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 					lastSnapshot, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 					if err != nil {
@@ -362,12 +362,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmRjknDz7UpPvSKzYWpgec3KJbVwaR9zz8tgmt5QouZa7f", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmTvXGtFKFt7iapyGFKK2iopFZPrTBeGXayEuXcpjRH3w2", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmP368XWwBX9tZynLkynjm1XqFAaM1u3vwSQGvn7ZCYm3d", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "Qmc2RGXyUbZtYWTKQH9Jyhb3fRyF4MWF1pWgGCwESh1BCv", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmdYV4H1sp9Q58BuSux7tU8LGdHqB2iwvwo9KFktRRSQvm", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmWN3qd2fYtDt4F6CJJRyqw6opjcqvv67jzvuvCUJUiYKu", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmcTrdyGZ6L2Dv86CM153KLQBVygy7wLif7svTK3ZK3LXw", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmeQ9bKh61ckWCgx9mxfdF1Hi8Wpn58TRh7AnohjWtv1S1", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmRCh2J9b2xUmGvhokL3usLYaUsu5ZLmWq9nLqyW1viTDM", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmPu7kNmXt1nkZSb4M3BAJVUAbppkEZ2rBKc8XNNLy1ewh", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmYgigX8PH11LRC5TiL8UGtYuVfkjCdZm2gGcJoqpeNpNg", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmWhFx69UaV7Z7nevUH3TL2TmEgJZQG4QA2xxSXAkvtqsc", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
@@ -402,7 +402,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	// Run events to height 1800
 
 	broker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
-		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64) {
+		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 			if lastCommittedBlockHeight == 1800 {
 				cancelFn()
 			}
@@ -451,7 +451,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	var md5Hash string
 	var historyMd5Hash string
 	broker, err = setupSQLBroker(ctx, sqlConfig, snapshotService,
-		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64) {
+		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 				meta, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 				require.NoError(t, err)
@@ -560,7 +560,7 @@ func TestRestoringNodeWithExistingDataFailsWhenLoadingWouldResultInNonContiguous
 	// Run events to height 1800
 
 	broker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
-		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64) {
+		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 			if lastCommittedBlockHeight == 1800 {
 				cancelFn()
 			}
@@ -676,7 +676,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 	outDeHistoryHome := t.TempDir()
 	outputSnapshotService := setupSnapshotService(sqlConfig, outDeHistoryHome, t.TempDir())
 	sqlBroker, err := setupSQLBroker(ctx, sqlConfig, outputSnapshotService,
-		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64) {
+		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 				snapshotMeta, err = service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 				require.NoError(t, err)
@@ -759,7 +759,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 
 	var lastCommittedBlockHeight int64
 	sqlBroker, err := setupSQLBroker(ctx, sqlConfig, outputSnapshotService,
-		func(ctx context.Context, service *snapshot.Service, chainId string, blockHeight int64) {
+		func(ctx context.Context, service *snapshot.Service, chainId string, blockHeight int64, snapshotTaken bool) {
 			lastCommittedBlockHeight = blockHeight
 		},
 		evtSource, puh,
@@ -778,7 +778,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 
 	// After protocol upgrade restart the broker
 	sqlBroker, err = setupSQLBroker(ctx, sqlConfig, outputSnapshotService,
-		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64) {
+		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 				if lastCommittedBlockHeight == 3000 {
 					ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
@@ -934,7 +934,7 @@ type ProtocolUpgradeHandler interface {
 
 func setupSQLBroker(ctx context.Context, testDbConfig sqlstore.Config, snapshotService *snapshot.Service,
 	onBlockCommitted func(ctx context.Context, service *snapshot.Service, chainId string,
-		lastCommittedBlockHeight int64), evtSource eventSource, protocolUpdateHandler ProtocolUpgradeHandler,
+		lastCommittedBlockHeight int64, snapshotTaken bool), evtSource eventSource, protocolUpdateHandler ProtocolUpgradeHandler,
 ) (sqlStoreBroker, error) {
 	transactionalConnectionSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), testDbConfig.ConnectionConfig)
 	if err != nil {
@@ -961,8 +961,8 @@ func setupSQLBroker(ctx context.Context, testDbConfig sqlstore.Config, snapshotS
 	config := broker.NewDefaultConfig()
 
 	sqlBroker := broker.NewSQLStoreBroker(logging.NewTestLogger(), config, chainID, evtSource,
-		transactionalConnectionSource, blockStore, func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) {
-			onBlockCommitted(ctx, snapshotService, chainId, lastCommittedBlockHeight)
+		transactionalConnectionSource, blockStore, func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
+			onBlockCommitted(ctx, snapshotService, chainId, lastCommittedBlockHeight, snapshotTaken)
 		}, protocolUpdateHandler, subscribers.GetSQLSubscribers(),
 	)
 	return sqlBroker, nil
@@ -1291,10 +1291,13 @@ func migrateDatabase(version int64) error {
 }
 
 func newTestEventSourceWithProtocolUpdateMessage() *TestEventSource {
-	var err error
 	var currentBlock *entities.Block
 	var m sync.RWMutex
 	evtSource, err := newTestEventSource(func(e events.Event, evtsCh chan<- events.Event) {
+		if e == nil {
+			return
+		}
+		var err error
 		switch e.Type() {
 		case events.EndBlockEvent:
 

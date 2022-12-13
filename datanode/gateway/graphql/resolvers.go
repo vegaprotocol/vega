@@ -357,6 +357,10 @@ func (r *VegaResolverRoot) ProtocolUpgradeProposal() ProtocolUpgradeProposalReso
 	return (*protocolUpgradeProposalResolver)(r)
 }
 
+func (r *VegaResolverRoot) CoreSnapshotData() CoreSnapshotDataResolver {
+	return (*coreDataSnapshotResolver)(r)
+}
+
 func (r *VegaResolverRoot) LedgerEntryFilter() LedgerEntryFilterResolver {
 	return (*ledgerEntryFilterResolver)(r)
 }
@@ -401,6 +405,16 @@ type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(ctx context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
 	return fmt.Sprintf("%d", obj.UpgradeBlockHeight), nil
+}
+
+type coreDataSnapshotResolver VegaResolverRoot
+
+func (r *coreDataSnapshotResolver) BlockHeight(ctx context.Context, obj *eventspb.CoreSnapshotData) (string, error) {
+	return fmt.Sprintf("%d", obj.BlockHeight), nil
+}
+
+func (r *coreDataSnapshotResolver) VegaCoreVersion(ctx context.Context, obj *eventspb.CoreSnapshotData) (string, error) {
+	return obj.CoreVersion, nil
 }
 
 type transactionResultResolver VegaResolverRoot
@@ -957,6 +971,16 @@ func (r *myQueryResolver) ProtocolUpgradeStatus(ctx context.Context) (*ProtocolU
 	return &ProtocolUpgradeStatus{
 		Ready: status.Ready,
 	}, nil
+}
+
+func (r *myQueryResolver) CoreSnapshots(ctx context.Context, pagination *v2.Pagination) (*v2.CoreSnapshotConnection, error) {
+	req := v2.ListCoreSnapshotsRequest{Pagination: pagination}
+	resp, err := r.tradingDataClientV2.ListCoreSnapshots(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.CoreSnapshots, nil
 }
 
 func (r *myQueryResolver) ProtocolUpgradeProposals(

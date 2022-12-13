@@ -458,17 +458,17 @@ func (mr *MockValidatorPerformanceMockRecorder) Serialize() *gomock.Call {
 }
 
 // ValidatorPerformanceScore mocks base method.
-func (m *MockValidatorPerformance) ValidatorPerformanceScore(arg0 string, arg1, arg2 int64) decimal.Decimal {
+func (m *MockValidatorPerformance) ValidatorPerformanceScore(arg0 string, arg1, arg2 int64, arg3 decimal.Decimal) decimal.Decimal {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidatorPerformanceScore", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "ValidatorPerformanceScore", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(decimal.Decimal)
 	return ret0
 }
 
 // ValidatorPerformanceScore indicates an expected call of ValidatorPerformanceScore.
-func (mr *MockValidatorPerformanceMockRecorder) ValidatorPerformanceScore(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockValidatorPerformanceMockRecorder) ValidatorPerformanceScore(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorPerformanceScore", reflect.TypeOf((*MockValidatorPerformance)(nil).ValidatorPerformanceScore), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorPerformanceScore", reflect.TypeOf((*MockValidatorPerformance)(nil).ValidatorPerformanceScore), arg0, arg1, arg2, arg3)
 }
 
 // MockNotary is a mock of Notary interface.

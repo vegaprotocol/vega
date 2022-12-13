@@ -74,7 +74,7 @@ Feature: test negative PDP (position decimal places)
 
 
     @Now
-    Scenario: 002, test negative PDP when trading mode is continuous (0003-MTMK-013, 0019-MCAL-010, 0029-FEES-014)
+    Scenario: 002, test negative PDP when trading mode is continuous (0003-MTMK-015, 0019-MCAL-010, 0029-FEES-014)
         Given the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
             | lp2 | party0 | USD/DEC22 | 35569             | 0.001 | sell | ASK              | 500        | 20     | submission |

@@ -217,7 +217,8 @@ func defaultNetParams() map[string]value {
 		MinBlockCapacity:           NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("32"),
 		MaxPeggedOrders:            NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("1500"),
 
-		MarkPriceUpdateMaximumFrequency: NewDuration().Mutable(true).MustUpdate("5s"),
+		MarkPriceUpdateMaximumFrequency:   NewDuration().Mutable(true).MustUpdate("5s"),
+		ValidatorPerformanceScalingFactor: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
 	}
 
 	// add additional cross net param rules
