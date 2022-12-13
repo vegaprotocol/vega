@@ -10,6 +10,9 @@
 
 ### 🛠 Improvements
 - [7032](https://github.com/vegaprotocol/vega/issues/7032) - Make deposits and withdrawals `hypertables` and change `deposits_current` and `withdrawals_current` into views to improve resource usage
+- [7026](https://github.com/vegaprotocol/vega/issues/7026) - Let decentralised history use the snapshot event from the core as an indication for snapshot rather than doing the calculation based on the interval network parameter.
+- [7098](https://github.com/vegaprotocol/vega/issues/7098) - Add an event when the core is taking a snapshot
+- [7122](https://github.com/vegaprotocol/vega/issues/7122) - Allow for tolerance in validator performance calculation
 
 ### 🐛 Fixes
 - [7040](https://github.com/vegaprotocol/vega/issues/7040) - Block explorer use different codes than 500 on error

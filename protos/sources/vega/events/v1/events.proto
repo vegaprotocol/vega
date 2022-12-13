@@ -567,6 +567,18 @@ message ProtocolUpgradeStarted {
 }
 
 
+// CoreSnapshotData represents the core snapshot data.
+message CoreSnapshotData {
+  // The block height at which snapshot was taken
+  uint64 block_height = 1;
+
+  // The hash of the snapshot block
+  string block_hash = 2;
+
+  // Core version
+  string core_version = 3;
+}
+
 // An (event) bus event type is used to specify a type of event
 // It has 2 styles of event:
 // Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
@@ -680,6 +692,8 @@ enum BusEventType {
   BUS_EVENT_TYPE_SETTLE_MARKET = 52;
   // The result of a transaction processed by the network
   BUS_EVENT_TYPE_TRANSACTION_RESULT = 53;
+  // Snapshot is taken at this block height
+  BUS_EVENT_TYPE_SNAPSHOT_TAKEN = 54;
 
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
@@ -798,6 +812,8 @@ message BusEvent {
     SettleMarket settle_market = 151;
     // The result of a transaction processed by the network
     TransactionResult transaction_result = 152;
+    // A core snapshot has been taken at the end of the block
+    CoreSnapshotData core_snapshot_event = 153;
 
     // Market tick events - See [MarketEvent](#vega.MarketEvent)
     MarketEvent market = 1001;
