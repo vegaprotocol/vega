@@ -495,7 +495,7 @@ func testReset(t *testing.T) {
 	}
 
 	// trigger ban of party1 for 30 minutes
-	tm, err := time.Parse("2006-01-02 15:04", "2022-12-12 04:35")
+	tm, _ := time.Parse("2006-01-02 15:04", "2022-12-12 04:35")
 	policy.EndOfBlock(1, tm, time.Minute*30)
 
 	policy.EndOfBlock(1, tm.Add(10*time.Minute), time.Minute*30)
