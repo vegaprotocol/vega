@@ -96,6 +96,7 @@ var (
 	ErrRiskServiceGetMarginLevelsByID = errors.New("failed to get margin levels")
 	ErrInvalidOrderSide               = errors.New("invalid order side")
 	// CandleService...
+	ErrMissingCandleID                  = errors.New("candle id is a required parameter")
 	ErrCandleServiceGetCandleData       = errors.New("failed to get candle data")
 	ErrCandleServiceSubscribeToCandles  = errors.New("failed to subscribe to candle data")
 	ErrCandleServiceGetCandlesForMarket = errors.New("failed to get candles for market")
