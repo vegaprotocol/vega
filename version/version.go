@@ -24,6 +24,12 @@ var (
 
 func init() {
 	info, _ := debug.ReadBuildInfo()
+	// for some reason in jenkins integration tests this return nil
+	if info == nil {
+		cliVersionHash = "unknown"
+		return
+	}
+
 	modified := false
 
 	for _, v := range info.Settings {

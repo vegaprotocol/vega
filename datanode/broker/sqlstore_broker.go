@@ -65,12 +65,13 @@ type SQLStoreBroker struct {
 	eventSource                  eventSource
 	transactionManager           TransactionManager
 	blockStore                   BlockStore
-	onBlockCommitted             func(ctx context.Context, chainId string, lastCommittedBlockHeight int64)
+	onBlockCommitted             func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool)
 	protocolUpdateHandler        ProtocolUpgradeHandler
 	chainID                      string
 	lastBlock                    *entities.Block
 	slowTimeUpdateTicker         *time.Ticker
 	receivedProtocolUpgradeEvent bool
+	snapshotTaken                bool
 }
 
 func NewSQLStoreBroker(
@@ -80,7 +81,7 @@ func NewSQLStoreBroker(
 	eventsource eventSource,
 	transactionManager TransactionManager,
 	blockStore BlockStore,
-	onBlockCommitted func(ctx context.Context, chainId string, lastCommittedBlockHeight int64),
+	onBlockCommitted func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool),
 	protocolUpdateHandler ProtocolUpgradeHandler,
 	subs []SQLBrokerSubscriber,
 ) *SQLStoreBroker {
@@ -129,7 +130,7 @@ func (b *SQLStoreBroker) Receive(ctx context.Context) error {
 			return err
 		}
 
-		b.onBlockCommitted(ctx, b.chainID, b.lastBlock.Height)
+		b.onBlockCommitted(ctx, b.chainID, b.lastBlock.Height, b.snapshotTaken)
 
 		if b.receivedProtocolUpgradeEvent {
 			b.protocolUpdateHandler.OnProtocolUpgradeEvent(ctx, b.chainID, b.lastBlock.Height)
@@ -216,7 +217,7 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 	}
 
 	defer b.slowTimeUpdateTicker.Stop()
-
+	b.snapshotTaken = false
 	betweenBlocks := false
 	for {
 		// Do a pre-check on ctx.Done() since select() cases are randomized, this reduces
@@ -263,6 +264,11 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 			case events.BeginBlockEvent:
 				beginBlock := e.(entities.BeginBlockEvent)
 				return entities.BlockFromBeginBlock(beginBlock)
+			case events.CoreSnapshotEvent:
+				b.snapshotTaken = true
+				if err = b.handleEvent(blockCtx, e); err != nil {
+					return nil, err
+				}
 			case events.ProtocolUpgradeStartedEvent:
 				b.receivedProtocolUpgradeEvent = true
 				// we've received a protocol upgrade event which is the last event core will have sent out

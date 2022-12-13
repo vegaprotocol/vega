@@ -132,6 +132,7 @@ const (
 	ProtocolUpgradeStartedEvent
 	SettleMarketEvent
 	TransactionResultEvent
+	CoreSnapshotEvent
 )
 
 var (
@@ -198,6 +199,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED:       ProtocolUpgradeStartedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_MARKET:                  SettleMarketEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSACTION_RESULT:             TransactionResultEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_SNAPSHOT_TAKEN:                 CoreSnapshotEvent,
 
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
@@ -256,6 +258,7 @@ var (
 		ProtocolUpgradeStartedEvent:     eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED,
 		SettleMarketEvent:               eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_MARKET,
 		TransactionResultEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_TRANSACTION_RESULT,
+		CoreSnapshotEvent:               eventspb.BusEventType_BUS_EVENT_TYPE_SNAPSHOT_TAKEN,
 	}
 
 	eventStrings = map[Type]string{
@@ -313,6 +316,7 @@ var (
 		ProtocolUpgradeStartedEvent:     "ProtocolUpgradeStartedEvent",
 		SettleMarketEvent:               "SettleMarketEvent",
 		TransactionResultEvent:          "TransactionResultEvent",
+		CoreSnapshotEvent:               "CoreSnapshotEvent",
 	}
 )
 

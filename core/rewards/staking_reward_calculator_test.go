@@ -91,7 +91,7 @@ func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	valPerformance := vmock.NewMockValidatorPerformance(ctrl)
-	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any(), gomock.Any(), gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
+	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
 
 	delegatorForVal1 := map[string]*num.Uint{}
 	delegatorForVal1["party1"] = num.NewUint(6000)
@@ -216,7 +216,7 @@ func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	valPerformance := vmock.NewMockValidatorPerformance(ctrl)
-	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any(), gomock.Any(), gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
+	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := map[string]num.Decimal{"node1": num.DecimalFromFloat(0.2), "node2": num.DecimalFromFloat(0.4), "node3": num.DecimalFromFloat(0.4), "node4": num.DecimalZero()}
@@ -296,7 +296,7 @@ func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	valPerformance := vmock.NewMockValidatorPerformance(ctrl)
-	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any(), gomock.Any(), gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
+	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 
@@ -389,7 +389,7 @@ func testEarlyStopCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	valPerformance := vmock.NewMockValidatorPerformance(ctrl)
-	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any(), gomock.Any(), gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
+	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := map[string]num.Decimal{"node1": num.DecimalFromFloat(0.25), "node2": num.DecimalFromFloat(0.5), "node3": num.DecimalFromFloat(0.25), "node4": num.DecimalZero()}
