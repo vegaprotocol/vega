@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/spam"
 	"code.vegaprotocol.io/vega/core/txn"
@@ -103,7 +104,8 @@ func testEngineReset(t *testing.T) {
 	}
 
 	// move to next block, we've voted/proposed everything already so shouldn't be allowed to make more
-	engine.EndOfBlock(1)
+	tm := time.Now()
+	engine.EndOfBlock(1, tm)
 
 	proposalState, _, err := engine.GetState("proposal")
 	require.Nil(t, err)
@@ -139,7 +141,7 @@ func testEngineReset(t *testing.T) {
 
 	accept, err := snapEngine.engine.PreBlockAccept(tx1)
 	require.Equal(t, false, accept)
-	require.Equal(t, errors.New("party has already proposed the maximum number of proposal requests per epoch"), err)
+	require.Equal(t, errors.New("party has already submitted the maximum number of proposal requests per epoch"), err)
 
 	accept, err = snapEngine.engine.PreBlockAccept(tx2)
 	require.Equal(t, false, accept)
@@ -212,7 +214,7 @@ func testPostBlockAccept(t *testing.T) {
 
 	tx1 := &testTx{party: "party1", proposal: "proposal1", command: txn.ProposeCommand}
 	_, err := engine.PostBlockAccept(tx1)
-	require.Equal(t, errors.New("party has already proposed the maximum number of proposal requests per epoch"), err)
+	require.Equal(t, errors.New("party has already submitted the maximum number of proposal requests per epoch"), err)
 
 	tx2 := &testTx{party: "party1", proposal: "proposal1", command: txn.VoteCommand}
 	_, err = engine.PostBlockAccept(tx2)
@@ -234,10 +236,10 @@ func testEndOfBlock(t *testing.T) {
 		accept, _ = engine.PostBlockAccept(tx2)
 		require.Equal(t, true, accept)
 	}
-	engine.EndOfBlock(1)
+	engine.EndOfBlock(1, time.Now())
 	tx1 := &testTx{party: "party1", proposal: "proposal1", command: txn.ProposeCommand}
 	_, err := engine.PreBlockAccept(tx1)
-	require.Equal(t, errors.New("party has already proposed the maximum number of proposal requests per epoch"), err)
+	require.Equal(t, errors.New("party has already submitted the maximum number of proposal requests per epoch"), err)
 
 	tx2 := &testTx{party: "party1", proposal: "proposal1", command: txn.VoteCommand}
 	_, err = engine.PreBlockAccept(tx2)

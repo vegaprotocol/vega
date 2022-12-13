@@ -403,6 +403,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 	if svcs.spam != nil {
 		spamWatchers = []netparams.WatchParam{
 			{
+				Param:   netparams.ValidatorsEpochLength,
+				Watcher: svcs.spam.OnEpochDurationChanged,
+			},
+			{
 				Param:   netparams.SpamProtectionMaxVotes,
 				Watcher: svcs.spam.OnMaxVotesChanged,
 			},

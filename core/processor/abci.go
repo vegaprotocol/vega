@@ -76,7 +76,7 @@ type Checkpoint interface {
 }
 
 type SpamEngine interface {
-	EndOfBlock(blockHeight uint64)
+	EndOfBlock(blockHeight uint64, now time.Time)
 	PreBlockAccept(tx abci.Tx) (bool, error)
 	PostBlockAccept(tx abci.Tx) (bool, error)
 }
@@ -718,7 +718,7 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 	}
 
 	if !app.nilSpam {
-		app.spam.EndOfBlock(uint64(req.Height))
+		app.spam.EndOfBlock(uint64(req.Height), app.time.GetTimeNow())
 	}
 
 	app.stateVar.OnBlockEnd(app.blockCtx)
