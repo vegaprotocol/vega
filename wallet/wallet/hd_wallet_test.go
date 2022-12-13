@@ -3,6 +3,8 @@ package wallet_test
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
+	"strings"
 	"testing"
 
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
@@ -12,7 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const TestRecoveryPhrase1 = "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
+const (
+	TestRecoveryPhrase1 = "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
+	FirstPubKeyV1       = "30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371"
+	FirstPubKeyV2       = "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
+)
 
 func TestHDWallet(t *testing.T) {
 	t.Run("Creating wallet succeeds", testHDWalletCreateWalletSucceeds)
@@ -76,16 +82,31 @@ func testHDWalletCreateWalletSucceeds(t *testing.T) {
 
 func testHDWalletImportingWalletSucceeds(t *testing.T) {
 	tcs := []struct {
-		name    string
-		version uint32
+		name        string
+		version     uint32
+		expectedKey string
 	}{
 		{
-			name:    "version 1",
-			version: 1,
+			name:        "version 1",
+			version:     1,
+			expectedKey: FirstPubKeyV1,
 		}, {
-			name:    "version 2",
-			version: 2,
+			name:        "version 2",
+			version:     2,
+			expectedKey: FirstPubKeyV2,
 		},
+	}
+
+	whitespaces := " \t\n\r"
+
+	genWhiteSpace := func() string {
+		var ws string
+		whiteSpaceIndex := rand.Intn(len(whitespaces))
+		numChar := rand.Intn(5) + 1
+		for i := 0; i < numChar; i++ {
+			ws += string(whitespaces[whiteSpaceIndex])
+		}
+		return ws
 	}
 
 	for _, tc := range tcs {
@@ -93,13 +114,28 @@ func testHDWalletImportingWalletSucceeds(t *testing.T) {
 			// given
 			name := vgrand.RandomStr(5)
 
+			// We mess up the recovery phrase structure to ensure whitespaces
+			// are not an actual problem.
+			words := strings.Split(TestRecoveryPhrase1, " ")
+			tamperedRecoveryPhrase := "  "
+			for _, word := range words {
+				tamperedRecoveryPhrase += word + genWhiteSpace()
+			}
+
 			// when
-			w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, tc.version)
+			w, err := wallet.ImportHDWallet(name, tamperedRecoveryPhrase, tc.version)
 
 			// then
 			require.NoError(tt, err)
 			assert.NotNil(tt, w)
 			assert.Equal(tt, tc.version, w.KeyDerivationVersion())
+
+			// when
+			kp, err := w.GenerateKeyPair(nil)
+
+			// then
+			require.NoError(tt, err)
+			assert.Equal(tt, tc.expectedKey, kp.PublicKey())
 		})
 	}
 }

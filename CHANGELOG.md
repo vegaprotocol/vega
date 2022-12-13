@@ -23,6 +23,7 @@
 - [7029](https://github.com/vegaprotocol/vega/issues/7029) - Remove unsafe `GRPC` endpoint in data node
 - [7116](https://github.com/vegaprotocol/vega/issues/7116) - Fix MTM trade price check when trading is terminated.
 - [7112](https://github.com/vegaprotocol/vega/issues/7112) - Restore order's original price when restoring from a snapshot
+- [7132](https://github.com/vegaprotocol/vega/issues/7132) - Make the recovery phrase import whitespace resistant
 
 
 ## 0.64.0
