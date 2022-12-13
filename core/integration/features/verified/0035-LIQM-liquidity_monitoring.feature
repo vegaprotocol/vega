@@ -154,7 +154,7 @@ Scenario: 002: A market which enters a state requiring liquidity auction through
       | type                               |
       | AuctionEvent                       |
 
-Scenario: A liquidity provider cannot remove their liquidity within the block if this would bring the current total stake below the target stake as of that transaction. (0035-LIQM-007)
+Scenario: 003: A liquidity provider cannot remove their liquidity within the block if this would bring the current total stake below the target stake as of that transaction. (0035-LIQM-007)
   Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 1     |
