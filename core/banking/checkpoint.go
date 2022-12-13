@@ -95,7 +95,7 @@ func (e *Engine) loadScheduledTransfers(
 			evts = append(evts, events.NewOneOffTransferFundsEvent(ctx, transfer.oneoff))
 			transfers = append(transfers, transfer)
 		}
-		e.scheduledTransfers[time.Unix(v.DeliverOn, 0)] = transfers
+		e.scheduledTransfers[time.Unix(v.DeliverOn, 0).UnixNano()] = transfers
 	}
 
 	return evts, nil
@@ -135,7 +135,7 @@ func (e *Engine) getRecurringTransfers() *checkpoint.RecurringTransfers {
 }
 
 func (e *Engine) getScheduledTransfers() []*checkpoint.ScheduledTransferAtTime {
-	out := []*checkpoint.ScheduledTransferAtTime{}
+	out := make([]*checkpoint.ScheduledTransferAtTime, 0, len(e.scheduledTransfers))
 
 	for k, v := range e.scheduledTransfers {
 		transfers := make([]*checkpoint.ScheduledTransfer, 0, len(v))
@@ -143,7 +143,10 @@ func (e *Engine) getScheduledTransfers() []*checkpoint.ScheduledTransferAtTime {
 			transfers = append(transfers, v.ToProto())
 		}
 
-		out = append(out, &checkpoint.ScheduledTransferAtTime{DeliverOn: k.Unix(), Transfers: transfers})
+		// k is a Unix nano timestamp, and we want a Unix timestamp.
+		deliverOnAsUnix := k / int64(time.Second)
+
+		out = append(out, &checkpoint.ScheduledTransferAtTime{DeliverOn: deliverOnAsUnix, Transfers: transfers})
 	}
 
 	sort.SliceStable(out, func(i, j int) bool { return out[i].DeliverOn < out[j].DeliverOn })
