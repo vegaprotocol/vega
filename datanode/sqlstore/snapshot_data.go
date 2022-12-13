@@ -26,7 +26,8 @@ type CoreSnapshotData struct {
 }
 
 var snapshotOrdering = TableOrdering{
-	ColumnOrdering{Name: "block_height", Sorting: DESC},
+	// ASC here actually means DESC for some reason
+	ColumnOrdering{Name: "block_height", Sorting: ASC},
 }
 
 func NewCoreSnapshotData(connectionSource *ConnectionSource) *CoreSnapshotData {
@@ -43,7 +44,7 @@ func (s *CoreSnapshotData) Add(ctx context.Context, csd entities.CoreSnapshotDat
 			vega_core_version,
 			vega_time,
 			tx_hash)
-		 VALUES ($1,  $2,  $3,  $4, $5);`,
+		 VALUES ($1,  $2,  $3,  $4, $5)`,
 		csd.BlockHeight, csd.BlockHash, csd.VegaCoreVersion, csd.VegaTime, csd.TxHash)
 	return err
 }
