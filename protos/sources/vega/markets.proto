@@ -275,6 +275,9 @@ message Market {
   MarketTimestamps market_timestamps = 10;
   // The number of decimal places for a position
   int64 position_decimal_places = 11;
+  // Percentage move up and down from the mid price which specifies the range of 
+  // price levels over which automated liquidity provision orders will be deployed
+  string lp_price_range = 12;
 }
 
 // Time stamps for important times about creating, enacting etc the market
