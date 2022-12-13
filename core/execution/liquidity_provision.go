@@ -530,18 +530,8 @@ func (m *Market) applyOffset(side types.Side, referencePrice, offset *num.Uint) 
 	return num.UintZero().Sub(referencePrice, ofst)
 }
 
-func (m *Market) getValidLPVolumeRange() (*num.Uint, *num.Uint, error) {
-	bBid, err := m.getBestStaticBidPrice()
-	if err != nil {
-		return num.UintOne(), num.MaxUint(), err
-	}
-
-	bAsk, err := m.getBestStaticAskPrice()
-	if err != nil {
-		return num.UintOne(), num.MaxUint(), err
-	}
-
-	mid := bBid.ToDecimal().Add(bAsk.ToDecimal()).Div(num.DecimalFromFloat(2))
+func (m *Market) computeValidLPVolumeRange(bestStaticBid, bestStaticAsk *num.Uint) (*num.Uint, *num.Uint) {
+	mid := bestStaticBid.ToDecimal().Add(bestStaticAsk.ToDecimal()).Div(num.DecimalFromFloat(2))
 
 	lbD := num.DecimalOne().Sub(m.lpPriceRange).Mul(mid)
 	ubD := num.DecimalOne().Add(m.lpPriceRange).Mul(mid)
@@ -572,7 +562,21 @@ func (m *Market) getValidLPVolumeRange() (*num.Uint, *num.Uint, error) {
 		ub = ub.Add(lb, num.UintOne())
 	}
 
-	return lb, ub, nil
+	return lb, ub
+}
+
+func (m *Market) getValidLPVolumeRange() (*num.Uint, *num.Uint, error) {
+	bBid, err := m.getBestStaticBidPrice()
+	if err != nil {
+		return num.UintOne(), num.MaxUint(), err
+	}
+
+	bAsk, err := m.getBestStaticAskPrice()
+	if err != nil {
+		return num.UintOne(), num.MaxUint(), err
+	}
+	min, max := m.computeValidLPVolumeRange(bBid, bAsk)
+	return min, max, nil
 }
 
 func (m *Market) cancelLiquidityProvision(

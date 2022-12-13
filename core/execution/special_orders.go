@@ -123,6 +123,7 @@ func (m *Market) repriceAllSpecialOrders(
 	ctx context.Context,
 	changes uint8,
 	orderUpdates []*types.Order,
+	minLpPrice, maxLpPrice *num.Uint,
 ) []*types.Order {
 	if changes == 0 && len(orderUpdates) <= 0 {
 		// nothing to do, prices didn't move,
@@ -166,15 +167,8 @@ func (m *Market) repriceAllSpecialOrders(
 
 	// now we have all the re-submitted pegged orders and the
 	// parked pegged orders from before
-	// we can call liquidityUpdate, which is going to give us the
+	// we can call Update, which is going to give us the
 	// actual updates to be done on liquidity orders
-	minLpPrice, maxLpPrice, err := m.getValidLPVolumeRange()
-	if err != nil {
-		m.log.Debug("could not get valid LP volume range",
-			logging.Error(err))
-		// we do not return here, we could not get one of the prices eventually
-	}
-
 	newOrders, cancels := m.liquidity.Update(
 		ctx, minLpPrice, maxLpPrice, m.repriceLiquidityOrder)
 
