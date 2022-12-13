@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [7032](https://github.com/vegaprotocol/vega/issues/7032) - Make deposits and withdrawals `hypertables` and change `deposits_current` and `withdrawals_current` into views to improve resource usage
+- [7136](https://github.com/vegaprotocol/vega/issues/7136) - Update ban duration to 30 minutes for spam
 
 ### 🐛 Fixes
 - [7040](https://github.com/vegaprotocol/vega/issues/7040) - Block explorer use different codes than 500 on error
