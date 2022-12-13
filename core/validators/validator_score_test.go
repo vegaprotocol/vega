@@ -1059,7 +1059,7 @@ func TestAddressMapping(t *testing.T) {
 
 type MockPerformanceScore struct{}
 
-func (*MockPerformanceScore) ValidatorPerformanceScore(tmPubKey string, power, totalPower int64) num.Decimal {
+func (*MockPerformanceScore) ValidatorPerformanceScore(tmPubKey string, power, totalPower int64, scalingFactor num.Decimal) num.Decimal {
 	if tmPubKey == "key6" || tmPubKey == "key8" {
 		return num.DecimalFromFloat(0.3)
 	}

@@ -25,8 +25,9 @@ import (
 )
 
 var (
-	decimalOne   = num.DecimalFromFloat(1)
-	minPerfScore = num.DecimalFromFloat(0.05)
+	decimalOne         = num.DecimalFromFloat(1)
+	minPerfScore       = num.DecimalFromFloat(0.05)
+	minBlocksTolerance = num.DecimalFromFloat(2)
 )
 
 type validatorPerformance struct {
@@ -58,7 +59,7 @@ func tmPubKeyToAddress(tmPubKey string) string {
 
 // ValidatorPerformanceScore returns the validator's performance score calculated as the numer of proposals out of the total number of proposals
 // normalised by their power out of the total power.
-func (vp *validatorPerformance) ValidatorPerformanceScore(tmPubKey string, power, totalPower int64) num.Decimal {
+func (vp *validatorPerformance) ValidatorPerformanceScore(tmPubKey string, power, totalPower int64, performanceScalingFactor num.Decimal) num.Decimal {
 	if vp.total == 0 || totalPower == 0 {
 		return minPerfScore
 	}
@@ -70,9 +71,11 @@ func (vp *validatorPerformance) ValidatorPerformanceScore(tmPubKey string, power
 		noProposals = vp.proposals[address]
 	}
 
-	actual := num.DecimalFromInt64(noProposals).Div(num.DecimalFromInt64(vp.total))
+	// the actual number of blocks proposed is scaled by the maximum of the hardcoded <minBlocksTolerance> and
+	// the network parameter performanceScalingFactor
+	noProposalsD := num.DecimalFromInt64(noProposals).Add(num.MaxD(minBlocksTolerance, num.DecimalFromInt64(noProposals).Mul(performanceScalingFactor)))
+	actual := noProposalsD.Div(num.DecimalFromInt64(vp.total))
 	expected := num.DecimalFromInt64(power).Div(num.DecimalFromInt64(totalPower))
-
 	score := num.MaxD(minPerfScore, num.MinD(decimalOne, actual.Div(expected)))
 	vp.log.Info("looking up performance for", logging.String("address", address), logging.String("perf-score", score.String()))
 	return score

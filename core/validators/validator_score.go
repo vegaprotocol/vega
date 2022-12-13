@@ -70,7 +70,7 @@ func (t *Topology) getPerformanceScore(delegationState []*types.ValidatorData) m
 			continue
 		}
 		if vd.status == ValidatorStatusTendermint {
-			scores[ds.NodeID] = t.validatorPerformance.ValidatorPerformanceScore(vd.data.TmPubKey, vd.validatorPower, totalTmPower)
+			scores[ds.NodeID] = t.validatorPerformance.ValidatorPerformanceScore(vd.data.TmPubKey, vd.validatorPower, totalTmPower, t.performanceScalingFactor)
 			continue
 		}
 

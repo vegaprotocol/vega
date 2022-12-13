@@ -455,6 +455,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.protocolUpgradeEngine.OnRequiredMajorityChanged,
 		},
 		{
+			Param:   netparams.ValidatorPerformanceScalingFactor,
+			Watcher: svcs.topology.OnPerformanceScalingChanged,
+		},
+		{
 			Param:   netparams.ValidatorsEpochLength,
 			Watcher: svcs.topology.OnEpochLengthUpdate,
 		},
