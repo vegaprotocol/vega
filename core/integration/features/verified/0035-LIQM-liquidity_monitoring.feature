@@ -224,7 +224,7 @@ Scenario: 003: A liquidity provider cannot remove their liquidity within the blo
       | mark price | trading mode            | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1000         | 1000           | 10            |
 
-  Scenario:  When the Max Open Interest field decreases for a created block to a level such that a liquidity auction which is active at the start of a block can now be exited the block stays in auction within the block but leaves at the end. (0035-LIQM-008)
+  Scenario: 004:  When the Max Open Interest field decreases for a created block to a level such that a liquidity auction which is active at the start of a block can now be exited the block stays in auction within the block but leaves at the end. (0035-LIQM-008)
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 1     |
@@ -263,5 +263,5 @@ Scenario: 003: A liquidity provider cannot remove their liquidity within the blo
     # target stake should drop now as the OI of 60 drops outside the window over the course of the 2nd block
     When the network moves ahead "2" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | auction trigger           | target stake | supplied stake  | open interest |
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake  | open interest |
       | 1010       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1010         | 1011            | 10            |
