@@ -60,11 +60,11 @@ Feature: Test closeout type 1: margin >= cost of closeout
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     Then the parties should have the following account balances:
-      | party            | asset | market id | margin  | general   |
-      | aux1             | USD   | ETH/DEC19 | 1350    | 999998650 |
-      | aux2             | USD   | ETH/DEC19 | 660     | 999999340 |
-      | sellSideProvider | USD   | ETH/DEC19 | 900000  | 999100000 |
-      | buySideProvider  | USD   | ETH/DEC19 | 240000  | 999760000 |
+      | party            | asset | market id | margin | general   |
+      | aux1             | USD   | ETH/DEC19 | 1350   | 999998650 |
+      | aux2             | USD   | ETH/DEC19 | 660    | 999999340 |
+      | sellSideProvider | USD   | ETH/DEC19 | 900000 | 999100000 |
+      | buySideProvider  | USD   | ETH/DEC19 | 240000 | 999760000 |
     # margin_sellSideProvider: 1000*100*2*3=600000
     # margin_buySideProvider: 1000*100*1*3=300000
 
@@ -109,9 +109,9 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | side | price | volume |
       | sell | 300   | 1      |
       | sell | 150   | 1000   |
-      | sell | 160   | 11250  |
+      | sell | 160   | 563    |
       | buy  | 80    | 1000   |
-      | buy  | 70    | 25715  |
+      | buy  | 70    | 1286   |
       | buy  | 20    | 1      |
 
     When the parties place the following orders with ticks:
@@ -132,10 +132,10 @@ Feature: Test closeout type 1: margin >= cost of closeout
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 300   | 1      |
-      | sell | 160   | 11250  |
+      | sell | 160   | 563    |
       | sell | 150   | 1000   |
       | buy  | 126   | 1      |
-      | buy  | 116   | 15518  |
+      | buy  | 116   | 776    |
       | buy  | 80    | 1000   |
       | buy  | 20    | 1      |
 
@@ -148,19 +148,18 @@ Feature: Test closeout type 1: margin >= cost of closeout
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 300   | 1      |
-      | sell | 160   | 11250  |
+      | sell | 160   | 563    |
       | sell | 150   | 900    |
       | buy  | 126   | 0      |
       | buy  | 116   | 0      |
       | buy  | 80    | 1000   |
-      | buy  | 70    | 25715  |
+      | buy  | 70    | 1286   |
       | buy  | 20    | 1      |
 
     # Margin account balance not updated following a trade (above search)
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party2 | ETH/DEC19 | 17372       | 34744  | 52116   | 86860   |
-    #| party2 | ETH/DEC19 | 13736       | 27472  | 41208   | 68680    |
 
     # margin_party2: 101*(126-80)+101*1*126=17372
 
@@ -413,7 +412,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | sell | 150   | 1000   |
       | sell | 120   | 400    |
       | buy  | 80    | 100    |
-      | buy  | 70    | 10214  |
+      | buy  | 70    | 2286   |
 
     And the mark price should be "100" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -450,7 +449,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | sell | 150   | 1000   |
       | sell | 120   | 400    |
       | buy  | 80    | 100    |
-      | buy  | 70    | 10214  |
+      | buy  | 70    | 2286   |
 
     # margin on order should be mark_price x volume x rf = 119 x 400 x 0.4878731 = 23223
     # margin account is above maintenance level, so it stays at 29272
@@ -477,4 +476,5 @@ Feature: Test closeout type 1: margin >= cost of closeout
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 23418       | 28101  | 35127   | 46836   |
+
 
