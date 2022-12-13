@@ -91,7 +91,7 @@ Feature: Test liquidity monitoring
       | type                               |
       | AuctionEvent                       |
 
-Scenario: A market which enters a state requiring liquidity auction through reduced current stake (e.g. through LP bankruptcy) during a block but then leaves state again prior to block completion never enters liquidity auction. (0035-LIQM-006)
+Scenario: 002: A market which enters a state requiring liquidity auction through reduced current stake (e.g. through LP bankruptcy) during a block but then leaves state again prior to block completion never enters liquidity auction. (0035-LIQM-006)
    Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.24  |
@@ -124,11 +124,11 @@ Scenario: A market which enters a state requiring liquidity auction through redu
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
-      | party2 | ETH/MAR22 | sell | 50     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-sell-4 |
+      | party2 | ETH/MAR22 | sell | 50     | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party2-sell-4 |
 
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 213414       | 50000          | 60            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 142276       | 50000          | 40            |
     And clear all events
 
     When the parties place the following orders:
@@ -136,7 +136,7 @@ Scenario: A market which enters a state requiring liquidity auction through redu
       | lprov1 | ETH/MAR22 | sell | 15     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 213414       | 50000          | 60            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 142276       | 50000          | 40            |
 
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -147,7 +147,7 @@ Scenario: A market which enters a state requiring liquidity auction through redu
     Then the network moves ahead "1" blocks
     And the market data for the market "ETH/MAR22" should be:
       | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 213414       | 51220          | 60            |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 142276       | 51220          | 40            |
 
     # verify that at no point auction has been entered
     Then the following events should NOT be emitted:
