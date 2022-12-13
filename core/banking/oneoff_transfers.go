@@ -105,7 +105,7 @@ func (e *Engine) oneOffTransfer(
 }
 
 type timesToTransfers struct {
-	deliverOn time.Time
+	deliverOn int64
 	transfer  []scheduledTransfer
 }
 
@@ -115,7 +115,7 @@ func (e *Engine) distributeScheduledTransfers(ctx context.Context) error {
 	// iterate over those scheduled transfers to sort them by time
 	now := e.timeService.GetTimeNow()
 	for k, v := range e.scheduledTransfers {
-		if !now.Before(k) {
+		if now.UnixNano() >= k {
 			ttfs = append(ttfs, timesToTransfers{k, v})
 			delete(e.scheduledTransfers, k)
 		}
@@ -124,7 +124,7 @@ func (e *Engine) distributeScheduledTransfers(ctx context.Context) error {
 	// sort slice by time.
 	// no need to sort transfers they are going out as first in first out.
 	sort.SliceStable(ttfs, func(i, j int) bool {
-		return ttfs[i].deliverOn.Before(ttfs[j].deliverOn)
+		return ttfs[i].deliverOn < ttfs[j].deliverOn
 	})
 
 	transfers := []*types.Transfer{}
@@ -167,10 +167,10 @@ func (e *Engine) scheduleTransfer(
 	reference string,
 	deliverOn time.Time,
 ) {
-	sts, ok := e.scheduledTransfers[deliverOn]
+	sts, ok := e.scheduledTransfers[deliverOn.UnixNano()]
 	if !ok {
-		e.scheduledTransfers[deliverOn] = []scheduledTransfer{}
-		sts = e.scheduledTransfers[deliverOn]
+		e.scheduledTransfers[deliverOn.UnixNano()] = []scheduledTransfer{}
+		sts = e.scheduledTransfers[deliverOn.UnixNano()]
 	}
 
 	sts = append(sts, scheduledTransfer{
@@ -179,5 +179,5 @@ func (e *Engine) scheduleTransfer(
 		accountType: ty,
 		reference:   reference,
 	})
-	e.scheduledTransfers[deliverOn] = sts
+	e.scheduledTransfers[deliverOn.UnixNano()] = sts
 }

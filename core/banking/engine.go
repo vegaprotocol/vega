@@ -144,7 +144,7 @@ type Engine struct {
 	marketActivityTracker MarketActivityTracker
 
 	// transfer fee related stuff
-	scheduledTransfers         map[time.Time][]scheduledTransfer
+	scheduledTransfers         map[int64][]scheduledTransfer
 	transferFeeFactor          num.Decimal
 	minTransferQuantumMultiple num.Decimal
 	// recurring transfers in the order they were created
@@ -198,7 +198,7 @@ func New(
 		deposits:                   map[string]*types.Deposit{},
 		withdrawalCnt:              big.NewInt(0),
 		bss:                        &bankingSnapshotState{},
-		scheduledTransfers:         map[time.Time][]scheduledTransfer{},
+		scheduledTransfers:         map[int64][]scheduledTransfer{},
 		recurringTransfers:         []*types.RecurringTransfer{},
 		recurringTransfersMap:      map[string]*types.RecurringTransfer{},
 		transferFeeFactor:          num.DecimalZero(),

@@ -878,7 +878,7 @@ func setupMarketData(t *testing.T, ctx context.Context) (*sqlstore.MarketData, e
 	hash, err = hex.DecodeString("deadbeef")
 	assert.NoError(t, err)
 
-	addedBlocksAt := make(map[time.Time]struct{})
+	addedBlocksAt := make(map[int64]struct{})
 	seqNum := 0
 	for {
 		line, err := reader.Read()
@@ -892,7 +892,7 @@ func setupMarketData(t *testing.T, ctx context.Context) (*sqlstore.MarketData, e
 		marketData := csvToMarketData(t, line, seqNum)
 		seqNum++
 
-		if _, alreadyAdded := addedBlocksAt[marketData.VegaTime]; !alreadyAdded {
+		if _, alreadyAdded := addedBlocksAt[marketData.VegaTime.UnixNano()]; !alreadyAdded {
 			// Postgres only stores timestamps in microsecond resolution
 			block := entities.Block{
 				VegaTime: marketData.VegaTime,
@@ -903,7 +903,7 @@ func setupMarketData(t *testing.T, ctx context.Context) (*sqlstore.MarketData, e
 			// Add it to the database
 			err = bs.Add(ctx, block)
 			require.NoError(t, err)
-			addedBlocksAt[marketData.VegaTime] = struct{}{}
+			addedBlocksAt[marketData.VegaTime.UnixNano()] = struct{}{}
 		}
 
 		err = md.Add(marketData)
