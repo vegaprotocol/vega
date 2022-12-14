@@ -630,6 +630,7 @@ type Market struct {
 	OpeningAuction                *AuctionDuration
 	PriceMonitoringSettings       *PriceMonitoringSettings
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
+	LPPriceRange                  num.Decimal
 
 	TradingMode      MarketTradingMode
 	State            MarketState
@@ -639,6 +640,7 @@ type Market struct {
 
 func MarketFromProto(mkt *proto.Market) *Market {
 	asset, _ := mkt.GetAsset()
+	lppr, _ := num.DecimalFromString(mkt.LpPriceRange)
 	m := &Market{
 		ID:                            mkt.Id,
 		TradableInstrument:            TradableInstrumentFromProto(mkt.TradableInstrument),
@@ -652,6 +654,7 @@ func MarketFromProto(mkt *proto.Market) *Market {
 		State:                         mkt.State,
 		MarketTimestamps:              MarketTimestampsFromProto(mkt.MarketTimestamps),
 		asset:                         asset,
+		LPPriceRange:                  lppr,
 	}
 	return m
 }
@@ -695,6 +698,7 @@ func (m Market) IntoProto() *proto.Market {
 		TradingMode:                   m.TradingMode,
 		State:                         m.State,
 		MarketTimestamps:              mktTS,
+		LpPriceRange:                  m.LPPriceRange.String(),
 	}
 	return r
 }
@@ -757,6 +761,7 @@ func (m Market) DeepClone() *Market {
 		TradingMode:           m.TradingMode,
 		State:                 m.State,
 		asset:                 m.asset,
+		LPPriceRange:          m.LPPriceRange,
 	}
 
 	if m.TradableInstrument != nil {

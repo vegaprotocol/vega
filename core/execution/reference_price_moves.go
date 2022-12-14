@@ -76,7 +76,8 @@ func (m *Market) checkForReferenceMoves(
 
 	// now we can start all special order repricing...
 	if err == nil {
-		orderUpdates = m.repriceAllSpecialOrders(ctx, changes, orderUpdates)
+		minLpPrice, maxLpPrice := m.computeValidLPVolumeRange(newBestBid, newBestAsk)
+		orderUpdates = m.repriceAllSpecialOrders(ctx, changes, orderUpdates, minLpPrice, maxLpPrice)
 	} else {
 		// we won't be able to reprice here
 		m.stopAllSpecialOrders(ctx, orderUpdates)

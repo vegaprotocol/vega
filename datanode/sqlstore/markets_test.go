@@ -384,6 +384,7 @@ func getTestMarket() *vega.Market {
 			Close:    0,
 		},
 		PositionDecimalPlaces: 8,
+		LpPriceRange:          "0.95",
 	}
 }
 
