@@ -868,7 +868,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	if len(snapHash) <= 0 {
 		resp.Data = vgcrypto.Hash(resp.Data)
 	} else {
-		app.broker.Send(events.NewSnapshotEventEvent(app.blockCtx, uint64(resp.RetainHeight), app.cBlock, app.protocolUpgradeService.TimeForUpgrade()))
+		app.broker.Send(events.NewSnapshotEventEvent(app.blockCtx, app.stats.Height(), app.cBlock, app.protocolUpgradeService.TimeForUpgrade()))
 	}
 
 	// Update response and save the apphash incase we lose connection with tendermint and need to verify our
@@ -880,7 +880,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 
 	app.broker.Send(
 		events.NewEndBlock(app.blockCtx, eventspb.EndBlock{
-			Height: uint64(resp.RetainHeight),
+			Height: app.stats.Height(),
 		}),
 	)
 
