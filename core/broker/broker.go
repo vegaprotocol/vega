@@ -56,6 +56,7 @@ type Interface interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/socket_client_mock.go -package mocks code.vegaprotocol.io/vega/core/broker SocketClient
 type SocketClient interface {
 	SendBatch(events []events.Event) error
+	Receive(ctx context.Context) (<-chan events.Event, <-chan error)
 }
 
 type FileClientSend interface {
@@ -169,7 +170,7 @@ func (b *Broker) sendChannelSync(sub Subscriber, evts []events.Event) bool {
 }
 
 func (b *Broker) startSending(t events.Type, evts []events.Event) {
-	if b.streamingEnabled() {
+	if b.StreamingEnabled() {
 		if err := b.socketClient.SendBatch(evts); err != nil {
 			b.log.Fatal("Failed to send to socket client", logging.Error(err))
 		}
@@ -398,8 +399,12 @@ func (b *Broker) SetStreaming(on bool) bool {
 	return old
 }
 
-func (b *Broker) streamingEnabled() bool {
+func (b *Broker) StreamingEnabled() bool {
 	return b.canStream && b.socketClient != nil
+}
+
+func (b *Broker) SocketClient() SocketClient {
+	return b.socketClient
 }
 
 func (b *Broker) fileStreamEnabled() bool {

@@ -133,6 +133,7 @@ const (
 	SettleMarketEvent
 	TransactionResultEvent
 	CoreSnapshotEvent
+	UpgradeDataNodeEvent
 )
 
 var (
@@ -199,7 +200,11 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED:       ProtocolUpgradeStartedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_MARKET:                  SettleMarketEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSACTION_RESULT:             TransactionResultEvent,
+<<<<<<< HEAD
 		eventspb.BusEventType_BUS_EVENT_TYPE_SNAPSHOT_TAKEN:                 CoreSnapshotEvent,
+=======
+		eventspb.BusEventType_BUS_EVENT_TYPE_UPGRADE_DATA_NODE:              UpgradeDataNodeEvent,
+>>>>>>> f1cb2162a (feat: add pair broker and sync message, Visor sigkill, remove ununsed code)
 
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
@@ -258,7 +263,11 @@ var (
 		ProtocolUpgradeStartedEvent:     eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED,
 		SettleMarketEvent:               eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_MARKET,
 		TransactionResultEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_TRANSACTION_RESULT,
+<<<<<<< HEAD
 		CoreSnapshotEvent:               eventspb.BusEventType_BUS_EVENT_TYPE_SNAPSHOT_TAKEN,
+=======
+		UpgradeDataNodeEvent:            eventspb.BusEventType_BUS_EVENT_TYPE_UPGRADE_DATA_NODE,
+>>>>>>> f1cb2162a (feat: add pair broker and sync message, Visor sigkill, remove ununsed code)
 	}
 
 	eventStrings = map[Type]string{
@@ -316,7 +325,11 @@ var (
 		ProtocolUpgradeStartedEvent:     "ProtocolUpgradeStartedEvent",
 		SettleMarketEvent:               "SettleMarketEvent",
 		TransactionResultEvent:          "TransactionResultEvent",
+<<<<<<< HEAD
 		CoreSnapshotEvent:               "CoreSnapshotEvent",
+=======
+		UpgradeDataNodeEvent:            "UpgradeDataNodeEvent",
+>>>>>>> f1cb2162a (feat: add pair broker and sync message, Visor sigkill, remove ununsed code)
 	}
 )
 

@@ -698,6 +698,9 @@ enum BusEventType {
   // Snapshot is taken at this block height
   BUS_EVENT_TYPE_SNAPSHOT_TAKEN = 54;
 
+  // Data node notifies that it is ready to upgrade
+  BUS_EVENT_TYPE_UPGRADE_DATA_NODE = 55;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type

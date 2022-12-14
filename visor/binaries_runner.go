@@ -198,30 +198,22 @@ func (r *BinariesRunner) signal(signal syscall.Signal) error {
 }
 
 func (r *BinariesRunner) Stop() error {
-	if err := r.signal(syscall.SIGTERM); err != nil {
-		return err
-	}
+	for _, c := range r.running {
+		r.log.Info("Stopping process",
+			logging.String("binaryName", c.Path),
+			logging.Strings("args", c.Args),
+		)
 
-	r.mut.RLock()
-	timeout := time.After(r.stopTimeout)
-	r.mut.RUnlock()
-
-	ticker := time.NewTicker(time.Second / 10)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-timeout:
-			return fmt.Errorf("failed to gracefully shut down processes: timed out")
-		case <-ticker.C:
-			r.mut.RLock()
-			if len(r.running) == 0 {
-				r.mut.RUnlock()
-				return nil
-			}
-			r.mut.RUnlock()
+		if err := c.Process.Kill(); err != nil {
+			r.log.Error("Failed to signal running binary",
+				logging.String("binaryPath", c.Path),
+				logging.Strings("args", c.Args),
+				logging.Error(err),
+			)
 		}
 	}
+
+	return nil
 }
 
 func (r *BinariesRunner) Kill() error {
