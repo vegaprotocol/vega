@@ -64,7 +64,7 @@ func NewTransactionalConnectionSource(log *logging.Logger, conf ConnectionConfig
 		return nil, errors.Wrap(err, "creating connection source")
 	}
 
-	setMaxPoolSize(context.Background(), poolConfig)
+	setMaxPoolSize(context.Background(), poolConfig, conf)
 	registerNumericType(poolConfig)
 
 	pool, err := pgxpool.ConnectConfig(context.Background(), poolConfig)
@@ -82,7 +82,7 @@ func NewTransactionalConnectionSource(log *logging.Logger, conf ConnectionConfig
 	return connectionSource, nil
 }
 
-func setMaxPoolSize(ctx context.Context, poolConfig *pgxpool.Config) error {
+func setMaxPoolSize(ctx context.Context, poolConfig *pgxpool.Config, conf ConnectionConfig) error {
 	conn, err := pgx.Connect(ctx, poolConfig.ConnString())
 	if err != nil {
 		return fmt.Errorf("connecting to db: %w", err)
@@ -99,7 +99,12 @@ func setMaxPoolSize(ctx context.Context, poolConfig *pgxpool.Config) error {
 		return fmt.Errorf("max_connections was not an integer: %w", err)
 	}
 
-	poolConfig.MaxConns = int32(num.MaxV(maxConnections-numSpareConnections, poolSizeLowerBound))
+	maxConnections = num.MaxV(maxConnections-numSpareConnections, poolSizeLowerBound)
+	if conf.MaxConnPoolSize > 0 && maxConnections > conf.MaxConnPoolSize {
+		maxConnections = conf.MaxConnPoolSize
+	}
+
+	poolConfig.MaxConns = int32(maxConnections)
 	return nil
 }
 
