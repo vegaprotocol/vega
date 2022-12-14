@@ -522,7 +522,7 @@ func (p *Store) extractHistorySegmentToStagingArea(ctx context.Context, toHeight
 	}
 	defer func() { _ = stagingFile.Close() }()
 
-	_, err = fsutil.UntarFile(stagingFile, p.stagingDir)
+	err = fsutil.UntarFile(stagingFile, p.stagingDir)
 	if err != nil {
 		return fmt.Errorf("failed to untar staging file:%w", err)
 	}
@@ -654,7 +654,7 @@ func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string
 	if err != nil {
 		return SegmentIndexEntry{}, fmt.Errorf("failed to create history segment dir: %w", err)
 	}
-	_, err = fsutil.UntarFile(tarFile, historySegmentDir)
+	err = fsutil.UntarFile(tarFile, historySegmentDir)
 	if err != nil {
 		return SegmentIndexEntry{}, fmt.Errorf("failed to untar history segment:%w", err)
 	}

@@ -101,7 +101,7 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 	}
 
 	if l.conf.SQLStore.WipeOnStartup {
-		if err = sqlstore.WipeDatabase(l.Log, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations); err != nil {
+		if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(l.Log, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations); err != nil {
 			return fmt.Errorf("failed to wiped database:%w", err)
 		}
 		l.Log.Info("Wiped all existing data from the datanode")
