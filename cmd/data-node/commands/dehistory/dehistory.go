@@ -20,6 +20,7 @@ type Cmd struct {
 	Fetch                         fetchCmd             `command:"fetch" description:"fetch <start from history segment id> <blocks to fetch>, fetches the given number of blocks into this node's decentralised history"`
 	LatestHistorySegmentFromPeers latestHistorySegment `command:"latest-history-segment-from-peers" description:"latest-history-segment returns the id of the networks latest history segment"`
 	ListActivePeers               listActivePeers      `command:"list-active-peers" description:"list the active datanode peers"`
+	EmptyDatanode                 emptyDatanodeCmd     `command:"empty-datanode" description:"deletes all data from the data node"`
 }
 
 var dehistoryCmd Cmd
@@ -31,6 +32,7 @@ func DeHistory(ctx context.Context, parser *flags.Parser) error {
 		Fetch:                         fetchCmd{},
 		LatestHistorySegmentFromPeers: latestHistorySegment{},
 		ListActivePeers:               listActivePeers{},
+		EmptyDatanode:                 emptyDatanodeCmd{},
 	}
 
 	desc := "commands for managing decentralised history"
