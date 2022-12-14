@@ -115,7 +115,7 @@ func (cmd *loadCmd) Execute(_ []string) error {
 	if yes {
 		fmt.Printf("Loading history from block %d to %d...\n", from, to)
 
-		loaded, err := deHistoryService.LoadAllAvailableHistoryIntoDatanode(context.Background(), sqlstore.EmbedMigrations)
+		loaded, err := deHistoryService.LoadAllAvailableHistoryIntoDatanode(context.Background())
 		if err != nil {
 			return fmt.Errorf("failed to load all available history:%w", err)
 		}
