@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/datanode/dehistory"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/jessevdk/go-flags"
@@ -84,4 +86,16 @@ func fixConfig(config *config.Config, vegaPaths paths.Paths) error {
 		return fmt.Errorf("failed to parse args:%w", err)
 	}
 	return nil
+}
+
+func handleErr(log *logging.Logger, outputJSON bool, msg string, err error) {
+	if outputJSON {
+		_ = vgjson.Print(struct {
+			Error string `json:"error"`
+		}{
+			Error: err.Error(),
+		})
+	} else {
+		log.Error(msg, logging.Error(err))
+	}
 }
