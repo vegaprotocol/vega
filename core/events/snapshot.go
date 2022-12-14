@@ -21,25 +21,28 @@ import (
 
 type SnapshotTakenEvent struct {
 	*Base
-	SnapshotBlockHeight uint64
-	SnapshotBlockHash   string
-	VegaCoreVersion     string
+	SnapshotBlockHeight  uint64
+	SnapshotBlockHash    string
+	VegaCoreVersion      string
+	ProtocolUpgradeBlock bool
 }
 
-func NewSnapshotEventEvent(ctx context.Context, blockHeight uint64, blockHash string) *SnapshotTakenEvent {
+func NewSnapshotEventEvent(ctx context.Context, blockHeight uint64, blockHash string, protocolUpgradeBlock bool) *SnapshotTakenEvent {
 	return &SnapshotTakenEvent{
-		Base:                newBase(ctx, CoreSnapshotEvent),
-		SnapshotBlockHeight: blockHeight,
-		SnapshotBlockHash:   blockHash,
-		VegaCoreVersion:     version.Get(),
+		Base:                 newBase(ctx, CoreSnapshotEvent),
+		SnapshotBlockHeight:  blockHeight,
+		SnapshotBlockHash:    blockHash,
+		VegaCoreVersion:      version.Get(),
+		ProtocolUpgradeBlock: protocolUpgradeBlock,
 	}
 }
 
 func (ste SnapshotTakenEvent) Proto() eventspb.CoreSnapshotData {
 	return eventspb.CoreSnapshotData{
-		BlockHeight: ste.SnapshotBlockHeight,
-		BlockHash:   ste.SnapshotBlockHash,
-		CoreVersion: ste.VegaCoreVersion,
+		BlockHeight:          ste.SnapshotBlockHeight,
+		BlockHash:            ste.SnapshotBlockHash,
+		CoreVersion:          ste.VegaCoreVersion,
+		ProtocolUpgradeBlock: ste.ProtocolUpgradeBlock,
 	}
 }
 
@@ -64,9 +67,10 @@ func SnapthostTakenEventFromStream(ctx context.Context, be *eventspb.BusEvent) *
 	}
 
 	return &SnapshotTakenEvent{
-		Base:                newBaseFromBusEvent(ctx, CoreSnapshotEvent, be),
-		SnapshotBlockHeight: event.BlockHeight,
-		SnapshotBlockHash:   event.BlockHash,
-		VegaCoreVersion:     event.CoreVersion,
+		Base:                 newBaseFromBusEvent(ctx, CoreSnapshotEvent, be),
+		SnapshotBlockHeight:  event.BlockHeight,
+		SnapshotBlockHash:    event.BlockHash,
+		VegaCoreVersion:      event.CoreVersion,
+		ProtocolUpgradeBlock: event.ProtocolUpgradeBlock,
 	}
 }
