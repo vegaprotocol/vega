@@ -33,8 +33,8 @@ Feature:  test 0038-OLIQ-008
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 10     | submission |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 10     | submission |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0   | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0   | sell | ASK              | 50         | 10     | submission |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
