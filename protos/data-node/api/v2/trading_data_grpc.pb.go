@@ -318,6 +318,8 @@ type TradingDataServiceClient interface {
 	GetProtocolUpgradeStatus(ctx context.Context, in *GetProtocolUpgradeStatusRequest, opts ...grpc.CallOption) (*GetProtocolUpgradeStatusResponse, error)
 	// List protocol upgrades proposals, optionally filtering on status or approver.
 	ListProtocolUpgradeProposals(ctx context.Context, in *ListProtocolUpgradeProposalsRequest, opts ...grpc.CallOption) (*ListProtocolUpgradeProposalsResponse, error)
+	// List core snapshots taken
+	ListCoreSnapshots(ctx context.Context, in *ListCoreSnapshotsRequest, opts ...grpc.CallOption) (*ListCoreSnapshotsResponse, error)
 	// Get most recent decentralized history segment
 	//
 	// Get the networks most recently history segment
@@ -1408,6 +1410,15 @@ func (c *tradingDataServiceClient) ListProtocolUpgradeProposals(ctx context.Cont
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListCoreSnapshots(ctx context.Context, in *ListCoreSnapshotsRequest, opts ...grpc.CallOption) (*ListCoreSnapshotsResponse, error) {
+	out := new(ListCoreSnapshotsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListCoreSnapshots", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) GetMostRecentDeHistorySegment(ctx context.Context, in *GetMostRecentDeHistorySegmentRequest, opts ...grpc.CallOption) (*GetMostRecentDeHistorySegmentResponse, error) {
 	out := new(GetMostRecentDeHistorySegmentResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetMostRecentDeHistorySegment", in, out, opts...)
@@ -1753,6 +1764,8 @@ type TradingDataServiceServer interface {
 	GetProtocolUpgradeStatus(context.Context, *GetProtocolUpgradeStatusRequest) (*GetProtocolUpgradeStatusResponse, error)
 	// List protocol upgrades proposals, optionally filtering on status or approver.
 	ListProtocolUpgradeProposals(context.Context, *ListProtocolUpgradeProposalsRequest) (*ListProtocolUpgradeProposalsResponse, error)
+	// List core snapshots taken
+	ListCoreSnapshots(context.Context, *ListCoreSnapshotsRequest) (*ListCoreSnapshotsResponse, error)
 	// Get most recent decentralized history segment
 	//
 	// Get the networks most recently history segment
@@ -2010,6 +2023,9 @@ func (UnimplementedTradingDataServiceServer) GetProtocolUpgradeStatus(context.Co
 }
 func (UnimplementedTradingDataServiceServer) ListProtocolUpgradeProposals(context.Context, *ListProtocolUpgradeProposalsRequest) (*ListProtocolUpgradeProposalsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListProtocolUpgradeProposals not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListCoreSnapshots(context.Context, *ListCoreSnapshotsRequest) (*ListCoreSnapshotsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListCoreSnapshots not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetMostRecentDeHistorySegment(context.Context, *GetMostRecentDeHistorySegmentRequest) (*GetMostRecentDeHistorySegmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMostRecentDeHistorySegment not implemented")
@@ -3478,6 +3494,24 @@ func _TradingDataService_ListProtocolUpgradeProposals_Handler(srv interface{}, c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListCoreSnapshots_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCoreSnapshotsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListCoreSnapshots(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListCoreSnapshots",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListCoreSnapshots(ctx, req.(*ListCoreSnapshotsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_GetMostRecentDeHistorySegment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetMostRecentDeHistorySegmentRequest)
 	if err := dec(in); err != nil {
@@ -3818,6 +3852,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListProtocolUpgradeProposals",
 			Handler:    _TradingDataService_ListProtocolUpgradeProposals_Handler,
+		},
+		{
+			MethodName: "ListCoreSnapshots",
+			Handler:    _TradingDataService_ListCoreSnapshots_Handler,
 		},
 		{
 			MethodName: "GetMostRecentDeHistorySegment",

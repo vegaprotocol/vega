@@ -685,6 +685,7 @@ create table if not exists markets (
     state market_state_type,
     market_timestamps jsonb,
     position_decimal_places int,
+    lp_price_range text,
     primary key (id, vega_time)
 );
 
@@ -705,6 +706,7 @@ create table if not exists markets_current (
     state market_state_type,
     market_timestamps jsonb,
     position_decimal_places int,
+    lp_price_range text,
     primary key (id)
 );
 
@@ -714,8 +716,8 @@ CREATE OR REPLACE FUNCTION update_current_markets()
     LANGUAGE PLPGSQL AS
 $$
 BEGIN
-    INSERT INTO markets_current(id,tx_hash,vega_time,instrument_id,tradable_instrument,decimal_places,fees,opening_auction,price_monitoring_settings,liquidity_monitoring_parameters,trading_mode,state,market_timestamps,position_decimal_places)
-    VALUES(NEW.id,NEW.tx_hash,NEW.vega_time,NEW.instrument_id,NEW.tradable_instrument,NEW.decimal_places,NEW.fees,NEW.opening_auction,NEW.price_monitoring_settings,NEW.liquidity_monitoring_parameters,NEW.trading_mode,NEW.state,NEW.market_timestamps,NEW.position_decimal_places)
+    INSERT INTO markets_current(id,tx_hash,vega_time,instrument_id,tradable_instrument,decimal_places,fees,opening_auction,price_monitoring_settings,liquidity_monitoring_parameters,trading_mode,state,market_timestamps,position_decimal_places,lp_price_range)
+    VALUES(NEW.id,NEW.tx_hash,NEW.vega_time,NEW.instrument_id,NEW.tradable_instrument,NEW.decimal_places,NEW.fees,NEW.opening_auction,NEW.price_monitoring_settings,NEW.liquidity_monitoring_parameters,NEW.trading_mode,NEW.state,NEW.market_timestamps,NEW.position_decimal_places,NEW.lp_price_range)
     ON CONFLICT(id) DO UPDATE SET
                                                            tx_hash=EXCLUDED.tx_hash,
                                                            instrument_id=EXCLUDED.instrument_id,
@@ -729,6 +731,7 @@ BEGIN
                                                            state=EXCLUDED.state,
                                                            market_timestamps=EXCLUDED.market_timestamps,
                                                            position_decimal_places=EXCLUDED.position_decimal_places,
+                                                           lp_price_range=EXCLUDED.lp_price_range,
                                                            vega_time=EXCLUDED.vega_time;
     RETURN NULL;
 END;
@@ -1467,6 +1470,15 @@ CREATE VIEW protocol_upgrade_proposals_current AS (
       FROM protocol_upgrade_proposals
   ORDER BY upgrade_block_height, vega_release_tag, vega_time DESC);
 
+CREATE TABLE IF NOT EXISTS core_snapshots(
+    block_height BIGINT NOT NULL,
+    block_hash TEXT null,
+    vega_core_version TEXT null,
+    tx_hash bytea not null,
+    vega_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    PRIMARY KEY(vega_time, block_height)
+);
+
 create table last_snapshot_span
 (
     onerow_check  bool PRIMARY KEY DEFAULT TRUE,
@@ -1485,7 +1497,7 @@ DROP FUNCTION IF EXISTS public.last_agg(anyelement, anyelement);
 DROP VIEW IF EXISTS protocol_upgrade_proposals_current;
 DROP TABLE IF EXISTS protocol_upgrade_proposals;
 DROP TYPE IF EXISTS protocol_upgrade_proposal_status;
-
+DROP TABLE IF EXISTS core_snapshots;
 DROP TABLE IF EXISTS ethereum_key_rotations;
 
 DROP TABLE IF EXISTS key_rotations;

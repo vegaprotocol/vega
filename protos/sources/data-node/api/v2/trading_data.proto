@@ -16,7 +16,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.64.0";
+    version: "v0.65.0+dev";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz/datanode/rest"
@@ -389,6 +389,9 @@ service TradingDataService {
 
     // List protocol upgrades proposals, optionally filtering on status or approver.
     rpc ListProtocolUpgradeProposals(ListProtocolUpgradeProposalsRequest) returns (ListProtocolUpgradeProposalsResponse);
+
+    // List core snapshots taken
+    rpc ListCoreSnapshots(ListCoreSnapshotsRequest) returns (ListCoreSnapshotsResponse);
 
     // Decentralized History
     //
@@ -2094,6 +2097,29 @@ message ProtocolUpgradeProposalConnection {
 // A protocol upgrade proposal, along with a cursor
 message ProtocolUpgradeProposalEdge {
     vega.events.v1.ProtocolUpgradeEvent node = 1;
+    string cursor = 2;
+}
+
+
+// Request type for ListCoreSnapshots; fetches a paginated list of the core snapshots.
+message ListCoreSnapshotsRequest {
+    optional Pagination pagination = 1;
+}
+
+// Reponse type from a ListCoreSnapshots RPC call; a paginated list of the core snapshots.
+message ListCoreSnapshotsResponse {
+    CoreSnapshotConnection core_snapshots = 1;
+}
+
+// A page of core snapshot data, with page information.
+message CoreSnapshotConnection {
+    repeated CoreSnapshotEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// Core snapshot data, along with a cursor.
+message CoreSnapshotEdge {
+    vega.events.v1.CoreSnapshotData node = 1;
     string cursor = 2;
 }
 

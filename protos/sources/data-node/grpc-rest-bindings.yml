@@ -11,6 +11,8 @@ apis:
 
 http:
   rules:
+    - selector: datanode.api.v2.TradingDataService.ListCoreSnapshots
+      get: "/api/v2/snapshots"
     - selector: datanode.api.v2.TradingDataService.ListAccounts
       get: "/api/v2/accounts"
     - selector: datanode.api.v2.TradingDataService.Info

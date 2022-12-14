@@ -34,7 +34,7 @@ var (
 
 func TestValidatorPerformanceNoPerformance(t *testing.T) {
 	vp := validators.NewValidatorPerformance(logging.NewTestLogger())
-	require.Equal(t, num.DecimalFromFloat(0.05), vp.ValidatorPerformanceScore("some name", 1, 10))
+	require.Equal(t, num.DecimalFromFloat(0.05), vp.ValidatorPerformanceScore("some name", 1, 10, num.DecimalOne()))
 }
 
 func TestElectedExpectationWithVotingPower(t *testing.T) {
@@ -46,14 +46,32 @@ func TestElectedExpectationWithVotingPower(t *testing.T) {
 	vp.BeginBlock(context.Background(), hex.EncodeToString(address2))
 
 	// validator 1 proposed 2 times, out of 5 (i.e. 40%), they only got 20% voting power so they score should be capped at 1
-	require.Equal(t, "1", vp.ValidatorPerformanceScore(tmkey1, 10, 50).String())
+	require.Equal(t, "1", vp.ValidatorPerformanceScore(tmkey1, 10, 50, num.DecimalZero()).String())
 
 	// validator 1 proposed 2 times, out of 5 (i.e. 40%), they only got 40% voting power so they score should be 1
-	require.Equal(t, "1", vp.ValidatorPerformanceScore(tmkey1, 20, 50).String())
+	require.Equal(t, "1", vp.ValidatorPerformanceScore(tmkey1, 20, 50, num.DecimalZero()).String())
 
-	// validator 1 proposed 2 times, out of 5 (i.e. 40%), they got 60% voting power so they score should be 0.66667
-	require.Equal(t, "0.6666666666666667", vp.ValidatorPerformanceScore(tmkey1, 30, 50).String())
+	// validator 1 proposed 2 times, out of 5 (i.e. 40%), they got 60% voting power so they score but with a minimum scaling of 2 blocks they should get a score of 1
+	require.Equal(t, "1", vp.ValidatorPerformanceScore(tmkey1, 30, 50, num.DecimalZero()).String())
 
-	// validator 4 never proposed
-	require.Equal(t, "0.05", vp.ValidatorPerformanceScore(tmkey4, 10, 50).String())
+	// validator 4 never proposed but has a 20% of the voting power so with scaling they proposed 2/5 which is greater than their voting power so they get score of 1
+	require.Equal(t, "1", vp.ValidatorPerformanceScore(tmkey4, 10, 50, num.DecimalZero()).String())
+}
+
+func TestPerformanceScoreWithScaling(t *testing.T) {
+	vp := validators.NewValidatorPerformance(logging.NewTestLogger())
+	for i := 0; i < 25; i++ {
+		vp.BeginBlock(context.Background(), hex.EncodeToString(address1))
+	}
+	for i := 0; i < 75; i++ {
+		vp.BeginBlock(context.Background(), hex.EncodeToString(address2))
+	}
+
+	// validator 1 proposed 1/4 of the blocks with 50% of the voting power
+	// with the minimum scaling they get a performance score of 27/50
+	require.Equal(t, "0.54", vp.ValidatorPerformanceScore(tmkey1, 25, 50, num.DecimalZero()).String())
+
+	// validator 1 proposed 1/4 of the blocks with 50% of the voting power
+	// with the scaling of 15% they get a performance score of 25*1.15/50
+	require.Equal(t, "0.575", vp.ValidatorPerformanceScore(tmkey1, 25, 50, num.DecimalFromFloat(0.15)).String())
 }

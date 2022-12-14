@@ -238,6 +238,8 @@ type Market struct {
 	pMonitor PriceMonitor
 	lMonitor LiquidityMonitor
 
+	lpPriceRange num.Decimal
+
 	tsCalc TargetStakeCalculator
 
 	as AuctionState
@@ -409,6 +411,7 @@ func NewMarket(
 		minLPStakeQuantumMultiple: num.MustDecimalFromString("1"),
 		positionFactor:            positionFactor,
 		nextMTM:                   time.Time{}, // default to zero time
+		lpPriceRange:              mkt.LPPriceRange,
 	}
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
@@ -445,6 +448,7 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.settlement.UpdateProduct(m.tradableInstrument.Instrument.Product)
 	m.tsCalc.UpdateParameters(*m.mkt.LiquidityMonitoringParameters.TargetStakeParameters)
 	m.pMonitor.UpdateSettings(m.tradableInstrument.RiskModel, m.mkt.PriceMonitoringSettings)
+	m.lpPriceRange = m.mkt.LPPriceRange
 	m.lMonitor.UpdateParameters(m.mkt.LiquidityMonitoringParameters)
 	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor)
 
@@ -1817,7 +1821,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	defer timer.EngineTimeCounterAdd()
 
 	now := m.timeService.GetTimeNow()
-	// this is going to be run after the the closed out routines
+	// this is going to be run after the closed out routines
 	// are finished, in order to notify the liquidity engine of
 	// any changes in the book / orders owned by the lp providers
 	orderUpdates := []*types.Order{}
@@ -3449,4 +3453,9 @@ func (m *Market) GetTotalOpenPositionCount() uint64 {
 // GetTotalLPShapeCount returns the total number of LP shapes.
 func (m *Market) GetTotalLPShapeCount() uint64 {
 	return m.liquidity.GetLPShapeCount()
+}
+
+// we use this in a banch of places so let's inform it from here in case we want to modify it in the future.
+func (m *Market) minValidPrice() *num.Uint {
+	return m.priceFactor
 }

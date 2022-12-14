@@ -90,6 +90,7 @@ type tradingDataServiceV2 struct {
 	blockService               BlockService
 	protocolUpgradeService     *service.ProtocolUpgrade
 	deHistoryService           DeHistoryService
+	coreSnapshotService        *service.SnapshotData
 }
 
 func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {
@@ -2831,6 +2832,36 @@ func (t *tradingDataServiceV2) ListProtocolUpgradeProposals(ctx context.Context,
 
 	return &v2.ListProtocolUpgradeProposalsResponse{
 		ProtocolUpgradeProposals: &connection,
+	}, nil
+}
+
+func (t *tradingDataServiceV2) ListCoreSnapshots(ctx context.Context, req *v2.ListCoreSnapshotsRequest) (*v2.ListCoreSnapshotsResponse, error) {
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("empty request"))
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	snaps, pageInfo, err := t.coreSnapshotService.ListSnapshots(ctx, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	edges, err := makeEdges[*v2.CoreSnapshotEdge](snaps)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	connection := v2.CoreSnapshotConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListCoreSnapshotsResponse{
+		CoreSnapshots: &connection,
 	}, nil
 }
 

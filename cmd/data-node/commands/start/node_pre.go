@@ -249,17 +249,17 @@ func (l *NodeCommand) preRun([]string) (err error) {
 
 	eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SQLStore.FanOutBufferSize, 2)
 
-	var onBlockCommittedHandler func(ctx context.Context, chainId string, lastCommittedBlockHeight int64)
+	var onBlockCommittedHandler func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool)
 	var protocolUpgradeHandler broker.ProtocolUpgradeHandler
 
 	if l.conf.DeHistory.Enabled {
-		blockCommitHandler := dehistory.NewBlockCommitHandler(l.Log, l.conf.DeHistory, l.snapshotService.SnapshotData, l.networkParameterService.GetByKey,
+		blockCommitHandler := dehistory.NewBlockCommitHandler(l.Log, l.conf.DeHistory, l.snapshotService.SnapshotData,
 			bool(l.conf.Broker.UseEventFile), l.conf.Broker.FileEventSourceConfig.TimeBetweenBlocks.Duration)
 		onBlockCommittedHandler = blockCommitHandler.OnBlockCommitted
 		protocolUpgradeHandler = dehistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService,
 			l.deHistoryService.CreateAndPublishSegment)
 	} else {
-		onBlockCommittedHandler = func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) {}
+		onBlockCommittedHandler = func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {}
 		protocolUpgradeHandler = dehistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService,
 			func(ctx context.Context, chainID string, toHeight int64) error { return nil })
 	}

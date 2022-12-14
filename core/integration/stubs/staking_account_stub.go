@@ -24,7 +24,7 @@ import (
 
 type StakingAccountStub struct {
 	partyToStake         map[string]*num.Uint
-	partyToStakeForEpoch map[time.Time]map[string]*num.Uint
+	partyToStakeForEpoch map[int64]map[string]*num.Uint
 	currentEpoch         *types.Epoch
 }
 
@@ -33,9 +33,9 @@ func (t *StakingAccountStub) OnEpochEvent(ctx context.Context, epoch types.Epoch
 		t.currentEpoch = &epoch
 		emptyT := time.Time{}
 		if epoch.EndTime == emptyT {
-			t.partyToStakeForEpoch[epoch.StartTime] = map[string]*num.Uint{}
+			t.partyToStakeForEpoch[epoch.StartTime.UnixNano()] = map[string]*num.Uint{}
 			for p, s := range t.partyToStake {
-				t.partyToStakeForEpoch[epoch.StartTime][p] = s.Clone()
+				t.partyToStakeForEpoch[epoch.StartTime.UnixNano()][p] = s.Clone()
 			}
 		}
 	}
@@ -60,14 +60,14 @@ func (t *StakingAccountStub) DecrementBalance(party string, amount *num.Uint) er
 		return errors.New("incorrect balance for unstaking")
 	}
 	t.partyToStake[party] = t.partyToStake[party].Sub(t.partyToStake[party], amount)
-	t.partyToStakeForEpoch[t.currentEpoch.StartTime][party] = t.partyToStake[party].Clone()
+	t.partyToStakeForEpoch[t.currentEpoch.StartTime.UnixNano()][party] = t.partyToStake[party].Clone()
 	return nil
 }
 
 func NewStakingAccountStub() *StakingAccountStub {
 	return &StakingAccountStub{
 		partyToStake:         make(map[string]*num.Uint),
-		partyToStakeForEpoch: make(map[time.Time]map[string]*num.Uint),
+		partyToStakeForEpoch: make(map[int64]map[string]*num.Uint),
 	}
 }
 
@@ -79,8 +79,8 @@ func (t *StakingAccountStub) GetAvailableBalance(party string) (*num.Uint, error
 	return ret, nil
 }
 
-func (t *StakingAccountStub) GetAvailableBalanceInRange(party string, from, to time.Time) (*num.Uint, error) {
-	partyStake, ok := t.partyToStakeForEpoch[from][party]
+func (t *StakingAccountStub) GetAvailableBalanceInRange(party string, from, _ time.Time) (*num.Uint, error) {
+	partyStake, ok := t.partyToStakeForEpoch[from.UnixNano()][party]
 	if !ok {
 		return nil, fmt.Errorf("party not found")
 	}

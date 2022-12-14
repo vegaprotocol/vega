@@ -644,6 +644,9 @@ type Query {
   "List protocol upgrade proposals, optionally filtering on status or approver"
   protocolUpgradeProposals(inState: ProtocolUpgradeProposalStatus, approvedBy: String, pagination: Pagination): ProtocolUpgradeProposalConnection
 
+  "List core snapshots"
+  coreSnapshots(pagination: Pagination): CoreSnapshotConnection
+
   "Get statistics about the Vega node"
   statistics: Statistics!
 
@@ -1762,6 +1765,9 @@ type Market {
 
   "Risk factors for the market"
   riskFactors: RiskFactor
+
+  "Liquidity Provision order price range"
+  lpPriceRange: String!
 }
 
 """
@@ -3162,6 +3168,8 @@ type NewMarket {
   riskParameters: RiskModel!
   "Metadata for this instrument, tags"
   metadata: [String!]
+  "Liquidity Provision order price range"
+  lpPriceRange: String!
 }
 
 """
@@ -4422,6 +4430,32 @@ type ProtocolUpgradeProposal {
   approvers: [String!]!
   "the status of the proposal"
   status: ProtocolUpgradeProposalStatus!
+}
+
+"Connection type for retrieving cursor-based paginated core snapshot data"
+type CoreSnapshotConnection {
+  "The positions in this connection"
+  edges: [CoreSnapshotEdge!]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+"Edge type containing the core snapshot cursor information"
+type CoreSnapshotEdge {
+  "The core snapshot data"
+  node: CoreSnapshotData!
+  "Cursor identifying the core snapashot data"
+  cursor: String!
+}
+
+"A snapshot taken by the core"
+type CoreSnapshotData {
+  "At which block the snapshot was taken"
+  blockHeight: String!
+  "The block hash at the snapshot block height"
+  blockHash: String!  
+  "The current version of vega core"
+  vegaCoreVersion: String!
 }
 
 """
