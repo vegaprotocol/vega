@@ -4,6 +4,8 @@ Feature:  test 0038-OLIQ-008
     Given the log normal risk model named "lognormal-risk-model-fish":
       | risk aversion | tau  | mu | r   | sigma |
       | 0.001         | 0.01 | 0  | 0.0 | 2     |
+    #rf_short=0.9247862
+    #rf_long=0.499476497
     And the price monitoring named "price-monitoring-1":
       | horizon | probability       | auction extension |
       | 36000   | 0.999999999999999 | 300               |
@@ -54,30 +56,31 @@ Feature:  test 0038-OLIQ-008
     # Observe that given specified pegs we should have an LP buy order placed at a price of 1 and sell order placed at a price of 3160, however, since both of these fall outside of price monitoring bounds the orders gets moved accordingly (0038-OLIQ-009)
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 170   | 1419   |
+      | sell | 170   | 530    |
       | sell | 160   | 10     |
       | buy  | 140   | 10     |
-      | buy  | 130   | 1901   |
+      | buy  | 130   | 693    |
 
     Then the parties should have the following margin levels:
       | party | market id | maintenance | search | initial | release |
       | aux3  | ETH/DEC19 | 750         | 900    | 1125    | 1500    |
       | aux4  | ETH/DEC19 | 1388        | 1665   | 2082    | 2776    |
-      | lp    | ETH/DEC19 | 196841      | 236209 | 295261  | 393682  |
+      | lp    | ETH/DEC19 | 73521       | 88225  | 110281  | 147042  |
+    #lp_margin = max(530*150*0.9247862,693*150*0.499476491)=73521
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general      |
       | aux3  | USD   | ETH/DEC19 | 1050   | 999999998950 |
       | aux4  | USD   | ETH/DEC19 | 2220   | 999999997780 |
-      | lp    | USD   | ETH/DEC19 | 295261 | 999999614739 |
+      | lp    | USD   | ETH/DEC19 | 110281 | 999999799719 |
 
     And the network moves ahead "10" blocks
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 170   | 1419   |
+      | sell | 170   | 530    |
       | sell | 160   | 10     |
       | buy  | 140   | 10     |
-      | buy  | 130   | 1901   |
+      | buy  | 130   | 693    |
 
     # update the best offer
     When the parties amend the following orders:
@@ -87,23 +90,23 @@ Feature:  test 0038-OLIQ-008
     # observe volumes change
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 175   | 1366   |
+      | sell | 175   | 515    |
       | sell | 165   | 10     |
       | buy  | 140   | 10     |
-      | buy  | 130   | 1901   |
+      | buy  | 130   | 693    |
 
     Then the parties should have the following margin levels:
       | party | market id | maintenance | search | initial | release |
       | aux3  | ETH/DEC19 | 750         | 900    | 1125    | 1500    |
       | aux4  | ETH/DEC19 | 1388        | 1665   | 2082    | 2776    |
-      | lp    | ETH/DEC19 | 189489      | 227386 | 284233  | 378978  |
+      | lp    | ETH/DEC19 | 71440       | 85728  | 107160  | 142880  |
 
     # no transfer in lp account since the existing margin is under release level, and above search level
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general      |
       | aux3  | USD   | ETH/DEC19 | 1050   | 999999998950 |
       | aux4  | USD   | ETH/DEC19 | 2220   | 999999997780 |
-      | lp    | USD   | ETH/DEC19 | 295261 | 999999614739 |
+      | lp    | USD   | ETH/DEC19 | 110281 | 999999799719 |
 
     # update the best offer
     When the parties amend the following orders:
@@ -113,20 +116,20 @@ Feature:  test 0038-OLIQ-008
     # observe volumes change
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 230   | 964    |
+      | sell | 230   | 392    |
       | sell | 220   | 10     |
       | buy  | 140   | 10     |
-      | buy  | 130   | 1901   |
+      | buy  | 130   | 693    |
 
     Then the parties should have the following margin levels:
       | party | market id | maintenance | search | initial | release |
       | aux3  | ETH/DEC19 | 750         | 900    | 1125    | 1500    |
       | aux4  | ETH/DEC19 | 1388        | 1665   | 2082    | 2776    |
-      | lp    | ETH/DEC19 | 142426      | 170911 | 213639  | 284852  |
+      | lp    | ETH/DEC19 | 54378       | 65253  | 81567   | 108756  |
 
     # transder from general to margin account since the existing margin account is above release level
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general      |
       | aux3  | USD   | ETH/DEC19 | 1050   | 999999998950 |
       | aux4  | USD   | ETH/DEC19 | 2220   | 999999997780 |
-      | lp    | USD   | ETH/DEC19 | 213639 | 999999696361 |
+      | lp    | USD   | ETH/DEC19 | 81567  | 999999828433 |
