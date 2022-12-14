@@ -265,7 +265,8 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 				beginBlock := e.(entities.BeginBlockEvent)
 				return entities.BlockFromBeginBlock(beginBlock)
 			case events.CoreSnapshotEvent:
-				b.snapshotTaken = true
+				// if a snapshot is taken on a protocol upgrade block, we want it to be taken synchronously as part of handling of protocol upgrade
+				b.snapshotTaken = !e.StreamMessage().GetCoreSnapshotEvent().ProtocolUpgradeBlock
 				if err = b.handleEvent(blockCtx, e); err != nil {
 					return nil, err
 				}

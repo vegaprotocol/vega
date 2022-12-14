@@ -27,6 +27,7 @@
 - [7112](https://github.com/vegaprotocol/vega/issues/7112) - Restore order's original price when restoring from a snapshot
 - [6955](https://github.com/vegaprotocol/vega/issues/6955) - Remove scaling by probability when implying LP volumes. Only change the LP order price if it’s outside the new “valid LP price range” - move it to the bound in that case.
 - [7132](https://github.com/vegaprotocol/vega/issues/7132) - Make the recovery phrase import white space resistant
+- [7150](https://github.com/vegaprotocol/vega/issues/7150) - Avoid taking 2 snapshots upon protocol upgrade block
 
 
 ## 0.64.0
