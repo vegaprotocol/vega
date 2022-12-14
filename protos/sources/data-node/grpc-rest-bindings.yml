@@ -127,6 +127,12 @@ http:
       get: '/api/v2/upgrade/status'
     - selector: datanode.api.v2.TradingDataService.ListProtocolUpgradeProposals
       get: '/api/v2/upgrade/proposals'
+    - selector: datanode.api.v2.TradingDataService.GetOracleSpec
+      get: '/api/v2/oracle/spec'
+    - selector: datanode.api.v2.TradingDataService.ListOracleSpecs
+      get: '/api/v2/oracle/specs'
+    - selector: datanode.api.v2.TradingDataService.ListOracleData
+      get: '/api/v2/oracle/data'
 
     # websockets
 
