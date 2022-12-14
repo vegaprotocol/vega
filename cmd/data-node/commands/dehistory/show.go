@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/paths"
 
 	"code.vegaprotocol.io/vega/datanode/dehistory/aggregation"
 
@@ -13,7 +14,6 @@ import (
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"code.vegaprotocol.io/vega/datanode/config"
-	"code.vegaprotocol.io/vega/paths"
 )
 
 type showCmd struct {
@@ -31,16 +31,7 @@ func (cmd *showCmd) Execute(_ []string) error {
 	defer log.AtExit()
 
 	vegaPaths := paths.New(cmd.VegaHome)
-
-	configFilePath, err := vegaPaths.CreateConfigPathFor(paths.DataNodeDefaultConfigFile)
-	if err != nil {
-		return fmt.Errorf("couldn't get path for %s: %w", paths.DataNodeDefaultConfigFile, err)
-	}
-
-	err = paths.ReadStructuredFile(configFilePath, &cmd.Config)
-	if err != nil {
-		return fmt.Errorf("failed to read config:%w", err)
-	}
+	fixConfig(&cmd.Config, vegaPaths)
 
 	if !datanodeLive(cmd.Config) {
 		return fmt.Errorf("datanode must be running for this command to work")

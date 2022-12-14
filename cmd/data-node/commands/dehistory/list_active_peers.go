@@ -24,19 +24,8 @@ func (cmd *listActivePeers) Execute(_ []string) error {
 	)
 	defer log.AtExit()
 
-	var err error
-
 	vegaPaths := paths.New(cmd.VegaHome)
-
-	configFilePath, err := vegaPaths.CreateConfigPathFor(paths.DataNodeDefaultConfigFile)
-	if err != nil {
-		return fmt.Errorf("couldn't get path for %s: %w", paths.DataNodeDefaultConfigFile, err)
-	}
-
-	err = paths.ReadStructuredFile(configFilePath, &cmd.Config)
-	if err != nil {
-		return fmt.Errorf("failed to read config:%w", err)
-	}
+	fixConfig(&cmd.Config, vegaPaths)
 
 	if !datanodeLive(cmd.Config) {
 		return fmt.Errorf("datanode must be running for this command to work")
