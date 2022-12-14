@@ -21,16 +21,7 @@
         }
       ],
       "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "hostname",
-          "description": "The name of the third-party application initiating the connection.",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
+      "params": [],
       "result": {
         "name": "Success",
         "required": true,
@@ -649,7 +640,7 @@
     {
       "name": "admin.create_wallet",
       "summary": "Creates a wallet with its first key-pair.",
-      "description": "This method creates a HD wallet (version 2) and generates its first key-pair the cryptographic algorithm ed25519.\n\nThe passphrase will be used to encrypt the wallet and its keys.\n\nIf successful, the wallet is ready to use for sending transaction.",
+      "description": "This method creates a HD wallet (with version 2 of the key derivation) and generates its first key-pair the cryptographic algorithm ed25519.\n\nThe passphrase will be used to encrypt the wallet and its keys.\n\nIf successful, the wallet is ready to use for sending transaction.",
       "tags": [
         {
           "name": "admin"
@@ -690,7 +681,7 @@
               "description": "the newly generated wallet",
               "required": [
                 "name",
-                "version",
+                "keyDerivationVersion",
                 "recoveryPhrase",
                 "filePath"
               ],
@@ -698,7 +689,7 @@
                 "name": {
                   "type": "string"
                 },
-                "version": {
+                "keyDerivationVersion": {
                   "type": "number"
                 },
                 "recoveryPhrase": {
@@ -753,7 +744,7 @@
             "value": {
               "wallet": {
                 "name": "my-wallet",
-                "version": 2,
+                "keyDerivationVersion": 2,
                 "recoveryPhrase": "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
                 "filePath": "some/path/to/my-wallet"
               },
@@ -777,8 +768,8 @@
     },
     {
       "name": "admin.import_wallet",
-      "summary": "Import a wallet with its first key-pair with a recovery phrase and a version.",
-      "description": "This method imports a wallet using the specified recovery phrase and wallet version, and generates its first key-pair.\n\nThe passphrase will be used to encrypt the wallet and its keys.\n\nIf successful, the wallet is ready to use for sending transaction.",
+      "summary": "Import a wallet with its first key-pair with a recovery phrase and a key derivation version.",
+      "description": "This method imports a wallet using the specified recovery phrase and a key derivation version, and generates its first key-pair.\n\nThe passphrase will be used to encrypt the wallet and its keys.\n\nIf successful, the wallet is ready to use for sending transaction.",
       "tags": [
         {
           "name": "admin"
@@ -811,7 +802,7 @@
           }
         },
         {
-          "name": "version",
+          "name": "keyDerivationVersion",
           "required": true,
           "schema": {
             "type": "number"
@@ -833,14 +824,14 @@
               "description": "the imported wallet",
               "required": [
                 "name",
-                "version",
+                "keyDerivationVersion",
                 "filePath"
               ],
               "properties": {
                 "name": {
                   "type": "string"
                 },
-                "version": {
+                "keyDerivationVersion": {
                   "type": "number"
                 },
                 "filePath": {
@@ -891,7 +882,7 @@
               "value": "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
             },
             {
-              "name": "version",
+              "name": "keyDerivationVersion",
               "value": "2"
             }
           ],
@@ -900,7 +891,7 @@
             "value": {
               "wallet": {
                 "name": "my-wallet",
-                "version": 2,
+                "keyDerivationVersion": 2,
                 "filePath": "some/path/to/my-wallet"
               },
               "key": {
@@ -924,7 +915,7 @@
     {
       "name": "admin.describe_wallet",
       "summary": "Returns the wallet base information.",
-      "description": "This method returns the wallet base information such as its name, ID, type and version. It doesn't return the keys nor the permissions.",
+      "description": "This method returns the wallet base information such as its name, ID, type and key derivation version. It doesn't return the keys nor the permissions.",
       "tags": [
         {
           "name": "admin"
@@ -957,7 +948,7 @@
           "type": "object",
           "required": [
             "name",
-            "version",
+            "keyDerivationVersion",
             "id",
             "type"
           ],
@@ -965,7 +956,7 @@
             "name": {
               "type": "string"
             },
-            "version": {
+            "keyDerivationVersion": {
               "type": "number"
             },
             "id": {
@@ -994,7 +985,7 @@
             "name": "Success",
             "value": {
               "name": "my-wallet",
-              "version": 2,
+              "keyDerivationVersion": 2,
               "type": "HD Wallet",
               "id": "7ffa36b2fb99d8404e9448f0d2ce944055e64c36d895d1fde044c867bfdf779f"
             }
@@ -1438,7 +1429,7 @@
       "paramStructure": "by-name",
       "params": [
         {
-          "name": "network",
+          "name": "name",
           "required": true,
           "schema": {
             "type": "string"

@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 	vgzap "code.vegaprotocol.io/vega/libs/zap"
 	"code.vegaprotocol.io/vega/paths"
@@ -22,7 +22,6 @@ import (
 
 const (
 	DefaultForwarderRetryCount = 5
-	ForwarderRequestTimeout    = 5 * time.Second
 )
 
 type Error struct {
@@ -84,7 +83,7 @@ func autoCompleteWallet(cmd *cobra.Command, vegaHome string, property string) {
 		}
 
 		listWallet := api.NewAdminListWallets(s)
-		rawResult, errorDetails := listWallet.Handle(context.Background(), nil)
+		rawResult, errorDetails := listWallet.Handle(context.Background(), nil, jsonrpc.RequestMetadata{})
 		if errorDetails != nil {
 			return nil, cobra.ShellCompDirectiveDefault
 		}

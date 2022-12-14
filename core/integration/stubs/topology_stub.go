@@ -178,3 +178,11 @@ func (ts *TopologyStub) normaliseScores(scores map[string]num.Decimal) map[strin
 
 func (*TopologyStub) RecalcValidatorSet(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) {
 }
+
+func (*TopologyStub) GetVotingPower(pubkey string) int64 {
+	return 1
+}
+
+func (*TopologyStub) GetTotalVotingPower() int64 {
+	return 1
+}

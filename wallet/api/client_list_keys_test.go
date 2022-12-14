@@ -69,13 +69,14 @@ func testListingKeysWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
+			metadata := requestMetadataForTest()
 
 			// setup
 			handler := newListKeysHandler(tt)
 
 			// when
-			result, errorDetails := handler.handle(t, ctx, tc.params)
+			result, errorDetails := handler.handle(t, ctx, tc.params, metadata)
 
 			// then
 			require.Empty(tt, result)
@@ -87,8 +88,8 @@ func testListingKeysWithInvalidParamsFails(t *testing.T) {
 func testListingKeysWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
-	hostname := "vega.xyz"
-	w, _ := walletWithPerms(t, hostname, wallet.Permissions{
+	metadata := requestMetadataForTest()
+	w, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: []string{},
@@ -110,12 +111,12 @@ func testListingKeysWithValidParamsSucceeds(t *testing.T) {
 
 	// setup
 	handler := newListKeysHandler(t)
-	token := connectWallet(t, handler.sessions, hostname, w)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, w)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
 		Token: token,
-	})
+	}, metadata)
 
 	// then
 	require.Nil(t, errorDetails)
@@ -125,8 +126,8 @@ func testListingKeysWithValidParamsSucceeds(t *testing.T) {
 func testListingKeysExcludesTaintedKeys(t *testing.T) {
 	// given
 	ctx := context.Background()
-	hostname := "vega.xyz"
-	w, kp1 := walletWithPerms(t, hostname, wallet.Permissions{
+	metadata := requestMetadataForTest()
+	w, kp1 := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: []string{},
@@ -142,12 +143,12 @@ func testListingKeysExcludesTaintedKeys(t *testing.T) {
 
 	// setup
 	handler := newListKeysHandler(t)
-	token := connectWallet(t, handler.sessions, hostname, w)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, w)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
 		Token: token,
-	})
+	}, metadata)
 
 	// then
 	require.Nil(t, errorDetails)
@@ -162,6 +163,7 @@ func testListingKeysExcludesTaintedKeys(t *testing.T) {
 func testListingKeysWithInvalidTokenFails(t *testing.T) {
 	// given
 	ctx := context.Background()
+	metadata := requestMetadataForTest()
 
 	// setup
 	handler := newListKeysHandler(t)
@@ -169,7 +171,7 @@ func testListingKeysWithInvalidTokenFails(t *testing.T) {
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
 		Token: vgrand.RandomStr(5),
-	})
+	}, metadata)
 
 	// then
 	assert.Empty(t, result)
@@ -179,6 +181,7 @@ func testListingKeysWithInvalidTokenFails(t *testing.T) {
 func testListingKeysWithLongLivingTokenSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
+	metadata := requestMetadataForTest()
 	w, kp := walletWithKey(t)
 	token := vgrand.RandomStr(10)
 
@@ -191,7 +194,7 @@ func testListingKeysWithLongLivingTokenSucceeds(t *testing.T) {
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
 		Token: token,
-	})
+	}, metadata)
 
 	// then
 	assert.Nil(t, errorDetails)
@@ -206,6 +209,7 @@ func testListingKeysWithLongLivingTokenSucceeds(t *testing.T) {
 func testListingKeysWithLongLivingExpiringTokenSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
+	metadata := requestMetadataForTest()
 	w, kp := walletWithKey(t)
 	token := vgrand.RandomStr(10)
 
@@ -222,7 +226,7 @@ func testListingKeysWithLongLivingExpiringTokenSucceeds(t *testing.T) {
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
 		Token: token,
-	})
+	}, metadata)
 
 	// then
 	assert.Nil(t, errorDetails)
@@ -252,19 +256,19 @@ func testListingKeysWithLongExpiredTokenSucceeds(t *testing.T) {
 
 func testListingKeysWithNotEnoughPermissionsFails(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
 	expectedPermissions := wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.NoAccess,
 			RestrictedKeys: []string{},
 		},
 	}
-	hostname := "vega.xyz"
 	originalPermissions := wallet.Permissions{}
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
-	w, _ := walletWithPerms(t, hostname, expectedPermissions)
+	w, _ := walletWithPerms(t, metadata.Hostname, expectedPermissions)
 	_, err := w.GenerateKeyPair(nil)
 	if err != nil {
 		t.Fatalf("could not generate key for tests: %v", err)
@@ -272,16 +276,16 @@ func testListingKeysWithNotEnoughPermissionsFails(t *testing.T) {
 
 	// setup
 	handler := newListKeysHandler(t)
-	token := connectWallet(t, handler.sessions, hostname, w)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, w)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, w.Name(), requestedPermissions).Times(1).Return(false, nil)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, metadata.TraceID, metadata.Hostname, w.Name(), requestedPermissions).Times(1).Return(false, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
 		Token: token,
-	})
+	}, metadata)
 
 	// then
 	assertUserRejectionError(t, errorDetails)
@@ -295,26 +299,26 @@ func testListingKeysWithNotEnoughPermissionsFails(t *testing.T) {
 
 func testListingKeysCancellingTheReviewDoesNotUpdatePermissions(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := vgrand.RandomStr(5)
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
 	originalPermissions := wallet.Permissions{}
-	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
 
 	// setup
 	handler := newListKeysHandler(t)
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, api.ErrUserCloseTheConnection)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, api.ErrUserCloseTheConnection)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
 		Token: token,
-	})
+	}, metadata)
 
 	// then
 	assertConnectionClosedError(t, errorDetails)
@@ -327,27 +331,27 @@ func testListingKeysCancellingTheReviewDoesNotUpdatePermissions(t *testing.T) {
 
 func testListingKeysInterruptingTheRequestDoesNotUpdatePermissions(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := vgrand.RandomStr(5)
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
 	originalPermissions := wallet.Permissions{}
-	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
 
 	// setup
 	handler := newListKeysHandler(t)
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, api.ErrRequestInterrupted)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, api.ErrRequestInterrupted)
+	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
 		Token: token,
-	})
+	}, metadata)
 
 	// then
 	assertRequestInterruptionError(t, errorDetails)
@@ -360,27 +364,27 @@ func testListingKeysInterruptingTheRequestDoesNotUpdatePermissions(t *testing.T)
 
 func testListingKeysGettingInternalErrorDuringReviewDoesNotUpdatePermissions(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := vgrand.RandomStr(5)
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
 	originalPermissions := wallet.Permissions{}
-	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
 
 	// setup
 	handler := newListKeysHandler(t)
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("requesting the permissions review failed: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, assert.AnError)
+	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.InternalError, fmt.Errorf("requesting the permissions review failed: %w", assert.AnError)).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
 		Token: token,
-	})
+	}, metadata)
 
 	// then
 	assertInternalError(t, errorDetails, api.ErrCouldNotRequestPermissions)
@@ -393,27 +397,27 @@ func testListingKeysGettingInternalErrorDuringReviewDoesNotUpdatePermissions(t *
 
 func testListingKeysCancellingThePassphraseRequestDoesNotUpdatePermissions(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := vgrand.RandomStr(5)
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
 	originalPermissions := wallet.Permissions{}
-	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
 
 	// setup
 	handler := newListKeysHandler(t)
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
 	handler.interactor.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return("", api.ErrUserCloseTheConnection)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
 		Token: token,
-	})
+	}, metadata)
 
 	// then
 	assertConnectionClosedError(t, errorDetails)
@@ -426,28 +430,28 @@ func testListingKeysCancellingThePassphraseRequestDoesNotUpdatePermissions(t *te
 
 func testListingKeysInterruptingTheRequestDuringPassphraseRequestDoesNotUpdatePermissions(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := vgrand.RandomStr(5)
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
 	originalPermissions := wallet.Permissions{}
-	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
 
 	// setup
 	handler := newListKeysHandler(t)
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
 	handler.interactor.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return("", api.ErrRequestInterrupted)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
 		Token: token,
-	})
+	}, metadata)
 
 	// then
 	assertRequestInterruptionError(t, errorDetails)
@@ -460,28 +464,28 @@ func testListingKeysInterruptingTheRequestDuringPassphraseRequestDoesNotUpdatePe
 
 func testListingKeysGettingInternalErrorDuringPassphraseRequestDoesNotUpdatePermissions(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := vgrand.RandomStr(5)
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
 	originalPermissions := wallet.Permissions{}
-	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
 
 	// setup
 	handler := newListKeysHandler(t)
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
-	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return("", assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("requesting the passphrase failed: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestPassphrase(ctx, metadata.TraceID, wallet1.Name()).Times(1).Return("", assert.AnError)
+	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.InternalError, fmt.Errorf("requesting the passphrase failed: %w", assert.AnError)).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
 		Token: token,
-	})
+	}, metadata)
 
 	// then
 	assertInternalError(t, errorDetails, api.ErrCouldNotRequestPermissions)
@@ -494,11 +498,11 @@ func testListingKeysGettingInternalErrorDuringPassphraseRequestDoesNotUpdatePerm
 
 func testListingKeysUsingWrongPassphraseDoesNotUpdatePermissions(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
 	cancelCtx, cancelFn := context.WithCancel(ctx)
-	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
-	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -506,14 +510,14 @@ func testListingKeysUsingWrongPassphraseDoesNotUpdatePermissions(t *testing.T) {
 
 	// setup
 	handler := newListKeysHandler(t)
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(cancelCtx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(cancelCtx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestPermissionsReview(cancelCtx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
-	handler.interactor.EXPECT().RequestPassphrase(cancelCtx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
+	handler.interactor.EXPECT().RequestPermissionsReview(cancelCtx, metadata.TraceID, metadata.Hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestPassphrase(cancelCtx, metadata.TraceID, wallet1.Name()).Times(1).Return(passphrase, nil)
 	handler.walletStore.EXPECT().GetWallet(cancelCtx, wallet1.Name(), passphrase).Times(1).Return(nil, wallet.ErrWrongPassphrase)
-	handler.interactor.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, wallet.ErrWrongPassphrase).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
+	handler.interactor.EXPECT().NotifyError(cancelCtx, metadata.TraceID, api.UserError, wallet.ErrWrongPassphrase).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
 		// Once everything has been called once, we cancel the handler to break the loop.
 		cancelFn()
 	})
@@ -521,7 +525,7 @@ func testListingKeysUsingWrongPassphraseDoesNotUpdatePermissions(t *testing.T) {
 	// when
 	result, errorDetails := handler.handle(t, cancelCtx, api.ClientListKeysParams{
 		Token: token,
-	})
+	}, metadata)
 
 	// then
 	assertRequestInterruptionError(t, errorDetails)
@@ -534,10 +538,10 @@ func testListingKeysUsingWrongPassphraseDoesNotUpdatePermissions(t *testing.T) {
 
 func testListingKeysGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermissions(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := vgrand.RandomStr(5)
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
 	originalPermissions := wallet.Permissions{}
-	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, metadata.Hostname, originalPermissions)
 	passphrase := vgrand.RandomStr(5)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
@@ -545,19 +549,19 @@ func testListingKeysGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermis
 
 	// setup
 	handler := newListKeysHandler(t)
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
-	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestPassphrase(ctx, metadata.TraceID, wallet1.Name()).Times(1).Return(passphrase, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name(), passphrase).Times(1).Return(nil, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.InternalError, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError)).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
 		Token: token,
-	})
+	}, metadata)
 
 	// then
 	assertInternalError(t, errorDetails, api.ErrCouldNotRequestPermissions)
@@ -570,8 +574,8 @@ func testListingKeysGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermis
 
 func testListingKeysGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissions(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := vgrand.RandomStr(5)
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
 	walletName := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
 	wallet1, recoveryPhrase, err := wallet.NewHDWallet(walletName)
@@ -598,20 +602,20 @@ func testListingKeysGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissio
 
 	// setup
 	handler := newListKeysHandler(t)
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
-	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestPassphrase(ctx, metadata.TraceID, wallet1.Name()).Times(1).Return(passphrase, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name(), passphrase).Times(1).Return(loadedWallet, nil)
 	handler.walletStore.EXPECT().SaveWallet(ctx, loadedWallet, passphrase).Times(1).Return(assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not save the wallet: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.InternalError, fmt.Errorf("could not save the wallet: %w", assert.AnError)).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
 		Token: token,
-	})
+	}, metadata)
 
 	// then
 	assertInternalError(t, errorDetails, api.ErrCouldNotRequestPermissions)
@@ -624,8 +628,8 @@ func testListingKeysGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissio
 
 func testListingKeysUpdatingPermissionsDoesNotOverwriteUntrackedChanges(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	hostname := vgrand.RandomStr(5)
+	ctx := context.Background()
+	metadata := requestMetadataForTest()
 	walletName := vgrand.RandomStr(5)
 	wallet1, recoveryPhrase, err := wallet.NewHDWallet(walletName)
 	if err != nil {
@@ -646,12 +650,12 @@ func testListingKeysUpdatingPermissionsDoesNotOverwriteUntrackedChanges(t *testi
 
 	// setup
 	handler := newListKeysHandler(t)
-	token := connectWallet(t, handler.sessions, hostname, wallet1)
+	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), askedPermissions).Times(1).Return(true, nil)
-	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), askedPermissions).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestPassphrase(ctx, metadata.TraceID, wallet1.Name()).Times(1).Return(passphrase, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name(), passphrase).Times(1).Return(modifiedWallet, nil)
 	handler.walletStore.EXPECT().SaveWallet(ctx, gomock.Any(), passphrase).Times(1).DoAndReturn(func(_ context.Context, w wallet.Wallet, _ string) error {
 		// We verify that the saved wallet contains the modification from the modified wallet and the permissions update from wallet1.
@@ -660,15 +664,15 @@ func testListingKeysUpdatingPermissionsDoesNotOverwriteUntrackedChanges(t *testi
 			PublicKeys: wallet.PublicKeysPermission{
 				Access: wallet.ReadAccess,
 			},
-		}, w.Permissions(hostname))
+		}, w.Permissions(metadata.Hostname))
 		return nil
 	})
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.PermissionsSuccessfullyUpdated).Times(1)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, metadata.TraceID, api.PermissionsSuccessfullyUpdated).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientListKeysParams{
 		Token: token,
-	})
+	}, metadata)
 
 	// then
 	assert.Nil(t, errorDetails)
@@ -687,10 +691,10 @@ type listKeysHandler struct {
 	sessions    *session.Sessions
 }
 
-func (h *listKeysHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.ClientListKeysResult, *jsonrpc.ErrorDetails) {
+func (h *listKeysHandler) handle(t *testing.T, ctx context.Context, params interface{}, metadata jsonrpc.RequestMetadata) (api.ClientListKeysResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, metadata)
 	if rawResult != nil {
 		result, ok := rawResult.(api.ClientListKeysResult)
 		if !ok {

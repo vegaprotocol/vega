@@ -59,3 +59,8 @@ http:
       get: '/markets/data'
     - selector: vega.api.v1.CoreStateService.ListDelegations
       get: '/delegations'
+
+    # websockets
+
+    - selector: vega.api.v1.CoreService.ObserveEventBus
+      get: '/stream/event/bus'

@@ -220,6 +220,34 @@ func (mr *MockValidatorTopologyMockRecorder) AllNodeIDs() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllNodeIDs", reflect.TypeOf((*MockValidatorTopology)(nil).AllNodeIDs))
 }
 
+// GetTotalVotingPower mocks base method.
+func (m *MockValidatorTopology) GetTotalVotingPower() int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotalVotingPower")
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// GetTotalVotingPower indicates an expected call of GetTotalVotingPower.
+func (mr *MockValidatorTopologyMockRecorder) GetTotalVotingPower() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalVotingPower", reflect.TypeOf((*MockValidatorTopology)(nil).GetTotalVotingPower))
+}
+
+// GetVotingPower mocks base method.
+func (m *MockValidatorTopology) GetVotingPower(arg0 string) int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVotingPower", arg0)
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// GetVotingPower indicates an expected call of GetVotingPower.
+func (mr *MockValidatorTopologyMockRecorder) GetVotingPower(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVotingPower", reflect.TypeOf((*MockValidatorTopology)(nil).GetVotingPower), arg0)
+}
+
 // IsTendermintValidator mocks base method.
 func (m *MockValidatorTopology) IsTendermintValidator(arg0 string) bool {
 	m.ctrl.T.Helper()
@@ -260,20 +288,6 @@ func (m *MockValidatorTopology) IsValidatorVegaPubKey(arg0 string) bool {
 func (mr *MockValidatorTopologyMockRecorder) IsValidatorVegaPubKey(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsValidatorVegaPubKey", reflect.TypeOf((*MockValidatorTopology)(nil).IsValidatorVegaPubKey), arg0)
-}
-
-// Len mocks base method.
-func (m *MockValidatorTopology) Len() int {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Len")
-	ret0, _ := ret[0].(int)
-	return ret0
-}
-
-// Len indicates an expected call of Len.
-func (mr *MockValidatorTopologyMockRecorder) Len() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Len", reflect.TypeOf((*MockValidatorTopology)(nil).Len))
 }
 
 // SelfVegaPubKey mocks base method.
@@ -444,17 +458,17 @@ func (mr *MockValidatorPerformanceMockRecorder) Serialize() *gomock.Call {
 }
 
 // ValidatorPerformanceScore mocks base method.
-func (m *MockValidatorPerformance) ValidatorPerformanceScore(arg0 string, arg1, arg2 int64) decimal.Decimal {
+func (m *MockValidatorPerformance) ValidatorPerformanceScore(arg0 string, arg1, arg2 int64, arg3 decimal.Decimal) decimal.Decimal {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidatorPerformanceScore", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "ValidatorPerformanceScore", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(decimal.Decimal)
 	return ret0
 }
 
 // ValidatorPerformanceScore indicates an expected call of ValidatorPerformanceScore.
-func (mr *MockValidatorPerformanceMockRecorder) ValidatorPerformanceScore(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockValidatorPerformanceMockRecorder) ValidatorPerformanceScore(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorPerformanceScore", reflect.TypeOf((*MockValidatorPerformance)(nil).ValidatorPerformanceScore), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorPerformanceScore", reflect.TypeOf((*MockValidatorPerformance)(nil).ValidatorPerformanceScore), arg0, arg1, arg2, arg3)
 }
 
 // MockNotary is a mock of Notary interface.

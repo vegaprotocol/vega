@@ -51,7 +51,7 @@ type AdminStartService struct {
 // a short living context to the long-running goroutines, like with an HTTP request
 // context. To manage the lifetime of the goroutines, the context builder should
 // be used to wrap the parent context.
-func (h *AdminStartService) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminStartService) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminStartServiceParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

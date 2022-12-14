@@ -35,7 +35,7 @@ type AdminUpdateNetwork struct {
 }
 
 // Handle retrieve a wallet from its name and passphrase.
-func (h *AdminUpdateNetwork) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminUpdateNetwork) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	updatedNetwork, err := validateUpdateNetworkParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

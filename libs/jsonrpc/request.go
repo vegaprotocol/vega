@@ -9,6 +9,11 @@ var (
 	ErrMethodIsRequired    = errors.New("the method is required")
 )
 
+type RequestMetadata struct {
+	TraceID  string
+	Hostname string
+}
+
 // Params is just a nicer way to describe what's passed to the handlers.
 type Params interface{}
 

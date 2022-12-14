@@ -32,6 +32,7 @@ import (
 
 func addTestProposal(
 	t *testing.T,
+	ctx context.Context,
 	ps *sqlstore.Proposals,
 	id string,
 	party entities.Party,
@@ -56,7 +57,7 @@ func addTestProposal(
 		RequiredLPMajority:      nil,
 		RequiredLPParticipation: nil,
 	}
-	ps.Add(context.Background(), p)
+	ps.Add(ctx, p)
 	return p
 }
 
@@ -78,15 +79,15 @@ func assertProposalMatch(t *testing.T, expected, actual entities.Proposal) {
 }
 
 func TestProposals(t *testing.T) {
-	defer DeleteEverything()
-	ctx := context.Background()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	partyStore := sqlstore.NewParties(connectionSource)
 	propStore := sqlstore.NewProposals(connectionSource)
 	blockStore := sqlstore.NewBlocks(connectionSource)
-	block1 := addTestBlock(t, blockStore)
+	block1 := addTestBlock(t, ctx, blockStore)
 
-	party1 := addTestParty(t, partyStore, block1)
-	party2 := addTestParty(t, partyStore, block1)
+	party1 := addTestParty(t, ctx, partyStore, block1)
+	party2 := addTestParty(t, ctx, partyStore, block1)
 	rationale1 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "desc"}}
 	rationale2 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl2.com", Description: "desc"}}
 	terms1 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{}}}}
@@ -96,8 +97,8 @@ func TestProposals(t *testing.T) {
 
 	reference1 := helpers.GenerateID()
 	reference2 := helpers.GenerateID()
-	prop1 := addTestProposal(t, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1)
-	prop2 := addTestProposal(t, propStore, id2, party2, reference2, block1, entities.ProposalStateEnacted, rationale2, terms2)
+	prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1)
+	prop2 := addTestProposal(t, ctx, propStore, id2, party2, reference2, block1, entities.ProposalStateEnacted, rationale2, terms2)
 
 	party1ID := party1.ID.String()
 	prop1ID := prop1.ID.String()
@@ -170,13 +171,13 @@ func TestProposalCursorPagination(t *testing.T) {
 }
 
 func testProposalCursorPaginationNoPagination(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ps)
+	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ps.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -213,14 +214,14 @@ func testProposalCursorPaginationNoPagination(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirst(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ps)
+	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ps.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -240,15 +241,15 @@ func testProposalCursorPaginationWithFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstAndAfter(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ps)
+	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	first := int32(8)
 	after := proposals[1].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ps.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -273,14 +274,14 @@ func testProposalCursorPaginationWithFirstAndAfter(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLast(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ps)
+	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ps.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -300,15 +301,15 @@ func testProposalCursorPaginationWithLast(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastAndBefore(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ps)
+	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	last := int32(8)
 	before := proposals[5].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ps.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -333,13 +334,13 @@ func testProposalCursorPaginationWithLastAndBefore(t *testing.T) {
 }
 
 func testProposalCursorPaginationNoPaginationNewestFirst(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ps)
+	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ps.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -376,14 +377,14 @@ func testProposalCursorPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstNewestFirst(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ps)
+	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ps.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -403,15 +404,15 @@ func testProposalCursorPaginationWithFirstNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstAndAfterNewestFirst(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ps)
+	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	first := int32(8)
 	after := proposals[12].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ps.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -436,14 +437,14 @@ func testProposalCursorPaginationWithFirstAndAfterNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastNewestFirst(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ps)
+	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ps.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -463,15 +464,15 @@ func testProposalCursorPaginationWithLastNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastAndBeforeNewestFirst(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ps)
+	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	last := int32(8)
 	before := proposals[16].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ps.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -496,13 +497,13 @@ func testProposalCursorPaginationWithLastAndBeforeNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationNoPaginationByParty(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ps)
+	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	partyID := parties[0].ID.String()
 	got, pageInfo, err := ps.Get(ctx, nil, &partyID, nil, pagination)
@@ -530,14 +531,14 @@ func testProposalCursorPaginationNoPaginationByParty(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstByParty(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ps)
+	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	partyID := parties[0].ID.String()
 	got, pageInfo, err := ps.Get(ctx, nil, &partyID, nil, pagination)
@@ -558,15 +559,15 @@ func testProposalCursorPaginationWithFirstByParty(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstAndAfterByParty(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ps)
+	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	first := int32(3)
 	after := proposals[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	partyID := parties[0].ID.String()
 	got, pageInfo, err := ps.Get(ctx, nil, &partyID, nil, pagination)
@@ -587,14 +588,14 @@ func testProposalCursorPaginationWithFirstAndAfterByParty(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastByParty(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ps)
+	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	partyID := parties[0].ID.String()
 	got, pageInfo, err := ps.Get(ctx, nil, &partyID, nil, pagination)
@@ -615,15 +616,15 @@ func testProposalCursorPaginationWithLastByParty(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastAndBeforeByParty(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ps)
+	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	last := int32(5)
 	before := proposals[6].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	partyID := parties[0].ID.String()
 	got, pageInfo, err := ps.Get(ctx, nil, &partyID, nil, pagination)
@@ -646,13 +647,13 @@ func testProposalCursorPaginationWithLastAndBeforeByParty(t *testing.T) {
 }
 
 func testProposalCursorPaginationNoPaginationByPartyNewestFirst(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ps)
+	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	partyID := parties[0].ID.String()
 
@@ -681,14 +682,14 @@ func testProposalCursorPaginationNoPaginationByPartyNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstByPartyNewestFirst(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ps)
+	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	partyID := parties[0].ID.String()
 
@@ -710,15 +711,15 @@ func testProposalCursorPaginationWithFirstByPartyNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstAndAfterByPartyNewestFirst(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ps)
+	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	first := int32(3)
 	after := proposals[1].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	partyID := parties[0].ID.String()
 
@@ -740,14 +741,14 @@ func testProposalCursorPaginationWithFirstAndAfterByPartyNewestFirst(t *testing.
 }
 
 func testProposalCursorPaginationWithLastByPartyNewestFirst(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ps)
+	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	partyID := parties[0].ID.String()
 
@@ -769,15 +770,15 @@ func testProposalCursorPaginationWithLastByPartyNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastAndBeforeByPartyNewestFirst(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ps)
+	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	last := int32(5)
 	before := proposals[5].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	partyID := parties[0].ID.String()
 
@@ -801,13 +802,13 @@ func testProposalCursorPaginationWithLastAndBeforeByPartyNewestFirst(t *testing.
 }
 
 func testProposalCursorPaginationOpenOnly(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ps)
+	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	state := entities.ProposalStateOpen
 	got, pageInfo, err := ps.Get(ctx, &state, nil, nil, pagination)
@@ -833,13 +834,13 @@ func testProposalCursorPaginationOpenOnly(t *testing.T) {
 }
 
 func testProposalCursorPaginationGivenState(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ps)
+	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	t.Run("State is Enacted", func(t *testing.T) {
 		state := entities.ProposalStateEnacted
@@ -884,7 +885,7 @@ func testProposalCursorPaginationGivenState(t *testing.T) {
 	})
 }
 
-func createPaginationTestProposals(t *testing.T, pps *sqlstore.Proposals) ([]entities.Proposal, []entities.Party) {
+func createPaginationTestProposals(t *testing.T, ctx context.Context, pps *sqlstore.Proposals) ([]entities.Proposal, []entities.Party) {
 	t.Helper()
 	ps := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
@@ -892,11 +893,11 @@ func createPaginationTestProposals(t *testing.T, pps *sqlstore.Proposals) ([]ent
 	proposals := make([]entities.Proposal, 20)
 
 	blockTime := time.Date(2022, 7, 15, 8, 0, 0, 0, time.Local)
-	block := addTestBlockForTime(t, bs, blockTime)
+	block := addTestBlockForTime(t, ctx, bs, blockTime)
 
 	parties := []entities.Party{
-		addTestParty(t, ps, block),
-		addTestParty(t, ps, block),
+		addTestParty(t, ctx, ps, block),
+		addTestParty(t, ctx, ps, block),
 	}
 
 	states := []entities.ProposalState{
@@ -914,8 +915,8 @@ func createPaginationTestProposals(t *testing.T, pps *sqlstore.Proposals) ([]ent
 	i := 0
 	for i < 10 {
 		blockTime = blockTime.Add(time.Minute)
-		block = addTestBlockForTime(t, bs, blockTime)
-		block2 := addTestBlockForTime(t, bs, blockTime.Add(time.Second*30))
+		block = addTestBlockForTime(t, ctx, bs, blockTime)
+		block2 := addTestBlockForTime(t, ctx, bs, blockTime.Add(time.Second*30))
 
 		id1 := fmt.Sprintf("deadbeef%02d", i)
 		id2 := fmt.Sprintf("deadbeef%02d", i+10)
@@ -927,8 +928,8 @@ func createPaginationTestProposals(t *testing.T, pps *sqlstore.Proposals) ([]ent
 		terms1 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{}}}}
 		terms2 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewAsset{NewAsset: &vega.NewAsset{}}}}
 
-		proposals[i] = addTestProposal(t, pps, id1, parties[0], ref1, block, states[i], rationale1, terms1)
-		proposals[i+10] = addTestProposal(t, pps, id2, parties[1], ref2, block2, states[i], rationale2, terms2)
+		proposals[i] = addTestProposal(t, ctx, pps, id1, parties[0], ref1, block, states[i], rationale1, terms1)
+		proposals[i+10] = addTestProposal(t, ctx, pps, id2, parties[1], ref2, block2, states[i], rationale2, terms2)
 		i++
 	}
 

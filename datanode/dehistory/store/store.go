@@ -40,6 +40,8 @@ import (
 	"github.com/ipfs/kubo/plugin/loader"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/prometheus/client_golang/prometheus"
+
+	ipfslogging "github.com/ipfs/go-log"
 )
 
 const segmentMetaDataFile = "metadata.json"
@@ -74,6 +76,7 @@ type Store struct {
 	ipfsAPI  icore.CoreAPI
 	ipfsNode *core.IpfsNode
 	index    index
+	swarmKey string
 
 	indexPath  string
 	stagingDir string
@@ -86,6 +89,10 @@ type Store struct {
 var plugins *loader.PluginLoader
 
 func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, deHistoryHome string, wipeOnStartup bool) (*Store, error) {
+	if log.IsDebug() {
+		ipfslogging.SetDebugLogging()
+	}
+
 	deHistoryStorePath := filepath.Join(deHistoryHome, "store")
 
 	p := &Store{
@@ -138,15 +145,9 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, d
 		return nil, fmt.Errorf("failed to create ipfs node configuration:%w", err)
 	}
 
-	swarmKey := chainID
-	if len(cfg.SwarmKeyOverride) > 0 {
-		swarmKey = cfg.SwarmKeyOverride
-		log.Infof("Using swarm key override %s as the swarm key", cfg.SwarmKeyOverride)
-	} else {
-		log.Infof("Using chain id %s as the swarm key", chainID)
-	}
+	p.swarmKey = cfg.GetSwarmKey(log, chainID)
 
-	p.ipfsNode, err = createIpfsNode(ctx, log, p.ipfsPath, ipfsCfg, swarmKey)
+	p.ipfsNode, err = createIpfsNode(ctx, log, p.ipfsPath, ipfsCfg, p.swarmKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ipfs node:%w", err)
 	}
@@ -185,6 +186,10 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, d
 	}()
 
 	return p, nil
+}
+
+func (p *Store) GetSwarmKey() string {
+	return p.swarmKey
 }
 
 func (p *Store) GetPeerAddrs() []ma.Multiaddr {
@@ -334,7 +339,16 @@ func (p *Store) AddSnapshotData(ctx context.Context, historySnapshot snapshot.Hi
 }
 
 func (p *Store) GetHighestBlockHeightEntry() (SegmentIndexEntry, error) {
-	return p.index.GetHighestBlockHeightEntry()
+	entry, err := p.index.GetHighestBlockHeightEntry()
+	if err != nil {
+		if errors.Is(err, ErrIndexEntryNotFound) {
+			return SegmentIndexEntry{}, ErrSegmentNotFound
+		}
+
+		return SegmentIndexEntry{}, fmt.Errorf("failed to get highest block height entry from index:%w", err)
+	}
+
+	return entry, nil
 }
 
 func (p *Store) ListAllHistorySegmentsOldestFirst() ([]SegmentIndexEntry, error) {
@@ -605,7 +619,17 @@ func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string
 
 	rootNodeFile, err := p.ipfsAPI.Unixfs().Get(ctx, path.IpfsPath(contentID))
 	if err != nil {
-		return SegmentIndexEntry{}, fmt.Errorf("could not get file with CID: %s", err)
+		connInfo, swarmError := p.ipfsAPI.Swarm().Peers(ctx)
+		if swarmError != nil {
+			return SegmentIndexEntry{}, fmt.Errorf("failed to get peers: %w", err)
+		}
+
+		peerAddrs := ""
+		for _, peer := range connInfo {
+			peerAddrs += fmt.Sprintf(",%s", peer.Address())
+		}
+
+		return SegmentIndexEntry{}, fmt.Errorf("could not get file with CID, connected peer addresses %s: %w", peerAddrs, err)
 	}
 
 	err = files.WriteTo(rootNodeFile, historySegment)
@@ -669,9 +693,13 @@ func createIpfsNodeConfiguration(log *logging.Logger, identity config.Identity, 
 		return nil, fmt.Errorf("failed to initiliase ipfs config:%w", err)
 	}
 
+	const ipfsConfigDefaultSwarmPort = "4001"
 	updatedSwarmAddrs := make([]string, 0, 10)
 	for _, addr := range cfg.Addresses.Swarm {
-		updatedSwarmAddrs = append(updatedSwarmAddrs, strings.ReplaceAll(addr, "4001", strconv.Itoa(swarmPort)))
+		// Exclude ip6 addresses cause hang on lookup
+		if !strings.Contains(addr, "/ip6/") {
+			updatedSwarmAddrs = append(updatedSwarmAddrs, strings.ReplaceAll(addr, ipfsConfigDefaultSwarmPort, strconv.Itoa(swarmPort)))
+		}
 	}
 
 	cfg.Addresses.Swarm = updatedSwarmAddrs

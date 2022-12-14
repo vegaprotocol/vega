@@ -238,6 +238,8 @@ type Market struct {
 	pMonitor PriceMonitor
 	lMonitor LiquidityMonitor
 
+	lpPriceRange num.Decimal
+
 	tsCalc TargetStakeCalculator
 
 	as AuctionState
@@ -409,6 +411,7 @@ func NewMarket(
 		minLPStakeQuantumMultiple: num.MustDecimalFromString("1"),
 		positionFactor:            positionFactor,
 		nextMTM:                   time.Time{}, // default to zero time
+		lpPriceRange:              mkt.LPPriceRange,
 	}
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
@@ -445,6 +448,7 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.settlement.UpdateProduct(m.tradableInstrument.Instrument.Product)
 	m.tsCalc.UpdateParameters(*m.mkt.LiquidityMonitoringParameters.TargetStakeParameters)
 	m.pMonitor.UpdateSettings(m.tradableInstrument.RiskModel, m.mkt.PriceMonitoringSettings)
+	m.lpPriceRange = m.mkt.LPPriceRange
 	m.lMonitor.UpdateParameters(m.mkt.LiquidityMonitoringParameters)
 	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor)
 
@@ -667,6 +671,9 @@ func (m *Market) PostRestore(ctx context.Context) error {
 		parties[p] = struct{}{}
 	}
 	m.parties = parties
+
+	// tell the matching engine about the markets price factor so it can finish restoring orders
+	m.matching.RestoreWithMarketPriceFactor(m.priceFactor)
 	return nil
 }
 
@@ -861,19 +868,6 @@ func (m *Market) closeCancelledMarket(ctx context.Context) error {
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
-	// perform last MTM settlement if needed
-	if mp := m.getLastTradedPrice(); mp != nil && mp.IsZero() && m.settlement.HasTraded() {
-		// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
-		// works as expected.
-		m.markPrice = mp.Clone()
-		mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
-		dummy := &types.Order{
-			ID:            m.idgen.NextID(),
-			Price:         mp,
-			OriginalPrice: mcmp,
-		}
-		m.confirmMTM(ctx, dummy, nil)
-	}
 	positions, err := m.settlement.Settle(t, m.assetDP)
 	if err != nil {
 		m.log.Error("Failed to get settle positions on market closed",
@@ -1827,7 +1821,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	defer timer.EngineTimeCounterAdd()
 
 	now := m.timeService.GetTimeNow()
-	// this is going to be run after the the closed out routines
+	// this is going to be run after the closed out routines
 	// are finished, in order to notify the liquidity engine of
 	// any changes in the book / orders owned by the lp providers
 	orderUpdates := []*types.Order{}
@@ -3227,31 +3221,51 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
 
 	if m.mkt.State != types.MarketStateProposed && m.mkt.State != types.MarketStatePending {
+		// we're either going to set state to trading terminated
+		// or we'll be performing the final settlement (setting market status to settled)
+		// in both cases, we want to MTM any pending trades
+		if mp := m.getLastTradedPrice(); mp != nil && !mp.IsZero() && m.settlement.HasTraded() {
+			// we need the ID-gen
+			_, blockHash := vegacontext.TraceIDFromContext(ctx)
+			m.idgen = idgeneration.New(blockHash + crypto.HashStrToHex("finalmtm"+m.GetID()))
+			defer func() {
+				m.idgen = nil
+			}()
+			// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
+			// works as expected.
+			m.markPrice = mp.Clone()
+			mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
+			dummy := &types.Order{
+				ID:            m.idgen.NextID(),
+				Price:         mp,
+				OriginalPrice: mcmp,
+			}
+			m.confirmMTM(ctx, dummy, nil)
+		}
 		m.mkt.State = types.MarketStateTradingTerminated
 		m.mkt.TradingMode = types.MarketTradingModeNoTrading
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-
-		if m.settlementDataInMarket == nil {
+		if m.settlementDataInMarket != nil {
+			// because we need to be able to perform the MTM settlement, only update market state now
+			m.settlementDataWithLock(ctx)
+		} else {
 			m.log.Debug("no settlement data", logging.MarketID(m.GetID()))
-			return
 		}
-		m.settlementDataWithLock(ctx)
-	} else {
-		for party := range m.parties {
-			_, err := m.CancelAllOrders(ctx, party)
-			if err != nil {
-				m.log.Debug("could not cancel orders for party", logging.PartyID(party), logging.Error(err))
-			}
-		}
-		err := m.closeCancelledMarket(ctx)
-		if err != nil {
-			m.log.Debug("could not close market", logging.MarketID(m.GetID()))
-			return
-		}
-
-		m.log.Debug("market must not terminated before its enactment time", logging.MarketID(m.GetID()))
 		return
 	}
+	for party := range m.parties {
+		_, err := m.CancelAllOrders(ctx, party)
+		if err != nil {
+			m.log.Debug("could not cancel orders for party", logging.PartyID(party), logging.Error(err))
+		}
+	}
+	err := m.closeCancelledMarket(ctx)
+	if err != nil {
+		m.log.Debug("could not close market", logging.MarketID(m.GetID()))
+		return
+	}
+
+	m.log.Debug("market must not terminated before its enactment time", logging.MarketID(m.GetID()))
 }
 
 func (m *Market) settlementData(ctx context.Context, settlementData *num.Uint) {
@@ -3280,7 +3294,9 @@ func (m *Market) settlementDataWithLock(ctx context.Context) {
 			return
 		}
 
+		// mark price should be updated here
 		m.lastTradedPrice = settlementDataInAsset.Clone()
+		m.markPrice = settlementDataInAsset.Clone()
 
 		// send the market data with all updated stuff
 		m.broker.Send(events.NewMarketDataEvent(ctx, m.GetMarketData()))
@@ -3437,4 +3453,9 @@ func (m *Market) GetTotalOpenPositionCount() uint64 {
 // GetTotalLPShapeCount returns the total number of LP shapes.
 func (m *Market) GetTotalLPShapeCount() uint64 {
 	return m.liquidity.GetLPShapeCount()
+}
+
+// we use this in a banch of places so let's inform it from here in case we want to modify it in the future.
+func (m *Market) minValidPrice() *num.Uint {
+	return m.priceFactor
 }

@@ -298,7 +298,7 @@ func newServices(
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		svcs.pow = pow.NewNoop()
 	} else {
-		pow := pow.New(svcs.log, svcs.conf.PoW, svcs.epochService)
+		pow := pow.New(svcs.log, svcs.conf.PoW, svcs.timeService)
 		svcs.pow = pow
 		svcs.snapshot.AddProviders(pow)
 		powWatchers = []netparams.WatchParam{
@@ -321,6 +321,10 @@ func newServices(
 			{
 				Param:   netparams.SpamPoWNumberOfTxPerBlock,
 				Watcher: pow.UpdateSpamPoWNumberOfTxPerBlock,
+			},
+			{
+				Param:   netparams.ValidatorsEpochLength,
+				Watcher: pow.OnEpochDurationChanged,
 			},
 		}
 	}
@@ -449,6 +453,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.ValidatorsVoteRequired,
 			Watcher: svcs.protocolUpgradeEngine.OnRequiredMajorityChanged,
+		},
+		{
+			Param:   netparams.ValidatorPerformanceScalingFactor,
+			Watcher: svcs.topology.OnPerformanceScalingChanged,
 		},
 		{
 			Param:   netparams.ValidatorsEpochLength,

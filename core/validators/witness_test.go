@@ -221,7 +221,8 @@ func TestVoteMajorityCalculation(t *testing.T) {
 	erc.Witness.OnDefaultValidatorsVoteRequiredUpdate(context.Background(), num.DecimalFromFloat(0.67))
 	selfPubKey := "b7ee437dc100d642"
 
-	erc.top.EXPECT().Len().AnyTimes().Return(5)
+	erc.top.EXPECT().GetTotalVotingPower().AnyTimes().Return(int64(500))
+	erc.top.EXPECT().GetVotingPower(gomock.Any()).AnyTimes().Return(int64(100))
 	erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
 
 	ch := make(chan struct{}, 1)
@@ -277,7 +278,9 @@ func testOnTick(t *testing.T) {
 
 	selfPubKey := "b7ee437dc100d642"
 
-	erc.top.EXPECT().Len().AnyTimes().Return(2)
+	erc.Witness.OnDefaultValidatorsVoteRequiredUpdate(context.Background(), num.DecimalFromFloat(0.67))
+	erc.top.EXPECT().GetTotalVotingPower().AnyTimes().Return(int64(298))
+	erc.top.EXPECT().GetVotingPower(gomock.Any()).AnyTimes().Return(int64(100))
 	erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
 
 	ch := make(chan struct{}, 1)
@@ -330,7 +333,8 @@ func testOnTickNonValidator(t *testing.T) {
 
 	selfPubKey := "b7ee437dc100d642"
 
-	erc.top.EXPECT().Len().AnyTimes().Return(2)
+	erc.top.EXPECT().GetTotalVotingPower().AnyTimes().Return(int64(298))
+	erc.top.EXPECT().GetVotingPower(gomock.Any()).AnyTimes().Return(int64(100))
 	erc.top.EXPECT().IsValidator().AnyTimes().Return(false)
 
 	res := testRes{"resource-id-1", func() error {

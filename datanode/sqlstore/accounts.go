@@ -86,9 +86,8 @@ func (as *Accounts) Add(ctx context.Context, a *entities.Account) error {
 	return err
 }
 
-func (as *Accounts) GetByID(id entities.AccountID) (entities.Account, error) {
+func (as *Accounts) GetByID(ctx context.Context, id entities.AccountID) (entities.Account, error) {
 	a := entities.Account{}
-	ctx := context.Background()
 	defer metrics.StartSQLQuery("Accounts", "GetByID")()
 	return a, as.wrapE(
 		pgxscan.Get(ctx, as.Connection, &a,
@@ -99,8 +98,7 @@ func (as *Accounts) GetByID(id entities.AccountID) (entities.Account, error) {
 	)
 }
 
-func (as *Accounts) GetAll() ([]entities.Account, error) {
-	ctx := context.Background()
+func (as *Accounts) GetAll(ctx context.Context) ([]entities.Account, error) {
 	accounts := []entities.Account{}
 	defer metrics.StartSQLQuery("Accounts", "GetAll")()
 	err := pgxscan.Select(ctx, as.Connection, &accounts, `
@@ -160,7 +158,7 @@ func deterministicAccountID(a *entities.Account) entities.AccountID {
 	return entities.AccountID(accountID)
 }
 
-func (as *Accounts) Query(filter entities.AccountFilter) ([]entities.Account, error) {
+func (as *Accounts) Query(ctx context.Context, filter entities.AccountFilter) ([]entities.Account, error) {
 	query, args, err := filterAccountsQuery(filter, true)
 	if err != nil {
 		return nil, err
@@ -168,7 +166,7 @@ func (as *Accounts) Query(filter entities.AccountFilter) ([]entities.Account, er
 	accs := []entities.Account{}
 
 	defer metrics.StartSQLQuery("Accounts", "Query")()
-	rows, err := as.Connection.Query(context.Background(), query, args...)
+	rows, err := as.Connection.Query(ctx, query, args...)
 	if err != nil {
 		return accs, fmt.Errorf("querying accounts: %w", err)
 	}

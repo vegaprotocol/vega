@@ -66,7 +66,7 @@ func testGeneratingAPITokenWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newGenerateAPITokenHandler(tt)
@@ -301,7 +301,7 @@ type generateAPITokenHandler struct {
 func (h *generateAPITokenHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminGenerateAPITokenResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminGenerateAPITokenResult)
 		if !ok {

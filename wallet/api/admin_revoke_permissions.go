@@ -20,7 +20,7 @@ type AdminRevokePermissions struct {
 }
 
 // Handle revokes the permissions set in the specified hostname.
-func (h *AdminRevokePermissions) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminRevokePermissions) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateRevokePermissionsParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

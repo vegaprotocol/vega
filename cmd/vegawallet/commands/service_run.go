@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 	vgzap "code.vegaprotocol.io/vega/libs/zap"
 	"code.vegaprotocol.io/vega/paths"
@@ -117,7 +118,7 @@ func BuildCmdRunService(w io.Writer, handler RunServiceHandler, rf *RootFlags) *
 	cmd.PersistentFlags().BoolVar(&f.NoVersionCheck,
 		"no-version-check",
 		false,
-		"Do not check for new version of the Vega wallet",
+		"Do not check the network version compatibility",
 	)
 	cmd.Flags().StringVar(&f.TokensPassphraseFile,
 		"tokens-passphrase-file",
@@ -277,7 +278,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 	rawResponse, errDetails := serviceStarter.Handle(context.Background(), walletapi.AdminStartServiceParams{
 		Network:        f.Network,
 		NoVersionCheck: f.NoVersionCheck,
-	})
+	}, jsonrpc.RequestMetadata{})
 	if errDetails != nil {
 		cliLog.Error("Failed to start HTTP server", zap.Error(errDetails))
 		return errDetails

@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -42,7 +43,7 @@ func NewCmdCreateWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 
 		createWallet := api.NewAdminCreateWallet(s)
 
-		rawResult, errDetails := createWallet.Handle(context.Background(), params)
+		rawResult, errDetails := createWallet.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
 		if errDetails != nil {
 			return api.AdminCreateWalletResult{}, errors.New(errDetails.Data)
 		}
@@ -131,7 +132,7 @@ func PrintCreateWalletResponse(w io.Writer, resp api.AdminCreateWalletResult) {
 	str.Text("Wallet recovery phrase:").NextLine()
 	str.WarningText(resp.Wallet.RecoveryPhrase).NextLine()
 	str.Text("Wallet version:").NextLine()
-	str.WarningText(fmt.Sprintf("%d", resp.Wallet.Version)).NextLine()
+	str.WarningText(fmt.Sprintf("%d", resp.Wallet.KeyDerivationVersion)).NextLine()
 	str.Text("First public key:").NextLine()
 	str.WarningText(resp.Key.PublicKey).NextLine()
 	str.NextSection()

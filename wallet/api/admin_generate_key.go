@@ -27,7 +27,7 @@ type AdminGenerateKey struct {
 }
 
 // Handle generates a key of the specified wallet.
-func (h *AdminGenerateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminGenerateKey) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateGenerateKeyParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

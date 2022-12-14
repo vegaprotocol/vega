@@ -27,7 +27,7 @@ type AdminIsolateKey struct {
 }
 
 // Handle isolates a key in a specific wallet.
-func (h *AdminIsolateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminIsolateKey) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminIsolateKeyParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

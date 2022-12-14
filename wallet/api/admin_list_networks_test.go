@@ -59,7 +59,7 @@ type listNetworksHandler struct {
 func (h *listNetworksHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminListNetworksResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminListNetworksResult)
 		if !ok {

@@ -19,7 +19,7 @@ type AdminCloseConnectionsToHostname struct {
 // Handle closes all the connections from the specified hostname to any wallet
 // opened in the service that run against the specified network.
 // It does not fail if the service or the connections are already closed.
-func (h *AdminCloseConnectionsToHostname) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminCloseConnectionsToHostname) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminCloseConnectionsToHostnameParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

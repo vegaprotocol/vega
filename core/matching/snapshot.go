@@ -17,6 +17,7 @@ import (
 	"log"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -119,4 +120,16 @@ func (b *OrderBook) LoadState(_ context.Context, payload *types.Payload) ([]type
 		b.indicativePriceAndVolume = NewIndicativePriceAndVolume(b.log, b.buy, b.sell)
 	}
 	return nil, nil
+}
+
+// RestoreWithMarketPriceFactor takes the given market price factor and updates all the OriginalPrices
+// in the orders accordingly.
+func (b *OrderBook) RestoreWithMarketPriceFactor(priceFactor *num.Uint) {
+	for _, o := range b.ordersByID {
+		if o.Price.IsZero() {
+			continue
+		}
+		o.OriginalPrice = o.Price.Clone()
+		o.OriginalPrice.Div(o.Price, priceFactor)
+	}
 }

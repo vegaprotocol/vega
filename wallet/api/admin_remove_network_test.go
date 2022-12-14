@@ -38,16 +38,16 @@ func testRemovingNetworkWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty name",
 			params: api.AdminRemoveNetworkParams{
-				Network: "",
+				Name: "",
 			},
-			expectedError: api.ErrNetworkIsRequired,
+			expectedError: api.ErrNetworkNameIsRequired,
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newRemoveNetworkHandler(tt)
@@ -75,7 +75,7 @@ func testRemovingNetworkWithValidParamsSucceeds(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRemoveNetworkParams{
-		Network: name,
+		Name: name,
 	})
 
 	// then
@@ -95,7 +95,7 @@ func testRemovingNetworkThatDoesNotExistsFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRemoveNetworkParams{
-		Network: name,
+		Name: name,
 	})
 
 	// then
@@ -116,7 +116,7 @@ func testGettingInternalErrorDuringVerificationDoesNotRemoveNetwork(t *testing.T
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRemoveNetworkParams{
-		Network: name,
+		Name: name,
 	})
 
 	// then
@@ -134,7 +134,7 @@ type removeNetworkHandler struct {
 func (h *removeNetworkHandler) handle(t *testing.T, ctx context.Context, params interface{}) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	return h.Handle(ctx, params)
+	return h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 }
 
 func newRemoveNetworkHandler(t *testing.T) *removeNetworkHandler {

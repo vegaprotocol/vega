@@ -70,6 +70,6 @@ func (TestNullAccountSource) Obtain(ctx context.Context, a *entities.Account) er
 	return nil
 }
 
-func (TestNullAccountSource) GetByID(id entities.AccountID) (entities.Account, error) {
+func (TestNullAccountSource) GetByID(ctx context.Context, id entities.AccountID) (entities.Account, error) {
 	panic("implement me")
 }

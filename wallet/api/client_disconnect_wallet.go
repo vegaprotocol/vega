@@ -22,7 +22,7 @@ type ClientDisconnectWalletParams struct {
 // happens.
 //
 // The wallet resources are unloaded.
-func (h *ClientDisconnectWallet) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *ClientDisconnectWallet) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateDisconnectWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

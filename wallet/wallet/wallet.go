@@ -2,7 +2,7 @@ package wallet
 
 // nolint: interfacebloat
 type Wallet interface {
-	Version() uint32
+	KeyDerivationVersion() uint32
 	Name() string
 	SetName(newName string)
 	ID() string

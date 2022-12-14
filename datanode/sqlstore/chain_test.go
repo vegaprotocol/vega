@@ -13,7 +13,6 @@
 package sqlstore_test
 
 import (
-	"context"
 	"testing"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
@@ -22,7 +21,9 @@ import (
 )
 
 func TestChain(t *testing.T) {
-	ctx := context.Background()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	cs := sqlstore.NewChain(connectionSource)
 
 	chain1 := entities.Chain{ID: "my-test-chain"}

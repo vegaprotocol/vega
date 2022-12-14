@@ -9,3 +9,11 @@ func TraceIDFromContext(ctx context.Context) string {
 	}
 	return traceID.(string)
 }
+
+func HostnameFromContext(ctx context.Context) string {
+	hostname := ctx.Value("hostname")
+	if hostname == nil {
+		return ""
+	}
+	return hostname.(string)
+}

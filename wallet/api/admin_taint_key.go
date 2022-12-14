@@ -22,7 +22,7 @@ type AdminTaintKey struct {
 
 // Handle marks the specified public key as tainted. It makes it unusable for
 // transaction signing.
-func (h *AdminTaintKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminTaintKey) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateTaintKeyParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

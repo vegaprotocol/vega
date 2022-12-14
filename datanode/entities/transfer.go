@@ -26,7 +26,7 @@ import (
 
 type AccountSource interface {
 	Obtain(ctx context.Context, a *Account) error
-	GetByID(id AccountID) (Account, error)
+	GetByID(ctx context.Context, id AccountID) (Account, error)
 }
 
 type _Transfer struct{}
@@ -54,13 +54,13 @@ type Transfer struct {
 	Reason              *string
 }
 
-func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, error) {
-	fromAcc, err := accountSource.GetByID(t.FromAccountID)
+func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*eventspb.Transfer, error) {
+	fromAcc, err := accountSource.GetByID(ctx, t.FromAccountID)
 	if err != nil {
 		return nil, fmt.Errorf("getting from account for transfer proto:%w", err)
 	}
 
-	toAcc, err := accountSource.GetByID(t.ToAccountID)
+	toAcc, err := accountSource.GetByID(ctx, t.ToAccountID)
 	if err != nil {
 		return nil, fmt.Errorf("getting to account for transfer proto:%w", err)
 	}
@@ -118,7 +118,7 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		AssetID:  AssetID(t.Asset),
 		Type:     t.FromAccountType,
 		TxHash:   txHash,
-		VegaTime: vegaTime,
+		VegaTime: time.Unix(0, t.Timestamp),
 	}
 
 	err := accountSource.Obtain(ctx, &fromAcc)
@@ -206,23 +206,28 @@ func (t Transfer) Cursor() *Cursor {
 }
 
 func (t Transfer) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
-	if len(input) == 0 {
-		return nil, fmt.Errorf("expected account source argument")
+	if len(input) != 2 {
+		return nil, fmt.Errorf("expected account source and context argument")
 	}
 
-	switch as := input[0].(type) {
-	case AccountSource:
-		transferProto, err := t.ToProto(as)
-		if err != nil {
-			return nil, err
-		}
-		return &v2.TransferEdge{
-			Node:   transferProto,
-			Cursor: t.Cursor().Encode(),
-		}, nil
-	default:
-		return nil, fmt.Errorf("expected account source argument, got:%v", as)
+	ctx, ok := input[0].(context.Context)
+	if !ok {
+		return nil, fmt.Errorf("first argument must be a context.Context, got: %v", input[0])
 	}
+
+	as, ok := input[1].(AccountSource)
+	if !ok {
+		return nil, fmt.Errorf("second argument must be an AccountSource, got: %v", input[1])
+	}
+
+	transferProto, err := t.ToProto(ctx, as)
+	if err != nil {
+		return nil, err
+	}
+	return &v2.TransferEdge{
+		Node:   transferProto,
+		Cursor: t.Cursor().Encode(),
+	}, nil
 }
 
 type TransferCursor struct {

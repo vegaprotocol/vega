@@ -75,7 +75,7 @@ type listWalletsHandler struct {
 func (h *listWalletsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminListWalletsResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminListWalletsResult)
 		if !ok {

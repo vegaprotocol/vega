@@ -72,7 +72,7 @@ func testAnnotatingKeyWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newAnnotateKeyHandler(tt)
@@ -253,7 +253,7 @@ type annotateKeyHandler struct {
 func (h *annotateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminAnnotateKeyResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, requestMetadataForTest())
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminAnnotateKeyResult)
 		if !ok {

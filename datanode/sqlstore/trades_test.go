@@ -50,13 +50,14 @@ func TestStorage_GetTradesByOrderId(t *testing.T) {
 
 func GetTradesByOrderIDAndMarket(t *testing.T, market *string) {
 	t.Helper()
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	tradeStore := sqlstore.NewTrades(connectionSource)
 
-	insertTestData(t, tradeStore)
+	insertTestData(t, ctx, tradeStore)
 
-	trades, err := tradeStore.GetByOrderID(context.Background(), orderAId, market, entities.OffsetPagination{})
+	trades, err := tradeStore.GetByOrderID(ctx, orderAId, market, entities.OffsetPagination{})
 
 	assert.Nil(t, err)
 	assert.Equal(t, 6, len(trades))
@@ -76,12 +77,12 @@ func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
 
 func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
 	t.Helper()
-	ctx := context.Background()
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	tradeStore := sqlstore.NewTrades(connectionSource)
 
-	insertTestData(t, tradeStore)
+	insertTestData(t, ctx, tradeStore)
 
 	// Want last 3 trades (timestamp descending)
 	last := uint64(3)
@@ -108,13 +109,12 @@ func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
 }
 
 func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
-	ctx := context.Background()
-
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	tradeStore := sqlstore.NewTrades(connectionSource)
 
-	insertTestData(t, tradeStore)
+	insertTestData(t, ctx, tradeStore)
 
 	// Expect 6 trades with no filtration/pagination
 	trades, err := tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{})
@@ -166,12 +166,14 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	assert.Equal(t, 0, len(trades))
 }
 
-func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
+func insertTestData(t *testing.T, ctx context.Context, tradeStore *sqlstore.Trades) {
 	t.Helper()
+
+	// Insert some trades
 	bs := sqlstore.NewBlocks(connectionSource)
 	now := time.Now()
-	block1 := addTestBlockForTime(t, bs, now)
-	block2 := addTestBlockForTime(t, bs, now.Add(time.Second))
+	block1 := addTestBlockForTime(t, ctx, bs, now)
+	block2 := addTestBlockForTime(t, ctx, bs, now.Add(time.Second))
 
 	trade1 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
@@ -277,7 +279,7 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 		seqNum++
 	}
 
-	tradeStore.Flush(context.Background())
+	tradeStore.Flush(ctx)
 }
 
 func TestTrades_CursorPagination(t *testing.T) {
@@ -319,20 +321,11 @@ func TestTrades_CursorPagination(t *testing.T) {
 	t.Run("Should return the page of trades between dates for a given market when a first and after cursor is set", testTradesCursorPaginationBetweenDatesByMarketWithCursorForward)
 }
 
-func setupTradesTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Trades, func(t *testing.T)) {
+func setupTradesTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Trades) {
 	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 	ts := sqlstore.NewTrades(connectionSource)
-
-	DeleteEverything()
-
-	config := sqlstore.NewDefaultConfig()
-	config.ConnectionConfig.Port = testDBPort
-
-	return bs, ts, func(t *testing.T) {
-		t.Helper()
-		DeleteEverything()
-	}
+	return bs, ts
 }
 
 func populateTestTrades(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ts *sqlstore.Trades, blockTimes map[string]time.Time) {
@@ -463,7 +456,7 @@ func populateTestTrades(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, 
 
 	for _, td := range trades {
 		trade := td
-		block := addTestBlock(t, bs)
+		block := addTestBlock(t, ctx, bs)
 		trade.SyntheticTime = block.VegaTime
 		trade.VegaTime = block.VegaTime
 		blockTimes[trade.ID.String()] = block.VegaTime
@@ -477,12 +470,10 @@ func populateTestTrades(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, 
 }
 
 func testTradesCursorPaginationByMarketNoCursor(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -504,12 +495,10 @@ func testTradesCursorPaginationByMarketNoCursor(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyNoMarketNoCursor(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -532,12 +521,10 @@ func testTradesCursorPaginationByPartyNoMarketNoCursor(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyAndMarketNoCursor(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -558,12 +545,10 @@ func testTradesCursorPaginationByPartyAndMarketNoCursor(t *testing.T) {
 }
 
 func testTradesCursorPaginationByMarketWithCursorFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
@@ -585,12 +570,10 @@ func testTradesCursorPaginationByMarketWithCursorFirst(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyWithCursorNoMarketFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
@@ -611,12 +594,10 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketFirst(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyAndMarketWithCursorFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
@@ -638,12 +619,10 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorFirst(t *testing.T) {
 }
 
 func testTradesCursorPaginationByMarketWithCursorLast(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
@@ -665,12 +644,10 @@ func testTradesCursorPaginationByMarketWithCursorLast(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyWithCursorNoMarketLast(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
@@ -691,12 +668,10 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketLast(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyAndMarketWithCursorLast(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	last := int32(2)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
@@ -718,12 +693,10 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorLast(t *testing.T) {
 }
 
 func testTradesCursorPaginationByMarketWithCursorForward(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
@@ -746,12 +719,10 @@ func testTradesCursorPaginationByMarketWithCursorForward(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyWithCursorNoMarketForward(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
@@ -773,12 +744,10 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketForward(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyAndMarketWithCursorForward(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
@@ -801,12 +770,10 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorForward(t *testing.T) {
 }
 
 func testTradesCursorPaginationByMarketWithCursorBackward(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
@@ -828,12 +795,10 @@ func testTradesCursorPaginationByMarketWithCursorBackward(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyWithCursorNoMarketBackward(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
@@ -855,12 +820,10 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketBackward(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyAndMarketWithCursorBackward(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
@@ -884,12 +847,10 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorBackward(t *testing.T) 
 
 // Newest First.
 func testTradesCursorPaginationByMarketNoCursorNewestFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -911,12 +872,10 @@ func testTradesCursorPaginationByMarketNoCursorNewestFirst(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyNoMarketNoCursorNewestFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -939,12 +898,10 @@ func testTradesCursorPaginationByPartyNoMarketNoCursorNewestFirst(t *testing.T) 
 }
 
 func testTradesCursorPaginationByPartyAndMarketNoCursorNewestFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -965,12 +922,10 @@ func testTradesCursorPaginationByPartyAndMarketNoCursorNewestFirst(t *testing.T)
 }
 
 func testTradesCursorPaginationByMarketWithCursorFirstNewestFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
@@ -992,12 +947,10 @@ func testTradesCursorPaginationByMarketWithCursorFirstNewestFirst(t *testing.T) 
 }
 
 func testTradesCursorPaginationByPartyWithCursorNoMarketFirstNewestFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
@@ -1018,12 +971,10 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketFirstNewestFirst(t *test
 }
 
 func testTradesCursorPaginationByPartyAndMarketWithCursorFirstNewestFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	first := int32(2)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
@@ -1045,12 +996,10 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorFirstNewestFirst(t *tes
 }
 
 func testTradesCursorPaginationByMarketWithCursorLastNewestFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
@@ -1072,12 +1021,10 @@ func testTradesCursorPaginationByMarketWithCursorLastNewestFirst(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyWithCursorNoMarketLastNewestFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
@@ -1098,12 +1045,10 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketLastNewestFirst(t *testi
 }
 
 func testTradesCursorPaginationByPartyAndMarketWithCursorLastNewestFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
@@ -1125,12 +1070,10 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorLastNewestFirst(t *test
 }
 
 func testTradesCursorPaginationByMarketWithCursorForwardNewestFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
@@ -1153,12 +1096,10 @@ func testTradesCursorPaginationByMarketWithCursorForwardNewestFirst(t *testing.T
 }
 
 func testTradesCursorPaginationByPartyWithCursorNoMarketForwardNewestFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
@@ -1180,12 +1121,10 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketForwardNewestFirst(t *te
 }
 
 func testTradesCursorPaginationByPartyAndMarketWithCursorForwardNewestFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
@@ -1208,12 +1147,10 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorForwardNewestFirst(t *t
 }
 
 func testTradesCursorPaginationByMarketWithCursorBackwardNewestFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
@@ -1235,12 +1172,10 @@ func testTradesCursorPaginationByMarketWithCursorBackwardNewestFirst(t *testing.
 }
 
 func testTradesCursorPaginationByPartyWithCursorNoMarketBackwardNewestFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
@@ -1262,12 +1197,10 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketBackwardNewestFirst(t *t
 }
 
 func testTradesCursorPaginationByPartyAndMarketWithCursorBackwardNewestFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
@@ -1290,12 +1223,10 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorBackwardNewestFirst(t *
 }
 
 func testTradesCursorPaginationBetweenDatesByMarketNoCursor(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -1320,12 +1251,10 @@ func testTradesCursorPaginationBetweenDatesByMarketNoCursor(t *testing.T) {
 }
 
 func testTradesCursorPaginationBetweenDatesByMarketNoCursorNewestFirst(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -1350,12 +1279,10 @@ func testTradesCursorPaginationBetweenDatesByMarketNoCursorNewestFirst(t *testin
 }
 
 func testTradesCursorPaginationBetweenDatesByMarketWithCursorLast(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
@@ -1380,12 +1307,10 @@ func testTradesCursorPaginationBetweenDatesByMarketWithCursorLast(t *testing.T) 
 }
 
 func testTradesCursorPaginationBetweenDatesByMarketWithCursorForward(t *testing.T) {
-	bs, ts, teardown := setupTradesTest(t)
-	t.Logf("DB Port: %d", testDBPort)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	defer teardown(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)

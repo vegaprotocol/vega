@@ -46,7 +46,7 @@ func testDisconnectingWalletWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newDisconnectWalletHandler(tt)
@@ -136,7 +136,7 @@ type disconnectWalletHandler struct {
 func (h *disconnectWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	return h.Handle(ctx, params)
+	return h.Handle(ctx, params, requestMetadataForTest())
 }
 
 func newDisconnectWalletHandler(t *testing.T) *disconnectWalletHandler {

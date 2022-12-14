@@ -149,6 +149,7 @@ type Engine struct {
 func (e *Engine) UpdateSettings(riskModel risk.Model, settings *types.PriceMonitoringSettings) {
 	e.riskModel = riskModel
 	e.fpHorizons, e.bounds = computeBoundsAndHorizons(settings)
+	e.initialised = false
 	e.boundFactorsInitialised = false
 	e.priceRangesCache = make(map[*bound]priceRange, len(e.bounds)) // clear the cache
 	// reset reference cache
@@ -241,7 +242,7 @@ func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 				})
 		}
 	}
-	// don't like this use of floats here, still
+
 	sort.SliceStable(ret,
 		func(i, j int) bool {
 			return ret[i].Trigger.Horizon <= ret[j].Trigger.Horizon &&
@@ -264,7 +265,10 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 		if len(trades) == 0 {
 			return false
 		}
-		e.resetPriceHistory(trades)
+		// only reset history if there isn't any (we need to initialise the engine) or we're still in opening auction as in that case it's based on previous indicative prices which are no longer relevant
+		if e.noHistory() || as.IsOpeningAuction() {
+			e.resetPriceHistory(trades)
+		}
 		e.initialised = true
 	}
 	// market is not in auction, or in batch auction
@@ -451,7 +455,7 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 		return e.priceRangesCache
 	}
 	ranges := make(map[*bound]priceRange, len(e.priceRangesCache))
-	if len(e.pricesPast) == 0 && len(e.pricesNow) == 0 {
+	if e.noHistory() {
 		return ranges
 	}
 	for _, b := range e.bounds {
@@ -566,6 +570,10 @@ func (e *Engine) calculateRefPrice(horizon int64) num.Decimal {
 		ref = p.VolumeWeightedPrice
 	}
 	return ref
+}
+
+func (e *Engine) noHistory() bool {
+	return len(e.pricesPast) == 0 && len(e.pricesNow) == 0
 }
 
 func computeBoundsAndHorizons(settings *types.PriceMonitoringSettings) (map[int64]num.Decimal, []*bound) {

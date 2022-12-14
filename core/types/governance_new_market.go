@@ -111,6 +111,7 @@ type NewMarketConfiguration struct {
 	PriceMonitoringParameters     *PriceMonitoringParameters
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
 	RiskParameters                newRiskParams
+	LpPriceRange                  num.Decimal
 	// New market risk model parameters
 	//
 	// Types that are valid to be assigned to RiskParameters:
@@ -150,6 +151,7 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		Metadata:                      md,
 		PriceMonitoringParameters:     priceMonitoring,
 		LiquidityMonitoringParameters: liquidityMonitoring,
+		LpPriceRange:                  n.LpPriceRange.String(),
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.NewMarketConfiguration_Simple:
@@ -165,6 +167,7 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 		DecimalPlaces:         n.DecimalPlaces,
 		PositionDecimalPlaces: n.PositionDecimalPlaces,
 		Metadata:              make([]string, len(n.Metadata)),
+		LpPriceRange:          n.LpPriceRange.Copy(),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -184,7 +187,7 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 
 func (n NewMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s)",
+		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) lpPriceRange(%s)",
 		n.Metadata,
 		n.DecimalPlaces,
 		n.PositionDecimalPlaces,
@@ -192,6 +195,7 @@ func (n NewMarketConfiguration) String() string {
 		reflectPointerToString(n.PriceMonitoringParameters),
 		reflectPointerToString(n.LiquidityMonitoringParameters),
 		reflectPointerToString(n.RiskParameters),
+		n.LpPriceRange,
 	)
 }
 
@@ -212,6 +216,7 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) *NewMarke
 	if p.LiquidityMonitoringParameters != nil {
 		liquidityMonitoring = LiquidityMonitoringParametersFromProto(p.LiquidityMonitoringParameters)
 	}
+	lppr, _ := num.DecimalFromString(p.LpPriceRange)
 
 	r := &NewMarketConfiguration{
 		Instrument:                    instrument,
@@ -220,6 +225,7 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) *NewMarke
 		Metadata:                      md,
 		PriceMonitoringParameters:     priceMonitoring,
 		LiquidityMonitoringParameters: liquidityMonitoring,
+		LpPriceRange:                  lppr,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

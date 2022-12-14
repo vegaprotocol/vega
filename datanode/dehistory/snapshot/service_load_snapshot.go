@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
+
+	"github.com/jackc/pgtype"
 
 	"code.vegaprotocol.io/vega/datanode/dehistory/fsutil"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
@@ -23,32 +26,58 @@ type Conn interface {
 	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
 }
 
+type LoadResult struct {
+	LoadedFromHeight int64
+	LoadedToHeight   int64
+	RowsLoaded       int64
+}
+
 func (b *Service) LoadAllSnapshotData(ctx context.Context, currentStateSnapshot CurrentState,
 	contiguousHistory []History, sourceDir string,
-) (int64, error) {
+) (LoadResult, error) {
 	if err := killAllConnectionsToDatabase(ctx, b.connConfig); err != nil {
-		return 0, fmt.Errorf("failed to kill all connections to database: %w", err)
+		return LoadResult{}, fmt.Errorf("failed to kill all connections to database: %w", err)
 	}
 
 	vegaDbConn, err := pgxpool.Connect(context.Background(), b.connConfig.GetConnectionString())
 	if err != nil {
-		return 0, fmt.Errorf("unable to connect to vega database:%w", err)
+		return LoadResult{}, fmt.Errorf("unable to connect to vega database: %w", err)
+	}
+
+	datanodeBlockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, b.connConfig)
+	if err != nil {
+		return LoadResult{}, fmt.Errorf("failed to check if datanode has data: %w", err)
+	}
+
+	historyFromHeight := contiguousHistory[0].HeightFrom
+	historyToHeight := contiguousHistory[len(contiguousHistory)-1].HeightTo
+
+	if err = validateSpanOfHistoryToLoad(datanodeBlockSpan, historyFromHeight, historyToHeight); err != nil {
+		return LoadResult{}, err
+	}
+
+	heightToLoadFrom := int64(0)
+	if datanodeBlockSpan.HasData {
+		heightToLoadFrom = datanodeBlockSpan.ToHeight + 1
+	} else {
+		sqlstore.RevertToSchemaVersionZero(b.log, b.connConfig, sqlstore.EmbedMigrations)
+		heightToLoadFrom = historyFromHeight
 	}
 
 	_, err = vegaDbConn.Exec(ctx, "SET TIME ZONE 0")
 	if err != nil {
-		return 0, fmt.Errorf("failed to set timezone to UTC:%w", err)
+		return LoadResult{}, fmt.Errorf("failed to set timezone to UTC: %w", err)
 	}
 
 	b.log.Infof("preparing for bulk load")
 	indexes, createConstrainsSQL, err := b.beforeBulkLoad(ctx, vegaDbConn)
 	if err != nil {
-		return 0, fmt.Errorf("failed to prepare database for bulk load: %w", err)
+		return LoadResult{}, fmt.Errorf("failed to prepare database for bulk load: %w", err)
 	}
 
 	dbVersion, err := getDatabaseVersion(b.connConfig)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get database version:%w", err)
+		return LoadResult{}, fmt.Errorf("failed to get database version: %w", err)
 	}
 
 	b.log.Info("copying data into database", logging.Int64("database version", dbVersion))
@@ -59,30 +88,80 @@ func (b *Service) LoadAllSnapshotData(ctx context.Context, currentStateSnapshot 
 		rowsCopied, dbVersion, err = b.loadSnapshot(ctx, history, sourceDir, dbVersion, vegaDbConn)
 		totalRowsCopied += rowsCopied
 		if err != nil {
-			return 0, fmt.Errorf("failed to load history snapshot %s: %w", history, err)
+			return LoadResult{}, fmt.Errorf("failed to load history snapshot %s: %w", history, err)
 		}
 	}
 
 	// Then current state
+	if err = b.truncateCurrentStateTables(ctx, vegaDbConn); err != nil {
+		return LoadResult{}, fmt.Errorf("failed to truncate current state tables: %w", err)
+	}
+
 	rowsCopied, _, err = b.loadSnapshot(ctx, currentStateSnapshot, sourceDir, dbVersion, vegaDbConn)
 	totalRowsCopied += rowsCopied
 	if err != nil {
-		return 0, fmt.Errorf("failed to load current state snapshot %s: %w", currentStateSnapshot, err)
+		return LoadResult{}, fmt.Errorf("failed to load current state snapshot %s: %w", currentStateSnapshot, err)
 	}
 
 	b.log.Infof("preparing database")
 	err = b.afterBulkLoad(ctx, vegaDbConn, indexes, createConstrainsSQL)
 	if err != nil {
-		return 0, fmt.Errorf("failed to end bulk load: %w", err)
+		return LoadResult{}, fmt.Errorf("failed to end bulk load: %w", err)
 	}
 
 	b.log.Infof("restoring current order state")
 	err = orders.UpdateCurrentOrdersState(ctx, vegaDbConn)
 	if err != nil {
-		return 0, fmt.Errorf("failed to update current order state: %w", err)
+		return LoadResult{}, fmt.Errorf("failed to update current order state: %w", err)
 	}
 
-	return totalRowsCopied, nil
+	return LoadResult{
+		LoadedFromHeight: heightToLoadFrom,
+		LoadedToHeight:   historyToHeight,
+		RowsLoaded:       totalRowsCopied,
+	}, nil
+}
+
+func validateSpanOfHistoryToLoad(existingDatanodeSpan sqlstore.DatanodeBlockSpan, historyFromHeight int64, historyToHeight int64) error {
+	if !existingDatanodeSpan.HasData {
+		return nil
+	}
+
+	if historyFromHeight < existingDatanodeSpan.FromHeight {
+		return fmt.Errorf("loading history from height %d is not possible as it is before the datanodes oldest block height %d, to load this history first empty the datanode",
+			historyFromHeight, existingDatanodeSpan.FromHeight)
+	}
+
+	if historyFromHeight > existingDatanodeSpan.ToHeight+1 {
+		return fmt.Errorf("the from height of the history to load, %d, must fall within or be one greater than the datanodes current span of %d to %d", historyFromHeight,
+			existingDatanodeSpan.FromHeight, existingDatanodeSpan.ToHeight)
+	}
+
+	if historyFromHeight >= existingDatanodeSpan.FromHeight && historyToHeight <= existingDatanodeSpan.ToHeight {
+		return fmt.Errorf("the span of history requested to load, %d to %d, is within the datanodes current span of %d to %d", historyFromHeight,
+			historyToHeight, existingDatanodeSpan.FromHeight, existingDatanodeSpan.ToHeight)
+	}
+
+	return nil
+}
+
+func (b *Service) truncateCurrentStateTables(ctx context.Context, vegaDbConn Conn) error {
+	dbMetaData, err := NewDatabaseMetaData(ctx, b.connConfig)
+	if err != nil {
+		return fmt.Errorf("failed to get database metadata: %w", err)
+	}
+
+	for tableName := range dbMetaData.TableNameToMetaData {
+		if !dbMetaData.TableNameToMetaData[tableName].Hypertable {
+			tableTruncateSQL := fmt.Sprintf("truncate table %s", tableName)
+			_, err = vegaDbConn.Exec(ctx, tableTruncateSQL)
+			if err != nil {
+				return fmt.Errorf("failed to truncate table %s: %w", tableName, err)
+			}
+		}
+	}
+
+	return nil
 }
 
 type compressedFileMapping interface {
@@ -113,10 +192,20 @@ func (b *Service) loadSnapshot(ctx context.Context, snapshotData compressedFileM
 		currentDbVersion = snapshotDbVersion
 	}
 
+	dbMetaData, err := NewDatabaseMetaData(ctx, b.connConfig)
+	if err != nil {
+		return 0, currentDbVersion, fmt.Errorf("failed to get database meta data: %w", err)
+	}
+
+	historyTableToLastPartitionEntry, err := getLastPartitionEntries(ctx, dbMetaData, vegaDbConn)
+	if err != nil {
+		return 0, currentDbVersion, fmt.Errorf("failed to get last partition entries: %w", err)
+	}
+
 	b.log.Infof("copying %s into database", snapshotData.UncompressedDataDir())
 
 	rowsCopied, err := b.copyDataIntoDatabase(ctx, vegaDbConn, decompressedFilesDestination,
-		filepath.Join(b.snapshotsCopyFromPath, snapshotData.UncompressedDataDir()))
+		filepath.Join(b.snapshotsCopyFromPath, snapshotData.UncompressedDataDir()), dbMetaData, historyTableToLastPartitionEntry)
 	if err != nil {
 		return 0, currentDbVersion, fmt.Errorf("failed to copy uncompressed data into the database %s : %w", snapshotData.UncompressedDataDir(), err)
 	}
@@ -124,6 +213,51 @@ func (b *Service) loadSnapshot(ctx context.Context, snapshotData compressedFileM
 	b.log.Infof("copied %d rows from %s into database", rowsCopied, snapshotData.UncompressedDataDir())
 
 	return rowsCopied, currentDbVersion, nil
+}
+
+func getLastPartitionEntries(ctx context.Context, dbMetaData DatabaseMetadata, vegaDbConn *pgxpool.Pool) (map[string]time.Time, error) {
+	historyTableToLastPartitionEntry := map[string]time.Time{}
+	for _, historyTableName := range dbMetaData.GetHistoryTableNames() {
+		metaData := dbMetaData.TableNameToMetaData[historyTableName]
+
+		lastPartitionEntry, err := getLastPartitionEntryForTable(ctx, vegaDbConn, metaData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get last partition entry for table %s: %w", historyTableName, err)
+		}
+
+		historyTableToLastPartitionEntry[historyTableName] = lastPartitionEntry
+	}
+
+	return historyTableToLastPartitionEntry, nil
+}
+
+func getLastPartitionEntryForTable(ctx context.Context, vegaDbConn *pgxpool.Pool, historyTableMetaData TableMetadata) (time.Time, error) {
+	timeSelect := fmt.Sprintf(`SELECT %s FROM %s order by %s desc limit 1`, historyTableMetaData.PartitionColumn, historyTableMetaData.Name,
+		historyTableMetaData.PartitionColumn)
+
+	rows, err := vegaDbConn.Query(ctx, timeSelect)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("failed to query last partition column time for table %s: %w", historyTableMetaData.Name, err)
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		values, err := rows.Values()
+		if err != nil {
+			return time.Time{}, fmt.Errorf("failed to get values for row: %w", err)
+		}
+		if len(values) != 1 {
+			return time.Time{}, fmt.Errorf("expected just 1 value got %d", len(values))
+		}
+		partitionTime, ok := values[0].(time.Time)
+		if !ok {
+			return time.Time{}, fmt.Errorf("expected value to be of type time, got %v", values[0])
+		}
+
+		return partitionTime, nil
+	}
+
+	return time.Time{}, nil
 }
 
 func killAllConnectionsToDatabase(ctx context.Context, connConfig sqlstore.ConnectionConfig) error {
@@ -144,7 +278,7 @@ func killAllConnectionsToDatabase(ctx context.Context, connConfig sqlstore.Conne
 
 	_, err = conn.Exec(ctx, killAllConnectionsQuery)
 	if err != nil {
-		return fmt.Errorf("failed to kill all database connection:%w", err)
+		return fmt.Errorf("failed to kill all database connection: %w", err)
 	}
 
 	return nil
@@ -158,14 +292,14 @@ func (b *Service) beforeBulkLoad(ctx context.Context, vegaDbConn Conn) (indexes 
 		"INNER JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace where pg_namespace.nspname='public'"+
 		"ORDER BY CASE WHEN contype='f' THEN 0 ELSE 1 END DESC,contype DESC,nspname DESC,relname DESC,conname DESC")
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get create constraints sql:%w", err)
+		return nil, nil, fmt.Errorf("failed to get create constraints sql: %w", err)
 	}
 
 	for createContraintRows.Next() {
 		createConstraintSQL := ""
 		err = createContraintRows.Scan(&createConstraintSQL)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to scan create constraint sql:%w", err)
+			return nil, nil, fmt.Errorf("failed to scan create constraint sql: %w", err)
 		}
 
 		createConstraintsSQL = append(createConstraintsSQL, createConstraintSQL)
@@ -178,14 +312,14 @@ func (b *Service) beforeBulkLoad(ctx context.Context, vegaDbConn Conn) (indexes 
 		"INNER JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace where pg_namespace.nspname='public' "+
 		"ORDER BY CASE WHEN contype='f' THEN 0 ELSE 1 END,contype,nspname,relname,conname")
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get drop constraints sql:%w", err)
+		return nil, nil, fmt.Errorf("failed to get drop constraints sql: %w", err)
 	}
 
 	for dropContraintRows.Next() {
 		dropConstraintSQL := ""
 		err = dropContraintRows.Scan(&dropConstraintSQL)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to scan drop constraint sql:%w", err)
+			return nil, nil, fmt.Errorf("failed to scan drop constraint sql: %w", err)
 		}
 
 		_, err = vegaDbConn.Exec(ctx, dropConstraintSQL)
@@ -198,7 +332,7 @@ func (b *Service) beforeBulkLoad(ctx context.Context, vegaDbConn Conn) (indexes 
 	err = pgxscan.Select(ctx, vegaDbConn, &indexes,
 		`select tablename, Indexname, Indexdef from pg_indexes where schemaname ='public' order by tablename`)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get table indexes:%w", err)
+		return nil, nil, fmt.Errorf("failed to get table indexes: %w", err)
 	}
 
 	for _, index := range indexes {
@@ -212,42 +346,84 @@ func (b *Service) beforeBulkLoad(ctx context.Context, vegaDbConn Conn) (indexes 
 }
 
 func (b *Service) copyDataIntoDatabase(ctx context.Context, vegaDbConn *pgxpool.Pool, copyFromDir string,
-	databaseCopyFromDir string,
+	databaseCopyFromDir string, dbMetaData DatabaseMetadata, historyTableToLastPartitionEntry map[string]time.Time,
 ) (int64, error) {
 	files, err := os.ReadDir(copyFromDir)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get files in snapshot dir:%w", err)
+		return 0, fmt.Errorf("failed to get files in snapshot dir: %w", err)
 	}
 
 	if err != nil {
-		return 0, fmt.Errorf("failed to connect to database:%w", err)
+		return 0, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	// Disable all triggers
 	_, err = vegaDbConn.Exec(ctx, "SET session_replication_role = replica;")
 	if err != nil {
-		return 0, fmt.Errorf("failed to disable triggers, setting session replication role to replica failed:%w", err)
+		return 0, fmt.Errorf("failed to disable triggers, setting session replication role to replica failed: %w", err)
 	}
 
 	var rowsCopied int64
 	for _, file := range files {
 		if !file.IsDir() {
-			snapshotFilePath := filepath.Join(databaseCopyFromDir, file.Name())
-			tag, err := vegaDbConn.Exec(ctx, fmt.Sprintf(`copy %s from '%s'`, file.Name(), snapshotFilePath))
-			rowsCopied += tag.RowsAffected()
+			tableName := file.Name()
+			snapshotFilePath := filepath.Join(databaseCopyFromDir, tableName)
+			tableMetaData := dbMetaData.TableNameToMetaData[tableName]
+			if tableMetaData.Hypertable {
+				partitionColumn := tableMetaData.PartitionColumn
 
-			if err != nil {
-				return 0, fmt.Errorf("failed to copy data into table %s: %w", file.Name(), err)
+				var copyQuery string
+				if lastPartitionColumnEntry, ok := historyTableToLastPartitionEntry[tableName]; ok {
+					timestampString, err := encodeTimestampToString(lastPartitionColumnEntry)
+					if err != nil {
+						return 0, fmt.Errorf("failed to encode timestamp into string: %w", err)
+					}
+
+					copyQuery = fmt.Sprintf(`copy %s from '%s' where %s > timestamp '%s'`, tableName, snapshotFilePath,
+						partitionColumn, timestampString)
+				} else {
+					copyQuery = fmt.Sprintf(`copy %s from '%s'`, tableName, snapshotFilePath)
+				}
+
+				tag, err := vegaDbConn.Exec(ctx, copyQuery)
+				rowsCopied += tag.RowsAffected()
+				if err != nil {
+					return 0, fmt.Errorf("failed to copy data into hyper-table %s: %w", tableName, err)
+				}
+			} else {
+				tag, err := vegaDbConn.Exec(ctx, fmt.Sprintf(`copy %s from '%s'`, tableName, snapshotFilePath))
+				rowsCopied += tag.RowsAffected()
+				if err != nil {
+					return 0, fmt.Errorf("failed to copy data into table %s: %w", tableName, err)
+				}
 			}
 		}
 	}
 	// Enable all triggers
 	_, err = vegaDbConn.Exec(ctx, "SET session_replication_role = DEFAULT;")
 	if err != nil {
-		return 0, fmt.Errorf("failed to enable triggers, setting session replication role to DEFAULT failed:%w", err)
+		return 0, fmt.Errorf("failed to enable triggers, setting session replication role to DEFAULT failed: %w", err)
 	}
 
 	return rowsCopied, nil
+}
+
+// encodeTimestampToString is required as pgx does not support parameter interpolation on copy statements.
+func encodeTimestampToString(lastPartitionColumnEntry time.Time) ([]byte, error) {
+	lastPartitionColumnEntry = lastPartitionColumnEntry.UTC()
+
+	ts := pgtype.Timestamp{
+		Time:   lastPartitionColumnEntry,
+		Status: pgtype.Present,
+	}
+
+	var err error
+	var timeText []byte
+	timeText, err = ts.EncodeText(nil, timeText)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode timestamp: %w", err)
+	}
+	return timeText, nil
 }
 
 func (b *Service) afterBulkLoad(ctx context.Context, vegaDbConn Conn, indexes []IndexInfo, createConstraintsSQL []string) error {
@@ -270,19 +446,19 @@ func (b *Service) afterBulkLoad(ctx context.Context, vegaDbConn Conn, indexes []
 	b.log.Infof("recreating all continuous aggregate data")
 	continuousAggNameRows, err := vegaDbConn.Query(ctx, "SELECT view_name FROM timescaledb_information.continuous_aggregates;")
 	if err != nil {
-		return fmt.Errorf("failed to get materialized view names:%w", err)
+		return fmt.Errorf("failed to get materialized view names: %w", err)
 	}
 
 	for continuousAggNameRows.Next() {
 		caggName := ""
 		err = continuousAggNameRows.Scan(&caggName)
 		if err != nil {
-			return fmt.Errorf("failed to scan continuous aggregate Name:%w", err)
+			return fmt.Errorf("failed to scan continuous aggregate Name: %w", err)
 		}
 
 		_, err = vegaDbConn.Exec(ctx, fmt.Sprintf("CALL refresh_continuous_aggregate('%s', NULL, NULL);;", caggName))
 		if err != nil {
-			return fmt.Errorf("failed to refresh continuous aggregate %s:%w", caggName, err)
+			return fmt.Errorf("failed to refresh continuous aggregate %s: %w", caggName, err)
 		}
 	}
 

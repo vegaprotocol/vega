@@ -28,7 +28,6 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"github.com/jackc/pgx/v4"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -74,27 +73,19 @@ func Test_MarketData(t *testing.T) {
 }
 
 func shouldInsertAValidMarketDataRecord(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	bs := sqlstore.NewBlocks(connectionSource)
 	md := sqlstore.NewMarketData(connectionSource)
 
-	DeleteEverything()
-
-	config := NewTestConfig()
-	connStr := config.ConnectionConfig.GetConnectionString()
-
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	conn, err := pgx.Connect(ctx, connStr)
-	require.NoError(t, err)
 	var rowCount int
 
-	err = conn.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
+	err := connectionSource.Connection.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 
 	err = md.Add(&entities.MarketData{
 		Market:            entities.MarketID("deadbeef"),
@@ -106,22 +97,22 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, err = md.Flush(context.Background())
+	_, err = md.Flush(ctx)
 	require.NoError(t, err)
 
-	err = conn.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
+	err = connectionSource.Connection.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 }
 
 func getLatestMarketData(t *testing.T) {
-	store, err := setupMarketData(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	store, err := setupMarketData(t, ctx)
 	if err != nil {
 		t.Fatalf("could not set up test: %s", err)
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 
 	marketID := entities.MarketID("8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 
@@ -167,13 +158,13 @@ func getLatestMarketData(t *testing.T) {
 }
 
 func getAllForMarketBetweenDates(t *testing.T) {
-	store, err := setupMarketData(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	store, err := setupMarketData(t, ctx)
 	if err != nil {
 		t.Fatalf("could not set up test: %s", err)
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 
 	market := "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
 
@@ -417,11 +408,11 @@ func getAllForMarketBetweenDates(t *testing.T) {
 }
 
 func getForMarketFromDate(t *testing.T) {
-	store, err := setupMarketData(t)
-	require.NoError(t, err)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	store, err := setupMarketData(t, ctx)
+	require.NoError(t, err)
 
 	startDate := time.Date(2022, 2, 11, 10, 5, 0, 0, time.UTC)
 
@@ -641,11 +632,11 @@ func getForMarketFromDate(t *testing.T) {
 }
 
 func getForMarketToDate(t *testing.T) {
-	store, err := setupMarketData(t)
-	require.NoError(t, err)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	store, err := setupMarketData(t, ctx)
+	require.NoError(t, err)
 
 	startDate := time.Date(2022, 2, 11, 10, 2, 0, 0, time.UTC)
 
@@ -868,13 +859,11 @@ func getForMarketToDate(t *testing.T) {
 	})
 }
 
-func setupMarketData(t *testing.T) (*sqlstore.MarketData, error) {
+func setupMarketData(t *testing.T, ctx context.Context) (*sqlstore.MarketData, error) {
 	t.Helper()
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	md := sqlstore.NewMarketData(connectionSource)
-
-	DeleteEverything()
 
 	f, err := os.Open(filepath.Join("testdata", "marketdata.csv"))
 	if err != nil {
@@ -889,6 +878,7 @@ func setupMarketData(t *testing.T) (*sqlstore.MarketData, error) {
 	hash, err = hex.DecodeString("deadbeef")
 	assert.NoError(t, err)
 
+	addedBlocksAt := make(map[int64]struct{})
 	seqNum := 0
 	for {
 		line, err := reader.Read()
@@ -902,20 +892,24 @@ func setupMarketData(t *testing.T) (*sqlstore.MarketData, error) {
 		marketData := csvToMarketData(t, line, seqNum)
 		seqNum++
 
-		// Postgres only stores timestamps in microsecond resolution
-		block := entities.Block{
-			VegaTime: marketData.VegaTime,
-			Height:   2,
-			Hash:     hash,
-		}
+		if _, alreadyAdded := addedBlocksAt[marketData.VegaTime.UnixNano()]; !alreadyAdded {
+			// Postgres only stores timestamps in microsecond resolution
+			block := entities.Block{
+				VegaTime: marketData.VegaTime,
+				Height:   2,
+				Hash:     hash,
+			}
 
-		// Add it to the database
-		_ = bs.Add(context.Background(), block)
+			// Add it to the database
+			err = bs.Add(ctx, block)
+			require.NoError(t, err)
+			addedBlocksAt[marketData.VegaTime.UnixNano()] = struct{}{}
+		}
 
 		err = md.Add(marketData)
 		require.NoError(t, err)
 	}
-	_, err = md.Flush(context.Background())
+	_, err = md.Flush(ctx)
 	require.NoError(t, err)
 
 	return md, nil

@@ -28,7 +28,7 @@ type ClientGetPermissions struct {
 // request them using `request_permissions` handler.
 //
 // Using this handler does not require permissions.
-func (h *ClientGetPermissions) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *ClientGetPermissions) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateGetPermissionsParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

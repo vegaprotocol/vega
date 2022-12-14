@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/api"
@@ -45,7 +46,7 @@ func NewCmdDeleteAPIToken(w io.Writer, rf *RootFlags) *cobra.Command {
 		}
 
 		deleteAPIToken := api.NewAdminDeleteAPIToken(store)
-		if _, errorDetails := deleteAPIToken.Handle(context.Background(), params); errorDetails != nil {
+		if _, errorDetails := deleteAPIToken.Handle(context.Background(), params, jsonrpc.RequestMetadata{}); errorDetails != nil {
 			return errors.New(errorDetails.Data)
 		}
 		return nil

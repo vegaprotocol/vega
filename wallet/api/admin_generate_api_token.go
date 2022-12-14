@@ -32,7 +32,7 @@ type AdminGenerateAPIToken struct {
 }
 
 // Handle generates a long-living API token.
-func (h *AdminGenerateAPIToken) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminGenerateAPIToken) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminGenerateAPITokenParams(rawParams, h.time)
 	if err != nil {
 		return nil, invalidParams(err)

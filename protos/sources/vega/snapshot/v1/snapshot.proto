@@ -777,8 +777,14 @@ message ProofOfWork {
   repeated string block_hash = 2;
   repeated TransactionsAtHeight tx_at_height = 4;
   repeated TransactionsAtHeight tid_at_height = 6;
-  repeated BannedParty banned = 7;
+  repeated PowBannedParty banned = 7;
   repeated ProofOfWorkParams pow_params = 8;
+  repeated ProofOfWorkState pow_state = 9;
+}
+
+message PowBannedParty {
+  string party = 1;
+  int64 until = 2;
 }
 
 message ProofOfWorkParams {
@@ -790,6 +796,23 @@ message ProofOfWorkParams {
   uint64 from_block = 6;
   int64 until_block = 7;
 }
+
+message ProofOfWorkState {
+  repeated ProofOfWorkBlockState pow_state = 1;
+}
+
+message ProofOfWorkBlockState {
+  uint64 block_height = 1;
+  repeated ProofOfWorkPartyStateForBlock party_state = 2;
+}
+
+message ProofOfWorkPartyStateForBlock {
+  string party = 1;
+  uint64 seen_count = 2;
+  uint64 observed_difficulty = 3;
+}
+
+
 
 message TransactionsAtHeight {
   uint64 height = 1;

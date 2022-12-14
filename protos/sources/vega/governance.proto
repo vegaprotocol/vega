@@ -58,6 +58,9 @@ message NewMarketConfiguration {
   }
   // Decimal places for order sizes, sets what size the smallest order / position on the market can be
   int64 position_decimal_places = 6;
+  // Percentage move up and down from the mid price which specifies the range of 
+  // price levels over which automated liquidity provision orders will be deployed
+  string lp_price_range = 8;
 }
 
 // New market on Vega
@@ -91,6 +94,9 @@ message UpdateMarketConfiguration {
     // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected
     LogNormalRiskModel log_normal = 101;
   }
+  // Percentage move up and down from the mid price which specifies the range of 
+  // price levels over which automated liquidity provision orders will be deployed
+  string lp_price_range = 5;
 }
 
 // Instrument configuration
@@ -339,6 +345,10 @@ enum ProposalError {
   PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS = 40;
   // The market proposal contains too many price monitoring triggers
   PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE = 41;
+  // The LP price range must be larger than 0
+  PROPOSAL_ERROR_LP_PRICE_RANGE_NONPOSITIVE = 42;
+  // The LP price range must not be larger than 100
+  PROPOSAL_ERROR_LP_PRICE_RANGE_TOO_LARGE = 43;
 }
 
 // Governance vote

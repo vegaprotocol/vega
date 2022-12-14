@@ -17,7 +17,7 @@ type AdminDeleteAPIToken struct {
 }
 
 // Handle generates a long-living API token.
-func (h *AdminDeleteAPIToken) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminDeleteAPIToken) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminDeleteAPITokenParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

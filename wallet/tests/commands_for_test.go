@@ -829,9 +829,9 @@ type GetWalletInfoResponse struct {
 	ID      string `json:"id"`
 }
 
-func WalletInfo(t *testing.T, args []string) (*GetWalletInfoResponse, error) {
+func WalletDescribe(t *testing.T, args []string) (*GetWalletInfoResponse, error) {
 	t.Helper()
-	argsWithCmd := []string{"info"}
+	argsWithCmd := []string{"describe"}
 	argsWithCmd = append(argsWithCmd, args...)
 	output, err := ExecuteCmd(t, argsWithCmd)
 	if err != nil {

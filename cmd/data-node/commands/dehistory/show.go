@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"sort"
 
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+
 	"code.vegaprotocol.io/vega/datanode/dehistory/aggregation"
 
-	"code.vegaprotocol.io/vega/datanode/dehistory/initialise"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
@@ -76,15 +77,15 @@ func (cmd *showCmd) Execute(_ []string) error {
 		fmt.Printf("\nNo decentralized history available.  Use the fetch command to fetch decentralised history\n")
 	}
 
-	datanodeFromHeight, datanodeToHeight, err := initialise.GetDatanodeBlockSpan(context.Background(), cmd.Config.SQLStore.ConnectionConfig)
+	span, err := sqlstore.GetDatanodeBlockSpan(context.Background(), cmd.Config.SQLStore.ConnectionConfig)
 	if err != nil {
 		return fmt.Errorf("failed to get datanode block span:%w", err)
 	}
 
-	if datanodeFromHeight == datanodeToHeight {
-		fmt.Printf("\nDatanode contains no data\n")
+	if span.HasData {
+		fmt.Printf("\nDatanode currently has data from block height %d to %d\n", span.FromHeight, span.ToHeight)
 	} else {
-		fmt.Printf("\nDatanode currently has data from block height %d to %d\n", datanodeFromHeight, datanodeToHeight)
+		fmt.Printf("\nDatanode contains no data\n")
 	}
 
 	return nil
