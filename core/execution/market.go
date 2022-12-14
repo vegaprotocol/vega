@@ -97,6 +97,8 @@ var (
 	ErrCannotStartOpeningAuctionForMarketNotInProposedState = errors.New("cannot start the opening auction for a market not in proposed state")
 	// ErrCannotRepriceDuringAuction.
 	ErrCannotRepriceDuringAuction = errors.New("cannot reprice during auction")
+	// ErrPartyInsufficientAssetBalance is returned when a party does not have sufficient balance of the required asset to perform an action.
+	ErrPartyInsufficientAssetBalance = errors.New("party has insufficient balance in asset")
 
 	one = num.UintOne()
 )
@@ -1263,7 +1265,7 @@ func (m *Market) validateAccounts(ctx context.Context, order *types.Order) error
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 
 		// party should be created before even trying to post order
-		return ErrPartyDoNotExists
+		return ErrPartyInsufficientAssetBalance
 	}
 
 	// ensure party have a general account, and margin account is / can be created
