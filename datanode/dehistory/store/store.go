@@ -173,19 +173,20 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, d
 		}
 	}
 
-	go func() {
-		for range ctx.Done() {
-			if p.ipfsNode != nil {
-				_ = p.ipfsNode.Close()
-			}
-
-			if p.index != nil {
-				_ = p.index.Close()
-			}
-		}
-	}()
-
 	return p, nil
+}
+
+func (p *Store) Stop() {
+	p.log.Info("Cleaning up dehistory store")
+	if p.ipfsNode != nil {
+		p.log.Info("Closing IPFS node")
+		_ = p.ipfsNode.Close()
+	}
+
+	if p.index != nil {
+		p.log.Info("Closing LevelDB")
+		_ = p.index.Close()
+	}
 }
 
 func (p *Store) GetSwarmKey() string {

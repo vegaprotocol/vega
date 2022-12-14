@@ -319,3 +319,8 @@ func (d *Service) extractSnapshotDataFromHistory(ctx context.Context, history ag
 
 	return currentStateSnaphot, historySnapshot, nil
 }
+
+func (d *Service) Stop() {
+	d.log.Info("stopping datanode service")
+	d.store.Stop()
+}
