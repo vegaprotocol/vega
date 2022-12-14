@@ -75,7 +75,7 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 		}
 		defer embeddedPostgres.Stop()
 
-		if err = sqlstore.WipeDatabase(log, sqlConfig.ConnectionConfig, sqlFs); err != nil {
+		if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(log, sqlConfig.ConnectionConfig, sqlFs); err != nil {
 			panic(err)
 		}
 
