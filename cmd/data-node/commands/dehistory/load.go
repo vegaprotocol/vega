@@ -21,11 +21,14 @@ import (
 type loadCmd struct {
 	config.VegaHomeFlag
 	config.Config
+
+	Force            bool `short:"f" long:"force" description:"do not prompt for confirmation"`
+	WipeExistingData bool `short:"w" long:"wipe-existing-data" description:"Erase all data from the node before loading from dehistory"`
 }
 
 func (cmd *loadCmd) Execute(_ []string) error {
 	cfg := logging.NewDefaultConfig()
-	cfg.Custom.Zap.Level = logging.InfoLevel
+	cfg.Custom.Zap.Level = logging.WarnLevel
 	cfg.Environment = "custom"
 	log := logging.NewLoggerFromConfig(
 		cfg,
@@ -54,6 +57,10 @@ func (cmd *loadCmd) Execute(_ []string) error {
 
 	if datanodeLive(cmd.Config) {
 		return fmt.Errorf("datanode must be shutdown before data can be loaded")
+	}
+
+	if hasSchema && cmd.WipeExistingData {
+		sqlstore.WipeDatabaseAndMigrateSchemaToVersion(log, cmd.Config.SQLStore.ConnectionConfig, 0, sqlstore.EmbedMigrations)
 	}
 
 	snapshotService, err := snapshot.NewSnapshotService(log, cmd.Config.DeHistory.Snapshot, cmd.Config.SQLStore.ConnectionConfig,
@@ -102,7 +109,10 @@ func (cmd *loadCmd) Execute(_ []string) error {
 	fmt.Printf("Decentralized history from block height %d to %d is available to load, current datanode block span is %d to %d\n",
 		from, to, span.FromHeight, span.ToHeight)
 
-	yes := flags.YesOrNo("Do you want to load this history?")
+	yes := true
+	if !cmd.Force {
+		yes = flags.YesOrNo("Do you want to load this history?")
+	}
 
 	if yes {
 		fmt.Printf("Loading history from block %d to %d...\n", from, to)
