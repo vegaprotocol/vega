@@ -15,6 +15,7 @@ package execution_test
 import (
 	"context"
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -275,7 +276,7 @@ func TestSubmit(t *testing.T) {
 		tm := getTestMarket(t, now, nil, nil)
 
 		// Create a new party account with very little funding
-		addAccountWithAmount(tm, "party-A", 5000)
+		addAccountWithAmount(tm, "party-A", 1200)
 		addAccountWithAmount(tm, "party-B", 10000000)
 		addAccountWithAmount(tm, "party-C", 10000000)
 		tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -335,7 +336,8 @@ func TestSubmit(t *testing.T) {
 		assert.Equal(t, int64(6), tm.market.GetOrdersOnBookCount())
 
 		// Check that the bond balance has been reduced
-		assert.True(t, tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset).LT(num.NewUint(1000)))
+		bondAccBal := tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset)
+		assert.True(t, bondAccBal.LT(num.NewUint(1000)))
 	})
 
 	// When a liquidity provider has a position that requires more margin after a MTM settlement,
@@ -1005,7 +1007,7 @@ func TestSubmit(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
 		mktCfg := getMarketWithDP(pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
-		}, 0)
+		}, 0, 0.99)
 		mktCfg.Fees = &types.Fees{
 			Factors: &types.FeeFactors{
 				InfrastructureFee: num.DecimalFromFloat(0.0005),
@@ -1136,6 +1138,17 @@ func TestSubmit(t *testing.T) {
 		tm.now = auctionEnd
 		tm.market.OnTick(ctx, auctionEnd)
 
+		md := tm.market.GetMarketData()
+
+		// Buys: []*types.LiquidityOrder{
+		// 	newLiquidityOrder(types.PeggedReferenceBestBid, 201, 99),
+		// 	newLiquidityOrder(types.PeggedReferenceBestBid, 200, 1),
+		// },
+		// Sells: []*types.LiquidityOrder{
+		// 	newLiquidityOrder(types.PeggedReferenceBestAsk, 100, 1),
+		// 	newLiquidityOrder(types.PeggedReferenceBestAsk, 101, 2),
+		// 	newLiquidityOrder(types.PeggedReferenceBestAsk, 102, 98),
+
 		t.Run("verify LP orders sizes", func(t *testing.T) {
 			// First collect all the orders events
 			found := map[string]*proto.Order{}
@@ -1148,20 +1161,31 @@ func TestSubmit(t *testing.T) {
 				}
 			}
 
+			bPrice2 := num.UintZero().Sub(md.BestStaticBidPrice, lpSubmission.Buys[1].Offset)    // 119800
+			bPrice1 := num.UintZero().Sub(md.BestStaticBidPrice, lpSubmission.Buys[0].Offset)    // 119799
+			sPrice1 := num.UintZero().Add(md.BestStaticOfferPrice, lpSubmission.Sells[0].Offset) // 123100
+			sPrice2 := num.UintZero().Add(md.BestStaticOfferPrice, lpSubmission.Sells[1].Offset) // 123101
+			sPrice3 := num.UintZero().Add(md.BestStaticOfferPrice, lpSubmission.Sells[2].Offset) // 123102
+
 			expectedQnts := []struct {
+				side  proto.Side
+				price string
 				size  uint64
 				found bool
 			}{
-				{104, false},
-				{2, false},
-				{2, false},
-				{3, false},
-				{113, false},
+				{proto.Side_SIDE_BUY, bPrice2.String(), 1, false},
+				{proto.Side_SIDE_BUY, bPrice1.String(), 48, false},
+				{proto.Side_SIDE_SELL, sPrice1.String(), 1, false},
+				{proto.Side_SIDE_SELL, sPrice2.String(), 1, false},
+				{proto.Side_SIDE_SELL, sPrice3.String(), 46, false},
 			}
 
 			for _, v := range found {
 				for i, expectedQnt := range expectedQnts {
-					if v.Size == expectedQnt.size && expectedQnt.found == false {
+					if expectedQnt.found == false &&
+						v.Side == expectedQnt.side &&
+						v.Price == expectedQnt.price &&
+						v.Size == expectedQnt.size {
 						expectedQnts[i].found = true
 					}
 				}
@@ -2012,62 +2036,70 @@ func TestSubmit(t *testing.T) {
 			// no update to the liquidity fee
 			assert.Equal(t, found.Status.String(), types.LiquidityProvisionStatusActive.String())
 			// no update to the liquidity fee
-			assert.Equal(t, 15, int(ord.Size))
+			assert.Equal(t, 7, int(ord.Size))
 		})
 
-		// then we'll submit an order which would expire
+		// now we'll submit an order which would expire
 		// we submit the order at the price of the LP shape generated order
-		expiringOrder := getMarketOrder(tm, auctionEnd, types.OrderTypeLimit, types.OrderTimeInForceGTT, "GTT-1", types.SideBuy, lpparty, 19, 890)
+
+		md := tm.market.GetMarketData()
+		price := num.UintOne().Sub(md.BestBidPrice, lpSubmission.Buys[0].Offset)
+		expiringOrder := getMarketOrder(tm, auctionEnd, types.OrderTypeLimit, types.OrderTimeInForceGTT, "GTT-1", types.SideBuy, lpparty, 8, price.Uint64())
 		expiringOrder.ExpiresAt = auctionEnd.Add(11 * time.Second).UnixNano()
 
 		tm.events = nil
-		_, err := tm.market.SubmitOrder(ctx, expiringOrder)
+		conf, err := tm.market.SubmitOrder(ctx, expiringOrder)
 		assert.NoError(t, err)
+		assert.NotNil(t, conf)
+		assert.Zero(t, len(conf.Trades)) // assure order didn't trade on entry
+
 		tm.now = tm.now.Add(block)
 		tm.market.OnTick(ctx, tm.now)
 
 		// now we ensure we have 2 order on the buy side.
-		// one lp of size 6, on normal limit of size 500
+		// one lp, on normal limit of size 19 (submitted above)
 		t.Run("lp order size decrease", func(t *testing.T) {
 			// First collect all the orders events
 			found := map[string]*proto.Order{}
 			for _, e := range tm.events {
 				switch evt := e.(type) {
 				case *events.Order:
-					found[evt.Order().Id] = evt.Order()
+					if evt.Order().Side == proto.Side_SIDE_BUY {
+						found[evt.Order().Id] = evt.Order()
+					}
 				}
 			}
 
-			assert.Len(t, found, 3)
+			assert.Len(t, found, 2)
 
+			// the manually submitted limit order should replace the automatically deployed LP order
 			expected := []struct {
 				size   uint64
-				status types.LiquidityProvisionStatus
+				status types.OrderStatus
+				ref    string
 				found  bool
 			}{
 				{
-					size:   19,
-					status: types.LiquidityProvisionStatusCancelled,
+					size:   expiringOrder.Size,
+					status: types.OrderStatusActive,
+					ref:    expiringOrder.Reference,
 					found:  false,
 				},
 				{
-					size:   15,
-					status: types.LiquidityProvisionStatusActive,
-					found:  false,
-				},
-				{
-					size:   19,
-					status: types.LiquidityProvisionStatusActive,
+					size:   expiringOrder.Size,
+					status: types.OrderStatusCancelled,
+					ref:    lpSubmission.Reference,
 					found:  false,
 				},
 			}
-
-			// no ensure that the orders in the map matches the size we have
 
 			matched := 0
 			for _, v := range found {
 				for i, exp := range expected {
-					if v.Size == exp.size && v.Status.String() == exp.status.String() && !exp.found {
+					if !exp.found &&
+						v.Size == exp.size &&
+						v.Status.String() == exp.status.String() &&
+						v.Reference == exp.ref {
 						expected[i].found = true
 						matched++
 					}
@@ -2090,30 +2122,30 @@ func TestSubmit(t *testing.T) {
 			for _, e := range tm.events {
 				switch evt := e.(type) {
 				case *events.Order:
-					found[evt.Order().Id] = evt.Order()
+					if evt.Order().Side == proto.Side_SIDE_BUY {
+						found[evt.Order().Id] = evt.Order()
+					}
 				}
 			}
 
-			assert.Len(t, found, 3)
+			assert.Len(t, found, 2)
 
 			expected := []struct {
 				size   uint64
 				status types.OrderStatus
+				ref    string
 				found  bool
 			}{
 				{
-					size:   19,
-					status: types.OrderStatusActive,
-					found:  false,
-				},
-				{
-					size:   19,
+					size:   expiringOrder.Size,
 					status: types.OrderStatusExpired,
+					ref:    expiringOrder.Reference,
 					found:  false,
 				},
 				{
-					size:   15,
+					size:   expiringOrder.Size,
 					status: types.OrderStatusActive,
+					ref:    lpSubmission.Reference,
 					found:  false,
 				},
 			}
@@ -2123,7 +2155,10 @@ func TestSubmit(t *testing.T) {
 			matched := 0
 			for _, v := range found {
 				for i, exp := range expected {
-					if v.Size == exp.size && v.Status.String() == exp.status.String() && !exp.found {
+					if !exp.found &&
+						v.Size == exp.size &&
+						v.Status.String() == exp.status.String() &&
+						v.Reference == exp.ref {
 						expected[i].found = true
 						matched++
 					}
@@ -2789,6 +2824,257 @@ func TestAmend(t *testing.T) {
 	})
 }
 
+func TestLpPriceRange(t *testing.T) {
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	pMonitorSettings := &types.PriceMonitoringSettings{
+		Parameters: &types.PriceMonitoringParameters{
+			// none of these parameters matter much since market uses a simple risk model,
+			// we just need a trigger so that price monitoring is active
+			Triggers: []*types.PriceMonitoringTrigger{
+				{
+					Horizon:          10,
+					HorizonDec:       num.DecimalFromInt64(10),
+					Probability:      num.DecimalFromFloat(0.95),
+					AuctionExtension: 5,
+				},
+			},
+		},
+	}
+	mktCfg := getMarketWithDP(pMonitorSettings, &types.AuctionDuration{
+		Duration: int64(10 * time.Minute.Seconds()),
+	}, 3, 0.99)
+
+	lpParty1 := "party-LP-1"
+	lpParty2 := "party-LP-2"
+	trader1 := "party-trader-1"
+	trader2 := "party-trader-2"
+
+	tm := newTestMarket(t, time.Unix(10, 0)).Run(ctx, mktCfg)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
+	tm.market.OnTick(ctx, tm.now)
+	tm.StartOpeningAuction().
+		WithAccountAndAmount(lpParty1, 1000000).
+		WithAccountAndAmount(lpParty2, 1000000).
+		WithAccountAndAmount(trader1, 100000).
+		WithAccountAndAmount(trader2, 100000)
+
+	// submit orders
+	midPrice := uint64(1000)
+	bestBidPrice := midPrice - uint64(250)
+	bestAskPrice := midPrice + uint64(250)
+
+	bestBidOrder := getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "lo-1", types.SideBuy, trader1, 10, bestBidPrice)
+	limitOrders := []*types.Order{
+		bestBidOrder,
+		getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "lo-2", types.SideBuy, trader1, 10, midPrice),
+		getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "lo-3", types.SideSell, trader2, 10, midPrice),
+		getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "lo-4", types.SideSell, trader2, 10, bestAskPrice),
+	}
+	for _, o := range limitOrders {
+		conf, err := tm.market.SubmitOrder(ctx, o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+
+	// submit 1st LP before updating the lpRange
+	lps1 := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(3000),
+		Fee:              num.DecimalFromFloat(0.1),
+		Reference:        "ref-lp-submission-1",
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 20),
+		},
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 30),
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 15),
+		},
+	}
+
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lps1, lpParty1, vgcrypto.RandomHash()),
+	)
+
+	tm.now = tm.now.Add(time.Minute)
+	tm.market.OnTick(ctx, tm.now)
+
+	md := tm.market.GetMarketData()
+	minValidPmPrice := md.PriceMonitoringBounds[0].MinValidPrice.Uint64()
+	maxValidPmPrice := md.PriceMonitoringBounds[0].MaxValidPrice.Uint64()
+
+	// make sure that we're violate one of the price monitoring bounds with our LP range
+	// 		check that mid is within PM bounds
+	require.Greater(t, midPrice, minValidPmPrice)
+	require.Less(t, midPrice, maxValidPmPrice)
+	distFromMin := float64(midPrice - minValidPmPrice)
+	distFromMax := float64(maxValidPmPrice - midPrice)
+	delta := (distFromMax + distFromMin) / 2
+	require.Greater(t, delta, math.Min(distFromMin, distFromMax))
+
+	lpPriceRange1 := delta / float64(midPrice)
+	mktCfg.LPPriceRange = num.DecimalFromFloat(lpPriceRange1)
+
+	tm.market.Update(ctx, &mktCfg, tm.oracleEngine)
+
+	bigOffset := 2 * uint32(math.Max(distFromMin, distFromMax))
+	smallOffset := uint32(3)
+
+	lps2 := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(70000),
+		Fee:              num.DecimalFromFloat(0.05),
+		Reference:        "ref-lp-submission-2",
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestBid, 4, bigOffset),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 3, smallOffset),
+			newLiquidityOrder(types.PeggedReferenceMid, 2, bigOffset),
+			newLiquidityOrder(types.PeggedReferenceMid, 1, smallOffset),
+		},
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 9, bigOffset),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 8, smallOffset),
+			newLiquidityOrder(types.PeggedReferenceMid, 7, bigOffset),
+			newLiquidityOrder(types.PeggedReferenceMid, 6, smallOffset),
+		},
+	}
+
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lps2, lpParty2, vgcrypto.RandomHash()),
+	)
+
+	// leave opening auction
+	tm.now = tm.now.Add(110 * time.Minute)
+	tm.market.OnTick(ctx, tm.now)
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
+
+	// check that LP orders respect bounds
+	// 		lp1
+	verifyOrderPrices(t, tm.getOrdersFromEvents(lps1.Reference, proto.Side_SIDE_BUY), lps1.Buys, true, bestBidPrice, bestAskPrice, lpPriceRange1)
+	verifyOrderPrices(t, tm.getOrdersFromEvents(lps1.Reference, proto.Side_SIDE_SELL), lps1.Sells, false, bestBidPrice, bestAskPrice, lpPriceRange1)
+
+	// 		lp2
+	verifyOrderPrices(t, tm.getOrdersFromEvents(lps2.Reference, proto.Side_SIDE_BUY), lps2.Buys, true, bestBidPrice, bestAskPrice, lpPriceRange1)
+	verifyOrderPrices(t, tm.getOrdersFromEvents(lps2.Reference, proto.Side_SIDE_SELL), lps2.Sells, false, bestBidPrice, bestAskPrice, lpPriceRange1)
+
+	// update LP price range parameter (shrink)
+	lpPriceRange2 := 0.25 * lpPriceRange1
+	mktCfg.LPPriceRange = num.DecimalFromFloat(lpPriceRange2)
+	tm.market.Update(ctx, &mktCfg, tm.oracleEngine)
+	// clear events
+	tm.events = nil
+	// 	cause LP order re-deployment (amendment)
+	bestBidPrice = bestBidPrice - 10
+	amd := &types.OrderAmendment{
+		OrderID:  bestBidOrder.ID,
+		MarketID: bestBidOrder.MarketID,
+		Price:    num.NewUint(bestBidPrice),
+	}
+	tm.market.AmendOrder(ctx, amd, bestBidOrder.Party, vgcrypto.RandomHash())
+	// 	observe that re-deployed orders repect the new bounds
+	// 		lp1
+	verifyOrderPrices(t, tm.getOrdersFromEvents(lps1.Reference, proto.Side_SIDE_BUY), lps1.Buys, true, bestBidPrice, bestAskPrice, lpPriceRange2)
+	verifyOrderPrices(t, tm.getOrdersFromEvents(lps1.Reference, proto.Side_SIDE_SELL), lps1.Sells, false, bestBidPrice, bestAskPrice, lpPriceRange2)
+	// 		lp2
+	verifyOrderPrices(t, tm.getOrdersFromEvents(lps2.Reference, proto.Side_SIDE_BUY), lps2.Buys, true, bestBidPrice, bestAskPrice, lpPriceRange2)
+	verifyOrderPrices(t, tm.getOrdersFromEvents(lps2.Reference, proto.Side_SIDE_SELL), lps2.Sells, false, bestBidPrice, bestAskPrice, lpPriceRange2)
+
+	// update LP price range parameter (expand)
+	lpPriceRange3 := 3 * lpPriceRange1
+	mktCfg.LPPriceRange = num.DecimalFromFloat(lpPriceRange3)
+	tm.market.Update(ctx, &mktCfg, tm.oracleEngine)
+	// clear events
+	tm.events = nil
+	// 	cause LP order re-deployment (new submission)
+	bestBidPrice = bestBidPrice + 23
+	betterBidOrder := getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "lo-5", types.SideBuy, trader1, 10, bestBidPrice)
+	conf, err := tm.market.SubmitOrder(ctx, betterBidOrder)
+	require.NoError(t, err)
+	require.NotNil(t, conf)
+	require.Zero(t, len(conf.Trades))
+	require.Equal(t, proto.Order_STATUS_ACTIVE, conf.Order.Status)
+
+	// 	observe that re-deployed orders repect the new bounds
+	// 		lp1
+	verifyOrderPrices(t, tm.getOrdersFromEvents(lps1.Reference, proto.Side_SIDE_BUY), lps1.Buys, true, bestBidPrice, bestAskPrice, lpPriceRange3)
+	verifyOrderPrices(t, tm.getOrdersFromEvents(lps1.Reference, proto.Side_SIDE_SELL), lps1.Sells, false, bestBidPrice, bestAskPrice, lpPriceRange3)
+	// 		lp2
+	verifyOrderPrices(t, tm.getOrdersFromEvents(lps2.Reference, proto.Side_SIDE_BUY), lps2.Buys, true, bestBidPrice, bestAskPrice, lpPriceRange3)
+	verifyOrderPrices(t, tm.getOrdersFromEvents(lps2.Reference, proto.Side_SIDE_SELL), lps2.Sells, false, bestBidPrice, bestAskPrice, lpPriceRange3)
+}
+
 func newTestIDGenerator() execution.IDGenerator {
 	return idgeneration.New(vgcrypto.RandomHash())
+}
+
+func (tm *testMarket) getOrdersFromEvents(ref string, side proto.Side) []*proto.Order {
+	ret := []*proto.Order{}
+	for _, e := range tm.events {
+		switch evt := e.(type) {
+		case *events.Order:
+			o := evt.Order()
+			if o.Reference == ref &&
+				o.Side == side &&
+				o.Status == proto.Order_STATUS_ACTIVE {
+				ret = append(ret, o)
+			}
+		}
+	}
+	return ret
+}
+
+func verifyOrderPrices(t *testing.T, actual []*proto.Order, orders []*types.LiquidityOrder, buySide bool, bestBid, bestAsk uint64, lpRange float64) {
+	t.Helper()
+	n := len(orders)
+	require.Equal(t, n, len(actual))
+
+	expected := []uint64{}
+	for _, o := range orders {
+		e := calcExpectedPrice(o, buySide, bestBid, bestAsk, lpRange)
+		expected = append(expected, e)
+	}
+
+	matched := 0
+	for _, a := range actual {
+		for _, e := range expected {
+			if a.Price == fmt.Sprint(e) {
+				matched++
+				break
+			}
+		}
+	}
+	require.Equal(t, n, matched)
+}
+
+func calcExpectedPrice(order *types.LiquidityOrder, isBuyOrder bool, bestBid, bestAsk uint64, lpRange float64) uint64 {
+	midPrice := float64(bestBid+bestAsk) / 2
+	minLpPrice := math.Ceil((1 - lpRange) * midPrice)
+	maxLpPrice := math.Floor((1 + lpRange) * midPrice)
+
+	var refPrice uint64
+	switch order.Reference {
+	case types.PeggedReferenceBestBid:
+		refPrice = bestBid
+	case types.PeggedReferenceBestAsk:
+		refPrice = bestAsk
+	case types.PeggedReferenceMid:
+		// that's how it's implemented at the moment so needs be be replicated here too
+		if isBuyOrder {
+			refPrice = uint64(float64(bestBid+bestAsk+1) / 2)
+		} else {
+			refPrice = uint64(midPrice)
+		}
+	}
+
+	offset := order.Offset.Uint64()
+	if isBuyOrder {
+		offset = -offset
+	}
+
+	adjustedPrice := math.Max(1, float64(refPrice+offset))
+
+	return uint64(math.Max(math.Min(adjustedPrice, maxLpPrice), minLpPrice))
 }

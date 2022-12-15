@@ -240,23 +240,15 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	markPrice := num.NewUint(10)
 
 	// Now repriceFn works as expected, so initial orders should get created now
-	fn := func(order *types.PeggedOrder, side types.Side) (*num.Uint, *types.PeggedOrder, error) {
+	fn := func(side types.Side, ref types.PeggedReference, offset *num.Uint) (*num.Uint, error) {
 		retPrice := markPrice.Clone()
 		if side == types.SideSell {
-			return retPrice.Add(retPrice, order.Offset), order, nil
+			return retPrice.Add(retPrice, offset), nil
 		}
-		return retPrice.Sub(retPrice, order.Offset), order, nil
+		return retPrice.Sub(retPrice, offset), nil
 	}
 
-	// Expectations
-	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(100), num.DecimalFromInt64(100))).AnyTimes()
-	any := gomock.Any()
-	tng.riskModel.EXPECT().ProbabilityOfTrading(
-		any, any, any, any, any, any, any,
-	).AnyTimes().Return(num.DecimalFromFloat(0.5))
-
-	newOrders, amendments, err := tng.engine.Update(context.Background(), markPrice.ToDecimal(), markPrice.ToDecimal(), fn, []*types.Order{})
-	require.NoError(t, err)
+	newOrders, amendments := tng.engine.Update(context.Background(), num.UintOne(), num.NewUint(100), fn)
 	require.Len(t, newOrders, 3)
 	require.Len(t, amendments, 0)
 }
@@ -429,32 +421,22 @@ func TestUpdateAndUndeploy(t *testing.T) {
 	)
 
 	markPrice := num.NewUint(10)
-	markPriceD := markPrice.ToDecimal()
 
-	fn := func(order *types.PeggedOrder, side types.Side) (*num.Uint, *types.PeggedOrder, error) {
+	fn := func(side types.Side, ref types.PeggedReference, offset *num.Uint) (*num.Uint, error) {
 		retPrice := markPrice.Clone()
 		if side == types.SideSell {
-			retPrice.Add(retPrice, order.Offset)
-		} else {
-			retPrice.Sub(retPrice, order.Offset)
+			return retPrice.Add(retPrice, offset), nil
 		}
-		return retPrice, order, nil
+		return retPrice.Sub(retPrice, offset), nil
 	}
 
 	// Expectations
-	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(100), num.DecimalFromInt64(100))).AnyTimes()
-	any := gomock.Any()
-	tng.riskModel.EXPECT().ProbabilityOfTrading(
-		any, any, any, any, any, any, any,
-	).AnyTimes().Return(num.DecimalFromFloat(0.5))
-
 	orders := []*types.Order{
 		{ID: "1", Party: party, Price: num.NewUint(10), Size: 1, Side: types.SideBuy, Status: types.OrderStatusActive},
 		{ID: "2", Party: party, Price: num.NewUint(11), Size: 1, Side: types.SideSell, Status: types.OrderStatusActive},
 	}
 	tng.orderbook.EXPECT().GetOrdersPerParty(party).Times(3).Return(orders)
-	creates, err := tng.engine.CreateInitialOrders(ctx, markPriceD, markPriceD, party, fn)
-	require.NoError(t, err)
+	creates := tng.engine.CreateInitialOrders(ctx, num.UintOne(), num.NewUint(100), party, fn)
 	require.Len(t, creates, 3)
 
 	tng.orderbook.EXPECT().GetLiquidityOrders(gomock.Any()).Times(2).Return(creates)
@@ -462,15 +444,13 @@ func TestUpdateAndUndeploy(t *testing.T) {
 	// Manual order satisfies the commitment, LiqOrders should be removed
 	orders[0].Remaining, orders[0].Size = 1000, 1000
 	orders[1].Remaining, orders[1].Size = 1000, 1000
-	newOrders, toCancels, err := tng.engine.Update(ctx, markPriceD, markPriceD, fn, orders)
-	require.NoError(t, err)
+	newOrders, toCancels := tng.engine.Update(ctx, num.UintOne(), num.NewUint(100), fn)
 	require.Len(t, newOrders, 0)
 	require.Len(t, toCancels[0].OrderIDs, 3)
 	require.Equal(t, toCancels[0].Party, party)
 
 	tng.orderbook.EXPECT().GetLiquidityOrders(gomock.Any()).Times(2)
-	newOrders, toCancels, err = tng.engine.Update(ctx, markPriceD, markPriceD, fn, orders)
-	require.NoError(t, err)
+	newOrders, toCancels = tng.engine.Update(ctx, num.UintOne(), num.NewUint(100), fn)
 	require.Len(t, newOrders, 0)
 	require.Len(t, toCancels, 0)
 

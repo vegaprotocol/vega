@@ -63,7 +63,7 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | trader2  | ETH/DEC19 | buy  | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTC | buy-order-3 |
-      | trader20 | ETH/DEC20 | buy  | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTC | buy-order-3 |
+      | trader20 | ETH/DEC20 | buy  | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTC | buy-order-4 |
 
     And the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
@@ -79,8 +79,8 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
 
     When the parties place the following orders with ticks:
       | party       | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | auxiliary1  | ETH/DEC19 | sell | 40     | 50    | 1                | TYPE_LIMIT | TIF_GTC | buy-order-3 |
-      | auxiliary10 | ETH/DEC20 | sell | 40     | 50    | 1                | TYPE_LIMIT | TIF_GTC | buy-order-3 |
+      | auxiliary1  | ETH/DEC19 | sell | 40     | 50    | 1                | TYPE_LIMIT | TIF_GTC | buy-order-5 |
+      | auxiliary10 | ETH/DEC20 | sell | 40     | 50    | 1                | TYPE_LIMIT | TIF_GTC | buy-order-6 |
 
     Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl |
@@ -89,25 +89,26 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 1055  | 223    |
+      | sell | 1005  | 100    |
       | sell | 1000  | 10     |
-      | buy  | 5     | 40005  |
+      | buy  | 5     | 5      |
+      | buy  | 1     | 100000 |
 
     # check margin initial level
     # trader2 and trader20 have open position of 40 now
     And the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
-      | trader2  | ETH/DEC19 | 3402        | 5103   | 6804    | 10206   |
-      | trader20 | ETH/DEC20 | 3402        | 4082   | 5103    | 6804    |
+      | trader2  | ETH/DEC19 | 3562        | 5343   | 7124    | 10686   |
+      | trader20 | ETH/DEC20 | 3562        | 4274   | 5343    | 7124    |
     #| trader2  | ETH/DEC19 | 1602        | 2403   | 3204    | 4806    |
     #| trader20 | ETH/DEC20 | 1602        | 1922   | 2403    | 3204    |
     #maintenance_margin_trader2: 40*(50-5)+40*50*0.801225765=3402
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader2  | USD   | ETH/DEC19 | 6804   | 3196    |
+      | trader2  | USD   | ETH/DEC19 | 7124   | 2876    |
       #| trader2  | USD   | ETH/DEC19 | 3204   | 5796    |
-      | trader20 | USD   | ETH/DEC20 | 5103   | 4897    |
+      | trader20 | USD   | ETH/DEC20 | 5343   | 4657    |
     #| trader20 | USD   | ETH/DEC20 | 2403   | 6597    |
 
     # move mark price from 50 to 20, MTM, hence cash flow beween margin and general account for trader2 and trader20
@@ -125,16 +126,16 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
 
     And the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
-      | trader2  | ETH/DEC19 | 1241        | 1861   | 2482    | 3723    |
+      | trader2  | ETH/DEC19 | 1401        | 2101   | 2802    | 4203    |
       #| trader2  | ETH/DEC19 | 641         | 961    | 1282    | 1923    |
-      | trader20 | ETH/DEC20 | 1241        | 1489   | 1861    | 2482    |
+      | trader20 | ETH/DEC20 | 1401        | 1681   | 2101    | 2802    |
     #| trader20 | ETH/DEC20 | 641         | 769    | 961     | 1282    |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader2  | USD   | ETH/DEC19 | 2482   | 6318    |
+      | trader2  | USD   | ETH/DEC19 | 2802   | 5998    |
       #| trader2  | USD   | ETH/DEC19 | 1282   | 6518    |
-      | trader20 | USD   | ETH/DEC20 | 1861   | 6939    |
+      | trader20 | USD   | ETH/DEC20 | 2101   | 6699    |
     #| trader20 | USD   | ETH/DEC20 | 1203   | 6597    |
 
     # check margin release level

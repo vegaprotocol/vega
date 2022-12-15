@@ -555,11 +555,6 @@ message PartyProposalVoteCount {
   uint64 count = 3;
 }
 
-message BannedParty {
-  string party = 1;
-  uint64 until_epoch = 2;
-}
-
 message PartyTokenBalance {
   string party = 1;
   string balance = 2;
@@ -777,12 +772,12 @@ message ProofOfWork {
   repeated string block_hash = 2;
   repeated TransactionsAtHeight tx_at_height = 4;
   repeated TransactionsAtHeight tid_at_height = 6;
-  repeated PowBannedParty banned = 7;
+  repeated BannedParty banned = 7;
   repeated ProofOfWorkParams pow_params = 8;
   repeated ProofOfWorkState pow_state = 9;
 }
 
-message PowBannedParty {
+message BannedParty {
   string party = 1;
   int64 until = 2;
 }

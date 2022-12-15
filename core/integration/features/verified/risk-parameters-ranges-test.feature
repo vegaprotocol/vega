@@ -286,134 +286,132 @@ Feature: test risk model parameter ranges
 
     Then the order book should have the following volumes for market "ETH/MAR0":
       | side | price | volume |
-      | sell | 1100  | 92     |
-      | sell | 1120  | 0      |
-      | buy  | 900   | 113    |
-      | buy  | 880   | 0      |
+      | sell | 1100  | 1      |
+      | sell | 1120  | 45     |
+      | buy  | 900   | 1      |
+      | buy  | 880   | 57     |
     Then the order book should have the following volumes for market "ETH/MAR11":
       | side | price | volume |
-      | sell | 1100  | 92     |
-      | sell | 1120  | 0      |
-      | buy  | 900   | 113    |
-      | buy  | 880   | 0      |
+      | sell | 1100  | 1      |
+      | sell | 1120  | 45     |
+      | buy  | 900   | 1      |
+      | buy  | 880   | 57     |
     Then the order book should have the following volumes for market "ETH/MAR12":
       | side | price | volume |
-      | sell | 1100  | 92     |
-      | sell | 1120  | 0      |
-      | buy  | 900   | 113    |
-      | buy  | 880   | 0      |
+      | sell | 1100  | 1      |
+      | sell | 1120  | 45     |
+      | buy  | 900   | 1      |
+      | buy  | 880   | 57     |
     Then the order book should have the following volumes for market "ETH/MAR21":
       | side | price | volume |
-      | sell | 1100  | 92     |
-      | sell | 1120  | 0      |
-      | buy  | 900   | 113    |
-      | buy  | 880   | 0      |
+      | sell | 1100  | 1      |
+      | sell | 1120  | 45     |
+      | buy  | 900   | 1      |
+      | buy  | 880   | 57     |
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
-      | sell | 1100  | 92     |
-      | sell | 1120  | 0      |
-      | buy  | 900   | 113    |
-      | buy  | 880   | 0      |
+      | sell | 1100  | 1      |
+      | sell | 1120  | 45     |
+      | buy  | 900   | 1      |
+      | buy  | 880   | 57     |
     Then the order book should have the following volumes for market "ETH/MAR31":
       | side | price | volume |
-      | sell | 1100  | 92     |
-      | sell | 1120  | 0      |
-      | buy  | 900   | 113    |
-      | buy  | 880   | 0      |
+      | sell | 1100  | 1      |
+      | sell | 1120  | 45     |
+      | buy  | 900   | 1      |
+      | buy  | 880   | 57     |
     Then the order book should have the following volumes for market "ETH/MAR32":
       | side | price | volume |
-      | sell | 1100  | 92     |
-      | sell | 1120  | 0      |
-      | buy  | 900   | 113    |
-      | buy  | 880   | 0      |
-
+      | sell | 1100  | 1      |
+      | sell | 1120  | 45     |
+      | buy  | 900   | 1      |
+      | buy  | 880   | 57     |
     Then the order book should have the following volumes for market "ETH/MAR41":
       | side | price | volume |
-      | sell | 1100  | 92     |
-      | sell | 1120  | 0      |
-      | buy  | 900   | 113    |
-      | buy  | 880   | 0      |
-
+      | sell | 1100  | 1      |
+      | sell | 1120  | 45     |
+      | buy  | 900   | 1      |
+      | buy  | 880   | 57     |
     Then the order book should have the following volumes for market "ETH/MAR42":
       | side | price | volume |
-      | sell | 1100  | 92     |
-      | sell | 1120  | 0      |
-      | buy  | 900   | 113    |
-      | buy  | 880   | 0      |
+      | sell | 1100  | 1      |
+      | sell | 1120  | 45     |
+      | buy  | 900   | 1      |
+      | buy  | 880   | 57     |
     Then the order book should have the following volumes for market "ETH/MAR43":
       | side | price | volume |
-      | sell | 1100  | 92     |
-      | sell | 1120  | 0      |
-      | buy  | 900   | 113    |
-      | buy  | 880   | 0      |
+      | sell | 1100  | 1      |
+      | sell | 1120  | 45     |
+      | buy  | 900   | 1      |
+      | buy  | 880   | 57     |
 
     Then the order book should have the following volumes for market "ETH/MAR51":
       | side | price | volume |
-      | sell | 1100  | 92     |
-      | sell | 1120  | 0      |
-      | buy  | 900   | 113    |
-      | buy  | 880   | 0      |
+      | sell | 1100  | 1      |
+      | sell | 1120  | 45     |
+      | buy  | 900   | 1      |
+      | buy  | 880   | 57     |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
-      | party0 | USD   | ETH/MAR0  | 388414 | 49999996119565 | 50000 |
+      | party0 | USD   | ETH/MAR0  | 192073 | 49999997803076 | 50000 |
       | party1 | USD   | ETH/MAR0  | 11770  | 49999999895669 | 0     |
       | party2 | USD   | ETH/MAR0  | 47374  | 49999999590279 | 0     |
     # intial margin level for LP = 92*1000*1.2*3.5569036=392682
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
-      | party0 | USD   | ETH/MAR11 | 537885 | 49999996119565 | 50000 |
+      | party0 | USD   | ETH/MAR11 | 265987 | 49999997803076 | 50000 |
       | party1 | USD   | ETH/MAR11 | 12379  | 49999999895669 | 0     |
       | party2 | USD   | ETH/MAR11 | 65605  | 49999999590279 | 0     |
     # intial margin level for LP = 92*1000*1.2*4.9256840 =543796
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
-      | party0 | USD   | ETH/MAR12 | 73374  | 49999996119565 | 50000 |
+      | party0 | USD   | ETH/MAR12 | 36284  | 49999997803076 | 50000 |
       | party1 | USD   | ETH/MAR12 | 7134   | 49999999895669 | 0     |
       | party2 | USD   | ETH/MAR12 | 10070  | 49999999590279 | 0     |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
-      | party0 | USD   | ETH/MAR21 | 67     | 49999996119565 | 50000 |
+      | party0 | USD   | ETH/MAR21 | 34     | 49999997803076 | 50000 |
       | party1 | USD   | ETH/MAR21 | 1207   | 49999999895669 | 0     |
       | party2 | USD   | ETH/MAR21 | 1207   | 49999999590279 | 0     |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
-      | party0 | USD   | ETH/MAR22 | 388414 | 49999996119565 | 50000 |
+      | party0 | USD   | ETH/MAR22 | 192073 | 49999997803076 | 50000 |
       | party1 | USD   | ETH/MAR22 | 11770  | 49999999895669 | 0     |
       | party2 | USD   | ETH/MAR22 | 47374  | 49999999590279 | 0     |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
-      | party0 | USD   | ETH/MAR31 | 388414 | 49999996119565 | 50000 |
-      | party1 | USD   | ETH/MAR31 | 11770  | 49999999895669 | 0     |
-      | party2 | USD   | ETH/MAR31 | 47374  | 49999999590279 | 0     |
+      | party0 | USD   | ETH/MAR22 | 192073 | 49999997803076 | 50000 |
+      | party1 | USD   | ETH/MAR22 | 11770  | 49999999895669 | 0     |
+      | party2 | USD   | ETH/MAR22 | 47374  | 49999999590279 | 0     |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
-      | party0 | USD   | ETH/MAR32 | 388414 | 49999996119565 | 50000 |
-      | party1 | USD   | ETH/MAR32 | 11770  | 49999999895669 | 0     |
-      | party2 | USD   | ETH/MAR32 | 47374  | 49999999590279 | 0     |
+      | party0 | USD   | ETH/MAR22 | 192073 | 49999997803076 | 50000 |
+      | party1 | USD   | ETH/MAR22 | 11770  | 49999999895669 | 0     |
+      | party2 | USD   | ETH/MAR22 | 47374  | 49999999590279 | 0     |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
-      | party0 | USD   | ETH/MAR41 | 388414 | 49999996119565 | 50000 |
-      | party1 | USD   | ETH/MAR41 | 11770  | 49999999895669 | 0     |
-      | party2 | USD   | ETH/MAR41 | 47374  | 49999999590279 | 0     |
+      | party0 | USD   | ETH/MAR22 | 192073 | 49999997803076 | 50000 |
+      | party1 | USD   | ETH/MAR22 | 11770  | 49999999895669 | 0     |
+      | party2 | USD   | ETH/MAR22 | 47374  | 49999999590279 | 0     |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
-      | party0 | USD   | ETH/MAR42 | 388414 | 49999996119565 | 50000 |
-      | party1 | USD   | ETH/MAR42 | 11770  | 49999999895669 | 0     |
-      | party2 | USD   | ETH/MAR42 | 47374  | 49999999590279 | 0     |
+      | party0 | USD   | ETH/MAR22 | 192073 | 49999997803076 | 50000 |
+      | party1 | USD   | ETH/MAR22 | 11770  | 49999999895669 | 0     |
+      | party2 | USD   | ETH/MAR22 | 47374  | 49999999590279 | 0     |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
-      | party0 | USD   | ETH/MAR43 | 388414 | 49999996119565 | 50000 |
-      | party1 | USD   | ETH/MAR43 | 11770  | 49999999895669 | 0     |
-      | party2 | USD   | ETH/MAR43 | 47374  | 49999999590279 | 0     |
+      | party0 | USD   | ETH/MAR22 | 192073 | 49999997803076 | 50000 |
+      | party1 | USD   | ETH/MAR22 | 11770  | 49999999895669 | 0     |
+      | party2 | USD   | ETH/MAR22 | 47374  | 49999999590279 | 0     |
 
   @Now
   Scenario: 002, test market ETH/MAR23 (tau=1)
@@ -449,13 +447,13 @@ Feature: test risk model parameter ranges
 
     Then the order book should have the following volumes for market "ETH/MAR23":
       | side | price | volume |
-      | sell | 1100  | 9092   |
-      | sell | 1120  | 0      |
-      | buy  | 900   | 11113  |
-      | buy  | 880   | 0      |
+      | sell | 1100  | 1      |
+      | sell | 1120  | 4465   |
+      | buy  | 900   | 1      |
+      | buy  | 880   | 5682   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin    | general        | bond    |
-      | party0 | USD   | ETH/MAR23 | 940565152 | 49999054434848 | 5000000 |
+      | party0 | USD   | ETH/MAR23 | 461953956 | 49999533046044 | 5000000 |
       | party1 | USD   | ETH/MAR23 | 14342     | 49999999985658 | 0       |
       | party2 | USD   | ETH/MAR23 | 1148316   | 49999998851684 | 0       |
 
@@ -495,13 +493,13 @@ Feature: test risk model parameter ranges
 
     Then the order book should have the following volumes for market "ETH/MAR52":
       | side | price | volume |
-      | sell | 24    | 114559 |
+      | sell | 20    | 30000  |
       | sell | 11    | 10     |
       | buy  | 9     | 10     |
-      | buy  | 4     | 311808 |
+      | buy  | 1     | 600000 |
     And the parties should have the following account balances:
       | party  | asset | market id | margin      | general        | bond   |
-      | party0 | USD   | ETH/MAR52 | 76691231326 | 49923308168674 | 600000 |
+      | party0 | USD   | ETH/MAR52 | 20083423736 | 49979915976264 | 600000 |
       | party1 | USD   | ETH/MAR52 | 133         | 49999999999867 | 0      |
       | party2 | USD   | ETH/MAR52 | 7363922     | 49999992636078 | 0      |
 

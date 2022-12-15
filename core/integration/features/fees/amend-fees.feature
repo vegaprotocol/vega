@@ -51,8 +51,8 @@ Feature: Fees when amend trades
       | side | price | volume |
       | sell | 1080  | 1      |
       | buy  | 920   | 1      |
-      | buy  | 910   | 210    |
-      | sell | 1090  | 184    |
+      | buy  | 910   | 10     |
+      | sell | 1090  | 10     |
 
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -117,8 +117,8 @@ Feature: Fees when amend trades
       | sell | 1080  | 1      |
       | buy  | 1001  | 2      |
       | buy  | 920   | 1      |
-      | buy  | 991   | 201    |
-      | sell | 1012  | 198    |
+      | buy  | 991   | 10     |
+      | sell | 1012  | 10     |
       | sell | 1002  | 1      |
       | sell | 1003  | 4      |
 
@@ -133,8 +133,8 @@ Feature: Fees when amend trades
       | sell | 1080  | 1      |
       | buy  | 1001  | 2      |
       | buy  | 920   | 1      |
-      | buy  | 991   | 201    |
-      | sell | 1012  | 198    |
+      | buy  | 991   | 10    |
+      | sell | 1012  | 10     |
       | sell | 1002  | 5      |
 
     When the parties amend the following orders:
@@ -227,10 +227,10 @@ Feature: Fees when amend trades
     # TODO: Check why margin doesn't go up after the trade WHEN the liquidity provision order gets included (seems to work fine without LP orders) (expecting first commented out values) but getting second value in other cases
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 702    | 9309    |
+      | trader3a | ETH   | ETH/DEC21 | 798    | 9213    |
       #| trader3a | ETH   | ETH/DEC21 | 699    | 9312    |
       | trader3b | ETH   | ETH/DEC21 | 339    | 9667    |
-      | trader4  | ETH   | ETH/DEC21 | 690    | 533     |
+      | trader4  | ETH   | ETH/DEC21 | 693    | 530     |
 
    # Placing second set of orders
     When the parties place the following orders with ticks:
@@ -240,8 +240,8 @@ Feature: Fees when amend trades
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1183   | 8828    |
-      | trader4  | ETH   | ETH/DEC21 | 1171   | 52      |
+      | trader3a | ETH   | ETH/DEC21 | 1279   | 8732    |
+      | trader4  | ETH   | ETH/DEC21 | 1174   | 49      |
 
       # reducing size
     And the parties amend the following orders:
@@ -268,5 +268,5 @@ Feature: Fees when amend trades
 
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1416   | 8601    |
+      | trader3a | ETH   | ETH/DEC21 | 1704   | 8313    |
       | trader4  | ETH   | ETH/DEC21 | 1015   | 0       |

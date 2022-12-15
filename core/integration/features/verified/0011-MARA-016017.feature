@@ -59,10 +59,12 @@ Feature: check pegged GTT and GTC in auction
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
+      | sell | 130   | 24     |
       | sell | 122   | 10     |
-      | sell | 120   | 70     |
-      | buy  | 80    | 95     |
+      | sell | 120   | 20     |
+      | buy  | 80    | 20     |
       | buy  | 76    | 5      |
+      | buy  | 70    | 43     |
 
     # now consume all the volume on the sell side
     When the parties place the following orders:
@@ -119,10 +121,12 @@ Feature: check pegged GTT and GTC in auction
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
+      | sell | 130   | 24     |
       | sell | 122   | 10     |
-      | sell | 120   | 70     |
-      | buy  | 80    | 95     |
+      | sell | 120   | 20     |
+      | buy  | 80    | 20     |
       | buy  | 76    | 5      |
+      | buy  | 70    | 43     |
 
     # now consume all the volume on the sell side
     When the parties place the following orders:
