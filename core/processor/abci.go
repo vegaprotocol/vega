@@ -760,45 +760,7 @@ func (app *App) OnBeginBlock(
 	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 
 	if app.protocolUpgradeService.CoreReadyForUpgrade() {
-		chainStop := make(chan struct{}, 1)
-		go func() {
-			app.stopBlockchain()
-			chainStop <- struct{}{}
-		}()
-
-		app.broker.Send(
-			events.NewProtocolUpgradeStarted(ctx, eventspb.ProtocolUpgradeStarted{
-				LastBlockHeight: app.stats.Height(),
-			}),
-		)
-
-		// TODO implement more robust separate function
-		if app.broker.StreamingEnabled() {
-			// wait here for data node send back the confirmation
-			sctx, cancel := context.WithCancel(ctx)
-			eventsCh, err := app.broker.SocketClient().Receive(sctx)
-
-		Loop:
-			for {
-				select {
-				case e := <-eventsCh:
-					if e.Type() == events.UpgradeDataNodeEvent {
-						cancel()
-						break Loop
-					}
-				case err := <-err:
-					fmt.Println("-------- error: ", err)
-				}
-			}
-		}
-
-		app.protocolUpgradeService.SetReadyForUpgrade()
-
-		// wait until killed
-		for {
-			time.Sleep(1 * time.Second)
-			app.log.Info("application is ready for shutdown")
-		}
+		app.startProtocolUpgrade(ctx)
 	}
 
 	app.broker.Send(
@@ -839,6 +801,55 @@ func (app *App) OnBeginBlock(
 	app.top.BeginBlock(ctx, req)
 
 	return ctx, resp
+}
+
+func (app *App) startProtocolUpgrade(ctx context.Context) {
+	// Stop blockchain server so it doesn't acceptc transactions and it doesn't times out.
+	go func() { app.stopBlockchain() }()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	var eventsCh <-chan events.Event
+	var errsCh <-chan error
+	if app.broker.StreamingEnabled() {
+		// wait here for data node send back the confirmation
+		eventsCh, errsCh = app.broker.SocketClient().Receive(ctx)
+	}
+
+	app.broker.Send(
+		events.NewProtocolUpgradeStarted(ctx, eventspb.ProtocolUpgradeStarted{
+			LastBlockHeight: app.stats.Height(),
+		}),
+	)
+
+	if eventsCh != nil {
+		app.log.Info("waiting for data node to get ready for upgrade")
+
+	Loop:
+		for {
+			select {
+			case e := <-eventsCh:
+				if e.Type() != events.ProtocolUpgradeDataNodeReadyEvent {
+					continue
+				}
+				if e.StreamMessage().GetProtocolUpgradeDataNodeReady().GetLastBlockHeight() == app.stats.Height() {
+					cancel()
+					break Loop
+				}
+			case err := <-errsCh:
+				app.log.Fatal("failed to wait for data node to get ready for upgrade", logging.Error(err))
+			}
+		}
+	}
+
+	app.protocolUpgradeService.SetReadyForUpgrade()
+
+	// wait until killed
+	for {
+		time.Sleep(1 * time.Second)
+		app.log.Info("application is ready for shutdown")
+	}
 }
 
 func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {

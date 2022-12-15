@@ -23,7 +23,7 @@ type ProtocolUpgradeStarted struct {
 	pps eventspb.ProtocolUpgradeStarted
 }
 
-// NewTime returns a new time Update event.
+// NewProtocolUpgradeStarted returns a new time Update event.
 func NewProtocolUpgradeStarted(ctx context.Context, bb eventspb.ProtocolUpgradeStarted) *ProtocolUpgradeStarted {
 	return &ProtocolUpgradeStarted{
 		Base: newBase(ctx, ProtocolUpgradeStartedEvent),
@@ -31,7 +31,6 @@ func NewProtocolUpgradeStarted(ctx context.Context, bb eventspb.ProtocolUpgradeS
 	}
 }
 
-// Time returns the new blocktime.
 func (b ProtocolUpgradeStarted) ProtocolUpgradeStarted() eventspb.ProtocolUpgradeStarted {
 	return b.pps
 }

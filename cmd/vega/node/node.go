@@ -191,7 +191,11 @@ func (n *Command) stopBlockchain() error {
 }
 
 func (n *Command) Stop() error {
-	if n.blockchainServer != nil {
+	upStatus := n.protocol.GetProtocolUpgradeService().GetUpgradeStatus()
+
+	// Blockchain server has been already stopped by the app during the upgrade.
+	// Calling stop again would block forever.
+	if n.blockchainServer != nil && !upStatus.ReadyToUpgrade {
 		n.blockchainServer.Stop()
 	}
 	if n.protocol != nil {
@@ -224,6 +228,11 @@ func (n *Command) Stop() error {
 
 	n.Log.Sync()
 	n.cancel()
+
+	// Blockchain server need to be killed as it is stuck in BeginBlock function.
+	if upStatus.ReadyToUpgrade {
+		return kill()
+	}
 
 	return err
 }
@@ -427,4 +436,13 @@ func (n *Command) startBlockchainClients(_ []string) error {
 	}
 
 	return nil
+}
+
+// kill the running process by signaling itself with SIGKILL.
+func kill() error {
+	p, err := os.FindProcess(os.Getpid())
+	if err != nil {
+		return err
+	}
+	return p.Signal(syscall.SIGKILL)
 }

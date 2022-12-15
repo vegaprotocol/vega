@@ -43,7 +43,7 @@ func (t *ProtocolUpgradeHandler) OnProtocolUpgradeEvent(ctx context.Context, cha
 
 	t.protocolUpgradeService.SetProtocolUpgradeStarted()
 
-	if err := t.eventSender.Send(events.NewUpgradeDataNode(ctx)); err != nil {
+	if err := t.eventSender.Send(events.NewProtocolUpgradeDataNodeReady(ctx, lastCommittedBlockHeight)); err != nil {
 		t.log.Error("Failed to send data node upgrade event", logging.Error(err))
 		return err
 	}

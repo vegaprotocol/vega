@@ -21,8 +21,8 @@ import (
 
 func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 	switch be.Type {
-	case eventspb.BusEventType_BUS_EVENT_TYPE_UPGRADE_DATA_NODE:
-		return events.UpgradeDataNodeEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_DATA_NODE_READY:
+		return events.ProtocolUpgradeDataNodeReadyEventFromStream(ctx, be)
 	}
 
 	return nil
