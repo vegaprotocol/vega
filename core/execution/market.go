@@ -771,7 +771,7 @@ func (m *Market) blockEnd(ctx context.Context) {
 				Price:         mp.Clone(),
 				OriginalPrice: mcmp,
 			}
-			m.confirmMTM(ctx, dummy, nil)
+			m.confirmMTM(ctx, dummy, nil, false)
 		}
 
 		closedWithoutLP := []events.MarketPosition{}
@@ -1119,7 +1119,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		ID:            m.idgen.NextID(),
 		Price:         cmp,
 		OriginalPrice: mcmp,
-	}, updatedOrders)
+	}, updatedOrders, false)
 	// set next MTM
 	m.nextMTM = m.timeService.GetTimeNow().Add(m.mtmDelta)
 
@@ -1732,7 +1732,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 }
 
 func (m *Market) confirmMTM(
-	ctx context.Context, order *types.Order, orderUpdates []*types.Order,
+	ctx context.Context, order *types.Order, orderUpdates []*types.Order, skipMargin bool,
 ) {
 	// now let's get the transfers for MTM settlement
 	markPrice := m.getLastTradedPrice()
@@ -1781,10 +1781,12 @@ func (m *Market) confirmMTM(
 	// force check
 	m.checkForReferenceMoves(
 		ctx, orderUpdates, false)
-	// release excess margin for all positions
-	pos := m.position.Positions()
-	// we can safely ignore the error here
-	_ = m.recheckMargin(ctx, pos)
+	if !skipMargin {
+		// release excess margin for all positions
+		pos := m.position.Positions()
+		// we can safely ignore the error here
+		_ = m.recheckMargin(ctx, pos)
+	}
 	// release any excess if needed
 	// m.releaseExcessMargin(ctx, pos...)
 }
@@ -2065,7 +2067,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		Price:         mp,
 		OriginalPrice: mcmp,
 	}
-	m.confirmMTM(ctx, dummy, nil)
+	m.confirmMTM(ctx, dummy, nil, false)
 
 	// Only check margins if MTM was successful.
 	return orderUpdates, m.recheckMargin(ctx, evt)
@@ -3242,7 +3244,7 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 				Price:         mp,
 				OriginalPrice: mcmp,
 			}
-			m.confirmMTM(ctx, dummy, nil)
+			m.confirmMTM(ctx, dummy, nil, true)
 		}
 		m.mkt.State = types.MarketStateTradingTerminated
 		m.mkt.TradingMode = types.MarketTradingModeNoTrading
