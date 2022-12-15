@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/commands"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
@@ -42,6 +41,7 @@ type ClientSignTransactionResult struct {
 type ClientSignTransaction struct {
 	interactor   Interactor
 	nodeSelector node.Selector
+	pow          ProofOfWork
 	sessions     *session.Sessions
 	time         TimeProvider
 }
@@ -137,16 +137,12 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 
 	// Generate the proof of work for the transaction.
 	h.interactor.Log(ctx, metadata.TraceID, InfoLog, "Computing proof-of-work...")
-	txID := vgcrypto.RandomHash()
-	powNonce, _, err := vgcrypto.PoW(lastBlockData.BlockHash, txID, uint(lastBlockData.ProofOfWorkDifficulty), lastBlockData.ProofOfWorkHashFunction)
+	tx.Pow, err = h.pow.Generate(params.PublicKey, &lastBlockData)
 	if err != nil {
 		h.interactor.NotifyError(ctx, metadata.TraceID, InternalError, fmt.Errorf("could not compute the proof-of-work: %w", err))
 		return nil, internalError(ErrCouldNotSignTransaction)
 	}
-	tx.Pow = &commandspb.ProofOfWork{
-		Tid:   txID,
-		Nonce: powNonce,
-	}
+
 	h.interactor.Log(ctx, metadata.TraceID, SuccessLog, "The proof-of-work has been computed.")
 
 	h.interactor.NotifySuccessfulRequest(ctx, metadata.TraceID, TransactionSuccessfullySigned)
@@ -156,10 +152,11 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	}, nil
 }
 
-func NewSignTransaction(interactor Interactor, nodeSelector node.Selector, sessions *session.Sessions, tp ...TimeProvider) *ClientSignTransaction {
+func NewSignTransaction(interactor Interactor, nodeSelector node.Selector, pow ProofOfWork, sessions *session.Sessions, tp ...TimeProvider) *ClientSignTransaction {
 	return &ClientSignTransaction{
 		interactor:   interactor,
 		nodeSelector: nodeSelector,
+		pow:          pow,
 		sessions:     sessions,
 		time:         extractTimeProvider(tp...),
 	}
