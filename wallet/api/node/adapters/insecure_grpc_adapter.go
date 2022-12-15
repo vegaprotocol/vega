@@ -46,11 +46,14 @@ func (c *InsecureGRPCAdapter) LastBlock(ctx context.Context) (nodetypes.LastBloc
 	}
 
 	return nodetypes.LastBlock{
-		ChainID:                 lastBlock.ChainId,
-		BlockHeight:             lastBlock.Height,
-		BlockHash:               lastBlock.Hash,
-		ProofOfWorkHashFunction: lastBlock.SpamPowHashFunction,
-		ProofOfWorkDifficulty:   lastBlock.SpamPowDifficulty,
+		ChainID:                         lastBlock.ChainId,
+		BlockHeight:                     lastBlock.Height,
+		BlockHash:                       lastBlock.Hash,
+		ProofOfWorkHashFunction:         lastBlock.SpamPowHashFunction,
+		ProofOfWorkDifficulty:           lastBlock.SpamPowDifficulty,
+		ProofOfWorkPastBlocks:           lastBlock.SpamPowNumberOfPastBlocks,
+		ProofOfWorkIncreasingDifficulty: lastBlock.SpamPowIncreasingDifficulty,
+		ProofOfWorkTxPerBlock:           lastBlock.SpamPowNumberOfTxPerBlock,
 	}, nil
 }
 

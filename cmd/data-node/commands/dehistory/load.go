@@ -33,15 +33,7 @@ func (cmd *loadCmd) Execute(_ []string) error {
 	defer log.AtExit()
 
 	vegaPaths := paths.New(cmd.VegaHome)
-	configFilePath, err := vegaPaths.CreateConfigPathFor(paths.DataNodeDefaultConfigFile)
-	if err != nil {
-		return fmt.Errorf("couldn't get path for %s: %w", paths.DataNodeDefaultConfigFile, err)
-	}
-
-	err = paths.ReadStructuredFile(configFilePath, &cmd.Config)
-	if err != nil {
-		return fmt.Errorf("failed to read configuration:%w", err)
-	}
+	fixConfig(&cmd.Config, vegaPaths)
 
 	// Wiping data from dehistory before loading then loading the data should never happen in any circumstance
 	cmd.Config.DeHistory.WipeOnStartup = false
