@@ -397,7 +397,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	evtSource := newTestEventSourceWithProtocolUpdateMessage()
 
 	pus := service.NewProtocolUpgrade(nil, log)
-	puh := dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context, chainID string,
+	puh := dehistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
 		toHeight int64,
 	) error {
 		return nil
@@ -446,7 +446,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	evtSource = newTestEventSourceWithProtocolUpdateMessage()
 
 	pus = service.NewProtocolUpgrade(nil, log)
-	puh = dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context, chainID string,
+	puh = dehistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
 		toHeight int64,
 	) error {
 		return nil
@@ -555,7 +555,7 @@ func TestRestoringNodeWithExistingDataFailsWhenLoadingWouldResultInNonContiguous
 	evtSource := newTestEventSourceWithProtocolUpdateMessage()
 
 	pus := service.NewProtocolUpgrade(nil, log)
-	puh := dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context, chainID string,
+	puh := dehistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
 		toHeight int64,
 	) error {
 		return nil
