@@ -248,7 +248,7 @@ func (l *NodeCommand) preRun([]string) (err error) {
 		}
 	}
 
-	eventSource = broker.NewFanOutEventSource(eventReceiverSender, l.conf.SQLStore.FanOutBufferSize, 2)
+	eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SQLStore.FanOutBufferSize, 2)
 
 	var onBlockCommittedHandler func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool)
 	var protocolUpgradeHandler broker.ProtocolUpgradeHandler
