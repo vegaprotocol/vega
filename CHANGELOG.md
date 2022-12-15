@@ -19,6 +19,7 @@
 - [7104](https://github.com/vegaprotocol/vega/issues/7104) - Provide a better error message when party has insufficient balance of an asset
 - [7143](https://github.com/vegaprotocol/vega/issues/7143) - Update `grpc-rest-bindings` for Oracle `API`
 - [7027](https://github.com/vegaprotocol/vega/issues/7027) - `Dehistory` store does not clean up resources after a graceful shutdown
+- [7157](https://github.com/vegaprotocol/vega/issues/7157) - Core waits for data node and shuts down gracefully during protocol upgrade
 
 ### 🐛 Fixes
 - [7040](https://github.com/vegaprotocol/vega/issues/7040) - Block explorer use different codes than 500 on error
