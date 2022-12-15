@@ -166,7 +166,7 @@ func (d *Service) GetSwarmKey() string {
 	return d.store.GetSwarmKey()
 }
 
-func (d *Service) LoadAllAvailableHistoryIntoDatanode(ctx context.Context, sqlFs fs.FS) (snapshot.LoadResult, error) {
+func (d *Service) LoadAllAvailableHistoryIntoDatanode(ctx context.Context) (snapshot.LoadResult, error) {
 	defer func() { _ = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromDir) }()
 
 	err := os.MkdirAll(d.snapshotsCopyFromDir, fs.ModePerm)
@@ -318,4 +318,9 @@ func (d *Service) extractSnapshotDataFromHistory(ctx context.Context, history ag
 	}
 
 	return currentStateSnaphot, historySnapshot, nil
+}
+
+func (d *Service) Stop() {
+	d.log.Info("stopping datanode service")
+	d.store.Stop()
 }

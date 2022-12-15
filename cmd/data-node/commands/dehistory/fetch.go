@@ -45,16 +45,7 @@ func (cmd *fetchCmd) Execute(args []string) error {
 	}
 
 	vegaPaths := paths.New(cmd.VegaHome)
-
-	configFilePath, err := vegaPaths.CreateConfigPathFor(paths.DataNodeDefaultConfigFile)
-	if err != nil {
-		return fmt.Errorf("couldn't get path for %s: %w", paths.DataNodeDefaultConfigFile, err)
-	}
-
-	err = paths.ReadStructuredFile(configFilePath, &cmd.Config)
-	if err != nil {
-		return fmt.Errorf("failed to read config:%w", err)
-	}
+	fixConfig(&cmd.Config, vegaPaths)
 
 	err = verifyChainID(log, cmd.SQLStore.ConnectionConfig, cmd.ChainID)
 	if err != nil {

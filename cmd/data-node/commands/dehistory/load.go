@@ -21,11 +21,14 @@ import (
 type loadCmd struct {
 	config.VegaHomeFlag
 	config.Config
+
+	Force            bool `short:"f" long:"force" description:"do not prompt for confirmation"`
+	WipeExistingData bool `short:"w" long:"wipe-existing-data" description:"Erase all data from the node before loading from dehistory"`
 }
 
 func (cmd *loadCmd) Execute(_ []string) error {
 	cfg := logging.NewDefaultConfig()
-	cfg.Custom.Zap.Level = logging.InfoLevel
+	cfg.Custom.Zap.Level = logging.WarnLevel
 	cfg.Environment = "custom"
 	log := logging.NewLoggerFromConfig(
 		cfg,
@@ -33,15 +36,7 @@ func (cmd *loadCmd) Execute(_ []string) error {
 	defer log.AtExit()
 
 	vegaPaths := paths.New(cmd.VegaHome)
-	configFilePath, err := vegaPaths.CreateConfigPathFor(paths.DataNodeDefaultConfigFile)
-	if err != nil {
-		return fmt.Errorf("couldn't get path for %s: %w", paths.DataNodeDefaultConfigFile, err)
-	}
-
-	err = paths.ReadStructuredFile(configFilePath, &cmd.Config)
-	if err != nil {
-		return fmt.Errorf("failed to read configuration:%w", err)
-	}
+	fixConfig(&cmd.Config, vegaPaths)
 
 	// Wiping data from dehistory before loading then loading the data should never happen in any circumstance
 	cmd.Config.DeHistory.WipeOnStartup = false
@@ -62,6 +57,10 @@ func (cmd *loadCmd) Execute(_ []string) error {
 
 	if datanodeLive(cmd.Config) {
 		return fmt.Errorf("datanode must be shutdown before data can be loaded")
+	}
+
+	if hasSchema && cmd.WipeExistingData {
+		sqlstore.WipeDatabaseAndMigrateSchemaToVersion(log, cmd.Config.SQLStore.ConnectionConfig, 0, sqlstore.EmbedMigrations)
 	}
 
 	snapshotService, err := snapshot.NewSnapshotService(log, cmd.Config.DeHistory.Snapshot, cmd.Config.SQLStore.ConnectionConfig,
@@ -110,12 +109,15 @@ func (cmd *loadCmd) Execute(_ []string) error {
 	fmt.Printf("Decentralized history from block height %d to %d is available to load, current datanode block span is %d to %d\n",
 		from, to, span.FromHeight, span.ToHeight)
 
-	yes := flags.YesOrNo("Do you want to load this history?")
+	yes := true
+	if !cmd.Force {
+		yes = flags.YesOrNo("Do you want to load this history?")
+	}
 
 	if yes {
 		fmt.Printf("Loading history from block %d to %d...\n", from, to)
 
-		loaded, err := deHistoryService.LoadAllAvailableHistoryIntoDatanode(context.Background(), sqlstore.EmbedMigrations)
+		loaded, err := deHistoryService.LoadAllAvailableHistoryIntoDatanode(context.Background())
 		if err != nil {
 			return fmt.Errorf("failed to load all available history:%w", err)
 		}

@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"strconv"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/spam"
@@ -132,7 +133,7 @@ func testPreRejectInsufficientBalanceWithFactor(t *testing.T) {
 	require.Equal(t, spam.ErrTooManyVotes, err)
 
 	// end the block for doubling of min amount to take place
-	policy.EndOfBlock(1)
+	policy.EndOfBlock(1, time.Now(), time.Minute*30)
 
 	// in the next block party1 should not have enough balance to vote while party2 still has, but has no more votes
 	accept, err = policy.PreBlockAccept(tx1)
@@ -181,7 +182,7 @@ func testFactoringOfMinTokens(t *testing.T) {
 
 		for j := 0; j < 11; j++ {
 			// the first end of block will double the amount, the following 10 will have no impact on doubling
-			policy.EndOfBlock(uint64(i*10+j) + 1)
+			policy.EndOfBlock(uint64(i*10+j)+1, time.Now(), time.Minute*30)
 		}
 	}
 
@@ -240,14 +241,14 @@ func testFactoringOfMinTokens(t *testing.T) {
 
 		for j := 0; j < 11; j++ {
 			// the first end of block will double the amount, the following 10 will have no impact on doubling
-			policy.EndOfBlock(uint64(i*10+j) + 1)
+			policy.EndOfBlock(uint64(i*10+j)+1, time.Now(), time.Minute*30)
 		}
 	}
 }
 
 // reject vote requests from banned parties for as long as they are banned.
 func testPreRejectBannedParty(t *testing.T) {
-	policy := getVotingSpamPolicy(map[string]*num.Uint{"party1": sufficientTokensForVoting})
+	policy := getVotingSpamPolicy(map[string]*num.Uint{"party1": sufficientTokens2ForVoting})
 
 	// epoch 0 started party1 has enough balance
 	policy.Reset(types.Epoch{Seq: 0})
@@ -271,24 +272,26 @@ func testPreRejectBannedParty(t *testing.T) {
 	}
 
 	// end the block for banning to take place
-	policy.EndOfBlock(1)
+	tm, _ := time.Parse("2006-01-02 15:04", "2022-12-12 04:35")
+	policy.EndOfBlock(1, tm, time.Minute*30)
 
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, spam.ErrPartyIsBannedFromVoting, err)
+	print(tm.String())
+	require.Equal(t, "party is banned from submitting votes until the earlier between 2022-12-12 05:05:00 +0000 UTC and the beginning of the next epoch", err.Error())
 
-	// advance epochs - verify still banned until epoch 4 (including)
-	for i := 0; i < 4; i++ {
-		policy.Reset(types.Epoch{Seq: uint64(i + 1)})
+	// advance 30 minutes - verify still banned until 30 minutes pass
+	for i := 0; i < 3; i++ {
 		accept, err := policy.PreBlockAccept(tx)
 		require.Equal(t, false, accept)
-		require.Equal(t, spam.ErrPartyIsBannedFromVoting, err)
+		require.Equal(t, "party is banned from submitting votes until the earlier between 2022-12-12 05:05:00 +0000 UTC and the beginning of the next epoch", err.Error())
+		adjustment := 10 * time.Minute * time.Duration(i+1)
+		policy.EndOfBlock(1, tm.Add(adjustment), time.Minute*30)
 	}
-	// should be released from ban on epoch 5
-	policy.Reset(types.Epoch{Seq: 5})
+	// should be released from ban now but should still fail as they have already voted 3 times
 	accept, err = policy.PreBlockAccept(tx)
-	require.Equal(t, true, accept)
-	require.Nil(t, err)
+	require.Equal(t, "party has already voted the maximum number of times per proposal per epoch", err.Error())
+	require.Equal(t, false, accept)
 }
 
 func testPreRejectTooManyVotesPerProposal(t *testing.T) {
@@ -315,7 +318,7 @@ func testPreRejectTooManyVotesPerProposal(t *testing.T) {
 	}
 
 	// end block 0
-	policy.EndOfBlock(1)
+	policy.EndOfBlock(1, time.Now(), time.Minute*30)
 
 	// try to submit
 	for i := 0; i < 2; i++ {
@@ -438,7 +441,7 @@ func testCountersUpdated(t *testing.T) {
 		}
 	}
 
-	policy.EndOfBlock(1)
+	policy.EndOfBlock(1, time.Now(), time.Minute*30)
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
 		// pre accepted
@@ -492,29 +495,25 @@ func testReset(t *testing.T) {
 		}
 	}
 
-	// trigger ban of party1 until epoch 4
-	policy.EndOfBlock(1)
-	// verify reset at the start of new epoch, party1 should still be banned for the epoch until epoch 4
-	policy.Reset(types.Epoch{Seq: 1})
+	// trigger ban of party1 for 30 minutes
+	tm, _ := time.Parse("2006-01-02 15:04", "2022-12-12 04:35")
+	policy.EndOfBlock(1, tm, time.Minute*30)
+
+	policy.EndOfBlock(1, tm.Add(10*time.Minute), time.Minute*30)
 	tx := &testTx{party: "party1", proposal: "proposal1"}
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, spam.ErrPartyIsBannedFromVoting, err)
+	require.Equal(t, "party is banned from submitting votes until the earlier between 2022-12-12 05:05:00 +0000 UTC and the beginning of the next epoch", err.Error())
 
-	policy.Reset(types.Epoch{Seq: 2})
+	policy.EndOfBlock(1, tm.Add(20*time.Minute), time.Minute*30)
 	accept, err = policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, spam.ErrPartyIsBannedFromVoting, err)
+	require.Equal(t, "party is banned from submitting votes until the earlier between 2022-12-12 05:05:00 +0000 UTC and the beginning of the next epoch", err.Error())
 
-	policy.Reset(types.Epoch{Seq: 3})
-	accept, err = policy.PreBlockAccept(tx)
-	require.Equal(t, false, accept)
-	require.Equal(t, spam.ErrPartyIsBannedFromVoting, err)
-
-	policy.Reset(types.Epoch{Seq: 4})
+	policy.EndOfBlock(1, tm.Add(30*time.Minute), time.Minute*30)
 	accept, err = policy.PostBlockAccept(tx)
-	require.Equal(t, true, accept)
-	require.Nil(t, err)
+	require.Equal(t, false, accept)
+	require.Equal(t, "party has already voted the maximum number of times per proposal per epoch", err.Error())
 }
 
 func testVoteEndBlockReset(t *testing.T) {
@@ -533,7 +532,7 @@ func testVoteEndBlockReset(t *testing.T) {
 		accept, err = policy.PostBlockAccept(tx)
 		require.Equal(t, true, accept)
 		require.Nil(t, err)
-		policy.EndOfBlock(i)
+		policy.EndOfBlock(i, time.Now(), time.Minute*30)
 	}
 
 	tx := &testTx{party: "party1", proposal: "proposal1"}
@@ -550,7 +549,7 @@ func testVoteEndBlockReset(t *testing.T) {
 	bytes2, err := policy.Serialise()
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(bytes1, bytes2))
-	policy.EndOfBlock(3)
+	policy.EndOfBlock(3, time.Now(), time.Minute*30)
 
 	bytes3, err := policy.Serialise()
 	require.Nil(t, err)

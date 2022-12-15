@@ -17,6 +17,7 @@ import (
 	"errors"
 	"sort"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/types"
@@ -39,11 +40,11 @@ type SimpleSpamPolicy struct {
 
 	partyToCount          map[string]uint64           // commands that are already on blockchain
 	blockPartyToCount     map[string]uint64           // commands in the current block
-	bannedParties         map[string]uint64           // parties banned until epoch seq
+	bannedParties         map[string]int64            // parties banned -> ban end time
 	partyBlockRejects     map[string]*blockRejectInfo // total vs rejection in the current block
 	currentEpochSeq       uint64                      // current epoch sequence
 	lock                  sync.RWMutex                // global lock to sync calls from multiple tendermint threads
-	banErr                error
+	banErr                func(until time.Time) error
 	insufficientTokensErr error
 	tooManyCommands       error
 }
@@ -51,21 +52,23 @@ type SimpleSpamPolicy struct {
 // NewSimpleSpamPolicy instantiates the simple spam policy.
 func NewSimpleSpamPolicy(policyName string, minTokensParamName string, maxAllowedParamName string, log *logging.Logger, accounts StakingAccounts) *SimpleSpamPolicy {
 	return &SimpleSpamPolicy{
-		log:                   log,
-		accounts:              accounts,
-		policyName:            policyName,
-		partyToCount:          map[string]uint64{},
-		blockPartyToCount:     map[string]uint64{},
-		bannedParties:         map[string]uint64{},
-		partyBlockRejects:     map[string]*blockRejectInfo{},
-		lock:                  sync.RWMutex{},
-		minTokensParamName:    minTokensParamName,
-		maxAllowedParamName:   maxAllowedParamName,
-		minTokensRequired:     num.UintZero(),
-		maxAllowedCommands:    1, // default is allow one per epoch
-		banErr:                errors.New("party is banned from submitting " + policyName + " in the current epoch"),
+		log:                 log,
+		accounts:            accounts,
+		policyName:          policyName,
+		partyToCount:        map[string]uint64{},
+		blockPartyToCount:   map[string]uint64{},
+		bannedParties:       map[string]int64{},
+		partyBlockRejects:   map[string]*blockRejectInfo{},
+		lock:                sync.RWMutex{},
+		minTokensParamName:  minTokensParamName,
+		maxAllowedParamName: maxAllowedParamName,
+		minTokensRequired:   num.UintZero(),
+		maxAllowedCommands:  1, // default is allow one per epoch
+		banErr: func(until time.Time) error {
+			return errors.New("party is banned from submitting " + policyName + " until the earlier between " + until.String() + " and the beginning of the next epoch")
+		},
 		insufficientTokensErr: errors.New("party has insufficient associated governance tokens in their staking account to submit " + policyName + " request"),
-		tooManyCommands:       errors.New("party has already proposed the maximum number of " + policyName + " requests per epoch"),
+		tooManyCommands:       errors.New("party has already submitted the maximum number of " + policyName + " requests per epoch"),
 	}
 }
 
@@ -81,10 +84,10 @@ func (ssp *SimpleSpamPolicy) Serialise() ([]byte, error) {
 	sort.SliceStable(partyToCount, func(i, j int) bool { return partyToCount[i].Party < partyToCount[j].Party })
 
 	bannedParties := make([]*types.BannedParty, 0, len(ssp.bannedParties))
-	for party, epoch := range ssp.bannedParties {
+	for party, until := range ssp.bannedParties {
 		bannedParties = append(bannedParties, &types.BannedParty{
-			Party:      party,
-			UntilEpoch: epoch,
+			Party: party,
+			Until: until,
 		})
 	}
 
@@ -111,9 +114,9 @@ func (ssp *SimpleSpamPolicy) Deserialise(p *types.Payload) error {
 	for _, ptc := range pl.PartyToCount {
 		ssp.partyToCount[ptc.Party] = ptc.Count
 	}
-	ssp.bannedParties = make(map[string]uint64, len(pl.BannedParty))
+	ssp.bannedParties = make(map[string]int64, len(pl.BannedParty))
 	for _, bp := range pl.BannedParty {
-		ssp.bannedParties[bp.Party] = bp.UntilEpoch
+		ssp.bannedParties[bp.Party] = bp.Until
 	}
 
 	ssp.currentEpochSeq = pl.CurrentEpochSeq
@@ -152,19 +155,15 @@ func (ssp *SimpleSpamPolicy) Reset(epoch types.Epoch) {
 	// reset counts
 	ssp.partyToCount = map[string]uint64{}
 
-	// clear banned if necessary
-	for party, epochSeq := range ssp.bannedParties {
-		if epochSeq < epoch.Seq {
-			delete(ssp.bannedParties, party)
-		}
-	}
+	// clear banned on new epoch
+	ssp.bannedParties = map[string]int64{}
 
 	ssp.blockPartyToCount = map[string]uint64{}
 	ssp.partyBlockRejects = map[string]*blockRejectInfo{}
 }
 
 // EndOfBlock is called at the end of the processing of the block to carry over state and trigger bans if necessary.
-func (ssp *SimpleSpamPolicy) EndOfBlock(blockHeight uint64) {
+func (ssp *SimpleSpamPolicy) EndOfBlock(blockHeight uint64, now time.Time, banDuration time.Duration) {
 	ssp.lock.Lock()
 	defer ssp.lock.Unlock()
 	// add the block's counters to the epoch's
@@ -177,10 +176,20 @@ func (ssp *SimpleSpamPolicy) EndOfBlock(blockHeight uint64) {
 
 	ssp.blockPartyToCount = map[string]uint64{}
 
+	// release bans
+	nowNano := now.UnixNano()
+	for k, v := range ssp.bannedParties {
+		if nowNano >= v {
+			delete(ssp.bannedParties, k)
+		}
+	}
+
+	endBanTime := now.Add(banDuration).UnixNano()
+
 	// ban parties with more than <banFactor> rejection rate in the block
 	for p, bStats := range ssp.partyBlockRejects {
-		if float64(bStats.rejected)/float64(bStats.total) >= banFactor {
-			ssp.bannedParties[p] = ssp.currentEpochSeq + numberOfEpochsBan
+		if num.DecimalFromInt64(int64(bStats.rejected)).Div(num.DecimalFromInt64(int64(bStats.total))).GreaterThanOrEqual(banFactor) {
+			ssp.bannedParties[p] = endBanTime
 		}
 	}
 	ssp.partyBlockRejects = map[string]*blockRejectInfo{}
@@ -242,12 +251,12 @@ func (ssp *SimpleSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	defer ssp.lock.RUnlock()
 
 	// check if the party is banned
-	_, ok := ssp.bannedParties[party]
+	until, ok := ssp.bannedParties[party]
 	if ok {
 		if ssp.log.GetLevel() <= logging.DebugLevel {
 			ssp.log.Debug("Spam pre: party is banned from "+ssp.policyName, logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("party", party))
 		}
-		return false, ssp.banErr
+		return false, ssp.banErr(time.Unix(0, until).UTC())
 	}
 
 	// check if the party has enough balance to submit commands

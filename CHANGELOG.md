@@ -10,9 +10,14 @@
 
 ### 🛠 Improvements
 - [7032](https://github.com/vegaprotocol/vega/issues/7032) - Make deposits and withdrawals `hypertables` and change `deposits_current` and `withdrawals_current` into views to improve resource usage
+- [7136](https://github.com/vegaprotocol/vega/issues/7136) - Update ban duration to 30 minutes for spam
 - [7026](https://github.com/vegaprotocol/vega/issues/7026) - Let decentralised history use the snapshot event from the core as an indication for snapshot rather than doing the calculation based on the interval network parameter.
 - [7098](https://github.com/vegaprotocol/vega/issues/7098) - Add an event when the core is taking a snapshot
+- [7028](https://github.com/vegaprotocol/vega/issues/7028) - Add `JSON` output for `dehistory` commands; fix `config` override on command line
 - [7122](https://github.com/vegaprotocol/vega/issues/7122) - Allow for tolerance in validator performance calculation
+- [7104](https://github.com/vegaprotocol/vega/issues/7104) - Provide a better error message when party has insufficient balance of an asset
+- [7143](https://github.com/vegaprotocol/vega/issues/7143) - Update `grpc-rest-bindings` for Oracle `API`
+- [7027](https://github.com/vegaprotocol/vega/issues/7027) - `Dehistory` store does not clean up resources after a graceful shutdown
 
 ### 🐛 Fixes
 - [7040](https://github.com/vegaprotocol/vega/issues/7040) - Block explorer use different codes than 500 on error
@@ -20,11 +25,13 @@
 - [7021](https://github.com/vegaprotocol/vega/issues/7021) - MTM settlement on trading terminated fix.
 - [7102](https://github.com/vegaprotocol/vega/issues/7102) - Ensure the `api-token init -f` wipes the tokens file
 - [7106](https://github.com/vegaprotocol/vega/issues/7106) - Properties of oracle data sent in non-deterministic order
+- [7000](https://github.com/vegaprotocol/vega/issues/7000) - Wallet honours proof of work difficulty increases
 - [7029](https://github.com/vegaprotocol/vega/issues/7029) - Remove unsafe `GRPC` endpoint in data node
 - [7116](https://github.com/vegaprotocol/vega/issues/7116) - Fix MTM trade price check when trading is terminated.
 - [7112](https://github.com/vegaprotocol/vega/issues/7112) - Restore order's original price when restoring from a snapshot
 - [6955](https://github.com/vegaprotocol/vega/issues/6955) - Remove scaling by probability when implying LP volumes. Only change the LP order price if it’s outside the new “valid LP price range” - move it to the bound in that case.
 - [7132](https://github.com/vegaprotocol/vega/issues/7132) - Make the recovery phrase import white space resistant
+- [7150](https://github.com/vegaprotocol/vega/issues/7150) - Avoid taking 2 snapshots upon protocol upgrade block
 
 
 ## 0.64.0

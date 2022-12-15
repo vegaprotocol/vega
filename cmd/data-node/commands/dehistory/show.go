@@ -3,22 +3,54 @@ package dehistory
 import (
 	"context"
 	"fmt"
+	"os"
 	"sort"
 
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-
+	coreConfig "code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/datanode/dehistory/aggregation"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
+	"code.vegaprotocol.io/vega/paths"
 
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"code.vegaprotocol.io/vega/datanode/config"
-	"code.vegaprotocol.io/vega/paths"
 )
 
 type showCmd struct {
 	config.VegaHomeFlag
 	config.Config
+	coreConfig.OutputFlag
+}
+
+type showOutput struct {
+	Segments                   []*v2.HistorySegment
+	AvailableHistoryBlockStart int64
+	AvailableHistoryBlockEnd   int64
+	LocalHistoryBlockStart     int64
+	LocalHistoryBlockEnd       int64
+}
+
+func (o *showOutput) printHuman() {
+	fmt.Printf("All Decentralized History Segments:\n\n")
+	for _, segment := range o.Segments {
+		fmt.Printf("%s\n", segment)
+	}
+
+	if o.AvailableHistoryBlockEnd > 0 {
+		fmt.Printf("\nAvailable contiguous decentralized history spans block %d to %d\n",
+			o.AvailableHistoryBlockStart,
+			o.AvailableHistoryBlockEnd)
+	} else {
+		fmt.Printf("\nNo decentralized history available.  Use the fetch command to fetch decentralised history\n")
+	}
+
+	if o.LocalHistoryBlockEnd > 0 {
+		fmt.Printf("\nDatanode currently has data from block height %d to %d\n", o.LocalHistoryBlockStart, o.LocalHistoryBlockEnd)
+	} else {
+		fmt.Printf("\nDatanode contains no data\n")
+	}
 }
 
 func (cmd *showCmd) Execute(_ []string) error {
@@ -31,61 +63,61 @@ func (cmd *showCmd) Execute(_ []string) error {
 	defer log.AtExit()
 
 	vegaPaths := paths.New(cmd.VegaHome)
-
-	configFilePath, err := vegaPaths.CreateConfigPathFor(paths.DataNodeDefaultConfigFile)
-	if err != nil {
-		return fmt.Errorf("couldn't get path for %s: %w", paths.DataNodeDefaultConfigFile, err)
-	}
-
-	err = paths.ReadStructuredFile(configFilePath, &cmd.Config)
-	if err != nil {
-		return fmt.Errorf("failed to read config:%w", err)
-	}
+	fixConfig(&cmd.Config, vegaPaths)
 
 	if !datanodeLive(cmd.Config) {
-		return fmt.Errorf("datanode must be running for this command to work")
+		handleErr(log,
+			cmd.Output.IsJSON(),
+			"datanode must be running for this command to work",
+			fmt.Errorf("couldn't connect to datanode on %v:%v", cmd.Config.API.IP, cmd.Config.API.Port))
+		os.Exit(1)
 	}
 
 	client, conn, err := getDatanodeClient(cmd.Config)
 	if err != nil {
-		return fmt.Errorf("failed to get datanode client:%w", err)
+		handleErr(log, cmd.Output.IsJSON(), "failed to get datanode client", err)
+		os.Exit(1)
 	}
 	defer func() { _ = conn.Close() }()
 
 	response, err := client.ListAllDeHistorySegments(context.Background(), &v2.ListAllDeHistorySegmentsRequest{})
 	if err != nil {
-		return fmt.Errorf("failed to list all dehistory segments:%w", err)
+		handleErr(log, cmd.Output.IsJSON(), "failed to list all dehistory segments", err)
+		os.Exit(1)
 	}
 
-	segments := response.Segments
+	output := showOutput{}
+	output.Segments = response.Segments
 
-	sort.Slice(segments, func(i int, j int) bool {
-		return segments[i].ToHeight < segments[j].ToHeight
+	sort.Slice(output.Segments, func(i int, j int) bool {
+		return output.Segments[i].ToHeight < output.Segments[j].ToHeight
 	})
 
-	fmt.Printf("All Decentralized History Segments:\n\n")
-	for _, segment := range segments {
-		fmt.Printf("%s\n", segment)
-	}
-
-	contiguousHistory := GetHighestContiguousHistoryFromHistorySegments(segments)
+	contiguousHistory := GetHighestContiguousHistoryFromHistorySegments(output.Segments)
 
 	if contiguousHistory != nil {
-		fmt.Printf("\nAvailable contiguous decentralized history spans block %d to %d\n", contiguousHistory[0].HeightFrom,
-			contiguousHistory[len(contiguousHistory)-1].HeightTo)
-	} else {
-		fmt.Printf("\nNo decentralized history available.  Use the fetch command to fetch decentralised history\n")
+		output.AvailableHistoryBlockStart = contiguousHistory[0].HeightFrom
+		output.AvailableHistoryBlockEnd = contiguousHistory[len(contiguousHistory)-1].HeightTo
 	}
 
 	span, err := sqlstore.GetDatanodeBlockSpan(context.Background(), cmd.Config.SQLStore.ConnectionConfig)
 	if err != nil {
-		return fmt.Errorf("failed to get datanode block span:%w", err)
+		handleErr(log, cmd.Output.IsJSON(), "failed to get datanode block span", err)
+		os.Exit(1)
 	}
 
 	if span.HasData {
-		fmt.Printf("\nDatanode currently has data from block height %d to %d\n", span.FromHeight, span.ToHeight)
+		output.LocalHistoryBlockStart = span.FromHeight
+		output.LocalHistoryBlockEnd = span.ToHeight
+	}
+
+	if cmd.Output.IsJSON() {
+		if err := vgjson.Print(&output); err != nil {
+			handleErr(log, cmd.Output.IsJSON(), "failed to marshal output", err)
+			os.Exit(1)
+		}
 	} else {
-		fmt.Printf("\nDatanode contains no data\n")
+		output.printHuman()
 	}
 
 	return nil

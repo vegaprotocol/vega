@@ -3063,8 +3063,8 @@ type PartyCount struct {
 }
 
 type BannedParty struct {
-	Party      string
-	UntilEpoch uint64
+	Party string
+	Until int64
 }
 
 type BlockRejectStats struct {
@@ -3181,8 +3181,8 @@ func PartyTokenBalanceFromProto(balance *snapshot.PartyTokenBalance) *PartyToken
 
 func BannedPartyFromProto(ban *snapshot.BannedParty) *BannedParty {
 	return &BannedParty{
-		Party:      ban.Party,
-		UntilEpoch: ban.UntilEpoch,
+		Party: ban.Party,
+		Until: ban.Until,
 	}
 }
 
@@ -3211,8 +3211,8 @@ func (p *PartyProposalVoteCount) IntoProto() *snapshot.PartyProposalVoteCount {
 
 func (b *BannedParty) IntoProto() *snapshot.BannedParty {
 	return &snapshot.BannedParty{
-		Party:      b.Party,
-		UntilEpoch: b.UntilEpoch,
+		Party: b.Party,
+		Until: b.Until,
 	}
 }
 
@@ -3867,9 +3867,9 @@ func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofO
 }
 
 func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
-	banned := make([]*snapshot.PowBannedParty, 0, len(p.BannedParties))
+	banned := make([]*snapshot.BannedParty, 0, len(p.BannedParties))
 	for k, v := range p.BannedParties {
-		banned = append(banned, &snapshot.PowBannedParty{Party: k, Until: v})
+		banned = append(banned, &snapshot.BannedParty{Party: k, Until: v})
 	}
 	sort.Slice(banned, func(i, j int) bool { return banned[i].Party < banned[j].Party })
 

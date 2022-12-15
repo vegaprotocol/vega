@@ -18,6 +18,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/types"
@@ -41,8 +42,6 @@ func (b *blockRejectInfo) add(rejected bool) {
 
 var maxMinVotingTokens, _ = num.UintFromString("1600000000000000000000", 10)
 var (
-	// ErrPartyIsBannedFromVoting is returned when the party is banned from voting.
-	ErrPartyIsBannedFromVoting = errors.New("party is banned from submitting votes in the current epoch")
 	// ErrInsufficientTokensForVoting is returned when the party has insufficient tokens for voting.
 	ErrInsufficientTokensForVoting = errors.New("party has insufficient associated governance tokens in their staking account to submit votes")
 	// ErrTooManyVotes is returned when the party has voted already the maximum allowed votes per proposal per epoch.
@@ -62,7 +61,7 @@ type VoteSpamPolicy struct {
 	effectiveMinTokens      *num.Uint                                        // minVotingFactor * minVotingTokens
 	partyToVote             map[string]map[string]uint64                     // those are votes that are already on blockchain
 	blockPartyToVote        map[string]map[string]uint64                     // votes in the current block
-	bannedParties           map[string]uint64                                // parties banned until epoch seq
+	bannedParties           map[string]int64                                 // parties banned -> ban end time
 	recentBlocksRejectStats [numberOfBlocksForIncreaseCheck]*blockRejectInfo // recent blocks post rejection stats
 	blockPostRejects        *blockRejectInfo                                 // this blocks post reject stats
 	partyBlockRejects       map[string]*blockRejectInfo                      // total vs rejection in the current block
@@ -81,7 +80,7 @@ func NewVoteSpamPolicy(minTokensParamName string, maxAllowedParamName string, lo
 
 		partyToVote:         map[string]map[string]uint64{},
 		blockPartyToVote:    map[string]map[string]uint64{},
-		bannedParties:       map[string]uint64{},
+		bannedParties:       map[string]int64{},
 		blockPostRejects:    &blockRejectInfo{total: 0, rejected: 0},
 		partyBlockRejects:   map[string]*blockRejectInfo{},
 		currentBlockIndex:   0,
@@ -115,10 +114,10 @@ func (vsp *VoteSpamPolicy) Serialise() ([]byte, error) {
 	})
 
 	bannedParties := make([]*types.BannedParty, 0, len(vsp.bannedParties))
-	for party, epoch := range vsp.bannedParties {
+	for party, until := range vsp.bannedParties {
 		bannedParties = append(bannedParties, &types.BannedParty{
-			Party:      party,
-			UntilEpoch: epoch,
+			Party: party,
+			Until: until,
 		})
 	}
 
@@ -172,9 +171,9 @@ func (vsp *VoteSpamPolicy) Deserialise(p *types.Payload) error {
 		}
 		vsp.partyToVote[ptv.Party][ptv.Proposal] = ptv.Count
 	}
-	vsp.bannedParties = make(map[string]uint64, len(pl.BannedParty))
+	vsp.bannedParties = make(map[string]int64, len(pl.BannedParty))
 	for _, bp := range pl.BannedParty {
-		vsp.bannedParties[bp.Party] = bp.UntilEpoch
+		vsp.bannedParties[bp.Party] = bp.Until
 	}
 
 	vsp.currentEpochSeq = pl.CurrentEpochSeq
@@ -236,12 +235,8 @@ func (vsp *VoteSpamPolicy) Reset(epoch types.Epoch) {
 		vsp.recentBlocksRejectStats[i] = nil
 	}
 
-	// clear banned if necessary
-	for party, epochSeq := range vsp.bannedParties {
-		if epochSeq < epoch.Seq {
-			delete(vsp.bannedParties, party)
-		}
-	}
+	// clear banned
+	vsp.bannedParties = map[string]int64{}
 
 	// reset block rejects - this is not essential here as it's cleared at the end of every block anyways
 	// but just for consistency
@@ -253,7 +248,7 @@ func (vsp *VoteSpamPolicy) Reset(epoch types.Epoch) {
 }
 
 // EndOfBlock is called at the end of the block to allow updating of the state for the next block.
-func (vsp *VoteSpamPolicy) EndOfBlock(blockHeight uint64) {
+func (vsp *VoteSpamPolicy) EndOfBlock(blockHeight uint64, now time.Time, banDuration time.Duration) {
 	vsp.lock.Lock()
 	defer vsp.lock.Unlock()
 	// add the block's vote counters to the epoch's
@@ -272,10 +267,20 @@ func (vsp *VoteSpamPolicy) EndOfBlock(blockHeight uint64) {
 
 	vsp.blockPartyToVote = map[string]map[string]uint64{}
 
+	// release bans
+	nowNano := now.UnixNano()
+	for k, v := range vsp.bannedParties {
+		if nowNano >= v {
+			delete(vsp.bannedParties, k)
+		}
+	}
+
+	endBanTime := now.Add(banDuration).UnixNano()
+
 	// ban parties with more than <banFactor> rejection rate in the block
 	for p, bStats := range vsp.partyBlockRejects {
-		if float64(bStats.rejected)/float64(bStats.total) >= banFactor {
-			vsp.bannedParties[p] = vsp.currentEpochSeq + numberOfEpochsBan
+		if num.DecimalFromInt64(int64(bStats.rejected)).Div(num.DecimalFromInt64(int64(bStats.total))).GreaterThanOrEqual(banFactor) {
+			vsp.bannedParties[p] = endBanTime
 		}
 	}
 	vsp.partyBlockRejects = map[string]*blockRejectInfo{}
@@ -393,12 +398,12 @@ func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	vsp.lock.RLock()
 	defer vsp.lock.RUnlock()
 
-	_, ok := vsp.bannedParties[party]
+	until, ok := vsp.bannedParties[party]
 	if ok {
 		if vsp.log.GetLevel() <= logging.DebugLevel {
 			vsp.log.Debug("Spam pre: party is banned from voting", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("party", party))
 		}
-		return false, ErrPartyIsBannedFromVoting
+		return false, errors.New("party is banned from submitting votes until the earlier between " + time.Unix(0, until).UTC().String() + " and the beginning of the next epoch")
 	}
 
 	// check if the party has enough balance to submit votes

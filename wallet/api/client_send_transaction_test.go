@@ -175,6 +175,7 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	handler.time.EXPECT().Now().Times(1).Return(time.Now())
 	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
+	handler.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
@@ -245,6 +246,7 @@ func testSendingTransactionWithLongLivingTokenSucceeds(t *testing.T) {
 		t.Fatalf("could not connect test wallet to a long-living sessions: %v", err)
 	}
 	// -- expected calls
+	handler.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
@@ -323,6 +325,7 @@ func testSendingTransactionWithLongLivingExpiringTokenSucceed(t *testing.T) {
 		t.Fatalf("could not connect test wallet to a long-living sessions: %v", err)
 	}
 	// -- expected calls
+	handler.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
@@ -622,6 +625,7 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 	handler.time.EXPECT().Now().Times(1).Return(time.Now())
 	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
+	handler.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
@@ -660,6 +664,7 @@ type sendTransactionHandler struct {
 	nodeSelector *nodemocks.MockSelector
 	node         *nodemocks.MockNode
 	time         *mocks.MockTimeProvider
+	pow          *mocks.MockProofOfWork
 }
 
 func (h *sendTransactionHandler) handle(t *testing.T, ctx context.Context, params interface{}, metadata jsonrpc.RequestMetadata) (api.ClientSendTransactionResult, *jsonrpc.ErrorDetails) {
@@ -686,14 +691,16 @@ func newSendTransactionHandler(t *testing.T) *sendTransactionHandler {
 	sessions := session.NewSessions()
 	node := nodemocks.NewMockNode(ctrl)
 	tp := mocks.NewMockTimeProvider(ctrl)
+	pow := mocks.NewMockProofOfWork(ctrl)
 
 	return &sendTransactionHandler{
-		ClientSendTransaction: api.NewSendTransaction(interactor, nodeSelector, sessions, tp),
+		ClientSendTransaction: api.NewSendTransaction(interactor, nodeSelector, pow, sessions, tp),
 		ctrl:                  ctrl,
 		nodeSelector:          nodeSelector,
 		interactor:            interactor,
 		sessions:              sessions,
 		node:                  node,
 		time:                  tp,
+		pow:                   pow,
 	}
 }
