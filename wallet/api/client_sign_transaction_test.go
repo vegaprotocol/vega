@@ -121,6 +121,7 @@ func testSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 	handler.time.EXPECT().Now().Times(1)
 	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
+	handler.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
@@ -187,6 +188,7 @@ func testSigningTransactionWithLongLivingTokenSucceeds(t *testing.T) {
 		t.Fatalf("could not connect test wallet to a long-living sessions: %v", err)
 	}
 	// -- expected calls
+	handler.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
@@ -262,6 +264,7 @@ func testSigningTransactionWithLongLivingValidTokenSucceeds(t *testing.T) {
 		t.Fatalf("could not connect test wallet to a long-living sessions: %v", err)
 	}
 	// -- expected calls
+	handler.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
@@ -540,6 +543,7 @@ type signTransactionHandler struct {
 	nodeSelector *nodemock.MockSelector
 	node         *nodemock.MockNode
 	time         *mocks.MockTimeProvider
+	pow          *mocks.MockProofOfWork
 }
 
 func (h *signTransactionHandler) handle(t *testing.T, ctx context.Context, params interface{}, metadata jsonrpc.RequestMetadata) (api.ClientSignTransactionResult, *jsonrpc.ErrorDetails) {
@@ -566,14 +570,16 @@ func newSignTransactionHandler(t *testing.T) *signTransactionHandler {
 	sessions := session.NewSessions()
 	node := nodemock.NewMockNode(ctrl)
 	tp := mocks.NewMockTimeProvider(ctrl)
+	pow := mocks.NewMockProofOfWork(ctrl)
 
 	return &signTransactionHandler{
-		ClientSignTransaction: api.NewSignTransaction(interactor, nodeSelector, sessions, tp),
+		ClientSignTransaction: api.NewSignTransaction(interactor, nodeSelector, pow, sessions, tp),
 		ctrl:                  ctrl,
 		nodeSelector:          nodeSelector,
 		interactor:            interactor,
 		sessions:              sessions,
 		node:                  node,
 		time:                  tp,
+		pow:                   pow,
 	}
 }
