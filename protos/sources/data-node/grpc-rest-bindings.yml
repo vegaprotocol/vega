@@ -128,7 +128,7 @@ http:
     - selector: datanode.api.v2.TradingDataService.ListProtocolUpgradeProposals
       get: '/api/v2/upgrade/proposals'
     - selector: datanode.api.v2.TradingDataService.GetOracleSpec
-      get: '/api/v2/oracle/spec'
+      get: '/api/v2/oracle/spec/{oracle_spec_id}'
     - selector: datanode.api.v2.TradingDataService.ListOracleSpecs
       get: '/api/v2/oracle/specs'
     - selector: datanode.api.v2.TradingDataService.ListOracleData
