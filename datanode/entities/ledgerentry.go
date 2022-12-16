@@ -96,8 +96,8 @@ const (
 	LedgerMovementTypeDeposit = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_DEPOSIT)
 	// Bond slashing.
 	LedgerMovementTypeBondSlashing = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_BOND_SLASHING)
-	// Stake reward.
-	LedgerMovementTypeRewardPayout            = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_STAKE_REWARD)
+	// Reward payout.
+	LedgerMovementTypeRewardPayout            = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_REWARD_PAYOUT)
 	LedgerMovementTypeTransferFundsSend       = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_SEND)
 	LedgerMovementTypeTransferFundsDistribute = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE)
 	LedgerMovementTypeClearAccount            = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_CLEAR_ACCOUNT)

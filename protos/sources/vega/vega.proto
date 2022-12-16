@@ -741,8 +741,8 @@ enum TransferType {
   TRANSFER_TYPE_DEPOSIT = 19;
   // Bond account penalised when liquidity commitment not met
   TRANSFER_TYPE_BOND_SLASHING = 20;
-  // Staking reward received
-  TRANSFER_TYPE_STAKE_REWARD = 21;
+  // Reward payout received
+  TRANSFER_TYPE_REWARD_PAYOUT = 21;
   // A network internal instruction for the collateral engine to move funds from a user's general account into the pending transfers pool
   TRANSFER_TYPE_TRANSFER_FUNDS_SEND = 22;
   // A network internal instruction for the collateral engine to move funds from the pending transfers pool account into the destination account
