@@ -582,6 +582,10 @@ func (t *tradingDataServiceV2) ListCandleData(ctx context.Context, req *v2.ListC
 		}
 	}
 
+	if req.CandleId == "" {
+		return nil, apiError(codes.InvalidArgument, ErrMissingCandleID)
+	}
+
 	candles, pageInfo, err := t.candleService.GetCandleDataForTimeSpan(ctx, req.CandleId, from, to, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCandleServiceGetCandleData, err)
