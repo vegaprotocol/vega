@@ -79,46 +79,57 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
     | 8   | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES     | USDT   |  2000   |      1      |           |   1    | DISPATCH_METRIC_MAKER_FEES_PAID     |    BTC       |           |
     | 9   | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | USDC   |  500    |      1      |           |   1    | DISPATCH_METRIC_LP_FEES_RECEIVED    |    BTC       |           |
 
+    # all LPs use the same shape within a given market so that liquidity score doesn't impact this test
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | lp1    | ETH/DEC21 | 4000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1    | ETH/DEC21 | 4000              | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp1 | lp1    | ETH/DEC21 | 4000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | lp1    | ETH/DEC21 | 4000              | 0.001 | sell | MID              | 2          | 1      | amendment |
-      | lp2 | lp1    | ETH/DEC22 | 8000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp1    | ETH/DEC22 | 8000              | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp2 | lp1    | ETH/DEC22 | 8000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp2 | lp1    | ETH/DEC22 | 8000              | 0.001 | sell | MID              | 2          | 1      | amendment |
-      | lp3 | lp1    | BTC/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp3 | lp1    | BTC/DEC21 | 2000              | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp3 | lp1    | BTC/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp3 | lp1    | BTC/DEC21 | 2000              | 0.001 | sell | MID              | 2          | 1      | amendment |
-      | lp4 | lp1    | BTC/DEC22 | 4000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp4 | lp1    | BTC/DEC22 | 4000              | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp4 | lp1    | BTC/DEC22 | 4000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp4 | lp1    | BTC/DEC22 | 4000              | 0.001 | sell | MID              | 2          | 1      | amendment |
-      | lp5 | lp2    | ETH/DEC21 | 1000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp5 | lp2    | ETH/DEC21 | 1000              | 0.002 | buy  | MID              | 2          | 1      | amendment |
-      | lp5 | lp2    | ETH/DEC21 | 1000              | 0.002 | sell | ASK              | 1          | 2      | amendment |
-      | lp5 | lp2    | ETH/DEC21 | 1000              | 0.002 | sell | MID              | 2          | 1      | amendment |
-      | lp6 | lp2    | ETH/DEC22 | 2000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp6 | lp2    | ETH/DEC22 | 2000              | 0.002 | buy  | MID              | 2          | 1      | amendment |
-      | lp6 | lp2    | ETH/DEC22 | 2000              | 0.002 | sell | ASK              | 1          | 2      | amendment |
-      | lp6 | lp2    | ETH/DEC22 | 2000              | 0.002 | sell | MID              | 2          | 1      | amendment |
-      | lp7 | lp2    | BTC/DEC21 | 500               | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp7 | lp2    | BTC/DEC21 | 500               | 0.002 | buy  | MID              | 2          | 1      | amendment |
-      | lp7 | lp2    | BTC/DEC21 | 500               | 0.002 | sell | ASK              | 1          | 2      | amendment |
-      | lp7 | lp2    | BTC/DEC21 | 500               | 0.002 | sell | MID              | 2          | 1      | amendment |
-      | lp8 | lp2    | BTC/DEC22 | 1000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp8 | lp2    | BTC/DEC22 | 1000              | 0.002 | buy  | MID              | 2          | 1      | amendment |
-      | lp8 | lp2    | BTC/DEC22 | 1000              | 0.002 | sell | ASK              | 1          | 2      | amendment |
-      | lp8 | lp2    | BTC/DEC22 | 1000              | 0.002 | sell | MID              | 2          | 1      | amendment |
-      | lp9 | lpprov | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 50         | 1      | submission |
-      | lp9 | lpprov | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 50         | 1      | submission |
-      | lpA | lpprov | BTC/DEC21 | 10000             | 0.001 | buy  | BID              | 50         | 1      | submission |
-      | lpA | lpprov | BTC/DEC21 | 10000             | 0.001 | sell | ASK              | 50         | 1      | submission |
-      | lpB | lpprov | BTC/DEC22 | 10000             | 0.001 | buy  | BID              | 50         | 1      | submission |
-      | lpB | lpprov | BTC/DEC22 | 10000             | 0.001 | sell | ASK              | 50         | 1      | submission |
+      | id  | party       | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      # ETH/DEC21
+      | lp1-A    | lp1    | ETH/DEC21 | 4000              | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp1-A    | lp1    | ETH/DEC21 | 4000              | 0.001 | buy  | MID              | 2          | 1      |            |
+      | lp1-A    | lp1    | ETH/DEC21 | 4000              | 0.001 | sell | ASK              | 1          | 2      |            |
+      | lp1-A    | lp1    | ETH/DEC21 | 4000              | 0.001 | sell | MID              | 2          | 1      |            |
+      | lp2-A    | lp2    | ETH/DEC21 | 1000              | 0.002 | buy  | BID              | 1          | 2      | submission |
+      | lp2-A    | lp2    | ETH/DEC21 | 1000              | 0.002 | buy  | MID              | 2          | 1      |            |
+      | lp2-A    | lp2    | ETH/DEC21 | 1000              | 0.002 | sell | ASK              | 1          | 2      |            |
+      | lp2-A    | lp2    | ETH/DEC21 | 1000              | 0.002 | sell | MID              | 2          | 1      |            |
+      | lpprov-A | lpprov | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lpprov-A | lpprov | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      |            |
+      | lpprov-A | lpprov | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |            |
+      | lpprov-A | lpprov | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |            |
+      # ETH/DEC
+      | lp1-B | lp1    | ETH/DEC22 | 8000                 | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp1-B | lp1    | ETH/DEC22 | 8000                 | 0.001 | buy  | MID              | 2          | 1      |            |
+      | lp1-B | lp1    | ETH/DEC22 | 8000                 | 0.001 | sell | ASK              | 1          | 2      |            |
+      | lp1-B | lp1    | ETH/DEC22 | 8000                 | 0.001 | sell | MID              | 2          | 1      |            |
+      | lp2-B | lp2    | ETH/DEC22 | 2000                 | 0.002 | buy  | BID              | 1          | 2      | submission |
+      | lp2-B | lp2    | ETH/DEC22 | 2000                 | 0.002 | buy  | MID              | 2          | 1      |            |
+      | lp2-B | lp2    | ETH/DEC22 | 2000                 | 0.002 | sell | ASK              | 1          | 2      |            |
+      | lp2-B | lp2    | ETH/DEC22 | 2000                 | 0.002 | sell | MID              | 2          | 1      |            |
+      # BTC/DEC21
+      | lp1-C    | lp1    | BTC/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp1-C    | lp1    | BTC/DEC21 | 2000              | 0.001 | buy  | MID              | 2          | 1      |            |
+      | lp1-C    | lp1    | BTC/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 2      |            |
+      | lp1-C    | lp1    | BTC/DEC21 | 2000              | 0.001 | sell | MID              | 2          | 1      |            |
+      | lp2-C    | lp2    | BTC/DEC21 | 500               | 0.002 | buy  | BID              | 1          | 2      | submission |
+      | lp2-C    | lp2    | BTC/DEC21 | 500               | 0.002 | buy  | MID              | 2          | 1      |            |
+      | lp2-C    | lp2    | BTC/DEC21 | 500               | 0.002 | sell | ASK              | 1          | 2      |            |
+      | lp2-C    | lp2    | BTC/DEC21 | 500               | 0.002 | sell | MID              | 2          | 1      |            |
+      | lpprov-C | lpprov | BTC/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lpprov-C | lpprov | BTC/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      |            |
+      | lpprov-C | lpprov | BTC/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |            |
+      | lpprov-C | lpprov | BTC/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |            |
+      # BTC/DEC22
+      | lp1-D    | lp1    | BTC/DEC22 | 4000              | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp1-D    | lp1    | BTC/DEC22 | 4000              | 0.001 | buy  | MID              | 2          | 1      |            |
+      | lp1-D    | lp1    | BTC/DEC22 | 4000              | 0.001 | sell | ASK              | 1          | 2      |            |
+      | lp1-D    | lp1    | BTC/DEC22 | 4000              | 0.001 | sell | MID              | 2          | 1      |            |
+      | lp2-D    | lp2    | BTC/DEC22 | 1000              | 0.002 | buy  | BID              | 1          | 2      | submission |
+      | lp2-D    | lp2    | BTC/DEC22 | 1000              | 0.002 | buy  | MID              | 2          | 1      |            |
+      | lp2-D    | lp2    | BTC/DEC22 | 1000              | 0.002 | sell | ASK              | 1          | 2      |            |
+      | lp2-D    | lp2    | BTC/DEC22 | 1000              | 0.002 | sell | MID              | 2          | 1      |            |
+      | lpprov-D | lpprov | BTC/DEC22 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lpprov-D | lpprov | BTC/DEC22 | 10000             | 0.001 | buy  | MID              | 2          | 1      |            |
+      | lpprov-D | lpprov | BTC/DEC22 | 10000             | 0.001 | sell | ASK              | 1          | 2      |            |
+      | lpprov-D | lpprov | BTC/DEC22 | 10000             | 0.001 | sell | MID              | 2          | 1      |            |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -179,33 +190,44 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
     Then the parties place the following orders with ticks:
     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
     | party1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell1 |
-    | party2 | ETH/DEC21 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | party2-buy1  |
+    | party2 | ETH/DEC21 | buy  | 20     | 1000  | 4                | TYPE_LIMIT | TIF_GTC | party2-buy1  |
     | party1 | ETH/DEC22 | sell | 30     | 1050  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell2 |
     | party2 | ETH/DEC22 | buy  | 30     | 1050  | 3                | TYPE_LIMIT | TIF_GTC | party2-buy2  |
-    | party2 | BTC/DEC21 | sell | 5      | 850   | 2                | TYPE_LIMIT | TIF_GTC | party2-sell1 |
-    | party1 | BTC/DEC21 | buy  | 10     | 850   | 3                | TYPE_LIMIT | TIF_GTC | party1-buy1  |
+    | party2 | BTC/DEC21 | sell | 5      | 850   | 3                | TYPE_LIMIT | TIF_GTC | party2-sell1 |
+    | party1 | BTC/DEC21 | buy  | 10     | 850   | 0                | TYPE_LIMIT | TIF_GTC | party1-buy1  |
     | party2 | BTC/DEC22 | buy  | 5      | 1030  | 0                | TYPE_LIMIT | TIF_GTC | party2-buy3  |
-    | party1 | BTC/DEC22 | sell | 20     | 1030  | 3                | TYPE_LIMIT | TIF_GTC | party1-sell3 |
-
+    | party1 | BTC/DEC22 | sell | 20     | 1030  | 4                | TYPE_LIMIT | TIF_GTC | party1-sell3 |
+  
     And the following trades should be executed:
-      | buyer  | price | size | seller |
-      | party2 | 951   | 3    | lp1    |
-      | party2 | 951   | 1    | lp2    |
-      | party2 | 1000  | 16   | party1 |
-      | party2 | 1050  | 22   | party1 |
-      | party1 | 850   | 30   | party2 |
-      | party2 | 1030  | 5    | party1 |
+      | buyer  | seller | price | size |
+      # ETH/DEC21
+      | party2 | lp1    |   951 |    3 |
+      | party2 | lp2    |   951 |    1 |
+      | party2 | lpprov |   951 |    8 |
+      | party2 | party1 |  1000 |    8 |
+      # ETH/DEC22
+      | party2 | lp1    |  1001 |    6 |
+      | party2 | lp2    |  1001 |    2 |
+      | party2 | party1 |  1050 |   22 |
+      # BTC/DEC21
+      | lp1    | party2 |   949 |    2 |
+      | lp2    | party2 |   949 |    1 |
+      | lpprov | party2 |   949 |    2 |
+      # BTC/DEC22
+      | lp1    | party1 |  1089 |    3 |
+      | lp2    | party1 |  1089 |    1 |
+      | lpprov | party1 |  1089 |    7 |
+      | party2 | party1 |  1030 |    5 |
 
-
-    Then "party1" should have general account balance of "599981491" for asset "ETH"
-    Then "party2" should have general account balance of "599994909" for asset "ETH"
+    Then "party1" should have general account balance of "599979904" for asset "ETH"
+    Then "party2" should have general account balance of "599994774" for asset "ETH"
     Then "lp1" should have general account balance of "5999984128" for asset "ETH"
     Then "lp2" should have general account balance of "5999995630" for asset "ETH"
 
-    Then "party1" should have general account balance of "299984905" for asset "BTC"
-    Then "party2" should have general account balance of "299983674" for asset "BTC"
-    Then "lp1" should have general account balance of "2999991155" for asset "BTC"
-    Then "lp2" should have general account balance of "2999997237" for asset "BTC"
+    Then "party1" should have general account balance of "299987176" for asset "BTC"
+    Then "party2" should have general account balance of "299986327" for asset "BTC"
+    Then "lp1" should have general account balance of "2999990841" for asset "BTC"
+    Then "lp2" should have general account balance of "2999997067" for asset "BTC"
 
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
@@ -243,10 +265,10 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
     # total lp1 = 2021
     # total lp2 = 735
 
-    Then "party1" should have general account balance of "7583" for asset "VEGA"
-    Then "party2" should have general account balance of "411" for asset "VEGA"
-    Then "lp1" should have general account balance of "2200" for asset "VEGA"
-    Then "lp2" should have general account balance of "800" for asset "VEGA"
+    Then "party1" should have general account balance of "6067" for asset "VEGA"
+    Then "party2" should have general account balance of "234" for asset "VEGA"
+    Then "lp1" should have general account balance of "2031" for asset "VEGA"
+    Then "lp2" should have general account balance of "723" for asset "VEGA"
 
     # calculation of taker fees paid reward - given in USDT
     # ETH - got 20k USDT
@@ -271,8 +293,8 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
     # total party1 = 904 + 1095 = 1999
     # total party2 = 3106 + 12233 = 19999
 
-    Then "party1" should have general account balance of "1656" for asset "USDT"
-    Then "party2" should have general account balance of "20341" for asset "USDT"
+    Then "party1" should have general account balance of "1567" for asset "USDT"
+    Then "party2" should have general account balance of "20431" for asset "USDT"
 
     # calculation of LP fees received reward - given in USDC
     # ETH - got 5000 USDC
@@ -287,4 +309,4 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
     # lp2 - 0.2 * 5000 = 1000
 
     Then "lp1" should have general account balance of "3061" for asset "USDC"
-    Then "lp2" should have general account balance of "740" for asset "USDC"
+    Then "lp2" should have general account balance of "760" for asset "USDC"
