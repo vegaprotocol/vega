@@ -989,3 +989,46 @@ func (m *Market) ensureLPCommitmentAmount(amount *num.Uint) error {
 
 	return nil
 }
+
+func (m *Market) updateLiquidityScores() {
+	minLpPrice, maxLpPrice, err := m.getValidLPVolumeRange()
+	if err != nil {
+		m.log.Debug("liquidity score update error", logging.Error(err))
+		return
+	}
+	bid, ask, err := m.getBestStaticPricesDecimal()
+	if err != nil {
+		m.log.Debug("liquidity score update error", logging.Error(err))
+		return
+	}
+
+	m.liquidity.UpdateAverageLiquidityScores(bid, ask, minLpPrice, maxLpPrice)
+}
+
+func (m *Market) updateSharesWithLiquidityScores(shares map[string]num.Decimal) map[string]num.Decimal {
+	lScores := m.liquidity.GetAverageLiquidityScores()
+
+	total := num.DecimalZero()
+	for k, v := range shares {
+		l, ok := lScores[k]
+		if !ok {
+			continue
+		}
+		adjusted := v.Mul(l)
+		shares[k] = adjusted
+
+		total = total.Add(adjusted)
+	}
+
+	// normalise
+	if !total.IsZero() {
+		for k, v := range shares {
+			shares[k] = v.Div(total)
+		}
+	}
+
+	// reset for next period
+	m.liquidity.ResetAverageLiquidityScores()
+
+	return shares
+}

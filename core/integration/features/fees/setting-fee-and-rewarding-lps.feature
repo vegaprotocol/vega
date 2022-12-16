@@ -19,8 +19,8 @@ Feature: Test liquidity provider reward distribution
       | property           | type         | binding             |
       | trading.terminated | TYPE_BOOLEAN | trading termination |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | ethDec21Oracle |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | ethDec21Oracle     |
 
     And the following network parameters are set:
       | name                                                | value |
@@ -425,8 +425,7 @@ Feature: Test liquidity provider reward distribution
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/DEC21 | buy  | 40     | 1000  | 3                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC21 | sell | 40     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC21 | buy  | 16     | 1000  | 3                | TYPE_LIMIT | TIF_FOK |
 
     And the following trades should be executed:
       | buyer  | price | size | seller |
@@ -436,16 +435,29 @@ Feature: Test liquidity provider reward distribution
 
     And the accumulated liquidity fees should be "16" for the market "ETH/DEC21"
 
-    # opening auction + time window
-    Then time is updated to "2019-11-30T00:20:06Z"
+    When time is updated to "2019-11-30T00:20:06Z"
+    # lp3 gets lower fee share than indicated by the ELS this fee round as it was later to deploy liquidity (so lower liquidity scores than others had)
+    Then the following transfers should happen:
+      | from   | to  | from account                | to account           | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 12     | ETH   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 3      | ETH   |
+      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 1      | ETH   |
 
-    # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+
+    # make sure we're in the next time window now
+    When time is updated to "2019-11-30T00:30:07Z"
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 16     | 1000  | 3                | TYPE_LIMIT | TIF_FOK |
+    Then the accumulated liquidity fees should be "16" for the market "ETH/DEC21"
+
+    When time is updated to "2019-11-30T00:40:08Z"
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 6      | ETH   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 1      | ETH   |
       | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 9      | ETH   |
-
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
   @Panic
