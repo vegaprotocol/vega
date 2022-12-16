@@ -27,7 +27,7 @@ import (
 	mangos "go.nanomsg.org/mangos/v3"
 	mangosErr "go.nanomsg.org/mangos/v3/errors"
 	"go.nanomsg.org/mangos/v3/protocol"
-	"go.nanomsg.org/mangos/v3/protocol/pull"
+	"go.nanomsg.org/mangos/v3/protocol/pair"
 	_ "go.nanomsg.org/mangos/v3/transport/inproc" // changes behavior of nanomsg
 	_ "go.nanomsg.org/mangos/v3/transport/tcp"    // changes behavior of nanomsg
 )
@@ -53,7 +53,7 @@ func pipeEventToString(pe mangos.PipeEvent) string {
 }
 
 func newSocketServer(log *logging.Logger, config *Config) (*socketServer, error) {
-	sock, err := pull.NewSocket()
+	sock, err := pair.NewSocket()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new socket: %w", err)
 	}
@@ -184,6 +184,27 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 	}()
 
 	return outboundCh, errCh
+}
+
+func (s socketServer) Send(evt events.Event) error {
+	msg, err := proto.Marshal(evt.StreamMessage())
+	if err != nil {
+		return fmt.Errorf("failed to marshal event: %w", err)
+	}
+
+	err = s.sock.Send(msg)
+	if err != nil {
+		switch err {
+		case protocol.ErrClosed:
+			return fmt.Errorf("socket is closed: %w", err)
+		case protocol.ErrSendTimeout:
+			return fmt.Errorf("failed to queue message on socket: %w", err)
+		default:
+			return fmt.Errorf("failed to send to socket: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func (s socketServer) close() error {

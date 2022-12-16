@@ -143,7 +143,7 @@ func TestMain(t *testing.M) {
 		evtSource := newTestEventSourceWithProtocolUpdateMessage()
 
 		pus := service.NewProtocolUpgrade(nil, log)
-		puh := dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context, chainID string,
+		puh := dehistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
 			toHeight int64,
 		) error {
 			meta, err := snapshotService.CreateSnapshot(ctx, chainID, toHeight)
@@ -233,7 +233,7 @@ func TestMain(t *testing.M) {
 		}
 
 		pus = service.NewProtocolUpgrade(nil, log)
-		nonInterceptPuh := dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context,
+		nonInterceptPuh := dehistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context,
 			chainID string, toHeight int64,
 		) error {
 			return nil
@@ -397,7 +397,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	evtSource := newTestEventSourceWithProtocolUpdateMessage()
 
 	pus := service.NewProtocolUpgrade(nil, log)
-	puh := dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context, chainID string,
+	puh := dehistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
 		toHeight int64,
 	) error {
 		return nil
@@ -446,7 +446,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	evtSource = newTestEventSourceWithProtocolUpdateMessage()
 
 	pus = service.NewProtocolUpgrade(nil, log)
-	puh = dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context, chainID string,
+	puh = dehistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
 		toHeight int64,
 	) error {
 		return nil
@@ -555,7 +555,7 @@ func TestRestoringNodeWithExistingDataFailsWhenLoadingWouldResultInNonContiguous
 	evtSource := newTestEventSourceWithProtocolUpdateMessage()
 
 	pus := service.NewProtocolUpgrade(nil, log)
-	puh := dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context, chainID string,
+	puh := dehistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
 		toHeight int64,
 	) error {
 		return nil
@@ -666,7 +666,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 	require.NoError(t, err)
 
 	pus := service.NewProtocolUpgrade(nil, log)
-	puh := dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context,
+	puh := dehistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context,
 		chainID string, toHeight int64,
 	) error {
 		return nil
@@ -756,7 +756,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 
 	evtSource := newTestEventSourceWithProtocolUpdateMessage()
 
-	puh := dehistory.NewProtocolUpgradeHandler(log, service.NewProtocolUpgrade(nil, log),
+	puh := dehistory.NewProtocolUpgradeHandler(log, service.NewProtocolUpgrade(nil, log), evtSource,
 		func(ctx context.Context, chainID string, toHeight int64) error {
 			return dehistoryService.CreateAndPublishSegment(ctx, chainID, toHeight)
 		})
@@ -795,7 +795,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 				}
 			}
 		},
-		evtSource, dehistory.NewProtocolUpgradeHandler(log, service.NewProtocolUpgrade(nil, log),
+		evtSource, dehistory.NewProtocolUpgradeHandler(log, service.NewProtocolUpgrade(nil, log), evtSource,
 			func(ctx context.Context, chainID string, toHeight int64) error {
 				return nil
 			}),
@@ -1020,6 +1020,10 @@ func (e *TestEventSource) Receive(ctx context.Context) (<-chan events.Event, <-c
 	}()
 
 	return sinkEventCh, sinkErrCh
+}
+
+func (e *TestEventSource) Send(evt events.Event) error {
+	return nil
 }
 
 type tableDataSummary struct {

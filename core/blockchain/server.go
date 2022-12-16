@@ -42,6 +42,7 @@ func (s *Server) Start() error {
 // Stop gracefully shutdowns down the blockchain provider's server.
 func (s *Server) Stop() error {
 	s.log.Info("Stopping blockchain server")
+
 	return s.srv.Stop()
 }
 

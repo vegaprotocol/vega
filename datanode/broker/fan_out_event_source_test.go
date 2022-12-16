@@ -130,3 +130,7 @@ func (te *testEventSource) Listen() error {
 func (te *testEventSource) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
 	return te.eventsCh, te.errorsCh
 }
+
+func (te *testEventSource) Send(e events.Event) error {
+	return nil
+}

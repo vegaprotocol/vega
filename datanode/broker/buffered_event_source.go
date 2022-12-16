@@ -22,7 +22,7 @@ type FileBufferedEventSource struct {
 	log                   *logging.Logger
 	lastBufferedSeqNum    chan uint64
 	sendChannelBufferSize int
-	source                eventSource
+	source                EventReceiver
 	bufferFilePath        string
 	config                BufferedEventSourceConfig
 }
@@ -32,7 +32,7 @@ const (
 	numberOfSizeBytes   = 4
 )
 
-func NewBufferedEventSource(log *logging.Logger, config BufferedEventSourceConfig, source eventSource, bufferFilePath string) (*FileBufferedEventSource, error) {
+func NewBufferedEventSource(log *logging.Logger, config BufferedEventSourceConfig, source EventReceiver, bufferFilePath string) (*FileBufferedEventSource, error) {
 	err := os.RemoveAll(bufferFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to remove old buffer files:%w", err)

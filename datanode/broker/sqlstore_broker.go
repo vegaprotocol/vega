@@ -62,7 +62,7 @@ type SQLStoreBroker struct {
 	log                          *logging.Logger
 	subscribers                  []SQLBrokerSubscriber
 	typeToSubs                   map[events.Type][]SQLBrokerSubscriber
-	eventSource                  eventSource
+	eventSource                  EventReceiver
 	transactionManager           TransactionManager
 	blockStore                   BlockStore
 	onBlockCommitted             func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool)
@@ -78,7 +78,7 @@ func NewSQLStoreBroker(
 	log *logging.Logger,
 	config Config,
 	chainID string,
-	eventsource eventSource,
+	eventsource EventReceiver,
 	transactionManager TransactionManager,
 	blockStore BlockStore,
 	onBlockCommitted func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool),

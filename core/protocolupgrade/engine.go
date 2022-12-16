@@ -92,8 +92,9 @@ type Engine struct {
 	events             map[string]*eventspb.ProtocolUpgradeEvent
 	lock               sync.RWMutex
 
-	requiredMajority num.Decimal
-	upgradeStatus    *types.UpgradeStatus
+	requiredMajority   num.Decimal
+	upgradeStatus      *types.UpgradeStatus
+	coreReadyToUpgrade bool
 }
 
 func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTopology, version string) *Engine {
@@ -302,6 +303,7 @@ func (e *Engine) BeginBlock(ctx context.Context, blockHeight uint64) {
 	} else {
 		e.upgradeStatus.AcceptedReleaseInfo = &types.ReleaseInfo{}
 	}
+
 	e.lock.Unlock()
 }
 
@@ -324,14 +326,35 @@ func (e *Engine) Cleanup(ctx context.Context) {
 	}
 }
 
-// SetReadyForUpgrade is called by abci after a snapshot has been taken and the process is ready to be shutdown.
-func (e *Engine) SetReadyForUpgrade() {
+// SetCoreReadyForUpgrade is called by abci after a snapshot has been taken and the core process is ready to
+// wait for data node to process if connected or to be shutdown.
+func (e *Engine) SetCoreReadyForUpgrade() {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	if int(e.currentBlockHeight)-int(e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight) != 0 {
-		e.log.Panic("can only call SetReadyForUpgrade at the block of the block height for upgrade", logging.Uint64("block-height", e.currentBlockHeight), logging.Int("block-height-for-upgrade", int(e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight)))
+		e.log.Panic("can only call SetCoreReadyForUpgrade at the block of the block height for upgrade", logging.Uint64("block-height", e.currentBlockHeight), logging.Int("block-height-for-upgrade", int(e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight)))
 	}
-	e.log.Info("marking vega as ready to shut down")
+	e.log.Info("marking vega core as ready to shut down")
+
+	e.coreReadyToUpgrade = true
+}
+
+func (e *Engine) CoreReadyForUpgrade() bool {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	return e.coreReadyToUpgrade
+}
+
+// SetReadyForUpgrade is called by abci after both core and data node has processed all required events before the update.
+// This will modify the RPC API.
+func (e *Engine) SetReadyForUpgrade() {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+	if !e.coreReadyToUpgrade {
+		e.log.Panic("can only call SetReadyForUpgrade when core node is ready up upgrade")
+	}
+	e.log.Info("marking vega core and data node as ready to shut down")
+
 	e.upgradeStatus.ReadyToUpgrade = true
 }
 
