@@ -839,7 +839,7 @@ func (e *Engine) UpdateAverageLiquidityScores(bestBid, bestAsk num.Decimal, minL
 }
 
 func (e *Engine) ResetAverageLiquidityScores() {
-	e.avgScores = map[string]num.Decimal{}
+	e.avgScores = make(map[string]num.Decimal, len(e.avgScores))
 	e.nAvg = 1
 }
 

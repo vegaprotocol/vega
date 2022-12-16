@@ -739,6 +739,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	timer.EngineTimeCounterAdd()
 
 	m.updateMarketValueProxy()
+	m.updateLiquidityScores()
 	m.updateLiquidityFee(ctx)
 	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
 	return m.closed
@@ -3411,6 +3412,9 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 	if len(shares) == 0 {
 		return nil
 	}
+
+	// get liquidity scores and reset for next period
+	shares = m.updateSharesWithLiquidityScores(shares)
 
 	feeTransfer := m.fee.BuildLiquidityFeeDistributionTransfer(shares, acc)
 	if feeTransfer == nil {

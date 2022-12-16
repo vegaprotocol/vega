@@ -286,5 +286,5 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
     # lp1 - 0.8 * 5000 = 4000
     # lp2 - 0.2 * 5000 = 1000
 
-    Then "lp1" should have general account balance of "3061" for asset "USDC"
-    Then "lp2" should have general account balance of "740" for asset "USDC"
+    Then "lp1" should have general account balance of "4229" for asset "USDC"
+    Then "lp2" should have general account balance of "975" for asset "USDC"
