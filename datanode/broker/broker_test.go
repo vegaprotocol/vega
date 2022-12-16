@@ -31,7 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"go.nanomsg.org/mangos/v3/protocol/pull"
+	"go.nanomsg.org/mangos/v3/protocol/pair"
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
@@ -637,7 +637,7 @@ func testStreamsOverSocket(t *testing.T) {
 	config.Socket.Enabled = true
 	config.Socket.Transport = "inproc"
 
-	sock, err := pull.NewSocket()
+	sock, err := pair.NewSocket()
 	assert.NoError(t, err)
 
 	addr := fmt.Sprintf(
@@ -681,7 +681,7 @@ func testStopsProcessOnStreamError(t *testing.T) {
 		config.Socket.SocketChannelBufferSize = 0
 		config.Socket.EventChannelBufferSize = 0
 
-		sock, err := pull.NewSocket()
+		sock, err := pair.NewSocket()
 		assert.NoError(t, err)
 
 		addr := fmt.Sprintf(

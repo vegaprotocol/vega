@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/governance"
@@ -159,6 +160,8 @@ type ValidatorTopology interface {
 type Broker interface {
 	Send(e events.Event)
 	SetStreaming(on bool) bool
+	StreamingEnabled() bool
+	SocketClient() broker.SocketClient
 }
 
 // Notary.

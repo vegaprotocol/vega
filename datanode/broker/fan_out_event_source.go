@@ -23,7 +23,7 @@ import (
 // fanOutEventSource: an event source to fan out an event stream, it is told in advance the number of subscribers to
 // expect and only starts publishing events once that number of subscriptions has been received.
 type fanOutEventSource struct {
-	source                 eventSource
+	source                 EventReceiver
 	sendChannelBufferSize  int
 	expectedNumSubscribers int
 	numSubscribers         int
@@ -34,7 +34,7 @@ type fanOutEventSource struct {
 }
 
 //revive:disable:unexported-return
-func NewFanOutEventSource(source eventSource, sendChannelBufferSize int, expectedNumSubscribers int) *fanOutEventSource {
+func NewFanOutEventSource(source EventReceiver, sendChannelBufferSize int, expectedNumSubscribers int) *fanOutEventSource {
 	return &fanOutEventSource{
 		source:                 source,
 		sendChannelBufferSize:  sendChannelBufferSize,

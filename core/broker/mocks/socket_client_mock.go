@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	events "code.vegaprotocol.io/vega/core/events"
@@ -32,6 +33,21 @@ func NewMockSocketClient(ctrl *gomock.Controller) *MockSocketClient {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockSocketClient) EXPECT() *MockSocketClientMockRecorder {
 	return m.recorder
+}
+
+// Receive mocks base method.
+func (m *MockSocketClient) Receive(arg0 context.Context) (<-chan events.Event, <-chan error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Receive", arg0)
+	ret0, _ := ret[0].(<-chan events.Event)
+	ret1, _ := ret[1].(<-chan error)
+	return ret0, ret1
+}
+
+// Receive indicates an expected call of Receive.
+func (mr *MockSocketClientMockRecorder) Receive(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Receive", reflect.TypeOf((*MockSocketClient)(nil).Receive), arg0)
 }
 
 // SendBatch mocks base method.
