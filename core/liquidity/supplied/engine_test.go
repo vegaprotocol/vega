@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/core/liquidity/supplied"
 	"code.vegaprotocol.io/vega/core/liquidity/supplied/mocks"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/statevar"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 
@@ -27,41 +28,48 @@ import (
 )
 
 var (
-	MarkPrice  = num.NewUint(103)
-	MarkPriceD = MarkPrice.ToDecimal()
-	Horizon    = num.DecimalFromFloat(0.001)
-	TickSize   = num.NewUint(1)
+	MarkPrice                          = num.NewUint(103)
+	MarkPriceD                         = MarkPrice.ToDecimal()
+	DefaultInRangeProbabilityOfTrading = num.DecimalFromFloat(.5)
+	Horizon                            = num.DecimalFromFloat(0.001)
+	TickSize                           = num.NewUint(1)
 )
 
-func TestCalculateSuppliedLiquidity(t *testing.T) {
+func TestLiquidityScore(t *testing.T) {
+	minLpPrice, maxLpPrice := num.UintOne(), num.MaxUint()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRiskModel(ctrl)
 	priceMonitor := mocks.NewMockPriceMonitor(ctrl)
 	riskModel.EXPECT().GetProjectionHorizon().Return(Horizon).Times(1)
 
-	minLpPrice := num.NewUint(89)
-	maxLpPrice := num.NewUint(111)
+	minPMPrice := num.NewWrappedDecimal(num.NewUint(89), num.DecimalFromInt64(89))
+	maxPMPrice := num.NewWrappedDecimal(num.NewUint(111), num.DecimalFromInt64(111))
 
 	// No orders
-	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", stubs.NewStateVar(), logging.NewTestLogger(), num.DecimalFromInt64(1))
+	priceMonitor.EXPECT().GetValidPriceRange().Return(minPMPrice, maxPMPrice).AnyTimes()
+	statevarEngine := stubs.NewStateVar()
+	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, logging.NewTestLogger(), num.DecimalFromInt64(1))
 	require.NotNil(t, engine)
 
-	liquidity := engine.CalculateSuppliedLiquidity([]*types.Order{}, minLpPrice, maxLpPrice)
-	require.Equal(t, num.NewUint(0), liquidity)
+	f := func() (num.Decimal, num.Decimal, error) { return MarkPriceD, MarkPriceD, nil }
+	engine.SetGetStaticPricesFunc(f)
 
+	liquidity := engine.CalculateLiquidityScore([]*types.Order{}, MarkPriceD, MarkPriceD, minLpPrice, maxLpPrice)
+	require.True(t, liquidity.IsZero())
+
+	// 1 buy, no sells
 	buyOrder1 := &types.Order{
 		Price:     num.NewUint(102),
 		Size:      30,
 		Remaining: 25,
 		Side:      types.SideBuy,
 	}
-	buyOrder2 := &types.Order{
-		Price:     num.NewUint(102),
-		Size:      600,
-		Remaining: 599,
-		Side:      types.SideBuy,
-	}
+
+	buyOrder1Prob := num.DecimalFromFloat(0.256)
+	sellOrder1Prob := num.DecimalFromFloat(0.33)
+	sellOrder2Prob := num.DecimalFromFloat(0.17)
+
 	sellOrder1 := &types.Order{
 		Price:     num.NewUint(105),
 		Size:      15,
@@ -75,30 +83,112 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 		Side:      types.SideSell,
 	}
 
-	liquidity = engine.CalculateSuppliedLiquidity([]*types.Order{}, minLpPrice, maxLpPrice)
-	require.Equal(t, num.NewUint(0), liquidity)
+	riskModel.EXPECT().ProbabilityOfTrading(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(best, order, min num.Decimal, max num.Decimal, yFrac num.Decimal, isBid bool, applyMinMax bool) num.Decimal {
+		if best.Equal(MarkPriceD) && order.Sub(buyOrder1.Price.ToDecimal()).Abs().LessThanOrEqual(num.DecimalFromFloat(0.1)) && isBid {
+			return buyOrder1Prob
+		}
+		if best.Equal(MarkPriceD) && order.Sub(sellOrder1.Price.ToDecimal()).Abs().LessThanOrEqual(num.DecimalFromFloat(0.1)) && !isBid {
+			return sellOrder1Prob
+		}
+		if best.Equal(MarkPriceD) && order.Sub(sellOrder2.Price.ToDecimal()).Abs().LessThanOrEqual(num.DecimalFromFloat(0.1)) && !isBid {
+			return sellOrder2Prob
+		}
+		if order.LessThanOrEqual(num.DecimalZero()) {
+			return num.DecimalZero()
+		}
+		if order.GreaterThanOrEqual(num.DecimalFromInt64(2).Mul(best)) {
+			return num.DecimalZero()
+		}
+		return num.DecimalFromFloat(0.5)
+	})
 
-	// 1 buy, two sells
-	// buyLiquidity1 := buyOrder1.Price.Float64() * float64(buyOrder1.Remaining)
-	buyLiquidity1 := num.UintZero().Mul(buyOrder1.Price.Clone(), num.NewUint(buyOrder1.Remaining))
+	statevarEngine.NewEvent("asset1", "market1", statevar.EventTypeAuctionEnded)
+	liquidity2 := engine.CalculateLiquidityScore([]*types.Order{}, MarkPriceD, MarkPriceD, minLpPrice, maxLpPrice)
+	require.True(t, liquidity2.IsZero())
 
-	// sellLiquidity := sellOrder1.Price.Float64()*float64(sellOrder1.Remaining) + sellOrder2.Price.Float64()*float64(sellOrder2.Remaining)
-	sellLiquidity1 := num.UintZero().Mul(sellOrder1.Price.Clone(), num.NewUint(sellOrder1.Remaining))
-	sellLiquidity2 := num.UintZero().Mul(sellOrder2.Price.Clone(), num.NewUint(sellOrder2.Remaining))
+	buyOrder1Size := num.DecimalFromInt64(int64(buyOrder1.Remaining))
+	buyLiquidityScore := buyOrder1Prob.Mul(DefaultInRangeProbabilityOfTrading).Mul(buyOrder1Size)
+	buySideTotalSize := num.DecimalZero().Add(buyOrder1Size)
 
-	sellLiquidity := num.UintZero().Add(sellLiquidity1, sellLiquidity2)
-	expectedLiquidity := num.Min(buyLiquidity1, sellLiquidity)
-	liquidity = engine.CalculateSuppliedLiquidity([]*types.Order{buyOrder1, sellOrder1, sellOrder2}, minLpPrice, maxLpPrice)
-	require.Equal(t, expectedLiquidity, liquidity)
+	buyLiquidityScore = buyLiquidityScore.Div(buySideTotalSize)
+
+	sellOrder1Size := num.DecimalFromInt64(int64(sellOrder1.Remaining))
+	sellLiquidityScore := sellOrder1Prob.Mul(DefaultInRangeProbabilityOfTrading).Mul(sellOrder1Size)
+	sellSideTotalSize := num.DecimalZero().Add(sellOrder1Size)
+
+	sellOrder2Size := num.DecimalFromInt64(int64(sellOrder2.Remaining))
+	sellLiquidityScore = sellLiquidityScore.Add(sellOrder2Prob.Mul(DefaultInRangeProbabilityOfTrading).Mul(sellOrder2Size))
+	sellSideTotalSize = sellSideTotalSize.Add(sellOrder2Size)
+
+	sellLiquidityScore = sellLiquidityScore.Div(sellSideTotalSize)
+
+	expectedScore := min(buyLiquidityScore, sellLiquidityScore)
+	liquidity3 := engine.CalculateLiquidityScore([]*types.Order{buyOrder1, sellOrder1, sellOrder2}, MarkPriceD, MarkPriceD, minLpPrice, maxLpPrice)
+	require.True(t, expectedScore.Equal(liquidity3))
 
 	// 2 buys, 2 sells
-	//	buyLiquidity += buyOrder2.Price.Float64() * float64(buyOrder2.Remaining) * buyOrder2Prob
-	buyLiquidity2 := num.UintZero().Mul(buyOrder2.Price.Clone(), num.NewUint(buyOrder2.Remaining))
-	buyLiquidity := num.UintZero().Add(buyLiquidity1, buyLiquidity2)
+	buyOrder2 := &types.Order{
+		Price:     num.NewUint(102),
+		Size:      600,
+		Remaining: 599,
+		Side:      types.SideBuy,
+	}
+	buyOrder2Prob := num.DecimalFromFloat(0.256)
 
-	expectedLiquidity = num.Min(buyLiquidity, sellLiquidity)
-	liquidity = engine.CalculateSuppliedLiquidity([]*types.Order{buyOrder1, sellOrder1, sellOrder2, buyOrder2}, minLpPrice, maxLpPrice)
-	require.Equal(t, expectedLiquidity, liquidity)
+	//	buyLiquidity += buyOrder2.Price.Float64() * float64(buyOrder2.Remaining) * buyOrder2Prob
+	buyOrder2Size := num.DecimalFromInt64(int64(buyOrder2.Remaining))
+	buyLiquidityScore = buyOrder1Prob.Mul(DefaultInRangeProbabilityOfTrading).Mul(buyOrder1Size).Add(buyOrder2Prob.Mul(DefaultInRangeProbabilityOfTrading).Mul(buyOrder2Size))
+	buySideTotalSize = num.DecimalZero().Add(buyOrder1Size).Add(buyOrder2Size)
+
+	buyLiquidityScore = buyLiquidityScore.Div(buySideTotalSize)
+
+	expectedScore = min(buyLiquidityScore, sellLiquidityScore)
+	liquidity4 := engine.CalculateLiquidityScore([]*types.Order{buyOrder1, sellOrder1, sellOrder2, buyOrder2}, MarkPriceD, MarkPriceD, minLpPrice, maxLpPrice)
+	require.True(t, expectedScore.Equal(liquidity4))
+
+	// Orders outside PM range (but within LP range)
+
+	// add orders outwith the LP bounds
+	buyOrder3 := &types.Order{
+		Price:     num.UintZero().Sub(minPMPrice.Representation(), num.UintOne()),
+		Size:      123,
+		Remaining: 45,
+		Side:      types.SideBuy,
+	}
+	sellOrder3 := &types.Order{
+		Price:     num.UintZero().Add(maxPMPrice.Representation(), num.UintOne()),
+		Size:      345,
+		Remaining: 67,
+		Side:      types.SideSell,
+	}
+
+	// liquidity shouldn't change
+	liquidity5 := engine.CalculateLiquidityScore([]*types.Order{buyOrder1, sellOrder1, sellOrder2, buyOrder2, sellOrder3, buyOrder3}, MarkPriceD, MarkPriceD, minLpPrice, maxLpPrice)
+	require.Equal(t, liquidity4, liquidity5)
+
+	// Orders outside LP range (but within PM range)
+
+	// set bounds at prices of orders furtherst away form the mid
+	minLpPrice = buyOrder2.Price
+	maxLpPrice = sellOrder1.Price
+
+	// add orders outwith the LP bounds
+	buyOrder3 = &types.Order{
+		Price:     num.UintZero().Sub(minLpPrice, num.UintOne()),
+		Size:      123,
+		Remaining: 45,
+		Side:      types.SideBuy,
+	}
+	sellOrder3 = &types.Order{
+		Price:     num.UintZero().Add(maxLpPrice, num.UintOne()),
+		Size:      345,
+		Remaining: 67,
+		Side:      types.SideSell,
+	}
+
+	// liquidity shouldn't change
+	liquidity6 := engine.CalculateLiquidityScore([]*types.Order{buyOrder1, sellOrder1, sellOrder2, buyOrder2, sellOrder3, buyOrder3}, MarkPriceD, MarkPriceD, minLpPrice, maxLpPrice)
+	require.Equal(t, liquidity4, liquidity6)
 }
 
 func Test_InteralConsistency(t *testing.T) {
@@ -142,7 +232,7 @@ func Test_InteralConsistency(t *testing.T) {
 
 	// 	Verify engine is internally consistent
 	allOrders := collateOrders(limitOrders, buyShapes, sellShapes)
-	totalSuppliedLiquidity := engine.CalculateSuppliedLiquidity(allOrders, minLpPrice, maxLpPrice)
+	totalSuppliedLiquidity := num.Min(engine.CalculateUnweightedBuySellLiquidityWithinLPRange(allOrders, minLpPrice, maxLpPrice))
 	require.True(t, totalSuppliedLiquidity.GTE(liquidityObligation))
 }
 
@@ -198,7 +288,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 
 	// 	Verify engine is internally consistent
 	allOrders := collateOrders(limitOrders, buyShapes, sellShapes)
-	totalSuppliedLiquidity := engine.CalculateSuppliedLiquidity(allOrders, minLpPrice, maxLpPrice)
+	totalSuppliedLiquidity := num.Min(engine.CalculateUnweightedBuySellLiquidityWithinLPRange(allOrders, minLpPrice, maxLpPrice))
 	require.True(t, totalSuppliedLiquidity.GTE(liquidityObligation))
 
 	// 0 liquidity obligation -> 0 sizes on all orders
@@ -212,7 +302,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 
 	// Verify engine is internally consistent
 	allOrders = collateOrders(limitOrders, buyShapes, sellShapes)
-	totalSuppliedLiquidity = engine.CalculateSuppliedLiquidity(allOrders, minLpPrice, maxLpPrice)
+	totalSuppliedLiquidity = num.Min(engine.CalculateUnweightedBuySellLiquidityWithinLPRange(allOrders, minLpPrice, maxLpPrice))
 	require.True(t, totalSuppliedLiquidity.GTE(liquidityObligation))
 
 	// Positive liquidity obligation -> positive sizes on orders -> suplied liquidity >= liquidity obligation
@@ -245,7 +335,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 
 	// Verify engine is internally consistent
 	allOrders = collateOrders(limitOrders, buyShapes, sellShapes)
-	totalSuppliedLiquidity = engine.CalculateSuppliedLiquidity(allOrders, minLpPrice, maxLpPrice)
+	totalSuppliedLiquidity = num.Min(engine.CalculateUnweightedBuySellLiquidityWithinLPRange(allOrders, minLpPrice, maxLpPrice))
 	require.True(t, totalSuppliedLiquidity.GTE(liquidityObligation))
 	require.True(t, totalSuppliedLiquidity.LT(liquidityObligation.Mul(liquidityObligation, num.NewUint(2))))
 }
@@ -309,8 +399,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 			Side:      types.SideSell,
 		},
 	}
-
-	limitOrdersSuppliedLiquidity := engine.CalculateSuppliedLiquidity(collateOrders(limitOrders, nil, nil), minLpPrice, maxLpPrice)
+	limitOrdersSuppliedLiquidity := num.Min(engine.CalculateUnweightedBuySellLiquidityWithinLPRange(collateOrders(limitOrders, nil, nil), minLpPrice, maxLpPrice))
 	require.True(t, limitOrdersSuppliedLiquidity.LT(liquidityObligation))
 
 	engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
@@ -323,7 +412,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 
 	// 	Verify engine is internally consistent
 	allOrders := collateOrders(limitOrders, buyShapes, sellShapes)
-	totalSuppliedLiquidity := engine.CalculateSuppliedLiquidity(allOrders, minLpPrice, maxLpPrice)
+	totalSuppliedLiquidity := num.Min(engine.CalculateUnweightedBuySellLiquidityWithinLPRange(allOrders, minLpPrice, maxLpPrice))
 	require.True(t, totalSuppliedLiquidity.GTE(liquidityObligation))
 	require.True(t, totalSuppliedLiquidity.LT(liquidityObligation.Mul(liquidityObligation, num.NewUint(2))))
 
@@ -349,7 +438,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 		},
 	}
 
-	limitOrdersSuppliedLiquidity = engine.CalculateSuppliedLiquidity(collateOrders(limitOrders, nil, nil), minLpPrice, maxLpPrice)
+	limitOrdersSuppliedLiquidity = num.Min(engine.CalculateUnweightedBuySellLiquidityWithinLPRange(collateOrders(limitOrders, nil, nil), minLpPrice, maxLpPrice))
 	require.True(t, limitOrdersSuppliedLiquidity.LT(liquidityObligation))
 
 	engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
@@ -361,7 +450,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 
 	// 	Verify engine is internally consistent
 	allOrders = collateOrders(limitOrders, buyShapes, sellShapes)
-	totalSuppliedLiquidity = engine.CalculateSuppliedLiquidity(allOrders, minLpPrice, maxLpPrice)
+	totalSuppliedLiquidity = num.Min(engine.CalculateUnweightedBuySellLiquidityWithinLPRange(allOrders, minLpPrice, maxLpPrice))
 	require.True(t, totalSuppliedLiquidity.GTE(liquidityObligation))
 	require.True(t, totalSuppliedLiquidity.LT(liquidityObligation.Mul(liquidityObligation, num.NewUint(2))))
 
@@ -386,8 +475,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 			Side:      types.SideSell,
 		},
 	}
-
-	limitOrdersSuppliedLiquidity = engine.CalculateSuppliedLiquidity(collateOrders(limitOrders, nil, nil), minLpPrice, maxLpPrice)
+	limitOrdersSuppliedLiquidity = num.Min(engine.CalculateUnweightedBuySellLiquidityWithinLPRange(allOrders, minLpPrice, maxLpPrice))
 	require.True(t, limitOrdersSuppliedLiquidity.LT(liquidityObligation))
 
 	engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
@@ -399,7 +487,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 
 	// 	Verify engine is internally consistent
 	allOrders = collateOrders(limitOrders, buyShapes, sellShapes)
-	totalSuppliedLiquidity = engine.CalculateSuppliedLiquidity(allOrders, minLpPrice, maxLpPrice)
+	totalSuppliedLiquidity = num.Min(engine.CalculateUnweightedBuySellLiquidityWithinLPRange(allOrders, minLpPrice, maxLpPrice))
 	require.True(t, totalSuppliedLiquidity.GTE(liquidityObligation))
 	tmp := liquidityObligation.Clone()
 	tmp.Mul(tmp, num.NewUint(2))
@@ -427,7 +515,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 		},
 	}
 
-	limitOrdersSuppliedLiquidity = engine.CalculateSuppliedLiquidity(collateOrders(limitOrders, nil, nil), minLpPrice, maxLpPrice)
+	limitOrdersSuppliedLiquidity = num.Min(engine.CalculateUnweightedBuySellLiquidityWithinLPRange(collateOrders(limitOrders, nil, nil), minLpPrice, maxLpPrice))
 	require.True(t, limitOrdersSuppliedLiquidity.GT(liquidityObligation))
 
 	engine.CalculateLiquidityImpliedVolumes(liquidityObligation, limitOrders, minLpPrice, maxLpPrice, buyShapes, sellShapes)
@@ -439,7 +527,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 
 	// 	Verify engine is internally consistent
 	allOrders = collateOrders(limitOrders, buyShapes, sellShapes)
-	totalSuppliedLiquidity = engine.CalculateSuppliedLiquidity(allOrders, minLpPrice, maxLpPrice)
+	totalSuppliedLiquidity = num.Min(engine.CalculateUnweightedBuySellLiquidityWithinLPRange(allOrders, minLpPrice, maxLpPrice))
 	require.True(t, totalSuppliedLiquidity.GTE(liquidityObligation))
 }
 
@@ -509,10 +597,10 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", stubs.NewStateVar(), logging.NewTestLogger(), num.DecimalFromInt64(1))
 	require.NotNil(t, engine)
 
-	liquidity1 := engine.CalculateSuppliedLiquidity(orders, minLpPrice, maxLpPrice)
+	liquidity1 := num.Min(engine.CalculateUnweightedBuySellLiquidityWithinLPRange(orders, minLpPrice, maxLpPrice))
 	require.True(t, liquidity1.GT(num.NewUint(0)))
 
-	liquidity2 := engine.CalculateSuppliedLiquidity(orders, minLpPrice, maxLpPrice)
+	liquidity2 := num.Min(engine.CalculateUnweightedBuySellLiquidityWithinLPRange(orders, minLpPrice, maxLpPrice))
 	require.True(t, liquidity2.GT(num.NewUint(0)))
 	require.Equal(t, liquidity1, liquidity2)
 }
@@ -538,4 +626,11 @@ func collateOrders(limitOrders []*types.Order, buyShapes []*supplied.LiquidityOr
 		limitOrders = append(limitOrders, lo)
 	}
 	return limitOrders
+}
+
+func min(d1, d2 num.Decimal) num.Decimal {
+	if d1.LessThan(d2) {
+		return d1
+	}
+	return d2
 }
