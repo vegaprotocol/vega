@@ -57,6 +57,7 @@ type ResolverRoot interface {
 	Delegation() DelegationResolver
 	Deposit() DepositResolver
 	Epoch() EpochResolver
+	EpochRewardSummary() EpochRewardSummaryResolver
 	EpochTimestamps() EpochTimestampsResolver
 	EthereumKeyRotation() EthereumKeyRotationResolver
 	Future() FutureResolver
@@ -468,6 +469,24 @@ type ComplexityRoot struct {
 		Offline      func(childComplexity int) int
 		Online       func(childComplexity int) int
 		TotalRewards func(childComplexity int) int
+	}
+
+	EpochRewardSummary struct {
+		Amount     func(childComplexity int) int
+		AssetId    func(childComplexity int) int
+		Epoch      func(childComplexity int) int
+		MarketId   func(childComplexity int) int
+		RewardType func(childComplexity int) int
+	}
+
+	EpochRewardSummaryConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	EpochRewardSummaryEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	EpochTimestamps struct {
@@ -1323,6 +1342,7 @@ type ComplexityRoot struct {
 		Deposit                            func(childComplexity int, id string) int
 		Deposits                           func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		Epoch                              func(childComplexity int, id *string) int
+		EpochRewardSummaries               func(childComplexity int, fromEpoch *int, toEpoch *int, pagination *v2.Pagination) int
 		Erc20ListAssetBundle               func(childComplexity int, assetID string) int
 		Erc20MultiSigSignerAddedBundles    func(childComplexity int, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) int
 		Erc20MultiSigSignerRemovedBundles  func(childComplexity int, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) int
@@ -1823,6 +1843,11 @@ type EpochResolver interface {
 	ValidatorsConnection(ctx context.Context, obj *vega.Epoch, pagination *v2.Pagination) (*v2.NodesConnection, error)
 	DelegationsConnection(ctx context.Context, obj *vega.Epoch, partyID *string, nodeID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error)
 }
+type EpochRewardSummaryResolver interface {
+	Epoch(ctx context.Context, obj *vega.EpochRewardSummary) (int, error)
+
+	RewardType(ctx context.Context, obj *vega.EpochRewardSummary) (vega.AccountType, error)
+}
 type EpochTimestampsResolver interface {
 	Start(ctx context.Context, obj *vega.EpochTimestamps) (*int64, error)
 	Expiry(ctx context.Context, obj *vega.EpochTimestamps) (*int64, error)
@@ -2119,6 +2144,7 @@ type QueryResolver interface {
 	ProtocolUpgradeStatus(ctx context.Context) (*ProtocolUpgradeStatus, error)
 	ProtocolUpgradeProposals(ctx context.Context, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) (*v2.ProtocolUpgradeProposalConnection, error)
 	CoreSnapshots(ctx context.Context, pagination *v2.Pagination) (*v2.CoreSnapshotConnection, error)
+	EpochRewardSummaries(ctx context.Context, fromEpoch *int, toEpoch *int, pagination *v2.Pagination) (*v2.EpochRewardSummaryConnection, error)
 	Statistics(ctx context.Context) (*v12.Statistics, error)
 	TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
 	Withdrawal(ctx context.Context, id string) (*vega.Withdrawal, error)
@@ -3577,6 +3603,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EpochParticipation.TotalRewards(childComplexity), true
+
+	case "EpochRewardSummary.amount":
+		if e.complexity.EpochRewardSummary.Amount == nil {
+			break
+		}
+
+		return e.complexity.EpochRewardSummary.Amount(childComplexity), true
+
+	case "EpochRewardSummary.assetId":
+		if e.complexity.EpochRewardSummary.AssetId == nil {
+			break
+		}
+
+		return e.complexity.EpochRewardSummary.AssetId(childComplexity), true
+
+	case "EpochRewardSummary.epoch":
+		if e.complexity.EpochRewardSummary.Epoch == nil {
+			break
+		}
+
+		return e.complexity.EpochRewardSummary.Epoch(childComplexity), true
+
+	case "EpochRewardSummary.marketId":
+		if e.complexity.EpochRewardSummary.MarketId == nil {
+			break
+		}
+
+		return e.complexity.EpochRewardSummary.MarketId(childComplexity), true
+
+	case "EpochRewardSummary.rewardType":
+		if e.complexity.EpochRewardSummary.RewardType == nil {
+			break
+		}
+
+		return e.complexity.EpochRewardSummary.RewardType(childComplexity), true
+
+	case "EpochRewardSummaryConnection.edges":
+		if e.complexity.EpochRewardSummaryConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.EpochRewardSummaryConnection.Edges(childComplexity), true
+
+	case "EpochRewardSummaryConnection.pageInfo":
+		if e.complexity.EpochRewardSummaryConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.EpochRewardSummaryConnection.PageInfo(childComplexity), true
+
+	case "EpochRewardSummaryEdge.cursor":
+		if e.complexity.EpochRewardSummaryEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.EpochRewardSummaryEdge.Cursor(childComplexity), true
+
+	case "EpochRewardSummaryEdge.node":
+		if e.complexity.EpochRewardSummaryEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.EpochRewardSummaryEdge.Node(childComplexity), true
 
 	case "EpochTimestamps.end":
 		if e.complexity.EpochTimestamps.End == nil {
@@ -7266,6 +7355,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Epoch(childComplexity, args["id"].(*string)), true
 
+	case "Query.epochRewardSummaries":
+		if e.complexity.Query.EpochRewardSummaries == nil {
+			break
+		}
+
+		args, err := ec.field_Query_epochRewardSummaries_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.EpochRewardSummaries(childComplexity, args["fromEpoch"].(*int), args["toEpoch"].(*int), args["pagination"].(*v2.Pagination)), true
+
 	case "Query.erc20ListAssetBundle":
 		if e.complexity.Query.Erc20ListAssetBundle == nil {
 			break
@@ -10272,6 +10373,39 @@ func (ec *executionContext) field_Query_deposits_args(ctx context.Context, rawAr
 		}
 	}
 	args["pagination"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_epochRewardSummaries_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["fromEpoch"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fromEpoch"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["fromEpoch"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["toEpoch"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toEpoch"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["toEpoch"] = arg1
+	var arg2 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg2
 	return args, nil
 }
 
@@ -20210,6 +20344,421 @@ func (ec *executionContext) fieldContext_EpochParticipation_totalRewards(ctx con
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EpochRewardSummary_epoch(ctx context.Context, field graphql.CollectedField, obj *vega.EpochRewardSummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EpochRewardSummary_epoch(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EpochRewardSummary().Epoch(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EpochRewardSummary_epoch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EpochRewardSummary",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EpochRewardSummary_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.EpochRewardSummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EpochRewardSummary_marketId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EpochRewardSummary_marketId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EpochRewardSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EpochRewardSummary_assetId(ctx context.Context, field graphql.CollectedField, obj *vega.EpochRewardSummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EpochRewardSummary_assetId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AssetId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EpochRewardSummary_assetId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EpochRewardSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EpochRewardSummary_rewardType(ctx context.Context, field graphql.CollectedField, obj *vega.EpochRewardSummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EpochRewardSummary_rewardType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EpochRewardSummary().RewardType(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(vega.AccountType)
+	fc.Result = res
+	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EpochRewardSummary_rewardType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EpochRewardSummary",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type AccountType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EpochRewardSummary_amount(ctx context.Context, field graphql.CollectedField, obj *vega.EpochRewardSummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EpochRewardSummary_amount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Amount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EpochRewardSummary_amount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EpochRewardSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EpochRewardSummaryConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.EpochRewardSummaryConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EpochRewardSummaryConnection_edges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.EpochRewardSummaryEdge)
+	fc.Result = res
+	return ec.marshalOEpochRewardSummaryEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEpochRewardSummaryEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EpochRewardSummaryConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EpochRewardSummaryConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_EpochRewardSummaryEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_EpochRewardSummaryEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EpochRewardSummaryEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EpochRewardSummaryConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.EpochRewardSummaryConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EpochRewardSummaryConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EpochRewardSummaryConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EpochRewardSummaryConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EpochRewardSummaryEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.EpochRewardSummaryEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EpochRewardSummaryEdge_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.EpochRewardSummary)
+	fc.Result = res
+	return ec.marshalNEpochRewardSummary2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpochRewardSummary(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EpochRewardSummaryEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EpochRewardSummaryEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "epoch":
+				return ec.fieldContext_EpochRewardSummary_epoch(ctx, field)
+			case "marketId":
+				return ec.fieldContext_EpochRewardSummary_marketId(ctx, field)
+			case "assetId":
+				return ec.fieldContext_EpochRewardSummary_assetId(ctx, field)
+			case "rewardType":
+				return ec.fieldContext_EpochRewardSummary_rewardType(ctx, field)
+			case "amount":
+				return ec.fieldContext_EpochRewardSummary_amount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EpochRewardSummary", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EpochRewardSummaryEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.EpochRewardSummaryEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EpochRewardSummaryEdge_cursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EpochRewardSummaryEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EpochRewardSummaryEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -46896,6 +47445,64 @@ func (ec *executionContext) fieldContext_Query_coreSnapshots(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_epochRewardSummaries(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_epochRewardSummaries(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().EpochRewardSummaries(rctx, fc.Args["fromEpoch"].(*int), fc.Args["toEpoch"].(*int), fc.Args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.EpochRewardSummaryConnection)
+	fc.Result = res
+	return ec.marshalOEpochRewardSummaryConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEpochRewardSummaryConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_epochRewardSummaries(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_EpochRewardSummaryConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_EpochRewardSummaryConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EpochRewardSummaryConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_epochRewardSummaries_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_statistics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_statistics(ctx, field)
 	if err != nil {
@@ -63923,6 +64530,149 @@ func (ec *executionContext) _EpochParticipation(ctx context.Context, sel ast.Sel
 	return out
 }
 
+var epochRewardSummaryImplementors = []string{"EpochRewardSummary"}
+
+func (ec *executionContext) _EpochRewardSummary(ctx context.Context, sel ast.SelectionSet, obj *vega.EpochRewardSummary) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, epochRewardSummaryImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EpochRewardSummary")
+		case "epoch":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EpochRewardSummary_epoch(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "marketId":
+
+			out.Values[i] = ec._EpochRewardSummary_marketId(ctx, field, obj)
+
+		case "assetId":
+
+			out.Values[i] = ec._EpochRewardSummary_assetId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "rewardType":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EpochRewardSummary_rewardType(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "amount":
+
+			out.Values[i] = ec._EpochRewardSummary_amount(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var epochRewardSummaryConnectionImplementors = []string{"EpochRewardSummaryConnection"}
+
+func (ec *executionContext) _EpochRewardSummaryConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.EpochRewardSummaryConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, epochRewardSummaryConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EpochRewardSummaryConnection")
+		case "edges":
+
+			out.Values[i] = ec._EpochRewardSummaryConnection_edges(ctx, field, obj)
+
+		case "pageInfo":
+
+			out.Values[i] = ec._EpochRewardSummaryConnection_pageInfo(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var epochRewardSummaryEdgeImplementors = []string{"EpochRewardSummaryEdge"}
+
+func (ec *executionContext) _EpochRewardSummaryEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.EpochRewardSummaryEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, epochRewardSummaryEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EpochRewardSummaryEdge")
+		case "node":
+
+			out.Values[i] = ec._EpochRewardSummaryEdge_node(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+
+			out.Values[i] = ec._EpochRewardSummaryEdge_cursor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var epochTimestampsImplementors = []string{"EpochTimestamps"}
 
 func (ec *executionContext) _EpochTimestamps(ctx context.Context, sel ast.SelectionSet, obj *vega.EpochTimestamps) graphql.Marshaler {
@@ -72269,6 +73019,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "epochRewardSummaries":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_epochRewardSummaries(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "statistics":
 			field := field
 
@@ -76820,6 +77590,16 @@ func (ec *executionContext) marshalNEpoch2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 	return ec._Epoch(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNEpochRewardSummary2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpochRewardSummary(ctx context.Context, sel ast.SelectionSet, v *vega.EpochRewardSummary) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._EpochRewardSummary(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNEpochTimestamps2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpochTimestamps(ctx context.Context, sel ast.SelectionSet, v *vega.EpochTimestamps) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -79963,6 +80743,61 @@ func (ec *executionContext) marshalOEpochData2ᚖcodeᚗvegaprotocolᚗioᚋvega
 		return graphql.Null
 	}
 	return ec._EpochData(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOEpochRewardSummaryConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEpochRewardSummaryConnection(ctx context.Context, sel ast.SelectionSet, v *v2.EpochRewardSummaryConnection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._EpochRewardSummaryConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOEpochRewardSummaryEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEpochRewardSummaryEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.EpochRewardSummaryEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOEpochRewardSummaryEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEpochRewardSummaryEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOEpochRewardSummaryEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEpochRewardSummaryEdge(ctx context.Context, sel ast.SelectionSet, v *v2.EpochRewardSummaryEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._EpochRewardSummaryEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOErc20ListAssetBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐErc20ListAssetBundle(ctx context.Context, sel ast.SelectionSet, v *Erc20ListAssetBundle) graphql.Marshaler {

@@ -26,6 +26,7 @@ type rewardStore interface {
 	GetByOffset(ctx context.Context, partyID *string, assetID *string, p *entities.OffsetPagination) ([]entities.Reward, error)
 	GetByCursor(ctx context.Context, partyID *string, assetID *string, p entities.CursorPagination) ([]entities.Reward, entities.PageInfo, error)
 	GetSummaries(ctx context.Context, partyID *string, assetID *string) ([]entities.RewardSummary, error)
+	GetEpochSummaries(ctx context.Context, fromEpoch *uint64, toEpoch *uint64, p entities.CursorPagination) ([]entities.EpochRewardSummary, entities.PageInfo, error)
 }
 
 type Reward struct {
@@ -65,6 +66,10 @@ func (r *Reward) GetByCursor(ctx context.Context, partyID, assetID *string, p en
 
 func (r *Reward) GetSummaries(ctx context.Context, partyID *string, assetID *string) ([]entities.RewardSummary, error) {
 	return r.store.GetSummaries(ctx, partyID, assetID)
+}
+
+func (r *Reward) GetEpochRewardSummaries(ctx context.Context, fromEpoch *uint64, toEpoch *uint64, p entities.CursorPagination) ([]entities.EpochRewardSummary, entities.PageInfo, error) {
+	return r.store.GetEpochSummaries(ctx, fromEpoch, toEpoch, p)
 }
 
 func (r *Reward) Observe(ctx context.Context, retries int, assetID, partyID string) (rewardCh <-chan []entities.Reward, ref uint64) {
