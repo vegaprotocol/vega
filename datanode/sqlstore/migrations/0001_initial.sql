@@ -689,6 +689,8 @@ create table if not exists markets (
     primary key (id, vega_time)
 );
 
+select create_hypertable('markets', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+
 drop view if exists markets_current;
 
 create table if not exists markets_current (
