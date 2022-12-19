@@ -14,7 +14,7 @@ Please see [Releases](https://github.com/vegaprotocol/vega/releases). We recomme
 
 **Please DO NOT file a public ticket** mentioning the vulnerability.
 
-To find out how to disclose a vulnerability in Vega visit the [bug bountys](https://vega.xyz/bug-bounties) page or email security@vegaprotocol.io. 
+To find out how to disclose a vulnerability in Vega visit the [bug bounties](https://vega.xyz/bug-bounties) page or email security@vegaprotocol.io. 
 
 Please read the [disclosure page](https://github.com/vegaprotocol/vega/security/advisories?state=published) for more information about publicly disclosed security vulnerabilities.
 
