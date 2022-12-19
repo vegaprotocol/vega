@@ -647,6 +647,13 @@ type Query {
   "List core snapshots"
   coreSnapshots(pagination: Pagination): CoreSnapshotConnection
 
+  "List reward summary per epoch by asset, market, reward type"
+  epochRewardSummaries(
+    fromEpoch: Int, 
+    toEpoch: Int,
+    pagination: Pagination
+    ): EpochRewardSummaryConnection
+
   "Get statistics about the Vega node"
   statistics: Statistics!
 
@@ -4430,6 +4437,30 @@ type ProtocolUpgradeProposal {
   approvers: [String!]!
   "the status of the proposal"
   status: ProtocolUpgradeProposalStatus!
+}
+
+type EpochRewardSummaryConnection {
+  edges: [EpochRewardSummaryEdge]
+  pageInfo: PageInfo
+}
+
+type EpochRewardSummaryEdge {
+  node: EpochRewardSummary!
+  cursor: String!
+}
+
+"an aggregated reward summary for a combination of epoch/asset/market/reward type"
+type EpochRewardSummary {
+  "The epoch for which summary is generated"
+  epoch: Int! 
+  "ID of the market"
+  marketId: ID
+  "ID of the Asset"
+  assetId: ID!
+  "Type of the reward"
+  rewardType: AccountType!
+  "Total quantity of rewards awarded in this asset/market/reward type in this epoch"
+  amount: String!
 }
 
 "Connection type for retrieving cursor-based paginated core snapshot data"

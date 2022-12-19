@@ -1293,6 +1293,16 @@ message RewardSummary {
   string amount = 3;
 }
 
+// Details for rewards for a combination of asset, market, and reward type in a given epoch
+message EpochRewardSummary {
+  uint64 epoch = 1;
+  string asset_id = 2;
+  string market_id = 3;
+  string reward_type = 4;
+  string amount = 5;
+}
+
+
 message StateValueProposal {
   // state variable identifier
   string state_var_id = 1;
