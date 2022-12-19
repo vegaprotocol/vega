@@ -4449,6 +4449,7 @@ type EpochRewardSummaryEdge {
   cursor: String!
 }
 
+"an aggregated reward summary for a combination of epoch/asset/market/reward type"
 type EpochRewardSummary {
   "The epoch for which summary is generated"
   epoch: Int! 
