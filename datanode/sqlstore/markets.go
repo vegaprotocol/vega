@@ -47,10 +47,11 @@ func NewMarkets(connectionSource *ConnectionSource) *Markets {
 }
 
 func (m *Markets) Upsert(ctx context.Context, market *entities.Market) error {
-	query := fmt.Sprintf(`insert into markets(%s)
+	query := fmt.Sprintf(`insert into markets_current(%s)
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-on conflict (id, vega_time) do update
+on conflict (id) do update
 set
+    vega_time=EXCLUDED.vega_time,
 	instrument_id=EXCLUDED.instrument_id,
 	tradable_instrument=EXCLUDED.tradable_instrument,
 	decimal_places=EXCLUDED.decimal_places,
@@ -94,7 +95,7 @@ func (m *Markets) GetByID(ctx context.Context, marketID string) (entities.Market
 	}
 
 	query := fmt.Sprintf(`select distinct on (id) %s
-from markets
+from markets_history
 where id = $1
 order by id, vega_time desc
 `, sqlMarketsColumns)
@@ -111,7 +112,7 @@ order by id, vega_time desc
 func (m *Markets) GetAll(ctx context.Context, pagination entities.OffsetPagination) ([]entities.Market, error) {
 	var markets []entities.Market
 	query := fmt.Sprintf(`select distinct on (id) %s
-from markets
+from markets_history
 where state != 'STATE_REJECTED'
 order by id, vega_time desc
 `, sqlMarketsColumns)

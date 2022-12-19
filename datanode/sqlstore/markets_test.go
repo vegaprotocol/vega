@@ -164,7 +164,7 @@ func shouldInsertAValidMarketRecord(t *testing.T) {
 	conn := connectionSource.Connection
 	var rowCount int
 
-	err := conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	err := conn.QueryRow(ctx, `select count(*) from markets_current`).Scan(&rowCount)
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
@@ -177,7 +177,7 @@ func shouldInsertAValidMarketRecord(t *testing.T) {
 
 	err = md.Upsert(ctx, market)
 	require.NoError(t, err, "Saving market entity to database")
-	err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	err = conn.QueryRow(ctx, `select count(*) from markets_current`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 }
@@ -198,7 +198,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 	var rowCount int
 
 	t.Run("should have no markets in the database", func(t *testing.T) {
-		err := conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+		err := conn.QueryRow(ctx, `select count(*) from markets_current`).Scan(&rowCount)
 		require.NoError(t, err)
 		assert.Equal(t, 0, rowCount)
 	})
@@ -217,7 +217,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 		require.NoError(t, err, "Saving market entity to database")
 
 		var got entities.Market
-		err = pgxscan.Get(ctx, conn, &got, `select * from markets where id = $1 and vega_time = $2`, market.ID, market.VegaTime)
+		err = pgxscan.Get(ctx, conn, &got, `select * from markets_current where id = $1 and vega_time = $2`, market.ID, market.VegaTime)
 		assert.NoError(t, err)
 		assert.Equal(t, "TEST_INSTRUMENT", market.InstrumentID)
 
@@ -236,7 +236,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 		require.NoError(t, err, "Saving market entity to database")
 
 		var got entities.Market
-		err = pgxscan.Get(ctx, conn, &got, `select * from markets where id = $1 and vega_time = $2`, market.ID, market.VegaTime)
+		err = pgxscan.Get(ctx, conn, &got, `select * from markets_current where id = $1 and vega_time = $2`, market.ID, market.VegaTime)
 		assert.NoError(t, err)
 		assert.Equal(t, "TEST_INSTRUMENT", market.InstrumentID)
 
@@ -255,22 +255,19 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 		err = md.Upsert(ctx, market)
 		require.NoError(t, err, "Saving market entity to database")
 
-		err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+		err = conn.QueryRow(ctx, `select count(*) from markets_history`).Scan(&rowCount)
 		require.NoError(t, err)
 		assert.Equal(t, 2, rowCount)
 
 		var gotFirstBlock, gotSecondBlock entities.Market
 
-		err = pgxscan.Get(ctx, conn, &gotFirstBlock, `select * from markets where id = $1 and vega_time = $2`, market.ID, block.VegaTime)
+		err = pgxscan.Get(ctx, conn, &gotFirstBlock, `select * from markets_history where id = $1 and vega_time = $2`, market.ID, block.VegaTime)
 		assert.NoError(t, err)
 		assert.Equal(t, "TEST_INSTRUMENT", market.InstrumentID)
-
 		assert.Equal(t, marketProto.TradableInstrument, gotFirstBlock.TradableInstrument.ToProto())
 
-		err = pgxscan.Get(ctx, conn, &gotSecondBlock, `select * from markets where id = $1 and vega_time = $2`, market.ID, newBlock.VegaTime)
+		err = pgxscan.Get(ctx, conn, &gotSecondBlock, `select * from markets_history where id = $1 and vega_time = $2`, market.ID, newBlock.VegaTime)
 		assert.NoError(t, err)
-		assert.Equal(t, "TEST_INSTRUMENT", market.InstrumentID)
-
 		assert.Equal(t, newMarketProto.TradableInstrument, gotSecondBlock.TradableInstrument.ToProto())
 	})
 }

@@ -716,31 +716,37 @@ CREATE OR REPLACE FUNCTION update_current_markets()
     LANGUAGE PLPGSQL AS
 $$
 BEGIN
-    INSERT INTO markets_current(id,tx_hash,vega_time,instrument_id,tradable_instrument,decimal_places,fees,opening_auction,price_monitoring_settings,liquidity_monitoring_parameters,trading_mode,state,market_timestamps,position_decimal_places,lp_price_range)
-    VALUES(NEW.id,NEW.tx_hash,NEW.vega_time,NEW.instrument_id,NEW.tradable_instrument,NEW.decimal_places,NEW.fees,NEW.opening_auction,NEW.price_monitoring_settings,NEW.liquidity_monitoring_parameters,NEW.trading_mode,NEW.state,NEW.market_timestamps,NEW.position_decimal_places,NEW.lp_price_range)
-    ON CONFLICT(id) DO UPDATE SET
-                                                           tx_hash=EXCLUDED.tx_hash,
-                                                           instrument_id=EXCLUDED.instrument_id,
-                                                           tradable_instrument=EXCLUDED.tradable_instrument,
-                                                           decimal_places=EXCLUDED.decimal_places,
-                                                           fees=EXCLUDED.fees,
-                                                           opening_auction=EXCLUDED.opening_auction,
-                                                           price_monitoring_settings=EXCLUDED.price_monitoring_settings,
-                                                           liquidity_monitoring_parameters=EXCLUDED.liquidity_monitoring_parameters,
-                                                           trading_mode=EXCLUDED.trading_mode,
-                                                           state=EXCLUDED.state,
-                                                           market_timestamps=EXCLUDED.market_timestamps,
-                                                           position_decimal_places=EXCLUDED.position_decimal_places,
-                                                           lp_price_range=EXCLUDED.lp_price_range,
-                                                           vega_time=EXCLUDED.vega_time;
+    INSERT INTO markets(id,tx_hash,vega_time,instrument_id,tradable_instrument,decimal_places,fees,opening_auction,price_monitoring_settings,liquidity_monitoring_parameters,trading_mode,state,market_timestamps,position_decimal_places,lp_price_range)
+    VALUES(OLD.id,OLD.tx_hash,OLD.vega_time,OLD.instrument_id,OLD.tradable_instrument,OLD.decimal_places,OLD.fees,OLD.opening_auction,OLD.price_monitoring_settings,OLD.liquidity_monitoring_parameters,OLD.trading_mode,OLD.state,OLD.market_timestamps,OLD.position_decimal_places,OLD.lp_price_range)
+    ON CONFLICT (id, vega_time) DO UPDATE SET
+        tx_hash=OLD.tx_hash,
+        instrument_id=OLD.instrument_id,
+        tradable_instrument=OLD.tradable_instrument,
+        decimal_places=OLD.decimal_places,
+        fees=OLD.fees,
+        opening_auction=OLD.opening_auction,
+        price_monitoring_settings=OLD.price_monitoring_settings,
+        liquidity_monitoring_parameters=OLD.liquidity_monitoring_parameters,
+        trading_mode=OLD.trading_mode,
+        state=OLD.state,
+        market_timestamps=OLD.market_timestamps,
+        position_decimal_places=OLD.position_decimal_places,
+        lp_price_range=OLD.lp_price_range;
+
     RETURN NULL;
 END;
 $$;
 -- +goose StatementEnd
 
 CREATE TRIGGER update_current_markets
-    AFTER INSERT OR UPDATE ON markets
+    AFTER UPDATE ON markets_current
     FOR EACH ROW EXECUTE function update_current_markets();
+
+
+CREATE VIEW markets_history AS
+    SELECT * FROM markets_current
+    UNION ALL
+    SELECT * FROM markets;
 
 CREATE TABLE epochs(
   id           BIGINT                   NOT NULL,
@@ -1633,7 +1639,8 @@ DROP TABLE IF EXISTS nodes;
 DROP TABLE IF EXISTS nodes_announced;
 DROP TYPE IF EXISTS node_status;
 
-DROP TRIGGER IF EXISTS update_current_markets ON markets;
+DROP VIEW IF EXISTS markets_history;
+DROP TRIGGER IF EXISTS update_current_markets ON markets_current;
 DROP FUNCTION IF EXISTS update_current_markets;
 DROP TABLE IF EXISTS markets_current;
 DROP TABLE IF EXISTS markets CASCADE;
