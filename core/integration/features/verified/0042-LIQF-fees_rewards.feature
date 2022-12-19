@@ -1,6 +1,6 @@
 Feature: Test liquidity provider reward distribution; Should also cover liquidity-fee-setting and equity-like-share calc and total stake.
-# to look into and test: If an equity-like share is small and LP rewards are distributed immediately, then how do we round? (does a small share get rounded up or down, do they all add up?)
-#Check what happens with time and distribution period (both in genesis and mid-market)
+  # to look into and test: If an equity-like share is small and LP rewards are distributed immediately, then how do we round? (does a small share get rounded up or down, do they all add up?)
+  #Check what happens with time and distribution period (both in genesis and mid-market)
 
   Background:
 
@@ -336,7 +336,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     # these are different from the tests, but again, we end up with a 0.8 vs 0.2 fee share here.
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 6     | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 6      | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 2      | USD   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
@@ -478,8 +478,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     # settle the market
     When the oracles broadcast data signed with "0xDEADBEEF":
-    | name               | value |
-    | trading.terminated | true  |
+      | name               | value |
+      | trading.terminated | true  |
 
     Then the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
@@ -552,8 +552,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     # Decrease the window length to 30 min
     Then the following network parameters are set:
-      | name                                                | value |
-      | market.value.windowLength                           | 30m   |
+      | name                      | value |
+      | market.value.windowLength | 30m   |
 
     # Move 1 block ahead to trigger market value proxy recalculation
     Then the network moves ahead "1" blocks
@@ -564,9 +564,9 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     # Place another trade and observe that it gets picked up by the market value proxy
     Then the parties place the following orders:
-      | party  | market id | side  | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/MAR22 | buy   | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/MAR22 | sell  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
@@ -586,9 +586,9 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     # Place another trade and observe that it gets picked up by the market value proxy
     Then the parties place the following orders:
-      | party  | market id | side  | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/MAR22 | sell  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/MAR22 | buy   | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
     Then the network moves ahead "100" blocks
     And the market data for the market "ETH/MAR22" should be:
@@ -597,8 +597,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     # Increase the window length to 40 min
     Then the following network parameters are set:
-      | name                                                | value |
-      | market.value.windowLength                           | 40m  |
+      | name                      | value |
+      | market.value.windowLength | 40m   |
 
     # Move beyond 30min (previous window length) and observe that trades are still picked up by market value proxy
     Then the network moves ahead "1000" blocks
@@ -610,3 +610,74 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | market value proxy |
       | 1000       | TRADING_MODE_CONTINUOUS | 8000         | 10000          | 70            | 10000              |
+
+  Scenario: 007 3 LPs joining at start, unequal commitments, check Liquidity fee factors are recalculated every time the liquidity demand estimate changes.(0042-LIQF-005)
+
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount     |
+      | lp1    | USD   | 1000000000 |
+      | lp2    | USD   | 1000000000 |
+      | lp3    | USD   | 1000000000 |
+      | party1 | USD   | 100000000  |
+      | party2 | USD   | 100000000  |
+
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 2000              | 0.002 | sell | ASK              | 1          | 2      | submission |
+      | lp1 | lp1   | ETH/MAR22 | 2000              | 0.002 | buy  | BID              | 1          | 1      | amendment  |
+
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp2 | lp2   | ETH/MAR22 | 3000              | 0.003 | sell | ASK              | 1          | 2      | submission |
+      | lp2 | lp2   | ETH/MAR22 | 3000              | 0.003 | buy  | BID              | 1          | 1      | amendment  |
+
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp3 | lp3   | ETH/MAR22 | 4000              | 0.004 | sell | ASK              | 1          | 2      | submission |
+      | lp3 | lp3   | ETH/MAR22 | 4000              | 0.004 | buy  | BID              | 1          | 1      | amendment  |
+
+    Then the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/MAR22 | buy  | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/MAR22"
+    And the liquidity fee factor should be "0.004" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    # no fees in auction
+
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party1 | 1000  | 60   | party2 |
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 6000         | 9000           | 60            |
+
+    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party | equity like share  | average entry valuation |
+      | lp1   | 0.2222222222222222 | 2000                    |
+      | lp2   | 0.3333333333333333 | 5000                    |
+      | lp3   | 0.4444444444444444 | 9000                    |
+
+    And the price monitoring bounds for the market "ETH/MAR22" should be:
+      | min bound | max bound |
+      | 500       | 1500      |
+
+    Then the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+      | party1 | ETH/MAR22 | sell | 50     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
+      | party2 | ETH/MAR22 | buy  | 50     | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party2-buy  |
+
+    And the liquidity fee factor should be "0.004" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "200" for the market "ETH/MAR22"
+    #liquidity fee: 50*1000*0.004=200
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 6000         | 9000           | 10            |
+
+
+
