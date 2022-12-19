@@ -258,7 +258,7 @@ func (e *Engine) isAccepted(p *protocolUpgradeProposal) bool {
 	for k := range p.accepted {
 		ratio = ratio.Add(num.DecimalFromInt64(e.topology.GetVotingPower(k)).Div(totalD))
 	}
-	return ratio.GreaterThan(e.requiredMajority)
+	return ratio.GreaterThanOrEqual(e.requiredMajority)
 }
 
 func (e *Engine) getProposalIDs() []string {
