@@ -679,5 +679,16 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 6000         | 9000           | 10            |
 
+    Then the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+      | party1 | ETH/MAR22 | buy  | 200    | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
+      | party2 | ETH/MAR22 | sell | 200    | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
+    And the liquidity fee factor should be "0.004" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1000" for the market "ETH/MAR22"
+    #liquidity fee: 50*1000*0.004=200
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 21000        | 9000           | 210           |
 
