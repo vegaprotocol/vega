@@ -38,7 +38,7 @@
 - [7132](https://github.com/vegaprotocol/vega/issues/7132) - Make the recovery phrase import white space resistant
 - [7150](https://github.com/vegaprotocol/vega/issues/7150) - Avoid taking 2 snapshots upon protocol upgrade block
 - [7142](https://github.com/vegaprotocol/vega/issues/7142) - Do not recalculate margins based on potential positions when market is terminated.
-
+- [7172](https://github.com/vegaprotocol/vega/issues/7172) - Market current status duplication in database
 
 ## 0.64.0
 
