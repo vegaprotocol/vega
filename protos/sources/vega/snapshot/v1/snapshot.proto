@@ -114,6 +114,7 @@ message Payload {
     ProtocolUpgradeProposals protocol_upgrade_proposals = 55;
     BankingBridgeState banking_bridge_state = 56;
     SettlementState settlement_state = 57;
+    LiquidityScores liquidity_scores = 58;
   }
 }
 
@@ -716,6 +717,17 @@ message LiquidityProvisions {
   repeated vega.LiquidityProvision liquidity_provisions = 1;
   // required for key generation
   string market_id = 2;
+}
+
+message LiquidityScores {
+  int32 running_average_counter = 1;
+  repeated LiquidityScore scores = 2;
+  string market_id = 3;
+}
+
+message LiquidityScore{
+  string score = 1;
+  string party_id = 2;
 }
 
 // snapshot payload for floating point consensus

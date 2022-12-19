@@ -21,6 +21,7 @@
 - [7027](https://github.com/vegaprotocol/vega/issues/7027) - `Dehistory` store does not clean up resources after a graceful shutdown
 - [7157](https://github.com/vegaprotocol/vega/issues/7157) - Core waits for data node and shuts down gracefully during protocol upgrade
 - [7113](https://github.com/vegaprotocol/vega/issues/7113) - Added API for epoch summaries of rewards distributed
+- [6956](https://github.com/vegaprotocol/vega/issues/6956) - Include liquidity measure of deployed orders in the fees distribution
 
 ### 🐛 Fixes
 - [7040](https://github.com/vegaprotocol/vega/issues/7040) - Block explorer use different codes than 500 on error

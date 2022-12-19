@@ -594,6 +594,10 @@ type PayloadLiquiditySupplied struct {
 	LiquiditySupplied *snapshot.LiquiditySupplied
 }
 
+type PayloadLiquidityScores struct {
+	LiquidityScores *snapshot.LiquidityScores
+}
+
 func (s Snapshot) GetRawChunk(idx uint32) (*RawChunk, error) {
 	if s.Chunks < idx {
 		return nil, ErrUnknownSnapshotChunkHeight
@@ -778,6 +782,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadProtocolUpgradeProposalFromProto(dt)
 	case *snapshot.Payload_SettlementState:
 		ret.Data = PayloadSettlementFromProto(dt)
+	case *snapshot.Payload_LiquidityScores:
+		ret.Data = PayloadLiquidityScoresFromProto(dt)
 	}
 
 	return ret
@@ -912,6 +918,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_ProtocolUpgradeProposals:
 		ret.Data = dt
 	case *snapshot.Payload_SettlementState:
+		ret.Data = dt
+	case *snapshot.Payload_LiquidityScores:
 		ret.Data = dt
 	}
 	return &ret
@@ -3838,6 +3846,32 @@ func (p *PayloadLiquiditySupplied) Key() string {
 }
 
 func (*PayloadLiquiditySupplied) Namespace() SnapshotNamespace {
+	return LiquiditySnapshot
+}
+
+func (*PayloadLiquidityScores) isPayload() {}
+
+func PayloadLiquidityScoresFromProto(ls *snapshot.Payload_LiquidityScores) *PayloadLiquidityScores {
+	return &PayloadLiquidityScores{
+		LiquidityScores: ls.LiquidityScores,
+	}
+}
+
+func (p *PayloadLiquidityScores) IntoProto() *snapshot.Payload_LiquidityScores {
+	return &snapshot.Payload_LiquidityScores{
+		LiquidityScores: p.LiquidityScores,
+	}
+}
+
+func (p *PayloadLiquidityScores) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (p *PayloadLiquidityScores) Key() string {
+	return fmt.Sprintf("liquidityScores:%v", p.LiquidityScores.MarketId)
+}
+
+func (*PayloadLiquidityScores) Namespace() SnapshotNamespace {
 	return LiquiditySnapshot
 }
 

@@ -62,17 +62,13 @@ Feature:
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      | amendment  |
+      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | submission |
+      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      |            |
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | buy  | MID              | 3          | 1      | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | sell | ASK              | 1          | 2      | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | sell | MID              | 3          | 1      | amendment  |
+      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | buy  | MID              | 3          | 1      | submission |
+      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | sell | MID              | 3          | 1      |            |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -118,9 +114,7 @@ Feature:
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
       | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
       | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | MID              | 3          | 1      | amendment |
 
     # Confirm equity-like-shares updated immediately after liquidity amendment
@@ -209,10 +203,8 @@ Feature:
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
       | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      |           |
 
     # Confirm equity-like-shares updated immediately after liquidity amendment
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
@@ -299,16 +291,12 @@ Feature:
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
       | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | MID              | 3          | 1      |           |
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp2 | lp2   | ETH/MAR22 | 45000             | 0.002 | buy  | BID              | 1          | 2      | amendment |
       | lp2 | lp2   | ETH/MAR22 | 45000             | 0.002 | buy  | MID              | 3          | 1      | amendment |
-      | lp2 | lp2   | ETH/MAR22 | 45000             | 0.002 | sell | ASK              | 1          | 2      | amendment |
-      | lp2 | lp2   | ETH/MAR22 | 45000             | 0.002 | sell | MID              | 3          | 1      | amendment |
+      | lp2 | lp2   | ETH/MAR22 | 45000             | 0.002 | sell | MID              | 3          | 1      |           |
 
     # Confirm equity-like-shares updated immediately after liquidity amendment
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
@@ -396,16 +384,12 @@ Feature:
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
       | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      |           |
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | buy  | BID              | 1          | 2      | amendment |
       | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | buy  | MID              | 3          | 1      | amendment |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | sell | ASK              | 1          | 2      | amendment |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | sell | MID              | 3          | 1      | amendment |
+      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | sell | MID              | 3          | 1      |           |
 
     # Confirm equity-like-shares updated immediately after liquidity amendment
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
@@ -748,11 +732,12 @@ Feature:
       | lp2   | 0.3750624687656172 | 50000                   |
       | lp3   | 0.2498750624687656 | 100050                  |
 
+    # lp3 just joined so liquidity score this period is virtually 0, hence no rewards
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 12     | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 12     | USD   |
-      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 8      | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 16     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 16     | USD   |
+      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 |  0     | USD   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
