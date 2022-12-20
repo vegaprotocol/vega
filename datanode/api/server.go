@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/dehistory"
+
 	"code.vegaprotocol.io/vega/datanode/dehistory/store"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -74,6 +76,7 @@ type GRPCServer struct {
 	log                   *logging.Logger
 	srv                   *grpc.Server
 	vegaCoreServiceClient CoreServiceClient
+	deHistoryConfig       dehistory.Config
 
 	eventService               *subscribers.Service
 	coreProxySvc               *coreProxyService
@@ -125,6 +128,7 @@ type GRPCServer struct {
 func NewGRPCServer(
 	log *logging.Logger,
 	config Config,
+	deHistoryConfig dehistory.Config,
 	coreServiceClient CoreServiceClient,
 	eventService *subscribers.Service,
 	orderService *service.Order,
@@ -172,6 +176,7 @@ func NewGRPCServer(
 	return &GRPCServer{
 		log:                        log,
 		Config:                     config,
+		deHistoryConfig:            deHistoryConfig,
 		vegaCoreServiceClient:      coreServiceClient,
 		eventService:               eventService,
 		orderService:               orderService,
@@ -410,11 +415,17 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		ethereumKeyRotationService: g.ethereumKeyRotationService,
 		blockService:               g.blockService,
 		protocolUpgradeService:     g.protocolUpgradeService,
-		deHistoryService:           g.deHistoryService,
 		coreSnapshotService:        g.coreSnapshotService,
 	}
 
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)
+
+	deHistorySvc := &deHistoryService{
+		config:           g.deHistoryConfig,
+		deHistoryService: g.deHistoryService,
+	}
+
+	protoapi.RegisterDeHistoryServiceServer(g.srv, deHistorySvc)
 
 	eg, ctx := errgroup.WithContext(ctx)
 

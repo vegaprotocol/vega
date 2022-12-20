@@ -146,6 +146,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	g := api.NewGRPCServer(
 		logger,
 		conf.API,
+		conf.DeHistory,
 		mockCoreServiceClient,
 		eventService,
 		sqlOrderService,

@@ -161,6 +161,7 @@ func (l *NodeCommand) createGRPCServer(config api.Config) *api.GRPCServer {
 	grpcServer := api.NewGRPCServer(
 		l.Log,
 		config,
+		l.conf.DeHistory,
 		l.vegaCoreServiceClient,
 		l.eventService,
 		l.orderService,

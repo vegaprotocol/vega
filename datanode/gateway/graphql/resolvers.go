@@ -47,7 +47,7 @@ var (
 	ErrInvalidProposal = errors.New("invalid proposal")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/datanode/gateway/graphql CoreProxyServiceClient,TradingDataServiceClientV2
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/datanode/gateway/graphql CoreProxyServiceClient,TradingDataServiceClientV2,DeHistoryServiceClient
 
 // CoreProxyServiceClient ...
 type CoreProxyServiceClient interface {
@@ -58,6 +58,10 @@ type TradingDataServiceClientV2 interface {
 	v2.TradingDataServiceClient
 }
 
+type DeHistoryServiceClient interface {
+	v2.DeHistoryServiceClient
+}
+
 // VegaResolverRoot is the root resolver for all graphql types.
 type VegaResolverRoot struct {
 	gateway.Config
@@ -65,6 +69,7 @@ type VegaResolverRoot struct {
 	log                 *logging.Logger
 	tradingProxyClient  CoreProxyServiceClient
 	tradingDataClientV2 TradingDataServiceClientV2
+	deHistoryClient     DeHistoryServiceClient
 	r                   allResolver
 }
 
@@ -74,12 +79,14 @@ func NewResolverRoot(
 	config gateway.Config,
 	tradingClient CoreProxyServiceClient,
 	tradingDataClientV2 TradingDataServiceClientV2,
+	deHistoryClient DeHistoryServiceClient,
 ) *VegaResolverRoot {
 	return &VegaResolverRoot{
 		log:                 log,
 		Config:              config,
 		tradingProxyClient:  tradingClient,
 		tradingDataClientV2: tradingDataClientV2,
+		deHistoryClient: deHistoryClient,
 		r:                   allResolver{log, tradingDataClientV2},
 	}
 }
@@ -1172,7 +1179,7 @@ func (r *myQueryResolver) NetworkLimits(ctx context.Context) (*types.NetworkLimi
 func (r *myQueryResolver) MostRecentHistorySegment(ctx context.Context) (*v2.HistorySegment, error) {
 	req := &v2.GetMostRecentDeHistorySegmentRequest{}
 
-	resp, err := r.tradingDataClientV2.GetMostRecentDeHistorySegment(ctx, req)
+	resp, err := r.deHistoryClient.GetMostRecentDeHistorySegment(ctx, req)
 	if err != nil {
 		return nil, err
 	}

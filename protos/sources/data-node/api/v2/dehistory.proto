@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package datanode.api.v2;
+
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "data-node/api/v2/trading_data.proto";
+
+option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Vega data node APIs";
+    version: "v0.65.0+dev";
+  }
+  schemes: [HTTP, HTTPS]
+  host: "lb.testnet.vega.xyz/datanode/rest"
+};
+
+service DeHistoryService {
+  // Decentralized History
+  //
+  // Decentralised History allows the data-node to reach out to peer nodes to fetch the most recent history, as well as
+  // older history if desired, such that it can quickly get itself up to the latest block height of the network and start
+  // to consume events for the latest block from the Vega core.
+  // See https://github.com/vegaprotocol/vega/tree/develop/datanode/dehistory/README.md for a full description of Decentralised History
+
+  // Get most recent decentralized history segment
+  //
+  // Get the networks most recently history segment
+  rpc GetMostRecentDeHistorySegment(GetMostRecentDeHistorySegmentRequest) returns (GetMostRecentDeHistorySegmentResponse);
+
+  // List all decentralized history segments
+  //
+  // List all history segments stored by this node
+  rpc ListAllDeHistorySegments(ListAllDeHistorySegmentsRequest) returns (ListAllDeHistorySegmentsResponse);
+
+  // Fetch decentralized history segment
+  //
+  // Fetch a history segment from another peer in the network
+  rpc FetchDeHistorySegment(FetchDeHistorySegmentRequest) returns (FetchDeHistorySegmentResponse);
+
+  // Get active decentralized history peer addresses
+  //
+  // List the addresses of all active decentralized history peers
+  rpc GetActiveDeHistoryPeerAddresses(GetActiveDeHistoryPeerAddressesRequest) returns (GetActiveDeHistoryPeerAddressesResponse);
+
+  // Copy history segment to file
+  //
+  // Copy history segment data to a target file
+  rpc CopyHistorySegmentToFile(CopyHistorySegmentToFileRequest) returns (CopyHistorySegmentToFileResponse);
+
+  // Ping
+  //
+  // Ping the datanode
+  rpc Ping(PingRequest) returns (PingResponse);
+}
+
+// -- Decentralized History --
+// Decentralised History allows the data-node to reach out to peer nodes to fetch the most recent history, as well as
+// older history if desired, such that it can quickly get itself up to the latest block height of the network and start
+// to consume events for the latest block from the Vega core.
+// See https://github.com/vegaprotocol/vega/tree/develop/datanode/dehistory/README.md for a full description of Decentralised History
+
+// Describes a decentralized history segment
+message HistorySegment {
+  int64 from_height = 1;
+  int64 to_height = 2;
+  string chain_id = 3;
+  string history_segment_id = 4;
+  string previous_history_segment_id = 5;
+}
+
+// Request to get the most recent history segment
+message GetMostRecentDeHistorySegmentRequest {
+}
+
+// Get most recent history segment response
+message GetMostRecentDeHistorySegmentResponse {
+  HistorySegment segment = 1;
+  string swarm_key  = 2;
+}
+
+// Request to list all the nodes history segments
+message ListAllDeHistorySegmentsRequest {
+}
+
+// Response with a list of all the nodes history segments
+message ListAllDeHistorySegmentsResponse {
+  repeated HistorySegment segments = 1;
+}
+
+// Request to fetch a history segment from the network
+message FetchDeHistorySegmentRequest {
+  string history_segment_id  = 1;
+}
+
+// Response with details of the fetched history segment
+message FetchDeHistorySegmentResponse {
+  HistorySegment segment = 1;
+}
+
+// Request to get the addresses of active decentralized history peers
+message GetActiveDeHistoryPeerAddressesRequest {
+}
+
+// Response containing the addresses of active decentralized history peers
+message GetActiveDeHistoryPeerAddressesResponse {
+  repeated string ip_addresses = 1;
+}
+
+// Request to copy a history segment to a file
+message CopyHistorySegmentToFileRequest {
+    string history_segment_id  = 1;
+    string target_file  = 2;
+}
+
+// Response from copying a history segment to a file
+message CopyHistorySegmentToFileResponse {
+}

@@ -14,7 +14,9 @@ type Config struct {
 	Enabled       encoding.Bool     `long:"enabled" description:"set to false to disable decentralized history"`
 	WipeOnStartup encoding.Bool     `long:"wipe-on-startup" description:"remove all deHistory state on startup"`
 
-	Publish encoding.Bool `long:"publish" description:"if true this node will create and publish decentralized history segments"`
+	Publish            encoding.Bool `long:"publish" description:"if true this node will create and publish decentralized history segments"`
+	AllowFetchSegments encoding.Bool `long:"allow-fetch-segments" description:"if true this node will allow other nodes to fetch segments from it"`
+	AllowCopyToFile    encoding.Bool `long:"allow-copy-to-file" description:"if true this node will allow history segments to be copied to disk"`
 
 	Store    store.Config    `group:"Store" namespace:"store"`
 	Snapshot snapshot.Config `group:"Snapshot" namespace:"snapshot"`

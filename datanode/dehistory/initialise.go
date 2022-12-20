@@ -256,15 +256,15 @@ func SelectMostRecentHistorySegmentResponse(peerToResponse map[string]*v2.GetMos
 	return nil
 }
 
-func GetDatanodeClientFromIPAndPort(ip string, port int) (v2.TradingDataServiceClient, *grpc.ClientConn, error) {
+func GetDatanodeClientFromIPAndPort(ip string, port int) (v2.DeHistoryServiceClient, *grpc.ClientConn, error) {
 	address := net.JoinHostPort(ip, strconv.Itoa(port))
 	tdconn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return nil, nil, err
 	}
-	tradingDataClientV2 := v2.NewTradingDataServiceClient(&clientConn{tdconn})
+	dehistoryClient := v2.NewDeHistoryServiceClient(&clientConn{tdconn})
 
-	return tradingDataClientV2, tdconn, nil
+	return dehistoryClient, tdconn, nil
 }
 
 type (

@@ -57,6 +57,7 @@ type GraphServer struct {
 
 	coreProxyClient     CoreProxyServiceClient
 	tradingDataClientV2 v2.TradingDataServiceClient
+	deHistoryClient     v2.DeHistoryServiceClient
 	srv                 *http.Server
 	rl                  *gateway.SubscriptionRateLimiter
 }
@@ -83,8 +84,13 @@ func New(
 	if err != nil {
 		return nil, err
 	}
-
 	tradingClient := vegaprotoapi.NewCoreServiceClient(&clientConn{tconn})
+
+	deConn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	if err != nil {
+		return nil, err
+	}
+	deHistoryClient := v2.NewDeHistoryServiceClient(&clientConn{deConn})
 
 	return &GraphServer{
 		log:                 log,
@@ -92,6 +98,7 @@ func New(
 		vegaPaths:           vegaPaths,
 		coreProxyClient:     tradingClient,
 		tradingDataClientV2: tradingDataClientV2,
+		deHistoryClient:     deHistoryClient,
 		rl: gateway.NewSubscriptionRateLimiter(
 			log, config.MaxSubscriptionPerClient),
 	}, nil
@@ -152,6 +159,7 @@ func (g *GraphServer) Start() error {
 		g.Config,
 		g.coreProxyClient,
 		g.tradingDataClientV2,
+		g.deHistoryClient,
 	)
 	config := Config{
 		Resolvers: resolverRoot,
