@@ -42,10 +42,6 @@ type DeHistoryServiceClient interface {
 	//
 	// Copy history segment data to a target file
 	CopyHistorySegmentToFile(ctx context.Context, in *CopyHistorySegmentToFileRequest, opts ...grpc.CallOption) (*CopyHistorySegmentToFileResponse, error)
-	// Ping
-	//
-	// Ping the datanode
-	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 }
 
 type deHistoryServiceClient struct {
@@ -101,15 +97,6 @@ func (c *deHistoryServiceClient) CopyHistorySegmentToFile(ctx context.Context, i
 	return out, nil
 }
 
-func (c *deHistoryServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
-	out := new(PingResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.DeHistoryService/Ping", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // DeHistoryServiceServer is the server API for DeHistoryService service.
 // All implementations must embed UnimplementedDeHistoryServiceServer
 // for forward compatibility
@@ -134,10 +121,6 @@ type DeHistoryServiceServer interface {
 	//
 	// Copy history segment data to a target file
 	CopyHistorySegmentToFile(context.Context, *CopyHistorySegmentToFileRequest) (*CopyHistorySegmentToFileResponse, error)
-	// Ping
-	//
-	// Ping the datanode
-	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	mustEmbedUnimplementedDeHistoryServiceServer()
 }
 
@@ -159,9 +142,6 @@ func (UnimplementedDeHistoryServiceServer) GetActiveDeHistoryPeerAddresses(conte
 }
 func (UnimplementedDeHistoryServiceServer) CopyHistorySegmentToFile(context.Context, *CopyHistorySegmentToFileRequest) (*CopyHistorySegmentToFileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CopyHistorySegmentToFile not implemented")
-}
-func (UnimplementedDeHistoryServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedDeHistoryServiceServer) mustEmbedUnimplementedDeHistoryServiceServer() {}
 
@@ -266,24 +246,6 @@ func _DeHistoryService_CopyHistorySegmentToFile_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DeHistoryService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PingRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DeHistoryServiceServer).Ping(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/datanode.api.v2.DeHistoryService/Ping",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DeHistoryServiceServer).Ping(ctx, req.(*PingRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // DeHistoryService_ServiceDesc is the grpc.ServiceDesc for DeHistoryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -310,10 +272,6 @@ var DeHistoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CopyHistorySegmentToFile",
 			Handler:    _DeHistoryService_CopyHistorySegmentToFile_Handler,
-		},
-		{
-			MethodName: "Ping",
-			Handler:    _DeHistoryService_Ping_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

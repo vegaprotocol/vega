@@ -51,7 +51,7 @@ func (cmd *dumpSegment) Execute(args []string) error {
 		return fmt.Errorf("datanode must be running for this command to work")
 	}
 
-	client, conn, err := getDatanodeClient(cmd.Config)
+	client, conn, err := getDeHistoryClient(cmd.Config)
 	if err != nil {
 		return fmt.Errorf("failed to get datanode client:%w", err)
 	}

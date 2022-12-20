@@ -3,7 +3,6 @@ syntax = "proto3";
 package datanode.api.v2;
 
 import "protoc-gen-openapiv2/options/annotations.proto";
-import "data-node/api/v2/trading_data.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 
@@ -48,11 +47,6 @@ service DeHistoryService {
   //
   // Copy history segment data to a target file
   rpc CopyHistorySegmentToFile(CopyHistorySegmentToFileRequest) returns (CopyHistorySegmentToFileResponse);
-
-  // Ping
-  //
-  // Ping the datanode
-  rpc Ping(PingRequest) returns (PingResponse);
 }
 
 // -- Decentralized History --

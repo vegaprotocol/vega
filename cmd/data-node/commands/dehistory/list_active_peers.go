@@ -55,7 +55,7 @@ func (cmd *listActivePeers) Execute(_ []string) error {
 		os.Exit(1)
 	}
 
-	client, conn, err := getDatanodeClient(cmd.Config)
+	client, conn, err := getDeHistoryClient(cmd.Config)
 	if err != nil {
 		handleErr(log,
 			cmd.Output.IsJSON(),

@@ -3,6 +3,8 @@ package dehistory
 import (
 	"context"
 	"fmt"
+	"net"
+	"strconv"
 
 	"code.vegaprotocol.io/vega/datanode/dehistory"
 	vgjson "code.vegaprotocol.io/vega/libs/json"
@@ -47,8 +49,26 @@ func DeHistory(ctx context.Context, parser *flags.Parser) error {
 	return nil
 }
 
-func getDatanodeClient(cfg config.Config) (v2.DeHistoryServiceClient, *grpc.ClientConn, error) {
+func getDeHistoryClient(cfg config.Config) (v2.DeHistoryServiceClient, *grpc.ClientConn, error) {
 	return dehistory.GetDatanodeClientFromIPAndPort(cfg.API.IP, cfg.API.Port)
+}
+
+func getDatanodeClient(cfg config.Config) (v2.TradingDataServiceClient, *grpc.ClientConn, error) {
+	address := net.JoinHostPort(cfg.API.IP, strconv.Itoa(cfg.API.Port))
+	tdconn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	type (
+		clientConn struct {
+			*grpc.ClientConn
+		}
+	)
+
+	tradingDataServiceClient := v2.NewTradingDataServiceClient(&clientConn{tdconn})
+
+	return tradingDataServiceClient, tdconn, nil
 }
 
 func datanodeLive(cfg config.Config) bool {

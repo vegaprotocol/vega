@@ -56,7 +56,7 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 		return fmt.Errorf("datanode must be running for this command to work")
 	}
 
-	client, conn, err := getDatanodeClient(cmd.Config)
+	client, conn, err := getDeHistoryClient(cmd.Config)
 	if err != nil {
 		handleErr(log, cmd.Output.IsJSON(), "failed to get datanode client", err)
 		os.Exit(1)
