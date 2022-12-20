@@ -330,10 +330,6 @@ type TradingDataServiceClient interface {
 	//
 	// List all history segments stored by this node
 	ListAllDeHistorySegments(ctx context.Context, in *ListAllDeHistorySegmentsRequest, opts ...grpc.CallOption) (*ListAllDeHistorySegmentsResponse, error)
-	// Fetch decentralized history segment
-	//
-	// Fetch a history segment from another peer in the network
-	FetchDeHistorySegment(ctx context.Context, in *FetchDeHistorySegmentRequest, opts ...grpc.CallOption) (*FetchDeHistorySegmentResponse, error)
 	// Get active decentralized history peer addresses
 	//
 	// List the addresses of all active decentralized history peers
@@ -1448,15 +1444,6 @@ func (c *tradingDataServiceClient) ListAllDeHistorySegments(ctx context.Context,
 	return out, nil
 }
 
-func (c *tradingDataServiceClient) FetchDeHistorySegment(ctx context.Context, in *FetchDeHistorySegmentRequest, opts ...grpc.CallOption) (*FetchDeHistorySegmentResponse, error) {
-	out := new(FetchDeHistorySegmentResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/FetchDeHistorySegment", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *tradingDataServiceClient) GetActiveDeHistoryPeerAddresses(ctx context.Context, in *GetActiveDeHistoryPeerAddressesRequest, opts ...grpc.CallOption) (*GetActiveDeHistoryPeerAddressesResponse, error) {
 	out := new(GetActiveDeHistoryPeerAddressesResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetActiveDeHistoryPeerAddresses", in, out, opts...)
@@ -1787,10 +1774,6 @@ type TradingDataServiceServer interface {
 	//
 	// List all history segments stored by this node
 	ListAllDeHistorySegments(context.Context, *ListAllDeHistorySegmentsRequest) (*ListAllDeHistorySegmentsResponse, error)
-	// Fetch decentralized history segment
-	//
-	// Fetch a history segment from another peer in the network
-	FetchDeHistorySegment(context.Context, *FetchDeHistorySegmentRequest) (*FetchDeHistorySegmentResponse, error)
 	// Get active decentralized history peer addresses
 	//
 	// List the addresses of all active decentralized history peers
@@ -2048,9 +2031,6 @@ func (UnimplementedTradingDataServiceServer) GetMostRecentDeHistorySegment(conte
 }
 func (UnimplementedTradingDataServiceServer) ListAllDeHistorySegments(context.Context, *ListAllDeHistorySegmentsRequest) (*ListAllDeHistorySegmentsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAllDeHistorySegments not implemented")
-}
-func (UnimplementedTradingDataServiceServer) FetchDeHistorySegment(context.Context, *FetchDeHistorySegmentRequest) (*FetchDeHistorySegmentResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FetchDeHistorySegment not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetActiveDeHistoryPeerAddresses(context.Context, *GetActiveDeHistoryPeerAddressesRequest) (*GetActiveDeHistoryPeerAddressesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetActiveDeHistoryPeerAddresses not implemented")
@@ -3582,24 +3562,6 @@ func _TradingDataService_ListAllDeHistorySegments_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingDataService_FetchDeHistorySegment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FetchDeHistorySegmentRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServiceServer).FetchDeHistorySegment(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/datanode.api.v2.TradingDataService/FetchDeHistorySegment",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).FetchDeHistorySegment(ctx, req.(*FetchDeHistorySegmentRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _TradingDataService_GetActiveDeHistoryPeerAddresses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetActiveDeHistoryPeerAddressesRequest)
 	if err := dec(in); err != nil {
@@ -3902,10 +3864,6 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListAllDeHistorySegments",
 			Handler:    _TradingDataService_ListAllDeHistorySegments_Handler,
-		},
-		{
-			MethodName: "FetchDeHistorySegment",
-			Handler:    _TradingDataService_FetchDeHistorySegment_Handler,
 		},
 		{
 			MethodName: "GetActiveDeHistoryPeerAddresses",
