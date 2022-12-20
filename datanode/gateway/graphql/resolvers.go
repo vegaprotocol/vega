@@ -86,7 +86,7 @@ func NewResolverRoot(
 		Config:              config,
 		tradingProxyClient:  tradingClient,
 		tradingDataClientV2: tradingDataClientV2,
-		deHistoryClient: deHistoryClient,
+		deHistoryClient:     deHistoryClient,
 		r:                   allResolver{log, tradingDataClientV2},
 	}
 }
