@@ -639,18 +639,34 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1 | ETH/MAR22 | buy  | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/MAR22 | sell | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/MAR22"
-    And the liquidity fee factor should be "0.004" for the market "ETH/MAR22"
+    And the liquidity fee factor should be "0.002" for the market "ETH/MAR22"
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
     # no fees in auction
 
+    Then the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | buy  | 25     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 25     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    And the accumulated liquidity fees should be "50" for the market "ETH/MAR22"
+    #liquidity fee: 25*1000*0.002=50
+    And the liquidity fee factor should be "0.003" for the market "ETH/MAR22"
+
+    Then the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | buy  | 25     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 25     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    And the accumulated liquidity fees should be "125" for the market "ETH/MAR22"
+    #liquidity fee: 25*1000*0.003=75
+    And the liquidity fee factor should be "0.004" for the market "ETH/MAR22"
+
     And the following trades should be executed:
       | buyer  | price | size | seller |
-      | party1 | 1000  | 60   | party2 |
+      | party1 | 1000  | 25   | party2 |
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake | open interest |
@@ -672,8 +688,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party2 | ETH/MAR22 | buy  | 50     | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
     And the liquidity fee factor should be "0.004" for the market "ETH/MAR22"
-    And the accumulated liquidity fees should be "200" for the market "ETH/MAR22"
-    #liquidity fee: 50*1000*0.004=200
+    And the accumulated liquidity fees should be "325" for the market "ETH/MAR22"
+    #liquidity fee: 50*1000*0.004=200, accumulated liquidity fee: 200+125=325
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake | open interest |
@@ -685,10 +701,11 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party2 | ETH/MAR22 | sell | 200    | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
     And the liquidity fee factor should be "0.004" for the market "ETH/MAR22"
-    And the accumulated liquidity fees should be "1000" for the market "ETH/MAR22"
-    #liquidity fee: 50*1000*0.004=200
+    And the accumulated liquidity fees should be "1125" for the market "ETH/MAR22"
+    #liquidity fee: 200*1000*0.004=800, accumulated liquidity fee: 800+325=1125
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 21000        | 9000           | 210           |
+
 
