@@ -25,8 +25,9 @@ import (
 )
 
 type Property struct {
-	Name  string
-	Value string
+	Name                string
+	Value               string
+	NumberDecimalPlaces *uint64
 }
 
 type Data struct {
@@ -54,8 +55,9 @@ func ExternalDataFromProto(data *datapb.ExternalData, txHash TxHash, vegaTime ti
 
 		for _, property := range data.Data.Data {
 			properties = append(properties, Property{
-				Name:  property.Name,
-				Value: property.Value,
+				Name:                property.Name,
+				Value:               property.Value,
+				NumberDecimalPlaces: property.NumberDecimalPlaces,
 			})
 		}
 
@@ -100,8 +102,9 @@ func (od *ExternalData) ToProto() *datapb.ExternalData {
 
 			for _, prop := range od.Data.Data {
 				properties = append(properties, &datapb.Property{
-					Name:  prop.Name,
-					Value: prop.Value,
+					Name:                prop.Name,
+					Value:               prop.Value,
+					NumberDecimalPlaces: prop.NumberDecimalPlaces,
 				})
 			}
 
