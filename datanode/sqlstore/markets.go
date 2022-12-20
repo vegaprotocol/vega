@@ -93,8 +93,8 @@ func (m *Markets) GetByID(ctx context.Context, marketID string) (entities.Market
 		return market, nil
 	}
 
-	query := fmt.Sprintf(`select distinct on (id) %s
-from markets
+	query := fmt.Sprintf(`select %s
+from markets_current
 where id = $1
 order by id, vega_time desc
 `, sqlMarketsColumns)
@@ -110,8 +110,8 @@ order by id, vega_time desc
 
 func (m *Markets) GetAll(ctx context.Context, pagination entities.OffsetPagination) ([]entities.Market, error) {
 	var markets []entities.Market
-	query := fmt.Sprintf(`select distinct on (id) %s
-from markets
+	query := fmt.Sprintf(`select %s
+from markets_current
 where state != 'STATE_REJECTED'
 order by id, vega_time desc
 `, sqlMarketsColumns)
