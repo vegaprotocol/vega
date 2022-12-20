@@ -271,7 +271,7 @@ type Market struct {
 	positionFactor        num.Decimal // 10^pdp
 	assetDP               uint32
 
-	settlementDataInMarket *num.Uint
+	settlementDataInMarket *num.Numeric
 	nextMTM                time.Time
 	mtmDelta               time.Duration
 }
@@ -3273,7 +3273,7 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.log.Debug("market must not terminated before its enactment time", logging.MarketID(m.GetID()))
 }
 
-func (m *Market) settlementData(ctx context.Context, settlementData *num.Uint) {
+func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -3300,8 +3300,10 @@ func (m *Market) settlementDataWithLock(ctx context.Context) {
 		}
 
 		// mark price should be updated here
-		m.lastTradedPrice = settlementDataInAsset.Clone()
-		m.markPrice = settlementDataInAsset.Clone()
+		if settlementDataInAsset != nil {
+			m.lastTradedPrice = settlementDataInAsset.Clone()
+			m.markPrice = settlementDataInAsset.Clone()
+		}
 
 		// send the market data with all updated stuff
 		m.broker.Send(events.NewMarketDataEvent(ctx, m.GetMarketData()))

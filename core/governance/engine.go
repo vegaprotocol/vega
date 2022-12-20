@@ -990,7 +990,6 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 				DataSourceSpecForSettlementData:     product.Future.DataSourceSpecForSettlementData,
 				DataSourceSpecForTradingTermination: product.Future.DataSourceSpecForTradingTermination,
 				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
-				SettlementDataDecimalPlaces:         product.Future.SettlementDataDecimals,
 			},
 		}
 	default:
