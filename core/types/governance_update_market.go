@@ -313,7 +313,6 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 				QuoteName:                           pr.Future.QuoteName,
 				DataSourceSpecForSettlementData:     *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData),
 				DataSourceSpecForTradingTermination: *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination),
-				SettlementDataDecimals:              pr.Future.SettlementDataDecimals,
 				DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
 			},
 		}
@@ -326,7 +325,6 @@ type UpdateFutureProduct struct {
 	DataSourceSpecForSettlementData     DataSourceDefinition
 	DataSourceSpecForTradingTermination DataSourceDefinition
 	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
-	SettlementDataDecimals              uint32
 }
 
 func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
@@ -335,7 +333,6 @@ func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
 		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.IntoProto(),
-		SettlementDataDecimals:              f.SettlementDataDecimals,
 	}
 }
 
@@ -345,7 +342,6 @@ func (f UpdateFutureProduct) DeepClone() *UpdateFutureProduct {
 		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.DeepClone(),
 		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.DeepClone(),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.DeepClone(),
-		SettlementDataDecimals:              f.SettlementDataDecimals,
 	}
 }
 

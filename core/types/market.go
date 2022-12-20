@@ -341,7 +341,6 @@ type Future struct {
 	DataSourceSpecForSettlementData     *DataSourceSpec
 	DataSourceSpecForTradingTermination *DataSourceSpec
 	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
-	SettlementDataDecimals              uint32
 }
 
 func FutureFromProto(f *proto.Future) *Future {
@@ -351,7 +350,6 @@ func FutureFromProto(f *proto.Future) *Future {
 		DataSourceSpecForSettlementData:     DataSourceSpecFromProto(f.DataSourceSpecForSettlementData),
 		DataSourceSpecForTradingTermination: DataSourceSpecFromProto(f.DataSourceSpecForTradingTermination),
 		DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(f.DataSourceSpecBinding),
-		SettlementDataDecimals:              f.SettlementDataDecimals,
 	}
 }
 
@@ -362,16 +360,14 @@ func (f Future) IntoProto() *proto.Future {
 		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.IntoProto(),
-		SettlementDataDecimals:              f.SettlementDataDecimals,
 	}
 }
 
 func (f Future) String() string {
 	return fmt.Sprintf(
-		"quoteName(%s) settlementAsset(%s) SettlementDataDecimals(%v) dataSourceSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
+		"quoteName(%s) settlementAsset(%s) dataSourceSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
 		f.QuoteName,
 		f.SettlementAsset,
-		f.SettlementDataDecimals,
 		reflectPointerToString(f.DataSourceSpecForSettlementData),
 		reflectPointerToString(f.DataSourceSpecForTradingTermination),
 		reflectPointerToString(f.DataSourceSpecBinding),

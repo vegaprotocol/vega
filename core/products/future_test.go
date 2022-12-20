@@ -36,39 +36,111 @@ func TestScalingOfSettlementData(t *testing.T) {
 }
 
 func testNoScalingNeeded(t *testing.T) {
-	ft := testFuture(t)
+	// Create test future with settlement data type integer with decimals (that represents a decimal)
+	ft := testFuture(t, datapb.PropertyKey_TYPE_INTEGER)
 
+	n := &num.Numeric{}
+	n.SetUint(num.NewUint(100000))
 	// settlement data is in 5 decimal places, asset in 5 decimal places => no scaling
-	scaled, err := ft.future.ScaleSettlementDataToDecimalPlaces(num.NewUint(100000), 5)
+	scaled, err := ft.future.ScaleSettlementDataToDecimalPlaces(
+		n, 5,
+	)
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(100000), scaled)
+
+	// Create test future with settlement data type decimal with decimals (that represents a decimal)
+	ft = testFuture(t, datapb.PropertyKey_TYPE_DECIMAL)
+
+	// settlement data is in 5 decimal places, asset in 3 decimal places => x10^-2
+	dec := num.DecimalFromFloat(10000.01101)
+	n.SetDecimal(&dec)
+	scaled, err = ft.future.ScaleSettlementDataToDecimalPlaces(
+		n, 5,
+	)
+	require.NoError(t, err)
+	require.Equal(t, num.NewUint(1000001101), scaled)
 }
 
 func testScalingUpNeeded(t *testing.T) {
-	ft := testFuture(t)
+	// Create test future with settlement data type integer with decimals (that represents a decimal)
+	ft := testFuture(t, datapb.PropertyKey_TYPE_INTEGER)
 
+	n := &num.Numeric{}
+	n.SetUint(num.NewUint(100000))
 	// settlement data is in 5 decimal places, asset in 10 decimal places => x10^5
-	scaled, err := ft.future.ScaleSettlementDataToDecimalPlaces(num.NewUint(100000), 10)
+	scaled, err := ft.future.ScaleSettlementDataToDecimalPlaces(
+		n, 10,
+	)
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(10000000000), scaled)
+
+	// Create test future with settlement data type decimal with decimals (that represents a decimal)
+	ft = testFuture(t, datapb.PropertyKey_TYPE_DECIMAL)
+
+	// settlement data is in 5 decimal places, asset in 3 decimal places => x10^-2
+	dec := num.DecimalFromFloat(10000.00001)
+	n.SetDecimal(&dec)
+	scaled, err = ft.future.ScaleSettlementDataToDecimalPlaces(
+		n, 10,
+	)
+	require.NoError(t, err)
+	require.Equal(t, num.NewUint(100000000100000), scaled)
 }
 
 func testScalingDownNeeded(t *testing.T) {
-	ft := testFuture(t)
+	// Create test future with settlement data type integer with decimals (that represents a decimal)
+	ft := testFuture(t, datapb.PropertyKey_TYPE_INTEGER)
 
+	n := &num.Numeric{}
+	n.SetUint(num.NewUint(100000))
 	// settlement data is in 5 decimal places, asset in 3 decimal places => x10^-2
-	scaled, err := ft.future.ScaleSettlementDataToDecimalPlaces(num.NewUint(100000), 3)
+	scaled, err := ft.future.ScaleSettlementDataToDecimalPlaces(
+		n, 3,
+	)
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(1000), scaled)
+
+	// Create test future with settlement data type decimal with decimals (that represents a decimal)
+	ft = testFuture(t, datapb.PropertyKey_TYPE_DECIMAL)
+
+	// settlement data is in 5 decimal places, asset in 3 decimal places => x10^-2
+	dec := num.DecimalFromFloat(10000.00001)
+	n.SetDecimal(&dec)
+	_, err = ft.future.ScaleSettlementDataToDecimalPlaces(
+		n, 3,
+	)
+	require.ErrorIs(t, products.ErrSettlementDataDecimalsNotSupportedByAsset, err)
 }
 
 func testScalingDownNeededWithPrecisionLoss(t *testing.T) {
-	ft := testFuture(t)
+	// Create test future with settlement data type integer with decimals (that represents a decimal)
+	ft := testFuture(t, datapb.PropertyKey_TYPE_INTEGER)
 
+	n := &num.Numeric{}
+	n.SetUint(num.NewUint(123456))
 	// settlement data is in 5 decimal places, asset in 3 decimal places => x10^-2
-	scaled, err := ft.future.ScaleSettlementDataToDecimalPlaces(num.NewUint(123456), 3)
+	scaled, err := ft.future.ScaleSettlementDataToDecimalPlaces(
+		n, 3,
+	)
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(1234), scaled)
+
+	// settlement data is in 5 decimal places, asset in 3 decimal places => x10^-2
+	dec := num.DecimalFromFloat(12345.678912)
+	n.SetDecimal(&dec)
+	_, err = ft.future.ScaleSettlementDataToDecimalPlaces(
+		n, 3,
+	)
+	require.ErrorIs(t, products.ErrSettlementDataDecimalsNotSupportedByAsset, err)
+
+	dec = num.DecimalFromFloat(12345.000)
+	n.SetDecimal(&dec)
+	scaled, err = ft.future.ScaleSettlementDataToDecimalPlaces(
+		n, 4,
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, num.NewUint(123450000), scaled)
 }
 
 type tstFuture struct {
@@ -76,7 +148,7 @@ type tstFuture struct {
 	future *products.Future
 }
 
-func testFuture(t *testing.T) *tstFuture {
+func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
 	t.Helper()
 
 	log := logging.NewTestLogger()
@@ -87,27 +159,10 @@ func testFuture(t *testing.T) *tstFuture {
 		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 	}
 
+	var dp uint64 = 5
 	f := &types.Future{
 		SettlementAsset: "ETH",
 		QuoteName:       "ETH",
-		DataSourceSpecForSettlementData: &types.DataSourceSpec{
-			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
-			).SetOracleConfig(
-				&types.DataSourceSpecConfiguration{
-					Signers: pubKeys,
-					Filters: []*types.DataSourceSpecFilter{
-						{
-							Key: &types.DataSourceSpecPropertyKey{
-								Name: "price.ETH.value",
-								Type: datapb.PropertyKey_TYPE_INTEGER,
-							},
-							Conditions: nil,
-						},
-					},
-				},
-			),
-		},
 		DataSourceSpecForTradingTermination: &types.DataSourceSpec{
 			Data: types.NewDataSourceDefinition(
 				vegapb.DataSourceDefinitionTypeExt,
@@ -130,7 +185,26 @@ func testFuture(t *testing.T) *tstFuture {
 			SettlementDataProperty:     "price.ETH.value",
 			TradingTerminationProperty: "trading.termination",
 		},
-		SettlementDataDecimals: 5,
+	}
+
+	f.DataSourceSpecForSettlementData = &types.DataSourceSpec{
+		Data: types.NewDataSourceDefinition(
+			vegapb.DataSourceDefinitionTypeExt,
+		).SetOracleConfig(
+			&types.DataSourceSpecConfiguration{
+				Signers: pubKeys,
+				Filters: []*types.DataSourceSpecFilter{
+					{
+						Key: &types.DataSourceSpecPropertyKey{
+							Name:                "price.ETH.value",
+							Type:                propertyTpe,
+							NumberDecimalPlaces: &dp,
+						},
+						Conditions: nil,
+					},
+				},
+			},
+		),
 	}
 
 	ctx := context.Background()

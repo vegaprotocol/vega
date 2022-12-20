@@ -67,7 +67,7 @@ func TestCollateralTransfer(t *testing.T) {
 }
 
 func TestCollateralMarkToMarket(t *testing.T) {
-	t.Run("Mark to Market distribution, insufficient funcs - complex scenario", testProcessBothProRatedMTM)
+	t.Run("Mark to Market distribution, insufficient funds - complex scenario", testProcessBothProRatedMTM)
 	t.Run("Mark to Market successful", testMTMSuccess)
 	// we panic if settlement account is non-zero, this test doesn't pass anymore
 	t.Run("Mark to Market wins and losses do not match up, settlement not drained", testSettleBalanceNotZero)

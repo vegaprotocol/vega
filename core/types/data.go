@@ -16,6 +16,7 @@ package types
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
@@ -238,36 +239,40 @@ func (s DataSourceSpecSigners) String() string {
 }
 
 type DataSourceSpecPropertyKey struct {
-	Name string
-	Type DataSourceSpecPropertyKeyType
+	Name                string
+	Type                DataSourceSpecPropertyKeyType
+	NumberDecimalPlaces *uint64
 }
 
 func (k DataSourceSpecPropertyKey) String() string {
 	return fmt.Sprintf(
-		"name(%s) type(%s)",
+		"name(%s) type(%s) decimals(%s)",
 		k.Name,
 		k.Type.String(),
+		strconv.FormatUint(*k.NumberDecimalPlaces, 10),
 	)
 }
 
 func (k DataSourceSpecPropertyKey) IntoProto() *datapb.PropertyKey {
-	return &datapb.PropertyKey{
-		Name: k.Name,
-		Type: k.Type,
+	pk := &datapb.PropertyKey{
+		Name:                k.Name,
+		Type:                k.Type,
+		NumberDecimalPlaces: k.NumberDecimalPlaces,
 	}
+
+	return pk
 }
 
 func (k *DataSourceSpecPropertyKey) DeepClone() *DataSourceSpecPropertyKey {
-	return &DataSourceSpecPropertyKey{
-		Name: k.Name,
-		Type: k.Type,
-	}
+	c := k
+	return c
 }
 
 func DataSourceSpecPropertyKeyFromProto(protoKey *datapb.PropertyKey) *DataSourceSpecPropertyKey {
 	return &DataSourceSpecPropertyKey{
-		Name: protoKey.Name,
-		Type: protoKey.Type,
+		Name:                protoKey.Name,
+		Type:                protoKey.Type,
+		NumberDecimalPlaces: protoKey.NumberDecimalPlaces,
 	}
 }
 

@@ -20,8 +20,6 @@ message FutureProduct {
   vega.DataSourceDefinition data_source_spec_for_trading_termination = 4;
   // The binding between the data source spec and the settlement data
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
-  // The number of decimal places implied by the settlement data (such as price) emitted by the settlement data source
-  uint32 settlement_data_decimals = 6;
 }
 
 // Instrument configuration
@@ -120,8 +118,6 @@ message UpdateFutureProduct {
   vega.DataSourceDefinition data_source_spec_for_trading_termination = 3;
   // The binding between the data source spec and the settlement data
   DataSourceSpecToFutureBinding data_source_spec_binding = 4;
-  // The number of decimal places implied by the settlement data (such as price) emitted by the settlement external data source
-  uint32 settlement_data_decimals = 5;
 }
 
 // Update network configuration on Vega
