@@ -26,17 +26,23 @@ func TestInitialiseEmptyDataNode(t *testing.T) {
 	service := mocks.NewMockDeHistory(ctrl)
 	ctx := context.Background()
 
-	mostRecentSegment := &v2.HistorySegment{
-		FromHeight:               1001,
-		ToHeight:                 2000,
-		ChainId:                  "testchainid",
-		HistorySegmentId:         "segment2",
-		PreviousHistorySegmentId: "segment1",
+	peerResponse := &dehistory.PeerResponse{
+		PeerAddr: "",
+		Response: &v2.GetMostRecentDeHistorySegmentResponse{
+			Segment: &v2.HistorySegment{
+				FromHeight:               1001,
+				ToHeight:                 2000,
+				ChainId:                  "testchainid",
+				HistorySegmentId:         "segment2",
+				PreviousHistorySegmentId: "segment1",
+			},
+			SwarmKey: "",
+		},
 	}
 
 	cfg.MinimumBlockCount = 1500
 	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
-		Return(mostRecentSegment, map[string]*v2.HistorySegment{"peer1": mostRecentSegment}, nil)
+		Return(peerResponse, map[string]*v2.GetMostRecentDeHistorySegmentResponse{"peer1": peerResponse.Response}, nil)
 
 	first := service.EXPECT().FetchHistorySegment(gomock.Any(), "segment2").Times(1).Return(store.SegmentIndexEntry{
 		SegmentMetaData: store.SegmentMetaData{
@@ -60,7 +66,7 @@ func TestInitialiseEmptyDataNode(t *testing.T) {
 
 	gomock.InOrder(first, second)
 
-	service.EXPECT().LoadAllAvailableHistoryIntoDatanode(gomock.Any(), sqlstore.EmbedMigrations).Times(1)
+	service.EXPECT().LoadAllAvailableHistoryIntoDatanode(gomock.Any()).Times(1)
 
 	dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{})
 }
@@ -75,17 +81,23 @@ func TestInitialiseNonEmptyDataNode(t *testing.T) {
 	service := mocks.NewMockDeHistory(ctrl)
 	ctx := context.Background()
 
-	mostRecentSegment := &v2.HistorySegment{
-		FromHeight:               3001,
-		ToHeight:                 4000,
-		ChainId:                  "testchainid",
-		HistorySegmentId:         "segment4",
-		PreviousHistorySegmentId: "segment3",
+	peerResponse := &dehistory.PeerResponse{
+		PeerAddr: "",
+		Response: &v2.GetMostRecentDeHistorySegmentResponse{
+			Segment: &v2.HistorySegment{
+				FromHeight:               3001,
+				ToHeight:                 4000,
+				ChainId:                  "testchainid",
+				HistorySegmentId:         "segment4",
+				PreviousHistorySegmentId: "segment3",
+			},
+			SwarmKey: "",
+		},
 	}
 
 	cfg.MinimumBlockCount = 500
 	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
-		Return(mostRecentSegment, map[string]*v2.HistorySegment{"peer1": mostRecentSegment}, nil)
+		Return(peerResponse, map[string]*v2.GetMostRecentDeHistorySegmentResponse{"peer1": peerResponse.Response}, nil)
 
 	first := service.EXPECT().FetchHistorySegment(gomock.Any(), "segment4").Times(1).Return(store.SegmentIndexEntry{
 		SegmentMetaData: store.SegmentMetaData{
@@ -109,7 +121,7 @@ func TestInitialiseNonEmptyDataNode(t *testing.T) {
 
 	gomock.InOrder(first, second)
 
-	service.EXPECT().LoadAllAvailableHistoryIntoDatanode(gomock.Any(), sqlstore.EmbedMigrations).Times(1)
+	service.EXPECT().LoadAllAvailableHistoryIntoDatanode(gomock.Any()).Times(1)
 
 	dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{
 		FromHeight: 0,
@@ -128,17 +140,23 @@ func TestLoadingHistoryWithinDatanodeCurrentSpanDoesNothing(t *testing.T) {
 	service := mocks.NewMockDeHistory(ctrl)
 	ctx := context.Background()
 
-	mostRecentSegment := &v2.HistorySegment{
-		FromHeight:               3001,
-		ToHeight:                 4000,
-		ChainId:                  "testchainid",
-		HistorySegmentId:         "segment4",
-		PreviousHistorySegmentId: "segment3",
+	peerResponse := &dehistory.PeerResponse{
+		PeerAddr: "",
+		Response: &v2.GetMostRecentDeHistorySegmentResponse{
+			Segment: &v2.HistorySegment{
+				FromHeight:               3001,
+				ToHeight:                 4000,
+				ChainId:                  "testchainid",
+				HistorySegmentId:         "segment4",
+				PreviousHistorySegmentId: "segment3",
+			},
+			SwarmKey: "",
+		},
 	}
 
 	cfg.MinimumBlockCount = 500
 	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
-		Return(mostRecentSegment, map[string]*v2.HistorySegment{"peer1": mostRecentSegment}, nil)
+		Return(peerResponse, map[string]*v2.GetMostRecentDeHistorySegmentResponse{"peer1": peerResponse.Response}, nil)
 
 	assert.Nil(t, dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{
 		FromHeight: 0,
@@ -157,16 +175,22 @@ func TestWhenMinimumBlockCountExceedsAvailableHistory(t *testing.T) {
 	service := mocks.NewMockDeHistory(ctrl)
 	ctx := context.Background()
 
-	mostRecentSegment := &v2.HistorySegment{
-		FromHeight:               1001,
-		ToHeight:                 2000,
-		ChainId:                  "testchainid",
-		HistorySegmentId:         "segment2",
-		PreviousHistorySegmentId: "segment1",
+	peerResponse := &dehistory.PeerResponse{
+		PeerAddr: "",
+		Response: &v2.GetMostRecentDeHistorySegmentResponse{
+			Segment: &v2.HistorySegment{
+				FromHeight:               1001,
+				ToHeight:                 2000,
+				ChainId:                  "testchainid",
+				HistorySegmentId:         "segment2",
+				PreviousHistorySegmentId: "segment1",
+			},
+			SwarmKey: "",
+		},
 	}
 
 	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
-		Return(mostRecentSegment, map[string]*v2.HistorySegment{"peer1": mostRecentSegment}, nil)
+		Return(peerResponse, map[string]*v2.GetMostRecentDeHistorySegmentResponse{"peer1": peerResponse.Response}, nil)
 
 	first := service.EXPECT().FetchHistorySegment(gomock.Any(), "segment2").Times(1).Return(store.SegmentIndexEntry{
 		SegmentMetaData: store.SegmentMetaData{
@@ -190,7 +214,7 @@ func TestWhenMinimumBlockCountExceedsAvailableHistory(t *testing.T) {
 
 	gomock.InOrder(first, second)
 
-	service.EXPECT().LoadAllAvailableHistoryIntoDatanode(gomock.Any(), sqlstore.EmbedMigrations).Times(1)
+	service.EXPECT().LoadAllAvailableHistoryIntoDatanode(gomock.Any()).Times(1)
 
 	dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{})
 }
@@ -216,7 +240,7 @@ func TestInitialiseToASpecifiedSegment(t *testing.T) {
 		HistorySegmentID: "segment1",
 	}, nil)
 
-	service.EXPECT().LoadAllAvailableHistoryIntoDatanode(gomock.Any(), sqlstore.EmbedMigrations).Times(1)
+	service.EXPECT().LoadAllAvailableHistoryIntoDatanode(gomock.Any()).Times(1)
 
 	dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{})
 }
@@ -251,38 +275,52 @@ func TestAutoInitialiseWhenNoHistoryAvailableFromPeers(t *testing.T) {
 
 	cfg.MinimumBlockCount = 1500
 	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
-		Return(nil, map[string]*v2.HistorySegment{}, nil)
+		Return(nil, map[string]*v2.GetMostRecentDeHistorySegmentResponse{}, nil)
 
 	assert.Equal(t, dehistory.ErrDeHistoryNotAvailable,
 		dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{}))
 }
 
 func TestSelectRootSegment(t *testing.T) {
-	segments := map[string]*v2.HistorySegment{
-		"1": {FromHeight: 1001, ToHeight: 2000},
-		"2": {FromHeight: 1001, ToHeight: 3000},
-		"3": {FromHeight: 1001, ToHeight: 4000},
-		"4": {FromHeight: 1001, ToHeight: 4000},
-		"5": {FromHeight: 1001, ToHeight: 3000},
-		"6": {FromHeight: 1001, ToHeight: 2000},
+	responses := map[string]*v2.GetMostRecentDeHistorySegmentResponse{
+		"1": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 2000}, SwarmKey: ""},
+		"2": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 3000}, SwarmKey: ""},
+		"3": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 4000}, SwarmKey: ""},
+		"4": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 4000}, SwarmKey: ""},
+		"5": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 3000}, SwarmKey: ""},
+		"6": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 2000}, SwarmKey: ""},
 	}
 
-	rootSegment := dehistory.SelectRootSegment(segments)
-	assert.Equal(t, int64(4000), rootSegment.ToHeight)
+	selectedResponse := dehistory.SelectMostRecentHistorySegmentResponse(responses, "")
+	assert.Equal(t, int64(4000), selectedResponse.Response.Segment.ToHeight)
+}
+
+func TestSelectRootSegmentWithSwarmKey(t *testing.T) {
+	responses := map[string]*v2.GetMostRecentDeHistorySegmentResponse{
+		"1": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 2000}, SwarmKey: "A"},
+		"2": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 3000}, SwarmKey: "A"},
+		"3": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 4000}, SwarmKey: "B"},
+		"4": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 4000}, SwarmKey: "D"},
+		"5": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 3000}, SwarmKey: "A"},
+		"6": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 2000}, SwarmKey: "B"},
+	}
+
+	selectedResponse := dehistory.SelectMostRecentHistorySegmentResponse(responses, "A")
+	assert.Equal(t, int64(3000), selectedResponse.Response.Segment.ToHeight)
 }
 
 func TestSelectRootSegmentWithOneSegment(t *testing.T) {
-	segments := map[string]*v2.HistorySegment{
-		"1": {FromHeight: 1001, ToHeight: 2000},
+	responses := map[string]*v2.GetMostRecentDeHistorySegmentResponse{
+		"1": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 2000}, SwarmKey: ""},
 	}
 
-	rootSegment := dehistory.SelectRootSegment(segments)
-	assert.Equal(t, int64(2000), rootSegment.ToHeight)
+	selectedResponse := dehistory.SelectMostRecentHistorySegmentResponse(responses, "")
+	assert.Equal(t, int64(2000), selectedResponse.Response.Segment.ToHeight)
 }
 
 func TestSelectRootSegmentWithZeroSegment(t *testing.T) {
-	segments := map[string]*v2.HistorySegment{}
+	responses := map[string]*v2.GetMostRecentDeHistorySegmentResponse{}
 
-	rootSegment := dehistory.SelectRootSegment(segments)
+	rootSegment := dehistory.SelectMostRecentHistorySegmentResponse(responses, "")
 	assert.Nil(t, rootSegment)
 }

@@ -6,9 +6,9 @@ package mocks
 
 import (
 	context "context"
-	fs "io/fs"
 	reflect "reflect"
 
+	dehistory "code.vegaprotocol.io/vega/datanode/dehistory"
 	snapshot "code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
 	store "code.vegaprotocol.io/vega/datanode/dehistory/store"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -54,11 +54,11 @@ func (mr *MockDeHistoryMockRecorder) FetchHistorySegment(arg0, arg1 interface{})
 }
 
 // GetMostRecentHistorySegmentFromPeers mocks base method.
-func (m *MockDeHistory) GetMostRecentHistorySegmentFromPeers(arg0 context.Context, arg1 []int) (*v2.HistorySegment, map[string]*v2.HistorySegment, error) {
+func (m *MockDeHistory) GetMostRecentHistorySegmentFromPeers(arg0 context.Context, arg1 []int) (*dehistory.PeerResponse, map[string]*v2.GetMostRecentDeHistorySegmentResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMostRecentHistorySegmentFromPeers", arg0, arg1)
-	ret0, _ := ret[0].(*v2.HistorySegment)
-	ret1, _ := ret[1].(map[string]*v2.HistorySegment)
+	ret0, _ := ret[0].(*dehistory.PeerResponse)
+	ret1, _ := ret[1].(map[string]*v2.GetMostRecentDeHistorySegmentResponse)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -70,16 +70,16 @@ func (mr *MockDeHistoryMockRecorder) GetMostRecentHistorySegmentFromPeers(arg0, 
 }
 
 // LoadAllAvailableHistoryIntoDatanode mocks base method.
-func (m *MockDeHistory) LoadAllAvailableHistoryIntoDatanode(arg0 context.Context, arg1 fs.FS) (snapshot.LoadResult, error) {
+func (m *MockDeHistory) LoadAllAvailableHistoryIntoDatanode(arg0 context.Context) (snapshot.LoadResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoadAllAvailableHistoryIntoDatanode", arg0, arg1)
+	ret := m.ctrl.Call(m, "LoadAllAvailableHistoryIntoDatanode", arg0)
 	ret0, _ := ret[0].(snapshot.LoadResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // LoadAllAvailableHistoryIntoDatanode indicates an expected call of LoadAllAvailableHistoryIntoDatanode.
-func (mr *MockDeHistoryMockRecorder) LoadAllAvailableHistoryIntoDatanode(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockDeHistoryMockRecorder) LoadAllAvailableHistoryIntoDatanode(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadAllAvailableHistoryIntoDatanode", reflect.TypeOf((*MockDeHistory)(nil).LoadAllAvailableHistoryIntoDatanode), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadAllAvailableHistoryIntoDatanode", reflect.TypeOf((*MockDeHistory)(nil).LoadAllAvailableHistoryIntoDatanode), arg0)
 }

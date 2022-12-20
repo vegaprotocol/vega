@@ -357,6 +357,14 @@ func (r *VegaResolverRoot) ProtocolUpgradeProposal() ProtocolUpgradeProposalReso
 	return (*protocolUpgradeProposalResolver)(r)
 }
 
+func (r *VegaResolverRoot) CoreSnapshotData() CoreSnapshotDataResolver {
+	return (*coreDataSnapshotResolver)(r)
+}
+
+func (r *VegaResolverRoot) EpochRewardSummary() EpochRewardSummaryResolver {
+	return (*epochRewardSummaryResolver)(r)
+}
+
 func (r *VegaResolverRoot) LedgerEntryFilter() LedgerEntryFilterResolver {
 	return (*ledgerEntryFilterResolver)(r)
 }
@@ -401,6 +409,31 @@ type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(ctx context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
 	return fmt.Sprintf("%d", obj.UpgradeBlockHeight), nil
+}
+
+type coreDataSnapshotResolver VegaResolverRoot
+
+func (r *coreDataSnapshotResolver) BlockHeight(ctx context.Context, obj *eventspb.CoreSnapshotData) (string, error) {
+	return fmt.Sprintf("%d", obj.BlockHeight), nil
+}
+
+func (r *coreDataSnapshotResolver) VegaCoreVersion(ctx context.Context, obj *eventspb.CoreSnapshotData) (string, error) {
+	return obj.CoreVersion, nil
+}
+
+type epochRewardSummaryResolver VegaResolverRoot
+
+func (r *epochRewardSummaryResolver) RewardType(ctx context.Context, obj *vega.EpochRewardSummary) (vega.AccountType, error) {
+	accountType, ok := vega.AccountType_value[obj.RewardType]
+	if !ok {
+		return vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("Unknown account type %v", obj.RewardType)
+	}
+
+	return vega.AccountType(accountType), nil
+}
+
+func (r *epochRewardSummaryResolver) Epoch(ctx context.Context, obj *vega.EpochRewardSummary) (int, error) {
+	return int(obj.Epoch), nil
 }
 
 type transactionResultResolver VegaResolverRoot
@@ -957,6 +990,41 @@ func (r *myQueryResolver) ProtocolUpgradeStatus(ctx context.Context) (*ProtocolU
 	return &ProtocolUpgradeStatus{
 		Ready: status.Ready,
 	}, nil
+}
+
+func (r *myQueryResolver) CoreSnapshots(ctx context.Context, pagination *v2.Pagination) (*v2.CoreSnapshotConnection, error) {
+	req := v2.ListCoreSnapshotsRequest{Pagination: pagination}
+	resp, err := r.tradingDataClientV2.ListCoreSnapshots(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.CoreSnapshots, nil
+}
+
+func (r *myQueryResolver) EpochRewardSummaries(ctx context.Context, fromEpoch *int, toEpoch *int, pagination *v2.Pagination) (*v2.EpochRewardSummaryConnection, error) {
+	var from, to *uint64
+	if fromEpoch != nil {
+		from = new(uint64)
+		if *fromEpoch < 0 {
+			return nil, errors.New("invalid fromEpoch for reward summary - must be positive")
+		}
+		*from = uint64(*fromEpoch)
+	}
+	if toEpoch != nil {
+		to = new(uint64)
+		if *toEpoch < 0 {
+			return nil, errors.New("invalid toEpoch for reward summary - must be positive")
+		}
+		*to = uint64(*toEpoch)
+	}
+
+	req := v2.ListEpochRewardSummariesRequest{FromEpoch: to, ToEpoch: from, Pagination: pagination}
+	resp, err := r.tradingDataClientV2.ListEpochRewardSummaries(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Summaries, nil
 }
 
 func (r *myQueryResolver) ProtocolUpgradeProposals(

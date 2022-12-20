@@ -948,9 +948,9 @@ func testPreprocessForRewardingNoForcedUndelegationNeeded(t *testing.T) {
 	setupDefaultDelegationState(testEngine, 12, 10)
 	epochStart := time.Now()
 	epochEnd := time.Now()
-	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart] = make(map[string]*num.Uint)
-	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party2"] = num.NewUint(10)
+	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart.UnixNano()] = make(map[string]*num.Uint)
+	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart.UnixNano()]["party1"] = num.NewUint(12)
+	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart.UnixNano()]["party2"] = num.NewUint(10)
 
 	// call preprocess to update the state based on the changes in staking account
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{StartTime: epochStart, EndTime: epochEnd, Seq: 1})
@@ -971,9 +971,9 @@ func testPreprocessForRewardingWithForceUndelegateSingleValidator(t *testing.T) 
 	defaultSimpleDelegationState(testEngine)
 	epochStart := time.Now()
 	epochEnd := time.Now()
-	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart] = make(map[string]*num.Uint)
-	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party1"] = num.NewUint(2)
-	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party2"] = num.NewUint(0)
+	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart.UnixNano()] = make(map[string]*num.Uint)
+	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart.UnixNano()]["party1"] = num.NewUint(2)
+	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart.UnixNano()]["party2"] = num.NewUint(0)
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(2)
 	testEngine.stakingAccounts.partyToStake["party2"] = num.UintZero()
 	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{StartTime: epochStart, Seq: 1})
@@ -999,8 +999,8 @@ func testPreprocessForRewardingWithForceUndelegateMultiValidatorNoRemainder(t *t
 	testEngine.topology.nodeToIsValidator["node1"] = true
 	testEngine.topology.nodeToIsValidator["node2"] = true
 	testEngine.topology.nodeToIsValidator["node3"] = true
-	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart] = make(map[string]*num.Uint)
-	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party1"] = num.NewUint(15)
+	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart.UnixNano()] = make(map[string]*num.Uint)
+	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart.UnixNano()]["party1"] = num.NewUint(15)
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(15)
 	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{StartTime: epochStart, Seq: 1})
 	// setup delegation
@@ -1033,7 +1033,7 @@ func testPreprocessForRewardingWithForceUndelegateMultiValidatorNoRemainder(t *t
 	// call preprocess to update the state based on the changes in staking account
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{StartTime: epochStart, EndTime: epochEnd, Seq: 1})
 
-	// the stake account balance has gone down for party1 to 15 and they have 30 tokens delegated meaning we need to undelegate 15
+	// the stake account balance has gone down for party1 to 15, and they have 30 tokens delegated meaning we need to undelegate 15
 	// with equal balance in all validators we expect to remove 5 from each
 
 	require.Equal(t, 1, len(testEngine.engine.partyDelegationState))
@@ -1052,10 +1052,10 @@ func testPreprocessForRewardingWithForceUndelegateMultiValidatorWithRemainder(t 
 	testEngine.topology.nodeToIsValidator["node1"] = true
 	testEngine.topology.nodeToIsValidator["node2"] = true
 	testEngine.topology.nodeToIsValidator["node3"] = true
-	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart] = make(map[string]*num.Uint)
-	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party1"] = num.NewUint(240)
-	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party2"] = num.NewUint(50)
-	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party3"] = num.NewUint(3)
+	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart.UnixNano()] = make(map[string]*num.Uint)
+	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart.UnixNano()]["party1"] = num.NewUint(240)
+	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart.UnixNano()]["party2"] = num.NewUint(50)
+	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart.UnixNano()]["party3"] = num.NewUint(3)
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(240)
 	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(50)
 	testEngine.stakingAccounts.partyToStake["party3"] = num.NewUint(3)
@@ -1976,13 +1976,13 @@ func (t *TestEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch), r 
 
 type TestStakingAccount struct {
 	partyToStake         map[string]*num.Uint
-	partyToStakeForEpoch map[time.Time]map[string]*num.Uint
+	partyToStakeForEpoch map[int64]map[string]*num.Uint
 }
 
 func newTestStakingAccount() *TestStakingAccount {
 	return &TestStakingAccount{
 		partyToStake:         make(map[string]*num.Uint),
-		partyToStakeForEpoch: make(map[time.Time]map[string]*num.Uint),
+		partyToStakeForEpoch: make(map[int64]map[string]*num.Uint),
 	}
 }
 
@@ -1995,7 +1995,7 @@ func (t *TestStakingAccount) GetAvailableBalance(party string) (*num.Uint, error
 }
 
 func (t *TestStakingAccount) GetAvailableBalanceInRange(party string, from, to time.Time) (*num.Uint, error) {
-	ret, ok := t.partyToStakeForEpoch[from]
+	ret, ok := t.partyToStakeForEpoch[from.UnixNano()]
 	if !ok {
 		return nil, fmt.Errorf("account not found")
 	}

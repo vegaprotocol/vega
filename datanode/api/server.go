@@ -65,6 +65,7 @@ type DeHistoryService interface {
 	FetchHistorySegment(ctx context.Context, historySegmentID string) (store.SegmentIndexEntry, error)
 	GetActivePeerAddresses() []string
 	CopyHistorySegmentToFile(ctx context.Context, historySegmentID string, outFile string) error
+	GetSwarmKey() string
 }
 
 // GRPCServer represent the grpc api provided by the vega node.
@@ -111,6 +112,7 @@ type GRPCServer struct {
 	ledgerService              *service.Ledger
 	protocolUpgradeService     *service.ProtocolUpgrade
 	deHistoryService           DeHistoryService
+	coreSnapshotService        *service.SnapshotData
 
 	eventObserver *eventObserver
 
@@ -160,6 +162,7 @@ func NewGRPCServer(
 	ledgerService *service.Ledger,
 	protocolUpgradeService *service.ProtocolUpgrade,
 	deHistoryService DeHistoryService,
+	coreSnapshotService *service.SnapshotData,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -206,6 +209,7 @@ func NewGRPCServer(
 		ledgerService:              ledgerService,
 		protocolUpgradeService:     protocolUpgradeService,
 		deHistoryService:           deHistoryService,
+		coreSnapshotService:        coreSnapshotService,
 
 		eventObserver: &eventObserver{
 			log:          log,
@@ -407,6 +411,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		blockService:               g.blockService,
 		protocolUpgradeService:     g.protocolUpgradeService,
 		deHistoryService:           g.deHistoryService,
+		coreSnapshotService:        g.coreSnapshotService,
 	}
 
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)

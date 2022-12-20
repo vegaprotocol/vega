@@ -34,9 +34,8 @@ var (
 type LiquidityOrder struct {
 	OrderID string
 
-	Price      *num.Uint
-	Proportion uint64
-	Peg        *types.PeggedOrder
+	Price   *num.Uint
+	Details *types.LiquidityOrder
 
 	LiquidityImpliedVolume uint64
 }
@@ -114,128 +113,116 @@ func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v num.Decimal) {
 	e.probabilityOfTradingTauScaling = v
 }
 
-// CalculateSuppliedLiquidity returns the current supplied liquidity per specified current mark price and order set.
-func (e *Engine) CalculateSuppliedLiquidity(
-	bestBidPrice, bestAskPrice num.Decimal,
+// CalculateLiquidityScore returns the current liquidity scores (volume-weighted probability of trading).
+func (e *Engine) CalculateLiquidityScore(
 	orders []*types.Order,
-) *num.Uint {
-	bLiq, sLiq := e.calculateBuySellLiquidityWithMinMax(bestBidPrice, bestAskPrice, orders)
+	bestBid, bestAsk num.Decimal,
+	minLpPrice, maxLpPrice *num.Uint,
+) num.Decimal {
+	minPMPrice, maxPMPrice := e.pm.GetValidPriceRange()
 
-	return num.Min(bLiq, sLiq)
+	lowerBound := num.Max(minPMPrice.Representation(), minLpPrice)
+	upperBound := num.Min(maxPMPrice.Representation(), maxLpPrice)
+
+	bLiq := num.DecimalZero()
+	sLiq := num.DecimalZero()
+	bSize := num.DecimalZero()
+	sSize := num.DecimalZero()
+	for _, o := range orders {
+		if o.Price.LT(lowerBound) || o.Price.GT(upperBound) {
+			continue
+		}
+		prob := getProbabilityOfTrading(bestBid, bestAsk, minPMPrice.Original(), maxPMPrice.Original(), e.pot, o.Price.ToDecimal(), o.Side == types.SideBuy, e.minProbabilityOfTrading)
+		s := num.DecimalFromUint(num.NewUint(o.Remaining))
+		l := prob.Mul(s)
+		if o.Side == types.SideBuy {
+			bLiq = bLiq.Add(l)
+			bSize = bSize.Add(s)
+		}
+		if o.Side == types.SideSell {
+			sLiq = sLiq.Add(l)
+			sSize = sSize.Add(s)
+		}
+	}
+	// descale by total volume per side
+	if !bSize.IsZero() {
+		bLiq = bLiq.Div(bSize)
+	}
+	if !sSize.IsZero() {
+		sLiq = sLiq.Div(sSize)
+	}
+
+	// return the minimum of the two
+	if bLiq.LessThanOrEqual(sLiq) {
+		return bLiq
+	}
+	return sLiq
 }
 
 // CalculateLiquidityImpliedVolumes updates the LiquidityImpliedSize fields in LiquidityOrderReference so that the liquidity commitment is met.
 // Current market price, liquidity obligation, and orders must be specified.
 // Note that due to integer order size the actual liquidity provided will be more than or equal to the commitment amount.
 func (e *Engine) CalculateLiquidityImpliedVolumes(
-	bestBidPrice, bestAskPrice num.Decimal,
 	liquidityObligation *num.Uint,
 	orders []*types.Order,
+	minLpPrice, maxLpPrice *num.Uint,
 	buyShapes, sellShapes []*LiquidityOrder,
-) error {
-	buySupplied, sellSupplied := e.calculateBuySellLiquidityWithMinMax(bestBidPrice, bestAskPrice, orders)
+) {
+	buySupplied, sellSupplied := e.CalculateUnweightedBuySellLiquidityWithinLPRange(orders, minLpPrice, maxLpPrice)
 
 	buyRemaining := liquidityObligation.Clone()
 	buyRemaining.Sub(buyRemaining, buySupplied)
-	if err := e.updateSizes(buyRemaining, bestBidPrice, bestAskPrice, buyShapes, true); err != nil {
-		return err
-	}
+	e.updateSizes(buyRemaining, buyShapes)
 
 	sellRemaining := liquidityObligation.Clone()
 	sellRemaining.Sub(sellRemaining, sellSupplied)
-	if err := e.updateSizes(sellRemaining, bestBidPrice, bestAskPrice, sellShapes, false); err != nil {
-		return err
-	}
-
-	return nil
+	e.updateSizes(sellRemaining, sellShapes)
 }
 
-// calculateBuySellLiquidityWithMinMax returns the current supplied liquidity per market specified in the constructor.
-func (e *Engine) calculateBuySellLiquidityWithMinMax(bestBidPrice, bestAskPrice num.Decimal, orders []*types.Order) (*num.Uint, *num.Uint) {
-	bLiq := num.DecimalZero()
-	sLiq := num.DecimalZero()
-	min, max := e.pm.GetValidPriceRange()
+// CalculateUnweightedBuySellLiquidityWithinLPRange returns the sum of price x remaining volume for each order within LP range.
+func (e *Engine) CalculateUnweightedBuySellLiquidityWithinLPRange(orders []*types.Order, minLpPrice, maxLpPrice *num.Uint) (*num.Uint, *num.Uint) {
+	bLiq := num.UintZero()
+	sLiq := num.UintZero()
 	for _, o := range orders {
+		if o.Price.LT(minLpPrice) || o.Price.GT(maxLpPrice) {
+			continue
+		}
+		l := num.NewUint(o.Remaining)
+		l.Mul(l, o.Price)
 		if o.Side == types.SideBuy {
-			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
-			prob := getProbabilityOfTrading(bestBidPrice, bestAskPrice, min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), true, e.minProbabilityOfTrading)
-			if e.log.GetLevel() <= logging.DebugLevel {
-				e.log.Debug("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()), logging.Decimal("prob", prob))
-			}
-			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
-			d = d.Mul(num.DecimalFromUint(o.Price))
-			bLiq = bLiq.Add(d)
+			bLiq.Add(bLiq, l)
 		}
 		if o.Side == types.SideSell {
-			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
-			prob := getProbabilityOfTrading(bestBidPrice, bestAskPrice, min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), false, e.minProbabilityOfTrading)
-			if e.log.GetLevel() <= logging.DebugLevel {
-				e.log.Debug("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()), logging.Decimal("prob", prob))
-			}
-			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
-			d = d.Mul(num.DecimalFromUint(o.Price))
-			sLiq = sLiq.Add(d)
+			sLiq.Add(sLiq, l)
 		}
 	}
 
 	// descale provided liquidity by 10^pdp
-	bl, _ := num.UintFromDecimal(bLiq.Div(e.positionFactor))
-	sl, _ := num.UintFromDecimal(sLiq.Div(e.positionFactor))
+	bl, _ := num.UintFromDecimal(bLiq.ToDecimal().Div(e.positionFactor))
+	sl, _ := num.UintFromDecimal(sLiq.ToDecimal().Div(e.positionFactor))
 	return bl, sl
 }
 
-func (e *Engine) updateSizes(liquidityObligation *num.Uint, bestBidPrice, bestAskPrice num.Decimal, orders []*LiquidityOrder, isBid bool) error {
+func (e *Engine) updateSizes(liquidityObligation *num.Uint, orders []*LiquidityOrder) {
 	if liquidityObligation.IsZero() || liquidityObligation.IsNegative() {
 		setSizesTo0(orders)
-		return nil
+		return
 	}
-	min, max := e.pm.GetValidPriceRange()
 	sum := num.DecimalZero()
-	probs := make([]num.Decimal, 0, len(orders))
-	validatedProportions := make([]num.Decimal, 0, len(orders))
-
+	proportionsD := make([]num.Decimal, 0, len(orders))
 	for _, o := range orders {
-		proportion := num.DecimalFromUint(num.NewUint(o.Proportion))
-
-		prob := getProbabilityOfTrading(bestBidPrice, bestAskPrice, min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), isBid, e.minProbabilityOfTrading)
-
-		if e.log.GetLevel() <= logging.DebugLevel {
-			e.log.Debug("$probability of trading$",
-				logging.String("market-id", e.marketID),
-				logging.String("best-bid", bestBidPrice.String()),
-				logging.String("best-ask", bestAskPrice.String()),
-				logging.String("min", min.Original().String()),
-				logging.String("max", max.Original().String()),
-				logging.String("order-price", o.Price.String()),
-				logging.Bool("is-bid", isBid),
-				logging.String("probability", prob.String()))
-		}
-		if prob.IsZero() || prob.IsNegative() {
-			proportion = num.DecimalZero()
-		}
-
-		sum = sum.Add(proportion)
-		validatedProportions = append(validatedProportions, proportion)
-		probs = append(probs, prob)
-	}
-	if sum.IsZero() {
-		return ErrNoValidOrders
+		prop := num.DecimalFromUint(num.NewUint(uint64(o.Details.Proportion)))
+		proportionsD = append(proportionsD, prop)
+		sum = sum.Add(prop)
 	}
 
 	for i, o := range orders {
-		scaling := num.DecimalZero()
-		if prob := probs[i]; !prob.IsZero() {
-			fraction := validatedProportions[i].Div(sum)
-			scaling = fraction.Div(prob)
-		}
-		// uint64(math.Ceil(liquidityObligation * scaling / float64(o.Price.Uint64())))
-		d := num.DecimalFromUint(liquidityObligation)
-		d = d.Mul(scaling)
+		scaling := proportionsD[i].Div(sum)
+		d := num.DecimalFromUint(liquidityObligation).Mul(scaling)
 		// scale the volume by 10^pdp BEFORE dividing by price for better precision.
 		liv, _ := num.UintFromDecimal(d.Mul(e.positionFactor).Div(num.DecimalFromUint(o.Price)).Ceil())
 		o.LiquidityImpliedVolume = liv.Uint64()
 	}
-	return nil
 }
 
 func setSizesTo0(orders []*LiquidityOrder) {

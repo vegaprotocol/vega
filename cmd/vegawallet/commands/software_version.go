@@ -72,10 +72,10 @@ func PrintGetSoftwareVersionResponse(w io.Writer, resp *wversion.GetSoftwareVers
 	str.Text("Git hash:").NextLine().WarningText(resp.GitHash).NextSection()
 
 	str.RedArrow().DangerText("Important").NextLine()
-	str.Text("This command is NOT related to your wallet version.").NextLine()
-	str.Bold("This is the version of the software.").NextLine()
-	str.Text("To get your wallet version, see the following command:").NextSection()
-	str.Code(fmt.Sprintf("%s info --help", os.Args[0])).NextLine()
+	str.Text("The software version is NOT related to the key derivation version of your wallets.").NextLine()
+	str.Bold("The software managing the wallets should not be confused with the wallets themselves.").NextLine()
+	str.Text("To get the key derivation version of a wallet, see the following command:").NextSection()
+	str.Code(fmt.Sprintf("%s describe --help", os.Args[0])).NextLine()
 
 	str.BlueArrow().InfoText("Check the network compatibility").NextLine()
 	str.Text("To determine if this software is compatible with the registered networks, use the following command:").NextSection()

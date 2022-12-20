@@ -566,6 +566,26 @@ message ProtocolUpgradeStarted {
   uint64 last_block_height = 1;
 }
 
+// The data node is ready fro protocol upgrade
+message ProtocolUpgradeDataNodeReady {
+  uint64 last_block_height = 1;
+}
+
+
+// CoreSnapshotData represents the core snapshot data.
+message CoreSnapshotData {
+  // The block height at which snapshot was taken
+  uint64 block_height = 1;
+
+  // The hash of the snapshot block
+  string block_hash = 2;
+
+  // Core version
+  string core_version = 3;
+
+  // Indicates if the snapshot is taken as part of protocol upgrade
+  bool protocol_upgrade_block = 4;
+}
 
 // An (event) bus event type is used to specify a type of event
 // It has 2 styles of event:
@@ -680,6 +700,11 @@ enum BusEventType {
   BUS_EVENT_TYPE_SETTLE_MARKET = 52;
   // The result of a transaction processed by the network
   BUS_EVENT_TYPE_TRANSACTION_RESULT = 53;
+  // Snapshot is taken at this block height
+  BUS_EVENT_TYPE_SNAPSHOT_TAKEN = 54;
+
+  // Data node notifies that it is ready to upgrade
+  BUS_EVENT_TYPE_PROTOCOL_UPGRADE_DATA_NODE_READY = 55;
 
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
@@ -798,6 +823,10 @@ message BusEvent {
     SettleMarket settle_market = 151;
     // The result of a transaction processed by the network
     TransactionResult transaction_result = 152;
+    // A core snapshot has been taken at the end of the block
+    CoreSnapshotData core_snapshot_event = 153;
+    // A core snapshot has been taken at the end of the block
+    ProtocolUpgradeDataNodeReady protocol_upgrade_data_node_ready = 154;
 
     // Market tick events - See [MarketEvent](#vega.MarketEvent)
     MarketEvent market = 1001;

@@ -100,7 +100,39 @@ func RevertToSchemaVersionZero(log *logging.Logger, config ConnectionConfig, fs 
 	return nil
 }
 
-func WipeDatabase(log *logging.Logger, config ConnectionConfig, fs fs.FS) error {
+func WipeDatabaseAndMigrateSchemaToVersion(log *logging.Logger, config ConnectionConfig, version int64, fs fs.FS) error {
+	goose.SetBaseFS(fs)
+	goose.SetLogger(log.Named("wipe database").GooseLogger())
+
+	poolConfig, err := config.GetPoolConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get pool config:%w", err)
+	}
+
+	db := stdlib.OpenDB(*poolConfig.ConnConfig)
+	defer db.Close()
+
+	currentVersion, err := goose.GetDBVersion(db)
+	if err != nil {
+		return err
+	}
+
+	if currentVersion > 0 {
+		if err := goose.DownTo(db, SQLMigrationsDir, 0); err != nil {
+			return fmt.Errorf("failed to goose down the schema: %w", err)
+		}
+	}
+
+	if version > 0 {
+		if err := goose.UpTo(db, SQLMigrationsDir, version); err != nil {
+			return fmt.Errorf("failed to goose up the schema: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func WipeDatabaseAndMigrateSchemaToLatestVersion(log *logging.Logger, config ConnectionConfig, fs fs.FS) error {
 	goose.SetBaseFS(fs)
 	goose.SetLogger(log.Named("wipe database").GooseLogger())
 

@@ -16,7 +16,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.64.0";
+    version: "v0.65.0";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz/datanode/rest"
@@ -240,6 +240,10 @@ service TradingDataService {
     //
     // Get reward summaries
     rpc ListRewardSummaries(ListRewardSummariesRequest) returns (ListRewardSummariesResponse);
+
+    // List reward summaries by epoch
+    rpc ListEpochRewardSummaries(ListEpochRewardSummariesRequest) returns (ListEpochRewardSummariesResponse);
+
     // subscribe to rewards
     rpc ObserveRewards(ObserveRewardsRequest) returns (stream ObserveRewardsResponse);
 
@@ -390,6 +394,9 @@ service TradingDataService {
     // List protocol upgrades proposals, optionally filtering on status or approver.
     rpc ListProtocolUpgradeProposals(ListProtocolUpgradeProposalsRequest) returns (ListProtocolUpgradeProposalsResponse);
 
+    // List core snapshots taken
+    rpc ListCoreSnapshots(ListCoreSnapshotsRequest) returns (ListCoreSnapshotsResponse);
+
     // Decentralized History
     //
     // Decentralised History allows the data-node to reach out to peer nodes to fetch the most recent history, as well as
@@ -416,11 +423,6 @@ service TradingDataService {
     //
     // List the addresses of all active decentralized history peers
     rpc GetActiveDeHistoryPeerAddresses(GetActiveDeHistoryPeerAddressesRequest) returns (GetActiveDeHistoryPeerAddressesResponse);
-
-    // Copy history segment to file
-    //
-    // Copy history segment data to a target file
-    rpc CopyHistorySegmentToFile(CopyHistorySegmentToFileRequest) returns (CopyHistorySegmentToFileResponse);
 
     // Ping
     //
@@ -1550,6 +1552,28 @@ message ListRewardSummariesResponse {
     repeated vega.RewardSummary summaries = 1;
 }
 
+// A request to get summary of reward per epoch for a given range of epochs
+message ListEpochRewardSummariesRequest {
+    optional uint64 from_epoch = 1;
+    optional uint64 to_epoch = 2;
+    optional Pagination pagination = 3;
+}
+
+// The return message with reward details in for a single party
+message ListEpochRewardSummariesResponse {
+    EpochRewardSummaryConnection summaries = 1;
+}
+
+message EpochRewardSummaryConnection {
+    repeated EpochRewardSummaryEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+message EpochRewardSummaryEdge {
+    vega.EpochRewardSummary node = 1;
+    string cursor = 2;
+}
+
 message ObserveRewardsRequest {
     optional string asset_id = 1;
     optional string party_id = 2;
@@ -2102,6 +2126,29 @@ message ProtocolUpgradeProposalEdge {
     string cursor = 2;
 }
 
+
+// Request type for ListCoreSnapshots; fetches a paginated list of the core snapshots.
+message ListCoreSnapshotsRequest {
+    optional Pagination pagination = 1;
+}
+
+// Reponse type from a ListCoreSnapshots RPC call; a paginated list of the core snapshots.
+message ListCoreSnapshotsResponse {
+    CoreSnapshotConnection core_snapshots = 1;
+}
+
+// A page of core snapshot data, with page information.
+message CoreSnapshotConnection {
+    repeated CoreSnapshotEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// Core snapshot data, along with a cursor.
+message CoreSnapshotEdge {
+    vega.events.v1.CoreSnapshotData node = 1;
+    string cursor = 2;
+}
+
 // -- Decentralized History --
 // Decentralised History allows the data-node to reach out to peer nodes to fetch the most recent history, as well as
 // older history if desired, such that it can quickly get itself up to the latest block height of the network and start
@@ -2124,6 +2171,7 @@ message GetMostRecentDeHistorySegmentRequest {
 // Get most recent history segment response
 message GetMostRecentDeHistorySegmentResponse {
     HistorySegment segment = 1;
+    string swarm_key  = 2;
 }
 
 // Request to list all the nodes history segments
@@ -2152,16 +2200,6 @@ message GetActiveDeHistoryPeerAddressesRequest {
 // Response containing the addresses of active decentralized history peers
 message GetActiveDeHistoryPeerAddressesResponse {
     repeated string ip_addresses = 1;
-}
-
-// Request to copy a history segment to a file
-message CopyHistorySegmentToFileRequest {
-    string history_segment_id  = 1;
-    string target_file  = 2;
-}
-
-// Response from copying a history segment to a file
-message CopyHistorySegmentToFileResponse {
 }
 
 // Request to ping the datanode

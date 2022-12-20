@@ -2,7 +2,7 @@ Feature: Regression test for issue 598
 
   Background:
     Given the markets:
-      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config          |
+      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     |
       | ETH/DEC19 | BTC        | BTC   | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
       | name                                    | value |
@@ -33,8 +33,8 @@ Feature: Regression test for issue 598
     # Trigger an auction to set the mark price
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | party1-2 |
-      | party2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | party2-2 |
+      | party1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | party1-2  |
+      | party2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | party2-2  |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "100" for the market "ETH/DEC19"
 
@@ -54,21 +54,21 @@ Feature: Regression test for issue 598
       | party  | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 571    | 429     |
       | barney | BTC   | ETH/DEC19 | 535    | 465     |
-# next instruction will trade with edd
+    # next instruction will trade with edd
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris | ETH/DEC19 | buy  | 10     | 0     | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general |
       | edd   | BTC   | ETH/DEC19 | 571    | 429     |
-      | chris | BTC   | ETH/DEC19 | 109    | 891     |
-# next instruction will trade with barney
+      | chris | BTC   | ETH/DEC19 | 109    | 790     |
+    # next instruction will trade with barney
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris | ETH/DEC19 | sell | 10     | 0     | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | chris  | BTC   | ETH/DEC19 | 0      | 980     |
+      | chris  | BTC   | ETH/DEC19 | 0      | 780     |
       | barney | BTC   | ETH/DEC19 | 535    | 465     |
       | edd    | BTC   | ETH/DEC19 | 591    | 429     |
     Then the parties should have the following margin levels:

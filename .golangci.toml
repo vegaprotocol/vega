@@ -130,3 +130,7 @@ forbid = ["fmt\\.Print.*"]
 linters = ["govet"]
 text = "impl.MessageState contains sync.Mutex"
 
+# Temporary while the test is skipped to be removed.
+[[issues.exclude-rules]]
+path = "market_cp_restore_test.go"
+linters = ["unused"]

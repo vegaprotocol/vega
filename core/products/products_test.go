@@ -143,8 +143,10 @@ func TestFutureSettlement(t *testing.T) {
 	}
 
 	for _, param := range params {
+		n := &num.Numeric{}
+		n.SetUint(num.NewUint(param.settlementData))
 		// Use debug function to update the settlement data as if from a Oracle
-		f.SetSettlementData(ctx, "prices.ETH.value", param.settlementData)
+		f.SetSettlementData(ctx, "prices.ETH.value", n)
 		ep := num.NewUint(param.entryPrice)
 		fa, _, err := prod.Settle(ep, 0, num.DecimalFromInt64(param.position))
 		assert.NoError(t, err)

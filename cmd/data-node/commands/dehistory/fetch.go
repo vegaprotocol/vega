@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/datanode/dehistory"
+	"google.golang.org/grpc/status"
 
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
@@ -44,16 +45,7 @@ func (cmd *fetchCmd) Execute(args []string) error {
 	}
 
 	vegaPaths := paths.New(cmd.VegaHome)
-
-	configFilePath, err := vegaPaths.CreateConfigPathFor(paths.DataNodeDefaultConfigFile)
-	if err != nil {
-		return fmt.Errorf("couldn't get path for %s: %w", paths.DataNodeDefaultConfigFile, err)
-	}
-
-	err = paths.ReadStructuredFile(configFilePath, &cmd.Config)
-	if err != nil {
-		return fmt.Errorf("failed to read config:%w", err)
-	}
+	fixConfig(&cmd.Config, vegaPaths)
 
 	err = verifyChainID(log, cmd.SQLStore.ConnectionConfig, cmd.ChainID)
 	if err != nil {
@@ -112,4 +104,13 @@ func verifyChainID(log *logging.Logger, connConfig sqlstore.ConnectionConfig, ch
 		return fmt.Errorf("failed to verify chain id:%w", err)
 	}
 	return nil
+}
+
+func errorFromGrpcError(msg string, err error) error {
+	s, ok := status.FromError(err)
+	if !ok {
+		return fmt.Errorf("%s:%s", msg, err)
+	}
+
+	return fmt.Errorf("%s:%s", msg, s.Details())
 }

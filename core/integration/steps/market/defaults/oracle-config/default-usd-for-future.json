@@ -19,7 +19,8 @@
             {
               "key": {
                 "name": "prices.USD.value",
-                "type": "TYPE_INTEGER"
+                "type": "TYPE_INTEGER",
+                "numberDecimalPlaces": "2"
               },
               "conditions": [
               ]

@@ -177,8 +177,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		switch ti := existing.TradableInstrument.Instrument.Product.(type) {
 		case *types.InstrumentFuture:
 			futureUp := &types.UpdateFutureProduct{
-				QuoteName:              ti.Future.QuoteName,
-				SettlementDataDecimals: settlementDecimals,
+				QuoteName: ti.Future.QuoteName,
 				DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
 					proto.DataSourceDefinitionTypeExt,
 				).SetOracleConfig(
@@ -200,10 +199,9 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 					TradingTerminationProperty: oracleTermination.Binding.TradingTerminationProperty,
 				}),
 			}
-			ti.Future.SettlementDataDecimals = settlementDecimals
-			ti.Future.DataSourceSpecForSettlementData = settleSpec.ExternalDataSourceSpec.Spec
-			ti.Future.DataSourceSpecBinding = futureUp.DataSourceSpecBinding
+			ti.Future.DataSourceSpecForSettlementData = settleSpec.ExternalDataSourceSpec.Spec.Data.SetFilterDecimals(uint64(settlementDecimals)).ToDataSourceSpec()
 			ti.Future.DataSourceSpecForTradingTermination = termSpec.ExternalDataSourceSpec.Spec
+			ti.Future.DataSourceSpecBinding = futureUp.DataSourceSpecBinding
 			// ensure we update the existing market
 			existing.TradableInstrument.Instrument.Product = ti
 			update.Changes.Instrument = &types.UpdateInstrumentConfiguration{
@@ -259,6 +257,12 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		// update existing
 		existing.TradableInstrument = current
 	}
+	// lp price range
+	if lppr, ok := row.tryLpPriceRange(); ok {
+		lpprD := num.DecimalFromFloat(lppr)
+		update.Changes.LpPriceRange = lpprD
+		existing.LPPriceRange = lpprD
+	}
 	return update
 }
 
@@ -279,6 +283,7 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	}
 
 	settlementDataDecimals := config.OracleConfigs.GetSettlementDataDP(row.oracleConfig())
+	settlSpec := types.OracleSpecFromProto(oracleConfigForSettlement.Spec)
 	var binding proto.DataSourceSpecToFutureBinding
 	binding.SettlementDataProperty = oracleConfigForSettlement.Binding.SettlementDataProperty
 	binding.TradingTerminationProperty = oracleConfigForTradingTermination.Binding.TradingTerminationProperty
@@ -297,6 +302,8 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	if err != nil {
 		panic(err)
 	}
+
+	lpPriceRange := row.lpPriceRange()
 
 	// the governance engine would fill in the liquidity monitor parameters from the network parameters (unless set explicitly)
 	// so we do this step here manually
@@ -334,10 +341,9 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 					Future: &types.Future{
 						SettlementAsset:                     row.asset(),
 						QuoteName:                           row.quoteName(),
-						DataSourceSpecForSettlementData:     types.DataSourceSpecFromProto(oracleConfigForSettlement.Spec.GetExternalDataSourceSpec().Spec),
+						DataSourceSpecForSettlementData:     settlSpec.ExternalDataSourceSpec.Spec.Data.SetFilterDecimals(uint64(settlementDataDecimals)).ToDataSourceSpec(),
 						DataSourceSpecForTradingTermination: types.DataSourceSpecFromProto(oracleConfigForTradingTermination.Spec.ExternalDataSourceSpec.Spec),
 						DataSourceSpecBinding:               types.DataSourceSpecBindingForFutureFromProto(&binding),
-						SettlementDataDecimals:              settlementDataDecimals,
 					},
 				},
 			},
@@ -346,6 +352,7 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		OpeningAuction:                openingAuction(row),
 		PriceMonitoringSettings:       types.PriceMonitoringSettingsFromProto(priceMonitoring),
 		LiquidityMonitoringParameters: liqMon,
+		LPPriceRange:                  num.DecimalFromFloat(lpPriceRange),
 	}
 
 	tip := m.TradableInstrument.IntoProto()
@@ -384,6 +391,7 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"decimal places",
 		"position decimal places",
 		"liquidity monitoring",
+		"lp price range",
 	})
 }
 
@@ -395,6 +403,7 @@ func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 		"price monitoring",      // price monitoring update
 		"risk model",            // risk model update
 		"liquidity monitoring ", // liquidity monitoring update
+		"lp price range",
 	})
 }
 
@@ -497,4 +506,19 @@ func (r marketRow) liquidityMonitoring() string {
 		return "default-parameters"
 	}
 	return r.row.MustStr("liquidity monitoring")
+}
+
+func (r marketRow) lpPriceRange() float64 {
+	if !r.row.HasColumn("lp price range") {
+		// set to 1 by default
+		return 1
+	}
+	return r.row.MustF64("lp price range")
+}
+
+func (r marketUpdateRow) tryLpPriceRange() (float64, bool) {
+	if r.row.HasColumn("lp price range") {
+		return r.row.MustF64("lp price range"), true
+	}
+	return -1, false
 }

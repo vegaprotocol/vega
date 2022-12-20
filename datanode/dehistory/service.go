@@ -162,7 +162,11 @@ func (d *Service) GetActivePeerAddresses() []string {
 	return activePeerIPAddresses
 }
 
-func (d *Service) LoadAllAvailableHistoryIntoDatanode(ctx context.Context, sqlFs fs.FS) (snapshot.LoadResult, error) {
+func (d *Service) GetSwarmKey() string {
+	return d.store.GetSwarmKey()
+}
+
+func (d *Service) LoadAllAvailableHistoryIntoDatanode(ctx context.Context) (snapshot.LoadResult, error) {
 	defer func() { _ = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromDir) }()
 
 	err := os.MkdirAll(d.snapshotsCopyFromDir, fs.ModePerm)
@@ -198,7 +202,7 @@ func (d *Service) LoadAllAvailableHistoryIntoDatanode(ctx context.Context, sqlFs
 
 func (d *Service) GetMostRecentHistorySegmentFromPeers(ctx context.Context,
 	grpcAPIPorts []int,
-) (*v2.HistorySegment, map[string]*v2.HistorySegment, error) {
+) (*PeerResponse, map[string]*v2.GetMostRecentDeHistorySegmentResponse, error) {
 	var activePeerAddresses []string
 	// Time for connections to be established
 	time.Sleep(5 * time.Second)
@@ -213,7 +217,7 @@ func (d *Service) GetMostRecentHistorySegmentFromPeers(ctx context.Context,
 		return nil, nil, ErrNoActivePeersFound
 	}
 
-	return GetMostRecentHistorySegmentFromPeerAddresses(ctx, activePeerAddresses, grpcAPIPorts)
+	return GetMostRecentHistorySegmentFromPeersAddresses(ctx, activePeerAddresses, d.GetSwarmKey(), grpcAPIPorts)
 }
 
 func (d *Service) publishSnapshots(ctx context.Context) error {
@@ -314,4 +318,9 @@ func (d *Service) extractSnapshotDataFromHistory(ctx context.Context, history ag
 	}
 
 	return currentStateSnaphot, historySnapshot, nil
+}
+
+func (d *Service) Stop() {
+	d.log.Info("stopping datanode service")
+	d.store.Stop()
 }

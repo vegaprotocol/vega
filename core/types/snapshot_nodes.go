@@ -332,7 +332,7 @@ type ExecMarket struct {
 	LongRiskFactor             num.Decimal
 	RiskFactorConsensusReached bool
 	FeeSplitter                *FeeSplitter
-	SettlementData             *num.Uint
+	SettlementData             *num.Numeric
 	NextMTM                    int64
 }
 
@@ -594,6 +594,10 @@ type PayloadLiquiditySupplied struct {
 	LiquiditySupplied *snapshot.LiquiditySupplied
 }
 
+type PayloadLiquidityScores struct {
+	LiquidityScores *snapshot.LiquidityScores
+}
+
 func (s Snapshot) GetRawChunk(idx uint32) (*RawChunk, error) {
 	if s.Chunks < idx {
 		return nil, ErrUnknownSnapshotChunkHeight
@@ -778,6 +782,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadProtocolUpgradeProposalFromProto(dt)
 	case *snapshot.Payload_SettlementState:
 		ret.Data = PayloadSettlementFromProto(dt)
+	case *snapshot.Payload_LiquidityScores:
+		ret.Data = PayloadLiquidityScoresFromProto(dt)
 	}
 
 	return ret
@@ -912,6 +918,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_ProtocolUpgradeProposals:
 		ret.Data = dt
 	case *snapshot.Payload_SettlementState:
+		ret.Data = dt
+	case *snapshot.Payload_LiquidityScores:
 		ret.Data = dt
 	}
 	return &ret
@@ -2906,9 +2914,12 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		lastMVP, _ = num.DecimalFromString(em.LastMarketValueProxy)
 	}
 
-	var sp *num.Uint
+	var sp *num.Numeric
 	if em.SettlementData != "" {
-		sp, _ = num.UintFromString(em.SettlementData, 10)
+		spp, _ := num.NumericFromString(em.SettlementData)
+		if spp != nil {
+			sp = spp
+		}
 	}
 
 	ret := ExecMarket{
@@ -2941,11 +2952,6 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 }
 
 func (e ExecMarket) IntoProto() *snapshot.Market {
-	sp := ""
-	if e.SettlementData != nil {
-		sp = e.SettlementData.String()
-	}
-
 	ret := snapshot.Market{
 		Market:                     e.Market.IntoProto(),
 		PriceMonitor:               e.PriceMonitor.IntoProto(),
@@ -2964,7 +2970,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		RiskFactorLong:             e.LongRiskFactor.String(),
 		RiskFactorConsensusReached: e.RiskFactorConsensusReached,
 		FeeSplitter:                e.FeeSplitter.IntoProto(),
-		SettlementData:             sp,
+		SettlementData:             num.NumericToString(e.SettlementData),
 		NextMarkToMarket:           e.NextMTM,
 		LastTradedPrice:            e.LastTradedPrice.String(),
 	}
@@ -3063,8 +3069,8 @@ type PartyCount struct {
 }
 
 type BannedParty struct {
-	Party      string
-	UntilEpoch uint64
+	Party string
+	Until int64
 }
 
 type BlockRejectStats struct {
@@ -3181,8 +3187,8 @@ func PartyTokenBalanceFromProto(balance *snapshot.PartyTokenBalance) *PartyToken
 
 func BannedPartyFromProto(ban *snapshot.BannedParty) *BannedParty {
 	return &BannedParty{
-		Party:      ban.Party,
-		UntilEpoch: ban.UntilEpoch,
+		Party: ban.Party,
+		Until: ban.Until,
 	}
 }
 
@@ -3211,8 +3217,8 @@ func (p *PartyProposalVoteCount) IntoProto() *snapshot.PartyProposalVoteCount {
 
 func (b *BannedParty) IntoProto() *snapshot.BannedParty {
 	return &snapshot.BannedParty{
-		Party:      b.Party,
-		UntilEpoch: b.UntilEpoch,
+		Party: b.Party,
+		Until: b.Until,
 	}
 }
 
@@ -3841,6 +3847,32 @@ func (*PayloadLiquiditySupplied) Namespace() SnapshotNamespace {
 	return LiquiditySnapshot
 }
 
+func (*PayloadLiquidityScores) isPayload() {}
+
+func PayloadLiquidityScoresFromProto(ls *snapshot.Payload_LiquidityScores) *PayloadLiquidityScores {
+	return &PayloadLiquidityScores{
+		LiquidityScores: ls.LiquidityScores,
+	}
+}
+
+func (p *PayloadLiquidityScores) IntoProto() *snapshot.Payload_LiquidityScores {
+	return &snapshot.Payload_LiquidityScores{
+		LiquidityScores: p.LiquidityScores,
+	}
+}
+
+func (p *PayloadLiquidityScores) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (p *PayloadLiquidityScores) Key() string {
+	return fmt.Sprintf("liquidityScores:%v", p.LiquidityScores.MarketId)
+}
+
+func (*PayloadLiquidityScores) Namespace() SnapshotNamespace {
+	return LiquiditySnapshot
+}
+
 func (*PayloadProofOfWork) isPayload() {}
 
 func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofOfWork {
@@ -3867,9 +3899,9 @@ func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofO
 }
 
 func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
-	banned := make([]*snapshot.PowBannedParty, 0, len(p.BannedParties))
+	banned := make([]*snapshot.BannedParty, 0, len(p.BannedParties))
 	for k, v := range p.BannedParties {
-		banned = append(banned, &snapshot.PowBannedParty{Party: k, Until: v})
+		banned = append(banned, &snapshot.BannedParty{Party: k, Until: v})
 	}
 	sort.Slice(banned, func(i, j int) bool { return banned[i].Party < banned[j].Party })
 

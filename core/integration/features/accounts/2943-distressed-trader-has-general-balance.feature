@@ -57,39 +57,39 @@ Feature: Distressed parties should not have general balance left
       | party4 | ETH/DEC20 | sell | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party5 | ETH/DEC20 | buy  | 10     | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-4     |
       | party3 | ETH/DEC20 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | party3 | ETH/DEC20 | sell | 10     | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | party3 | ETH/DEC20 | sell | 40     | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general       |
       | party4 | ETH   | ETH/DEC20 | 360    | 9999999999640 |
-      #| party4 | ETH   | ETH/DEC20 | 240    | 9999999999760 |
       | party5 | ETH   | ETH/DEC20 | 372    | 9999999999528 |
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | party3 | ETH/DEC20 | 10000             | 0.1 | buy  | BID              | 10         | 10     | submission |
-      | lp2 | party3 | ETH/DEC20 | 10000             | 0.1 | sell | ASK              | 10         | 10     | amendment  |
+      | lp2 | party3 | ETH/DEC20 | 20000             | 0.1 | buy  | BID              | 10         | 10     | submission |
+      | lp2 | party3 | ETH/DEC20 | 20000             | 0.1 | sell | ASK              | 10         | 10     | amendment  |
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status        |
-      | lp2 | party3 | ETH/DEC20 | 10000             | STATUS_ACTIVE |
+      | lp2 | party3 | ETH/DEC20 | 20000             | STATUS_ACTIVE |
 
     Then the orders should have the following states:
       | party  | market id | side | volume | price | status        |
-      | party3 | ETH/DEC20 | buy  | 945    | 100   | STATUS_ACTIVE |
-      | party3 | ETH/DEC20 | sell | 724    | 130   | STATUS_ACTIVE |
-    ## The sum of the margin + general account == 10000 - 10000 (commitment amount)
+      | party3 | ETH/DEC20 | buy  | 189    | 100   | STATUS_ACTIVE |
+      | party3 | ETH/DEC20 | sell | 117    | 130   | STATUS_ACTIVE |
+    ## The sum of the margin + general account == 24000 - 10000 (commitment amount)
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party3 | ETH   | ETH/DEC20 | 12606  | 1394    |
+      | party3 | ETH   | ETH/DEC20 | 2626   | 1374    |
 
     ## Now let's increase the mark price so party3 gets distressed
     When the parties place the following orders "1" blocks apart:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party5 | ETH/DEC20 | buy  | 20     | 165   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party5 | ETH/DEC20 | buy  | 40     | 165    | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party1 | ETH/DEC20 | sell | 20     | 1850   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
     Then the mark price should be "120" for the market "ETH/DEC20"
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general       |
-      | party3 | ETH   | ETH/DEC20 | 15127  | 0             |
+      | party3 | ETH   | ETH/DEC20 | 3152   | 884           |
       | party4 | ETH   | ETH/DEC20 | 160    | 9999999999640 |
 
     ## Now let's increase the mark price so party3 gets distressed
@@ -101,4 +101,4 @@ Feature: Distressed parties should not have general balance left
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party3 | ETH   | ETH/DEC20 | 15027  | 0       |
+      | party3 | ETH   | ETH/DEC20 | 4194   | 0       |

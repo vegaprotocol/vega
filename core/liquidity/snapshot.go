@@ -45,6 +45,7 @@ type SnapshotEngine struct {
 	serialisedPendingProvisions []byte
 	serialisedProvisions        []byte
 	serialisedSupplied          []byte
+	serialisedScores            []byte
 
 	// keys, need to be computed when the engine is
 	// instantiated as they are dynamic
@@ -53,6 +54,7 @@ type SnapshotEngine struct {
 	pendingProvisionsKey string
 	provisionsKey        string
 	suppliedKey          string
+	scoresKey            string
 }
 
 func NewSnapshotEngine(config Config,
@@ -138,6 +140,8 @@ func (e *SnapshotEngine) LoadState(ctx context.Context, p *types.Payload) ([]typ
 		return nil, e.loadParameters(ctx, pl.Parameters, p)
 	case *types.PayloadLiquiditySupplied:
 		return nil, e.loadSupplied(pl.LiquiditySupplied, p)
+	case *types.PayloadLiquidityScores:
+		return nil, e.loadLiquidityScores(pl.LiquidityScores, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -149,6 +153,25 @@ func (e *SnapshotEngine) loadSupplied(ls *snapshotpb.LiquiditySupplied, p *types
 		return err
 	}
 	e.serialisedSupplied, err = proto.Marshal(p.IntoProto())
+	return err
+}
+
+func (e *SnapshotEngine) loadLiquidityScores(ls *snapshotpb.LiquidityScores, p *types.Payload) error {
+	var err error
+	e.nAvg = int64(ls.RunningAverageCounter)
+
+	scores := make(map[string]num.Decimal, len(ls.Scores))
+	for _, p := range ls.Scores {
+		score, err := num.DecimalFromString(p.Score)
+		if err != nil {
+			return err
+		}
+		scores[p.PartyId] = score
+	}
+
+	e.avgScores = scores
+
+	e.serialisedScores, err = proto.Marshal(p.IntoProto())
 	return err
 }
 
@@ -225,6 +248,8 @@ func (e *SnapshotEngine) serialise(k string) ([]byte, error) {
 		buf, changed, err = e.serialiseProvisions()
 	case e.suppliedKey:
 		buf, changed, err = e.serialiseSupplied()
+	case e.scoresKey:
+		buf, changed, err = e.serialiseScores()
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -250,6 +275,8 @@ func (e *SnapshotEngine) serialise(k string) ([]byte, error) {
 		e.serialisedProvisions = buf
 	case e.suppliedKey:
 		e.serialisedSupplied = buf
+	case e.scoresKey:
+		e.serialisedScores = buf
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -320,6 +347,36 @@ func (e *SnapshotEngine) serialiseSupplied() ([]byte, bool, error) {
 	return e.marshalPayload(payload)
 }
 
+func (e *SnapshotEngine) serialiseScores() ([]byte, bool, error) {
+	scores := make([]*snapshotpb.LiquidityScore, 0, len(e.avgScores))
+
+	keys := make([]string, 0, len(e.avgScores))
+	for k := range e.avgScores {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		s := &snapshotpb.LiquidityScore{
+			PartyId: k,
+			Score:   e.avgScores[k].String(),
+		}
+		scores = append(scores, s)
+	}
+
+	payload := &snapshotpb.Payload{
+		Data: &snapshotpb.Payload_LiquidityScores{
+			LiquidityScores: &snapshotpb.LiquidityScores{
+				MarketId:              e.market,
+				RunningAverageCounter: int32(e.nAvg),
+				Scores:                scores,
+			},
+		},
+	}
+
+	return e.marshalPayload(payload)
+}
+
 func (e *SnapshotEngine) marshalPayload(payload *snapshotpb.Payload) ([]byte, bool, error) {
 	buf, err := proto.Marshal(payload)
 	if err != nil {
@@ -352,6 +409,12 @@ func (e *SnapshotEngine) buildHashKeys(market string) {
 		},
 	}).Key()
 
+	e.scoresKey = (&types.PayloadLiquidityScores{
+		LiquidityScores: &snapshotpb.LiquidityScores{
+			MarketId: market,
+		},
+	}).Key()
+
 	e.hashKeys = append([]string{}, e.parametersKey,
-		e.pendingProvisionsKey, e.provisionsKey, e.suppliedKey)
+		e.pendingProvisionsKey, e.provisionsKey, e.suppliedKey, e.scoresKey)
 }

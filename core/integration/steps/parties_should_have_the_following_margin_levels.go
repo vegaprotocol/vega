@@ -29,9 +29,9 @@ func ThePartiesShouldHaveTheFollowingMarginLevels(
 		partyID := row.MustStr("party")
 		marketID := row.MustStr("market id")
 		maintenance := row.MustU64("maintenance")
-		search := row.MustU64("search")
-		initial := row.MustU64("initial")
-		release := row.MustU64("release")
+		search, hasSearch := row.U64B("search")
+		initial, hasInitial := row.U64B("initial")
+		release, hasRelease := row.U64B("release")
 
 		levels, err := broker.GetMarginByPartyAndMarket(partyID, marketID)
 		if err != nil {
@@ -42,13 +42,13 @@ func ThePartiesShouldHaveTheFollowingMarginLevels(
 		if stringToU64(levels.MaintenanceMargin) != maintenance {
 			hasError = true
 		}
-		if stringToU64(levels.SearchLevel) != search {
+		if hasSearch && stringToU64(levels.SearchLevel) != search {
 			hasError = true
 		}
-		if stringToU64(levels.InitialMargin) != initial {
+		if hasInitial && stringToU64(levels.InitialMargin) != initial {
 			hasError = true
 		}
-		if stringToU64(levels.CollateralReleaseLevel) != release {
+		if hasRelease && stringToU64(levels.CollateralReleaseLevel) != release {
 			hasError = true
 		}
 		if hasError {
@@ -88,8 +88,10 @@ func parseExpectedMarginsTable(table *godog.Table) []RowWrapper {
 		"party",
 		"market id",
 		"maintenance",
+	}, []string{
 		"search",
 		"initial",
 		"release",
-	}, []string{})
+	},
+	)
 }

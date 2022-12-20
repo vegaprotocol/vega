@@ -458,10 +458,10 @@ func createTestBroker(transactionManager broker.TransactionManager, blockStore b
 		protocolUpgradeSvc: service.NewProtocolUpgrade(nil, log),
 	}
 
-	blockCommitedFunc := func(context.Context, string, int64) {}
+	blockCommitedFunc := func(context.Context, string, int64, bool) {}
 
 	protocolUpgradeHandler := dehistory.NewProtocolUpgradeHandler(log,
-		tes.protocolUpgradeSvc, func(ctx context.Context, chainID string, toHeight int64) error {
+		tes.protocolUpgradeSvc, tes, func(ctx context.Context, chainID string, toHeight int64) error {
 			return nil
 		})
 

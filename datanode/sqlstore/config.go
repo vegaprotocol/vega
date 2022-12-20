@@ -42,6 +42,7 @@ type ConnectionConfig struct {
 	SocketDir             string            `long:"socket-dir" description:"location of postgres UNIX socket directory (used if host is empty string)"`
 	MaxConnLifetime       encoding.Duration `long:"max-conn-lifetime"`
 	MaxConnLifetimeJitter encoding.Duration `long:"max-conn-lifetime-jitter"`
+	MaxConnPoolSize       int               `long:"max-conn-pool-size"`
 }
 
 type RetentionPolicy struct {

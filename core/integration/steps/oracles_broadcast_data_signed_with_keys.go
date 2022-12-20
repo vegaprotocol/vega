@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 )
 
 func OraclesBroadcastDataSignedWithKeys(
@@ -38,7 +39,9 @@ func OraclesBroadcastDataSignedWithKeys(
 		return err
 	}
 
-	return oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	// we need a traceID here in case of final MTM settlement -> an idgen is required
+	ctx := vgcontext.WithTraceID(context.Background(), "deadbeef")
+	return oracleEngine.BroadcastData(ctx, oracles.OracleData{
 		Signers: pubKeysSigners,
 		Data:    properties,
 	})

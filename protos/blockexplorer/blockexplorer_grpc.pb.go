@@ -30,6 +30,11 @@ type BlockExplorerServiceClient interface {
 	//
 	// List transactions from the Vega blockchain
 	ListTransactions(ctx context.Context, in *ListTransactionsRequest, opts ...grpc.CallOption) (*ListTransactionsResponse, error)
+	// Info
+	//
+	// Retrieves information about the block explorer.
+	// Response contains a semver formatted version of the data node and the commit hash, from which the block explorer was built,
+	Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*InfoResponse, error)
 }
 
 type blockExplorerServiceClient struct {
@@ -58,6 +63,15 @@ func (c *blockExplorerServiceClient) ListTransactions(ctx context.Context, in *L
 	return out, nil
 }
 
+func (c *blockExplorerServiceClient) Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*InfoResponse, error) {
+	out := new(InfoResponse)
+	err := c.cc.Invoke(ctx, "/blockexplorer.api.v1.BlockExplorerService/Info", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BlockExplorerServiceServer is the server API for BlockExplorerService service.
 // All implementations must embed UnimplementedBlockExplorerServiceServer
 // for forward compatibility
@@ -70,6 +84,11 @@ type BlockExplorerServiceServer interface {
 	//
 	// List transactions from the Vega blockchain
 	ListTransactions(context.Context, *ListTransactionsRequest) (*ListTransactionsResponse, error)
+	// Info
+	//
+	// Retrieves information about the block explorer.
+	// Response contains a semver formatted version of the data node and the commit hash, from which the block explorer was built,
+	Info(context.Context, *InfoRequest) (*InfoResponse, error)
 	mustEmbedUnimplementedBlockExplorerServiceServer()
 }
 
@@ -82,6 +101,9 @@ func (UnimplementedBlockExplorerServiceServer) GetTransaction(context.Context, *
 }
 func (UnimplementedBlockExplorerServiceServer) ListTransactions(context.Context, *ListTransactionsRequest) (*ListTransactionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTransactions not implemented")
+}
+func (UnimplementedBlockExplorerServiceServer) Info(context.Context, *InfoRequest) (*InfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Info not implemented")
 }
 func (UnimplementedBlockExplorerServiceServer) mustEmbedUnimplementedBlockExplorerServiceServer() {}
 
@@ -132,6 +154,24 @@ func _BlockExplorerService_ListTransactions_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BlockExplorerService_Info_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BlockExplorerServiceServer).Info(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/blockexplorer.api.v1.BlockExplorerService/Info",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BlockExplorerServiceServer).Info(ctx, req.(*InfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // BlockExplorerService_ServiceDesc is the grpc.ServiceDesc for BlockExplorerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -146,6 +186,10 @@ var BlockExplorerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTransactions",
 			Handler:    _BlockExplorerService_ListTransactions_Handler,
+		},
+		{
+			MethodName: "Info",
+			Handler:    _BlockExplorerService_Info_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

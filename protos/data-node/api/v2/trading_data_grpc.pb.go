@@ -199,6 +199,8 @@ type TradingDataServiceClient interface {
 	//
 	// Get reward summaries
 	ListRewardSummaries(ctx context.Context, in *ListRewardSummariesRequest, opts ...grpc.CallOption) (*ListRewardSummariesResponse, error)
+	// List reward summaries by epoch
+	ListEpochRewardSummaries(ctx context.Context, in *ListEpochRewardSummariesRequest, opts ...grpc.CallOption) (*ListEpochRewardSummariesResponse, error)
 	// subscribe to rewards
 	ObserveRewards(ctx context.Context, in *ObserveRewardsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveRewardsClient, error)
 	// Deposit
@@ -318,6 +320,8 @@ type TradingDataServiceClient interface {
 	GetProtocolUpgradeStatus(ctx context.Context, in *GetProtocolUpgradeStatusRequest, opts ...grpc.CallOption) (*GetProtocolUpgradeStatusResponse, error)
 	// List protocol upgrades proposals, optionally filtering on status or approver.
 	ListProtocolUpgradeProposals(ctx context.Context, in *ListProtocolUpgradeProposalsRequest, opts ...grpc.CallOption) (*ListProtocolUpgradeProposalsResponse, error)
+	// List core snapshots taken
+	ListCoreSnapshots(ctx context.Context, in *ListCoreSnapshotsRequest, opts ...grpc.CallOption) (*ListCoreSnapshotsResponse, error)
 	// Get most recent decentralized history segment
 	//
 	// Get the networks most recently history segment
@@ -334,10 +338,6 @@ type TradingDataServiceClient interface {
 	//
 	// List the addresses of all active decentralized history peers
 	GetActiveDeHistoryPeerAddresses(ctx context.Context, in *GetActiveDeHistoryPeerAddressesRequest, opts ...grpc.CallOption) (*GetActiveDeHistoryPeerAddressesResponse, error)
-	// Copy history segment to file
-	//
-	// Copy history segment data to a target file
-	CopyHistorySegmentToFile(ctx context.Context, in *CopyHistorySegmentToFileRequest, opts ...grpc.CallOption) (*CopyHistorySegmentToFileResponse, error)
 	// Ping
 	//
 	// Ping the datanode
@@ -978,6 +978,15 @@ func (c *tradingDataServiceClient) ListRewardSummaries(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListEpochRewardSummaries(ctx context.Context, in *ListEpochRewardSummariesRequest, opts ...grpc.CallOption) (*ListEpochRewardSummariesResponse, error) {
+	out := new(ListEpochRewardSummariesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListEpochRewardSummaries", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ObserveRewards(ctx context.Context, in *ObserveRewardsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveRewardsClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[10], "/datanode.api.v2.TradingDataService/ObserveRewards", opts...)
 	if err != nil {
@@ -1412,6 +1421,15 @@ func (c *tradingDataServiceClient) ListProtocolUpgradeProposals(ctx context.Cont
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListCoreSnapshots(ctx context.Context, in *ListCoreSnapshotsRequest, opts ...grpc.CallOption) (*ListCoreSnapshotsResponse, error) {
+	out := new(ListCoreSnapshotsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListCoreSnapshots", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) GetMostRecentDeHistorySegment(ctx context.Context, in *GetMostRecentDeHistorySegmentRequest, opts ...grpc.CallOption) (*GetMostRecentDeHistorySegmentResponse, error) {
 	out := new(GetMostRecentDeHistorySegmentResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetMostRecentDeHistorySegment", in, out, opts...)
@@ -1442,15 +1460,6 @@ func (c *tradingDataServiceClient) FetchDeHistorySegment(ctx context.Context, in
 func (c *tradingDataServiceClient) GetActiveDeHistoryPeerAddresses(ctx context.Context, in *GetActiveDeHistoryPeerAddressesRequest, opts ...grpc.CallOption) (*GetActiveDeHistoryPeerAddressesResponse, error) {
 	out := new(GetActiveDeHistoryPeerAddressesResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetActiveDeHistoryPeerAddresses", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tradingDataServiceClient) CopyHistorySegmentToFile(ctx context.Context, in *CopyHistorySegmentToFileRequest, opts ...grpc.CallOption) (*CopyHistorySegmentToFileResponse, error) {
-	out := new(CopyHistorySegmentToFileResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/CopyHistorySegmentToFile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1647,6 +1656,8 @@ type TradingDataServiceServer interface {
 	//
 	// Get reward summaries
 	ListRewardSummaries(context.Context, *ListRewardSummariesRequest) (*ListRewardSummariesResponse, error)
+	// List reward summaries by epoch
+	ListEpochRewardSummaries(context.Context, *ListEpochRewardSummariesRequest) (*ListEpochRewardSummariesResponse, error)
 	// subscribe to rewards
 	ObserveRewards(*ObserveRewardsRequest, TradingDataService_ObserveRewardsServer) error
 	// Deposit
@@ -1766,6 +1777,8 @@ type TradingDataServiceServer interface {
 	GetProtocolUpgradeStatus(context.Context, *GetProtocolUpgradeStatusRequest) (*GetProtocolUpgradeStatusResponse, error)
 	// List protocol upgrades proposals, optionally filtering on status or approver.
 	ListProtocolUpgradeProposals(context.Context, *ListProtocolUpgradeProposalsRequest) (*ListProtocolUpgradeProposalsResponse, error)
+	// List core snapshots taken
+	ListCoreSnapshots(context.Context, *ListCoreSnapshotsRequest) (*ListCoreSnapshotsResponse, error)
 	// Get most recent decentralized history segment
 	//
 	// Get the networks most recently history segment
@@ -1782,10 +1795,6 @@ type TradingDataServiceServer interface {
 	//
 	// List the addresses of all active decentralized history peers
 	GetActiveDeHistoryPeerAddresses(context.Context, *GetActiveDeHistoryPeerAddressesRequest) (*GetActiveDeHistoryPeerAddressesResponse, error)
-	// Copy history segment to file
-	//
-	// Copy history segment data to a target file
-	CopyHistorySegmentToFile(context.Context, *CopyHistorySegmentToFileRequest) (*CopyHistorySegmentToFileResponse, error)
 	// Ping
 	//
 	// Ping the datanode
@@ -1929,6 +1938,9 @@ func (UnimplementedTradingDataServiceServer) ListRewards(context.Context, *ListR
 func (UnimplementedTradingDataServiceServer) ListRewardSummaries(context.Context, *ListRewardSummariesRequest) (*ListRewardSummariesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRewardSummaries not implemented")
 }
+func (UnimplementedTradingDataServiceServer) ListEpochRewardSummaries(context.Context, *ListEpochRewardSummariesRequest) (*ListEpochRewardSummariesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListEpochRewardSummaries not implemented")
+}
 func (UnimplementedTradingDataServiceServer) ObserveRewards(*ObserveRewardsRequest, TradingDataService_ObserveRewardsServer) error {
 	return status.Errorf(codes.Unimplemented, "method ObserveRewards not implemented")
 }
@@ -2028,6 +2040,9 @@ func (UnimplementedTradingDataServiceServer) GetProtocolUpgradeStatus(context.Co
 func (UnimplementedTradingDataServiceServer) ListProtocolUpgradeProposals(context.Context, *ListProtocolUpgradeProposalsRequest) (*ListProtocolUpgradeProposalsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListProtocolUpgradeProposals not implemented")
 }
+func (UnimplementedTradingDataServiceServer) ListCoreSnapshots(context.Context, *ListCoreSnapshotsRequest) (*ListCoreSnapshotsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListCoreSnapshots not implemented")
+}
 func (UnimplementedTradingDataServiceServer) GetMostRecentDeHistorySegment(context.Context, *GetMostRecentDeHistorySegmentRequest) (*GetMostRecentDeHistorySegmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMostRecentDeHistorySegment not implemented")
 }
@@ -2039,9 +2054,6 @@ func (UnimplementedTradingDataServiceServer) FetchDeHistorySegment(context.Conte
 }
 func (UnimplementedTradingDataServiceServer) GetActiveDeHistoryPeerAddresses(context.Context, *GetActiveDeHistoryPeerAddressesRequest) (*GetActiveDeHistoryPeerAddressesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetActiveDeHistoryPeerAddresses not implemented")
-}
-func (UnimplementedTradingDataServiceServer) CopyHistorySegmentToFile(context.Context, *CopyHistorySegmentToFileRequest) (*CopyHistorySegmentToFileResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CopyHistorySegmentToFile not implemented")
 }
 func (UnimplementedTradingDataServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
@@ -2881,6 +2893,24 @@ func _TradingDataService_ListRewardSummaries_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListEpochRewardSummaries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListEpochRewardSummariesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListEpochRewardSummaries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListEpochRewardSummaries",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListEpochRewardSummaries(ctx, req.(*ListEpochRewardSummariesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ObserveRewards_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ObserveRewardsRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -3498,6 +3528,24 @@ func _TradingDataService_ListProtocolUpgradeProposals_Handler(srv interface{}, c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListCoreSnapshots_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCoreSnapshotsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListCoreSnapshots(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListCoreSnapshots",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListCoreSnapshots(ctx, req.(*ListCoreSnapshotsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_GetMostRecentDeHistorySegment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetMostRecentDeHistorySegmentRequest)
 	if err := dec(in); err != nil {
@@ -3566,24 +3614,6 @@ func _TradingDataService_GetActiveDeHistoryPeerAddresses_Handler(srv interface{}
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).GetActiveDeHistoryPeerAddresses(ctx, req.(*GetActiveDeHistoryPeerAddressesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TradingDataService_CopyHistorySegmentToFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CopyHistorySegmentToFileRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServiceServer).CopyHistorySegmentToFile(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/datanode.api.v2.TradingDataService/CopyHistorySegmentToFile",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).CopyHistorySegmentToFile(ctx, req.(*CopyHistorySegmentToFileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3750,6 +3780,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_ListRewardSummaries_Handler,
 		},
 		{
+			MethodName: "ListEpochRewardSummaries",
+			Handler:    _TradingDataService_ListEpochRewardSummaries_Handler,
+		},
+		{
 			MethodName: "GetDeposit",
 			Handler:    _TradingDataService_GetDeposit_Handler,
 		},
@@ -3858,6 +3892,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_ListProtocolUpgradeProposals_Handler,
 		},
 		{
+			MethodName: "ListCoreSnapshots",
+			Handler:    _TradingDataService_ListCoreSnapshots_Handler,
+		},
+		{
 			MethodName: "GetMostRecentDeHistorySegment",
 			Handler:    _TradingDataService_GetMostRecentDeHistorySegment_Handler,
 		},
@@ -3872,10 +3910,6 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetActiveDeHistoryPeerAddresses",
 			Handler:    _TradingDataService_GetActiveDeHistoryPeerAddresses_Handler,
-		},
-		{
-			MethodName: "CopyHistorySegmentToFile",
-			Handler:    _TradingDataService_CopyHistorySegmentToFile_Handler,
 		},
 		{
 			MethodName: "Ping",
