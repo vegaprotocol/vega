@@ -401,11 +401,11 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | party2 | ETH/MAR22 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party2-buy  |
-
+    And the liquidity fee factor should be "0.001" for the market "ETH/MAR22"
+    #liquidity fee: 20*1000*0.001=20
     And the accumulated liquidity fees should be "20" for the market "ETH/MAR22"
 
     # check lp fee distribution
-
     Then time is updated to "2019-11-30T00:10:05Z"
 
     Then the following transfers should happen:
