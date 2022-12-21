@@ -2559,7 +2559,7 @@ func getParty(ctx context.Context, _ *logging.Logger, client TradingDataServiceC
 	return res.Party, nil
 }
 
-// Market Data Resolvers
+// Market Data Resolvers.
 type myPropertyKeyResolver VegaResolverRoot
 
 func (r *myPropertyKeyResolver) NumberDecimalPlaces(ctx context.Context, obj *data.PropertyKey) (*int, error) {
@@ -2567,8 +2567,7 @@ func (r *myPropertyKeyResolver) NumberDecimalPlaces(ctx context.Context, obj *da
 	if ndp == nil {
 		return nil, nil
 	}
-	var indp *int
-	indp = new(int)
+	indp := new(int)
 	*indp = int(*ndp)
 	return indp, nil
 }
