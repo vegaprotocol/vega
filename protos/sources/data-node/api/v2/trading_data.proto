@@ -16,7 +16,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.65.0+dev";
+    version: "v0.65.0";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz/datanode/rest"
@@ -240,6 +240,10 @@ service TradingDataService {
     //
     // Get reward summaries
     rpc ListRewardSummaries(ListRewardSummariesRequest) returns (ListRewardSummariesResponse);
+
+    // List reward summaries by epoch
+    rpc ListEpochRewardSummaries(ListEpochRewardSummariesRequest) returns (ListEpochRewardSummariesResponse);
+
     // subscribe to rewards
     rpc ObserveRewards(ObserveRewardsRequest) returns (stream ObserveRewardsResponse);
 
@@ -1546,6 +1550,28 @@ message ListRewardSummariesRequest {
 // The return message with reward details in for a single party
 message ListRewardSummariesResponse {
     repeated vega.RewardSummary summaries = 1;
+}
+
+// A request to get summary of reward per epoch for a given range of epochs
+message ListEpochRewardSummariesRequest {
+    optional uint64 from_epoch = 1;
+    optional uint64 to_epoch = 2;
+    optional Pagination pagination = 3;
+}
+
+// The return message with reward details in for a single party
+message ListEpochRewardSummariesResponse {
+    EpochRewardSummaryConnection summaries = 1;
+}
+
+message EpochRewardSummaryConnection {
+    repeated EpochRewardSummaryEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+message EpochRewardSummaryEdge {
+    vega.EpochRewardSummary node = 1;
+    string cursor = 2;
 }
 
 message ObserveRewardsRequest {

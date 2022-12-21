@@ -582,6 +582,10 @@ func (t *tradingDataServiceV2) ListCandleData(ctx context.Context, req *v2.ListC
 		}
 	}
 
+	if req.CandleId == "" {
+		return nil, apiError(codes.InvalidArgument, ErrMissingCandleID)
+	}
+
 	candles, pageInfo, err := t.candleService.GetCandleDataForTimeSpan(ctx, req.CandleId, from, to, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCandleServiceGetCandleData, err)
@@ -1395,6 +1399,39 @@ func (t *tradingDataServiceV2) ListRewardSummaries(ctx context.Context, in *v2.L
 
 	resp := v2.ListRewardSummariesResponse{Summaries: summaryProtos}
 	return &resp, nil
+}
+
+// Get reward summaries for epoch range.
+func (t *tradingDataServiceV2) ListEpochRewardSummaries(ctx context.Context, in *v2.ListEpochRewardSummariesRequest) (*v2.ListEpochRewardSummariesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListEpochRewardSummaries")()
+
+	if in == nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("empty request"))
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	summaries, pageInfo, err := t.rewardService.GetEpochRewardSummaries(ctx, in.FromEpoch, in.ToEpoch, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	edges, err := makeEdges[*v2.EpochRewardSummaryEdge](summaries)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	connection := v2.EpochRewardSummaryConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListEpochRewardSummariesResponse{
+		Summaries: &connection,
+	}, nil
 }
 
 // subscribe to rewards.

@@ -143,7 +143,7 @@ func TestMain(t *testing.M) {
 		evtSource := newTestEventSourceWithProtocolUpdateMessage()
 
 		pus := service.NewProtocolUpgrade(nil, log)
-		puh := dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context, chainID string,
+		puh := dehistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
 			toHeight int64,
 		) error {
 			meta, err := snapshotService.CreateSnapshot(ctx, chainID, toHeight)
@@ -233,7 +233,7 @@ func TestMain(t *testing.M) {
 		}
 
 		pus = service.NewProtocolUpgrade(nil, log)
-		nonInterceptPuh := dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context,
+		nonInterceptPuh := dehistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context,
 			chainID string, toHeight int64,
 		) error {
 			return nil
@@ -366,12 +366,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmTwiAydX6jpjC5FdsJfJbHKPCnLYP5UWKqnTV19MrmUxN", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmSro2dKVSwwjKkxuh7HcwnYyMTS6Rca8jdTeXbSoP8H4u", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmTbi7GXNDBLcZ9HvQaEg7a6hqwDZmexYV5zGoNWHujo1Z", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmRLMtigPXmHYgL2dR4gm7WR5Hc5FJPFWS6UdBbT7YFRRg", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmZ4U259qcKaerBGUP9RVGX84R1euZcuV17hzs5ZJFiU7n", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmbBUczQPekVryAWBTdAuoaMk1xiUY792Y9uuzoQ7cwkDj", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmQoDFtyXto9mjCbHwmPzP1US3SS73MtWt446AqonL3jVz", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmUmeWhLWAzmxj5fsaWQ5wfzocJNRKvtFZXYPV1fXaoW31", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmYNdoW7uuSpJ11PMuzxT7kvQqiaJfnRZLDEFqTVPKnPpw", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "Qmbiu28aN2Vhb7JBEW5mfbcr6ZvPrxnPwgzjJFUidQi8Cg", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmaLf7e1ynXGHvmPuw7KqxH1CZR6SvFgquQz9VsvUUCqjL", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmbJi3EKtdAdbv74pKJhBJXzpcjMxF7GRweSBciWekhsAg", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
@@ -397,7 +397,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	evtSource := newTestEventSourceWithProtocolUpdateMessage()
 
 	pus := service.NewProtocolUpgrade(nil, log)
-	puh := dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context, chainID string,
+	puh := dehistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
 		toHeight int64,
 	) error {
 		return nil
@@ -446,7 +446,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	evtSource = newTestEventSourceWithProtocolUpdateMessage()
 
 	pus = service.NewProtocolUpgrade(nil, log)
-	puh = dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context, chainID string,
+	puh = dehistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
 		toHeight int64,
 	) error {
 		return nil
@@ -555,7 +555,7 @@ func TestRestoringNodeWithExistingDataFailsWhenLoadingWouldResultInNonContiguous
 	evtSource := newTestEventSourceWithProtocolUpdateMessage()
 
 	pus := service.NewProtocolUpgrade(nil, log)
-	puh := dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context, chainID string,
+	puh := dehistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
 		toHeight int64,
 	) error {
 		return nil
@@ -666,7 +666,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 	require.NoError(t, err)
 
 	pus := service.NewProtocolUpgrade(nil, log)
-	puh := dehistory.NewProtocolUpgradeHandler(log, pus, func(ctx context.Context,
+	puh := dehistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context,
 		chainID string, toHeight int64,
 	) error {
 		return nil
@@ -756,7 +756,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 
 	evtSource := newTestEventSourceWithProtocolUpdateMessage()
 
-	puh := dehistory.NewProtocolUpgradeHandler(log, service.NewProtocolUpgrade(nil, log),
+	puh := dehistory.NewProtocolUpgradeHandler(log, service.NewProtocolUpgrade(nil, log), evtSource,
 		func(ctx context.Context, chainID string, toHeight int64) error {
 			return dehistoryService.CreateAndPublishSegment(ctx, chainID, toHeight)
 		})
@@ -795,7 +795,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 				}
 			}
 		},
-		evtSource, dehistory.NewProtocolUpgradeHandler(log, service.NewProtocolUpgrade(nil, log),
+		evtSource, dehistory.NewProtocolUpgradeHandler(log, service.NewProtocolUpgrade(nil, log), evtSource,
 			func(ctx context.Context, chainID string, toHeight int64) error {
 				return nil
 			}),
@@ -1020,6 +1020,10 @@ func (e *TestEventSource) Receive(ctx context.Context) (<-chan events.Event, <-c
 	}()
 
 	return sinkEventCh, sinkErrCh
+}
+
+func (e *TestEventSource) Send(evt events.Event) error {
+	return nil
 }
 
 type tableDataSummary struct {

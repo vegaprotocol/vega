@@ -75,6 +75,8 @@ http:
       get: "/api/v2/rewards"
     - selector: datanode.api.v2.TradingDataService.ListRewardSummaries
       get: "/api/v2/rewards/summaries"
+    - selector: datanode.api.v2.TradingDataService.ListEpochRewardSummaries
+      get: "/api/v2/rewards/epoch/summaries"
     - selector: datanode.api.v2.TradingDataService.GetDeposit
       get: "/api/v2/deposit/{id}"
     - selector: datanode.api.v2.TradingDataService.ListDeposits

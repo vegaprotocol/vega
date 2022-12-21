@@ -228,19 +228,20 @@ func (l *NodeCommand) preRun([]string) (err error) {
 		}
 	}()
 
-	eventSource, err := broker.NewEventSource(l.conf.Broker, l.Log, l.conf.ChainID)
+	eventReceiverSender, err := broker.NewEventReceiverSender(l.conf.Broker, l.Log, l.conf.ChainID)
 	if err != nil {
 		l.Log.Error("unable to initialise event source", logging.Error(err))
 		return err
 	}
 
+	var eventSource broker.EventReceiver
 	if l.conf.Broker.UseBufferedEventSource {
 		bufferFilePath, err := l.vegaPaths.CreateStatePathFor(paths.DataNodeEventBufferHome)
 		if err != nil {
 			l.Log.Error("failed to create path for buffered event source", logging.Error(err))
 			return err
 		}
-		eventSource, err = broker.NewBufferedEventSource(l.Log, l.conf.Broker.BufferedEventSourceConfig, eventSource, bufferFilePath)
+		eventSource, err = broker.NewBufferedEventSource(l.Log, l.conf.Broker.BufferedEventSourceConfig, eventReceiverSender, bufferFilePath)
 		if err != nil {
 			l.Log.Error("unable to initialise file buffered event source", logging.Error(err))
 			return err
@@ -256,11 +257,11 @@ func (l *NodeCommand) preRun([]string) (err error) {
 		blockCommitHandler := dehistory.NewBlockCommitHandler(l.Log, l.conf.DeHistory, l.snapshotService.SnapshotData,
 			bool(l.conf.Broker.UseEventFile), l.conf.Broker.FileEventSourceConfig.TimeBetweenBlocks.Duration)
 		onBlockCommittedHandler = blockCommitHandler.OnBlockCommitted
-		protocolUpgradeHandler = dehistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService,
+		protocolUpgradeHandler = dehistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService, eventReceiverSender,
 			l.deHistoryService.CreateAndPublishSegment)
 	} else {
 		onBlockCommittedHandler = func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {}
-		protocolUpgradeHandler = dehistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService,
+		protocolUpgradeHandler = dehistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService, eventReceiverSender,
 			func(ctx context.Context, chainID string, toHeight int64) error { return nil })
 	}
 

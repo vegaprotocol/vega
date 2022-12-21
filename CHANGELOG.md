@@ -1,9 +1,25 @@
 # Changelog
 
-## Unreleased 0.65.0
+## Unreleased 0.66.0
+
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.65.0
 
 ### 🚨 Breaking changes
 - [6955](https://github.com/vegaprotocol/vega/issues/6955) - Market definition extended with the new field for LP price range across the API.
+- [6645](https://github.com/vegaprotocol/vega/issues/6645) - Set decimal number value to be used from oracle instead of from tradable instruments
 
 ### 🗑️ Deprecation
 - [7068](https://github.com/vegaprotocol/vega/issues/7068) - Alias `vegawallet info` to `vegawallet describe`, before definitive renaming.
@@ -12,12 +28,16 @@
 - [7032](https://github.com/vegaprotocol/vega/issues/7032) - Make deposits and withdrawals `hypertables` and change `deposits_current` and `withdrawals_current` into views to improve resource usage
 - [7136](https://github.com/vegaprotocol/vega/issues/7136) - Update ban duration to 30 minutes for spam
 - [7026](https://github.com/vegaprotocol/vega/issues/7026) - Let decentralised history use the snapshot event from the core as an indication for snapshot rather than doing the calculation based on the interval network parameter.
+- [7108](https://github.com/vegaprotocol/vega/issues/7108) - Return `ArgumentError` if candle id not supplied to `ListCandleData`
 - [7098](https://github.com/vegaprotocol/vega/issues/7098) - Add an event when the core is taking a snapshot
 - [7028](https://github.com/vegaprotocol/vega/issues/7028) - Add `JSON` output for `dehistory` commands; fix `config` override on command line
 - [7122](https://github.com/vegaprotocol/vega/issues/7122) - Allow for tolerance in validator performance calculation
 - [7104](https://github.com/vegaprotocol/vega/issues/7104) - Provide a better error message when party has insufficient balance of an asset
 - [7143](https://github.com/vegaprotocol/vega/issues/7143) - Update `grpc-rest-bindings` for Oracle `API`
 - [7027](https://github.com/vegaprotocol/vega/issues/7027) - `Dehistory` store does not clean up resources after a graceful shutdown
+- [7157](https://github.com/vegaprotocol/vega/issues/7157) - Core waits for data node and shuts down gracefully during protocol upgrade
+- [7113](https://github.com/vegaprotocol/vega/issues/7113) - Added API for epoch summaries of rewards distributed
+- [6956](https://github.com/vegaprotocol/vega/issues/6956) - Include liquidity measure of deployed orders in the fees distribution
 
 ### 🐛 Fixes
 - [7040](https://github.com/vegaprotocol/vega/issues/7040) - Block explorer use different codes than 500 on error
@@ -28,11 +48,13 @@
 - [7000](https://github.com/vegaprotocol/vega/issues/7000) - Wallet honours proof of work difficulty increases
 - [7029](https://github.com/vegaprotocol/vega/issues/7029) - Remove unsafe `GRPC` endpoint in data node
 - [7116](https://github.com/vegaprotocol/vega/issues/7116) - Fix MTM trade price check when trading is terminated.
+- [7173](https://github.com/vegaprotocol/vega/issues/7173) - Fix deterministic order of price bounds on market data events
 - [7112](https://github.com/vegaprotocol/vega/issues/7112) - Restore order's original price when restoring from a snapshot
 - [6955](https://github.com/vegaprotocol/vega/issues/6955) - Remove scaling by probability when implying LP volumes. Only change the LP order price if it’s outside the new “valid LP price range” - move it to the bound in that case.
 - [7132](https://github.com/vegaprotocol/vega/issues/7132) - Make the recovery phrase import white space resistant
 - [7150](https://github.com/vegaprotocol/vega/issues/7150) - Avoid taking 2 snapshots upon protocol upgrade block
-
+- [7142](https://github.com/vegaprotocol/vega/issues/7142) - Do not recalculate margins based on potential positions when market is terminated.
+- [7172](https://github.com/vegaprotocol/vega/issues/7172) - Make markets table a hyper table and update queries.
 
 ## 0.64.0
 

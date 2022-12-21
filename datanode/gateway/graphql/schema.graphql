@@ -647,6 +647,13 @@ type Query {
   "List core snapshots"
   coreSnapshots(pagination: Pagination): CoreSnapshotConnection
 
+  "List reward summary per epoch by asset, market, reward type"
+  epochRewardSummaries(
+    fromEpoch: Int, 
+    toEpoch: Int,
+    pagination: Pagination
+    ): EpochRewardSummaryConnection
+
   "Get statistics about the Vega node"
   statistics: Statistics!
 
@@ -1327,9 +1334,6 @@ type Future {
 
   "The binding between the data source specification and the settlement data"
   dataSourceSpecBinding: DataSourceSpecToFutureBinding!
-
-  "The number of decimal places implied by the settlement data (such as price) emitted by the settlement data source"
-  settlementDataDecimals: Int!
 }
 
 """
@@ -1421,6 +1425,11 @@ type PropertyKey {
   name: String
   "The type of the property."
   type: PropertyKeyType!
+  """
+  An optional decimal place to be applied on the provided value.
+  Valid only for PropertyType of type DECIMAL, INTEGER.
+  """
+  numberDecimalPlaces: Int
 }
 
 """
@@ -3095,8 +3104,8 @@ enum TransferType {
   TRANSFER_TYPE_DEPOSIT
   "Bond account penalised when liquidity commitment not met"
   TRANSFER_TYPE_BOND_SLASHING
-  "Staking reward received"
-  TRANSFER_TYPE_STAKE_REWARD
+  "Reward payout received"
+  TRANSFER_TYPE_REWARD_PAYOUT
   "A network internal instruction for the collateral engine to move funds from a user's general account into the pending transfers pool"
   TRANSFER_TYPE_TRANSFER_FUNDS_SEND
   "A network internal instruction for the collateral engine to move funds from the pending transfers pool account into the destination account"
@@ -3126,9 +3135,6 @@ type FutureProduct {
   used as settlement data.
   """
   dataSourceSpecBinding: DataSourceSpecToFutureBinding!
-
-  "The number of decimal places implied by the settlement data (such as price) emitted by the settlement oracle"
-  settlementDataDecimals: Int!
 }
 
 """
@@ -4430,6 +4436,30 @@ type ProtocolUpgradeProposal {
   approvers: [String!]!
   "the status of the proposal"
   status: ProtocolUpgradeProposalStatus!
+}
+
+type EpochRewardSummaryConnection {
+  edges: [EpochRewardSummaryEdge]
+  pageInfo: PageInfo
+}
+
+type EpochRewardSummaryEdge {
+  node: EpochRewardSummary!
+  cursor: String!
+}
+
+"an aggregated reward summary for a combination of epoch/asset/market/reward type"
+type EpochRewardSummary {
+  "The epoch for which summary is generated"
+  epoch: Int! 
+  "ID of the market"
+  marketId: ID
+  "ID of the Asset"
+  assetId: ID!
+  "Type of the reward"
+  rewardType: AccountType!
+  "Total quantity of rewards awarded in this asset/market/reward type in this epoch"
+  amount: String!
 }
 
 "Connection type for retrieving cursor-based paginated core snapshot data"

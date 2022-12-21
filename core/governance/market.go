@@ -78,7 +78,6 @@ func assignProduct(
 				QuoteName:                           product.Future.QuoteName,
 				DataSourceSpecForSettlementData:     product.Future.DataSourceSpecForSettlementData.ToDataSourceSpec(),
 				DataSourceSpecForTradingTermination: product.Future.DataSourceSpecForTradingTermination.ToDataSourceSpec(),
-				SettlementDataDecimals:              product.Future.SettlementDataDecimalPlaces,
 				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
 			},
 		}
@@ -271,10 +270,21 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
-	if err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_INTEGER); err != nil {
-		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+	switch future.DataSourceSpecBinding.SettlementDataProperty {
+	case datapb.PropertyKey_TYPE_DECIMAL.String():
+		err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_DECIMAL)
+		if err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+		}
+
+	default:
+		err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_INTEGER)
+		if err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+		}
 	}
 
+	// ensure the oracle spec for market termination can be constructed
 	ospec, err = oracles.NewOracleSpec(*future.DataSourceSpecForTradingTermination.ToExternalDataSourceSpec())
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
@@ -453,15 +463,25 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 	}
 
 	// ensure the oracle spec for settlement data can be constructed
-	tedss := *future.DataSourceSpecForSettlementData.ToExternalDataSourceSpec()
-	ospec, err := oracles.NewOracleSpec(tedss)
+	ospec, err := oracles.NewOracleSpec(*future.DataSourceSpecForSettlementData.ToExternalDataSourceSpec())
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
-	if err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_INTEGER); err != nil {
-		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+	switch future.DataSourceSpecBinding.SettlementDataProperty {
+	case datapb.PropertyKey_TYPE_DECIMAL.String():
+		err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_DECIMAL)
+		if err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+		}
+
+	default:
+		err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_INTEGER)
+		if err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+		}
 	}
 
+	// ensure the oracle spec for market termination can be constructed
 	ospec, err = oracles.NewOracleSpec(*future.DataSourceSpecForTradingTermination.ToExternalDataSourceSpec())
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
