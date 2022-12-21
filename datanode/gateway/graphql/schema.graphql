@@ -336,6 +336,8 @@ type LiquidityProviderFeeShare {
   equityLikeShare: String!
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
+  "The average liquidity score"
+  averageScore: String! 
 }
 
 "The equity like share of liquidity fee for each liquidity provider"
@@ -346,6 +348,8 @@ type ObservableLiquidityProviderFeeShare {
   equityLikeShare: String!
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
+  "The average liquidity score"
+  averageScore: String! 
 }
 
 "The liquidity commitments for this market"
@@ -643,6 +647,16 @@ type Query {
 
   "List protocol upgrade proposals, optionally filtering on status or approver"
   protocolUpgradeProposals(inState: ProtocolUpgradeProposalStatus, approvedBy: String, pagination: Pagination): ProtocolUpgradeProposalConnection
+
+  "List core snapshots"
+  coreSnapshots(pagination: Pagination): CoreSnapshotConnection
+
+  "List reward summary per epoch by asset, market, reward type"
+  epochRewardSummaries(
+    fromEpoch: Int, 
+    toEpoch: Int,
+    pagination: Pagination
+    ): EpochRewardSummaryConnection
 
   "Get statistics about the Vega node"
   statistics: Statistics!
@@ -1322,9 +1336,6 @@ type Future {
 
   "The binding between the data source specification and the settlement data"
   dataSourceSpecBinding: DataSourceSpecToFutureBinding!
-
-  "The number of decimal places implied by the settlement data (such as price) emitted by the settlement data source"
-  settlementDataDecimals: Int!
 }
 
 """
@@ -1416,6 +1427,11 @@ type PropertyKey {
   name: String
   "The type of the property."
   type: PropertyKeyType!
+  """
+  An optional decimal place to be applied on the provided value.
+  Valid only for PropertyType of type DECIMAL, INTEGER.
+  """
+  numberDecimalPlaces: Int
 }
 
 """
@@ -1760,6 +1776,9 @@ type Market {
 
   "Risk factors for the market"
   riskFactors: RiskFactor
+
+  "Liquidity Provision order price range"
+  lpPriceRange: String!
 }
 
 """
@@ -3087,8 +3106,8 @@ enum TransferType {
   TRANSFER_TYPE_DEPOSIT
   "Bond account penalised when liquidity commitment not met"
   TRANSFER_TYPE_BOND_SLASHING
-  "Staking reward received"
-  TRANSFER_TYPE_STAKE_REWARD
+  "Reward payout received"
+  TRANSFER_TYPE_REWARD_PAYOUT
   "A network internal instruction for the collateral engine to move funds from a user's general account into the pending transfers pool"
   TRANSFER_TYPE_TRANSFER_FUNDS_SEND
   "A network internal instruction for the collateral engine to move funds from the pending transfers pool account into the destination account"
@@ -3118,9 +3137,6 @@ type FutureProduct {
   used as settlement data.
   """
   dataSourceSpecBinding: DataSourceSpecToFutureBinding!
-
-  "The number of decimal places implied by the settlement data (such as price) emitted by the settlement oracle"
-  settlementDataDecimals: Int!
 }
 
 """
@@ -3160,6 +3176,8 @@ type NewMarket {
   riskParameters: RiskModel!
   "Metadata for this instrument, tags"
   metadata: [String!]
+  "Liquidity Provision order price range"
+  lpPriceRange: String!
 }
 
 """
@@ -4420,6 +4438,56 @@ type ProtocolUpgradeProposal {
   approvers: [String!]!
   "the status of the proposal"
   status: ProtocolUpgradeProposalStatus!
+}
+
+type EpochRewardSummaryConnection {
+  edges: [EpochRewardSummaryEdge]
+  pageInfo: PageInfo
+}
+
+type EpochRewardSummaryEdge {
+  node: EpochRewardSummary!
+  cursor: String!
+}
+
+"an aggregated reward summary for a combination of epoch/asset/market/reward type"
+type EpochRewardSummary {
+  "The epoch for which summary is generated"
+  epoch: Int! 
+  "ID of the market"
+  marketId: ID
+  "ID of the Asset"
+  assetId: ID!
+  "Type of the reward"
+  rewardType: AccountType!
+  "Total quantity of rewards awarded in this asset/market/reward type in this epoch"
+  amount: String!
+}
+
+"Connection type for retrieving cursor-based paginated core snapshot data"
+type CoreSnapshotConnection {
+  "The positions in this connection"
+  edges: [CoreSnapshotEdge!]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+"Edge type containing the core snapshot cursor information"
+type CoreSnapshotEdge {
+  "The core snapshot data"
+  node: CoreSnapshotData!
+  "Cursor identifying the core snapashot data"
+  cursor: String!
+}
+
+"A snapshot taken by the core"
+type CoreSnapshotData {
+  "At which block the snapshot was taken"
+  blockHeight: String!
+  "The block hash at the snapshot block height"
+  blockHash: String!  
+  "The current version of vega core"
+  vegaCoreVersion: String!
 }
 
 """

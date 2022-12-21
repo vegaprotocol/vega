@@ -93,6 +93,20 @@ func (mr *MockDeHistoryServiceMockRecorder) GetHighestBlockHeightHistorySegment(
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHighestBlockHeightHistorySegment", reflect.TypeOf((*MockDeHistoryService)(nil).GetHighestBlockHeightHistorySegment))
 }
 
+// GetSwarmKey mocks base method.
+func (m *MockDeHistoryService) GetSwarmKey() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSwarmKey")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetSwarmKey indicates an expected call of GetSwarmKey.
+func (mr *MockDeHistoryServiceMockRecorder) GetSwarmKey() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSwarmKey", reflect.TypeOf((*MockDeHistoryService)(nil).GetSwarmKey))
+}
+
 // ListAllHistorySegments mocks base method.
 func (m *MockDeHistoryService) ListAllHistorySegments() ([]store.SegmentIndexEntry, error) {
 	m.ctrl.T.Helper()

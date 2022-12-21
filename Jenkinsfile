@@ -157,7 +157,7 @@ pipeline {
                     sh label: 'get version', script: '''#!/bin/bash -e
                         ./vega version
                         ./data-node version
-                        ./vegawallet version
+                        ./vegawallet software version
                     '''
                 }
             }

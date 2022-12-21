@@ -10,10 +10,12 @@ import (
 )
 
 type AdminImportWalletParams struct {
-	Wallet         string `json:"wallet"`
-	RecoveryPhrase string `json:"recoveryPhrase"`
-	Version        uint32 `json:"version"`
-	Passphrase     string `json:"passphrase"`
+	Wallet               string `json:"wallet"`
+	RecoveryPhrase       string `json:"recoveryPhrase"`
+	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
+	Passphrase           string `json:"passphrase"`
+	// DEPRECATED: Use KeyDerivationVersion instead
+	Version uint32 `json:"version"`
 }
 
 type AdminImportWalletResult struct {
@@ -22,9 +24,11 @@ type AdminImportWalletResult struct {
 }
 
 type AdminImportedWallet struct {
-	Name     string `json:"name"`
-	Version  uint32 `json:"version"`
-	FilePath string `json:"filePath"`
+	Name                 string `json:"name"`
+	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
+	FilePath             string `json:"filePath"`
+	// DEPRECATED: Use KeyDerivationVersion instead
+	Version uint32 `json:"version"`
 }
 
 type AdminImportWallet struct {
@@ -44,7 +48,7 @@ func (h *AdminImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params
 		return nil, invalidParams(ErrWalletAlreadyExists)
 	}
 
-	w, err := wallet.ImportHDWallet(params.Wallet, params.RecoveryPhrase, params.Version)
+	w, err := wallet.ImportHDWallet(params.Wallet, params.RecoveryPhrase, params.KeyDerivationVersion)
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not import the wallet: %w", err))
 	}
@@ -60,9 +64,10 @@ func (h *AdminImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params
 
 	return AdminImportWalletResult{
 		Wallet: AdminImportedWallet{
-			Name:     w.Name(),
-			Version:  w.Version(),
-			FilePath: h.walletStore.GetWalletPath(w.Name()),
+			Name:                 w.Name(),
+			Version:              w.KeyDerivationVersion(),
+			KeyDerivationVersion: w.KeyDerivationVersion(),
+			FilePath:             h.walletStore.GetWalletPath(w.Name()),
 		},
 		Key: AdminFirstPublicKey{
 			PublicKey: kp.PublicKey(),
@@ -97,8 +102,12 @@ func validateImportWalletParams(rawParams jsonrpc.Params) (AdminImportWalletPara
 		return AdminImportWalletParams{}, ErrRecoveryPhraseIsRequired
 	}
 
-	if params.Version == 0 {
-		return AdminImportWalletParams{}, ErrWalletVersionIsRequired
+	if params.KeyDerivationVersion == 0 {
+		params.KeyDerivationVersion = params.Version
+	}
+
+	if params.KeyDerivationVersion == 0 {
+		return AdminImportWalletParams{}, ErrWalletKeyDerivationVersionIsRequired
 	}
 
 	return params, nil

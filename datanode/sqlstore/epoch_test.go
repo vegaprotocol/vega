@@ -24,7 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 )
 
-func addTestEpoch(t *testing.T, es *sqlstore.Epochs,
+func addTestEpoch(t *testing.T, ctx context.Context, es *sqlstore.Epochs,
 	epochID int64,
 	startTime time.Time,
 	expireTime time.Time,
@@ -44,14 +44,15 @@ func addTestEpoch(t *testing.T, es *sqlstore.Epochs,
 	} else {
 		r.LastBlock = &block.Height
 	}
-	err := es.Add(context.Background(), r)
+	err := es.Add(ctx, r)
 	require.NoError(t, err)
 	return r
 }
 
 func TestEpochs(t *testing.T) {
-	defer DeleteEverything()
-	ctx := context.Background()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	es := sqlstore.NewEpochs(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
@@ -69,17 +70,17 @@ func TestEpochs(t *testing.T) {
 	block3 := addTestBlockForHeightAndTime(t, bs, 3, epoch3Start)
 
 	// Insert one epoch that gets updated in the same block
-	epoch1 := addTestEpoch(t, es, 1, epoch1Start, epoch1Expire, nil, block1)
-	epoch1b := addTestEpoch(t, es, 1, epoch1Start, epoch1Expire, &epoch1End, block1)
+	epoch1 := addTestEpoch(t, ctx, es, 1, epoch1Start, epoch1Expire, nil, block1)
+	epoch1b := addTestEpoch(t, ctx, es, 1, epoch1Start, epoch1Expire, &epoch1End, block1)
 	epoch1b.FirstBlock = epoch1.FirstBlock
 
 	// And another which is updated in a subsequent block
-	epoch2 := addTestEpoch(t, es, 2, epoch2Start, epoch2Expire, nil, block2)
-	epoch2b := addTestEpoch(t, es, 2, epoch2Start, epoch2Expire, &epoch2End, block3)
+	epoch2 := addTestEpoch(t, ctx, es, 2, epoch2Start, epoch2Expire, nil, block2)
+	epoch2b := addTestEpoch(t, ctx, es, 2, epoch2Start, epoch2Expire, &epoch2End, block3)
 	epoch2b.FirstBlock = epoch2.FirstBlock
 
 	// And finally one which isn't updated (e.g. hasn't ended yet)
-	epoch3 := addTestEpoch(t, es, 3, epoch3Start, epoch3Expire, nil, block3)
+	epoch3 := addTestEpoch(t, ctx, es, 3, epoch3Start, epoch3Expire, nil, block3)
 
 	_ = epoch1
 	_ = epoch2

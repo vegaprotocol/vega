@@ -28,7 +28,7 @@ type MarginLevelsStore interface {
 }
 
 type AccountSource interface {
-	GetByID(id entities.AccountID) (entities.Account, error)
+	GetByID(ctx context.Context, id entities.AccountID) (entities.Account, error)
 }
 
 type Risk struct {
@@ -73,7 +73,7 @@ func (r *Risk) ObserveMarginLevels(
 ) (accountCh <-chan []entities.MarginLevels, ref uint64) {
 	ch, ref := r.observer.Observe(ctx, retries,
 		func(ml entities.MarginLevels) bool {
-			acc, err := r.accountSource.GetByID(ml.AccountID)
+			acc, err := r.accountSource.GetByID(ctx, ml.AccountID)
 			if err != nil {
 				return false
 			}

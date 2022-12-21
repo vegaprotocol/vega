@@ -685,8 +685,11 @@ create table if not exists markets (
     state market_state_type,
     market_timestamps jsonb,
     position_decimal_places int,
+    lp_price_range text,
     primary key (id, vega_time)
 );
+
+select create_hypertable('markets', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
 drop view if exists markets_current;
 
@@ -705,6 +708,7 @@ create table if not exists markets_current (
     state market_state_type,
     market_timestamps jsonb,
     position_decimal_places int,
+    lp_price_range text,
     primary key (id)
 );
 
@@ -714,8 +718,8 @@ CREATE OR REPLACE FUNCTION update_current_markets()
     LANGUAGE PLPGSQL AS
 $$
 BEGIN
-    INSERT INTO markets_current(id,tx_hash,vega_time,instrument_id,tradable_instrument,decimal_places,fees,opening_auction,price_monitoring_settings,liquidity_monitoring_parameters,trading_mode,state,market_timestamps,position_decimal_places)
-    VALUES(NEW.id,NEW.tx_hash,NEW.vega_time,NEW.instrument_id,NEW.tradable_instrument,NEW.decimal_places,NEW.fees,NEW.opening_auction,NEW.price_monitoring_settings,NEW.liquidity_monitoring_parameters,NEW.trading_mode,NEW.state,NEW.market_timestamps,NEW.position_decimal_places)
+    INSERT INTO markets_current(id,tx_hash,vega_time,instrument_id,tradable_instrument,decimal_places,fees,opening_auction,price_monitoring_settings,liquidity_monitoring_parameters,trading_mode,state,market_timestamps,position_decimal_places,lp_price_range)
+    VALUES(NEW.id,NEW.tx_hash,NEW.vega_time,NEW.instrument_id,NEW.tradable_instrument,NEW.decimal_places,NEW.fees,NEW.opening_auction,NEW.price_monitoring_settings,NEW.liquidity_monitoring_parameters,NEW.trading_mode,NEW.state,NEW.market_timestamps,NEW.position_decimal_places,NEW.lp_price_range)
     ON CONFLICT(id) DO UPDATE SET
                                                            tx_hash=EXCLUDED.tx_hash,
                                                            instrument_id=EXCLUDED.instrument_id,
@@ -729,6 +733,7 @@ BEGIN
                                                            state=EXCLUDED.state,
                                                            market_timestamps=EXCLUDED.market_timestamps,
                                                            position_decimal_places=EXCLUDED.position_decimal_places,
+                                                           lp_price_range=EXCLUDED.lp_price_range,
                                                            vega_time=EXCLUDED.vega_time;
     RETURN NULL;
 END;
@@ -765,47 +770,11 @@ create table if not exists deposits (
     primary key (id, party_id, vega_time)
 );
 
-drop view if exists deposits_current;
+select create_hypertable('deposits', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
-create table if not exists deposits_current (
-    id bytea not null,
-    status deposit_status not null,
-    party_id bytea not null,
-    asset bytea not null,
-    amount HUGEINT,
-    foreign_tx_hash text not null,
-    credited_timestamp timestamp with time zone not null,
-    created_timestamp timestamp with time zone not null,
-    tx_hash  bytea not null,
-    vega_time timestamp with time zone not null,
-    primary key (id, party_id)
+CREATE VIEW deposits_current AS (
+    SELECT DISTINCT ON (id) * FROM deposits ORDER BY id, vega_time DESC
 );
-
--- +goose StatementBegin
-CREATE OR REPLACE FUNCTION update_current_deposits()
-    RETURNS TRIGGER
-    LANGUAGE PLPGSQL AS
-$$
-BEGIN
-    INSERT INTO deposits_current(id,status,party_id,asset,amount,foreign_tx_hash,credited_timestamp,created_timestamp,tx_hash,vega_time)
-    VALUES(NEW.id,NEW.status,NEW.party_id,NEW.asset,NEW.amount,NEW.foreign_tx_hash,NEW.credited_timestamp,NEW.created_timestamp,NEW.tx_hash,NEW.vega_time)
-    ON CONFLICT(id, party_id) DO UPDATE SET
-                                            status=EXCLUDED.status,
-                                            asset=EXCLUDED.asset,
-                                            amount=EXCLUDED.amount,
-                                            foreign_tx_hash=EXCLUDED.foreign_tx_hash,
-                                            credited_timestamp=EXCLUDED.credited_timestamp,
-                                            created_timestamp=EXCLUDED.created_timestamp,
-                                            tx_hash=EXCLUDED.tx_hash,
-                                            vega_time=EXCLUDED.vega_time;
-    RETURN NULL;
-END;
-$$;
--- +goose StatementEnd
-
-create trigger update_current_deposits
-    after insert or update on deposits
-    for each row execute function update_current_deposits();
 
 create type withdrawal_status as enum('STATUS_UNSPECIFIED', 'STATUS_OPEN', 'STATUS_REJECTED', 'STATUS_FINALIZED');
 
@@ -826,53 +795,11 @@ create table if not exists withdrawals (
     primary key (id, party_id, vega_time)
 );
 
-drop view if exists withdrawals_current;
+select create_hypertable('withdrawals', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
-create table if not exists withdrawals_current (
-    id bytea not null,
-    party_id bytea not null,
-    amount numeric,
-    asset bytea not null,
-    status withdrawal_status not null,
-    ref text not null,
-    expiry timestamp with time zone not null,
-    foreign_tx_hash text not null,
-    created_timestamp timestamp with time zone not null,
-    withdrawn_timestamp timestamp with time zone not null,
-    ext jsonb not null,
-    tx_hash  bytea not null,
-    vega_time timestamp with time zone not null,
-    primary key (id, party_id)
+CREATE VIEW withdrawals_current AS (
+    SELECT DISTINCT ON (id) * FROM withdrawals ORDER BY id, vega_time DESC
 );
-
--- +goose StatementBegin
-CREATE OR REPLACE FUNCTION update_current_withdrawals()
-    RETURNS TRIGGER
-    LANGUAGE PLPGSQL AS
-$$
-BEGIN
-    INSERT INTO withdrawals_current(id,party_id,amount,asset,status,ref,expiry,foreign_tx_hash,created_timestamp,withdrawn_timestamp,ext,tx_hash,vega_time)
-    VALUES(NEW.id,NEW.party_id,NEW.amount,NEW.asset,NEW.status,NEW.ref,NEW.expiry,NEW.foreign_tx_hash,NEW.created_timestamp,NEW.withdrawn_timestamp,NEW.ext,NEW.tx_hash,NEW.vega_time)
-    ON CONFLICT(id, party_id) DO UPDATE SET
-                                            amount=EXCLUDED.amount,
-                                            asset=EXCLUDED.asset,
-                                            status=EXCLUDED.status,
-                                            ref=EXCLUDED.ref,
-                                            expiry=EXCLUDED.expiry,
-                                            foreign_tx_hash=EXCLUDED.foreign_tx_hash,
-                                            created_timestamp=EXCLUDED.created_timestamp,
-                                            withdrawn_timestamp=EXCLUDED.withdrawn_timestamp,
-                                            ext=EXCLUDED.ext,
-                                            tx_hash=EXCLUDED.tx_hash,
-                                            vega_time=EXCLUDED.vega_time;
-    RETURN NULL;
-END;
-$$;
--- +goose StatementEnd
-
-CREATE TRIGGER update_current_withdrawals
-    AFTER INSERT OR UPDATE ON withdrawals
-    FOR EACH ROW EXECUTE function update_current_withdrawals();
 
 CREATE TYPE proposal_state AS enum('STATE_UNSPECIFIED', 'STATE_FAILED', 'STATE_OPEN', 'STATE_PASSED', 'STATE_REJECTED', 'STATE_DECLINED', 'STATE_ENACTED', 'STATE_WAITING_FOR_NODE_VOTE');
 CREATE TYPE proposal_error AS enum('PROPOSAL_ERROR_UNSPECIFIED', 'PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON', 'PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE', 'PROPOSAL_ERROR_ENACT_TIME_TOO_SOON', 'PROPOSAL_ERROR_ENACT_TIME_TOO_LATE', 'PROPOSAL_ERROR_INSUFFICIENT_TOKENS', 'PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY', 'PROPOSAL_ERROR_NO_PRODUCT', 'PROPOSAL_ERROR_UNSUPPORTED_PRODUCT', 'PROPOSAL_ERROR_NO_TRADING_MODE', 'PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE', 'PROPOSAL_ERROR_NODE_VALIDATION_FAILED', 'PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD', 'PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS', 'PROPOSAL_ERROR_INVALID_ASSET', 'PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS', 'PROPOSAL_ERROR_NO_RISK_PARAMETERS', 'PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY', 'PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE', 'PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED', 'PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL', 'PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE', 'PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT', 'PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET', 'PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT', 'PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT', 'PROPOSAL_ERROR_INVALID_FEE_AMOUNT', 'PROPOSAL_ERROR_INVALID_SHAPE', 'PROPOSAL_ERROR_INVALID_RISK_PARAMETER', 'PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED', 'PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED', 'PROPOSAL_ERROR_INVALID_ASSET_DETAILS', 'PROPOSAL_ERROR_UNKNOWN_TYPE', 'PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE', 'PROPOSAL_ERROR_INVALID_FREEFORM', 'PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE', 'PROPOSAL_ERROR_INVALID_MARKET', 'PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES', 'PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS', 'PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE');
@@ -1545,6 +1472,15 @@ CREATE VIEW protocol_upgrade_proposals_current AS (
       FROM protocol_upgrade_proposals
   ORDER BY upgrade_block_height, vega_release_tag, vega_time DESC);
 
+CREATE TABLE IF NOT EXISTS core_snapshots(
+    block_height BIGINT NOT NULL,
+    block_hash TEXT null,
+    vega_core_version TEXT null,
+    tx_hash bytea not null,
+    vega_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    PRIMARY KEY(vega_time, block_height)
+);
+
 create table last_snapshot_span
 (
     onerow_check  bool PRIMARY KEY DEFAULT TRUE,
@@ -1563,7 +1499,7 @@ DROP FUNCTION IF EXISTS public.last_agg(anyelement, anyelement);
 DROP VIEW IF EXISTS protocol_upgrade_proposals_current;
 DROP TABLE IF EXISTS protocol_upgrade_proposals;
 DROP TYPE IF EXISTS protocol_upgrade_proposal_status;
-
+DROP TABLE IF EXISTS core_snapshots;
 DROP TABLE IF EXISTS ethereum_key_rotations;
 
 DROP TABLE IF EXISTS key_rotations;
@@ -1640,13 +1576,41 @@ DROP TABLE IF EXISTS current_margin_levels;
 
 drop trigger if exists update_current_deposits on deposits;
 drop function if exists update_current_deposits;
-drop table if exists deposits_current;
+-- +goose StatementBegin
+DO $$
+    BEGIN
+        IF EXISTS (SELECT relname
+                   FROM pg_class
+                   WHERE relname='deposits_current'
+                     AND relkind = 'r')
+        THEN
+            DROP TABLE IF EXISTS deposits_current;
+        ELSE
+            DROP VIEW IF EXISTS deposits_current;
+        END IF;
+    END;
+$$;
+-- +goose StatementEnd
 DROP TABLE IF EXISTS deposits cascade;
 DROP TYPE IF EXISTS deposit_status;
 
 drop trigger if exists update_current_withdrawals on withdrawals;
 drop function if exists update_current_withdrawals;
-drop table if exists withdrawals_current;
+-- +goose StatementBegin
+DO $$
+    BEGIN
+        IF EXISTS (SELECT relname
+                   FROM pg_class
+                   WHERE relname='withdrawals_current'
+                     AND relkind = 'r')
+        THEN
+            DROP TABLE IF EXISTS withdrawals_current;
+        ELSE
+            DROP VIEW IF EXISTS withdrawals_current;
+        END IF;
+    END;
+$$;
+-- +goose StatementEnd
 DROP TABLE IF EXISTS withdrawals cascade;
 DROP TYPE IF EXISTS withdrawal_status;
 

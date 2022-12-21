@@ -92,9 +92,9 @@ func (e *Engine) AmendLiquidityProvision(
 // to submit orders later on.
 func (e *Engine) GetPotentialShapeOrders(
 	party string,
-	bestBidPrice, bestAskPrice num.Decimal,
+	minLpPrice, maxLpPrice *num.Uint,
 	lps *types.LiquidityProvisionAmendment,
-	repriceFn RepricePeggedOrder,
+	repriceFn RepriceOrder,
 ) ([]*types.Order, error) {
 	if err := e.ValidateLiquidityProvisionAmendment(lps); err != nil {
 		return nil, err
@@ -103,15 +103,10 @@ func (e *Engine) GetPotentialShapeOrders(
 	priceShape := func(loShape []*types.LiquidityOrder, side types.Side) ([]*supplied.LiquidityOrder, bool) {
 		shape := make([]*supplied.LiquidityOrder, 0, len(loShape))
 		for _, lorder := range loShape {
-			pegged := &types.PeggedOrder{
-				Reference: lorder.Reference,
-				Offset:    lorder.Offset.Clone(),
-			}
 			order := &supplied.LiquidityOrder{
-				Proportion: uint64(lorder.Proportion),
-				Peg:        pegged,
+				Details: lorder,
 			}
-			price, _, err := repriceFn(pegged, side)
+			price, err := repriceFn(side, lorder.Reference, lorder.Offset.Clone())
 			if err != nil {
 				return nil, false
 			}
@@ -141,16 +136,13 @@ func (e *Engine) GetPotentialShapeOrders(
 		}
 	}
 
-	// now try to calculate the implied volume for our shape,
-	// any error would exit straight away
-	if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
-		bestBidPrice, bestAskPrice,
+	// now calculate the implied volume for our shape
+	e.suppliedEngine.CalculateLiquidityImpliedVolumes(
 		obligation,
 		orders,
+		minLpPrice, maxLpPrice,
 		buyShape, sellShape,
-	); err != nil {
-		return nil, err
-	}
+	)
 
 	// from this point we should have no error possible, let's just
 	// make the order shapes

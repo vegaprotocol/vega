@@ -14,6 +14,7 @@ package start
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -25,7 +26,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/dehistory"
-	"code.vegaprotocol.io/vega/datanode/dehistory/initialise"
 	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
@@ -100,35 +100,51 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		}
 	}
 
-	dataNodeHasData, err := initialise.DataNodeHasData(l.ctx, l.conf.SQLStore.ConnectionConfig)
-	if err != nil {
-		return fmt.Errorf("failed to check if data node has scheme or is empty: %w", err)
-	}
-
-	if dataNodeHasData && bool(l.conf.SQLStore.WipeOnStartup) {
-		if err = sqlstore.WipeDatabase(l.Log, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations); err != nil {
+	if l.conf.SQLStore.WipeOnStartup {
+		if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(l.Log, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations); err != nil {
 			return fmt.Errorf("failed to wiped database:%w", err)
 		}
-		dataNodeHasData = false
 		l.Log.Info("Wiped all existing data from the datanode")
 	}
 
-	if !dataNodeHasData && bool(l.conf.DeHistory.Enabled) && bool(l.conf.AutoInitialiseFromDeHistory) {
+	initialisedFromDeHistory := false
+	if bool(l.conf.DeHistory.Enabled) && bool(l.conf.AutoInitialiseFromDeHistory) {
 		l.Log.Info("Auto Initialising Datanode From Decentralized History")
+		initialisedFromDeHistory = true
 		apiPorts := []int{l.conf.API.Port}
 		apiPorts = append(apiPorts, l.conf.DeHistory.Initialise.GrpcAPIPorts...)
-		if err = initialise.DatanodeFromDeHistory(l.ctx, l.conf.DeHistory.Initialise,
-			l.Log, l.deHistoryService, apiPorts); err != nil {
-			return fmt.Errorf("failed to initialise datanode from decentralized history:%w", err)
+		blockSpan, err := sqlstore.GetDatanodeBlockSpan(l.ctx, l.conf.SQLStore.ConnectionConfig)
+		if err != nil {
+			return fmt.Errorf("failed to get datanode block span:%w", err)
 		}
-		l.Log.Info("Finished Auto Initialising Datanode From Decentralized History")
+
+		if blockSpan.HasData {
+			l.Log.Infof("Datanode has data from block height %d to %d", blockSpan.FromHeight, blockSpan.ToHeight)
+		} else {
+			l.Log.Info("Datanode is empty")
+		}
+
+		if err = dehistory.DatanodeFromDeHistory(l.ctx, l.conf.DeHistory.Initialise,
+			l.Log, l.deHistoryService, blockSpan, apiPorts); err != nil {
+			if errors.Is(err, dehistory.ErrDeHistoryNotAvailable) {
+				initialisedFromDeHistory = false
+				l.Log.Info("Unable to initialize from decentralized history, no history is available")
+			} else {
+				return fmt.Errorf("failed to initialize datanode from decentralized history:%w", err)
+			}
+		}
+	}
+
+	if initialisedFromDeHistory {
+		l.Log.Info("Initialized from decentralized history")
 	} else {
 		operation := func() (opErr error) {
-			l.Log.Info("Attempting to connect to SQL stores...")
+			l.Log.Info("Attempting to initialise database...")
 			opErr = l.initialiseDatabase()
 			if opErr != nil {
-				l.Log.Error("Failed to connect to SQL stores, retrying...", logging.Error(opErr))
+				l.Log.Error("Failed to initialise database, retrying...", logging.Error(opErr))
 			}
+			l.Log.Info("Database initialised")
 			return opErr
 		}
 
@@ -169,7 +185,7 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		return err
 	}
 
-	err = initialise.VerifyChainID(l.conf.ChainID, l.chainService)
+	err = dehistory.VerifyChainID(l.conf.ChainID, l.chainService)
 	if err != nil {
 		return fmt.Errorf("failed to verify chain id:%w", err)
 	}
@@ -182,7 +198,7 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 func (l *NodeCommand) initialiseDatabase() error {
 	var err error
 
-	hasVegaSchema, err := initialise.HasVegaSchema(l.ctx, l.conf.SQLStore.ConnectionConfig)
+	hasVegaSchema, err := sqlstore.HasVegaSchema(l.ctx, l.conf.SQLStore.ConnectionConfig)
 	if err != nil {
 		return fmt.Errorf("failed to check if database has schema: %w", err)
 	}
@@ -212,19 +228,20 @@ func (l *NodeCommand) preRun([]string) (err error) {
 		}
 	}()
 
-	eventSource, err := broker.NewEventSource(l.conf.Broker, l.Log, l.conf.ChainID)
+	eventReceiverSender, err := broker.NewEventReceiverSender(l.conf.Broker, l.Log, l.conf.ChainID)
 	if err != nil {
 		l.Log.Error("unable to initialise event source", logging.Error(err))
 		return err
 	}
 
+	var eventSource broker.EventReceiver
 	if l.conf.Broker.UseBufferedEventSource {
 		bufferFilePath, err := l.vegaPaths.CreateStatePathFor(paths.DataNodeEventBufferHome)
 		if err != nil {
 			l.Log.Error("failed to create path for buffered event source", logging.Error(err))
 			return err
 		}
-		eventSource, err = broker.NewBufferedEventSource(l.Log, l.conf.Broker.BufferedEventSourceConfig, eventSource, bufferFilePath)
+		eventSource, err = broker.NewBufferedEventSource(l.Log, l.conf.Broker.BufferedEventSourceConfig, eventReceiverSender, bufferFilePath)
 		if err != nil {
 			l.Log.Error("unable to initialise file buffered event source", logging.Error(err))
 			return err
@@ -233,18 +250,18 @@ func (l *NodeCommand) preRun([]string) (err error) {
 
 	eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SQLStore.FanOutBufferSize, 2)
 
-	var onBlockCommittedHandler func(ctx context.Context, chainId string, lastCommittedBlockHeight int64)
+	var onBlockCommittedHandler func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool)
 	var protocolUpgradeHandler broker.ProtocolUpgradeHandler
 
 	if l.conf.DeHistory.Enabled {
-		blockCommitHandler := dehistory.NewBlockCommitHandler(l.Log, l.conf.DeHistory, l.snapshotService.SnapshotData, l.networkParameterService.GetByKey,
+		blockCommitHandler := dehistory.NewBlockCommitHandler(l.Log, l.conf.DeHistory, l.snapshotService.SnapshotData,
 			bool(l.conf.Broker.UseEventFile), l.conf.Broker.FileEventSourceConfig.TimeBetweenBlocks.Duration)
 		onBlockCommittedHandler = blockCommitHandler.OnBlockCommitted
-		protocolUpgradeHandler = dehistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService,
+		protocolUpgradeHandler = dehistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService, eventReceiverSender,
 			l.deHistoryService.CreateAndPublishSegment)
 	} else {
-		onBlockCommittedHandler = func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) {}
-		protocolUpgradeHandler = dehistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService,
+		onBlockCommittedHandler = func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {}
+		protocolUpgradeHandler = dehistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService, eventReceiverSender,
 			func(ctx context.Context, chainID string, toHeight int64) error { return nil })
 	}
 

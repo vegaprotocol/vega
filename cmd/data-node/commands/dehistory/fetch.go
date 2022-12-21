@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"strconv"
 
+	"code.vegaprotocol.io/vega/datanode/dehistory"
+	"google.golang.org/grpc/status"
+
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 
-	"code.vegaprotocol.io/vega/datanode/dehistory/initialise"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"code.vegaprotocol.io/vega/datanode/config"
@@ -43,16 +45,7 @@ func (cmd *fetchCmd) Execute(args []string) error {
 	}
 
 	vegaPaths := paths.New(cmd.VegaHome)
-
-	configFilePath, err := vegaPaths.CreateConfigPathFor(paths.DataNodeDefaultConfigFile)
-	if err != nil {
-		return fmt.Errorf("couldn't get path for %s: %w", paths.DataNodeDefaultConfigFile, err)
-	}
-
-	err = paths.ReadStructuredFile(configFilePath, &cmd.Config)
-	if err != nil {
-		return fmt.Errorf("failed to read config:%w", err)
-	}
+	fixConfig(&cmd.Config, vegaPaths)
 
 	err = verifyChainID(log, cmd.SQLStore.ConnectionConfig, cmd.ChainID)
 	if err != nil {
@@ -69,19 +62,19 @@ func (cmd *fetchCmd) Execute(args []string) error {
 	}
 	defer func() { _ = conn.Close() }()
 
-	blocksFetched, err := initialise.FetchHistoryBlocks(context.Background(), func(s string, args ...interface{}) {
+	blocksFetched, err := dehistory.FetchHistoryBlocks(context.Background(), func(s string, args ...interface{}) {
 		fmt.Printf(s+"\n", args...)
 	}, rootSegmentID,
-		func(ctx context.Context, historySegmentId string) (initialise.FetchResult, error) {
+		func(ctx context.Context, historySegmentId string) (dehistory.FetchResult, error) {
 			resp, err := client.FetchDeHistorySegment(context.Background(), &v2.FetchDeHistorySegmentRequest{
 				HistorySegmentId: historySegmentId,
 			})
 			if err != nil {
-				return initialise.FetchResult{},
+				return dehistory.FetchResult{},
 					errorFromGrpcError("failed to fetch decentralized history segments", err)
 			}
 
-			return initialise.FetchResult{
+			return dehistory.FetchResult{
 				HeightFrom:               resp.Segment.FromHeight,
 				HeightTo:                 resp.Segment.ToHeight,
 				PreviousHistorySegmentID: resp.Segment.PreviousHistorySegmentId,
@@ -106,9 +99,18 @@ func verifyChainID(log *logging.Logger, connConfig sqlstore.ConnectionConfig, ch
 	store := sqlstore.NewChain(connSource)
 	chainService := service.NewChain(store, log)
 
-	err = initialise.VerifyChainID(chainID, chainService)
+	err = dehistory.VerifyChainID(chainID, chainService)
 	if err != nil {
 		return fmt.Errorf("failed to verify chain id:%w", err)
 	}
 	return nil
+}
+
+func errorFromGrpcError(msg string, err error) error {
+	s, ok := status.FromError(err)
+	if !ok {
+		return fmt.Errorf("%s:%s", msg, err)
+	}
+
+	return fmt.Errorf("%s:%s", msg, s.Details())
 }

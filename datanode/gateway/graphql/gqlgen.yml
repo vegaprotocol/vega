@@ -489,3 +489,15 @@ models:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.ProtocolUpgradeProposalStatus
   OrderFilter:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.OrderFilter
+  CoreSnapshotConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.CoreSnapshotConnection
+  CoreSnapshotEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.CoreSnapshotEdge
+  CoreSnapshotData:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.CoreSnapshotData
+  EpochRewardSummaryConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EpochRewardSummaryConnection
+  EpochRewardSummaryEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EpochRewardSummaryEdge
+  EpochRewardSummary:
+    model: code.vegaprotocol.io/vega/protos/vega.EpochRewardSummary

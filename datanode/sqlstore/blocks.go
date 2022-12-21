@@ -56,9 +56,8 @@ func (bs *Blocks) Add(ctx context.Context, b entities.Block) error {
 	return nil
 }
 
-func (bs *Blocks) GetAll() ([]entities.Block, error) {
+func (bs *Blocks) GetAll(ctx context.Context) ([]entities.Block, error) {
 	defer metrics.StartSQLQuery("Blocks", "GetAll")()
-	ctx := context.Background()
 	blocks := []entities.Block{}
 	err := pgxscan.Select(ctx, bs.Connection, &blocks,
 		`SELECT vega_time, height, hash
@@ -76,7 +75,7 @@ func (bs *Blocks) GetAtHeight(ctx context.Context, height int64) (entities.Block
 		return block, nil
 	}
 
-	return block, bs.wrapE(pgxscan.Get(context.Background(), bs.Connection, &block,
+	return block, bs.wrapE(pgxscan.Get(ctx, bs.Connection, &block,
 		`SELECT vega_time, height, hash
 		FROM blocks
 		WHERE height=$1`, height))

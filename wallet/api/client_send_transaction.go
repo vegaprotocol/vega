@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/commands"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -47,6 +46,7 @@ type ClientSendTransactionResult struct {
 type ClientSendTransaction struct {
 	interactor   Interactor
 	nodeSelector node.Selector
+	pow          ProofOfWork
 	sessions     *session.Sessions
 	time         TimeProvider
 }
@@ -145,16 +145,12 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 
 	// Generate the proof of work for the transaction.
 	h.interactor.Log(ctx, metadata.TraceID, InfoLog, "Computing proof-of-work...")
-	txID := vgcrypto.RandomHash()
-	powNonce, _, err := vgcrypto.PoW(lastBlockData.BlockHash, txID, uint(lastBlockData.ProofOfWorkDifficulty), vgcrypto.Sha3)
+	tx.Pow, err = h.pow.Generate(params.PublicKey, &lastBlockData)
 	if err != nil {
 		h.interactor.NotifyError(ctx, metadata.TraceID, InternalError, fmt.Errorf("could not compute the proof-of-work: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)
 	}
-	tx.Pow = &commandspb.ProofOfWork{
-		Tid:   txID,
-		Nonce: powNonce,
-	}
+
 	h.interactor.Log(ctx, metadata.TraceID, SuccessLog, "The proof-of-work has been computed.")
 
 	sentAt := time.Now()
@@ -190,10 +186,11 @@ func protoToJSON(tx proto.Message) string {
 	return jsonProto
 }
 
-func NewSendTransaction(interactor Interactor, nodeSelector node.Selector, sessions *session.Sessions, tp ...TimeProvider) *ClientSendTransaction {
+func NewSendTransaction(interactor Interactor, nodeSelector node.Selector, pow ProofOfWork, sessions *session.Sessions, tp ...TimeProvider) *ClientSendTransaction {
 	return &ClientSendTransaction{
 		interactor:   interactor,
 		nodeSelector: nodeSelector,
+		pow:          pow,
 		sessions:     sessions,
 		time:         extractTimeProvider(tp...),
 	}

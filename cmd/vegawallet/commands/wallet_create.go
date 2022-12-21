@@ -132,7 +132,7 @@ func PrintCreateWalletResponse(w io.Writer, resp api.AdminCreateWalletResult) {
 	str.Text("Wallet recovery phrase:").NextLine()
 	str.WarningText(resp.Wallet.RecoveryPhrase).NextLine()
 	str.Text("Wallet version:").NextLine()
-	str.WarningText(fmt.Sprintf("%d", resp.Wallet.Version)).NextLine()
+	str.WarningText(fmt.Sprintf("%d", resp.Wallet.KeyDerivationVersion)).NextLine()
 	str.Text("First public key:").NextLine()
 	str.WarningText(resp.Key.PublicKey).NextLine()
 	str.NextSection()

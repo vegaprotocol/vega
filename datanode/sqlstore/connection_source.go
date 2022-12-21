@@ -64,7 +64,7 @@ func NewTransactionalConnectionSource(log *logging.Logger, conf ConnectionConfig
 		return nil, errors.Wrap(err, "creating connection source")
 	}
 
-	setMaxPoolSize(context.Background(), poolConfig)
+	setMaxPoolSize(context.Background(), poolConfig, conf)
 	registerNumericType(poolConfig)
 
 	pool, err := pgxpool.ConnectConfig(context.Background(), poolConfig)
@@ -82,7 +82,7 @@ func NewTransactionalConnectionSource(log *logging.Logger, conf ConnectionConfig
 	return connectionSource, nil
 }
 
-func setMaxPoolSize(ctx context.Context, poolConfig *pgxpool.Config) error {
+func setMaxPoolSize(ctx context.Context, poolConfig *pgxpool.Config, conf ConnectionConfig) error {
 	conn, err := pgx.Connect(ctx, poolConfig.ConnString())
 	if err != nil {
 		return fmt.Errorf("connecting to db: %w", err)
@@ -99,7 +99,12 @@ func setMaxPoolSize(ctx context.Context, poolConfig *pgxpool.Config) error {
 		return fmt.Errorf("max_connections was not an integer: %w", err)
 	}
 
-	poolConfig.MaxConns = int32(num.MaxV(maxConnections-numSpareConnections, poolSizeLowerBound))
+	maxConnections = num.MaxV(maxConnections-numSpareConnections, poolSizeLowerBound)
+	if conf.MaxConnPoolSize > 0 && maxConnections > conf.MaxConnPoolSize {
+		maxConnections = conf.MaxConnPoolSize
+	}
+
+	poolConfig.MaxConns = int32(maxConnections)
 	return nil
 }
 
@@ -116,14 +121,16 @@ func (s *ConnectionSource) WithConnection(ctx context.Context) (context.Context,
 func (s *ConnectionSource) WithTransaction(ctx context.Context) (context.Context, error) {
 	var tx pgx.Tx
 	var err error
-	if conn, ok := ctx.Value(connectionContextKey{}).(*pgx.Conn); ok {
+	if outerTx, ok := ctx.Value(transactionContextKey{}).(pgx.Tx); ok {
+		tx, err = outerTx.Begin(ctx)
+	} else if conn, ok := ctx.Value(connectionContextKey{}).(*pgx.Conn); ok {
 		tx, err = conn.Begin(ctx)
 	} else {
 		tx, err = s.pool.Begin(ctx)
 	}
 
 	if err != nil {
-		return context.Background(), errors.Errorf("failed to start transaction:%s", err)
+		return ctx, errors.Errorf("failed to start transaction:%s", err)
 	}
 
 	return context.WithValue(ctx, transactionContextKey{}, tx), nil
@@ -155,6 +162,18 @@ func (s *ConnectionSource) Commit(ctx context.Context) error {
 			f()
 		}
 		s.postCommitHooks = s.postCommitHooks[:0]
+	} else {
+		return fmt.Errorf("no transaction is associated with the context")
+	}
+
+	return nil
+}
+
+func (s *ConnectionSource) Rollback(ctx context.Context) error {
+	if tx, ok := ctx.Value(transactionContextKey{}).(pgx.Tx); ok {
+		if err := tx.Rollback(ctx); err != nil {
+			return fmt.Errorf("failed to rollback transaction for context:%s, error:%w", ctx, err)
+		}
 	} else {
 		return fmt.Errorf("no transaction is associated with the context")
 	}

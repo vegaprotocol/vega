@@ -97,7 +97,7 @@ func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error
 
 	defer metrics.StartSQLQuery("Assets", "GetByID")()
 	err := pgxscan.Get(ctx, as.Connection, &a,
-		getAssetQuery()+` WHERE id=$1`,
+		getAssetQuery(ctx)+` WHERE id=$1`,
 		entities.AssetID(id))
 
 	if err == nil {
@@ -109,7 +109,7 @@ func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error
 func (as *Assets) GetAll(ctx context.Context) ([]entities.Asset, error) {
 	assets := []entities.Asset{}
 	defer metrics.StartSQLQuery("Assets", "GetAll")()
-	err := pgxscan.Select(ctx, as.Connection, &assets, getAssetQuery())
+	err := pgxscan.Select(ctx, as.Connection, &assets, getAssetQuery(ctx))
 	return assets, err
 }
 
@@ -121,7 +121,7 @@ func (as *Assets) GetAllWithCursorPagination(ctx context.Context, pagination ent
 	var args []interface{}
 	var err error
 
-	query := getAssetQuery()
+	query := getAssetQuery(ctx)
 	query, args, err = PaginateQuery[entities.AssetCursor](query, args, assetOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
@@ -137,6 +137,6 @@ func (as *Assets) GetAllWithCursorPagination(ctx context.Context, pagination ent
 	return assets, pageInfo, nil
 }
 
-func getAssetQuery() string {
+func getAssetQuery(ctx context.Context) string {
 	return `SELECT * FROM assets_current`
 }

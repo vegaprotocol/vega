@@ -76,7 +76,7 @@ type Checkpoint interface {
 }
 
 type SpamEngine interface {
-	EndOfBlock(blockHeight uint64)
+	EndOfBlock(blockHeight uint64, now time.Time)
 	PreBlockAccept(tx abci.Tx) (bool, error)
 	PostBlockAccept(tx abci.Tx) (bool, error)
 }
@@ -124,6 +124,8 @@ type ProtocolUpgradeService interface {
 	TimeForUpgrade() bool
 	GetUpgradeStatus() types.UpgradeStatus
 	SetReadyForUpgrade()
+	CoreReadyForUpgrade() bool
+	SetCoreReadyForUpgrade()
 	Cleanup(ctx context.Context)
 	IsValidProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error
 }
@@ -141,11 +143,12 @@ type App struct {
 	version           string
 	blockchainClient  BlockchainClient
 
-	vegaPaths paths.Paths
-	cfg       Config
-	log       *logging.Logger
-	cancelFn  func()
-	rates     *ratelimit.Rates
+	vegaPaths      paths.Paths
+	cfg            Config
+	log            *logging.Logger
+	cancelFn       func()
+	stopBlockchain func() error
+	rates          *ratelimit.Rates
 
 	// service injection
 	assets                 Assets
@@ -187,6 +190,7 @@ func NewApp(
 	vegaPaths paths.Paths,
 	config Config,
 	cancelFn func(),
+	stopBlockchain func() error,
 	assets Assets,
 	banking Banking,
 	broker Broker,
@@ -224,10 +228,11 @@ func NewApp(
 	app := &App{
 		abci: abci.New(codec),
 
-		log:       log,
-		vegaPaths: vegaPaths,
-		cfg:       config,
-		cancelFn:  cancelFn,
+		log:            log,
+		vegaPaths:      vegaPaths,
+		cfg:            config,
+		cancelFn:       cancelFn,
+		stopBlockchain: stopBlockchain,
 		rates: ratelimit.New(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
@@ -718,7 +723,7 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 	}
 
 	if !app.nilSpam {
-		app.spam.EndOfBlock(uint64(req.Height))
+		app.spam.EndOfBlock(uint64(req.Height), app.time.GetTimeNow())
 	}
 
 	app.stateVar.OnBlockEnd(app.blockCtx)
@@ -754,17 +759,8 @@ func (app *App) OnBeginBlock(
 	hash := hex.EncodeToString(req.Hash)
 	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 
-	if app.protocolUpgradeService.GetUpgradeStatus().ReadyToUpgrade {
-		app.broker.Send(
-			events.NewProtocolUpgradeStarted(ctx, eventspb.ProtocolUpgradeStarted{
-				LastBlockHeight: app.stats.Height(),
-			}),
-		)
-		// wait until killed
-		for {
-			time.Sleep(1 * time.Second)
-			app.log.Info("application is ready for shutdown")
-		}
+	if app.protocolUpgradeService.CoreReadyForUpgrade() {
+		app.startProtocolUpgrade(ctx)
 	}
 
 	app.broker.Send(
@@ -807,6 +803,55 @@ func (app *App) OnBeginBlock(
 	return ctx, resp
 }
 
+func (app *App) startProtocolUpgrade(ctx context.Context) {
+	// Stop blockchain server so it doesn't acceptc transactions and it doesn't times out.
+	go func() { app.stopBlockchain() }()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	var eventsCh <-chan events.Event
+	var errsCh <-chan error
+	if app.broker.StreamingEnabled() {
+		// wait here for data node send back the confirmation
+		eventsCh, errsCh = app.broker.SocketClient().Receive(ctx)
+	}
+
+	app.broker.Send(
+		events.NewProtocolUpgradeStarted(ctx, eventspb.ProtocolUpgradeStarted{
+			LastBlockHeight: app.stats.Height(),
+		}),
+	)
+
+	if eventsCh != nil {
+		app.log.Info("waiting for data node to get ready for upgrade")
+
+	Loop:
+		for {
+			select {
+			case e := <-eventsCh:
+				if e.Type() != events.ProtocolUpgradeDataNodeReadyEvent {
+					continue
+				}
+				if e.StreamMessage().GetProtocolUpgradeDataNodeReady().GetLastBlockHeight() == app.stats.Height() {
+					cancel()
+					break Loop
+				}
+			case err := <-errsCh:
+				app.log.Fatal("failed to wait for data node to get ready for upgrade", logging.Error(err))
+			}
+		}
+	}
+
+	app.protocolUpgradeService.SetReadyForUpgrade()
+
+	// wait until killed
+	for {
+		time.Sleep(1 * time.Second)
+		app.log.Info("application is ready for shutdown")
+	}
+}
+
 func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("entering commit", logging.Time("at", time.Now()))
 	defer func() { app.log.Debug("leaving commit", logging.Time("at", time.Now())) }()
@@ -826,7 +871,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 		app.protocolUpgradeService.Cleanup(app.blockCtx)
 		snapHash, err = app.snapshot.SnapshotNow(app.blockCtx)
 		if err == nil {
-			app.protocolUpgradeService.SetReadyForUpgrade()
+			app.protocolUpgradeService.SetCoreReadyForUpgrade()
 		}
 	} else {
 		snapHash, err = app.snapshot.Snapshot(app.blockCtx)
@@ -867,6 +912,8 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	// hash and is consistent over all calls to Commit
 	if len(snapHash) <= 0 {
 		resp.Data = vgcrypto.Hash(resp.Data)
+	} else {
+		app.broker.Send(events.NewSnapshotEventEvent(app.blockCtx, app.stats.Height(), app.cBlock, app.protocolUpgradeService.TimeForUpgrade()))
 	}
 
 	// Update response and save the apphash incase we lose connection with tendermint and need to verify our
@@ -878,7 +925,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 
 	app.broker.Send(
 		events.NewEndBlock(app.blockCtx, eventspb.EndBlock{
-			Height: uint64(resp.RetainHeight),
+			Height: app.stats.Height(),
 		}),
 	)
 

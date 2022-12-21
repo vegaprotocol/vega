@@ -116,7 +116,7 @@ linters = ["exhaustruct", "noctx"]
 
 # Don't complain about context not being first argument in tests (convention is to use *testing.T)
 [[issues.exclude-rules]]
-path = "_test.go"
+paths = ["_test.go", "helpers.go"]
 linters = ["revive"]
 text = "context-as-argument"
 
@@ -130,3 +130,7 @@ forbid = ["fmt\\.Print.*"]
 linters = ["govet"]
 text = "impl.MessageState contains sync.Mutex"
 
+# Temporary while the test is skipped to be removed.
+[[issues.exclude-rules]]
+path = "market_cp_restore_test.go"
+linters = ["unused"]

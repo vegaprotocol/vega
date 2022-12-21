@@ -23,7 +23,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/libs/num"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"github.com/jackc/pgx/v4"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -35,61 +34,53 @@ func TestStakeLinkingStore(t *testing.T) {
 	t.Run("GetStake should return the most current version of each stake linking record and calculate the total stake available", testGetStake)
 }
 
-func setupStakeLinkingTest(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.StakeLinking, *pgx.Conn) {
+func setupStakeLinkingTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.StakeLinking) {
 	t.Helper()
-	DeleteEverything()
-
 	bs := sqlstore.NewBlocks(connectionSource)
 	sl := sqlstore.NewStakeLinking(connectionSource)
-
-	config := NewTestConfig()
-	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
-	require.NoError(t, err)
-
-	return bs, sl, conn
+	return bs, sl
 }
 
 func testUpsertShouldAddNewInBlock(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, sl, conn := setupStakeLinkingTest(t, ctx)
+	bs, sl := setupStakeLinkingTest(t)
 
 	var rowCount int
+	conn := connectionSource.Connection
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	stakingProtos := getStakingProtos()
 
 	proto := stakingProtos[0]
 	data, err := entities.StakeLinkingFromProto(proto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err)
-	assert.NoError(t, sl.Upsert(context.Background(), data))
+	assert.NoError(t, sl.Upsert(ctx, data))
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
 	assert.Equal(t, 1, rowCount)
 }
 
 func testUpsertShouldUpdateExistingInBlock(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, sl, conn := setupStakeLinkingTest(t, ctx)
-
+	bs, sl := setupStakeLinkingTest(t)
+	conn := connectionSource.Connection
 	var rowCount int
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	stakingProtos := getStakingProtos()
 
 	for _, proto := range stakingProtos {
 		data, err := entities.StakeLinkingFromProto(proto, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
-		assert.NoError(t, sl.Upsert(context.Background(), data))
+		assert.NoError(t, sl.Upsert(ctx, data))
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
@@ -97,23 +88,23 @@ func testUpsertShouldUpdateExistingInBlock(t *testing.T) {
 }
 
 func testGetStake(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, sl, conn := setupStakeLinkingTest(t, ctx)
+	bs, sl := setupStakeLinkingTest(t)
+	conn := connectionSource.Connection
 
 	var rowCount int
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	stakingProtos := getStakingProtos()
 
 	for _, proto := range stakingProtos {
 		data, err := entities.StakeLinkingFromProto(proto, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
-		assert.NoError(t, sl.Upsert(context.Background(), data))
+		assert.NoError(t, sl.Upsert(ctx, data))
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
@@ -190,18 +181,16 @@ func TestStakeLinkingPagination(t *testing.T) {
 }
 
 func testStakeLinkingPaginationNoPagination(t *testing.T) {
-	DeleteEverything()
-	defer DeleteEverything()
-	ls, links := setupStakeLinkingPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 	partyID := entities.PartyID("cafed00d")
 
-	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
+	_, got, pageInfo, err := ls.GetStake(ctx, partyID, pagination)
 	require.NoError(t, err)
 	want := links[10:]
 	assert.Equal(t, want, got)
@@ -214,18 +203,17 @@ func testStakeLinkingPaginationNoPagination(t *testing.T) {
 }
 
 func testStakeLinkingPaginationFirst(t *testing.T) {
-	defer DeleteEverything()
-	ls, links := setupStakeLinkingPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
 	partyID := entities.PartyID("cafed00d")
 
-	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
+	_, got, pageInfo, err := ls.GetStake(ctx, partyID, pagination)
 	require.NoError(t, err)
 	want := links[10:13]
 	assert.Equal(t, want, got)
@@ -238,18 +226,17 @@ func testStakeLinkingPaginationFirst(t *testing.T) {
 }
 
 func testStakeLinkingPaginationLast(t *testing.T) {
-	defer DeleteEverything()
-	ls, links := setupStakeLinkingPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 	partyID := entities.PartyID("cafed00d")
 
-	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
+	_, got, pageInfo, err := ls.GetStake(ctx, partyID, pagination)
 	require.NoError(t, err)
 	want := links[17:]
 	assert.Equal(t, want, got)
@@ -262,11 +249,10 @@ func testStakeLinkingPaginationLast(t *testing.T) {
 }
 
 func testStakeLinkingPaginationFirstAndAfter(t *testing.T) {
-	defer DeleteEverything()
-	ls, links := setupStakeLinkingPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
 	first := int32(3)
 	after := links[12].Cursor().Encode()
@@ -274,7 +260,7 @@ func testStakeLinkingPaginationFirstAndAfter(t *testing.T) {
 	require.NoError(t, err)
 	partyID := entities.PartyID("cafed00d")
 
-	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
+	_, got, pageInfo, err := ls.GetStake(ctx, partyID, pagination)
 	require.NoError(t, err)
 	want := links[13:16]
 	assert.Equal(t, want, got)
@@ -287,11 +273,10 @@ func testStakeLinkingPaginationFirstAndAfter(t *testing.T) {
 }
 
 func testStakeLinkingPaginationLastAndBefore(t *testing.T) {
-	defer DeleteEverything()
-	ls, links := setupStakeLinkingPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
 	last := int32(3)
 	before := links[17].Cursor().Encode()
@@ -299,7 +284,7 @@ func testStakeLinkingPaginationLastAndBefore(t *testing.T) {
 	require.NoError(t, err)
 	partyID := entities.PartyID("cafed00d")
 
-	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
+	_, got, pageInfo, err := ls.GetStake(ctx, partyID, pagination)
 	require.NoError(t, err)
 	want := links[14:17]
 	assert.Equal(t, want, got)
@@ -312,17 +297,16 @@ func testStakeLinkingPaginationLastAndBefore(t *testing.T) {
 }
 
 func testStakeLinkingPaginationNoPaginationNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ls, links := setupStakeLinkingPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 	partyID := entities.PartyID("cafed00d")
 
-	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
+	_, got, pageInfo, err := ls.GetStake(ctx, partyID, pagination)
 	require.NoError(t, err)
 	want := entities.ReverseSlice(links[10:])
 	assert.Equal(t, want, got)
@@ -335,18 +319,17 @@ func testStakeLinkingPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testStakeLinkingPaginationFirstNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ls, links := setupStakeLinkingPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
 	partyID := entities.PartyID("cafed00d")
 
-	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
+	_, got, pageInfo, err := ls.GetStake(ctx, partyID, pagination)
 	require.NoError(t, err)
 	want := entities.ReverseSlice(links[10:])[:3]
 	assert.Equal(t, want, got)
@@ -359,18 +342,17 @@ func testStakeLinkingPaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testStakeLinkingPaginationLastNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ls, links := setupStakeLinkingPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
 	partyID := entities.PartyID("cafed00d")
 
-	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
+	_, got, pageInfo, err := ls.GetStake(ctx, partyID, pagination)
 	require.NoError(t, err)
 	want := entities.ReverseSlice(links[10:])[7:]
 	assert.Equal(t, want, got)
@@ -383,11 +365,10 @@ func testStakeLinkingPaginationLastNewestFirst(t *testing.T) {
 }
 
 func testStakeLinkingPaginationFirstAndAfterNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ls, links := setupStakeLinkingPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
 	first := int32(3)
 	after := links[17].Cursor().Encode()
@@ -395,7 +376,7 @@ func testStakeLinkingPaginationFirstAndAfterNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 	partyID := entities.PartyID("cafed00d")
 
-	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
+	_, got, pageInfo, err := ls.GetStake(ctx, partyID, pagination)
 	require.NoError(t, err)
 	want := entities.ReverseSlice(links[10:])[3:6]
 	assert.Equal(t, want, got)
@@ -408,11 +389,10 @@ func testStakeLinkingPaginationFirstAndAfterNewestFirst(t *testing.T) {
 }
 
 func testStakeLinkingPaginationLastAndBeforeNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ls, links := setupStakeLinkingPaginationTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
 	last := int32(3)
 	before := links[12].Cursor().Encode()
@@ -420,7 +400,7 @@ func testStakeLinkingPaginationLastAndBeforeNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 	partyID := entities.PartyID("cafed00d")
 
-	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
+	_, got, pageInfo, err := ls.GetStake(ctx, partyID, pagination)
 	require.NoError(t, err)
 	want := entities.ReverseSlice(links[10:])[4:7]
 	assert.Equal(t, want, got)
@@ -453,7 +433,7 @@ func addStakeLinking(t *testing.T, ctx context.Context, ls *sqlstore.StakeLinkin
 	return l
 }
 
-func setupStakeLinkingPaginationTest(t *testing.T) (*sqlstore.StakeLinking, []entities.StakeLinking) {
+func setupStakeLinkingPaginationTest(t *testing.T, ctx context.Context) (*sqlstore.StakeLinking, []entities.StakeLinking) {
 	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 	ls := sqlstore.NewStakeLinking(connectionSource)
@@ -461,13 +441,10 @@ func setupStakeLinkingPaginationTest(t *testing.T) (*sqlstore.StakeLinking, []en
 	blockTime := time.Date(2022, 7, 27, 8, 0, 0, 0, time.Local)
 	linkings := make([]entities.StakeLinking, 20)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	partyID := "cafed00d"
 	for i := 0; i < 10; i++ {
 		blockTime = blockTime.Add(time.Minute)
-		block := addTestBlockForTime(t, bs, blockTime)
+		block := addTestBlockForTime(t, ctx, bs, blockTime)
 		id := int64(i + 1)
 		linkingID := fmt.Sprintf("deadbeef%02d", id)
 
@@ -476,7 +453,7 @@ func setupStakeLinkingPaginationTest(t *testing.T) (*sqlstore.StakeLinking, []en
 
 	for i := 0; i < 10; i++ {
 		blockTime = blockTime.Add(time.Minute)
-		block := addTestBlockForTime(t, bs, blockTime)
+		block := addTestBlockForTime(t, ctx, bs, blockTime)
 		id := int64(i + 1)
 		linkingID := fmt.Sprintf("deadbeef%02d", id)
 		linkings[10+i] = addStakeLinking(t, ctx, ls, linkingID, partyID, id+10, block)

@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func addTestDelegation(t *testing.T, ds *sqlstore.Delegations,
+func addTestDelegation(t *testing.T, ctx context.Context, ds *sqlstore.Delegations,
 	party entities.Party,
 	node entities.Node,
 	epochID int64,
@@ -42,7 +42,7 @@ func addTestDelegation(t *testing.T, ds *sqlstore.Delegations,
 		VegaTime: block.VegaTime,
 		SeqNum:   seqNum,
 	}
-	err := ds.Add(context.Background(), r)
+	err := ds.Add(ctx, r)
 	require.NoError(t, err)
 	return r
 }
@@ -66,48 +66,50 @@ func assertDelegationsMatch(t *testing.T, expected, actual []entities.Delegation
 }
 
 func TestDelegations(t *testing.T) {
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	ps := sqlstore.NewParties(connectionSource)
 	ds := sqlstore.NewDelegations(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 
-	node1 := addTestNode(t, ns, block, helpers.GenerateID())
-	node2 := addTestNode(t, ns, block, helpers.GenerateID())
+	node1 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
+	node2 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
 
 	node1ID := node1.ID.String()
 	node2ID := node2.ID.String()
 
-	party1 := addTestParty(t, ps, block)
-	party2 := addTestParty(t, ps, block)
+	party1 := addTestParty(t, ctx, ps, block)
+	party2 := addTestParty(t, ctx, ps, block)
 
 	party1ID := party1.ID.String()
 	party2ID := party2.ID.String()
 
-	delegation1 := addTestDelegation(t, ds, party1, node1, 1, block, 0)
-	delegation2 := addTestDelegation(t, ds, party1, node2, 2, block, 1)
-	delegation3 := addTestDelegation(t, ds, party2, node1, 3, block, 2)
-	delegation4 := addTestDelegation(t, ds, party2, node2, 4, block, 3)
-	delegation5 := addTestDelegation(t, ds, party2, node2, 5, block, 4)
+	delegation1 := addTestDelegation(t, ctx, ds, party1, node1, 1, block, 0)
+	delegation2 := addTestDelegation(t, ctx, ds, party1, node2, 2, block, 1)
+	delegation3 := addTestDelegation(t, ctx, ds, party2, node1, 3, block, 2)
+	delegation4 := addTestDelegation(t, ctx, ds, party2, node2, 4, block, 3)
+	delegation5 := addTestDelegation(t, ctx, ds, party2, node2, 5, block, 4)
 
 	t.Run("GetAll", func(t *testing.T) {
 		expected := []entities.Delegation{delegation1, delegation2, delegation3, delegation4, delegation5}
-		actual, err := ds.GetAll(context.Background())
+		actual, err := ds.GetAll(ctx)
 		require.NoError(t, err)
 		assertDelegationsMatch(t, expected, actual)
 	})
 
 	t.Run("GetByParty", func(t *testing.T) {
 		expected := []entities.Delegation{delegation1, delegation2}
-		actual, _, err := ds.Get(context.Background(), &party1ID, nil, nil, nil)
+		actual, _, err := ds.Get(ctx, &party1ID, nil, nil, nil)
 		require.NoError(t, err)
 		assertDelegationsMatch(t, expected, actual)
 	})
 
 	t.Run("GetByNode", func(t *testing.T) {
 		expected := []entities.Delegation{delegation1, delegation3}
-		actual, _, err := ds.Get(context.Background(), nil, &node1ID, nil, nil)
+		actual, _, err := ds.Get(ctx, nil, &node1ID, nil, nil)
 		require.NoError(t, err)
 		assertDelegationsMatch(t, expected, actual)
 	})
@@ -115,14 +117,14 @@ func TestDelegations(t *testing.T) {
 	t.Run("GetByEpoch", func(t *testing.T) {
 		expected := []entities.Delegation{delegation4}
 		four := int64(4)
-		actual, _, err := ds.Get(context.Background(), nil, nil, &four, nil)
+		actual, _, err := ds.Get(ctx, nil, nil, &four, nil)
 		require.NoError(t, err)
 		assertDelegationsMatch(t, expected, actual)
 	})
 
 	t.Run("GetByPartyAndNode", func(t *testing.T) {
 		expected := []entities.Delegation{delegation4, delegation5}
-		actual, _, err := ds.Get(context.Background(), &party2ID, &node2ID, nil, nil)
+		actual, _, err := ds.Get(ctx, &party2ID, &node2ID, nil, nil)
 		require.NoError(t, err)
 		assertDelegationsMatch(t, expected, actual)
 	})
@@ -130,7 +132,7 @@ func TestDelegations(t *testing.T) {
 	t.Run("GetByPartyAndNodeAndEpoch", func(t *testing.T) {
 		expected := []entities.Delegation{delegation4}
 		four := int64(4)
-		actual, _, err := ds.Get(context.Background(), &party2ID, &node2ID, &four, nil)
+		actual, _, err := ds.Get(ctx, &party2ID, &node2ID, &four, nil)
 		require.NoError(t, err)
 		assertDelegationsMatch(t, expected, actual)
 	})
@@ -138,7 +140,7 @@ func TestDelegations(t *testing.T) {
 	t.Run("GetPagination", func(t *testing.T) {
 		expected := []entities.Delegation{delegation4, delegation3, delegation2}
 		p := entities.OffsetPagination{Skip: 1, Limit: 3, Descending: true}
-		actual, _, err := ds.Get(context.Background(), nil, nil, nil, &p)
+		actual, _, err := ds.Get(ctx, nil, nil, nil, &p)
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual) // Explicitly check the order on this one
 	})
@@ -171,12 +173,11 @@ func TestDelegationPagination(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterNoPagination(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, _, _ := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ds.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -192,13 +193,12 @@ func testDelegationPaginationNoFilterNoPagination(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterFirstPage(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, _, _ := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ds.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -214,14 +214,13 @@ func testDelegationPaginationNoFilterFirstPage(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterFirstAfterPage(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, _, _ := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	first := int32(3)
 	after := delegations[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ds.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -237,13 +236,12 @@ func testDelegationPaginationNoFilterFirstAfterPage(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterLastPage(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, _, _ := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ds.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -259,14 +257,13 @@ func testDelegationPaginationNoFilterLastPage(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterLastBeforePage(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, _, _ := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	last := int32(3)
 	before := delegations[17].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ds.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -282,12 +279,11 @@ func testDelegationPaginationNoFilterLastBeforePage(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterNoPaginationNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, _, _ := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ds.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -304,14 +300,13 @@ func testDelegationPaginationNoFilterNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterFirstPageNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, _, _ := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	delegations = entities.ReverseSlice(delegations)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ds.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -327,15 +322,14 @@ func testDelegationPaginationNoFilterFirstPageNewestFirst(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterFirstAfterPageNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, _, _ := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	delegations = entities.ReverseSlice(delegations)
 	first := int32(3)
 	after := delegations[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ds.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -351,14 +345,13 @@ func testDelegationPaginationNoFilterFirstAfterPageNewestFirst(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterLastPageNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, _, _ := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	delegations = entities.ReverseSlice(delegations)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ds.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -374,15 +367,14 @@ func testDelegationPaginationNoFilterLastPageNewestFirst(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterLastBeforePageNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, _, _ := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	delegations = entities.ReverseSlice(delegations)
 	last := int32(3)
 	before := delegations[17].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	got, pageInfo, err := ds.Get(ctx, nil, nil, nil, pagination)
 	require.NoError(t, err)
@@ -398,12 +390,11 @@ func testDelegationPaginationNoFilterLastBeforePageNewestFirst(t *testing.T) {
 }
 
 func testDelegationPaginationPartyFilterNoPagination(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, parties, _ := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, parties, _ := setupPaginatedDelegationsTests(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 	partyID := parties[0].ID.String()
 	got, pageInfo, err := ds.Get(ctx, &partyID, nil, nil, pagination)
 	require.NoError(t, err)
@@ -419,13 +410,12 @@ func testDelegationPaginationPartyFilterNoPagination(t *testing.T) {
 }
 
 func testDelegationPaginationPartyFilterFirstPage(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, parties, _ := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, parties, _ := setupPaginatedDelegationsTests(t, ctx)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 	partyID := parties[0].ID.String()
 	got, pageInfo, err := ds.Get(ctx, &partyID, nil, nil, pagination)
 	require.NoError(t, err)
@@ -441,14 +431,13 @@ func testDelegationPaginationPartyFilterFirstPage(t *testing.T) {
 }
 
 func testDelegationPaginationPartyFilterFirstAfterPage(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, parties, _ := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, parties, _ := setupPaginatedDelegationsTests(t, ctx)
 	first := int32(3)
 	after := delegations[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 	partyID := parties[0].ID.String()
 	got, pageInfo, err := ds.Get(ctx, &partyID, nil, nil, pagination)
 	require.NoError(t, err)
@@ -464,13 +453,12 @@ func testDelegationPaginationPartyFilterFirstAfterPage(t *testing.T) {
 }
 
 func testDelegationPaginationPartyFilterLastPage(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, parties, _ := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, parties, _ := setupPaginatedDelegationsTests(t, ctx)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 	partyID := parties[0].ID.String()
 	got, pageInfo, err := ds.Get(ctx, &partyID, nil, nil, pagination)
 	require.NoError(t, err)
@@ -486,14 +474,13 @@ func testDelegationPaginationPartyFilterLastPage(t *testing.T) {
 }
 
 func testDelegationPaginationPartyFilterLastBeforePage(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, parties, _ := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, parties, _ := setupPaginatedDelegationsTests(t, ctx)
 	last := int32(3)
 	before := delegations[7].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 	partyID := parties[0].ID.String()
 	got, pageInfo, err := ds.Get(ctx, &partyID, nil, nil, pagination)
 	require.NoError(t, err)
@@ -509,12 +496,11 @@ func testDelegationPaginationPartyFilterLastBeforePage(t *testing.T) {
 }
 
 func testDelegationPaginationPartyNodeFilterNoPagination(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, parties, nodes := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, parties, nodes := setupPaginatedDelegationsTests(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 	partyID := parties[1].ID.String()
 	nodeID := nodes[1].ID.String()
 	got, pageInfo, err := ds.Get(ctx, &partyID, &nodeID, nil, pagination)
@@ -531,13 +517,12 @@ func testDelegationPaginationPartyNodeFilterNoPagination(t *testing.T) {
 }
 
 func testDelegationPaginationPartyNodeFilterFirstPage(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, parties, nodes := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, parties, nodes := setupPaginatedDelegationsTests(t, ctx)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 	partyID := parties[1].ID.String()
 	nodeID := nodes[1].ID.String()
 	got, pageInfo, err := ds.Get(ctx, &partyID, &nodeID, nil, pagination)
@@ -554,14 +539,13 @@ func testDelegationPaginationPartyNodeFilterFirstPage(t *testing.T) {
 }
 
 func testDelegationPaginationPartyNodeFilterFirstAfterPage(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, parties, nodes := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, parties, nodes := setupPaginatedDelegationsTests(t, ctx)
 	first := int32(3)
 	after := delegations[12].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 	partyID := parties[1].ID.String()
 	nodeID := nodes[1].ID.String()
 	got, pageInfo, err := ds.Get(ctx, &partyID, &nodeID, nil, pagination)
@@ -578,13 +562,12 @@ func testDelegationPaginationPartyNodeFilterFirstAfterPage(t *testing.T) {
 }
 
 func testDelegationPaginationPartyNodeFilterLastPage(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, parties, nodes := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, parties, nodes := setupPaginatedDelegationsTests(t, ctx)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 	partyID := parties[1].ID.String()
 	nodeID := nodes[1].ID.String()
 	got, pageInfo, err := ds.Get(ctx, &partyID, &nodeID, nil, pagination)
@@ -601,14 +584,13 @@ func testDelegationPaginationPartyNodeFilterLastPage(t *testing.T) {
 }
 
 func testDelegationPaginationPartyNodeFilterLastBeforePage(t *testing.T) {
-	defer DeleteEverything()
-	ds, delegations, parties, nodes := setupPaginatedDelegationsTests(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	ds, delegations, parties, nodes := setupPaginatedDelegationsTests(t, ctx)
 	last := int32(3)
 	before := delegations[17].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 	partyID := parties[1].ID.String()
 	nodeID := nodes[1].ID.String()
 	got, pageInfo, err := ds.Get(ctx, &partyID, &nodeID, nil, pagination)
@@ -624,11 +606,10 @@ func testDelegationPaginationPartyNodeFilterLastBeforePage(t *testing.T) {
 	}, pageInfo)
 }
 
-func setupPaginatedDelegationsTests(t *testing.T) (*sqlstore.Delegations,
+func setupPaginatedDelegationsTests(t *testing.T, ctx context.Context) (*sqlstore.Delegations,
 	[]entities.Delegation, []entities.Party, []entities.Node,
 ) {
 	t.Helper()
-
 	ps := sqlstore.NewParties(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
@@ -637,23 +618,23 @@ func setupPaginatedDelegationsTests(t *testing.T) (*sqlstore.Delegations,
 	delegations := make([]entities.Delegation, 0)
 
 	blockTime := time.Date(2022, 7, 15, 8, 0, 0, 0, time.Local)
-	block := addTestBlockForTime(t, bs, blockTime)
+	block := addTestBlockForTime(t, ctx, bs, blockTime)
 
 	nodes := []entities.Node{
-		addTestNode(t, ns, block, helpers.GenerateID()),
-		addTestNode(t, ns, block, helpers.GenerateID()),
+		addTestNode(t, ctx, ns, block, helpers.GenerateID()),
+		addTestNode(t, ctx, ns, block, helpers.GenerateID()),
 	}
 
 	parties := []entities.Party{
-		addTestParty(t, ps, block),
-		addTestParty(t, ps, block),
+		addTestParty(t, ctx, ps, block),
+		addTestParty(t, ctx, ps, block),
 	}
 
 	for i := 0; i < 2; i++ {
 		for j := 0; j < 10; j++ {
 			blockTime = blockTime.Add(time.Minute)
-			block = addTestBlockForTime(t, bs, blockTime)
-			delegations = append(delegations, addTestDelegation(t, ds, parties[i], nodes[i], int64((i*10)+j), block, 0))
+			block = addTestBlockForTime(t, ctx, bs, blockTime)
+			delegations = append(delegations, addTestDelegation(t, ctx, ds, parties[i], nodes[i], int64((i*10)+j), block, 0))
 		}
 	}
 

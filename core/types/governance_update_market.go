@@ -118,22 +118,25 @@ type UpdateMarketConfiguration struct {
 	PriceMonitoringParameters     *PriceMonitoringParameters
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
 	RiskParameters                updateRiskParams
+	LpPriceRange                  num.Decimal
 }
 
 func (n UpdateMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"instrument(%s) metadata(%v) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s)",
+		"instrument(%s) metadata(%v) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) lpPriceRange(%s)",
 		reflectPointerToString(n.Instrument),
 		MetadataList(n.Metadata).String(),
 		reflectPointerToString(n.PriceMonitoringParameters),
 		reflectPointerToString(n.LiquidityMonitoringParameters),
 		reflectPointerToString(n.RiskParameters),
+		n.LpPriceRange,
 	)
 }
 
 func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
 	cpy := &UpdateMarketConfiguration{
-		Metadata: make([]string, len(n.Metadata)),
+		Metadata:     make([]string, len(n.Metadata)),
+		LpPriceRange: n.LpPriceRange.Copy(),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -174,6 +177,7 @@ func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration
 		Metadata:                      md,
 		PriceMonitoringParameters:     priceMonitoring,
 		LiquidityMonitoringParameters: liquidityMonitoring,
+		LpPriceRange:                  n.LpPriceRange.String(),
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.UpdateMarketConfiguration_Simple:
@@ -202,11 +206,14 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) *Up
 		liquidityMonitoring = LiquidityMonitoringParametersFromProto(p.LiquidityMonitoringParameters)
 	}
 
+	lppr, _ := num.DecimalFromString(p.LpPriceRange)
+
 	r := &UpdateMarketConfiguration{
 		Instrument:                    instrument,
 		Metadata:                      md,
 		PriceMonitoringParameters:     priceMonitoring,
 		LiquidityMonitoringParameters: liquidityMonitoring,
+		LpPriceRange:                  lppr,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {
@@ -306,7 +313,6 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 				QuoteName:                           pr.Future.QuoteName,
 				DataSourceSpecForSettlementData:     *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData),
 				DataSourceSpecForTradingTermination: *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination),
-				SettlementDataDecimals:              pr.Future.SettlementDataDecimals,
 				DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
 			},
 		}
@@ -319,7 +325,6 @@ type UpdateFutureProduct struct {
 	DataSourceSpecForSettlementData     DataSourceDefinition
 	DataSourceSpecForTradingTermination DataSourceDefinition
 	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
-	SettlementDataDecimals              uint32
 }
 
 func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
@@ -328,7 +333,6 @@ func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
 		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.IntoProto(),
-		SettlementDataDecimals:              f.SettlementDataDecimals,
 	}
 }
 
@@ -338,7 +342,6 @@ func (f UpdateFutureProduct) DeepClone() *UpdateFutureProduct {
 		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.DeepClone(),
 		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.DeepClone(),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.DeepClone(),
-		SettlementDataDecimals:              f.SettlementDataDecimals,
 	}
 }
 

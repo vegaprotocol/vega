@@ -430,32 +430,38 @@ func TestSqlBrokerUpgradeBlock(t *testing.T) {
 	}()
 
 	beSource := newBlockEventSource()
+
+	// send through a full block
 	blockEvent := beSource.NextBeginBlockEvent()
 	tes.eventsCh <- blockEvent
+	tes.eventsCh <- beSource.NextEndBlockEvent()
 
+	// everything gets committed, now we start a new block
+	blockEvent = beSource.NextBeginBlockEvent()
+	tes.eventsCh <- blockEvent
+	assert.False(t, tes.protocolUpgradeSvc.GetProtocolUpgradeStarted())
+
+	// now protocol upgrade event comes through
 	tes.eventsCh <- events.NewProtocolUpgradeStarted(context.Background(), eventsv1.ProtocolUpgradeStarted{
 		LastBlockHeight: blockEvent.BeginBlock().Height,
 	})
-
-	assert.False(t, tes.protocolUpgradeSvc.GetProtocolUpgradeStarted())
-	tes.eventsCh <- beSource.NextEndBlockEvent()
 	assert.Nil(t, <-errCh)
 	assert.True(t, tes.protocolUpgradeSvc.GetProtocolUpgradeStarted())
 }
 
 func createTestBroker(transactionManager broker.TransactionManager, blockStore broker.BlockStore, subs []broker.SQLBrokerSubscriber) (*testEventSource, broker.SQLStoreEventBroker) {
 	conf := broker.NewDefaultConfig()
-
+	log := logging.NewTestLogger()
 	tes := &testEventSource{
 		eventsCh:           make(chan events.Event),
 		errorsCh:           make(chan error, 1),
-		protocolUpgradeSvc: service.NewProtocolUpgrade(nil, nil),
+		protocolUpgradeSvc: service.NewProtocolUpgrade(nil, log),
 	}
 
-	blockCommitedFunc := func(context.Context, string, int64) {}
+	blockCommitedFunc := func(context.Context, string, int64, bool) {}
 
-	protocolUpgradeHandler := dehistory.NewProtocolUpgradeHandler(logging.NewTestLogger(),
-		tes.protocolUpgradeSvc, func(ctx context.Context, chainID string, toHeight int64) error {
+	protocolUpgradeHandler := dehistory.NewProtocolUpgradeHandler(log,
+		tes.protocolUpgradeSvc, tes, func(ctx context.Context, chainID string, toHeight int64) error {
 			return nil
 		})
 

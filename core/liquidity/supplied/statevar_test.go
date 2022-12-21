@@ -107,11 +107,11 @@ func TestGetProbability(t *testing.T) {
 	minProb := num.DecimalFromFloat(0.21)
 
 	// no consensus yet within 20% ticks (bid)
-	require.Equal(t, defaultProbability.String(), getProbabilityOfTrading(num.DecimalFromFloat(200000), num.DecimalFromFloat(600), min, max, &probabilityOfTrading{}, num.DecimalFromInt64(160000), true, minProb).String())
+	require.Equal(t, defaultInRangeProbabilityOfTrading.String(), getProbabilityOfTrading(num.DecimalFromFloat(200000), num.DecimalFromFloat(600), min, max, &probabilityOfTrading{}, num.DecimalFromInt64(160000), true, minProb).String())
 	require.Equal(t, minProb.String(), getProbabilityOfTrading(num.DecimalFromFloat(200000), num.DecimalFromFloat(600), min, max, &probabilityOfTrading{}, num.DecimalFromInt64(159999), true, minProb).String())
 
 	// no consensus yet within 20% ticks (ask)
-	require.Equal(t, defaultProbability.String(), getProbabilityOfTrading(num.DecimalFromFloat(100000), num.DecimalFromFloat(200000), min, max, &probabilityOfTrading{}, num.DecimalFromInt64(240000), false, minProb).String())
+	require.Equal(t, defaultInRangeProbabilityOfTrading.String(), getProbabilityOfTrading(num.DecimalFromFloat(100000), num.DecimalFromFloat(200000), min, max, &probabilityOfTrading{}, num.DecimalFromInt64(240000), false, minProb).String())
 	require.Equal(t, minProb.String(), getProbabilityOfTrading(num.DecimalFromFloat(100000), num.DecimalFromFloat(200000), min, max, &probabilityOfTrading{}, num.DecimalFromInt64(240001), false, minProb).String())
 
 	// price is GTE best bid and LTE best ask - use defaultInRangeProbabilityOfTrading

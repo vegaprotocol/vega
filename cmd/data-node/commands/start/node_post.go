@@ -36,7 +36,7 @@ func (l *NodeCommand) postRun(_ []string) error {
 		}
 	}
 
-	l.Log.Info("Vega shutdown complete",
+	l.Log.Info("Vega datanode shutdown complete",
 		logging.String("version", l.Version),
 		logging.String("version-hash", l.VersionHash))
 

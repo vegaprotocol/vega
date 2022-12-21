@@ -272,6 +272,7 @@ func dummy() *all {
 								},
 							},
 						},
+						LpPriceRange: "0.95",
 					},
 				},
 			},
