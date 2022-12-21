@@ -65,9 +65,9 @@ func TestEpochs(t *testing.T) {
 	epoch3Start := epoch2End
 	epoch3Expire := epoch3Start.Add(time.Minute)
 
-	block1 := addTestBlockForHeightAndTime(t, bs, 1, epoch1Start)
-	block2 := addTestBlockForHeightAndTime(t, bs, 2, epoch2Start)
-	block3 := addTestBlockForHeightAndTime(t, bs, 3, epoch3Start)
+	block1 := addTestBlockForHeightAndTime(t, ctx, bs, 1, epoch1Start)
+	block2 := addTestBlockForHeightAndTime(t, ctx, bs, 2, epoch2Start)
+	block3 := addTestBlockForHeightAndTime(t, ctx, bs, 3, epoch3Start)
 
 	// Insert one epoch that gets updated in the same block
 	epoch1 := addTestEpoch(t, ctx, es, 1, epoch1Start, epoch1Expire, nil, block1)

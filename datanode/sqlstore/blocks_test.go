@@ -31,10 +31,10 @@ func addTestBlock(t *testing.T, ctx context.Context, bs *sqlstore.Blocks) entiti
 
 func addTestBlockForTime(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, vegaTime time.Time) entities.Block {
 	t.Helper()
-	return addTestBlockForHeightAndTime(t, bs, 2, vegaTime)
+	return addTestBlockForHeightAndTime(t, ctx, bs, 2, vegaTime)
 }
 
-func addTestBlockForHeightAndTime(t *testing.T, bs *sqlstore.Blocks, height int64, vegaTime time.Time) entities.Block {
+func addTestBlockForHeightAndTime(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, height int64, vegaTime time.Time) entities.Block {
 	t.Helper()
 	// Make a block
 	hash, err := hex.DecodeString("deadbeef")
