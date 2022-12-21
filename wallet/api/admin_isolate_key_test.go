@@ -82,7 +82,7 @@ func testIsolatingKeyWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newIsolateKeyHandler(tt)
@@ -270,7 +270,7 @@ type isolateKeyHandler struct {
 func (h *isolateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminIsolateKeyResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminIsolateKeyResult)
 		if !ok {

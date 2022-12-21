@@ -21,7 +21,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -39,13 +38,11 @@ func TestMarkets_Get(t *testing.T) {
 }
 
 func getByIDShouldReturnTheRequestedMarketIfItExists(t *testing.T) {
-	bs, md, _ := setupMarketsTest(t)
+	bs, md := setupMarketsTest(t)
 
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	block := addTestBlock(t, bs)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	block := addTestBlock(t, ctx, bs)
 
 	market := entities.Market{
 		ID:       "deadbeef",
@@ -65,13 +62,11 @@ func getByIDShouldReturnTheRequestedMarketIfItExists(t *testing.T) {
 }
 
 func getByIDShouldReturnErrorIfTheMarketDoesNotExist(t *testing.T) {
-	bs, md, _ := setupMarketsTest(t)
+	bs, md := setupMarketsTest(t)
 
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	block := addTestBlock(t, bs)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	block := addTestBlock(t, ctx, bs)
 
 	market := entities.Market{
 		ID:       "deadbeef",
@@ -87,13 +82,11 @@ func getByIDShouldReturnErrorIfTheMarketDoesNotExist(t *testing.T) {
 }
 
 func getAllShouldNotIncludeRejectedMarkets(t *testing.T) {
-	bs, md, _ := setupMarketsTest(t)
+	bs, md := setupMarketsTest(t)
 
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	block := addTestBlock(t, bs)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	block := addTestBlock(t, ctx, bs)
 
 	market := entities.Market{
 		ID:       "deadbeef",
@@ -123,13 +116,11 @@ func getAllShouldNotIncludeRejectedMarkets(t *testing.T) {
 }
 
 func getAllPagedShouldNotIncludeRejectedMarkets(t *testing.T) {
-	bs, md, _ := setupMarketsTest(t)
+	bs, md := setupMarketsTest(t)
 
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	block := addTestBlock(t, bs)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	block := addTestBlock(t, ctx, bs)
 
 	market := entities.Market{
 		ID:       "deadbeef",
@@ -165,61 +156,49 @@ func getAllPagedShouldNotIncludeRejectedMarkets(t *testing.T) {
 }
 
 func shouldInsertAValidMarketRecord(t *testing.T) {
-	bs, md, config := setupMarketsTest(t)
-	connStr := config.ConnectionConfig.GetConnectionString()
+	bs, md := setupMarketsTest(t)
 
-	testTimeout := time.Second * 1000000
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	conn, err := pgx.Connect(ctx, connStr)
-	require.NoError(t, err)
+	conn := connectionSource.Connection
 	var rowCount int
 
-	err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	err := conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 
 	marketProto := getTestMarket()
 
 	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = md.Upsert(context.Background(), market)
+	err = md.Upsert(ctx, market)
 	require.NoError(t, err, "Saving market entity to database")
 	err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 }
 
-func setupMarketsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Markets, sqlstore.Config) {
+func setupMarketsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Markets) {
 	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 	md := sqlstore.NewMarkets(connectionSource)
-
-	DeleteEverything()
-
-	config := NewTestConfig()
-
-	return bs, md, config
+	return bs, md
 }
 
 func shouldUpdateAValidMarketRecord(t *testing.T) {
-	bs, md, config := setupMarketsTest(t)
-	connStr := config.ConnectionConfig.GetConnectionString()
+	bs, md := setupMarketsTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	conn, err := pgx.Connect(ctx, connStr)
-	require.NoError(t, err)
+	conn := connectionSource.Connection
 	var rowCount int
 
 	t.Run("should have no markets in the database", func(t *testing.T) {
-		err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+		err := conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
 		require.NoError(t, err)
 		assert.Equal(t, 0, rowCount)
 	})
@@ -228,13 +207,13 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 	var marketProto *vega.Market
 
 	t.Run("should insert a valid market record to the database", func(t *testing.T) {
-		block = addTestBlock(t, bs)
+		block = addTestBlock(t, ctx, bs)
 		marketProto = getTestMarket()
 
 		market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
 		require.NoError(t, err, "Converting market proto to database entity")
 
-		err = md.Upsert(context.Background(), market)
+		err = md.Upsert(ctx, market)
 		require.NoError(t, err, "Saving market entity to database")
 
 		var got entities.Market
@@ -253,7 +232,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 
 		require.NoError(t, err, "Converting market proto to database entity")
 
-		err = md.Upsert(context.Background(), market)
+		err = md.Upsert(ctx, market)
 		require.NoError(t, err, "Saving market entity to database")
 
 		var got entities.Market
@@ -268,12 +247,12 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 		newMarketProto := marketProto.DeepClone()
 		newMarketProto.TradableInstrument.Instrument.Metadata.Tags = append(newMarketProto.TradableInstrument.Instrument.Metadata.Tags, "DDD")
 		time.Sleep(time.Second)
-		newBlock := addTestBlock(t, bs)
+		newBlock := addTestBlock(t, ctx, bs)
 
 		market, err := entities.NewMarketFromProto(newMarketProto, generateTxHash(), newBlock.VegaTime)
 		require.NoError(t, err, "Converting market proto to database entity")
 
-		err = md.Upsert(context.Background(), market)
+		err = md.Upsert(ctx, market)
 		require.NoError(t, err, "Saving market entity to database")
 
 		err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
@@ -405,6 +384,7 @@ func getTestMarket() *vega.Market {
 			Close:    0,
 		},
 		PositionDecimalPlaces: 8,
+		LpPriceRange:          "0.95",
 	}
 }
 
@@ -455,7 +435,7 @@ func populateTestMarkets(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 	}
 
 	for _, market := range markets {
-		block := addTestBlock(t, bs)
+		block := addTestBlock(t, ctx, bs)
 		market.VegaTime = block.VegaTime
 		blockTimes[market.ID.String()] = block.VegaTime
 		err := md.Upsert(ctx, &market)
@@ -481,9 +461,11 @@ func TestMarketsCursorPagination(t *testing.T) {
 }
 
 func testCursorPaginationReturnsTheSpecifiedMarket(t *testing.T) {
-	bs, md, _ := setupMarketsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	bs, md := setupMarketsTest(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -512,9 +494,9 @@ func testCursorPaginationReturnsTheSpecifiedMarket(t *testing.T) {
 }
 
 func testCursorPaginationReturnsAllMarkets(t *testing.T) {
-	bs, md, _ := setupMarketsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, md := setupMarketsTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 
@@ -550,9 +532,9 @@ func testCursorPaginationReturnsAllMarkets(t *testing.T) {
 }
 
 func testCursorPaginationReturnsFirstPage(t *testing.T) {
-	bs, md, _ := setupMarketsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, md := setupMarketsTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	first := int32(3)
@@ -589,9 +571,9 @@ func testCursorPaginationReturnsFirstPage(t *testing.T) {
 }
 
 func testCursorPaginationReturnsLastPage(t *testing.T) {
-	bs, md, _ := setupMarketsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, md := setupMarketsTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	last := int32(3)
@@ -628,9 +610,9 @@ func testCursorPaginationReturnsLastPage(t *testing.T) {
 }
 
 func testCursorPaginationReturnsPageTraversingForward(t *testing.T) {
-	bs, md, _ := setupMarketsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, md := setupMarketsTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	first := int32(3)
@@ -673,9 +655,9 @@ func testCursorPaginationReturnsPageTraversingForward(t *testing.T) {
 }
 
 func testCursorPaginationReturnsPageTraversingBackward(t *testing.T) {
-	bs, md, _ := setupMarketsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, md := setupMarketsTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	last := int32(3)
@@ -718,9 +700,9 @@ func testCursorPaginationReturnsPageTraversingBackward(t *testing.T) {
 }
 
 func testCursorPaginationReturnsTheSpecifiedMarketNewestFirst(t *testing.T) {
-	bs, md, _ := setupMarketsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
+	bs, md := setupMarketsTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -754,9 +736,9 @@ func testCursorPaginationReturnsTheSpecifiedMarketNewestFirst(t *testing.T) {
 }
 
 func testCursorPaginationReturnsAllMarketsNewestFirst(t *testing.T) {
-	bs, md, _ := setupMarketsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, md := setupMarketsTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 
@@ -792,9 +774,9 @@ func testCursorPaginationReturnsAllMarketsNewestFirst(t *testing.T) {
 }
 
 func testCursorPaginationReturnsFirstPageNewestFirst(t *testing.T) {
-	bs, md, _ := setupMarketsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, md := setupMarketsTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	first := int32(3)
@@ -831,9 +813,9 @@ func testCursorPaginationReturnsFirstPageNewestFirst(t *testing.T) {
 }
 
 func testCursorPaginationReturnsLastPageNewestFirst(t *testing.T) {
-	bs, md, _ := setupMarketsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, md := setupMarketsTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	last := int32(3)
@@ -870,9 +852,9 @@ func testCursorPaginationReturnsLastPageNewestFirst(t *testing.T) {
 }
 
 func testCursorPaginationReturnsPageTraversingForwardNewestFirst(t *testing.T) {
-	bs, md, _ := setupMarketsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, md := setupMarketsTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	first := int32(3)
@@ -915,9 +897,9 @@ func testCursorPaginationReturnsPageTraversingForwardNewestFirst(t *testing.T) {
 }
 
 func testCursorPaginationReturnsPageTraversingBackwardNewestFirst(t *testing.T) {
-	bs, md, _ := setupMarketsTest(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancel()
+	bs, md := setupMarketsTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	last := int32(3)

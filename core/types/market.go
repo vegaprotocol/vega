@@ -341,7 +341,6 @@ type Future struct {
 	DataSourceSpecForSettlementData     *DataSourceSpec
 	DataSourceSpecForTradingTermination *DataSourceSpec
 	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
-	SettlementDataDecimals              uint32
 }
 
 func FutureFromProto(f *proto.Future) *Future {
@@ -351,7 +350,6 @@ func FutureFromProto(f *proto.Future) *Future {
 		DataSourceSpecForSettlementData:     DataSourceSpecFromProto(f.DataSourceSpecForSettlementData),
 		DataSourceSpecForTradingTermination: DataSourceSpecFromProto(f.DataSourceSpecForTradingTermination),
 		DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(f.DataSourceSpecBinding),
-		SettlementDataDecimals:              f.SettlementDataDecimals,
 	}
 }
 
@@ -362,16 +360,14 @@ func (f Future) IntoProto() *proto.Future {
 		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.IntoProto(),
-		SettlementDataDecimals:              f.SettlementDataDecimals,
 	}
 }
 
 func (f Future) String() string {
 	return fmt.Sprintf(
-		"quoteName(%s) settlementAsset(%s) SettlementDataDecimals(%v) dataSourceSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
+		"quoteName(%s) settlementAsset(%s) dataSourceSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
 		f.QuoteName,
 		f.SettlementAsset,
-		f.SettlementDataDecimals,
 		reflectPointerToString(f.DataSourceSpecForSettlementData),
 		reflectPointerToString(f.DataSourceSpecForTradingTermination),
 		reflectPointerToString(f.DataSourceSpecBinding),
@@ -630,6 +626,7 @@ type Market struct {
 	OpeningAuction                *AuctionDuration
 	PriceMonitoringSettings       *PriceMonitoringSettings
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
+	LPPriceRange                  num.Decimal
 
 	TradingMode      MarketTradingMode
 	State            MarketState
@@ -639,6 +636,7 @@ type Market struct {
 
 func MarketFromProto(mkt *proto.Market) *Market {
 	asset, _ := mkt.GetAsset()
+	lppr, _ := num.DecimalFromString(mkt.LpPriceRange)
 	m := &Market{
 		ID:                            mkt.Id,
 		TradableInstrument:            TradableInstrumentFromProto(mkt.TradableInstrument),
@@ -652,6 +650,7 @@ func MarketFromProto(mkt *proto.Market) *Market {
 		State:                         mkt.State,
 		MarketTimestamps:              MarketTimestampsFromProto(mkt.MarketTimestamps),
 		asset:                         asset,
+		LPPriceRange:                  lppr,
 	}
 	return m
 }
@@ -695,6 +694,7 @@ func (m Market) IntoProto() *proto.Market {
 		TradingMode:                   m.TradingMode,
 		State:                         m.State,
 		MarketTimestamps:              mktTS,
+		LpPriceRange:                  m.LPPriceRange.String(),
 	}
 	return r
 }
@@ -757,6 +757,7 @@ func (m Market) DeepClone() *Market {
 		TradingMode:           m.TradingMode,
 		State:                 m.State,
 		asset:                 m.asset,
+		LPPriceRange:          m.LPPriceRange,
 	}
 
 	if m.TradableInstrument != nil {

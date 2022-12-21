@@ -984,6 +984,7 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 				},
 				Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
 				DecimalPlaces: 0,
+				LpPriceRange:  num.DecimalFromFloat(0.95),
 			},
 		},
 	}
@@ -1055,7 +1056,8 @@ func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *type
 						},
 					},
 				},
-				Metadata: []string{"asset_class:fx/crypto", "product:futures"},
+				Metadata:     []string{"asset_class:fx/crypto", "product:futures"},
+				LpPriceRange: num.DecimalFromFloat(0.95),
 			},
 		},
 	}

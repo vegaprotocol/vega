@@ -18,7 +18,6 @@ import (
 )
 
 func TestConnectWallet(t *testing.T) {
-	t.Run("Connecting to a wallet with invalid params fails", testConnectingToWalletWithInvalidParamsFails)
 	t.Run("Connecting to a wallet with valid params succeeds", testConnectingToWalletWithValidParamsSucceeds)
 	t.Run("Connecting to a connected wallet disconnects the previous one and generates a new token", testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken)
 	t.Run("Connecting to a wallet without wallets fails", testConnectingWalletWithoutWalletsFails)
@@ -36,59 +35,18 @@ func TestConnectWallet(t *testing.T) {
 	t.Run("Getting internal error during the wallet retrieval does not connect to a wallet", testGettingInternalErrorDuringWalletRetrievalDoesNotConnectToWallet)
 }
 
-func testConnectingToWalletWithInvalidParamsFails(t *testing.T) {
-	tcs := []struct {
-		name          string
-		params        interface{}
-		expectedError error
-	}{
-		{
-			name:          "with nil params",
-			params:        nil,
-			expectedError: api.ErrParamsRequired,
-		}, {
-			name:          "with wrong type of params",
-			params:        "test",
-			expectedError: api.ErrParamsDoNotMatch,
-		}, {
-			name: "with empty hostname",
-			params: api.ClientConnectWalletParams{
-				Hostname: "",
-			},
-			expectedError: api.ErrHostnameIsRequired,
-		},
-	}
-
-	for _, tc := range tcs {
-		t.Run(tc.name, func(tt *testing.T) {
-			// given
-			ctx, _ := contextWithTraceID()
-
-			// setup
-			handler := newConnectWalletHandler(tt)
-
-			// when
-			result, errorDetails := handler.handle(t, ctx, tc.params)
-
-			// then
-			require.Empty(tt, result)
-			assertInvalidParams(tt, errorDetails, tc.expectedError)
-		})
-	}
-}
-
 func testConnectingToWalletWithValidParamsSucceeds(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
+	ctx := context.Background()
+	requestMetadata := requestMetadataForTest()
 	expectedPermissions := wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: []string{},
 		},
 	}
-	expectedHostname := "vega.xyz"
-	expectedSelectedWallet, _ := walletWithPerms(t, expectedHostname, expectedPermissions)
-	nonSelectedWallet, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	expectedSelectedWallet, _ := walletWithPerms(t, requestMetadata.Hostname, expectedPermissions)
+	nonSelectedWallet, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
 
 	passphrase := vgrand.RandomStr(5)
 	availableWallets := []string{
@@ -104,17 +62,15 @@ func testConnectingToWalletWithValidParamsSucceeds(t *testing.T) {
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedSelectedWallet.Name(), passphrase).Times(1).Return(expectedSelectedWallet, nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
-	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, availableWallets).Times(1).Return(api.SelectedWallet{
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, requestMetadata.TraceID, requestMetadata.Hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, requestMetadata.TraceID, requestMetadata.Hostname, availableWallets).Times(1).Return(api.SelectedWallet{
 		Wallet:     expectedSelectedWallet.Name(),
 		Passphrase: passphrase,
 	}, nil)
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, requestMetadata.TraceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
-		Hostname: expectedHostname,
-	})
+	result, errorDetails := handler.handle(t, ctx, requestMetadata)
 
 	// then
 	require.Nil(t, errorDetails)
@@ -123,16 +79,16 @@ func testConnectingToWalletWithValidParamsSucceeds(t *testing.T) {
 
 func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
+	ctx := context.Background()
+	requestMetadata := requestMetadataForTest()
 	expectedPermissions := wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: []string{},
 		},
 	}
-	expectedHostname := "vega.xyz"
-	expectedSelectedWallet, _ := walletWithPerms(t, expectedHostname, expectedPermissions)
-	nonSelectedWallet, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	expectedSelectedWallet, _ := walletWithPerms(t, requestMetadata.Hostname, expectedPermissions)
+	nonSelectedWallet, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
 
 	passphrase := vgrand.RandomStr(5)
 	availableWallets := []string{
@@ -148,17 +104,15 @@ func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedSelectedWallet.Name(), passphrase).Times(1).Return(expectedSelectedWallet, nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
-	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, availableWallets).Times(1).Return(api.SelectedWallet{
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, requestMetadata.TraceID, requestMetadata.Hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, requestMetadata.TraceID, requestMetadata.Hostname, availableWallets).Times(1).Return(api.SelectedWallet{
 		Wallet:     expectedSelectedWallet.Name(),
 		Passphrase: passphrase,
 	}, nil)
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, requestMetadata.TraceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
 
 	// when
-	result1, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
-		Hostname: expectedHostname,
-	})
+	result1, errorDetails := handler.handle(t, ctx, requestMetadata)
 
 	// then
 	assert.Nil(t, errorDetails)
@@ -171,17 +125,15 @@ func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedSelectedWallet.Name(), passphrase).Times(1).Return(expectedSelectedWallet, nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
-	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, availableWallets).Times(1).Return(api.SelectedWallet{
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, requestMetadata.TraceID, requestMetadata.Hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, requestMetadata.TraceID, requestMetadata.Hostname, availableWallets).Times(1).Return(api.SelectedWallet{
 		Wallet:     expectedSelectedWallet.Name(),
 		Passphrase: passphrase,
 	}, nil)
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, requestMetadata.TraceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
 
 	// when
-	result2, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
-		Hostname: expectedHostname,
-	})
+	result2, errorDetails := handler.handle(t, ctx, requestMetadata)
 
 	// then
 	assert.Nil(t, errorDetails)
@@ -190,21 +142,19 @@ func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t
 
 func testConnectingWalletWithoutWalletsFails(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	expectedHostname := "vega.xyz"
+	ctx := context.Background()
+	requestMetadata := requestMetadataForTest()
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ApplicationError, api.ErrNoWalletToConnectTo).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, requestMetadata.TraceID, api.ApplicationError, api.ErrNoWalletToConnectTo).Times(1)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{}, nil)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
-		Hostname: expectedHostname,
-	})
+	result, errorDetails := handler.handle(t, ctx, requestMetadata)
 
 	// then
 	assertApplicationCancellationError(t, errorDetails)
@@ -213,8 +163,8 @@ func testConnectingWalletWithoutWalletsFails(t *testing.T) {
 
 func testGettingInternalErrorDuringWalletListingDoesNotConnectToWallet(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	expectedHostname := "vega.xyz"
+	ctx := context.Background()
+	requestMetadata := requestMetadataForTest()
 
 	// setup
 	handler := newConnectWalletHandler(t)
@@ -222,12 +172,10 @@ func testGettingInternalErrorDuringWalletListingDoesNotConnectToWallet(t *testin
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(nil, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not list the available wallets: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, requestMetadata.TraceID, api.InternalError, fmt.Errorf("could not list the available wallets: %w", assert.AnError)).Times(1)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
-		Hostname: expectedHostname,
-	})
+	result, errorDetails := handler.handle(t, ctx, requestMetadata)
 
 	// then
 	assertInternalError(t, errorDetails, api.ErrCouldNotConnectToWallet)
@@ -236,22 +184,20 @@ func testGettingInternalErrorDuringWalletListingDoesNotConnectToWallet(t *testin
 
 func testRefusingWalletConnectionDoesNotConnectToWallet(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	expectedHostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	ctx := context.Background()
+	requestMetadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(string(preferences.RejectedOnlyThisTime), nil)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, requestMetadata.TraceID, requestMetadata.Hostname).Times(1).Return(string(preferences.RejectedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name()}, nil)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
-		Hostname: expectedHostname,
-	})
+	result, errorDetails := handler.handle(t, ctx, requestMetadata)
 
 	// then
 	assertUserRejectionError(t, errorDetails)
@@ -260,22 +206,20 @@ func testRefusingWalletConnectionDoesNotConnectToWallet(t *testing.T) {
 
 func testCancelingTheReviewDoesNotConnectToWallet(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	expectedHostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	ctx := context.Background()
+	requestMetadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return("", api.ErrUserCloseTheConnection)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, requestMetadata.TraceID, requestMetadata.Hostname).Times(1).Return("", api.ErrUserCloseTheConnection)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name()}, nil)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
-		Hostname: expectedHostname,
-	})
+	result, errorDetails := handler.handle(t, ctx, requestMetadata)
 
 	// then
 	assertConnectionClosedError(t, errorDetails)
@@ -284,23 +228,21 @@ func testCancelingTheReviewDoesNotConnectToWallet(t *testing.T) {
 
 func testInterruptingTheRequestDuringReviewDoesNotConnectToWallet(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	expectedHostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	ctx := context.Background()
+	requestMetadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return("", api.ErrRequestInterrupted)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, requestMetadata.TraceID, requestMetadata.Hostname).Times(1).Return("", api.ErrRequestInterrupted)
+	handler.interactor.EXPECT().NotifyError(ctx, requestMetadata.TraceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name()}, nil)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
-		Hostname: expectedHostname,
-	})
+	result, errorDetails := handler.handle(t, ctx, requestMetadata)
 
 	// then
 	assertRequestInterruptionError(t, errorDetails)
@@ -309,23 +251,21 @@ func testInterruptingTheRequestDuringReviewDoesNotConnectToWallet(t *testing.T) 
 
 func testGettingInternalErrorDuringReviewDoesNotConnectToWallet(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	expectedHostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	ctx := context.Background()
+	requestMetadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return("", assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("reviewing the wallet connection failed: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, requestMetadata.TraceID, requestMetadata.Hostname).Times(1).Return("", assert.AnError)
+	handler.interactor.EXPECT().NotifyError(ctx, requestMetadata.TraceID, api.InternalError, fmt.Errorf("reviewing the wallet connection failed: %w", assert.AnError)).Times(1)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name()}, nil)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
-		Hostname: expectedHostname,
-	})
+	result, errorDetails := handler.handle(t, ctx, requestMetadata)
 
 	// then
 	assertInternalError(t, errorDetails, api.ErrCouldNotConnectToWallet)
@@ -334,24 +274,22 @@ func testGettingInternalErrorDuringReviewDoesNotConnectToWallet(t *testing.T) {
 
 func testCancellingTheWalletSelectionDoesNotConnectToWallet(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	expectedHostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	ctx := context.Background()
+	requestMetadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, requestMetadata.TraceID, requestMetadata.Hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{}, api.ErrUserCloseTheConnection)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, requestMetadata.TraceID, requestMetadata.Hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{}, api.ErrUserCloseTheConnection)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
-		Hostname: expectedHostname,
-	})
+	result, errorDetails := handler.handle(t, ctx, requestMetadata)
 
 	// then
 	assertConnectionClosedError(t, errorDetails)
@@ -360,25 +298,23 @@ func testCancellingTheWalletSelectionDoesNotConnectToWallet(t *testing.T) {
 
 func testInterruptingTheRequestDuringWalletSelectionDoesNotConnectToWallet(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	expectedHostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	ctx := context.Background()
+	requestMetadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, requestMetadata.TraceID, requestMetadata.Hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{}, api.ErrRequestInterrupted)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, requestMetadata.TraceID, requestMetadata.Hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{}, api.ErrRequestInterrupted)
+	handler.interactor.EXPECT().NotifyError(ctx, requestMetadata.TraceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
-		Hostname: expectedHostname,
-	})
+	result, errorDetails := handler.handle(t, ctx, requestMetadata)
 
 	// then
 	assertRequestInterruptionError(t, errorDetails)
@@ -387,25 +323,23 @@ func testInterruptingTheRequestDuringWalletSelectionDoesNotConnectToWallet(t *te
 
 func testGettingInternalErrorDuringWalletSelectionDoesNotConnectToWallet(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	expectedHostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	ctx := context.Background()
+	requestMetadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, requestMetadata.TraceID, requestMetadata.Hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{}, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("requesting the wallet selection failed: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, requestMetadata.TraceID, requestMetadata.Hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{}, assert.AnError)
+	handler.interactor.EXPECT().NotifyError(ctx, requestMetadata.TraceID, api.InternalError, fmt.Errorf("requesting the wallet selection failed: %w", assert.AnError)).Times(1)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
-		Hostname: expectedHostname,
-	})
+	result, errorDetails := handler.handle(t, ctx, requestMetadata)
 
 	// then
 	assertInternalError(t, errorDetails, api.ErrCouldNotConnectToWallet)
@@ -414,11 +348,10 @@ func testGettingInternalErrorDuringWalletSelectionDoesNotConnectToWallet(t *test
 
 func testSelectingNonExistingWalletDoesNotConnectToWallet(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	cancelCtx, cancelFn := context.WithCancel(ctx)
-	expectedHostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	requestMetadata := requestMetadataForTest()
+	cancelCtx, cancelFn := context.WithCancel(context.Background())
+	wallet1, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
 	nonExistingWallet := vgrand.RandomStr(5)
 
 	// setup
@@ -426,22 +359,20 @@ func testSelectingNonExistingWalletDoesNotConnectToWallet(t *testing.T) {
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(cancelCtx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(cancelCtx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestWalletConnectionReview(cancelCtx, traceID, expectedHostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(cancelCtx, requestMetadata.TraceID, requestMetadata.Hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(cancelCtx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.interactor.EXPECT().RequestWalletSelection(cancelCtx, traceID, expectedHostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{
+	handler.interactor.EXPECT().RequestWalletSelection(cancelCtx, requestMetadata.TraceID, requestMetadata.Hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{
 		Wallet:     nonExistingWallet,
 		Passphrase: vgrand.RandomStr(4),
 	}, nil)
 	handler.walletStore.EXPECT().WalletExists(cancelCtx, nonExistingWallet).Times(1).Return(false, nil)
-	handler.interactor.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, api.ErrWalletDoesNotExist).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
+	handler.interactor.EXPECT().NotifyError(cancelCtx, requestMetadata.TraceID, api.UserError, api.ErrWalletDoesNotExist).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
 		// Once everything has been called once, we cancel the handler to break the loop.
 		cancelFn()
 	})
 
 	// when
-	result, errorDetails := handler.handle(t, cancelCtx, api.ClientConnectWalletParams{
-		Hostname: expectedHostname,
-	})
+	result, errorDetails := handler.handle(t, cancelCtx, requestMetadata)
 
 	// then
 	assertRequestInterruptionError(t, errorDetails)
@@ -450,29 +381,27 @@ func testSelectingNonExistingWalletDoesNotConnectToWallet(t *testing.T) {
 
 func testGettingInternalErrorDuringWalletRetrievalDoesNotConnectToWallet(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	expectedHostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	ctx := context.Background()
+	requestMetadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, requestMetadata.TraceID, requestMetadata.Hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, requestMetadata.TraceID, requestMetadata.Hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{
 		Wallet:     wallet1.Name(),
 		Passphrase: vgrand.RandomStr(5),
 	}, nil)
 	handler.walletStore.EXPECT().WalletExists(ctx, wallet1.Name()).Times(1).Return(false, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, requestMetadata.TraceID, api.InternalError, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError)).Times(1)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
-		Hostname: expectedHostname,
-	})
+	result, errorDetails := handler.handle(t, ctx, requestMetadata)
 
 	// then
 	assertInternalError(t, errorDetails, api.ErrCouldNotConnectToWallet)
@@ -481,11 +410,10 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotConnectToWallet(t *test
 
 func testUsingWrongPassphraseDoesNotConnectToWallet(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	cancelCtx, cancelFn := context.WithCancel(ctx)
-	expectedHostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	requestMetadata := requestMetadataForTest()
+	cancelCtx, cancelFn := context.WithCancel(context.Background())
+	wallet1, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
 	passphrase := vgrand.RandomStr(4)
 
 	// setup
@@ -493,23 +421,21 @@ func testUsingWrongPassphraseDoesNotConnectToWallet(t *testing.T) {
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(cancelCtx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(cancelCtx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestWalletConnectionReview(cancelCtx, traceID, expectedHostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(cancelCtx, requestMetadata.TraceID, requestMetadata.Hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(cancelCtx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.interactor.EXPECT().RequestWalletSelection(cancelCtx, traceID, expectedHostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{
+	handler.interactor.EXPECT().RequestWalletSelection(cancelCtx, requestMetadata.TraceID, requestMetadata.Hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{
 		Wallet:     wallet1.Name(),
 		Passphrase: passphrase,
 	}, nil)
 	handler.walletStore.EXPECT().WalletExists(cancelCtx, wallet1.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(cancelCtx, wallet1.Name(), passphrase).Times(1).Return(nil, wallet.ErrWrongPassphrase)
-	handler.interactor.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, wallet.ErrWrongPassphrase).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
+	handler.interactor.EXPECT().NotifyError(cancelCtx, requestMetadata.TraceID, api.UserError, wallet.ErrWrongPassphrase).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
 		// Once everything has been called once, we cancel the handler to break the loop.
 		cancelFn()
 	})
 
 	// when
-	result, errorDetails := handler.handle(t, cancelCtx, api.ClientConnectWalletParams{
-		Hostname: expectedHostname,
-	})
+	result, errorDetails := handler.handle(t, cancelCtx, requestMetadata)
 
 	// then
 	assertRequestInterruptionError(t, errorDetails)
@@ -518,10 +444,10 @@ func testUsingWrongPassphraseDoesNotConnectToWallet(t *testing.T) {
 
 func testGettingInternalErrorDuringWalletVerificationDoesNotConnectToWallet(t *testing.T) {
 	// given
-	ctx, traceID := contextWithTraceID()
-	expectedHostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	ctx := context.Background()
+	requestMetadata := requestMetadataForTest()
+	wallet1, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, requestMetadata.Hostname, wallet.Permissions{})
 	passphrase := vgrand.RandomStr(5)
 
 	// setup
@@ -529,20 +455,18 @@ func testGettingInternalErrorDuringWalletVerificationDoesNotConnectToWallet(t *t
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, requestMetadata.TraceID, requestMetadata.Hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, requestMetadata.TraceID, requestMetadata.Hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{
 		Wallet:     wallet1.Name(),
 		Passphrase: passphrase,
 	}, nil)
 	handler.walletStore.EXPECT().WalletExists(ctx, wallet1.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name(), passphrase).Times(1).Return(nil, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, requestMetadata.TraceID, api.InternalError, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError)).Times(1)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
-		Hostname: expectedHostname,
-	})
+	result, errorDetails := handler.handle(t, ctx, requestMetadata)
 
 	// then
 	assertInternalError(t, errorDetails, api.ErrCouldNotConnectToWallet)
@@ -556,10 +480,10 @@ type connectWalletHandler struct {
 	interactor  *mocks.MockInteractor
 }
 
-func (h *connectWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.ClientConnectWalletResult, *jsonrpc.ErrorDetails) {
+func (h *connectWalletHandler) handle(t *testing.T, ctx context.Context, requestMetadata jsonrpc.RequestMetadata) (api.ClientConnectWalletResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, nil, requestMetadata)
 	if rawResult != nil {
 		result, ok := rawResult.(api.ClientConnectWalletResult)
 		if !ok {

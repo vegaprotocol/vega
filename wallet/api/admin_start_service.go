@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	coreversion "code.vegaprotocol.io/vega/version"
 	nodeapi "code.vegaprotocol.io/vega/wallet/api/node"
+	"code.vegaprotocol.io/vega/wallet/api/pow"
 	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/node"
@@ -51,7 +52,7 @@ type AdminStartService struct {
 // a short living context to the long-running goroutines, like with an HTTP request
 // context. To manage the lifetime of the goroutines, the context builder should
 // be used to wrap the parent context.
-func (h *AdminStartService) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminStartService) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminStartServiceParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -116,15 +117,17 @@ func (h *AdminStartService) Handle(_ context.Context, rawParams jsonrpc.Params) 
 
 	handler := wallets.NewHandler(h.walletStore)
 
+	proofOfWork := pow.NewProofOfWork()
+
 	// API v2
 	sessions := session.NewSessions()
-	clientAPI, err := h.buildClientAPI(shutdownSwitch.Ctx(), logger, networkCfg, sessions)
+	clientAPI, err := h.buildClientAPI(shutdownSwitch.Ctx(), logger, networkCfg, proofOfWork, sessions)
 	if err != nil {
 		logger.Error("Could not build the client JSON-RPC API", zap.Error(err))
 		return nil, internalError(err)
 	}
 
-	svc := service.NewService(logger.Named("http-server"), networkCfg, clientAPI, handler, auth, forwarder, policy)
+	svc := service.NewService(logger.Named("http-server"), networkCfg, clientAPI, handler, auth, forwarder, proofOfWork, policy)
 
 	shutdownSwitch.BeforeCancelFunc(func() {
 		if err := svc.Stop(); err != nil {
@@ -244,7 +247,7 @@ func (h *AdminStartService) ensureServiceIsInitialised(logger *zap.Logger) *json
 	return nil
 }
 
-func (h *AdminStartService) buildClientAPI(ctx context.Context, logger *zap.Logger, cfg *network.Network, sessions *session.Sessions) (*jsonrpc.API, error) {
+func (h *AdminStartService) buildClientAPI(ctx context.Context, logger *zap.Logger, cfg *network.Network, pow ProofOfWork, sessions *session.Sessions) (*jsonrpc.API, error) {
 	clientAPILogger := logger.Named("client-api")
 
 	nodeSelector, err := nodeapi.BuildRoundRobinSelectorWithRetryingNodes(clientAPILogger, cfg.API.GRPC.Hosts, cfg.API.GRPC.Retries)
@@ -255,7 +258,7 @@ func (h *AdminStartService) buildClientAPI(ctx context.Context, logger *zap.Logg
 
 	interactor := h.interactorBuilderFunc(ctx)
 
-	clientAPI, err := ClientAPI(clientAPILogger, h.walletStore, interactor, nodeSelector, sessions)
+	clientAPI, err := ClientAPI(clientAPILogger, h.walletStore, interactor, nodeSelector, pow, sessions)
 	if err != nil {
 		logger.Error("Could not instantiate the client JSON-RPC API", zap.Error(err))
 		return nil, fmt.Errorf("could not instantiate JSON-RPC API: %w", err)

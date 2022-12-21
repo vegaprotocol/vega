@@ -20,10 +20,12 @@ type AdminCreateWalletResult struct {
 }
 
 type AdminCreatedWallet struct {
-	Name           string `json:"name"`
-	Version        uint32 `json:"version"`
-	RecoveryPhrase string `json:"recoveryPhrase"`
-	FilePath       string `json:"filePath"`
+	Name                 string `json:"name"`
+	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
+	RecoveryPhrase       string `json:"recoveryPhrase"`
+	FilePath             string `json:"filePath"`
+	// DEPRECATED: Use KeyDerivationVersion instead
+	Version uint32 `json:"version"`
 }
 
 type AdminFirstPublicKey struct {
@@ -37,7 +39,7 @@ type AdminCreateWallet struct {
 }
 
 // Handle creates a wallet and generates its first key.
-func (h *AdminCreateWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminCreateWallet) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateCreateWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -65,10 +67,11 @@ func (h *AdminCreateWallet) Handle(ctx context.Context, rawParams jsonrpc.Params
 
 	return AdminCreateWalletResult{
 		Wallet: AdminCreatedWallet{
-			Name:           w.Name(),
-			Version:        w.Version(),
-			RecoveryPhrase: recoveryPhrase,
-			FilePath:       h.walletStore.GetWalletPath(w.Name()),
+			Name:                 w.Name(),
+			KeyDerivationVersion: w.KeyDerivationVersion(),
+			Version:              w.KeyDerivationVersion(),
+			RecoveryPhrase:       recoveryPhrase,
+			FilePath:             h.walletStore.GetWalletPath(w.Name()),
 		},
 		Key: AdminFirstPublicKey{
 			PublicKey: kp.PublicKey(),

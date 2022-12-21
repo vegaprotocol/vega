@@ -85,7 +85,7 @@ func testSigningMessageWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newSignMessageHandler(tt)
@@ -102,7 +102,7 @@ func testSigningMessageWithInvalidParamsFails(t *testing.T) {
 
 func testSigningMessageWithWalletThatDoesntExistFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	params := paramsWithMessage("bXltZXNzYWdl")
 
 	// setup
@@ -120,7 +120,7 @@ func testSigningMessageWithWalletThatDoesntExistFails(t *testing.T) {
 
 func testSigningMessageFailingToGetWalletFails(t *testing.T) {
 	// given
-	ctx, _ := contextWithTraceID()
+	ctx := context.Background()
 	params := paramsWithMessage("bXltZXNzYWdl")
 
 	// setup
@@ -155,7 +155,7 @@ type signMessageHandler struct {
 func (h *signMessageHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminSignMessageResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminSignMessageResult)
 		if !ok {

@@ -58,7 +58,7 @@ func testCreatingWalletWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newCreateWalletHandler(tt)
@@ -108,7 +108,7 @@ func testCreatingWalletWithValidParamsSucceeds(t *testing.T) {
 	// Verify the result.
 	assert.Equal(t, name, result.Wallet.Name)
 	assert.NotEmpty(t, result.Wallet.RecoveryPhrase)
-	assert.Equal(t, uint32(2), result.Wallet.Version)
+	assert.Equal(t, uint32(2), result.Wallet.KeyDerivationVersion)
 	assert.Equal(t, expectedPath, result.Wallet.FilePath)
 	assert.Equal(t, keyPair.PublicKey(), result.Key.PublicKey)
 	assert.Equal(t, keyPair.AlgorithmName(), result.Key.Algorithm.Name)
@@ -195,7 +195,7 @@ type createWalletHandler struct {
 func (h *createWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminCreateWalletResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminCreateWalletResult)
 		if !ok {

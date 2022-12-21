@@ -36,16 +36,16 @@ func (m *MockCommand) EXPECT() *MockCommandMockRecorder {
 }
 
 // Handle mocks base method.
-func (m *MockCommand) Handle(arg0 context.Context, arg1 jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (m *MockCommand) Handle(arg0 context.Context, arg1 jsonrpc.Params, arg2 jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Handle", arg0, arg1)
+	ret := m.ctrl.Call(m, "Handle", arg0, arg1, arg2)
 	ret0, _ := ret[0].(jsonrpc.Result)
 	ret1, _ := ret[1].(*jsonrpc.ErrorDetails)
 	return ret0, ret1
 }
 
 // Handle indicates an expected call of Handle.
-func (mr *MockCommandMockRecorder) Handle(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockCommandMockRecorder) Handle(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handle", reflect.TypeOf((*MockCommand)(nil).Handle), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handle", reflect.TypeOf((*MockCommand)(nil).Handle), arg0, arg1, arg2)
 }

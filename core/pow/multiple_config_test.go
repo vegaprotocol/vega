@@ -15,15 +15,21 @@ package pow
 import (
 	"context"
 	"testing"
+	"time"
 
+	"code.vegaprotocol.io/vega/core/pow/mocks"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
 
 func TestConfigurationHistory(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	ts := mocks.NewMockTimeService(gomock.NewController(t))
+	ts.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
+
 	e.BeginBlock(1, crypto.RandomHash())
 	require.Equal(t, 0, len(e.activeParams))
 	require.Equal(t, 0, len(e.activeStates))
@@ -51,7 +57,10 @@ func TestConfigurationHistory(t *testing.T) {
 }
 
 func TestSpamPoWNumberOfPastBlocksChange(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	ts := mocks.NewMockTimeService(gomock.NewController(t))
+	ts.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
+
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
 	e.BeginBlock(1, crypto.RandomHash())
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(10))
 
@@ -69,7 +78,9 @@ func TestSpamPoWNumberOfPastBlocksChange(t *testing.T) {
 }
 
 func TestSpamPoWDifficultyChange(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	ts := mocks.NewMockTimeService(gomock.NewController(t))
+	ts.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
 	e.BeginBlock(1, crypto.RandomHash())
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(10))
 
@@ -87,7 +98,9 @@ func TestSpamPoWDifficultyChange(t *testing.T) {
 }
 
 func TestSpamPoWHashChange(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	ts := mocks.NewMockTimeService(gomock.NewController(t))
+	ts.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
 	e.BeginBlock(1, crypto.RandomHash())
 	e.UpdateSpamPoWHashFunction(context.Background(), "f1")
 
@@ -105,7 +118,9 @@ func TestSpamPoWHashChange(t *testing.T) {
 }
 
 func TestSpamPoWNumberOfTxPerBlockChange(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	ts := mocks.NewMockTimeService(gomock.NewController(t))
+	ts.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
 	e.BeginBlock(1, crypto.RandomHash())
 	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(10))
 
@@ -123,7 +138,9 @@ func TestSpamPoWNumberOfTxPerBlockChange(t *testing.T) {
 }
 
 func TestSpamPoWIncreasingDifficultyChange(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	ts := mocks.NewMockTimeService(gomock.NewController(t))
+	ts.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
 	e.BeginBlock(1, crypto.RandomHash())
 	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(1))
 
@@ -141,7 +158,9 @@ func TestSpamPoWIncreasingDifficultyChange(t *testing.T) {
 }
 
 func TestBlockData(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	ts := mocks.NewMockTimeService(gomock.NewController(t))
+	ts.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
 	blockHash := crypto.RandomHash()
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(5))
 	e.BeginBlock(1, blockHash)
@@ -159,7 +178,9 @@ func TestBlockData(t *testing.T) {
 }
 
 func TestFindParamsForBlockHeight(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	ts := mocks.NewMockTimeService(gomock.NewController(t))
+	ts.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(100))
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
 	e.UpdateSpamPoWHashFunction(context.Background(), "sha3")
@@ -187,12 +208,15 @@ func TestFindParamsForBlockHeight(t *testing.T) {
 }
 
 func TestVerifyWithMultipleConfigs(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	ts := mocks.NewMockTimeService(gomock.NewController(t))
+	ts.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(100))
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
 	e.UpdateSpamPoWHashFunction(context.Background(), "sha3_24_rounds")
 	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
 	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(0))
+	e.OnEpochDurationChanged(context.Background(), 24*time.Hour)
 
 	block9Hash := "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4"
 	e.BeginBlock(9, block9Hash)
@@ -209,7 +233,7 @@ func TestVerifyWithMultipleConfigs(t *testing.T) {
 	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(1))
 
 	e.EndOfBlock()
-	block29Hash := "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4"
+	block29Hash := "8890702af457ddcda01fba579a126adcecae954781500acb546fef9c8087a239"
 	e.BeginBlock(29, block29Hash)
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(1))
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(70))
@@ -217,7 +241,7 @@ func TestVerifyWithMultipleConfigs(t *testing.T) {
 	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(0))
 	e.EndOfBlock()
 
-	block30Hash := "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4"
+	block30Hash := "377EEAC9847D751A4FAFD3F2896E99C1A03363EBDA3036C33940CFE578E196D1"
 	e.BeginBlock(30, block30Hash)
 
 	// now we're in block 90
@@ -234,22 +258,22 @@ func TestVerifyWithMultipleConfigs(t *testing.T) {
 	require.Equal(t, "unknown block height for tx:32, command:Amend Order, party:party", err.Error())
 
 	// in block 29 we're allowed to submit 1 transactions with difficulty starting at 22 and increased difficulty
-	tx29_1 := &testTx{txID: "3", blockHeight: 29, party: "party", powTxID: "B14DD602ED48C9F7B5367105A4A97FFC9199EA0C9E1490B786534768DD1538EF", powNonce: 1751582}
-	tx29_2 := &testTx{txID: "4", blockHeight: 29, party: "party", powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 431336}
+	tx29_1 := &testTx{txID: "3", blockHeight: 29, party: "party", powTxID: "74030ee7dc931be9d9cc5f2c9d44ac174b4144b377ef07a7bb1781856921dd43", powNonce: 1903233}
+	tx29_2 := &testTx{txID: "4", blockHeight: 29, party: "party", powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 7914217}
 	err = e.DeliverTx(tx29_1)
 	require.NoError(t, err)
 	err = e.DeliverTx(tx29_2)
 	require.NoError(t, err)
 
 	// finally we have a transaction sent in block 30 which allows for 2 transactions with no increased difficulty
-	tx30_1 := &testTx{txID: "5", blockHeight: 30, party: "party", powTxID: "2A1319636230740888C968E4E7610D6DE820E644EEC3C08AA5322A0A022014BD", powNonce: 1421231}
+	tx30_1 := &testTx{txID: "5", blockHeight: 30, party: "party", powTxID: "2A1319636230740888C968E4E7610D6DE820E644EEC3C08AA5322A0A022014BD", powNonce: 380742}
 	err = e.DeliverTx(tx30_1)
 	require.NoError(t, err)
 
-	tx30_2 := &testTx{txID: "6", blockHeight: 30, party: "party", powTxID: "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", powNonce: 4}
+	tx30_2 := &testTx{txID: "6", blockHeight: 30, party: "party", powTxID: "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", powNonce: 1296835}
 	err = e.DeliverTx(tx30_2)
 	require.NoError(t, err)
-	tx30_3 := &testTx{txID: "7", blockHeight: 30, party: "party", powTxID: "5B0E1EB96CCAC120E6D824A5F4C4007EABC59573B861BD84B1EF09DFB376DC84", powNonce: 4031737}
+	tx30_3 := &testTx{txID: "7", blockHeight: 30, party: "party", powTxID: "5B0E1EB96CCAC120E6D824A5F4C4007EABC59573B861BD84B1EF09DFB376DC84", powNonce: 388948}
 	err = e.DeliverTx(tx30_3)
 	// the third transaction would be rejected and ban the party
 	require.Equal(t, "too many transactions per block", err.Error())
@@ -262,7 +286,9 @@ func TestVerifyWithMultipleConfigs(t *testing.T) {
 }
 
 func TestEndOfBlockCleanup(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	ts := mocks.NewMockTimeService(gomock.NewController(t))
+	ts.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(100))
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
 	e.UpdateSpamPoWHashFunction(context.Background(), "sha3_24_rounds")

@@ -25,7 +25,7 @@ type AdminDescribeAPIToken struct {
 }
 
 // Handle describes a long-living API token and its configuration.
-func (h *AdminDescribeAPIToken) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminDescribeAPIToken) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminDescribeAPITokenParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

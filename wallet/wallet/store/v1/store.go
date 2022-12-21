@@ -119,7 +119,7 @@ func (s *Store) GetWallet(ctx context.Context, name, passphrase string) (wallet.
 		return nil, fmt.Errorf("couldn't unmarshal wallet verion: %w", err)
 	}
 
-	if !wallet.IsVersionSupported(versionedWallet.Version) {
+	if !wallet.IsKeyDerivationVersionSupported(versionedWallet.Version) {
 		return nil, wallet.NewUnsupportedWalletVersionError(versionedWallet.Version)
 	}
 

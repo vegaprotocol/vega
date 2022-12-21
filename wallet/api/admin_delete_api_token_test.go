@@ -49,7 +49,7 @@ func testDeletingTokenWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newDeleteAPITokenHandler(tt)
@@ -186,7 +186,7 @@ type adminDeleteAPITokenHandler struct {
 func (h *adminDeleteAPITokenHandler) handle(t *testing.T, ctx context.Context, params interface{}) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	return h.Handle(ctx, params)
+	return h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 }
 
 func newDeleteAPITokenHandler(t *testing.T) *adminDeleteAPITokenHandler {

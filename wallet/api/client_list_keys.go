@@ -37,7 +37,7 @@ type ClientListKeys struct {
 // Handle returns the public keys the third-party application has access to.
 //
 // This requires a "read" access on "public_keys".
-func (h *ClientListKeys) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *ClientListKeys) Handle(ctx context.Context, rawParams jsonrpc.Params, metadata jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateSessionListKeysParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -51,7 +51,7 @@ func (h *ClientListKeys) Handle(ctx context.Context, rawParams jsonrpc.Params) (
 	if perms := connectedWallet.Permissions(); !perms.CanListKeys() {
 		// we need to now ask for read permissions
 		perms.PublicKeys.Access = wallet.ReadAccess
-		if err := h.requestPermissions(ctx, connectedWallet, perms); err != nil {
+		if err := h.requestPermissions(ctx, metadata.TraceID, connectedWallet, perms); err != nil {
 			return nil, err
 		}
 	}
@@ -72,9 +72,7 @@ func (h *ClientListKeys) Handle(ctx context.Context, rawParams jsonrpc.Params) (
 	}, nil
 }
 
-func (h *ClientListKeys) requestPermissions(ctx context.Context, connectedWallet *session.ConnectedWallet, perms wallet.Permissions) *jsonrpc.ErrorDetails {
-	traceID := TraceIDFromContext(ctx)
-
+func (h *ClientListKeys) requestPermissions(ctx context.Context, traceID string, connectedWallet *session.ConnectedWallet, perms wallet.Permissions) *jsonrpc.ErrorDetails {
 	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
 		return internalError(err)
 	}

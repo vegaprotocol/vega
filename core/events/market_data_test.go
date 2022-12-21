@@ -67,6 +67,7 @@ func TestMarketDataDeepClone(t *testing.T) {
 				Party:                 "Party",
 				EquityLikeShare:       "25000",
 				AverageEntryValuation: "26000",
+				AverageScore:          "123",
 			},
 		},
 	}
@@ -107,6 +108,7 @@ func TestMarketDataDeepClone(t *testing.T) {
 	md.LiquidityProviderFeeShare[0].Party = "Changed"
 	md.LiquidityProviderFeeShare[0].EquityLikeShare = "999"
 	md.LiquidityProviderFeeShare[0].AverageEntryValuation = "999"
+	md.LiquidityProviderFeeShare[0].AverageScore = "321"
 
 	assert.NotEqual(t, md.MarkPrice, md2.MarkPrice)
 	assert.NotEqual(t, md.BestBidPrice, md2.BestBidPrice)
@@ -140,4 +142,5 @@ func TestMarketDataDeepClone(t *testing.T) {
 	assert.NotEqual(t, md.LiquidityProviderFeeShare[0].Party, md2.LiquidityProviderFeeShare[0].Party)
 	assert.NotEqual(t, md.LiquidityProviderFeeShare[0].EquityLikeShare, md2.LiquidityProviderFeeShare[0].EquityLikeShare)
 	assert.NotEqual(t, md.LiquidityProviderFeeShare[0].AverageEntryValuation, md2.LiquidityProviderFeeShare[0].AverageEntryValuation)
+	assert.NotEqual(t, md.LiquidityProviderFeeShare[0].AverageScore, md2.LiquidityProviderFeeShare[0].AverageScore)
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	vgencoding "code.vegaprotocol.io/vega/libs/encoding"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
@@ -45,9 +46,11 @@ func (s *Store) ListNetworks() ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("couldn't read directory at %s: %w", s.networksHome, err)
 	}
-	networks := make([]string, len(entries))
-	for i, entry := range entries {
-		networks[i] = s.fileNameToName(entry.Name())
+	networks := []string{}
+	for _, entry := range entries {
+		if strings.HasSuffix(entry.Name(), ".toml") {
+			networks = append(networks, s.fileNameToName(entry.Name()))
+		}
 	}
 	sort.Strings(networks)
 	return networks, nil

@@ -21,7 +21,7 @@ type AdminListConnections struct {
 }
 
 // Handle closes all opened connections to a running service and stop the service.
-func (h *AdminListConnections) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminListConnections) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminListConnectionsParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

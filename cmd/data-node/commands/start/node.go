@@ -147,6 +147,10 @@ func (l *NodeCommand) runNode([]string) error {
 
 	err := eg.Wait()
 	if errors.Is(err, context.Canceled) {
+		if l.conf.DeHistory.Enabled {
+			l.deHistoryService.Stop()
+		}
+
 		return nil
 	}
 
@@ -194,6 +198,7 @@ func (l *NodeCommand) createGRPCServer(config api.Config) *api.GRPCServer {
 		l.ledgerService,
 		l.protocolUpgradeService,
 		l.deHistoryService,
+		l.coreSnapshotService,
 	)
 	return grpcServer
 }

@@ -114,6 +114,7 @@ message Payload {
     ProtocolUpgradeProposals protocol_upgrade_proposals = 55;
     BankingBridgeState banking_bridge_state = 56;
     SettlementState settlement_state = 57;
+    LiquidityScores liquidity_scores = 58;
   }
 }
 
@@ -555,11 +556,6 @@ message PartyProposalVoteCount {
   uint64 count = 3;
 }
 
-message BannedParty {
-  string party = 1;
-  uint64 until_epoch = 2;
-}
-
 message PartyTokenBalance {
   string party = 1;
   string balance = 2;
@@ -723,6 +719,17 @@ message LiquidityProvisions {
   string market_id = 2;
 }
 
+message LiquidityScores {
+  int32 running_average_counter = 1;
+  repeated LiquidityScore scores = 2;
+  string market_id = 3;
+}
+
+message LiquidityScore{
+  string score = 1;
+  string party_id = 2;
+}
+
 // snapshot payload for floating point consensus
 message FloatingPointConsensus {
   repeated NextTimeTrigger next_time_trigger = 1;
@@ -779,6 +786,12 @@ message ProofOfWork {
   repeated TransactionsAtHeight tid_at_height = 6;
   repeated BannedParty banned = 7;
   repeated ProofOfWorkParams pow_params = 8;
+  repeated ProofOfWorkState pow_state = 9;
+}
+
+message BannedParty {
+  string party = 1;
+  int64 until = 2;
 }
 
 message ProofOfWorkParams {
@@ -790,6 +803,23 @@ message ProofOfWorkParams {
   uint64 from_block = 6;
   int64 until_block = 7;
 }
+
+message ProofOfWorkState {
+  repeated ProofOfWorkBlockState pow_state = 1;
+}
+
+message ProofOfWorkBlockState {
+  uint64 block_height = 1;
+  repeated ProofOfWorkPartyStateForBlock party_state = 2;
+}
+
+message ProofOfWorkPartyStateForBlock {
+  string party = 1;
+  uint64 seen_count = 2;
+  uint64 observed_difficulty = 3;
+}
+
+
 
 message TransactionsAtHeight {
   uint64 height = 1;

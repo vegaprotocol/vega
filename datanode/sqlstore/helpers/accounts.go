@@ -11,6 +11,7 @@ import (
 )
 
 func AddTestAccount(t *testing.T,
+	ctx context.Context,
 	accountStore *sqlstore.Accounts,
 	party entities.Party,
 	asset entities.Asset,
@@ -26,12 +27,13 @@ func AddTestAccount(t *testing.T,
 		VegaTime: block.VegaTime,
 	}
 
-	err := accountStore.Add(context.Background(), &account)
+	err := accountStore.Add(ctx, &account)
 	require.NoError(t, err)
 	return account
 }
 
 func AddTestAccountWithMarketAndType(t *testing.T,
+	ctx context.Context,
 	accountStore *sqlstore.Accounts,
 	party entities.Party,
 	asset entities.Asset,
@@ -48,7 +50,7 @@ func AddTestAccountWithMarketAndType(t *testing.T,
 		VegaTime: block.VegaTime,
 	}
 
-	err := accountStore.Add(context.Background(), &account)
+	err := accountStore.Add(ctx, &account)
 	require.NoError(t, err)
 	return account
 }

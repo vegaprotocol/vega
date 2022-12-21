@@ -19,7 +19,7 @@ type AdminPurgePermissions struct {
 }
 
 // Handle purges all the permissions set for all hostname.
-func (h *AdminPurgePermissions) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminPurgePermissions) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validatePurgePermissionsParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

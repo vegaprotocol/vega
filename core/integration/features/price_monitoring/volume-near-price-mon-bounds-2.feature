@@ -16,33 +16,33 @@ Feature: Test margin for lp near price monitoring boundaries
   Scenario: second scenario for volume at near price monitoring bounds with log-normal
 
     Given the log normal risk model named "log-normal-risk-model-1":
-      | risk aversion | tau     | mu | r   | sigma  |
-      | 0.000001      | 0.00273 | 0  | 0   |  1.2   |
+      | risk aversion | tau     | mu | r | sigma |
+      | 0.000001      | 0.00273 | 0  | 0 | 1.2   |
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
     And the price monitoring named "price-monitoring-2":
-      | horizon | probability  | auction extension |
-      | 43200   | 0.982        | 300               |
+      | horizon | probability | auction extension |
+      | 43200   | 0.982       | 300               |
     And the markets:
-      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          |
+      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
       | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name              | value  |
       | prices.ETH2.value | 100000 |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount      |
-      | lp1     | ETH2  | 10000000000 |
-      | party1 | ETH2  |  1000000000 |
-      | party2 | ETH2  |  1000000000 |
+      | lp1    | ETH2  | 10000000000 |
+      | party1 | ETH2  | 1000000000  |
+      | party2 | ETH2  | 1000000000  |
 
     Given the parties submit the following liquidity provision:
-      | id          | party   | market id  | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | commitment1 | lp1     | ETH2/MAR22 | 3000000           | 0.001 | buy  | BID              | 500        |  100   | submission |
-      | commitment1 | lp1     | ETH2/MAR22 | 3000000           | 0.001 | sell | ASK              | 500        |  100   | amendment |
-  
+      | id          | party | market id  | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | commitment1 | lp1   | ETH2/MAR22 | 3000000           | 0.001 | buy  | BID              | 500        | 100    | submission |
+      | commitment1 | lp1   | ETH2/MAR22 | 3000000           | 0.001 | sell | ASK              | 500        | 100    | amendment  |
+
     And the parties place the following orders:
-      | party  | market id | side  | volume | price  | resulting trades | type       | tif     | reference  |
+      | party  | market id  | side | volume | price  | resulting trades | type       | tif     | reference  |
       | party1 | ETH2/MAR22 | buy  | 1      | 89942  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | party1 | ETH2/MAR22 | buy  | 10     | 100000 | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
       | party2 | ETH2/MAR22 | sell | 1      | 110965 | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
@@ -52,70 +52,64 @@ Feature: Test margin for lp near price monitoring boundaries
     Then the auction ends with a traded volume of "10" at a price of "100000"
 
     And the parties should have the following profit and loss:
-      | party           | volume | unrealised pnl | realised pnl |
-      | party1          |  10    | 0              | 0            |
-      | party2          | -10    | 0              | 0            |
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | 10     | 0              | 0            |
+      | party2 | -10    | 0              | 0            |
 
     And the market data for the market "ETH2/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 100000     | TRADING_MODE_CONTINUOUS | 43200   | 89942     | 110965    | 361190       | 3000000        | 10            |
 
     And the order book should have the following volumes for market "ETH2/MAR22":
-      | side | price    | volume |
-      | sell | 110965   | 56     |
-      | buy  | 89943    | 0      |
-      | buy  | 89942    | 68     |
-
-
-    # # at this point what's left on the book (static) is the buy @ 89942 and sell @ 110965
-    # # so the best bid/ask coincides with the price monitoring bounds.
-    # # Since the lp1 offset is +/- 100 the lp1 volume "should" go to 89842 and 111065
-    # # but because the price monitoring bounds are 89942 and 110965 the volume gets pushed to these
-    # # i.e. it's placed at 89942 / 110965.
-    # # As these are the best bid / best ask the probability of trading used is 1/2.
+      | side | price  | volume |
+      | sell | 111065 | 28     |
+      | sell | 110965 | 1      |
+      | buy  | 89943  | 0      |
+      | buy  | 89942  | 1      |
+      | buy  | 89842  | 34     |
 
     And the parties should have the following margin levels:
-      | party    | market id  | maintenance | search   | initial  | release  |
-      | lp1       | ETH2/MAR22 | 1986563     | 2185219  | 2383875  | 2781188  |
+      | party | market id  | maintenance | search  | initial | release |
+      | lp1   | ETH2/MAR22 | 1011341     | 1112475 | 1213609 | 1415877 |
 
     And the parties should have the following account balances:
-      | party    | asset  | market id | margin      | general      | bond    |
-      | lp1       | ETH2   | ETH2/MAR22 | 2383875    | 9994616125   | 3000000 |
+      | party | asset | market id  | margin  | general    | bond    |
+      | lp1   | ETH2  | ETH2/MAR22 | 1213609 | 9995786391 | 3000000 |
 
     Then the parties place the following orders:
-      | party  | market id  | side | volume | price   | resulting trades | type       | tif     | reference  |
-      | party1 | ETH2/MAR22 | buy  | 1      | 89942   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3  |
+      | party  | market id  | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH2/MAR22 | buy  | 1      | 89942 | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3 |
 
     And the order book should have the following volumes for market "ETH2/MAR22":
-      | side | price    | volume |
-      | sell | 110965   | 56     |
-      | buy  | 89943    | 0      |
-      | buy  | 89942    | 69     |
+      | side | price  | volume |
+      | sell | 111065 | 28     |
+      | sell | 110965 | 1      |
+      | buy  | 89943  | 0      |
+      | buy  | 89942  | 2      |
+      | buy  | 89842  | 34     |
 
     And the parties should have the following margin levels:
-      | party    | market id  | maintenance | search   | initial  | release  |
-      | lp1      | ETH2/MAR22 | 1986563     | 2185219  | 2383875  | 2781188  |
+      | party | market id  | maintenance | search  | initial | release |
+      | lp1   | ETH2/MAR22 | 1011341     | 1112475 | 1213609 | 1415877 |
 
     # # now we place an order which makes the best bid 89943.
     Then the parties place the following orders:
-      | party  | market id  | side  | volume | price   | resulting trades   | type       | tif     | reference  |
-      | party1 | ETH2/MAR22 | buy   | 1      | 89943   | 0                  | TYPE_LIMIT | TIF_GTC | buy-ref-4  |
+      | party  | market id  | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH2/MAR22 | buy  | 1      | 89943 | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-4 |
 
     And the market data for the market "ETH2/MAR22" should be:
-      | mark price   | trading mode            | horizon | min bound   | max bound   | target stake   | supplied stake | open interest  |
-      | 100000       | TRADING_MODE_CONTINUOUS | 43200   | 89942       | 110965      | 361190         | 3000000        | 10             |
-
-
-    # # the lp1 one volume on this side should go to 89843 but because price monitoring bound is still 89942 it gets pushed to 89942.
-    # # but 89942 is no longer the best bid, so the risk model is used to get prob of trading. This now given by the log-normal model
-    # # Hence a bit volume is required to meet commitment and thus the margin requirement moves but not much.
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 100000     | TRADING_MODE_CONTINUOUS | 43200   | 89942     | 110965    | 361190       | 3000000        | 10            |
 
     And the order book should have the following volumes for market "ETH2/MAR22":
-      | side | price    | volume |
-      | sell | 110965   | 56     |
-      | buy  | 89943    | 1      |
-      | buy  | 89942    | 69    |
+      | side | price  | volume |
+      | sell | 111065 | 28     |
+      | sell | 110965 | 1      |
+      | buy  | 89943  | 1      |
+      | buy  | 89942  | 2      |
+      | buy  | 89843  | 34     |
 
     And the parties should have the following margin levels:
-      | party    | market id  | maintenance | search   | initial  | release |
-      | lp1      | ETH2/MAR22 | 1986563     | 2185219  | 2383875  | 2781188 |
+      | party | market id  | maintenance | search  | initial | release |
+      | lp1   | ETH2/MAR22 | 1011341     | 1112475 | 1213609 | 1415877 |
+

@@ -21,6 +21,10 @@ import (
 	"io/fs"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/entities"
+
+	"github.com/jackc/pgx/v4/pgxpool"
+
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
@@ -77,7 +81,58 @@ func MigrateToSchemaVersion(log *logging.Logger, config Config, version int64, f
 	return nil
 }
 
-func WipeDatabase(log *logging.Logger, config ConnectionConfig, fs fs.FS) error {
+func RevertToSchemaVersionZero(log *logging.Logger, config ConnectionConfig, fs fs.FS) error {
+	goose.SetBaseFS(fs)
+	goose.SetLogger(log.Named("revert schema to version 0").GooseLogger())
+
+	poolConfig, err := config.GetPoolConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get pool config:%w", err)
+	}
+
+	db := stdlib.OpenDB(*poolConfig.ConnConfig)
+	defer db.Close()
+
+	if err := goose.DownTo(db, SQLMigrationsDir, 0); err != nil {
+		return fmt.Errorf("failed to goose down the schema to version 0: %w", err)
+	}
+
+	return nil
+}
+
+func WipeDatabaseAndMigrateSchemaToVersion(log *logging.Logger, config ConnectionConfig, version int64, fs fs.FS) error {
+	goose.SetBaseFS(fs)
+	goose.SetLogger(log.Named("wipe database").GooseLogger())
+
+	poolConfig, err := config.GetPoolConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get pool config:%w", err)
+	}
+
+	db := stdlib.OpenDB(*poolConfig.ConnConfig)
+	defer db.Close()
+
+	currentVersion, err := goose.GetDBVersion(db)
+	if err != nil {
+		return err
+	}
+
+	if currentVersion > 0 {
+		if err := goose.DownTo(db, SQLMigrationsDir, 0); err != nil {
+			return fmt.Errorf("failed to goose down the schema: %w", err)
+		}
+	}
+
+	if version > 0 {
+		if err := goose.UpTo(db, SQLMigrationsDir, version); err != nil {
+			return fmt.Errorf("failed to goose up the schema: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func WipeDatabaseAndMigrateSchemaToLatestVersion(log *logging.Logger, config ConnectionConfig, fs fs.FS) error {
 	goose.SetBaseFS(fs)
 	goose.SetLogger(log.Named("wipe database").GooseLogger())
 
@@ -130,6 +185,39 @@ func CreateVegaSchema(log *logging.Logger, connConfig ConnectionConfig) error {
 	return nil
 }
 
+func HasVegaSchema(ctx context.Context, conf ConnectionConfig) (bool, error) {
+	conn, err := pgxpool.Connect(ctx, conf.GetConnectionString())
+	if err != nil {
+		return false, fmt.Errorf("unable to connect to database: %w", err)
+	}
+	defer conn.Close()
+
+	tableNames, err := GetAllTableNames(ctx, conn)
+	if err != nil {
+		return false, fmt.Errorf("failed to get all table names:%w", err)
+	}
+
+	return len(tableNames) != 0, nil
+}
+
+func GetAllTableNames(ctx context.Context, conn *pgxpool.Pool) ([]string, error) {
+	tableNameRows, err := conn.Query(ctx, "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' and table_type = 'BASE TABLE' and table_name != 'goose_db_version' order by table_name")
+	if err != nil {
+		return nil, fmt.Errorf("failed to query table names:%w", err)
+	}
+
+	var tableNames []string
+	for tableNameRows.Next() {
+		tableName := ""
+		err = tableNameRows.Scan(&tableName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan table Name:%w", err)
+		}
+		tableNames = append(tableNames, tableName)
+	}
+	return tableNames, nil
+}
+
 func RecreateVegaDatabase(ctx context.Context, log *logging.Logger, connConfig ConnectionConfig) error {
 	postgresDbConn, err := pgx.Connect(context.Background(), connConfig.GetConnectionStringForPostgresDatabase())
 	if err != nil {
@@ -153,6 +241,52 @@ func RecreateVegaDatabase(ctx context.Context, log *logging.Logger, connConfig C
 		return fmt.Errorf("unable to create database:%w", err)
 	}
 	return nil
+}
+
+type DatanodeBlockSpan struct {
+	FromHeight int64
+	ToHeight   int64
+	HasData    bool
+}
+
+func GetDatanodeBlockSpan(ctx context.Context, connConfig ConnectionConfig) (DatanodeBlockSpan, error) {
+	hasVegaSchema, err := HasVegaSchema(ctx, connConfig)
+	if err != nil {
+		return DatanodeBlockSpan{}, fmt.Errorf("failed to get check if database if empty:%w", err)
+	}
+
+	var span DatanodeBlockSpan
+	if hasVegaSchema {
+		conn, err := pgxpool.Connect(ctx, connConfig.GetConnectionString())
+		if err != nil {
+			return DatanodeBlockSpan{}, fmt.Errorf("failed to connect to database: %w", err)
+		}
+		defer conn.Close()
+
+		oldestBlock, err := GetOldestHistoryBlockUsingConnection(ctx, conn)
+		if err != nil {
+			if errors.Is(err, entities.ErrNotFound) {
+				return DatanodeBlockSpan{
+					HasData: false,
+				}, nil
+			}
+
+			return DatanodeBlockSpan{}, fmt.Errorf("failed to get oldest history block:%w", err)
+		}
+
+		lastBlock, err := GetLastBlockUsingConnection(ctx, conn)
+		if err != nil {
+			return DatanodeBlockSpan{}, fmt.Errorf("failed to get last block:%w", err)
+		}
+
+		span = DatanodeBlockSpan{
+			FromHeight: oldestBlock.Height,
+			ToHeight:   lastBlock.Height,
+			HasData:    true,
+		}
+	}
+
+	return span, nil
 }
 
 func dropDatabaseWithRetry(parentCtx context.Context, postgresDbConn *pgx.Conn, connConfig ConnectionConfig) error {

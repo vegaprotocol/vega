@@ -16,64 +16,64 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
+	"code.vegaprotocol.io/vega/core/delegation/mocks"
 	"code.vegaprotocol.io/vega/core/txn"
-	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/protos/vega"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
 
-type TestEpochEngine struct {
-	callbacks []func(context.Context, types.Epoch)
-	restore   []func(context.Context, types.Epoch)
-}
+func TestUpdateBanDuration(t *testing.T) {
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), mocks.NewMockTimeService(gomock.NewController(t)))
+	e.OnEpochDurationChanged(context.Background(), time.Hour*10)
+	require.Equal(t, float64(750), e.banDuration.Round(time.Second).Seconds()) // 10h/48 = 10 * 60 * 60 / 48 = 750s
 
-func (e *TestEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch)) {
-	e.callbacks = append(e.callbacks, f)
-	e.restore = append(e.restore, r)
+	e.OnEpochDurationChanged(context.Background(), time.Second*10)
+	require.Equal(t, float64(30), e.banDuration.Round(time.Second).Seconds()) // minimum of 30s applies
 }
 
 func TestSpamPoWNumberOfPastBlocks(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), mocks.NewMockTimeService(gomock.NewController(t)))
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(200))
 	require.Equal(t, uint32(200), e.SpamPoWNumberOfPastBlocks())
 }
 
 func TestSpamPoWDifficulty(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), mocks.NewMockTimeService(gomock.NewController(t)))
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
 	require.Equal(t, uint32(20), e.SpamPoWDifficulty())
 }
 
 func TestSpamPoWHashFunction(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), mocks.NewMockTimeService(gomock.NewController(t)))
 	e.UpdateSpamPoWHashFunction(context.Background(), "hash4")
 	require.Equal(t, "hash4", e.SpamPoWHashFunction())
 }
 
 func TestSpamPoWNumberOfTxPerBlock(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), mocks.NewMockTimeService(gomock.NewController(t)))
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(2))
 	require.Equal(t, uint32(2), e.SpamPoWNumberOfPastBlocks())
 }
 
 func TestSpamPoWIncreasingDifficulty(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), mocks.NewMockTimeService(gomock.NewController(t)))
 	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(1))
 	require.Equal(t, true, e.SpamPoWIncreasingDifficulty())
 }
 
 func TestUpdateNumberOfBlocks(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), mocks.NewMockTimeService(gomock.NewController(t)))
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(5))
 	require.Equal(t, uint32(5), e.SpamPoWNumberOfPastBlocks())
 }
 
 func TestCheckTx(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), mocks.NewMockTimeService(gomock.NewController(t)))
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(5))
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
 	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
@@ -89,7 +89,7 @@ func TestCheckTx(t *testing.T) {
 	require.Equal(t, errors.New("proof of work tid already used"), e.CheckTx(&testTx{blockHeight: 100, powTxID: "49B0DF0954A8C048554B1C65F4F5883C38640D101A11959EB651AE2065A80BBB"}))
 
 	// party is banned
-	e.bannedParties["C692100485479CE9E1815B9E0A66D3596295A04DB42170CB4B61CFAE7332ADD8"] = 6
+	e.bannedParties["C692100485479CE9E1815B9E0A66D3596295A04DB42170CB4B61CFAE7332ADD8"] = time.Time{}
 	require.Equal(t, errors.New("party is banned from sending transactions"), e.CheckTx(&testTx{party: "C692100485479CE9E1815B9E0A66D3596295A04DB42170CB4B61CFAE7332ADD8", blockHeight: 100, powTxID: "A204DF39B63100C76EC831A843BF3C538FF54217DBA4B1409A3773507053EBB5"}))
 
 	// incorrect pow
@@ -100,7 +100,7 @@ func TestCheckTx(t *testing.T) {
 }
 
 func TestDeliverTx(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), mocks.NewMockTimeService(gomock.NewController(t)))
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(5))
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
 	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
@@ -120,7 +120,7 @@ func TestDeliverTx(t *testing.T) {
 }
 
 func TestMempoolTidRejection(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), mocks.NewMockTimeService(gomock.NewController(t)))
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(5))
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
 	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
@@ -149,17 +149,19 @@ func TestMempoolTidRejection(t *testing.T) {
 }
 
 func TestExpectedDifficulty(t *testing.T) {
-	require.Equal(t, uint(60), calculateExpectedDifficulty(20, 5, 3))
-	require.Equal(t, uint(100), calculateExpectedDifficulty(20, 5, 5))
-	require.Equal(t, uint(121), calculateExpectedDifficulty(20, 5, 6))
-	require.Equal(t, uint(143), calculateExpectedDifficulty(20, 5, 7))
-	require.Equal(t, uint(166), calculateExpectedDifficulty(20, 5, 8))
-	require.Equal(t, uint(190), calculateExpectedDifficulty(20, 5, 9))
-	require.Equal(t, uint(215), calculateExpectedDifficulty(20, 5, 10))
+	require.Equal(t, uint(60), calculateExpectedDifficulty(20, 5, 3))   // 3 * 20
+	require.Equal(t, uint(100), calculateExpectedDifficulty(20, 5, 5))  // 5 * 20
+	require.Equal(t, uint(121), calculateExpectedDifficulty(20, 5, 6))  // 5 * 20 + 21
+	require.Equal(t, uint(184), calculateExpectedDifficulty(20, 5, 9))  // 5 * 20 + 4 * 21
+	require.Equal(t, uint(205), calculateExpectedDifficulty(20, 5, 10)) // 5 * 20 + 5 * 21
+	require.Equal(t, uint(430), calculateExpectedDifficulty(20, 5, 20)) // 5 * 20 + 5 * 21 + 5 * 22 + 5 * 23
+	require.Equal(t, uint(478), calculateExpectedDifficulty(20, 5, 22)) // 5 * 20 + 5 * 21 + 5 * 22 + 5 * 23 + 2 * 24
 }
 
 func TestBeginBlock(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	ts := mocks.NewMockTimeService(gomock.NewController(t))
+	ts.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(3))
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
 	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
@@ -195,12 +197,16 @@ func TestBeginBlock(t *testing.T) {
 }
 
 func TestBan(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	now := time.Now()
+	ts := mocks.NewMockTimeService(gomock.NewController(t))
+	ts.EXPECT().GetTimeNow().Times(72).Return(now)
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(1))
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
 	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
 	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
 	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(1))
+	e.OnEpochDurationChanged(context.Background(), 24*time.Hour)
 
 	// test happy days first - 4 transactions with increasing difficulty results in no ban - regardless of the order they come in
 	party := crypto.RandomHash()
@@ -210,7 +216,7 @@ func TestBan(t *testing.T) {
 		{txID: "6", party: party, powTxID: "B14DD602ED48C9F7B5367105A4A97FFC9199EA0C9E1490B786534768DD1538EF", powNonce: 1751582}, // 000003bbf0cde49e3899ad23282b18defbc12a65f07c95d768464b87024df368 - 22
 		{txID: "7", party: party, powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 431336},  // 000001c297318619efd60b9197f89e36fea83ca8d7461cf7b7c78af84e0a3b51 - 23
 	}
-	testBanWithTxPermutations(t, e, txs, false, 102, party)
+	testBanWithTxPermutations(t, e, txs, false, 102, party, now)
 
 	txs = []*testTx{
 		{txID: "8", party: party, powTxID: "2A1319636230740888C968E4E7610D6DE820E644EEC3C08AA5322A0A022014BD", powNonce: 1421231},  // 000009c5043c4e1dd7fe190ece8d3fd83d94c4e2a2b7800456ce5f5a653c9f75 - 20
@@ -218,23 +224,67 @@ func TestBan(t *testing.T) {
 		{txID: "10", party: party, powTxID: "5B0E1EB96CCAC120E6D824A5F4C4007EABC59573B861BD84B1EF09DFB376DC84", powNonce: 4031737}, // 000002a98320df372412d7179ca2645b13ff3ecbe660e4a9a743fb423d8aec1f - 22
 		{txID: "11", party: party, powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 431336},  // 000001c297318619efd60b9197f89e36fea83ca8d7461cf7b7c78af84e0a3b51 - 23
 	}
-	testBanWithTxPermutations(t, e, txs, true, 126, party)
+	testBanWithTxPermutations(t, e, txs, true, 126, party, now)
+	now = now.Add(e.banDuration)
+	ts.EXPECT().GetTimeNow().Times(1).Return(now)
+	e.BeginBlock(129, crypto.RandomHash())
+	require.Equal(t, 0, len(e.bannedParties))
+}
+
+func TestAllowTransactionsAcrossMultipleBlocks(t *testing.T) {
+	now := time.Now()
+	ts := mocks.NewMockTimeService(gomock.NewController(t))
+	ts.EXPECT().GetTimeNow().AnyTimes().Return(now)
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
+	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(10))
+	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
+	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
+	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
+	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(1))
+	e.BeginBlock(100, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4")
+
+	// test happy days first - 4 transactions with increasing difficulty results in no ban - regardless of the order they come in
+	party := crypto.RandomHash()
+	txs := []*testTx{
+		{txID: "9", blockHeight: 100, party: party, powTxID: "DFE522E234D67E6AE3F017859F898E576B3928EA57310B765398615A0D3FDE2F", powNonce: 424517},   // 00000e31f8ac983354f5885d46b7631bc75f69ec82e8f6178bae53db0ab7e054 - 20
+		{txID: "10", blockHeight: 100, party: party, powTxID: "5B0E1EB96CCAC120E6D824A5F4C4007EABC59573B861BD84B1EF09DFB376DC84", powNonce: 4031737}, // 000002a98320df372412d7179ca2645b13ff3ecbe660e4a9a743fb423d8aec1f - 22
+		{txID: "11", blockHeight: 100, party: party, powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 431336},  // 000001c297318619efd60b9197f89e36fea83ca8d7461cf7b7c78af84e0a3b51 - 23
+		{txID: "8", blockHeight: 100, party: party, powTxID: "2A1319636230740888C968E4E7610D6DE820E644EEC3C08AA5322A0A022014BD", powNonce: 1421231},  // 000009c5043c4e1dd7fe190ece8d3fd83d94c4e2a2b7800456ce5f5a653c9f75 - 20
+	}
+
+	// process the first transaction on block 101
+	e.BeginBlock(101, crypto.RandomHash())
+	require.NoError(t, e.DeliverTx(txs[0]))
+
+	// process the second transaction on block 102
+	e.BeginBlock(102, crypto.RandomHash())
+	require.NoError(t, e.DeliverTx(txs[1]))
+
+	// process the third transaction on block 103
+	e.BeginBlock(103, crypto.RandomHash())
+	require.NoError(t, e.DeliverTx(txs[2]))
+
+	// process the last transaction on block 104 - this should get us banned
+	e.BeginBlock(104, crypto.RandomHash())
+	require.Equal(t, "too many transactions per block", e.DeliverTx(txs[3]).Error())
+
+	require.Equal(t, 1, len(e.bannedParties))
 }
 
 func TestEndBlock(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), mocks.NewMockTimeService(gomock.NewController(t)))
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(1))
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
 	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
 	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
 }
 
-func testBanWithTxPermutations(t *testing.T, e *Engine, txs []*testTx, expectedBan bool, blockHeight uint64, party string) {
+func testBanWithTxPermutations(t *testing.T, e *Engine, txs []*testTx, expectedBan bool, blockHeight uint64, party string, now time.Time) {
 	t.Helper()
 	txsPerm := permutation(txs)
 	for i, perm := range txsPerm {
 		// clear any bans
-		e.bannedParties = map[string]uint64{}
+		e.bannedParties = map[string]time.Time{}
 
 		// begin a new block
 		e.BeginBlock(blockHeight+uint64(i), "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4")
@@ -262,7 +312,7 @@ func testBanWithTxPermutations(t *testing.T, e *Engine, txs []*testTx, expectedB
 		// verify expected ban
 		if expectedBan {
 			require.Equal(t, 1, len(e.bannedParties))
-			require.Equal(t, uint64(4), e.bannedParties[party])
+			require.Equal(t, now.Add(e.banDuration), e.bannedParties[party])
 		} else {
 			require.Equal(t, 0, len(e.bannedParties))
 		}
@@ -285,26 +335,6 @@ func permutation(xs []*testTx) (permuts [][]*testTx) {
 	rc(xs, 0)
 
 	return permuts
-}
-
-func TestOnEpoch(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
-	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(1))
-	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
-	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
-	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
-
-	e.OnEpochEvent(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_UNSPECIFIED, Seq: 100})
-	require.NotEqual(t, 100, e.currentEpoch)
-
-	e.bannedParties["party1"] = 100
-
-	e.OnEpochEvent(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, Seq: 100})
-	require.NotEqual(t, 100, e.currentEpoch)
-
-	require.Equal(t, 1, len(e.bannedParties))
-	e.OnEpochEvent(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, Seq: 101})
-	require.Equal(t, 0, len(e.bannedParties))
 }
 
 type testTx struct {

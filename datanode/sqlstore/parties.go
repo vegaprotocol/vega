@@ -41,9 +41,9 @@ func NewParties(connectionSource *ConnectionSource) *Parties {
 
 // Initialise adds the built-in 'network' party which is never explicitly sent on the event
 // bus, but nonetheless is necessary.
-func (ps *Parties) Initialise() {
+func (ps *Parties) Initialise(ctx context.Context) {
 	defer metrics.StartSQLQuery("Parties", "Initialise")()
-	_, err := ps.Connection.Exec(context.Background(),
+	_, err := ps.Connection.Exec(ctx,
 		`INSERT INTO parties(id, tx_hash) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
 		entities.PartyID("network"), entities.TxHash("01"))
 	if err != nil {

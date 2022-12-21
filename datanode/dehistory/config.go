@@ -1,8 +1,9 @@
 package dehistory
 
 import (
+	"time"
+
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
-	"code.vegaprotocol.io/vega/datanode/dehistory/initialise"
 	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/dehistory/store"
 	"code.vegaprotocol.io/vega/logging"
@@ -18,7 +19,7 @@ type Config struct {
 	Store    store.Config    `group:"Store" namespace:"store"`
 	Snapshot snapshot.Config `group:"Snapshot" namespace:"snapshot"`
 
-	Initialise initialise.Config `group:"Initialise" namespace:"initialise"`
+	Initialise InitializationConfig `group:"Initialise" namespace:"initialise"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -31,6 +32,22 @@ func NewDefaultConfig() Config {
 		Publish:       true,
 		Store:         store.NewDefaultConfig(),
 		Snapshot:      snapshot.NewDefaultConfig(),
-		Initialise:    initialise.NewDefaultConfig(),
+		Initialise:    NewDefaultInitializationConfig(),
 	}
+}
+
+func NewDefaultInitializationConfig() InitializationConfig {
+	return InitializationConfig{
+		MinimumBlockCount: 1,
+		TimeOut:           encoding.Duration{Duration: 1 * time.Minute},
+		GrpcAPIPorts:      []int{},
+		ToSegment:         "",
+	}
+}
+
+type InitializationConfig struct {
+	ToSegment         string            `long:"to-segment" description:"the segment to initialise up to, if omitted the datanode will attempt to fetch the latest segment from the network"`
+	MinimumBlockCount int64             `long:"block-count" description:"the minimum number of blocks to fetch"`
+	TimeOut           encoding.Duration `long:"timeout" description:"maximum time allowed to auto-initialise the node"`
+	GrpcAPIPorts      []int             `long:"grpc-api-ports" description:"list of additional ports to check to for api connection when getting latest segment"`
 }

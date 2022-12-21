@@ -17,6 +17,7 @@ import (
 	"errors"
 	"math/rand"
 	"sort"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -49,12 +50,13 @@ type Commander interface {
 }
 
 type ValidatorTopology interface {
-	Len() int
 	IsValidator() bool
 	SelfVegaPubKey() string
 	AllNodeIDs() []string
 	IsValidatorVegaPubKey(string) bool
 	IsTendermintValidator(string) bool
+	GetVotingPower(pubkey string) int64
+	GetTotalVotingPower() int64
 }
 
 type Resource interface {
@@ -119,17 +121,18 @@ func (r *res) selfVoteReceived(self string) bool {
 	return ok
 }
 
-func (r *res) voteCount(t ValidatorTopology) int {
+func (r *res) votePassed(t ValidatorTopology, requiredMajority num.Decimal) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	count := 0
+	count := int64(0)
 	for k := range r.votes {
 		if t.IsTendermintValidator(k) {
-			count++
+			count += t.GetVotingPower(k)
 		}
 	}
-	return count
+
+	return num.DecimalFromInt64(count).Div(num.DecimalFromInt64(t.GetTotalVotingPower())).GreaterThanOrEqual(requiredMajority)
 }
 
 type Witness struct {
@@ -301,16 +304,8 @@ func (w *Witness) start(ctx context.Context, r *res) {
 	atomic.StoreUint32(&r.state, validated)
 }
 
-func (w *Witness) votePassed(votesCount, validators int) bool {
-	validatorsDec := num.DecimalFromInt64(int64(validators))
-	votesDec := num.DecimalFromInt64(int64(votesCount))
-	minimumVotesForMajority := num.MinD(validatorsDec, validatorsDec.Mul(w.validatorVotesRequired))
-	return votesDec.GreaterThanOrEqual(minimumVotesForMajority)
-}
-
 func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 	w.now = t
-	topLen := w.top.Len() // this is the number of validators with Tendermint status
 	isValidator := w.top.IsValidator()
 
 	// sort resources first
@@ -325,8 +320,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 		v := w.resources[k]
 
 		state := atomic.LoadUint32(&v.state)
-		votesLen := v.voteCount(w.top)
-		checkPass := w.votePassed(votesLen, topLen)
+		checkPass := v.votePassed(w.top, w.validatorVotesRequired)
 
 		// if the time is expired, or we received enough votes
 		if v.checkUntil.Before(t) || checkPass {
@@ -336,19 +330,21 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			if !checkPass {
 				votesReceived := []string{}
 				votesMissing := []string{}
+				votePowers := []string{}
 				for _, k := range w.top.AllNodeIDs() {
 					if _, ok := v.votes[k]; ok {
 						votesReceived = append(votesReceived, k)
+						votePowers = append(votePowers, strconv.FormatInt(w.top.GetVotingPower(k), 10))
 						continue
 					}
 					votesMissing = append(votesMissing, k)
 				}
 				w.log.Warn("resource checking was not validated by all nodes",
 					logging.String("resource-id", v.res.GetID()),
-					logging.Int("vote-count", votesLen),
-					logging.Int("node-count", topLen),
 					logging.Strings("votes-received", votesReceived),
 					logging.Strings("votes-missing", votesMissing),
+					logging.Strings("votes-power-received", votePowers),
+					logging.Int64("total-voting-power", w.top.GetTotalVotingPower()),
 				)
 			}
 

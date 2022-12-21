@@ -17,7 +17,7 @@ type AdminListAPITokens struct {
 }
 
 // Handle generates a long-living API token.
-func (h *AdminListAPITokens) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminListAPITokens) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	err := validateAdminListAPITokensParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

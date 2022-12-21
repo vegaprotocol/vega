@@ -68,7 +68,7 @@ func testUntaintingKeyWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newUntaintKeyHandler(tt)
@@ -241,7 +241,7 @@ type untaintKeyHandler struct {
 func (h *untaintKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
 	t.Helper()
 
-	result, err := h.Handle(ctx, params)
+	result, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	assert.Nil(t, result)
 	return err
 }

@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/api"
 	networkStore "code.vegaprotocol.io/vega/wallet/network/store/v1"
@@ -39,7 +40,7 @@ func NewCmdDescribeNetwork(w io.Writer, rf *RootFlags) *cobra.Command {
 		}
 
 		describeNetwork := api.NewAdminDescribeNetwork(networkStore)
-		rawResult, errorDetails := describeNetwork.Handle(context.Background(), params)
+		rawResult, errorDetails := describeNetwork.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
 		if errorDetails != nil {
 			return api.AdminDescribeNetworkResult{}, errors.New(errorDetails.Data)
 		}

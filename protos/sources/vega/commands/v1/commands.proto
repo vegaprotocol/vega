@@ -166,10 +166,11 @@ message DelegateSubmission {
 
 message UndelegateSubmission {
   enum Method {
+    reserved 3;
+
     METHOD_UNSPECIFIED = 0;
     METHOD_NOW = 1;
     METHOD_AT_END_OF_EPOCH = 2;
-    METHOD_IN_ANGER = 3;
   }
   string node_id = 1;
   // optional, if not specified = ALL

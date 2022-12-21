@@ -1,7 +1,6 @@
 package api_test
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -146,11 +145,11 @@ func generateKey(t *testing.T, w wallet.Wallet) wallet.KeyPair {
 	return kp
 }
 
-func contextWithTraceID() (context.Context, string) {
-	traceID := vgrand.RandomStr(5)
-	//revive:disable:context-keys-type
-	//nolint:staticcheck
-	return context.WithValue(context.Background(), "trace-id", traceID), traceID
+func requestMetadataForTest() jsonrpc.RequestMetadata {
+	return jsonrpc.RequestMetadata{
+		TraceID:  vgrand.RandomStr(5),
+		Hostname: vgrand.RandomStr(5) + ".xyz",
+	}
 }
 
 func connectWallet(t *testing.T, sessions *session.Sessions, hostname string, w wallet.Wallet) string {

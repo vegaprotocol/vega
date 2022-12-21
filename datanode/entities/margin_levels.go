@@ -88,8 +88,8 @@ func GetAccountFromMarginLevel(ctx context.Context, margin *vega.MarginLevels, a
 	return marginAccount, err
 }
 
-func (ml *MarginLevels) ToProto(accountSource AccountSource) (*vega.MarginLevels, error) {
-	marginAccount, err := accountSource.GetByID(ml.AccountID)
+func (ml *MarginLevels) ToProto(ctx context.Context, accountSource AccountSource) (*vega.MarginLevels, error) {
+	marginAccount, err := accountSource.GetByID(ctx, ml.AccountID)
 	if err != nil {
 		return nil, fmt.Errorf("getting from account for transfer proto:%w", err)
 	}
@@ -115,23 +115,29 @@ func (ml MarginLevels) Cursor() *Cursor {
 }
 
 func (ml MarginLevels) ToProtoEdge(input ...any) (*v2.MarginEdge, error) {
-	if len(input) == 0 {
-		return nil, fmt.Errorf("expected account source argument")
+	if len(input) != 2 {
+		return nil, fmt.Errorf("expected account source and context argument")
 	}
 
-	switch as := input[0].(type) {
-	case AccountSource:
-		mlProto, err := ml.ToProto(as)
-		if err != nil {
-			return nil, err
-		}
-		return &v2.MarginEdge{
-			Node:   mlProto,
-			Cursor: ml.Cursor().Encode(),
-		}, nil
-	default:
-		return nil, fmt.Errorf("expected account source argument, got:%v", as)
+	ctx, ok := input[0].(context.Context)
+	if !ok {
+		return nil, fmt.Errorf("first argument must be a context.Context, got: %v", input[0])
 	}
+
+	as, ok := input[1].(AccountSource)
+	if !ok {
+		return nil, fmt.Errorf("second argument must be an AccountSource, got: %v", input[1])
+	}
+
+	mlProto, err := ml.ToProto(ctx, as)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v2.MarginEdge{
+		Node:   mlProto,
+		Cursor: ml.Cursor().Encode(),
+	}, nil
 }
 
 type MarginLevelsKey struct {

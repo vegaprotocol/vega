@@ -37,7 +37,7 @@ func testListingTokensWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx, _ := contextWithTraceID()
+			ctx := context.Background()
 
 			// setup
 			handler := newAdminListAPITokenHandlers(tt)
@@ -105,7 +105,7 @@ type adminListAPITokenHandler struct {
 func (h *adminListAPITokenHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminListAPITokensResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params)
+	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminListAPITokensResult)
 		if !ok {

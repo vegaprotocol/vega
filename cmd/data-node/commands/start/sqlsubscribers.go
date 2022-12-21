@@ -49,6 +49,7 @@ type SQLSubscribers struct {
 	candleStore               *sqlstore.Candles
 	chainStore                *sqlstore.Chain
 	pupStore                  *sqlstore.ProtocolUpgradeProposals
+	snapStore                 *sqlstore.CoreSnapshotData
 
 	// Services
 	candleService               *candlesv2.Svc
@@ -86,6 +87,7 @@ type SQLSubscribers struct {
 	nodeService                 *service.Node
 	chainService                *service.Chain
 	protocolUpgradeService      *service.ProtocolUpgrade
+	coreSnapshotService         *service.SnapshotData
 
 	// Subscribers
 	accountSub              *sqlsubscribers.Account
@@ -122,6 +124,7 @@ type SQLSubscribers struct {
 	nodeSub                 *sqlsubscribers.Node
 	marketDepthSub          *sqlsubscribers.MarketDepth
 	pupSub                  *sqlsubscribers.ProtocolUpgrade
+	snapSub                 *sqlsubscribers.SnapshotData
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -162,6 +165,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.marketDepthSub,
 		s.ethereumKeyRotationsSub,
 		s.pupSub,
+		s.snapSub,
 	}
 }
 
@@ -171,7 +175,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.assetStore = sqlstore.NewAssets(transactionalConnectionSource)
 	s.blockStore = sqlstore.NewBlocks(transactionalConnectionSource)
 	s.partyStore = sqlstore.NewParties(transactionalConnectionSource)
-	s.partyStore.Initialise()
+	s.partyStore.Initialise(ctx)
 	s.accountStore = sqlstore.NewAccounts(transactionalConnectionSource)
 	s.balanceStore = sqlstore.NewBalances(transactionalConnectionSource)
 	s.ledger = sqlstore.NewLedger(transactionalConnectionSource)
@@ -205,6 +209,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.candleStore = sqlstore.NewCandles(ctx, transactionalConnectionSource, candleV2Config)
 	s.chainStore = sqlstore.NewChain(transactionalConnectionSource)
 	s.pupStore = sqlstore.NewProtocolUpgradeProposals(transactionalConnectionSource)
+	s.snapStore = sqlstore.NewCoreSnapshotData(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -243,6 +248,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.withdrawalService = service.NewWithdrawal(s.withdrawalsStore, log)
 	s.chainService = service.NewChain(s.chainStore, log)
 	s.protocolUpgradeService = service.NewProtocolUpgrade(s.pupStore, log)
+	s.coreSnapshotService = service.NewSnapshotData(s.snapStore, log)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,
@@ -294,4 +300,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers(ctx context.Context, Log *logging.L
 	s.nodeSub = sqlsubscribers.NewNode(s.nodeService, Log)
 	s.marketDepthSub = sqlsubscribers.NewMarketDepth(s.marketDepthService)
 	s.pupSub = sqlsubscribers.NewProtocolUpgrade(s.protocolUpgradeService, Log)
+	s.snapSub = sqlsubscribers.NewSnapshotData(s.coreSnapshotService, Log)
 }

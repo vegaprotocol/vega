@@ -13,14 +13,12 @@
 package sqlstore_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"github.com/jackc/pgx/v4"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,26 +31,20 @@ func TestRiskFactors(t *testing.T) {
 	t.Run("GetMarketRiskFactors returns the risk factors for the given market id", testGetMarketRiskFactors)
 }
 
-func setupRiskFactorTests(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.RiskFactors, *pgx.Conn) {
+func setupRiskFactorTests(t *testing.T) (*sqlstore.Blocks, *sqlstore.RiskFactors) {
 	t.Helper()
-	DeleteEverything()
-
 	bs := sqlstore.NewBlocks(connectionSource)
 	rfStore := sqlstore.NewRiskFactors(connectionSource)
-	config := NewTestConfig()
-
-	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
-	require.NoError(t, err)
-
-	return bs, rfStore, conn
+	return bs, rfStore
 }
 
 func testUpdateMarketRiskFactors(t *testing.T) {
-	ctx := context.Background()
-	bs, rfStore, _ := setupRiskFactorTests(t, ctx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, rfStore := setupRiskFactorTests(t)
 
 	// Add a risk factor for market 'aa' in one block
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	marketID := entities.MarketID("aa")
 	rf := entities.RiskFactor{
 		MarketID: marketID,
@@ -70,7 +62,7 @@ func testUpdateMarketRiskFactors(t *testing.T) {
 
 	// Upsert a new risk factor for the same in a different block
 	time.Sleep(5 * time.Microsecond) // Ensure we get a different vega time
-	block2 := addTestBlock(t, bs)
+	block2 := addTestBlock(t, ctx, bs)
 	rf2 := entities.RiskFactor{
 		MarketID: marketID,
 		Short:    decimal.NewFromInt(101),
@@ -87,56 +79,54 @@ func testUpdateMarketRiskFactors(t *testing.T) {
 }
 
 func testAddRiskFactor(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, rfStore, conn := setupRiskFactorTests(t, ctx)
+	bs, rfStore := setupRiskFactorTests(t)
 
 	var rowCount int
-	err := conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
+	err := connectionSource.Connection.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
 	assert.NoError(t, err)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	riskFactorProto := getRiskFactorProto()
 	riskFactor, err := entities.RiskFactorFromProto(riskFactorProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting risk factor proto to database entity")
 
-	err = rfStore.Upsert(context.Background(), riskFactor)
+	err = rfStore.Upsert(ctx, riskFactor)
 	require.NoError(t, err)
 
-	err = conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
+	err = connectionSource.Connection.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 }
 
 func testUpsertDuplicateMarketInSameBlock(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, rfStore, conn := setupRiskFactorTests(t, ctx)
+	bs, rfStore := setupRiskFactorTests(t)
 
 	var rowCount int
-	err := conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
+	err := connectionSource.Connection.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
 	assert.NoError(t, err)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	riskFactorProto := getRiskFactorProto()
 	riskFactor, err := entities.RiskFactorFromProto(riskFactorProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting risk factor proto to database entity")
 
-	err = rfStore.Upsert(context.Background(), riskFactor)
+	err = rfStore.Upsert(ctx, riskFactor)
 	require.NoError(t, err)
 
-	err = conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
+	err = connectionSource.Connection.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 
-	err = rfStore.Upsert(context.Background(), riskFactor)
+	err = rfStore.Upsert(ctx, riskFactor)
 	require.NoError(t, err)
 
-	err = conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
+	err = connectionSource.Connection.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 }
@@ -150,25 +140,24 @@ func getRiskFactorProto() *vega.RiskFactor {
 }
 
 func testGetMarketRiskFactors(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, rfStore, conn := setupRiskFactorTests(t, ctx)
+	bs, rfStore := setupRiskFactorTests(t)
 
 	var rowCount int
-	err := conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
+	err := connectionSource.Connection.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
 	assert.NoError(t, err)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	riskFactorProto := getRiskFactorProto()
 	riskFactor, err := entities.RiskFactorFromProto(riskFactorProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting risk factor proto to database entity")
 
-	err = rfStore.Upsert(context.Background(), riskFactor)
+	err = rfStore.Upsert(ctx, riskFactor)
 	require.NoError(t, err)
 
-	err = conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
+	err = connectionSource.Connection.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 

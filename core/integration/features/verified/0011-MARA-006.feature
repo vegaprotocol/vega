@@ -18,7 +18,7 @@ Feature: check margin account with partially filled order
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  Scenario: If an order is partially filled and if this leads to a reduced position and reduced riskiest long / short then the margin requirements are seen to be reduced and if margin balance is above release level then the excess amount is transferred to the general account.0011-MARA-006
+  Scenario: 001 If an order is partially filled and if this leads to a reduced position and reduced riskiest long / short then the margin requirements are seen to be reduced and if margin balance is above release level then the excess amount is transferred to the general account.0011-MARA-006
     Given the parties deposit on asset's general account the following amount:
       | party       | asset | amount        |
       | auxiliary1  | USD   | 1000000000000 |
@@ -54,11 +54,11 @@ Feature: check margin account with partially filled order
 
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 46754       | 56104  | 70131   | 93508   |
+      | trader2 | ETH/DEC20 | 45234       | 54280  | 67851   | 90468   |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 70131  | 19869   |
+      | trader2 | USD   | ETH/DEC20 | 67851  | 22149   |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -66,11 +66,11 @@ Feature: check margin account with partially filled order
 
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 46754       | 56104  | 70131   | 93508   |
+      | trader2 | ETH/DEC20 | 45234       | 54280  | 67851   | 90468   |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 70131  | 19869   |
+      | trader2 | USD   | ETH/DEC20 | 67851  | 22149   |
 
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference    |
@@ -78,12 +78,12 @@ Feature: check margin account with partially filled order
 
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 34916       | 41899  | 52374   | 69832   |
+      | trader2 | ETH/DEC20 | 34826       | 41791  | 52239   | 69652   |
 
     # margin is under above  level, then the excess amount is transferred to the general account
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 52374  | 37626   |
+      | trader2 | USD   | ETH/DEC20 | 67851  | 22149   |
 
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference    |
@@ -91,10 +91,10 @@ Feature: check margin account with partially filled order
 
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 33752       | 40502  | 50628   | 67504   |
+      | trader2 | ETH/DEC20 | 33636       | 40363  | 50454   | 67272   |
 
     # margin is under release level, then no excess amount is transferred to the general account
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 52374  | 37626   |
+      | trader2 | USD   | ETH/DEC20 | 50454  | 39546   |
 
