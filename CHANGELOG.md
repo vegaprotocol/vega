@@ -9,12 +9,11 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6574](https://github.com/vegaprotocol/vega/issues/6574) - Use same default for the probability of trading for floating point consensus as we do for the value between best bid and ask.
 
 ### 🐛 Fixes
 - [7188](https://github.com/vegaprotocol/vega/issues/7188) - Reset liquidity score even if fees accrued in a period were 0.
 - [7189](https://github.com/vegaprotocol/vega/issues/7189) - Include LP orders outside PM price range but within LP price in the liquidity score.
-
 
 ## 0.65.0
 
