@@ -3407,6 +3407,8 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 
 	// We can't distribute any share when no balance.
 	if acc.Balance.IsZero() {
+		// reset next distribution period
+		m.liquidity.ResetAverageLiquidityScores()
 		return nil
 	}
 
