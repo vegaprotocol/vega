@@ -936,7 +936,8 @@ message LiquidityProviderFeeShare {
   string equity_like_share = 2;
   // The average entry valuation of the liquidity provider for the market
   string average_entry_valuation = 3;
-
+  // The average liquidity score
+  string average_score = 4;
 }
 
 // Represents a list of valid (at the current timestamp) price ranges per associated trigger
