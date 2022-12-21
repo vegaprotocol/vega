@@ -129,6 +129,7 @@
 - [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position
 
 ### 🐛 Fixes
+- [6758](https://github.com/vegaprotocol/vega/issues/6758) - Fix first and last block not returned on querying epoch 
 - [6924](https://github.com/vegaprotocol/vega/issues/6924) - Fix deterministic sorting when nodes have equal scores and we have to choose who is in the signer set
 - [6812](https://github.com/vegaprotocol/vega/issues/6812) - Network name is derived solely from the filename to cause less confusion if the network `config` is renamed
 - [6831](https://github.com/vegaprotocol/vega/issues/6831) - Fix settlement state in snapshots and market settlement.

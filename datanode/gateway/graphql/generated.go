@@ -491,9 +491,11 @@ type ComplexityRoot struct {
 	}
 
 	EpochTimestamps struct {
-		End    func(childComplexity int) int
-		Expiry func(childComplexity int) int
-		Start  func(childComplexity int) int
+		End        func(childComplexity int) int
+		Expiry     func(childComplexity int) int
+		FirstBlock func(childComplexity int) int
+		LastBlock  func(childComplexity int) int
+		Start      func(childComplexity int) int
 	}
 
 	Erc20ListAssetBundle struct {
@@ -1854,6 +1856,8 @@ type EpochTimestampsResolver interface {
 	Start(ctx context.Context, obj *vega.EpochTimestamps) (*int64, error)
 	Expiry(ctx context.Context, obj *vega.EpochTimestamps) (*int64, error)
 	End(ctx context.Context, obj *vega.EpochTimestamps) (*int64, error)
+	FirstBlock(ctx context.Context, obj *vega.EpochTimestamps) (string, error)
+	LastBlock(ctx context.Context, obj *vega.EpochTimestamps) (*string, error)
 }
 type EthereumKeyRotationResolver interface {
 	BlockHeight(ctx context.Context, obj *v1.EthereumKeyRotation) (string, error)
@@ -3685,6 +3689,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EpochTimestamps.Expiry(childComplexity), true
+
+	case "EpochTimestamps.firstBlock":
+		if e.complexity.EpochTimestamps.FirstBlock == nil {
+			break
+		}
+
+		return e.complexity.EpochTimestamps.FirstBlock(childComplexity), true
+
+	case "EpochTimestamps.lastBlock":
+		if e.complexity.EpochTimestamps.LastBlock == nil {
+			break
+		}
+
+		return e.complexity.EpochTimestamps.LastBlock(childComplexity), true
 
 	case "EpochTimestamps.start":
 		if e.complexity.EpochTimestamps.Start == nil {
@@ -19932,6 +19950,10 @@ func (ec *executionContext) fieldContext_Epoch_timestamps(ctx context.Context, f
 				return ec.fieldContext_EpochTimestamps_expiry(ctx, field)
 			case "end":
 				return ec.fieldContext_EpochTimestamps_end(ctx, field)
+			case "firstBlock":
+				return ec.fieldContext_EpochTimestamps_firstBlock(ctx, field)
+			case "lastBlock":
+				return ec.fieldContext_EpochTimestamps_lastBlock(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type EpochTimestamps", field.Name)
 		},
@@ -20894,6 +20916,91 @@ func (ec *executionContext) fieldContext_EpochTimestamps_end(ctx context.Context
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EpochTimestamps_firstBlock(ctx context.Context, field graphql.CollectedField, obj *vega.EpochTimestamps) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EpochTimestamps_firstBlock(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EpochTimestamps().FirstBlock(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EpochTimestamps_firstBlock(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EpochTimestamps",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EpochTimestamps_lastBlock(ctx context.Context, field graphql.CollectedField, obj *vega.EpochTimestamps) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EpochTimestamps_lastBlock(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EpochTimestamps().LastBlock(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EpochTimestamps_lastBlock(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EpochTimestamps",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -64784,6 +64891,43 @@ func (ec *executionContext) _EpochTimestamps(ctx context.Context, sel ast.Select
 					}
 				}()
 				res = ec._EpochTimestamps_end(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "firstBlock":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EpochTimestamps_firstBlock(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "lastBlock":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EpochTimestamps_lastBlock(ctx, field, obj)
 				return res
 			}
 

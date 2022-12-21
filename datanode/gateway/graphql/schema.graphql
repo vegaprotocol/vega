@@ -800,12 +800,10 @@ type EpochTimestamps {
   expiry: Timestamp
   "RFC3339 timestamp - Vega time of epoch end, null if not ended"
   end: Timestamp
-
-  # @TODO - blocks support
-  # "Height of first block in the epoch, null if not started"
-  # firstBlock: String!
-  # "Height of last block in the epoch, null if not ended"
-  # lastBlock: String
+  "Height of first block in the epoch, null if not started"
+  firstBlock: String!
+  "Height of last block in the epoch, null if not ended"
+  lastBlock: String
 }
 
 "A node's key rotation event"
