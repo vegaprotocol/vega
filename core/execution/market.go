@@ -580,7 +580,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		SuppliedStake:             m.getSuppliedStake().String(),
 		PriceMonitoringBounds:     bounds,
 		MarketValueProxy:          m.lastMarketValueProxy.BigInt().String(),
-		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps),
+		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps, m.liquidity.GetAverageLiquidityScores()),
 		NextMTM:                   m.nextMTM.UnixNano(),
 	}
 }
@@ -3376,13 +3376,14 @@ func (m *Market) stopAllLiquidityProvisionOnReject(ctx context.Context) error {
 	return nil
 }
 
-func lpsToLiquidityProviderFeeShare(lps map[string]*lp) []*types.LiquidityProviderFeeShare {
+func lpsToLiquidityProviderFeeShare(lps map[string]*lp, ls map[string]num.Decimal) []*types.LiquidityProviderFeeShare {
 	out := make([]*types.LiquidityProviderFeeShare, 0, len(lps))
 	for k, v := range lps {
 		out = append(out, &types.LiquidityProviderFeeShare{
 			Party:                 k,
 			EquityLikeShare:       v.share.String(),
 			AverageEntryValuation: v.avg.String(),
+			AverageScore:          ls[k].String(),
 		})
 	}
 

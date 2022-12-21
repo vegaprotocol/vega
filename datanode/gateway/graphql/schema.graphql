@@ -336,6 +336,8 @@ type LiquidityProviderFeeShare {
   equityLikeShare: String!
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
+  "The average liquidity score"
+  averageScore: String! 
 }
 
 "The equity like share of liquidity fee for each liquidity provider"
@@ -346,6 +348,8 @@ type ObservableLiquidityProviderFeeShare {
   equityLikeShare: String!
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
+  "The average liquidity score"
+  averageScore: String! 
 }
 
 "The liquidity commitments for this market"
