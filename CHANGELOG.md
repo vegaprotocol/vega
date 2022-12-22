@@ -5,6 +5,7 @@
 ### 🚨 Breaking changes
 - [6957](https://github.com/vegaprotocol/vega/issues/6957) - Remove `client.<get|request>_permissions` endpoints on the wallet.
 - [7079](https://github.com/vegaprotocol/vega/issues/7079) - Remove deprecated `version` property from wallet API.
+- [7067](https://github.com/vegaprotocol/vega/issues/7067) - Remove legacy technical commands on the wallet command line.
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
