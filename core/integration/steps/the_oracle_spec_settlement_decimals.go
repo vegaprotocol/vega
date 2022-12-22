@@ -19,7 +19,7 @@ import (
 )
 
 func OracleSpecSettlementDataDecimals(config *market.Config, name string, settlementDP string) error {
-	dp, err := strconv.ParseUint(settlementDP, 10, 0)
+	dp, err := strconv.ParseUint(settlementDP, 10, 32)
 	if err != nil {
 		return err
 	}
