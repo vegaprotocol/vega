@@ -829,7 +829,7 @@ func (e *Engine) UpdateAverageLiquidityScores(bestBid, bestAsk num.Decimal, minL
 		for k, vNew := range current {
 			// if not found then it defaults to 0
 			vOld := e.avgScores[k]
-			current[k] = vOld.Mul(nMinusOneOverN).Add(vNew.Div(n))
+			current[k] = (vOld.Mul(nMinusOneOverN).Add(vNew.Div(n))).Round(10)
 		}
 	}
 
