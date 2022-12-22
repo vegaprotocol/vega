@@ -94,10 +94,6 @@ func BuildCmdRoot(w io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdListWallets(w, f))
 	cmd.AddCommand(NewCmdRenameWallet(w, f))
 
-	// DEPRECATED
-	cmd.AddCommand(NewCmdShellCompletion(w))
-	cmd.AddCommand(NewCmdSoftwareVersion(w, f))
-
 	return cmd
 }
 
