@@ -677,7 +677,7 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 	n := num.DecimalFromInt64(5)
 	nMinus1 := n.Sub(num.DecimalOne())
 	nMinus1overN := nMinus1.Div(n)
-	expectedScore := lScores4[party1].Mul(nMinus1overN).Add(cLiq5[party1].Div(t5).Div(n))
+	expectedScore := (lScores4[party1].Mul(nMinus1overN).Add(cLiq5[party1].Div(t5).Div(n))).Round(10)
 	require.True(t, expectedScore.Equal(lScores5[party1]))
 
 	// now reset scores and do another round
@@ -689,7 +689,7 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 	lScoresSumTo1(t, lScores6)
 	for _, p := range activeParties {
 		// we've just reset so running average should be same as previous observation normalised
-		require.True(t, lScores6[p].Equal(cLiq5[p].Div(t5)))
+		require.True(t, lScores6[p].Equal((cLiq5[p].Div(t5)).Round(10)))
 	}
 }
 
