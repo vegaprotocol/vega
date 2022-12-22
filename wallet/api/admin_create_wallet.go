@@ -24,8 +24,6 @@ type AdminCreatedWallet struct {
 	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
 	RecoveryPhrase       string `json:"recoveryPhrase"`
 	FilePath             string `json:"filePath"`
-	// DEPRECATED: Use KeyDerivationVersion instead
-	Version uint32 `json:"version"`
 }
 
 type AdminFirstPublicKey struct {
@@ -69,7 +67,6 @@ func (h *AdminCreateWallet) Handle(ctx context.Context, rawParams jsonrpc.Params
 		Wallet: AdminCreatedWallet{
 			Name:                 w.Name(),
 			KeyDerivationVersion: w.KeyDerivationVersion(),
-			Version:              w.KeyDerivationVersion(),
 			RecoveryPhrase:       recoveryPhrase,
 			FilePath:             h.walletStore.GetWalletPath(w.Name()),
 		},
