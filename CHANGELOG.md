@@ -3,7 +3,7 @@
 ## Unreleased 0.66.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6957](https://github.com/vegaprotocol/vega/issues/6957) - Remove `client.<get|request>_permissions` endpoints on the wallet.
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
