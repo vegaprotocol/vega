@@ -91,11 +91,12 @@ func (conf ConnectionConfig) GetConnectionStringForPostgresDatabase() string {
 
 func (conf ConnectionConfig) GetPoolConfig() (*pgxpool.Config, error) {
 	cfg, err := pgxpool.ParseConfig(conf.GetConnectionString())
-	cfg.MaxConnLifetime = conf.MaxConnLifetime.Duration
-	cfg.MaxConnLifetimeJitter = conf.MaxConnLifetimeJitter.Duration
 	if err != nil {
 		return nil, err
 	}
+	cfg.MaxConnLifetime = conf.MaxConnLifetime.Duration
+	cfg.MaxConnLifetimeJitter = conf.MaxConnLifetimeJitter.Duration
+
 	cfg.ConnConfig.RuntimeParams["application_name"] = "Vega Data Node"
 	return cfg, nil
 }
