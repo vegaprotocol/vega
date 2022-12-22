@@ -379,6 +379,8 @@ type LiquidityProviderFeeShare struct {
 	EquityLikeShare string `json:"equityLikeShare"`
 	// The average entry valuation of the liquidity provider for the market
 	AverageEntryValuation string `json:"averageEntryValuation"`
+	// The average liquidity score
+	AverageScore string `json:"averageScore"`
 }
 
 type LossSocialization struct {
@@ -449,6 +451,8 @@ type ObservableLiquidityProviderFeeShare struct {
 	EquityLikeShare string `json:"equityLikeShare"`
 	// The average entry valuation of the liquidity provider for the market
 	AverageEntryValuation string `json:"averageEntryValuation"`
+	// The average liquidity score
+	AverageScore string `json:"averageScore"`
 }
 
 type OffsetPagination struct {

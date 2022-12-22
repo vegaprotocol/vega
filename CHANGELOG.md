@@ -9,11 +9,13 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6574](https://github.com/vegaprotocol/vega/issues/6574) - Use same default for the probability of trading for floating point consensus as we do for the value between best bid and ask.
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
-
+- [7188](https://github.com/vegaprotocol/vega/issues/7188) - Reset liquidity score even if fees accrued in a period were 0.
+- [7189](https://github.com/vegaprotocol/vega/issues/7189) - Include LP orders outside PM price range but within LP price in the liquidity score.
+- [7195](https://github.com/vegaprotocol/vega/issues/7195) - Ignore oracle messages while market is in proposed state
+- [7198](https://github.com/vegaprotocol/vega/issues/7198) - Reduce `RAM` usage when tendermint calls list snapshot
 
 ## 0.65.0
 
@@ -38,6 +40,7 @@
 - [7157](https://github.com/vegaprotocol/vega/issues/7157) - Core waits for data node and shuts down gracefully during protocol upgrade
 - [7113](https://github.com/vegaprotocol/vega/issues/7113) - Added API for epoch summaries of rewards distributed
 - [6956](https://github.com/vegaprotocol/vega/issues/6956) - Include liquidity measure of deployed orders in the fees distribution
+- [7168](https://github.com/vegaprotocol/vega/issues/7168) - Expose liquidity score on on market data `API`
 
 ### 🐛 Fixes
 - [7040](https://github.com/vegaprotocol/vega/issues/7040) - Block explorer use different codes than 500 on error
@@ -126,6 +129,7 @@
 - [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position
 
 ### 🐛 Fixes
+- [6758](https://github.com/vegaprotocol/vega/issues/6758) - Fix first and last block not returned on querying epoch 
 - [6924](https://github.com/vegaprotocol/vega/issues/6924) - Fix deterministic sorting when nodes have equal scores and we have to choose who is in the signer set
 - [6812](https://github.com/vegaprotocol/vega/issues/6812) - Network name is derived solely from the filename to cause less confusion if the network `config` is renamed
 - [6831](https://github.com/vegaprotocol/vega/issues/6831) - Fix settlement state in snapshots and market settlement.
