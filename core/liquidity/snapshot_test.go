@@ -152,7 +152,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		"pendingProvisions:market-id": "627ef55af7f36bea0d09b0081b85d66531a01df060d8e9447e17049a4e152b12",
 		"provisions:market-id":        "89335d14e98ca80b144cb6502e9b508d97d63027ba0c7733d6024030cdf102ed",
 		"liquiditySupplied:market-id": "3276bba2a77778ba710ec29e3a6e59212452dbda69eaac8f9160930d1270da1d",
-		"liquidityScores:market-id":   "ea2a4e9af8cc1a10e097d273436ca03be3b2233595f58b4ca085ef6b8f1c4c05",
+		"liquidityScores:market-id":   "4f1d569c75a1a524084d6c1e9998fef46451a00bcc8dbfac41db90bd948e5af0",
 	}
 
 	lp3 := &types.LiquidityProvisionSubmission{
