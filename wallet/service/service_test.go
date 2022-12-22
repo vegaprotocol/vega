@@ -191,7 +191,7 @@ func testServiceImportWalletOK(t *testing.T) {
 			// given
 			walletName := vgrand.RandomStr(5)
 			passphrase := vgrand.RandomStr(5)
-			payload := fmt.Sprintf(`{"wallet": "%s", "passphrase": "%s", "recoveryPhrase": "%s", "version": %d}`, walletName, passphrase, testRecoveryPhrase, tc.version)
+			payload := fmt.Sprintf(`{"wallet": "%s", "passphrase": "%s", "recoveryPhrase": "%s", "keyDerivationVersion": %d}`, walletName, passphrase, testRecoveryPhrase, tc.version)
 
 			// setup
 			s.handler.EXPECT().ImportWallet(walletName, passphrase, testRecoveryPhrase, tc.version).Times(1).Return(nil)
