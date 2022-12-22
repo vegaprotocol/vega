@@ -833,6 +833,10 @@ func (e *Engine) UpdateAverageLiquidityScores(bestBid, bestAsk num.Decimal, minL
 		}
 	}
 
+	for k := range current {
+		current[k] = current[k].Round(10)
+	}
+
 	// always overwrite with latest to automatically remove LPs that are no longer ACTIVE from the list
 	e.avgScores = current
 	e.nAvg++
