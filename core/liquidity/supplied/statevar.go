@@ -34,9 +34,8 @@ var (
 	defaultInRangeProbabilityOfTrading = num.DecimalFromFloat(0.5)
 	defaultMinimumProbabilityOfTrading = num.DecimalFromFloat(1e-8)
 	tolerance                          = num.DecimalFromFloat(1e-6)
-	incrementInPct                     = num.DecimalFromFloat(0.1)                     // we calculate the probability of trading in increments of 0.1% of the best bid/ask
-	IncrementFactor                    = incrementInPct.Div(num.DecimalFromFloat(100)) // we calculate the probability of trading in increments of 0.001 from of the best bid/ask
-	defaultProbability                 = num.DecimalFromFloat(0.05)
+	incrementInPct                     = num.DecimalFromFloat(0.1)                                    // we calculate the probability of trading in increments of 0.1% of the best bid/ask
+	IncrementFactor                    = incrementInPct.Div(num.DecimalFromFloat(100))                // we calculate the probability of trading in increments of 0.001 from of the best bid/ask
 	maxDistanceWhenNoConsensusPct      = num.DecimalFromFloat(20)                                     // if there's no consensus yet and the price is within 20% of the best bid/ask it gets the default probability
 	maxDistanceWhenNoConsensusFactor   = maxDistanceWhenNoConsensusPct.Div(num.DecimalFromFloat(100)) // if there's no consensus yet and the price is within 0.2 of the best bid/ask it gets the default probability
 
@@ -187,7 +186,7 @@ func getAskProbabilityOfTrading(bestAsk num.Decimal, offsets, probabilities []nu
 	if len(offsets) == 0 {
 		maxDistance := maxDistanceWhenNoConsensusFactor.Mul(bestAsk)
 		if bestAsk.Sub(price).Abs().LessThanOrEqual(maxDistance) {
-			return defaultProbability
+			return defaultInRangeProbabilityOfTrading
 		}
 		return minProbabilityOfTrading
 	}
@@ -211,7 +210,7 @@ func getBidProbabilityOfTrading(bestBid num.Decimal, offsets, probabilities []nu
 	if len(offsets) == 0 {
 		maxDistance := maxDistanceWhenNoConsensusFactor.Mul(bestBid)
 		if bestBid.Sub(price).Abs().LessThanOrEqual(maxDistance) {
-			return defaultProbability
+			return defaultInRangeProbabilityOfTrading
 		}
 		return minProbabilityOfTrading
 	}

@@ -148,7 +148,7 @@ func TestLiquidityScore(t *testing.T) {
 
 	// Orders outside PM range (but within LP range)
 
-	// add orders outwith the LP bounds
+	// add orders outwith the PM bounds
 	buyOrder3 := &types.Order{
 		Price:     num.UintZero().Sub(minPMPrice.Representation(), num.UintOne()),
 		Size:      123,
@@ -162,9 +162,9 @@ func TestLiquidityScore(t *testing.T) {
 		Side:      types.SideSell,
 	}
 
-	// liquidity shouldn't change
+	// liquidity should drop as the volume-weighted PoT of trading within the LP range drops (some orders included in the score now have PoT==0)
 	liquidity5 := engine.CalculateLiquidityScore([]*types.Order{buyOrder1, sellOrder1, sellOrder2, buyOrder2, sellOrder3, buyOrder3}, MarkPriceD, MarkPriceD, minLpPrice, maxLpPrice)
-	require.Equal(t, liquidity4, liquidity5)
+	require.True(t, liquidity5.LessThan(liquidity4))
 
 	// Orders outside LP range (but within PM range)
 

@@ -580,7 +580,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		SuppliedStake:             m.getSuppliedStake().String(),
 		PriceMonitoringBounds:     bounds,
 		MarketValueProxy:          m.lastMarketValueProxy.BigInt().String(),
-		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps),
+		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps, m.liquidity.GetAverageLiquidityScores()),
 		NextMTM:                   m.nextMTM.UnixNano(),
 	}
 }
@@ -3225,7 +3225,12 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 
 	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
 
-	if m.mkt.State != types.MarketStateProposed && m.mkt.State != types.MarketStatePending {
+	// ignore trading termination while the governance proposal hasn't been enacted
+	if m.mkt.State == types.MarketStateProposed {
+		return
+	}
+
+	if m.mkt.State != types.MarketStatePending {
 		// we're either going to set state to trading terminated
 		// or we'll be performing the final settlement (setting market status to settled)
 		// in both cases, we want to MTM any pending trades
@@ -3376,13 +3381,14 @@ func (m *Market) stopAllLiquidityProvisionOnReject(ctx context.Context) error {
 	return nil
 }
 
-func lpsToLiquidityProviderFeeShare(lps map[string]*lp) []*types.LiquidityProviderFeeShare {
+func lpsToLiquidityProviderFeeShare(lps map[string]*lp, ls map[string]num.Decimal) []*types.LiquidityProviderFeeShare {
 	out := make([]*types.LiquidityProviderFeeShare, 0, len(lps))
 	for k, v := range lps {
 		out = append(out, &types.LiquidityProviderFeeShare{
 			Party:                 k,
 			EquityLikeShare:       v.share.String(),
 			AverageEntryValuation: v.avg.String(),
+			AverageScore:          ls[k].String(),
 		})
 	}
 
@@ -3407,6 +3413,8 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 
 	// We can't distribute any share when no balance.
 	if acc.Balance.IsZero() {
+		// reset next distribution period
+		m.liquidity.ResetAverageLiquidityScores()
 		return nil
 	}
 
