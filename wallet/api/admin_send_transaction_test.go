@@ -307,7 +307,7 @@ func testAdminSendingTransactionWithMalformedTransactionFails(t *testing.T) {
 	})
 
 	// then
-	assertInvalidParams(t, errorDetails, api.ErrTransactionIsMalformed)
+	assertInvalidParams(t, errorDetails, api.ErrTransactionIsNotValidVegaCommand)
 	assert.Empty(t, result)
 }
 

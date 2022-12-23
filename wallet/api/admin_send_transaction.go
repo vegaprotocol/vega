@@ -76,7 +76,7 @@ func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 
 	request := &walletpb.SubmitTransactionRequest{}
 	if err := jsonpb.Unmarshal(strings.NewReader(params.RawTransaction), request); err != nil {
-		return nil, invalidParams(ErrTransactionIsMalformed)
+		return nil, invalidParams(ErrTransactionIsNotValidVegaCommand)
 	}
 
 	request.PubKey = params.PublicKey
@@ -239,7 +239,7 @@ func validateAdminSendTransactionParams(rawParams jsonrpc.Params) (ParsedAdminSe
 
 	tx, err := json.Marshal(params.Transaction)
 	if err != nil {
-		return ParsedAdminSendTransactionParams{}, ErrEncodedTransactionIsNotValid
+		return ParsedAdminSendTransactionParams{}, ErrTransactionIsNotValidJSON
 	}
 
 	return ParsedAdminSendTransactionParams{
