@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -32,14 +33,17 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	snappb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"github.com/cosmos/iavl"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 )
 
 const (
-	SnapshotDBName = "snapshot"
-	numWorkers     = 1000
+	SnapshotDBName     = "snapshot"
+	SnapshotMetaDBName = "snapshot_meta"
+	numWorkers         = 1000
 )
 
 type StateProviderT interface {
@@ -88,6 +92,7 @@ type Engine struct {
 	timeService  TimeService
 	statsService StatsService
 	db           db.DB
+	metadb       *MetaDB
 	dbPath       string
 
 	avl             *iavl.MutableTree
@@ -232,23 +237,26 @@ func (e *Engine) ListMeta() ([]*tmtypes.Snapshot, error) {
 	}
 	for j := len(e.versions); i < j; i++ {
 		v := e.versions[i]
-		tree, err := e.avl.GetImmutable(v)
-		if err != nil {
-			return nil, err
-		}
-		snap, err := types.SnapshotFromTree(tree)
+
+		// use the meta db
+		snap, err := e.metadb.Load(v)
 		if err != nil {
 			e.log.Error("could not list snapshot",
 				logging.Int64("version", v),
 				logging.Error(err))
 			continue // if we have a borked snapshot we just won't list it
 		}
-		tmSnap, err := snap.ToTM()
+
+		// then save the version for height
+		snapMeta := &snappb.Metadata{}
+		err = proto.Unmarshal(snap.Metadata, snapMeta)
 		if err != nil {
 			return nil, err
 		}
-		snapshots = append(snapshots, tmSnap)
-		e.versionHeight[snap.Height] = snap.Meta.Version
+		e.versionHeight[snap.Height] = snapMeta.Version
+
+		// then add to the list
+		snapshots = append(snapshots, snap)
 	}
 	return snapshots, nil
 }
@@ -429,12 +437,19 @@ func (e *Engine) initialiseTree() error {
 	switch e.Storage {
 	case memDB:
 		e.db = db.NewMemDB()
+		e.metadb = NewMetaDB(NewMetaMemDB())
 	case goLevelDB:
 		conn, err := db.NewGoLevelDB(SnapshotDBName, e.dbPath)
 		if err != nil {
 			return fmt.Errorf("could not open goleveldb: %w", err)
 		}
 		e.db = conn
+
+		metaConn, err := db.NewGoLevelDB(SnapshotMetaDBName, e.dbPath)
+		if err != nil {
+			return fmt.Errorf("could not open goleveldb: %w", err)
+		}
+		e.metadb = NewMetaDB(NewMetaGoLevelDB(metaConn))
 	default:
 		return types.ErrInvalidSnapshotStorageMethod
 	}
@@ -624,7 +639,7 @@ func (e *Engine) LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.
 		}
 	}
 	// check format:
-	f, err := types.SnapshotFromatFromU32(format)
+	f, err := types.SnapshotFormatFromU32(format)
 	if err != nil {
 		return nil, err
 	}
@@ -924,7 +939,19 @@ func (e *Engine) saveCurrentTree() error {
 	}
 	// get ptr to current version
 	e.last = e.avl.ImmutableTree
-	return nil
+
+	// now save into the meta db
+	snap, err := types.SnapshotFromTree(e.last)
+	if err != nil {
+		return err
+	}
+
+	tmSnap, err := snap.ToTM()
+	if err != nil {
+		return err
+	}
+
+	return e.metadb.Save(v, tmSnap)
 }
 
 func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg *sync.WaitGroup, cnt *int64) {
@@ -1106,7 +1133,17 @@ func (e *Engine) Close() error {
 		}
 	}
 	if e.db != nil {
-		return e.db.Close()
+		dbErr := e.db.Close()
+		metaErr := e.metadb.Close()
+		if dbErr != nil || metaErr != nil {
+			if dbErr != nil {
+				e.log.Error("could not close cleanly snapshot db", logging.Error(dbErr))
+			}
+			if metaErr != nil {
+				e.log.Error("could not close cleanly meta snapshot db", logging.Error(metaErr))
+			}
+			return errors.New("unable to close dbs cleanly")
+		}
 	}
 	return nil
 }
