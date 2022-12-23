@@ -10,9 +10,7 @@ import (
 	db "github.com/tendermint/tm-db"
 )
 
-var (
-	ErrUnknownSnapshotVersion = errors.New("unknown snapshot version")
-)
+var ErrUnknownSnapshotVersion = errors.New("unknown snapshot version")
 
 type MDB interface {
 	Save(version []byte, state []byte) error
