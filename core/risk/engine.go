@@ -152,8 +152,8 @@ func (e *Engine) OnMarginScalingFactorsUpdate(sf *types.ScalingFactors) error {
 func (e *Engine) UpdateModel(stateVarEngine StateVarEngine, calculator *types.MarginCalculator, model Model) {
 	e.scalingFactorsUint = scalingFactorsUintFromDecimals(calculator.ScalingFactors)
 	e.factors = model.DefaultRiskFactors()
-	stateVarEngine.NewEvent(e.asset, e.mktID, statevar.EventTypeMarketUpdated)
 	e.model = model
+	stateVarEngine.NewEvent(e.asset, e.mktID, statevar.EventTypeMarketUpdated)
 }
 
 // ReloadConf update the internal configuration of the risk engine.
