@@ -452,7 +452,7 @@ func (n SnapshotNamespace) String() string {
 	return string(n)
 }
 
-func SnapshotFromatFromU32(f uint32) (SnapshotFormat, error) {
+func SnapshotFormatFromU32(f uint32) (SnapshotFormat, error) {
 	i32 := int32(f)
 	if _, ok := snapshot.Format_name[i32]; !ok {
 		return SnapshotFormatUnspecified, ErrInvalidSnapshotFormat
