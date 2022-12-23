@@ -264,13 +264,11 @@ func U64(value string) (uint64, error) {
 }
 
 func (r RowWrapper) MustU32(name string) uint32 {
-	value, err := U64(r.mustColumn(name))
-	panicW(name, err)
-	return uint32(value)
+	return r.U32(name)
 }
 
 func (r RowWrapper) U32(name string) uint32 {
-	value, err := U64(r.values[name])
+	value, err := strconv.ParseUint(r.values[name], 10, 32)
 	panicW(name, err)
 	return uint32(value)
 }

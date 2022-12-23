@@ -116,7 +116,7 @@ func (s *CheckpointState) SetState(state []byte) error {
 	}
 	c := NewCheckpointFromProto(cp)
 	s.State = state
-	s.Hash = crypto.Hash(c.HashBytes())
+	s.Hash = crypto.HashBytesBuffer(c.HashBytes())
 	return nil
 }
 
@@ -137,7 +137,7 @@ func (s *CheckpointState) SetCheckpoint(cp *Checkpoint) error {
 	if err != nil {
 		return err
 	}
-	s.Hash = crypto.Hash(cp.HashBytes())
+	s.Hash = crypto.HashBytesBuffer(cp.HashBytes())
 	s.State = b
 	return nil
 }
@@ -148,7 +148,7 @@ func (s CheckpointState) Validate() error {
 	if err != nil {
 		return ErrCheckpointStateInvalid
 	}
-	if !bytes.Equal(crypto.Hash(cp.HashBytes()), s.Hash) {
+	if !bytes.Equal(crypto.HashBytesBuffer(cp.HashBytes()), s.Hash) {
 		return ErrCheckpointHashIncorrect
 	}
 	return nil
@@ -204,22 +204,23 @@ func (c *Checkpoint) SetBlockHeight(height int64) error {
 
 // HashBytes returns the data contained in the checkpoint as a []byte for hashing
 // the order in which the data is added to the slice matters.
-func (c Checkpoint) HashBytes() []byte {
-	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters)+len(c.Delegation)+len(c.Epoch)+len(c.Block)+len(c.Rewards)+len(c.Validators)+len(c.Banking)+len(c.Staking)+len(c.MultisigControl))
+func (c Checkpoint) HashBytes() bytes.Buffer {
+	var b bytes.Buffer
 	// the order in which we append is quite important
-	ret = append(ret, c.NetworkParameters...)
-	ret = append(ret, c.Assets...)
-	ret = append(ret, c.Collateral...)
-	ret = append(ret, c.Delegation...)
-	ret = append(ret, c.Epoch...)
-	ret = append(ret, c.Block...)
-	ret = append(ret, c.Governance...)
-	ret = append(ret, c.Rewards...)
-	ret = append(ret, c.Banking...)
-	ret = append(ret, c.Validators...)
-	ret = append(ret, c.Staking...)
-	ret = append(ret, c.MarketActivityTracker...)
-	return append(ret, c.MultisigControl...)
+	b.Write(c.Governance)
+	b.Write(c.Assets)
+	b.Write(c.Collateral)
+	b.Write(c.NetworkParameters)
+	b.Write(c.Delegation)
+	b.Write(c.Epoch)
+	b.Write(c.Block)
+	b.Write(c.Rewards)
+	b.Write(c.Validators)
+	b.Write(c.Banking)
+	b.Write(c.Staking)
+	b.Write(c.MarketActivityTracker)
+	b.Write(c.MultisigControl)
+	return b
 }
 
 // Set set a specific checkpoint value using the name the engine returns.

@@ -3223,13 +3223,12 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
-
 	// ignore trading termination while the governance proposal hasn't been enacted
 	if m.mkt.State == types.MarketStateProposed {
 		return
 	}
 
+	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
 	if m.mkt.State != types.MarketStatePending {
 		// we're either going to set state to trading terminated
 		// or we'll be performing the final settlement (setting market status to settled)
