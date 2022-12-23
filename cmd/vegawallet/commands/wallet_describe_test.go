@@ -23,7 +23,7 @@ func testGetWalletInfoFlagsValidFlagsSucceeds(t *testing.T) {
 	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 
-	f := &cmd.GetWalletInfoFlags{
+	f := &cmd.DescribeWalletFlags{
 		Wallet:         walletName,
 		PassphraseFile: passphraseFilePath,
 	}
@@ -57,13 +57,13 @@ func testGetWalletInfoFlagsMissingWalletFails(t *testing.T) {
 	assert.Empty(t, req)
 }
 
-func newGetWalletInfoFlags(t *testing.T, testDir string) *cmd.GetWalletInfoFlags {
+func newGetWalletInfoFlags(t *testing.T, testDir string) *cmd.DescribeWalletFlags {
 	t.Helper()
 
 	_, passphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 
-	return &cmd.GetWalletInfoFlags{
+	return &cmd.DescribeWalletFlags{
 		Wallet:         walletName,
 		PassphraseFile: passphraseFilePath,
 	}
