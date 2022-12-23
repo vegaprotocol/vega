@@ -51,7 +51,7 @@ func (h *AdminSendRawTransaction) Handle(ctx context.Context, rawParams jsonrpc.
 
 	tx := &commandspb.Transaction{}
 	if err := proto.Unmarshal([]byte(params.RawTransaction), tx); err != nil {
-		return nil, invalidParams(ErrTransactionIsMalformed)
+		return nil, invalidParams(ErrRawTransactionIsNotValidVegaTransaction)
 	}
 
 	var hosts []string

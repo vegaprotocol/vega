@@ -80,7 +80,7 @@ func (h *AdminSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 
 	request := &walletpb.SubmitTransactionRequest{}
 	if err := jsonpb.Unmarshal(strings.NewReader(params.RawTransaction), request); err != nil {
-		return nil, invalidParams(ErrTransactionIsMalformed)
+		return nil, invalidParams(ErrTransactionIsNotValidVegaCommand)
 	}
 
 	request.PubKey = params.PublicKey
@@ -217,7 +217,7 @@ func validateAdminSignTransactionParams(rawParams jsonrpc.Params) (ParsedAdminSi
 
 	tx, err := json.Marshal(params.Transaction)
 	if err != nil {
-		return ParsedAdminSignTransactionParams{}, ErrEncodedTransactionIsNotValid
+		return ParsedAdminSignTransactionParams{}, ErrTransactionIsNotValidJSON
 	}
 
 	if params.Network != "" && params.LastBlockData != nil {
