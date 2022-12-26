@@ -207,19 +207,20 @@ func (c *Checkpoint) SetBlockHeight(height int64) error {
 func (c Checkpoint) HashBytes() bytes.Buffer {
 	var b bytes.Buffer
 	// the order in which we append is quite important
-	b.Write(c.Governance)
+	b.Write(c.NetworkParameters)
 	b.Write(c.Assets)
 	b.Write(c.Collateral)
-	b.Write(c.NetworkParameters)
 	b.Write(c.Delegation)
 	b.Write(c.Epoch)
 	b.Write(c.Block)
+	b.Write(c.Governance)
 	b.Write(c.Rewards)
-	b.Write(c.Validators)
 	b.Write(c.Banking)
+	b.Write(c.Validators)
 	b.Write(c.Staking)
 	b.Write(c.MarketActivityTracker)
 	b.Write(c.MultisigControl)
+
 	return b
 }
 
