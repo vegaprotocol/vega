@@ -15,6 +15,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -96,10 +97,10 @@ type Config struct {
 	StateVar          statevar.Config        `group:"StateVar" namespace:"statevar"`
 	ERC20MultiSig     erc20multisig.Config   `group:"ERC20MultiSig" namespace:"erc20multisig"`
 	ProtocolUpgrade   protocolupgrade.Config `group:"ProtocolUpgrade" namespace:"protocolupgrade"`
+	Pprof             pprof.Config           `group:"Pprof" namespace:"pprof"`
 
-	Pprof        pprof.Config         `group:"Pprof" namespace:"pprof"`
-	NodeMode     cfgencoding.NodeMode `long:"mode" description:"The mode of the vega node [validator, full]"`
-	UlimitNOFile uint64               `long:"ulimit-no-files" description:"Set the max number of open files (see: ulimit -n)" tomlcp:"Set the max number of open files (see: ulimit -n)"`
+	NodeMode         cfgencoding.NodeMode `long:"mode" description:"The mode of the vega node [validator, full]"`
+	MaxMemoryPercent uint8                `long:"max-memory-percent" description:"The maximum amount of memory reserved for the vega node (default: 33%)"`
 }
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
@@ -107,6 +108,7 @@ type Config struct {
 func NewDefaultConfig() Config {
 	return Config{
 		NodeMode:          cfgencoding.NodeModeValidator,
+		MaxMemoryPercent:  33,
 		Admin:             admin.NewDefaultConfig(),
 		API:               api.NewDefaultConfig(),
 		CoreAPI:           coreapi.NewDefaultConfig(),
@@ -135,7 +137,6 @@ func NewDefaultConfig() Config {
 		Checkpoint:        checkpoint.NewDefaultConfig(),
 		Staking:           staking.NewDefaultConfig(),
 		Broker:            broker.NewDefaultConfig(),
-		UlimitNOFile:      8192,
 		Snapshot:          snapshot.NewDefaultConfig(),
 		StateVar:          statevar.NewDefaultConfig(),
 		ERC20MultiSig:     erc20multisig.NewDefaultConfig(),
@@ -146,6 +147,14 @@ func NewDefaultConfig() Config {
 
 func (c Config) IsValidator() bool {
 	return c.NodeMode == cfgencoding.NodeModeValidator
+}
+
+func (c Config) GetMaxMemoryFactor() (float64, error) {
+	if c.MaxMemoryPercent <= 0 || c.MaxMemoryPercent >= 100 {
+		return 0, errors.New("MaxMemoryPercent is out of range, expect > 0 and < 100")
+	}
+
+	return float64(c.MaxMemoryPercent) / 100., nil
 }
 
 func (c Config) HaveEthClient() bool {
