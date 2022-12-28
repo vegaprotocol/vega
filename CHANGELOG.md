@@ -18,6 +18,7 @@
 ### 🐛 Fixes
 - [7207](https://github.com/vegaprotocol/vega/issues/7207) - Fix panic, return on error in pool configuration
 - [7213](https://github.com/vegaprotocol/vega/issues/7213) - Implement separate `DB` for snapshots `metadata`
+- [7220](https://github.com/vegaprotocol/vega/issues/7220) - Fix panic when LP is closed out
 
 ##  0.65.1
 
