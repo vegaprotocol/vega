@@ -111,14 +111,14 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     #   | party  | market id | maintenance | search | initial | release |
     #   | party0 | ETH/DEC21 | 1315        | 1446   | 1578    | 1841    |
 
-    # Then the order book should have the following volumes for market "ETH/DEC21":
-    #   | side | price | volume |
-    #   | buy  | 900   | 1      |
-    #   | buy  | 990   | 1      |
-    #   | buy  | 1035  | 5      |
-    #   | sell | 1055  | 5      |
-    #   | sell | 1010  | 0      |
-    #   | sell | 1100  | 1      |
+    Then the order book should have the following volumes for market "ETH/DEC21":
+      | side | price | volume |
+      | buy  | 900   | 1      |
+      | buy  | 990   | 1      |
+      | buy  | 1035  | 10     |
+      | sell | 1055  | 10     |
+      | sell | 1010  | 0      |
+      | sell | 1100  | 1      |
 
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
@@ -163,8 +163,9 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC21 | buy  | 5      | 1055  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 450    | 0       | 0    |
+      | party   | asset | market id | margin | general | bond |
+      | party0  | ETH   | ETH/DEC21 | 450    | 0       | 0    |
+      | party10 | ETH   | ETH/DEC21 | 1266   | 0       | 3954 |
     # Then the parties should have the following account balances:
     #   | party  | asset | market id | margin | general | bond |
     #   | party0 | ETH   | ETH/DEC21 | 233    | 0       | 0    |
@@ -174,19 +175,11 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | id  | party  | market    | commitment amount | status           |
       | lp1 | party0 | ETH/DEC21 | 5000              | STATUS_CANCELLED |
 
-    Then the parties should have the following account balances:
-      | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 450    | 0       | 0    |
-
     # existing LP position not liquidated as there isn't enough volume on the book
     Then the parties should have the following profit and loss:
-      | party  | volume | unrealised pnl | realised pnl |
-      | party0 | -22    | -90            | 0            |
-    And the order book should have the following volumes for market "ETH/DEC21":
-      | side | price | volume |
-      | sell | 1100  | 1      |
-      | buy  | 990   | 1      |
-      | buy  | 900   | 1      |
+      | party   | volume | unrealised pnl | realised pnl |
+      | party0  | -22    | -90            | 0            |
+      | party10 | -5     | 0              | 0            |
 
     Then the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
