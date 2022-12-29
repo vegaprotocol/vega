@@ -191,13 +191,21 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | sell | 1100  | 1      |
     And the accumulated liquidity fees should be "35" for the market "ETH/DEC21"
 
+    When the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party4 | ETH/DEC21 | sell | 25     | 1055  | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the network moves ahead "1" blocks
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | bond |
+      | party0 | ETH   | ETH/DEC21 | 450    | 0       | 0    |
+
     # Make sure that at no point fees get distributed since the LP has been closed out
     Then the network moves ahead "12" blocks
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
-      | 1055       | TRADING_MODE_CONTINUOUS | 1       | 987       | 1136      | 4009         | 5000           | 38            | 990                   | 1045             | 1100                    |
+      | 1055       | TRADING_MODE_CONTINUOUS | 1       | 987       | 1136      | 4009         | 5000           | 38            | 990                   | 1022             | 1055                    |
 
   Scenario: LP gets distressed after auction
     Given the simple risk model named "simple-risk-model-2":
