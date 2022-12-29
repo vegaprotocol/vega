@@ -116,6 +116,10 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party0 | -7     | -90            | 0            |
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
+      | 1055       | TRADING_MODE_CONTINUOUS | 1899         | 5000           | 18            | 990                   | 1045             | 1100                    |
+
     And the insurance pool balance should be "826" for the market "ETH/DEC21"
 
     When the parties place the following orders with ticks:
