@@ -15,7 +15,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | 0.1  | 0.1   | 100         | 50            | 0.2                    |
     And the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r   | sigma |
-      | 0.000001      | 0.1 | 0  | 1.4 | -1    |
+      | 0.000001      | 0.1 | 0  | 1.4 | 1     |
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
@@ -53,8 +53,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     When the opening auction period ends for market "ETH/DEC21"
     Then the auction ends with a traded volume of "10" at a price of "1000"
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1000         | 5000           | 10            | 990                   | 1000             | 1010                    |
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 950       | 1100      | 1000         | 5000           | 10            | 990                   | 1000             | 1010                    |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
       | party0 | ETH   | ETH/DEC21 | 720    | 1       | 5000 |
@@ -85,14 +85,15 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party  | volume | unrealised pnl | realised pnl |
       | party0 | -2     | 0              | 0            |
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
-      | 1010       | TRADING_MODE_CONTINUOUS | 1313         | 5000           | 13            | 990                   | 1045             | 1100                    |
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
+      | 1010       | TRADING_MODE_CONTINUOUS | 1       | 950       | 1100      | 1313         | 5000           | 13            | 990                   | 1045             | 1100                    |
 
     Then the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
       | buy  | 900   | 1      |
       | buy  | 990   | 1      |
-      | sell | 1010  | 0      |
+      | buy  | 1035  | 5      |
+      | sell | 1055  | 5      |
       | sell | 1100  | 1      |
 
     # Keep trading with LP volume until LP can't support the margin
@@ -110,6 +111,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | side | price | volume |
       | buy  | 900   | 1      |
       | buy  | 990   | 1      |
+      | buy  | 1035  | 5      |
+      | sell | 1055  | 5      |
       | sell | 1010  | 0      |
       | sell | 1100  | 1      |
 
@@ -117,8 +120,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party  | volume | unrealised pnl | realised pnl |
       | party0 | -7     | -90            | 0            |
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
-      | 1055       | TRADING_MODE_CONTINUOUS | 1899         | 5000           | 18            | 990                   | 1045             | 1100                    |
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
+      | 1055       | TRADING_MODE_CONTINUOUS | 1       | 950       | 1100      | 1899         | 5000           | 18            | 990                   | 1045             | 1100                    |
 
     And the insurance pool balance should be "826" for the market "ETH/DEC21"
 
