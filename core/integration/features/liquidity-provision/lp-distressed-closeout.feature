@@ -166,6 +166,9 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party   | asset | market id | margin | general | bond |
       | party0  | ETH   | ETH/DEC21 | 450    | 0       | 0    |
       | party10 | ETH   | ETH/DEC21 | 1266   | 0       | 3954 |
+    And the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release |
+      | party0 | ETH/DEC21 | 2475        | 2722   | 2970    | 3465    |
     # Then the parties should have the following account balances:
     #   | party  | asset | market id | margin | general | bond |
     #   | party0 | ETH   | ETH/DEC21 | 233    | 0       | 0    |
