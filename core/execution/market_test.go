@@ -6124,7 +6124,7 @@ func TestLPOrdersRollback(t *testing.T) {
 			price  uint64
 			size   uint64
 		}{
-			// First 4 orders go through as there's enough margin
+			// First 4 orders g
 			{
 				side:   types.SideBuy,
 				status: types.OrderStatusStopped,
@@ -6205,7 +6205,7 @@ func TestLPOrdersRollback(t *testing.T) {
 				size:   s1Size,
 			},
 		}
-    //	TestLiquidityScoresMechanics
+		//	TestLiquidityScoresMechanics
 
 		require.Len(t, found, len(expected))
 
