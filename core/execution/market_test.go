@@ -6095,7 +6095,7 @@ func TestLPOrdersRollback(t *testing.T) {
 		assert.Equal(t, types.LiquidityProvisionStatusRejected.String(), found.Status.String())
 	})
 
-	t.Run("ExpectedEventStatus", func(t *testing.T) {
+	t.Run("ExpectEventStatus", func(t *testing.T) {
 		// First collect all the orders events for party-2
 		found := []*types.Order{}
 		for _, e := range tm.events {
@@ -6124,7 +6124,35 @@ func TestLPOrdersRollback(t *testing.T) {
 			price  uint64
 			size   uint64
 		}{
-			// First 3 orders go through as there's enough margin
+			// First 4 orders go through as there's enough margin
+			{
+				side:   types.SideBuy,
+				status: types.OrderStatusStopped,
+				ref:    lp.Reference,
+				price:  0,
+				size:   0,
+			},
+			{
+				side:   types.SideBuy,
+				status: types.OrderStatusStopped,
+				ref:    lp.Reference,
+				price:  0,
+				size:   0,
+			},
+			{
+				side:   types.SideSell,
+				status: types.OrderStatusStopped,
+				ref:    lp.Reference,
+				price:  0,
+				size:   0,
+			},
+			{
+				side:   types.SideSell,
+				status: types.OrderStatusStopped,
+				ref:    lp.Reference,
+				price:  0,
+				size:   0,
+			},
 			{
 				side:   types.SideBuy,
 				status: types.OrderStatusActive,
@@ -6177,6 +6205,7 @@ func TestLPOrdersRollback(t *testing.T) {
 				size:   s1Size,
 			},
 		}
+    //	TestLiquidityScoresMechanics
 
 		require.Len(t, found, len(expected))
 

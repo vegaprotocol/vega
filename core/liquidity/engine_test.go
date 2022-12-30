@@ -585,6 +585,7 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 
 	// We don't care about the following calls
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
 	// initialise PoT
 	tng.engine.SetGetStaticPricesFunc(func() (num.Decimal, num.Decimal, error) { return bestBid, bestAsk, nil })
