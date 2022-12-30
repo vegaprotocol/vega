@@ -10,9 +10,9 @@ var completionLong = `To load completions:
 
 Bash:  To load completions for each session, execute once:
 -----  Linux:
-       $ {{.Software}} completion bash > /etc/bash_completion.d/{{.Software}}
+       $ {{.Software}} shell completion bash > /etc/bash_completion.d/{{.Software}}
        MacOS:
-       $ {{.Software}} completion bash > /usr/local/etc/bash_completion.d/{{.Software}}
+       $ {{.Software}} shell completion bash > /usr/local/etc/bash_completion.d/{{.Software}}
 
 
 Zsh:   If shell completion is not already enabled in your environment you will need
@@ -20,16 +20,16 @@ Zsh:   If shell completion is not already enabled in your environment you will n
        $ echo "autoload -U compinit; compinit" >> ~/.zshrc
 
        To load completions for each session, execute once:
-       $ {{.Software}} completion zsh > "${fpath[1]}/_{{.Software}}"
+       $ {{.Software}} shell completion zsh > "${fpath[1]}/_{{.Software}}"
 
        You will need to start a new shell for this setup to take effect.
 
 
 Fish:  To load completions for each session, execute once:
------  $ {{.Software}} completion fish > ~/.config/fish/completions/{{.Software}}.fish
+-----  $ {{.Software}} shell completion fish > ~/.config/fish/completions/{{.Software}}.fish
 `
 
-func NewCmdCompletion(w io.Writer) *cobra.Command {
+func NewCmdShellCompletion(w io.Writer) *cobra.Command {
 	return &cobra.Command{
 		Use:                   "completion [bash|zsh|fish|powershell]",
 		Short:                 "Generate completion script",

@@ -62,25 +62,26 @@ type SQLStoreBroker struct {
 	log                          *logging.Logger
 	subscribers                  []SQLBrokerSubscriber
 	typeToSubs                   map[events.Type][]SQLBrokerSubscriber
-	eventSource                  eventSource
+	eventSource                  EventReceiver
 	transactionManager           TransactionManager
 	blockStore                   BlockStore
-	onBlockCommitted             func(ctx context.Context, chainId string, lastCommittedBlockHeight int64)
+	onBlockCommitted             func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool)
 	protocolUpdateHandler        ProtocolUpgradeHandler
 	chainID                      string
 	lastBlock                    *entities.Block
 	slowTimeUpdateTicker         *time.Ticker
 	receivedProtocolUpgradeEvent bool
+	snapshotTaken                bool
 }
 
 func NewSQLStoreBroker(
 	log *logging.Logger,
 	config Config,
 	chainID string,
-	eventsource eventSource,
+	eventsource EventReceiver,
 	transactionManager TransactionManager,
 	blockStore BlockStore,
-	onBlockCommitted func(ctx context.Context, chainId string, lastCommittedBlockHeight int64),
+	onBlockCommitted func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool),
 	protocolUpdateHandler ProtocolUpgradeHandler,
 	subs []SQLBrokerSubscriber,
 ) *SQLStoreBroker {
@@ -129,7 +130,7 @@ func (b *SQLStoreBroker) Receive(ctx context.Context) error {
 			return err
 		}
 
-		b.onBlockCommitted(ctx, b.chainID, b.lastBlock.Height)
+		b.onBlockCommitted(ctx, b.chainID, b.lastBlock.Height, b.snapshotTaken)
 
 		if b.receivedProtocolUpgradeEvent {
 			b.protocolUpdateHandler.OnProtocolUpgradeEvent(ctx, b.chainID, b.lastBlock.Height)
@@ -216,7 +217,7 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 	}
 
 	defer b.slowTimeUpdateTicker.Stop()
-
+	b.snapshotTaken = false
 	betweenBlocks := false
 	for {
 		// Do a pre-check on ctx.Done() since select() cases are randomized, this reduces
@@ -260,16 +261,20 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 				}
 				b.slowTimeUpdateTicker.Reset(slowTimeUpdateThreshold)
 				betweenBlocks = true
-				if b.receivedProtocolUpgradeEvent {
-					// we've received a protocol upgrade event so now that we've got the end block event
-					// we should exit the loop
-					return nil, nil
-				}
 			case events.BeginBlockEvent:
 				beginBlock := e.(entities.BeginBlockEvent)
 				return entities.BlockFromBeginBlock(beginBlock)
+			case events.CoreSnapshotEvent:
+				// if a snapshot is taken on a protocol upgrade block, we want it to be taken synchronously as part of handling of protocol upgrade
+				b.snapshotTaken = !e.StreamMessage().GetCoreSnapshotEvent().ProtocolUpgradeBlock
+				if err = b.handleEvent(blockCtx, e); err != nil {
+					return nil, err
+				}
 			case events.ProtocolUpgradeStartedEvent:
 				b.receivedProtocolUpgradeEvent = true
+				// we've received a protocol upgrade event which is the last event core will have sent out
+				// so we can leave now
+				return nil, nil
 			default:
 				if betweenBlocks {
 					// we should only be receiving a BeginBlockEvent immediately after an EndBlockEvent

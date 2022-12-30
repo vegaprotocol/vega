@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	vfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"go.uber.org/zap"
 )
 
@@ -47,7 +48,7 @@ func (a *API) DispatchRequest(ctx context.Context, request Request, metadata Req
 	if !ok {
 		a.log.Info("invalid method",
 			zap.String("trace-id", metadata.TraceID),
-			zap.String("method", request.Method))
+			zap.String("method", vfmt.Escape(request.Method)))
 		return NewErrorResponse(request.ID, NewMethodNotFound(fmt.Errorf("method %q is not supported", request.Method)))
 	}
 

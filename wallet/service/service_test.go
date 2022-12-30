@@ -37,6 +37,7 @@ type testService struct {
 	handler     *mocks.MockWalletHandler
 	nodeForward *mocks.MockNodeForward
 	auth        *mocks.MockAuth
+	pow         *mocks.MockProofOfWork
 }
 
 func getTestService(t *testing.T, consentPolicy string) *testService {
@@ -46,6 +47,7 @@ func getTestService(t *testing.T, consentPolicy string) *testService {
 	handler := mocks.NewMockWalletHandler(ctrl)
 	auth := mocks.NewMockAuth(ctrl)
 	nodeForward := mocks.NewMockNodeForward(ctrl)
+	pow := mocks.NewMockProofOfWork(ctrl)
 
 	pendingConsents := make(chan service.ConsentRequest, 1)
 	sentTxs := make(chan service.SentTransaction, 1)
@@ -60,7 +62,7 @@ func getTestService(t *testing.T, consentPolicy string) *testService {
 		t.Fatalf("unknown consent policy: %s", consentPolicy)
 	}
 	// no needs of the conf or path as we do not run an actual service
-	s := service.NewService(zap.NewNop(), &network.Network{}, nil, handler, auth, nodeForward, policy)
+	s := service.NewService(zap.NewNop(), &network.Network{}, nil, handler, auth, nodeForward, pow, policy)
 
 	return &testService{
 		Service:     s,
@@ -68,6 +70,7 @@ func getTestService(t *testing.T, consentPolicy string) *testService {
 		handler:     handler,
 		auth:        auth,
 		nodeForward: nodeForward,
+		pow:         pow,
 	}
 }
 
@@ -188,7 +191,7 @@ func testServiceImportWalletOK(t *testing.T) {
 			// given
 			walletName := vgrand.RandomStr(5)
 			passphrase := vgrand.RandomStr(5)
-			payload := fmt.Sprintf(`{"wallet": "%s", "passphrase": "%s", "recoveryPhrase": "%s", "version": %d}`, walletName, passphrase, testRecoveryPhrase, tc.version)
+			payload := fmt.Sprintf(`{"wallet": "%s", "passphrase": "%s", "recoveryPhrase": "%s", "keyDerivationVersion": %d}`, walletName, passphrase, testRecoveryPhrase, tc.version)
 
 			// setup
 			s.handler.EXPECT().ImportWallet(walletName, passphrase, testRecoveryPhrase, tc.version).Times(1).Return(nil)
@@ -706,6 +709,7 @@ func testCheckTransactionSucceeds(t *testing.T) {
 	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
 
 	// setup
+	s.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
 	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), chainID).Times(1).Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().CheckTx(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&api.CheckTransactionResponse{
@@ -748,6 +752,7 @@ func testCheckTransactionWithRejectedTransactionSucceeds(t *testing.T) {
 	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
 
 	// setup
+	s.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
 	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), chainID).Times(1).Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().CheckTx(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&api.CheckTransactionResponse{
@@ -788,6 +793,7 @@ func testCheckTransactionWithFailedTransactionFails(t *testing.T) {
 	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
 
 	// setup
+	s.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
 	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), chainID).Times(1).Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().CheckTx(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, assert.AnError)
@@ -817,6 +823,7 @@ func testAcceptSigningTransactionSucceeds(t *testing.T) {
 	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
 
 	// setup
+	s.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
 	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), chainID).Times(1).Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1).
@@ -868,6 +875,7 @@ func testSigningTransactionWithPropagationSucceeds(t *testing.T) {
 	payload := fmt.Sprintf(`{"propagate": true, "pubKey": "%s", "orderCancellation": {}}`, vgrand.RandomStr(5))
 
 	// setup
+	s.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
 	s.handler.EXPECT().SignTx(walletName, gomock.Any(), gomock.Any(), chainID).Times(1).Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1).
@@ -899,6 +907,7 @@ func testSigningTransactionWithFailedPropagationFails(t *testing.T) {
 	payload := fmt.Sprintf(`{"propagate": true, "pubKey": "%s", "orderCancellation": {}}`, vgrand.RandomStr(5))
 
 	// setup
+	s.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
 	s.handler.EXPECT().SignTx(walletName, gomock.Any(), gomock.Any(), chainID).Times(1).Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1).
@@ -1337,7 +1346,7 @@ func testAcceptSigningTransactionFailsSpam(t *testing.T) {
 		ChainId:             chainID,
 	}, 0, nil)
 	// when
-
+	s.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1).
 		Return(&api.SubmitTransactionResponse{Success: false, Code: 89}, nil)
 

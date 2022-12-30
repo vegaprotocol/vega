@@ -17,13 +17,14 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 )
 
-func addTestEpoch(t *testing.T, es *sqlstore.Epochs,
+func addTestEpoch(t *testing.T, ctx context.Context, es *sqlstore.Epochs,
 	epochID int64,
 	startTime time.Time,
 	expireTime time.Time,
@@ -38,39 +39,48 @@ func addTestEpoch(t *testing.T, es *sqlstore.Epochs,
 		EndTime:    endTime,
 		VegaTime:   block.VegaTime,
 	}
-	err := es.Add(context.Background(), r)
+	if endTime == nil {
+		r.FirstBlock = &block.Height
+	} else {
+		r.LastBlock = &block.Height
+	}
+	err := es.Add(ctx, r)
 	require.NoError(t, err)
 	return r
 }
 
 func TestEpochs(t *testing.T) {
-	defer DeleteEverything()
-	ctx := context.Background()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	es := sqlstore.NewEpochs(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
-	block1 := addTestBlock(t, bs)
-	block2 := addTestBlock(t, bs)
-	block3 := addTestBlock(t, bs)
 
 	epoch1Start := time.Date(2022, 1, 1, 0, 0, 0, 0, time.Local)
 	epoch1Expire := epoch1Start.Add(time.Minute)
-	epoch1End := epoch1Expire.Add(time.Second)
-	epoch2Start := epoch1End
+	epoch1End := epoch1Start
+	epoch2Start := epoch1End.Add(time.Second)
 	epoch2Expire := epoch2Start.Add(time.Minute)
-	epoch2End := epoch1Expire.Add(time.Second)
+	epoch2End := epoch2Start.Add(time.Second)
 	epoch3Start := epoch2End
 	epoch3Expire := epoch3Start.Add(time.Minute)
 
+	block1 := addTestBlockForHeightAndTime(t, ctx, bs, 1, epoch1Start)
+	block2 := addTestBlockForHeightAndTime(t, ctx, bs, 2, epoch2Start)
+	block3 := addTestBlockForHeightAndTime(t, ctx, bs, 3, epoch3Start)
+
 	// Insert one epoch that gets updated in the same block
-	epoch1 := addTestEpoch(t, es, 1, epoch1Start, epoch1Expire, nil, block1)
-	epoch1b := addTestEpoch(t, es, 1, epoch1Start, epoch1Expire, &epoch1End, block1)
+	epoch1 := addTestEpoch(t, ctx, es, 1, epoch1Start, epoch1Expire, nil, block1)
+	epoch1b := addTestEpoch(t, ctx, es, 1, epoch1Start, epoch1Expire, &epoch1End, block1)
+	epoch1b.FirstBlock = epoch1.FirstBlock
 
 	// And another which is updated in a subsequent block
-	epoch2 := addTestEpoch(t, es, 2, epoch2Start, epoch2Expire, nil, block1)
-	epoch2b := addTestEpoch(t, es, 2, epoch2Start, epoch2Expire, &epoch2End, block2)
+	epoch2 := addTestEpoch(t, ctx, es, 2, epoch2Start, epoch2Expire, nil, block2)
+	epoch2b := addTestEpoch(t, ctx, es, 2, epoch2Start, epoch2Expire, &epoch2End, block3)
+	epoch2b.FirstBlock = epoch2.FirstBlock
 
 	// And finally one which isn't updated (e.g. hasn't ended yet)
-	epoch3 := addTestEpoch(t, es, 3, epoch3Start, epoch3Expire, nil, block3)
+	epoch3 := addTestEpoch(t, ctx, es, 3, epoch3Start, epoch3Expire, nil, block3)
 
 	_ = epoch1
 	_ = epoch2

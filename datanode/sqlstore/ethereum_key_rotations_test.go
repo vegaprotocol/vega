@@ -30,6 +30,7 @@ func randomEthAddress() entities.EthereumAddress {
 }
 
 func addTestEthereumKeyRotation(t *testing.T,
+	ctx context.Context,
 	store *sqlstore.EthereumKeyRotations,
 	block entities.Block,
 	seqNum uint64,
@@ -43,50 +44,50 @@ func addTestEthereumKeyRotation(t *testing.T,
 		BlockHeight: 42,
 		SeqNum:      seqNum,
 	}
-	err := store.Add(context.Background(), kr)
+	err := store.Add(ctx, kr)
 	require.NoError(t, err)
 	return kr
 }
 
 func TestEthereumKeyRotations(t *testing.T) {
-	DeleteEverything()
-	defer DeleteEverything()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	blockStore := sqlstore.NewBlocks(connectionSource)
-	block := addTestBlock(t, blockStore)
+	block := addTestBlock(t, ctx, blockStore)
 	nodeStore := sqlstore.NewNode(connectionSource)
-	node := addTestNode(t, nodeStore, block, "beef")
+	node := addTestNode(t, ctx, nodeStore, block, "beef")
 
 	krStore := sqlstore.NewEthereumKeyRotations(connectionSource)
 
 	var kr entities.EthereumKeyRotation
 	t.Run("adding", func(t *testing.T) {
-		kr = addTestEthereumKeyRotation(t, krStore, block, 0)
+		kr = addTestEthereumKeyRotation(t, ctx, krStore, block, 0)
 	})
 
 	t.Run("fetching all", func(t *testing.T) {
-		fetched, _, err := krStore.List(context.Background(), entities.NodeID(""), entities.CursorPagination{})
+		fetched, _, err := krStore.List(ctx, entities.NodeID(""), entities.CursorPagination{})
 		require.NoError(t, err)
 		require.Len(t, fetched, 1)
 		assert.Equal(t, fetched[0], kr)
 	})
 
 	t.Run("fetching all by node", func(t *testing.T) {
-		fetched, _, err := krStore.List(context.Background(), node.ID, entities.CursorPagination{})
+		fetched, _, err := krStore.List(ctx, node.ID, entities.CursorPagination{})
 		require.NoError(t, err)
 		require.Len(t, fetched, 1)
 		assert.Equal(t, fetched[0], kr)
 	})
 
 	t.Run("fetching all by bad node", func(t *testing.T) {
-		fetched, _, err := krStore.List(context.Background(), entities.NodeID("baad"), entities.CursorPagination{})
+		fetched, _, err := krStore.List(ctx, entities.NodeID("baad"), entities.CursorPagination{})
 		require.NoError(t, err)
 		require.Len(t, fetched, 0)
 	})
 
 	t.Run("adding more", func(t *testing.T) {
 		for i := 0; i < 10; i++ {
-			addTestEthereumKeyRotation(t, krStore, block, uint64(i+1))
+			addTestEthereumKeyRotation(t, ctx, krStore, block, uint64(i+1))
 		}
 	})
 
@@ -95,7 +96,7 @@ func TestEthereumKeyRotations(t *testing.T) {
 		pagination, err := entities.NewCursorPagination(&five, nil, nil, nil, true)
 		require.NoError(t, err)
 
-		fetched, pageInfo, err := krStore.List(context.Background(), entities.NodeID(""), pagination)
+		fetched, pageInfo, err := krStore.List(ctx, entities.NodeID(""), pagination)
 		require.NoError(t, err)
 		require.Len(t, fetched, 5)
 		require.True(t, pageInfo.HasNextPage)
@@ -104,7 +105,7 @@ func TestEthereumKeyRotations(t *testing.T) {
 			pagination, err := entities.NewCursorPagination(&five, &pageInfo.StartCursor, nil, nil, true)
 			require.NoError(t, err)
 
-			fetchedAgain, pageInfo, err := krStore.List(context.Background(), entities.NodeID(""), pagination)
+			fetchedAgain, pageInfo, err := krStore.List(ctx, entities.NodeID(""), pagination)
 			require.NoError(t, err)
 			require.Len(t, fetched, 5)
 			require.True(t, pageInfo.HasNextPage)
@@ -116,7 +117,7 @@ func TestEthereumKeyRotations(t *testing.T) {
 			pagination, err := entities.NewCursorPagination(nil, nil, &five, &pageInfo.EndCursor, true)
 			require.NoError(t, err)
 
-			fetchedAgain, pageInfo, err := krStore.List(context.Background(), entities.NodeID(""), pagination)
+			fetchedAgain, pageInfo, err := krStore.List(ctx, entities.NodeID(""), pagination)
 			require.NoError(t, err)
 			// The last one won't be included
 			require.Len(t, fetchedAgain, 4)

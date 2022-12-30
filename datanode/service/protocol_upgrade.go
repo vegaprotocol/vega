@@ -33,6 +33,7 @@ func (p *ProtocolUpgrade) GetProtocolUpgradeStarted() bool {
 }
 
 func (p *ProtocolUpgrade) SetProtocolUpgradeStarted() {
+	p.log.Info("datanode is ready for protocol upgrade")
 	p.upgradeStarted = true
 }
 

@@ -1,27 +1,105 @@
 # Changelog
 
-## Unreleased 0.64.0
+## Unreleased 0.66.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6957](https://github.com/vegaprotocol/vega/issues/6957) - Remove `client.<get|request>_permissions` endpoints on the wallet.
+- [7079](https://github.com/vegaprotocol/vega/issues/7079) - Remove deprecated `version` property from wallet API.
+- [7067](https://github.com/vegaprotocol/vega/issues/7067) - Remove legacy technical commands on the wallet command line.
+- [7069](https://github.com/vegaprotocol/vega/issues/7069) - Remove deprecated `vegawallet info` command line.
+- [7010](https://github.com/vegaprotocol/vega/issues/7010) - Remove the deprecated `encodedTransaction` fields on wallet API endpoints.
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [7052](https://github.com/vegaprotocol/vega/issues/7052) - Add a specific error message when trying to access administrative endpoints on wallet API
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
+- [7207](https://github.com/vegaprotocol/vega/issues/7207) - Fix panic, return on error in pool configuration
+- [7213](https://github.com/vegaprotocol/vega/issues/7213) - Implement separate `DB` for snapshots `metadata`
+- [7220](https://github.com/vegaprotocol/vega/issues/7220) - Fix panic when LP is closed out
+
+##  0.65.1
+
+### 🛠 Improvements
+- [6574](https://github.com/vegaprotocol/vega/issues/6574) - Use same default for the probability of trading for floating point consensus as we do for the value between best bid and ask.
+
+### 🐛 Fixes
+- [7188](https://github.com/vegaprotocol/vega/issues/7188) - Reset liquidity score even if fees accrued in a period were 0.
+- [7189](https://github.com/vegaprotocol/vega/issues/7189) - Include LP orders outside PM price range but within LP price in the liquidity score.
+- [7195](https://github.com/vegaprotocol/vega/issues/7195) - Ignore oracle messages while market is in proposed state
+- [7198](https://github.com/vegaprotocol/vega/issues/7198) - Reduce `RAM` usage when tendermint calls list snapshot
+
+## 0.65.0
+
+### 🚨 Breaking changes
+- [6955](https://github.com/vegaprotocol/vega/issues/6955) - Market definition extended with the new field for LP price range across the API.
+- [6645](https://github.com/vegaprotocol/vega/issues/6645) - Set decimal number value to be used from oracle instead of from tradable instruments
+
+### 🗑️ Deprecation
+- [7068](https://github.com/vegaprotocol/vega/issues/7068) - Alias `vegawallet info` to `vegawallet describe`, before definitive renaming.
+
+### 🛠 Improvements
+- [7032](https://github.com/vegaprotocol/vega/issues/7032) - Make deposits and withdrawals `hypertables` and change `deposits_current` and `withdrawals_current` into views to improve resource usage
+- [7136](https://github.com/vegaprotocol/vega/issues/7136) - Update ban duration to 30 minutes for spam
+- [7026](https://github.com/vegaprotocol/vega/issues/7026) - Let decentralised history use the snapshot event from the core as an indication for snapshot rather than doing the calculation based on the interval network parameter.
+- [7108](https://github.com/vegaprotocol/vega/issues/7108) - Return `ArgumentError` if candle id not supplied to `ListCandleData`
+- [7098](https://github.com/vegaprotocol/vega/issues/7098) - Add an event when the core is taking a snapshot
+- [7028](https://github.com/vegaprotocol/vega/issues/7028) - Add `JSON` output for `dehistory` commands; fix `config` override on command line
+- [7122](https://github.com/vegaprotocol/vega/issues/7122) - Allow for tolerance in validator performance calculation
+- [7104](https://github.com/vegaprotocol/vega/issues/7104) - Provide a better error message when party has insufficient balance of an asset
+- [7143](https://github.com/vegaprotocol/vega/issues/7143) - Update `grpc-rest-bindings` for Oracle `API`
+- [7027](https://github.com/vegaprotocol/vega/issues/7027) - `Dehistory` store does not clean up resources after a graceful shutdown
+- [7157](https://github.com/vegaprotocol/vega/issues/7157) - Core waits for data node and shuts down gracefully during protocol upgrade
+- [7113](https://github.com/vegaprotocol/vega/issues/7113) - Added API for epoch summaries of rewards distributed
+- [6956](https://github.com/vegaprotocol/vega/issues/6956) - Include liquidity measure of deployed orders in the fees distribution
+- [7168](https://github.com/vegaprotocol/vega/issues/7168) - Expose liquidity score on on market data `API`
+
+### 🐛 Fixes
+- [7040](https://github.com/vegaprotocol/vega/issues/7040) - Block explorer use different codes than 500 on error
+- [7099](https://github.com/vegaprotocol/vega/issues/7099) - Remove undelegate method `IN_ANGER`
+- [7021](https://github.com/vegaprotocol/vega/issues/7021) - MTM settlement on trading terminated fix.
+- [7102](https://github.com/vegaprotocol/vega/issues/7102) - Ensure the `api-token init -f` wipes the tokens file
+- [7106](https://github.com/vegaprotocol/vega/issues/7106) - Properties of oracle data sent in non-deterministic order
+- [7000](https://github.com/vegaprotocol/vega/issues/7000) - Wallet honours proof of work difficulty increases
+- [7029](https://github.com/vegaprotocol/vega/issues/7029) - Remove unsafe `GRPC` endpoint in data node
+- [7116](https://github.com/vegaprotocol/vega/issues/7116) - Fix MTM trade price check when trading is terminated.
+- [7173](https://github.com/vegaprotocol/vega/issues/7173) - Fix deterministic order of price bounds on market data events
+- [7112](https://github.com/vegaprotocol/vega/issues/7112) - Restore order's original price when restoring from a snapshot
+- [6955](https://github.com/vegaprotocol/vega/issues/6955) - Remove scaling by probability when implying LP volumes. Only change the LP order price if it’s outside the new “valid LP price range” - move it to the bound in that case.
+- [7132](https://github.com/vegaprotocol/vega/issues/7132) - Make the recovery phrase import white space resistant
+- [7150](https://github.com/vegaprotocol/vega/issues/7150) - Avoid taking 2 snapshots upon protocol upgrade block
+- [7142](https://github.com/vegaprotocol/vega/issues/7142) - Do not recalculate margins based on potential positions when market is terminated.
+- [7172](https://github.com/vegaprotocol/vega/issues/7172) - Make markets table a hyper table and update queries.
+
+## 0.64.0
+
+### 🗑️ Deprecation
+- [7065](https://github.com/vegaprotocol/vega/issues/7065) - Scope technical commands on wallet command line
+- [7066](https://github.com/vegaprotocol/vega/issues/7066) - Move network compatibility check to a dedicated wallet command line
+
+### 🛠 Improvements
+- [7052](https://github.com/vegaprotocol/vega/issues/7052) - Add a specific error message when trying to access administrative endpoints on wallet API
+- [7064](https://github.com/vegaprotocol/vega/issues/7064) - Make `SQL` store tests run in temporary transactions instead of truncating all tables for each test
+- [7053](https://github.com/vegaprotocol/vega/issues/7053) - Add info endpoint for the block explorer
+
+### 🐛 Fixes
+- [7011](https://github.com/vegaprotocol/vega/issues/7011) - Incorrect flagging of live orders when multiple updates in the same block
 - [7037](https://github.com/vegaprotocol/vega/issues/7037) - Reinstate permissions endpoints on the wallet API
 - [7034](https://github.com/vegaprotocol/vega/issues/7034) - Rename `network` to `name` in `admin.remove_network`
+- [7031](https://github.com/vegaprotocol/vega/issues/7031) - `datanode` expects protocol upgrade event in the right sequence
+- [7072](https://github.com/vegaprotocol/vega/issues/7072) - Check if event forwarding engine is started before reloading
+- [7017](https://github.com/vegaprotocol/vega/issues/7017) - Fix issue with market update during opening auction
 
 
 ## 0.63.1
 
 ### 🛠 Improvements
 - [7003](https://github.com/vegaprotocol/vega/pull/7003) - Expose bus event stream on the `REST` API
-- [7044](https://github.com/vegaprotocol/vega/issues/7044) - Proof of work improvements 
+- [7044](https://github.com/vegaprotocol/vega/issues/7044) - Proof of work improvements
 - [7041](https://github.com/vegaprotocol/vega/issues/7041) - Change witness vote count to be based on voting power
+- [7073](https://github.com/vegaprotocol/vega/issues/7073) - Upgrade `btcd` library
 
 ## 0.63.0
 
@@ -65,6 +143,7 @@
 - [6910](https://github.com/vegaprotocol/vega/issues/6910) - Separate settled position from position
 
 ### 🐛 Fixes
+- [6758](https://github.com/vegaprotocol/vega/issues/6758) - Fix first and last block not returned on querying epoch
 - [6924](https://github.com/vegaprotocol/vega/issues/6924) - Fix deterministic sorting when nodes have equal scores and we have to choose who is in the signer set
 - [6812](https://github.com/vegaprotocol/vega/issues/6812) - Network name is derived solely from the filename to cause less confusion if the network `config` is renamed
 - [6831](https://github.com/vegaprotocol/vega/issues/6831) - Fix settlement state in snapshots and market settlement.

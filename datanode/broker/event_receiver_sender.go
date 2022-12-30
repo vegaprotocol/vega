@@ -19,8 +19,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-func NewEventSource(config Config, log *logging.Logger, chainID string) (eventSource, error) {
-	var eventsource eventSource
+func NewEventReceiverSender(config Config, log *logging.Logger, chainID string) (eventReceiverSender, error) {
+	var eventsource eventReceiverSender
 	var err error
 	if config.UseEventFile {
 		absPath, err := filepath.Abs(config.FileEventSourceConfig.File)

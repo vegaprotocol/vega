@@ -8,7 +8,7 @@
     {
       "name": "client.connect_wallet",
       "summary": "Initiates a connection between a wallet and a third-party application.",
-      "description": "This method initiates a connection between a wallet and a third-party application.\n\nThe user has to review the request, and, if they accept it, select the wallet they want to use for this connection.\n\nA connection token is generated and returned to the third-party application. This token is meant to be used in protected methods.\n\n**Supported connections:**\n- Multiple wallets connected for the same hostname. Each connection will have a different token.\n- A single wallet connected to multiple hostnames. Each connection will have a different token.\n- Combination of the above setups.\n\nHowever, it's not possible to have multiple connections on the same wallet for the same hostname. The previous connection will be terminated and a new token will be generated.\n\nThis method should be the entry point of every third-party application. Once connected, see the method `get_permissions`.",
+      "description": "This method initiates a connection between a wallet and a third-party application.\n\nThe user has to review the request, and, if they accept it, select the wallet they want to use for this connection.\n\nA connection token is generated and returned to the third-party application. This token is meant to be used in protected methods.\n\n**Supported connections:**\n- Multiple wallets connected for the same hostname. Each connection will have a different token.\n- A single wallet connected to multiple hostnames. Each connection will have a different token.\n- Combination of the above setups.\n\nHowever, it's not possible to have multiple connections on the same wallet for the same hostname. The previous connection will be terminated and a new token will be generated.\n\nThis method should be the entry point of every third-party application.",
       "tags": [
         {
           "name": "client"
@@ -109,166 +109,6 @@
           "result": {
             "name": "Success",
             "value": null
-          }
-        }
-      ]
-    },
-    {
-      "name": "client.get_permissions",
-      "summary": "Returns the permissions set on the wallet for the third-party application.",
-      "description": "This method returns the permissions set on the wallet for the third-party application.\n\nThis method should be called, by the third-party application, right after it successfully connected to a wallet, to ensure it has sufficient permissions to call the method it relies on. If the third-party application doesn't have enough permissions, see the method `request_permissions`.",
-      "tags": [
-        {
-          "name": "client"
-        },
-        {
-          "name": "permissions"
-        }
-      ],
-      "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "token",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/token"
-          }
-        }
-      ],
-      "result": {
-        "name": "Success",
-        "required": true,
-        "schema": {
-          "type": "object",
-          "required": [
-            "permissions"
-          ],
-          "properties": {
-            "permissions": {
-              "$ref": "#/components/schemas/permissions_summary"
-            }
-          }
-        }
-      },
-      "examples": [
-        {
-          "name": "Get permissions set for \"vega.xyz\"",
-          "description": "The third-party application \"vega.xyz\" wants to know the permissions that have been set on the wallet in use.",
-          "params": [
-            {
-              "name": "token",
-              "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            }
-          ],
-          "result": {
-            "name": "Success",
-            "value": {
-              "publicKeys": "read"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "client.request_permissions",
-      "summary": "Requests permissions update for the third-party application.",
-      "description": "This method allows a third-party application to request new permissions to access the methods it requires.\n\nAll permissions the third-party relies on have to be specified. If a permission is omitted, it will be considered as no longer required and, as a result, be automatically revoked.\n\nThe user has to review the permissions.",
-      "tags": [
-        {
-          "name": "client"
-        },
-        {
-          "name": "permissions"
-        }
-      ],
-      "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "token",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/token"
-          }
-        },
-        {
-          "name": "requestedPermissions",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/permissions_summary"
-          }
-        }
-      ],
-      "result": {
-        "name": "Success",
-        "required": true,
-        "schema": {
-          "type": "object",
-          "required": [
-            "permissions"
-          ],
-          "properties": {
-            "permissions": {
-              "$ref": "#/components/schemas/permissions_summary"
-            }
-          }
-        }
-      },
-      "errors": [
-        {
-          "$ref": "#/components/errors/connection_closed"
-        },
-        {
-          "$ref": "#/components/errors/request_rejected"
-        },
-        {
-          "$ref": "#/components/errors/request_interrupted"
-        }
-      ],
-      "examples": [
-        {
-          "name": "Updating permissions for \"vega.xyz\"",
-          "description": "The third-party application \"vega.xyz\" requests an update of its permissions and the user accepts.",
-          "params": [
-            {
-              "name": "token",
-              "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            },
-            {
-              "name": "requestedPermissions",
-              "value": {
-                "publicKeys": "read"
-              }
-            }
-          ],
-          "result": {
-            "name": "Success",
-            "value": {
-              "permissions": {
-                "publicKeys": "read"
-              }
-            }
-          }
-        },
-        {
-          "name": "Updating permissions for \"vega.xyz\" with omitted permission",
-          "description": "The third-party application \"vega.xyz\" omits a permission during the update and the user accepts. This automatically marks the omitted permission as revoked.",
-          "params": [
-            {
-              "name": "token",
-              "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            },
-            {
-              "name": "requestedPermissions",
-              "value": {}
-            }
-          ],
-          "result": {
-            "name": "Success",
-            "value": {
-              "permissions": {
-                "publicKeys": "none"
-              }
-            }
           }
         }
       ]
@@ -640,7 +480,7 @@
     {
       "name": "admin.create_wallet",
       "summary": "Creates a wallet with its first key-pair.",
-      "description": "This method creates a HD wallet (version 2) and generates its first key-pair the cryptographic algorithm ed25519.\n\nThe passphrase will be used to encrypt the wallet and its keys.\n\nIf successful, the wallet is ready to use for sending transaction.",
+      "description": "This method creates a HD wallet (with version 2 of the key derivation) and generates its first key-pair the cryptographic algorithm ed25519.\n\nThe passphrase will be used to encrypt the wallet and its keys.\n\nIf successful, the wallet is ready to use for sending transaction.",
       "tags": [
         {
           "name": "admin"
@@ -681,7 +521,7 @@
               "description": "the newly generated wallet",
               "required": [
                 "name",
-                "version",
+                "keyDerivationVersion",
                 "recoveryPhrase",
                 "filePath"
               ],
@@ -689,7 +529,7 @@
                 "name": {
                   "type": "string"
                 },
-                "version": {
+                "keyDerivationVersion": {
                   "type": "number"
                 },
                 "recoveryPhrase": {
@@ -744,7 +584,7 @@
             "value": {
               "wallet": {
                 "name": "my-wallet",
-                "version": 2,
+                "keyDerivationVersion": 2,
                 "recoveryPhrase": "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
                 "filePath": "some/path/to/my-wallet"
               },
@@ -768,8 +608,8 @@
     },
     {
       "name": "admin.import_wallet",
-      "summary": "Import a wallet with its first key-pair with a recovery phrase and a version.",
-      "description": "This method imports a wallet using the specified recovery phrase and wallet version, and generates its first key-pair.\n\nThe passphrase will be used to encrypt the wallet and its keys.\n\nIf successful, the wallet is ready to use for sending transaction.",
+      "summary": "Import a wallet with its first key-pair with a recovery phrase and a key derivation version.",
+      "description": "This method imports a wallet using the specified recovery phrase and a key derivation version, and generates its first key-pair.\n\nThe passphrase will be used to encrypt the wallet and its keys.\n\nIf successful, the wallet is ready to use for sending transaction.",
       "tags": [
         {
           "name": "admin"
@@ -802,7 +642,7 @@
           }
         },
         {
-          "name": "version",
+          "name": "keyDerivationVersion",
           "required": true,
           "schema": {
             "type": "number"
@@ -824,14 +664,14 @@
               "description": "the imported wallet",
               "required": [
                 "name",
-                "version",
+                "keyDerivationVersion",
                 "filePath"
               ],
               "properties": {
                 "name": {
                   "type": "string"
                 },
-                "version": {
+                "keyDerivationVersion": {
                   "type": "number"
                 },
                 "filePath": {
@@ -882,7 +722,7 @@
               "value": "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
             },
             {
-              "name": "version",
+              "name": "keyDerivationVersion",
               "value": "2"
             }
           ],
@@ -891,7 +731,7 @@
             "value": {
               "wallet": {
                 "name": "my-wallet",
-                "version": 2,
+                "keyDerivationVersion": 2,
                 "filePath": "some/path/to/my-wallet"
               },
               "key": {
@@ -915,7 +755,7 @@
     {
       "name": "admin.describe_wallet",
       "summary": "Returns the wallet base information.",
-      "description": "This method returns the wallet base information such as its name, ID, type and version. It doesn't return the keys nor the permissions.",
+      "description": "This method returns the wallet base information such as its name, ID, type and key derivation version. It doesn't return the keys nor the permissions.",
       "tags": [
         {
           "name": "admin"
@@ -948,7 +788,7 @@
           "type": "object",
           "required": [
             "name",
-            "version",
+            "keyDerivationVersion",
             "id",
             "type"
           ],
@@ -956,7 +796,7 @@
             "name": {
               "type": "string"
             },
-            "version": {
+            "keyDerivationVersion": {
               "type": "number"
             },
             "id": {
@@ -985,7 +825,7 @@
             "name": "Success",
             "value": {
               "name": "my-wallet",
-              "version": 2,
+              "keyDerivationVersion": 2,
               "type": "HD Wallet",
               "id": "7ffa36b2fb99d8404e9448f0d2ce944055e64c36d895d1fde044c867bfdf779f"
             }
@@ -2175,7 +2015,7 @@
             "name": "Success",
             "value": {
               "masterPublicKey": "9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e",
-              "filePath": "CqsBdGVzdC1jaGFpbi1UaHo5YzYACPfdurmpppHlogEQCqp9iAEIAhAPGkA5ODhlYWUzMjNhMDdmMTIzNjNjMTcwMjVjMjNlZTU4ZWEzMmFjMzkxMjM5OGUxNmJiMGI1Njk2OWY1N2FkYzUyIkA4MWFhZjk2NmU4ZjUxNDIzZjBiZDFkOTMzYWQ0NmY5NjJlMjNiY2Q3MTg4ZWQzZmUwZjUzZjRkYThhMzJhOWVlEpMBCoABYzg3NDVkODhlMWQ1YTBhOGE3NGI5YzRmN2QyMzQ3ZmQ5ZDY1NzIwYTQ3ZmYwNWU3YTZmZmYyOTA0NzhmOTU0M2NjM2E4MzJkNjBmYTJiNmY3ZTQ3YWJlMjE0MGIwOTEyNzBlNTAxZTA5MjVjNDg3NzEwMjViOTkyYTg1ZTAxMDQSDHZlZ2EvZWQyNTUxORgBgH0D0j5AOWRmNjgyYTNjODdkOTA1NjdmMjYwNTY2YTljMjIzY2NiYmI3NTI5YzM4MzQwY2YxNjNiOGZlMTk5ZGJmMGYyZQ=="
+              "encodedTransaction": "CqsBdGVzdC1jaGFpbi1UaHo5YzYACPfdurmpppHlogEQCqp9iAEIAhAPGkA5ODhlYWUzMjNhMDdmMTIzNjNjMTcwMjVjMjNlZTU4ZWEzMmFjMzkxMjM5OGUxNmJiMGI1Njk2OWY1N2FkYzUyIkA4MWFhZjk2NmU4ZjUxNDIzZjBiZDFkOTMzYWQ0NmY5NjJlMjNiY2Q3MTg4ZWQzZmUwZjUzZjRkYThhMzJhOWVlEpMBCoABYzg3NDVkODhlMWQ1YTBhOGE3NGI5YzRmN2QyMzQ3ZmQ5ZDY1NzIwYTQ3ZmYwNWU3YTZmZmYyOTA0NzhmOTU0M2NjM2E4MzJkNjBmYTJiNmY3ZTQ3YWJlMjE0MGIwOTEyNzBlNTAxZTA5MjVjNDg3NzEwMjViOTkyYTg1ZTAxMDQSDHZlZ2EvZWQyNTUxORgBgH0D0j5AOWRmNjgyYTNjODdkOTA1NjdmMjYwNTY2YTljMjIzY2NiYmI3NTI5YzM4MzQwY2YxNjNiOGZlMTk5ZGJmMGYyZQ=="
             }
           }
         }

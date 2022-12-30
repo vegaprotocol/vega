@@ -71,8 +71,6 @@ func BuildCmdRoot(w io.Writer) *cobra.Command {
 
 	// Root commands
 	cmd.AddCommand(NewCmdInit(w, f))
-	cmd.AddCommand(NewCmdCompletion(w))
-	cmd.AddCommand(NewCmdVersion(w, f))
 
 	// Sub-commands
 	cmd.AddCommand(NewCmdAPIToken(w, f))
@@ -83,13 +81,15 @@ func BuildCmdRoot(w io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdPermissions(w, f))
 	cmd.AddCommand(NewCmdRawTransaction(w, f))
 	cmd.AddCommand(NewCmdService(w, f))
+	cmd.AddCommand(NewCmdShell(w, f))
+	cmd.AddCommand(NewCmdSoftware(w, f))
 	cmd.AddCommand(NewCmdTransaction(w, f))
 
 	// Wallet commands
 	// We don't have a wrapper sub-command for wallet commands.
 	cmd.AddCommand(NewCmdCreateWallet(w, f))
 	cmd.AddCommand(NewCmdDeleteWallet(w, f))
-	cmd.AddCommand(NewCmdGetInfoWallet(w, f))
+	cmd.AddCommand(NewCmdDescribeWallet(w, f))
 	cmd.AddCommand(NewCmdImportWallet(w, f))
 	cmd.AddCommand(NewCmdListWallets(w, f))
 	cmd.AddCommand(NewCmdRenameWallet(w, f))

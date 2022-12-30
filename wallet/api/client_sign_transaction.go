@@ -2,14 +2,12 @@ package api
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/commands"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
@@ -23,10 +21,9 @@ import (
 const TransactionSuccessfullySigned = "The transaction has been successfully signed."
 
 type ClientSignTransactionParams struct {
-	Token              string      `json:"token"`
-	PublicKey          string      `json:"publicKey"`
-	EncodedTransaction string      `json:"encodedTransaction"`
-	Transaction        interface{} `json:"transaction"`
+	Token       string      `json:"token"`
+	PublicKey   string      `json:"publicKey"`
+	Transaction interface{} `json:"transaction"`
 }
 
 type ClientParsedSignTransactionParams struct {
@@ -42,6 +39,7 @@ type ClientSignTransactionResult struct {
 type ClientSignTransaction struct {
 	interactor   Interactor
 	nodeSelector node.Selector
+	pow          ProofOfWork
 	sessions     *session.Sessions
 	time         TimeProvider
 }
@@ -52,6 +50,11 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		return nil, invalidParams(err)
 	}
 
+	request := &walletpb.SubmitTransactionRequest{}
+	if err := jsonpb.Unmarshal(strings.NewReader(params.RawTransaction), request); err != nil {
+		return nil, invalidParams(ErrTransactionIsNotValidVegaCommand)
+	}
+
 	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token, h.time.Now())
 	if err != nil {
 		return nil, invalidParams(err)
@@ -59,11 +62,6 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 
 	if !connectedWallet.CanUseKey(params.PublicKey) {
 		return nil, requestNotPermittedError(ErrPublicKeyIsNotAllowedToBeUsed)
-	}
-
-	request := &walletpb.SubmitTransactionRequest{}
-	if err := jsonpb.Unmarshal(strings.NewReader(params.RawTransaction), request); err != nil {
-		return nil, invalidParams(ErrTransactionIsMalformed)
 	}
 
 	request.PubKey = params.PublicKey
@@ -137,16 +135,12 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 
 	// Generate the proof of work for the transaction.
 	h.interactor.Log(ctx, metadata.TraceID, InfoLog, "Computing proof-of-work...")
-	txID := vgcrypto.RandomHash()
-	powNonce, _, err := vgcrypto.PoW(lastBlockData.BlockHash, txID, uint(lastBlockData.ProofOfWorkDifficulty), lastBlockData.ProofOfWorkHashFunction)
+	tx.Pow, err = h.pow.Generate(params.PublicKey, &lastBlockData)
 	if err != nil {
 		h.interactor.NotifyError(ctx, metadata.TraceID, InternalError, fmt.Errorf("could not compute the proof-of-work: %w", err))
 		return nil, internalError(ErrCouldNotSignTransaction)
 	}
-	tx.Pow = &commandspb.ProofOfWork{
-		Tid:   txID,
-		Nonce: powNonce,
-	}
+
 	h.interactor.Log(ctx, metadata.TraceID, SuccessLog, "The proof-of-work has been computed.")
 
 	h.interactor.NotifySuccessfulRequest(ctx, metadata.TraceID, TransactionSuccessfullySigned)
@@ -156,10 +150,11 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	}, nil
 }
 
-func NewSignTransaction(interactor Interactor, nodeSelector node.Selector, sessions *session.Sessions, tp ...TimeProvider) *ClientSignTransaction {
+func NewSignTransaction(interactor Interactor, nodeSelector node.Selector, pow ProofOfWork, sessions *session.Sessions, tp ...TimeProvider) *ClientSignTransaction {
 	return &ClientSignTransaction{
 		interactor:   interactor,
 		nodeSelector: nodeSelector,
+		pow:          pow,
 		sessions:     sessions,
 		time:         extractTimeProvider(tp...),
 	}
@@ -183,29 +178,13 @@ func validateSignTransactionParams(rawParams jsonrpc.Params) (ClientParsedSignTr
 		return ClientParsedSignTransactionParams{}, ErrPublicKeyIsRequired
 	}
 
-	if params.EncodedTransaction == "" && params.Transaction == nil {
+	if params.Transaction == nil {
 		return ClientParsedSignTransactionParams{}, ErrTransactionIsRequired
 	}
 
-	if params.EncodedTransaction != "" && params.Transaction != nil {
-		return ClientParsedSignTransactionParams{}, ErrEncodedTransactionAndTransactionSupplied
-	}
-
-	var tx []byte
-	var err error
-
-	if params.EncodedTransaction != "" {
-		tx, err = base64.StdEncoding.DecodeString(params.EncodedTransaction)
-		if err != nil {
-			return ClientParsedSignTransactionParams{}, ErrEncodedTransactionIsNotValidBase64String
-		}
-	}
-
-	if params.Transaction != nil {
-		tx, err = json.Marshal(params.Transaction)
-		if err != nil {
-			return ClientParsedSignTransactionParams{}, ErrEncodedTransactionIsNotValid
-		}
+	tx, err := json.Marshal(params.Transaction)
+	if err != nil {
+		return ClientParsedSignTransactionParams{}, ErrTransactionIsNotValidJSON
 	}
 
 	return ClientParsedSignTransactionParams{

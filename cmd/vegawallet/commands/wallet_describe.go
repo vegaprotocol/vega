@@ -17,19 +17,19 @@ import (
 )
 
 var (
-	infoLong = cli.LongDesc(`
-		Get wallet information such as wallet ID, version and type.
+	describeWalletLong = cli.LongDesc(`
+		Get wallet information such as wallet ID, key derivation version and type.
 	`)
 
-	infoExample = cli.Examples(`
+	describeWalletExample = cli.Examples(`
 		# Get the wallet information
-		{{.Software}} info --wallet WALLET
+		{{.Software}} describe --wallet WALLET
 	`)
 )
 
-type GetInfoWalletHandler func(params api.AdminDescribeWalletParams) (api.AdminDescribeWalletResult, error)
+type DescribeWalletHandler func(params api.AdminDescribeWalletParams) (api.AdminDescribeWalletResult, error)
 
-func NewCmdGetInfoWallet(w io.Writer, rf *RootFlags) *cobra.Command {
+func NewCmdDescribeWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminDescribeWalletParams) (api.AdminDescribeWalletResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
@@ -43,17 +43,17 @@ func NewCmdGetInfoWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 		}
 		return rawResult.(api.AdminDescribeWalletResult), nil
 	}
-	return BuildCmdGetInfoWallet(w, h, rf)
+	return BuildCmdDescribeWallet(w, h, rf)
 }
 
-func BuildCmdGetInfoWallet(w io.Writer, handler GetInfoWalletHandler, rf *RootFlags) *cobra.Command {
-	f := &GetWalletInfoFlags{}
+func BuildCmdDescribeWallet(w io.Writer, handler DescribeWalletHandler, rf *RootFlags) *cobra.Command {
+	f := &DescribeWalletFlags{}
 
 	cmd := &cobra.Command{
-		Use:     "info",
-		Short:   "Get wallet information",
-		Long:    infoLong,
-		Example: infoExample,
+		Use:     "describe",
+		Short:   "Describe the specified wallet",
+		Long:    describeWalletLong,
+		Example: describeWalletExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			req, err := f.Validate()
 			if err != nil {
@@ -67,7 +67,7 @@ func BuildCmdGetInfoWallet(w io.Writer, handler GetInfoWalletHandler, rf *RootFl
 
 			switch rf.Output {
 			case flags.InteractiveOutput:
-				PrintGetWalletInfoResponse(w, resp)
+				PrintDescribeWalletResponse(w, resp)
 			case flags.JSONOutput:
 				return printer.FprintJSON(w, resp)
 			}
@@ -92,12 +92,12 @@ func BuildCmdGetInfoWallet(w io.Writer, handler GetInfoWalletHandler, rf *RootFl
 	return cmd
 }
 
-type GetWalletInfoFlags struct {
+type DescribeWalletFlags struct {
 	Wallet         string
 	PassphraseFile string
 }
 
-func (f *GetWalletInfoFlags) Validate() (api.AdminDescribeWalletParams, error) {
+func (f *DescribeWalletFlags) Validate() (api.AdminDescribeWalletParams, error) {
 	req := api.AdminDescribeWalletParams{}
 
 	if len(f.Wallet) == 0 {
@@ -114,13 +114,13 @@ func (f *GetWalletInfoFlags) Validate() (api.AdminDescribeWalletParams, error) {
 	return req, nil
 }
 
-func PrintGetWalletInfoResponse(w io.Writer, resp api.AdminDescribeWalletResult) {
+func PrintDescribeWalletResponse(w io.Writer, resp api.AdminDescribeWalletResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
 	defer p.Print(str)
 
 	str.Text("Type:").NextLine().WarningText(resp.Type).NextLine()
-	str.Text("Version:").NextLine().WarningText(fmt.Sprintf("%d", resp.Version)).NextLine()
+	str.Text("Key derivation version:").NextLine().WarningText(fmt.Sprintf("%d", resp.KeyDerivationVersion)).NextLine()
 	str.Text("ID:").NextLine().WarningText(resp.ID).NextLine()
 }

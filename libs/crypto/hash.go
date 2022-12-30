@@ -13,6 +13,7 @@
 package crypto
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -23,6 +24,12 @@ import (
 func Hash(key []byte) []byte {
 	hashFunc := sha3.New256()
 	hashFunc.Write(key)
+	return hashFunc.Sum(nil)
+}
+
+func HashBytesBuffer(key bytes.Buffer) []byte {
+	hashFunc := sha3.New256()
+	key.WriteTo(hashFunc)
 	return hashFunc.Sum(nil)
 }
 

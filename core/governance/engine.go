@@ -959,6 +959,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 			Metadata:                      terms.Changes.Metadata,
 			PriceMonitoringParameters:     terms.Changes.PriceMonitoringParameters,
 			LiquidityMonitoringParameters: terms.Changes.LiquidityMonitoringParameters,
+			LpPriceRange:                  terms.Changes.LpPriceRange,
 		},
 	}
 
@@ -989,7 +990,6 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 				DataSourceSpecForSettlementData:     product.Future.DataSourceSpecForSettlementData,
 				DataSourceSpecForTradingTermination: product.Future.DataSourceSpecForTradingTermination,
 				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
-				SettlementDataDecimalPlaces:         product.Future.SettlementDataDecimals,
 			},
 		}
 	default:

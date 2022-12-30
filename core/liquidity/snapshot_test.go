@@ -116,6 +116,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		"pendingProvisions:market-id": "6cc4d407a2ea45e37e27993eb6f94134b3f906d080777d94bf99551aa82dc461",
 		"provisions:market-id":        "7c76902e145d0eaf0abb83382575c027097abdb418364c351e2ad085e1c69c3e",
 		"liquiditySupplied:market-id": "3276bba2a77778ba710ec29e3a6e59212452dbda69eaac8f9160930d1270da1d",
+		"liquidityScores:market-id":   "960e7a009ad808147dc0a83638379ae5df2a67dab2a9654ce7bae55b0110ff07",
 	}
 
 	for _, key := range keys {
@@ -153,6 +154,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		"pendingProvisions:market-id": "627ef55af7f36bea0d09b0081b85d66531a01df060d8e9447e17049a4e152b12",
 		"provisions:market-id":        "89335d14e98ca80b144cb6502e9b508d97d63027ba0c7733d6024030cdf102ed",
 		"liquiditySupplied:market-id": "3276bba2a77778ba710ec29e3a6e59212452dbda69eaac8f9160930d1270da1d",
+		"liquidityScores:market-id":   "4f1d569c75a1a524084d6c1e9998fef46451a00bcc8dbfac41db90bd948e5af0",
 	}
 
 	lp3 := &types.LiquidityProvisionSubmission{
@@ -185,30 +187,18 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	)
 
 	repriceFN := func(
-		order *types.PeggedOrder, side types.Side,
-	) (*num.Uint, *types.PeggedOrder, error) {
-		return num.NewUint(100), order, nil
+		side types.Side, ref types.PeggedReference, offset *num.Uint,
+	) (*num.Uint, error) {
+		return num.NewUint(100), nil
 	}
 
 	e2.priceMonitor.EXPECT().GetValidPriceRange().
 		Return(num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(90), num.DecimalFromInt64(110))).
 		AnyTimes()
 
-	_, _, err := e2.engine.Update(ctx, num.DecimalFromFloat(99), num.DecimalFromFloat(101),
-		repriceFN, []*types.Order{
-			{
-				ID:        "order-id-1",
-				Party:     party1,
-				MarketID:  market,
-				Side:      types.SideBuy,
-				Price:     num.NewUint(90),
-				Size:      10,
-				Remaining: 10,
-			},
-		},
-	)
+	e2.engine.Update(ctx, num.NewUint(99), num.NewUint(101), repriceFN)
 
-	require.NoError(t, err)
+	e2.engine.UpdateAverageLiquidityScores(num.DecimalFromFloat(99.1), num.DecimalFromFloat(100.8), num.NewUint(99), num.NewUint(101))
 
 	for _, key := range keys {
 		s, _, err := e2.engine.GetState(key)
@@ -289,29 +279,16 @@ func TestSnapshotChangeOnUpdate(t *testing.T) {
 	assert.NotEmpty(t, s1)
 
 	repriceFN := func(
-		order *types.PeggedOrder, side types.Side,
-	) (*num.Uint, *types.PeggedOrder, error) {
-		return num.NewUint(100), order, nil
+		side types.Side, ref types.PeggedReference, offset *num.Uint,
+	) (*num.Uint, error) {
+		return num.NewUint(100), nil
 	}
 
 	e1.priceMonitor.EXPECT().GetValidPriceRange().
 		Return(num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(90), num.DecimalFromInt64(110))).
 		AnyTimes()
 
-	_, _, err = e1.engine.Update(ctx, num.DecimalFromFloat(99), num.DecimalFromFloat(101),
-		repriceFN, []*types.Order{
-			{
-				ID:        "order-id-1",
-				Party:     party1,
-				MarketID:  market,
-				Side:      types.SideBuy,
-				Price:     num.NewUint(90),
-				Size:      10,
-				Remaining: 10,
-			},
-		},
-	)
-	require.NoError(t, err)
+	e1.engine.Update(ctx, num.NewUint(99), num.NewUint(101), repriceFN)
 
 	// Get new hash, it should have changed
 	s2, _, err := e1.engine.GetState(key)

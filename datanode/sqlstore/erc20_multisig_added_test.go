@@ -22,7 +22,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,26 +32,17 @@ func TestERC20MultiSigEvent(t *testing.T) {
 	t.Run("Get with add and removed events", testGetWithAddAndRemoveEvents)
 }
 
-func setupERC20MultiSigEventStoreTests(t *testing.T, ctx context.Context) (*sqlstore.ERC20MultiSigSignerEvent, *pgx.Conn) {
+func setupERC20MultiSigEventStoreTests(t *testing.T) (*sqlstore.ERC20MultiSigSignerEvent, sqlstore.Connection) {
 	t.Helper()
-	DeleteEverything()
 	ms := sqlstore.NewERC20MultiSigSignerEvent(connectionSource)
-
-	config := NewTestConfig()
-
-	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
-	require.NoError(t, err)
-
-	return ms, conn
+	return ms, connectionSource.Connection
 }
 
 func testAddSigner(t *testing.T) {
-	defer DeleteEverything()
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	ms, conn := setupERC20MultiSigEventStoreTests(t, ctx)
+	ms, conn := setupERC20MultiSigEventStoreTests(t)
 
 	var rowCount int
 
@@ -78,12 +68,10 @@ func testAddSigner(t *testing.T) {
 }
 
 func testGetWithFilters(t *testing.T) {
-	defer DeleteEverything()
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	ms, conn := setupERC20MultiSigEventStoreTests(t, ctx)
+	ms, conn := setupERC20MultiSigEventStoreTests(t)
 
 	var rowCount int
 	vID1 := "fc677151d0c93726"
@@ -120,12 +108,10 @@ func testGetWithFilters(t *testing.T) {
 }
 
 func testGetWithAddAndRemoveEvents(t *testing.T) {
-	defer DeleteEverything()
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	ms, conn := setupERC20MultiSigEventStoreTests(t, ctx)
+	ms, conn := setupERC20MultiSigEventStoreTests(t)
 
 	var rowCount int
 	vID1 := "fc677151d0c93726"
@@ -235,9 +221,8 @@ func TestERC20MultiSigEventPagination(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationNoPagination(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -257,9 +242,8 @@ func testERC20MultiSigAddedEventPaginationNoPagination(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	first := int32(3)
@@ -280,9 +264,8 @@ func testERC20MultiSigAddedEventPaginationFirst(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationLast(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	last := int32(3)
@@ -303,9 +286,8 @@ func testERC20MultiSigAddedEventPaginationLast(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationFirstAfter(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	first := int32(3)
@@ -327,9 +309,8 @@ func testERC20MultiSigAddedEventPaginationFirstAfter(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationLastBefore(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	last := int32(3)
@@ -351,9 +332,8 @@ func testERC20MultiSigAddedEventPaginationLastBefore(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationNoPaginationNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -373,9 +353,8 @@ func testERC20MultiSigAddedEventPaginationNoPaginationNewestFirst(t *testing.T) 
 }
 
 func testERC20MultiSigAddedEventPaginationFirstNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	first := int32(3)
@@ -396,9 +375,8 @@ func testERC20MultiSigAddedEventPaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationLastNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	last := int32(3)
@@ -419,9 +397,8 @@ func testERC20MultiSigAddedEventPaginationLastNewestFirst(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationFirstAfterNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	first := int32(3)
@@ -443,9 +420,8 @@ func testERC20MultiSigAddedEventPaginationFirstAfterNewestFirst(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationLastBeforeNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	last := int32(3)
@@ -467,9 +443,8 @@ func testERC20MultiSigAddedEventPaginationLastBeforeNewestFirst(t *testing.T) {
 }
 
 func testERC20MultiSigRemovedEventPaginationNoPagination(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -489,9 +464,8 @@ func testERC20MultiSigRemovedEventPaginationNoPagination(t *testing.T) {
 }
 
 func testERC20MultiSigRemovedEventPaginationFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	first := int32(3)
@@ -512,9 +486,8 @@ func testERC20MultiSigRemovedEventPaginationFirst(t *testing.T) {
 }
 
 func testERC20MultiSigRemovedEventPaginationLast(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	last := int32(3)
@@ -535,9 +508,8 @@ func testERC20MultiSigRemovedEventPaginationLast(t *testing.T) {
 }
 
 func testERC20MultiSigRemovedEventPaginationFirstAfter(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	first := int32(3)
@@ -559,9 +531,8 @@ func testERC20MultiSigRemovedEventPaginationFirstAfter(t *testing.T) {
 }
 
 func testERC20MultiSigRemovedEventPaginationLastBefore(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	last := int32(3)
@@ -583,9 +554,8 @@ func testERC20MultiSigRemovedEventPaginationLastBefore(t *testing.T) {
 }
 
 func testERC20MultiSigRemovedEventPaginationNoPaginationNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -605,9 +575,8 @@ func testERC20MultiSigRemovedEventPaginationNoPaginationNewestFirst(t *testing.T
 }
 
 func testERC20MultiSigRemovedEventPaginationFirstNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	first := int32(3)
@@ -628,9 +597,8 @@ func testERC20MultiSigRemovedEventPaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testERC20MultiSigRemovedEventPaginationLastNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	last := int32(3)
@@ -651,9 +619,8 @@ func testERC20MultiSigRemovedEventPaginationLastNewestFirst(t *testing.T) {
 }
 
 func testERC20MultiSigRemovedEventPaginationFirstAfterNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	first := int32(3)
@@ -675,9 +642,8 @@ func testERC20MultiSigRemovedEventPaginationFirstAfterNewestFirst(t *testing.T) 
 }
 
 func testERC20MultiSigRemovedEventPaginationLastBeforeNewestFirst(t *testing.T) {
-	defer DeleteEverything()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	last := int32(3)

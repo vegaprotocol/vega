@@ -90,6 +90,7 @@ type tradingDataServiceV2 struct {
 	blockService               BlockService
 	protocolUpgradeService     *service.ProtocolUpgrade
 	deHistoryService           DeHistoryService
+	coreSnapshotService        *service.SnapshotData
 }
 
 func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {
@@ -224,7 +225,7 @@ func (t *tradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.Li
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid cursor: %w", err))
 	}
 
-	entries, pageInfo, err := t.ledgerService.Query(leFilter, dateRange, pagination)
+	entries, pageInfo, err := t.ledgerService.Query(ctx, leFilter, dateRange, pagination)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("could not query ledger entries: %w", err))
 	}
@@ -259,7 +260,7 @@ func (t *tradingDataServiceV2) ListBalanceChanges(ctx context.Context, req *v2.L
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid cursor: %w", err))
 	}
 
-	balances, pageInfo, err := t.accountService.QueryAggregatedBalances(filter, dateRange, pagination)
+	balances, pageInfo, err := t.accountService.QueryAggregatedBalances(ctx, filter, dateRange, pagination)
 	if err != nil {
 		return nil, fmt.Errorf("querying balances: %w", err)
 	}
@@ -579,6 +580,10 @@ func (t *tradingDataServiceV2) ListCandleData(ctx context.Context, req *v2.ListC
 		if err != nil {
 			return nil, fmt.Errorf("could not parse cursor pagination information: %w", err)
 		}
+	}
+
+	if req.CandleId == "" {
+		return nil, apiError(codes.InvalidArgument, ErrMissingCandleID)
 	}
 
 	candles, pageInfo, err := t.candleService.GetCandleDataForTimeSpan(ctx, req.CandleId, from, to, pagination)
@@ -1303,7 +1308,7 @@ func (t *tradingDataServiceV2) ListMarginLevels(ctx context.Context, in *v2.List
 		return nil, apiError(codes.Internal, err)
 	}
 
-	edges, err := makeEdges[*v2.MarginEdge](marginLevels, t.accountService)
+	edges, err := makeEdges[*v2.MarginEdge](marginLevels, ctx, t.accountService)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1338,7 +1343,7 @@ func (t *tradingDataServiceV2) ObserveMarginLevels(req *v2.ObserveMarginLevelsRe
 	}
 
 	return observe(ctx, t.log, "MarginLevel", marginLevelsChan, ref, func(ml entities.MarginLevels) error {
-		protoMl, err := ml.ToProto(t.accountService)
+		protoMl, err := ml.ToProto(ctx, t.accountService)
 		if err != nil {
 			return apiError(codes.Internal, err)
 		}
@@ -1394,6 +1399,39 @@ func (t *tradingDataServiceV2) ListRewardSummaries(ctx context.Context, in *v2.L
 
 	resp := v2.ListRewardSummariesResponse{Summaries: summaryProtos}
 	return &resp, nil
+}
+
+// Get reward summaries for epoch range.
+func (t *tradingDataServiceV2) ListEpochRewardSummaries(ctx context.Context, in *v2.ListEpochRewardSummariesRequest) (*v2.ListEpochRewardSummariesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListEpochRewardSummaries")()
+
+	if in == nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("empty request"))
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	summaries, pageInfo, err := t.rewardService.GetEpochRewardSummaries(ctx, in.FromEpoch, in.ToEpoch, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	edges, err := makeEdges[*v2.EpochRewardSummaryEdge](summaries)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	connection := v2.EpochRewardSummaryConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListEpochRewardSummariesResponse{
+		Summaries: &connection,
+	}, nil
 }
 
 // subscribe to rewards.
@@ -1908,7 +1946,7 @@ func (t *tradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 		return nil, apiError(codes.Internal, err)
 	}
 
-	edges, err := makeEdges[*v2.TransferEdge](transfers, t.accountService)
+	edges, err := makeEdges[*v2.TransferEdge](transfers, ctx, t.accountService)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -2834,6 +2872,36 @@ func (t *tradingDataServiceV2) ListProtocolUpgradeProposals(ctx context.Context,
 	}, nil
 }
 
+func (t *tradingDataServiceV2) ListCoreSnapshots(ctx context.Context, req *v2.ListCoreSnapshotsRequest) (*v2.ListCoreSnapshotsResponse, error) {
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("empty request"))
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	snaps, pageInfo, err := t.coreSnapshotService.ListSnapshots(ctx, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	edges, err := makeEdges[*v2.CoreSnapshotEdge](snaps)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	connection := v2.CoreSnapshotConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListCoreSnapshotsResponse{
+		CoreSnapshots: &connection,
+	}, nil
+}
+
 type tradingDataEventBusServerV2 struct {
 	stream v2.TradingDataService_ObserveEventBusServer
 }
@@ -2980,11 +3048,18 @@ func (t *tradingDataServiceV2) GetMostRecentDeHistorySegment(context.Context, *v
 
 	segment, err := t.deHistoryService.GetHighestBlockHeightHistorySegment()
 	if err != nil {
+		if errors.Is(err, store.ErrSegmentNotFound) {
+			return &v2.GetMostRecentDeHistorySegmentResponse{
+				Segment: nil,
+			}, nil
+		}
+
 		return nil, apiError(codes.Internal, ErrGetMostRecentHistorySegment, err)
 	}
 
 	return &v2.GetMostRecentDeHistorySegmentResponse{
-		Segment: toHistorySegment(segment),
+		Segment:  toHistorySegment(segment),
+		SwarmKey: t.deHistoryService.GetSwarmKey(),
 	}, nil
 }
 
@@ -3048,20 +3123,6 @@ func (t *tradingDataServiceV2) GetActiveDeHistoryPeerAddresses(_ context.Context
 	return &v2.GetActiveDeHistoryPeerAddressesResponse{
 		IpAddresses: addresses,
 	}, nil
-}
-
-func (t *tradingDataServiceV2) CopyHistorySegmentToFile(ctx context.Context, req *v2.CopyHistorySegmentToFileRequest) (*v2.CopyHistorySegmentToFileResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("CopyHistorySegmentToFile")()
-	if t.deHistoryService == nil {
-		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
-	}
-
-	err := t.deHistoryService.CopyHistorySegmentToFile(ctx, req.HistorySegmentId, req.TargetFile)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrCopyHistorySegmentToFile, err)
-	}
-
-	return &v2.CopyHistorySegmentToFileResponse{}, nil
 }
 
 func batch[T any](in []T, batchSize int) [][]T {

@@ -7,7 +7,9 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/paths"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/wallet/api/node"
+	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
 	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/service"
@@ -16,7 +18,7 @@ import (
 )
 
 // Generates mocks
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Interactor,ServiceStore,TokenStore,TimeProvider
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Interactor,ServiceStore,TokenStore,TimeProvider,ProofOfWork
 
 type NodeSelectorBuilder func(hosts []string, retries uint64) (node.Selector, error)
 
@@ -151,6 +153,10 @@ type Interactor interface {
 	RequestTransactionReviewForSigning(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
 }
 
+type ProofOfWork interface {
+	Generate(pubKey string, blockData *nodetypes.LastBlock) (*commandspb.ProofOfWork, error)
+}
+
 // ErrorType defines the type of error that is sent to the user, for fine
 // grain error management and reporting.
 type ErrorType string
@@ -201,7 +207,7 @@ type SelectedWallet struct {
 // no administration methods are exposed. We don't want malicious third-party
 // applications to leverage administration capabilities that could expose the
 // user and/or compromise his wallets.
-func ClientAPI(log *zap.Logger, walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, sessions *session.Sessions) (*jsonrpc.API, error) {
+func ClientAPI(log *zap.Logger, walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, pow ProofOfWork, sessions *session.Sessions) (*jsonrpc.API, error) {
 	walletAPI := jsonrpc.New(log)
 
 	// We add this pre-check so users stop asking why they can't access the
@@ -217,10 +223,8 @@ func ClientAPI(log *zap.Logger, walletStore WalletStore, interactor Interactor, 
 	walletAPI.RegisterMethod("client.disconnect_wallet", NewDisconnectWallet(sessions))
 	walletAPI.RegisterMethod("client.get_chain_id", NewGetChainID(nodeSelector))
 	walletAPI.RegisterMethod("client.list_keys", NewListKeys(walletStore, interactor, sessions))
-	walletAPI.RegisterMethod("client.sign_transaction", NewSignTransaction(interactor, nodeSelector, sessions))
-	walletAPI.RegisterMethod("client.send_transaction", NewSendTransaction(interactor, nodeSelector, sessions))
-	walletAPI.RegisterMethod("client.request_permissions", NewRequestPermissions(walletStore, interactor, sessions))
-	walletAPI.RegisterMethod("client.get_permissions", NewGetPermissions(sessions))
+	walletAPI.RegisterMethod("client.sign_transaction", NewSignTransaction(interactor, nodeSelector, pow, sessions))
+	walletAPI.RegisterMethod("client.send_transaction", NewSendTransaction(interactor, nodeSelector, pow, sessions))
 
 	log.Info("the client JSON-RPC API has been initialised")
 

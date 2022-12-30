@@ -49,6 +49,10 @@ func (e fileEventSource) Listen() error {
 	return nil
 }
 
+func (e fileEventSource) Send(events.Event) error {
+	return nil
+}
+
 func (e fileEventSource) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
 	eventsCh := make(chan events.Event, e.sendChannelBufferSize)
 	errorCh := make(chan error, 1)

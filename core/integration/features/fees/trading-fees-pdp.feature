@@ -87,9 +87,9 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1089   | 8927    |
+      | trader3 | ETH   | ETH/DEC21 | 1330   | 8686    |
       #| trader3 | ETH   | ETH/DEC21 | 1082   | 8934    |
-      | trader4 | ETH   | ETH/DEC21 | 715    | 8961    |
+      | trader4 | ETH   | ETH/DEC21 | 718    | 8958    |
 
     And the accumulated infrastructure fees should be "7" for the asset "ETH"
     ## Because we move forwards in time to MTM, the fees have been paid already. We see the transfer of 301, but that is paid out
@@ -193,11 +193,11 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 726    | 9285    |
+      | trader3a | ETH   | ETH/DEC21 | 846    | 9165    |
       #| trader3a | ETH   | ETH/DEC21 | 721    | 9290    |
       | trader3b | ETH   | ETH/DEC21 | 363    | 9643    |
       #| trader3b | ETH   | ETH/DEC21 | 361    | 9645    |
-      | trader4  | ETH   | ETH/DEC21 | 715    | 8958    |
+      | trader4  | ETH   | ETH/DEC21 | 718    | 8955    |
 
     And the accumulated infrastructure fees should be "8" for the asset "ETH"
     And the accumulated liquidity fees should be "302" for the market "ETH/DEC21"
@@ -254,8 +254,8 @@ Feature: Fees calculations
       | side | price | volume |
       | sell | 1080  | 100    |
       | buy  | 920   | 100    |
-      | buy  | 910   | 20968  |
-      | sell | 1090  | 18349  |
+      | buy  | 910   | 998    |
+      | sell | 1090  | 918    |
 
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
@@ -464,8 +464,8 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1183   | 8828    |
-      | trader4  | ETH   | ETH/DEC21 | 1171   | 52      |
+      | trader3a | ETH   | ETH/DEC21 | 1279   | 8732    |
+      | trader4  | ETH   | ETH/DEC21 | 1174   | 49      |
 
     # reducing size
     And the parties amend the following orders:
@@ -487,8 +487,8 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1183   | 8828    |
-      | trader4  | ETH   | ETH/DEC21 | 1171   | 52      |
+      | trader3a | ETH   | ETH/DEC21 | 1279   | 8732    |
+      | trader4  | ETH   | ETH/DEC21 | 1174   | 49      |
 
   Scenario: Testing fees in continuous trading with insufficient balance in their general account but margin covers the fees
 
@@ -520,12 +520,12 @@ Feature: Fees calculations
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC21 | buy  | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux1  | ETH/DEC21 | buy  | 100    | 920   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC21 | sell | 100    | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1  | ETH/DEC21 | buy  | 100    | 995   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC21 | sell | 100    | 1005  | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 10      | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 10      | submission |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -548,12 +548,12 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 33888  | 9966613 |
-      | trader4 | ETH   | ETH/DEC21 | 21384  | 0       |
+      | trader3 | ETH   | ETH/DEC21 | 24000  | 9976501 |
+      | trader4 | ETH   | ETH/DEC21 | 11364  | 0       |
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader4 | ETH/DEC21 | 17820       | 19602  | 21384   | 24948   |
+      | trader4 | ETH/DEC21 | 11220       | 12342  | 13464   | 15708   |
 
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
@@ -568,14 +568,12 @@ Feature: Fees calculations
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      #| trader4 | ETH/DEC21 | 17999       | 19798  | 21598   | 25198   |
-      | trader4 | ETH/DEC21 | 17921       | 19713  | 21505   | 25089   |
-    #| trader4 | ETH/DEC21 | 17999       | 19798  | 21598   | 25198   |
+      | trader4 | ETH/DEC21 | 11321       | 12453  | 13585   | 15849   |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 34129  | 9966378 |
-      | trader4 | ETH   | ETH/DEC21 | 21375  | 0       |
+      | trader3 | ETH   | ETH/DEC21 | 26329  | 9974178 |
+      | trader4 | ETH   | ETH/DEC21 | 11254  | 0       |
 
   Scenario: Testing fees to confirm fees are collected first and then margin
 
@@ -607,12 +605,12 @@ Feature: Fees calculations
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC21 | buy  | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux1  | ETH/DEC21 | buy  | 100    | 920   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC21 | sell | 100    | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1  | ETH/DEC21 | buy  | 100    | 997   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC21 | sell | 100    | 1003  | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 1      | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 1      | submission |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -632,12 +630,12 @@ Feature: Fees calculations
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader4 | ETH/DEC21 | 179         | 196    | 214     | 250     |
+      | trader4 | ETH/DEC21 | 102         | 112    | 122     | 142     |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 339    | 9999667 |
-      | trader4 | ETH   | ETH/DEC21 | 205    | 0       |
+      | trader3 | ETH   | ETH/DEC21 | 240    | 9999766 |
+      | trader4 | ETH   | ETH/DEC21 | 104    | 0       |
 
   Scenario: WIP - Testing fees in continuous trading when insufficient balance in their general and margin account with LP, then the trade does not execute
     # <PC> - Just need to confirm if the trades doesn't go through, then general and margin account balances are expected to be 0.
@@ -692,8 +690,8 @@ Feature: Fees calculations
       | side | price | volume |
       | sell | 1080  | 1000   |
       | buy  | 920   | 1000   |
-      | buy  | 910   | 11869  |
-      | sell | 1090  | 18349  |
+      | buy  | 910   | 88     |
+      | sell | 1090  | 918    |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
@@ -841,10 +839,10 @@ Feature: Fees calculations
 
     Then the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
-      | sell | 2010  | 0      |
-      | sell | 2000  | 1100   |
-      | buy  | 500   | 4000   |
-      | buy  | 490   | 0      |
+      | sell | 2010  | 498    |
+      | sell | 2000  | 100    |
+      | buy  | 500   | 100    |
+      | buy  | 490   | 1939   |
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 3372   | 6644    |
@@ -891,7 +889,7 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 3204   | 6402    |
+      | trader3a | ETH   | ETH/DEC21 | 3242   | 6364    |
       | trader4  | ETH   | ETH/DEC21 | 7140   | 3239    |
 
     Then the market data for the market "ETH/DEC21" should be:
@@ -1274,7 +1272,6 @@ Feature: Fees calculations
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
 
-    #TODO: Raise a bug: mark price is not being checked, any value results in a pass.
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1002       | TRADING_MODE_CONTINUOUS | 1       | 903       | 1101      | 200          | 10000          | 100           |
@@ -1678,8 +1675,8 @@ Feature: Fees calculations
       | side | price | volume |
       | sell | 1080  | 100    |
       | buy  | 920   | 100    |
-      | buy  | 990   | 1928   |
-      | sell | 1010  | 1981   |
+      | buy  | 990   | 918    |
+      | sell | 1010  | 991    |
 
     Then the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1688,13 +1685,13 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 2916   | 97134   |
+      | trader3a | ETH   | ETH/DEC21 | 2928   | 97122   |
       # | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
-      | trader4  | ETH   | ETH/DEC21 | 4280   | 96160   |
+      | trader4  | ETH   | ETH/DEC21 | 3910   | 96245   |
     # | trader4  | ETH   | ETH/DEC21 | 5506   | 94934   |
 
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
-    And the accumulated liquidity fees should be "30" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
 
     Then the following trades should be executed:
       # | buyer    | price | size | seller  | maker   | taker   | buyer_fee | seller_fee | maker_fee |
@@ -1703,7 +1700,6 @@ Feature: Fees calculations
       | buyer    | price | size | seller  |
       # | aux1     | 990   | 19   | trader4 |
       | trader3a | 990   | 1000 | trader4 |
-    # Somehow the trades for party aux1 with size = 20 at price = 990 are getting cancelled and new trades of size = 21 at price = 965 are getting placed
 
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
@@ -1725,25 +1721,25 @@ Feature: Fees calculations
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 50     | ETH   |
-      | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 60     | ETH   |
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 30     | ETH   |
+      | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 39     | ETH   |
+      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 20     | ETH   |
       | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 50     | ETH   |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 2916   | 97134   |
+      | trader3a | ETH   | ETH/DEC21 | 2928   | 97122   |
       # | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
-      | trader4  | ETH   | ETH/DEC21 | 4280   | 96160   |
+      | trader4  | ETH   | ETH/DEC21 | 3910   | 96245   |
     # | trader4  | ETH   | ETH/DEC21 | 5506   | 94934   |
 
     # And the accumulated infrastructure fee should be "20" for the market "ETH/DEC21"
-    And the accumulated liquidity fees should be "30" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
 
     When the network moves ahead "11" blocks
 
     And the following transfers should happen:
       | from   | to   | from account                | to account           | market id | amount | asset |
-      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 30     | ETH   |
+      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 20     | ETH   |
 
   Scenario: Testing fees when network parameters are changed (in continuous trading with one trade)
     Description : Changing net params does change the fees being collected appropriately even if the market is already running
@@ -1823,26 +1819,26 @@ Feature: Fees calculations
     # trade_value_for_fee_purposes = size_of_trade * price_of_trade = 3 *1002 = 3006
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.02 * 3006 = 60.12 = 61 (rounded up to nearest whole value)
     # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.05 * 3006 = 150.30 = 151 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0 * 3006 = 0
+    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.1 * 3006 = 300.6 = 301 (rounded up to the nearest whole value)
 
     And the following transfers should happen:
       | from    | to      | from account            | to account                       | market id | amount | asset |
       | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 151    | ETH   |
       | trader4 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 61     | ETH   |
-      | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 0      | ETH   |
+      | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 301    | ETH   |
       | market  | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 151    | ETH   |
 
-    # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 61 + 151 + 0 = 212
+    # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 61 + 151 + 301 = 513
     # Trader3 margin + general account balance = 10000 + 151 ( Maker fees) = 10151
-    # Trader4 margin + general account balance = 10000 - 151 ( Maker fees) - 61 (Infra fee) = 9788
+    # Trader4 margin + general account balance = 10000 - 151 ( Maker fees) - 61 (Infra fee) - 301 (liq fee) = 9487
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1089   | 9062    |
-      | trader4 | ETH   | ETH/DEC21 | 657    | 9131    |
+      | trader3 | ETH   | ETH/DEC21 | 1330   | 8821    |
+      | trader4 | ETH   | ETH/DEC21 | 718    | 8769    |
 
     And the accumulated infrastructure fees should be "61" for the asset "ETH"
-    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "301" for the market "ETH/DEC21"
 
 # TO DO -
 # Testing fees in continuous trading with two trades and one liquidity providers with 10 & 0s liquidity fee distribution timestep

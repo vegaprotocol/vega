@@ -53,14 +53,14 @@ Feature: Test LP orders with different decimals for market and asset
     
     Then the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party1  | ETH/DEC19 | 3905000000000000000000000      | 0.3  | buy | BID              | 2          | 100000 | submission |
-      | lp1 | party1  | ETH/DEC19 | 3905000000000000000000000      | 0.3  | sell| ASK              | 13         | 100000 | amendment  |
+      | lp2 | party1  | ETH/DEC19 | 3905000000000000000000000      | 0.3  | buy | BID              | 2          | 100000 | submission |
+      | lp2 | party1  | ETH/DEC19 | 3905000000000000000000000      | 0.3  | sell| ASK              | 13         | 100000 | amendment  |
 
     Then the liquidity provisions should have the following states:
-      | id  | party   | market    | commitment amount | status        |
-      | lp1 | party1 | ETH/DEC19  | 3905000000000000000000000       | STATUS_ACTIVE |
+      | id  | party   | market    | commitment amount         | status        |
+      | lp2 | party1 | ETH/DEC19  | 3905000000000000000000000 | STATUS_ACTIVE |
 
     Then the orders should have the following states:
-      | party  | market id | side | volume    | price     | status        |
-      | party1 | ETH/DEC19 | buy  | 919280545 | 89900000  | STATUS_ACTIVE |
-      | party1 | ETH/DEC19 | sell | 678595080 | 120100000 | STATUS_ACTIVE |
+      | party  | market id | side | volume    | price     | status        | reference |
+      | party1 | ETH/DEC19 | buy  | 434371524 | 89900000  | STATUS_ACTIVE | lp2       |
+      | party1 | ETH/DEC19 | sell | 325145712 | 120100000 | STATUS_ACTIVE | lp2       |

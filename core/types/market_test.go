@@ -149,6 +149,7 @@ func TestMarketFromIntoProto(t *testing.T) {
 			Open:     2,
 			Close:    360,
 		},
+		LpPriceRange: "0.95",
 	}
 	domain := types.MarketFromProto(pMarket)
 	// we can check equality of individual fields, but perhaps this is the easiest way:

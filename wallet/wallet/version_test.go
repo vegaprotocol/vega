@@ -35,7 +35,7 @@ func TestVersionIsSupported(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// when
-			supported := wallet.IsVersionSupported(tc.version)
+			supported := wallet.IsKeyDerivationVersionSupported(tc.version)
 
 			assert.Equal(tt, tc.supported, supported)
 		})

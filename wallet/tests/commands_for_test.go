@@ -668,10 +668,10 @@ func (a *VerifyAssertion) IsValid() *VerifyAssertion {
 
 type CreateWalletResponse struct {
 	Wallet struct {
-		Name           string `json:"name"`
-		RecoveryPhrase string `json:"recoveryPhrase"`
-		Version        uint32 `json:"version"`
-		FilePath       string `json:"filePath"`
+		Name                 string `json:"name"`
+		RecoveryPhrase       string `json:"recoveryPhrase"`
+		KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
+		FilePath             string `json:"filePath"`
 	} `json:"wallet"`
 	Key struct {
 		PublicKey string `json:"publicKey"`
@@ -712,7 +712,7 @@ func AssertCreateWallet(t *testing.T, resp *CreateWalletResponse) *CreateWalletA
 	assert.NotNil(t, resp)
 	assert.NotEmpty(t, resp.Wallet.Name)
 	assert.NotEmpty(t, resp.Wallet.RecoveryPhrase)
-	assert.Equal(t, uint32(2), resp.Wallet.Version)
+	assert.Equal(t, uint32(2), resp.Wallet.KeyDerivationVersion)
 	assert.NotEmpty(t, resp.Wallet.FilePath)
 	assert.FileExists(t, resp.Wallet.FilePath)
 	assert.NotEmpty(t, resp.Key.PublicKey)
@@ -753,9 +753,9 @@ func PassphraseUpdate(t *testing.T, args []string) error {
 
 type ImportWalletResponse struct {
 	Wallet struct {
-		Name     string `json:"name"`
-		Version  uint32 `json:"version"`
-		FilePath string `json:"filePath"`
+		Name                 string `json:"name"`
+		KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
+		FilePath             string `json:"filePath"`
 	} `json:"wallet"`
 	Key struct {
 		PublicKey string `json:"publicKey"`
@@ -795,7 +795,7 @@ func AssertImportWallet(t *testing.T, resp *ImportWalletResponse) *ImportWalletA
 
 	assert.NotNil(t, resp)
 	assert.NotEmpty(t, resp.Wallet.Name)
-	assert.NotEmpty(t, resp.Wallet.Version)
+	assert.NotEmpty(t, resp.Wallet.KeyDerivationVersion)
 	assert.NotEmpty(t, resp.Wallet.FilePath)
 	assert.FileExists(t, resp.Wallet.FilePath)
 	assert.NotEmpty(t, resp.Key.PublicKey)
@@ -829,9 +829,9 @@ type GetWalletInfoResponse struct {
 	ID      string `json:"id"`
 }
 
-func WalletInfo(t *testing.T, args []string) (*GetWalletInfoResponse, error) {
+func WalletDescribe(t *testing.T, args []string) (*GetWalletInfoResponse, error) {
 	t.Helper()
-	argsWithCmd := []string{"info"}
+	argsWithCmd := []string{"describe"}
 	argsWithCmd = append(argsWithCmd, args...)
 	output, err := ExecuteCmd(t, argsWithCmd)
 	if err != nil {

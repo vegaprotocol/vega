@@ -33,9 +33,6 @@ message Future {
 
   // The binding between the data spec and the data source
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
-
-  // The number of decimal places implied by the settlement data (such as price) emitted by the settlement data source
-  uint32 settlement_data_decimals = 6;
 }
 
 // DataSourceSpecToFutureBinding describes which property of the data source data is to be
@@ -275,6 +272,9 @@ message Market {
   MarketTimestamps market_timestamps = 10;
   // The number of decimal places for a position
   int64 position_decimal_places = 11;
+  // Percentage move up and down from the mid price which specifies the range of 
+  // price levels over which automated liquidity provision orders will be deployed
+  string lp_price_range = 12;
 }
 
 // Time stamps for important times about creating, enacting etc the market

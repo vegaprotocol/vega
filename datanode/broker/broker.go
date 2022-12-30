@@ -50,9 +50,14 @@ type TestInterface interface {
 	Receive(ctx context.Context) error
 }
 
-type eventSource interface {
+type EventReceiver interface {
 	Listen() error
 	Receive(ctx context.Context) (<-chan events.Event, <-chan error)
+}
+
+type eventReceiverSender interface {
+	EventReceiver
+	Send(events.Event) error
 }
 
 type subscription struct {
@@ -92,7 +97,7 @@ type Broker struct {
 	eChans map[events.Type]chan []events.Event
 	smVer  int // version of subscriber map
 
-	eventSource eventSource
+	eventSource EventReceiver
 	quit        chan struct{}
 	chainID     string
 	vegaTime    time.Time
@@ -100,7 +105,7 @@ type Broker struct {
 
 // New creates a new base broker.
 func New(ctx context.Context, log *logging.Logger, config Config, chainID string,
-	eventsource eventSource,
+	eventsource EventReceiver,
 ) (*Broker, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())

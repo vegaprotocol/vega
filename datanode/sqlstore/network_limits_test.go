@@ -13,7 +13,6 @@
 package sqlstore_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -24,11 +23,12 @@ import (
 )
 
 func TestNetworkLimits(t *testing.T) {
-	defer DeleteEverything()
-	ctx := context.Background()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
 	bs := sqlstore.NewBlocks(connectionSource)
-	block := addTestBlock(t, bs)
-	block2 := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
+	block2 := addTestBlock(t, ctx, bs)
 	nls := sqlstore.NewNetworkLimits(connectionSource)
 
 	nl := entities.NetworkLimits{

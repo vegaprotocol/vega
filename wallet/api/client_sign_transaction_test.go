@@ -66,21 +66,23 @@ func testSigningTransactionWithInvalidParamsFails(t *testing.T) {
 			},
 			expectedError: api.ErrPublicKeyIsRequired,
 		}, {
-			name: "with empty encoded transaction",
+			name: "with no transaction",
 			params: api.ClientSignTransactionParams{
-				Token:              vgrand.RandomStr(10),
-				PublicKey:          vgrand.RandomStr(10),
-				EncodedTransaction: "",
+				Token:       vgrand.RandomStr(10),
+				PublicKey:   vgrand.RandomStr(10),
+				Transaction: nil,
 			},
 			expectedError: api.ErrTransactionIsRequired,
 		}, {
-			name: "with invalid encoded transaction",
+			name: "with transaction as invalid Vega command",
 			params: api.ClientSignTransactionParams{
-				Token:              vgrand.RandomStr(10),
-				PublicKey:          vgrand.RandomStr(10),
-				EncodedTransaction: `{ "voteSubmission": {} }`,
+				Token:     vgrand.RandomStr(10),
+				PublicKey: vgrand.RandomStr(10),
+				Transaction: map[string]interface{}{
+					"type": "not vega command",
+				},
 			},
-			expectedError: api.ErrEncodedTransactionIsNotValidBase64String,
+			expectedError: api.ErrTransactionIsNotValidVegaCommand,
 		},
 	}
 
@@ -121,9 +123,10 @@ func testSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 	handler.time.EXPECT().Now().Times(1)
 	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
+	handler.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
 		BlockHeight:             100,
@@ -176,7 +179,6 @@ func testSigningTransactionWithLongLivingTokenSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	metadata := requestMetadataForTest()
-	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
 	wallet1, kp := walletWithKey(t)
 	token := vgrand.RandomStr(10)
 
@@ -187,6 +189,7 @@ func testSigningTransactionWithLongLivingTokenSucceeds(t *testing.T) {
 		t.Fatalf("could not connect test wallet to a long-living sessions: %v", err)
 	}
 	// -- expected calls
+	handler.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
@@ -202,9 +205,9 @@ func testSigningTransactionWithLongLivingTokenSucceeds(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
-		Token:              token,
-		PublicKey:          kp.PublicKey(),
-		EncodedTransaction: encodedTransaction,
+		Token:       token,
+		PublicKey:   kp.PublicKey(),
+		Transaction: testTransaction(t),
 	}, metadata)
 
 	// then
@@ -217,7 +220,6 @@ func testSigningTransactionWithLongLivingExpiredTokenFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	metadata := requestMetadataForTest()
-	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
 	wallet1, kp := walletWithKey(t)
 	token := vgrand.RandomStr(10)
 
@@ -234,9 +236,9 @@ func testSigningTransactionWithLongLivingExpiredTokenFails(t *testing.T) {
 
 	// when
 	_, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
-		Token:              token,
-		PublicKey:          kp.PublicKey(),
-		EncodedTransaction: encodedTransaction,
+		Token:       token,
+		PublicKey:   kp.PublicKey(),
+		Transaction: testTransaction(t),
 	}, metadata)
 
 	// then
@@ -247,7 +249,6 @@ func testSigningTransactionWithLongLivingValidTokenSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	metadata := requestMetadataForTest()
-	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
 	wallet1, kp := walletWithKey(t)
 	token := vgrand.RandomStr(10)
 
@@ -262,6 +263,7 @@ func testSigningTransactionWithLongLivingValidTokenSucceeds(t *testing.T) {
 		t.Fatalf("could not connect test wallet to a long-living sessions: %v", err)
 	}
 	// -- expected calls
+	handler.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
@@ -277,9 +279,9 @@ func testSigningTransactionWithLongLivingValidTokenSucceeds(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
-		Token:              token,
-		PublicKey:          kp.PublicKey(),
-		EncodedTransaction: encodedTransaction,
+		Token:       token,
+		PublicKey:   kp.PublicKey(),
+		Transaction: testTransaction(t),
 	}, metadata)
 
 	// then
@@ -333,7 +335,7 @@ func testRefusingSigningOfTransactionDoesNotSignTransaction(t *testing.T) {
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(false, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, fakeTransaction, gomock.Any()).Times(1).Return(false, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
@@ -367,7 +369,7 @@ func testCancellingTheReviewDoesNotSignTransaction(t *testing.T) {
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(false, api.ErrUserCloseTheConnection)
+	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, fakeTransaction, gomock.Any()).Times(1).Return(false, api.ErrUserCloseTheConnection)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
@@ -401,7 +403,7 @@ func testInterruptingTheRequestDoesNotSignTransaction(t *testing.T) {
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(false, api.ErrRequestInterrupted)
+	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, fakeTransaction, gomock.Any()).Times(1).Return(false, api.ErrRequestInterrupted)
 	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
 
 	// when
@@ -436,7 +438,7 @@ func testGettingInternalErrorDuringReviewDoesNotSignTransaction(t *testing.T) {
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(false, assert.AnError)
+	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, fakeTransaction, gomock.Any()).Times(1).Return(false, assert.AnError)
 	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.InternalError, fmt.Errorf("requesting the transaction review failed: %w", assert.AnError)).Times(1)
 
 	// when
@@ -471,7 +473,7 @@ func testNoHealthyNodeAvailableDoesNotSignTransaction(t *testing.T) {
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(nil, assert.AnError)
 	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.NetworkError, fmt.Errorf("could not find a healthy node: %w", assert.AnError)).Times(1)
 	handler.interactor.EXPECT().Log(ctx, metadata.TraceID, gomock.Any(), gomock.Any()).AnyTimes()
@@ -511,7 +513,7 @@ func testFailingToGetLastBlockDoesNotSignTransaction(t *testing.T) {
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, testTransactionJSON, gomock.Any()).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{}, assert.AnError)
 	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.NetworkError, fmt.Errorf("could not get the latest block from the node: %w", assert.AnError)).Times(1)
@@ -540,6 +542,7 @@ type signTransactionHandler struct {
 	nodeSelector *nodemock.MockSelector
 	node         *nodemock.MockNode
 	time         *mocks.MockTimeProvider
+	pow          *mocks.MockProofOfWork
 }
 
 func (h *signTransactionHandler) handle(t *testing.T, ctx context.Context, params interface{}, metadata jsonrpc.RequestMetadata) (api.ClientSignTransactionResult, *jsonrpc.ErrorDetails) {
@@ -566,14 +569,16 @@ func newSignTransactionHandler(t *testing.T) *signTransactionHandler {
 	sessions := session.NewSessions()
 	node := nodemock.NewMockNode(ctrl)
 	tp := mocks.NewMockTimeProvider(ctrl)
+	pow := mocks.NewMockProofOfWork(ctrl)
 
 	return &signTransactionHandler{
-		ClientSignTransaction: api.NewSignTransaction(interactor, nodeSelector, sessions, tp),
+		ClientSignTransaction: api.NewSignTransaction(interactor, nodeSelector, pow, sessions, tp),
 		ctrl:                  ctrl,
 		nodeSelector:          nodeSelector,
 		interactor:            interactor,
 		sessions:              sessions,
 		node:                  node,
 		time:                  tp,
+		pow:                   pow,
 	}
 }

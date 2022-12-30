@@ -19,11 +19,17 @@ import (
 
 var (
 	cliVersionHash = ""
-	cliVersion     = "v0.63.1"
+	cliVersion     = "v0.65.1"
 )
 
 func init() {
 	info, _ := debug.ReadBuildInfo()
+	// for some reason in jenkins integration tests this return nil
+	if info == nil {
+		cliVersionHash = "unknown"
+		return
+	}
+
 	modified := false
 
 	for _, v := range info.Settings {

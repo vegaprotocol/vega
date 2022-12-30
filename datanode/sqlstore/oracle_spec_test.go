@@ -25,7 +25,6 @@ import (
 
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
-	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,87 +36,76 @@ func TestOracleSpec(t *testing.T) {
 	t.Run("ListOracleSpecs should retrieve the latest versions of all OracleSpecs", testGetSpecs)
 }
 
-func setupOracleSpecTest(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.OracleSpec, *pgx.Conn) {
+func setupOracleSpecTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.OracleSpec, sqlstore.Connection) {
 	t.Helper()
-	DeleteEverything()
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	os := sqlstore.NewOracleSpec(connectionSource)
 
-	config := NewTestConfig()
-	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
-	require.NoError(t, err)
-
-	return bs, os, conn
+	return bs, os, connectionSource.Connection
 }
 
 func testInsertIntoNewBlock(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	bs, os, conn := setupOracleSpecTest(t, ctx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, os, conn := setupOracleSpecTest(t)
 
 	var rowCount int
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	specProtos := getTestSpecs()
 
 	proto := specProtos[0]
 	data, err := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err)
-	assert.NoError(t, os.Upsert(context.Background(), data))
+	assert.NoError(t, os.Upsert(ctx, data))
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
 	assert.Equal(t, 1, rowCount)
 }
 
 func testUpdateExistingInBlock(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	bs, os, conn := setupOracleSpecTest(t, ctx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, os, conn := setupOracleSpecTest(t)
 
 	var rowCount int
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	specProtos := getTestSpecs()
 
 	proto := specProtos[0]
 	data, err := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err)
-	assert.NoError(t, os.Upsert(context.Background(), data))
+	assert.NoError(t, os.Upsert(ctx, data))
 
 	data.ExternalDataSourceSpec.Spec.Status = entities.OracleSpecDeactivated
-	assert.NoError(t, os.Upsert(context.Background(), data))
+	assert.NoError(t, os.Upsert(ctx, data))
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
 	assert.Equal(t, 1, rowCount)
 }
 
 func testGetSpecByID(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	bs, os, conn := setupOracleSpecTest(t, ctx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, os, conn := setupOracleSpecTest(t)
 
 	var rowCount int
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	specProtos := getTestSpecs()
 
 	for _, proto := range specProtos {
 		data, err := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
-		assert.NoError(t, os.Upsert(context.Background(), data))
+		assert.NoError(t, os.Upsert(ctx, data))
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
@@ -136,17 +124,15 @@ func testGetSpecByID(t *testing.T) {
 }
 
 func testGetSpecs(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	bs, os, conn := setupOracleSpecTest(t, ctx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, os, conn := setupOracleSpecTest(t)
 
 	var rowCount int
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, bs)
+	block := addTestBlock(t, ctx, bs)
 	specProtos := getTestSpecs()
 
 	want := make([]entities.OracleSpec, 0)
@@ -154,7 +140,7 @@ func testGetSpecs(t *testing.T) {
 	for _, proto := range specProtos {
 		data, err := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
-		assert.NoError(t, os.Upsert(context.Background(), data))
+		assert.NoError(t, os.Upsert(ctx, data))
 
 		// truncate the time to microseconds as postgres doesn't support nanosecond granularity.
 		data.ExternalDataSourceSpec.Spec.CreatedAt = data.ExternalDataSourceSpec.Spec.CreatedAt.Truncate(time.Microsecond)
@@ -294,7 +280,7 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 	t.Helper()
 	specs := make([]entities.OracleSpec, 0, 10)
 
-	block := addTestBlockForTime(t, bs, time.Now().Truncate(time.Second))
+	block := addTestBlockForTime(t, ctx, bs, time.Now().Truncate(time.Second))
 
 	for i := 0; i < 10; i++ {
 		pubKey := types.CreateSignerFromString(helpers.GenerateID(), types.DataSignerTypePubKey)
@@ -328,9 +314,9 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 }
 
 func testOracleSpecPaginationGetSpecID(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	bs, os, _ := setupOracleSpecTest(t, ctx)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
 
 	got, pageInfo, err := os.GetSpecsWithCursorPagination(ctx, "deadbeef05", entities.CursorPagination{})
@@ -346,10 +332,10 @@ func testOracleSpecPaginationGetSpecID(t *testing.T) {
 }
 
 func testOracleSpecPaginationNoPagination(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, os, _ := setupOracleSpecTest(t, ctx)
+	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
 	got, pageInfo, err := os.GetSpecsWithCursorPagination(ctx, "", entities.CursorPagination{})
 	require.NoError(t, err)
@@ -364,10 +350,10 @@ func testOracleSpecPaginationNoPagination(t *testing.T) {
 }
 
 func testOracleSpecPaginationFirst(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, os, _ := setupOracleSpecTest(t, ctx)
+	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
@@ -386,10 +372,10 @@ func testOracleSpecPaginationFirst(t *testing.T) {
 }
 
 func testOracleSpecPaginationLast(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, os, _ := setupOracleSpecTest(t, ctx)
+	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
@@ -408,10 +394,10 @@ func testOracleSpecPaginationLast(t *testing.T) {
 }
 
 func testOracleSpecPaginationFirstAfter(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, os, _ := setupOracleSpecTest(t, ctx)
+	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
 	first := int32(3)
 	after := specs[2].Cursor().Encode()
@@ -431,10 +417,10 @@ func testOracleSpecPaginationFirstAfter(t *testing.T) {
 }
 
 func testOracleSpecPaginationLastBefore(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, os, _ := setupOracleSpecTest(t, ctx)
+	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
 	last := int32(3)
 	before := specs[7].Cursor().Encode()
@@ -454,10 +440,10 @@ func testOracleSpecPaginationLastBefore(t *testing.T) {
 }
 
 func testOracleSpecPaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, os, _ := setupOracleSpecTest(t, ctx)
+	bs, os, _ := setupOracleSpecTest(t)
 	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
 	got, pageInfo, err := os.GetSpecsWithCursorPagination(ctx, "", entities.CursorPagination{NewestFirst: true})
 	require.NoError(t, err)
@@ -472,10 +458,10 @@ func testOracleSpecPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testOracleSpecPaginationFirstNewestFirst(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, os, _ := setupOracleSpecTest(t, ctx)
+	bs, os, _ := setupOracleSpecTest(t)
 	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
@@ -494,10 +480,10 @@ func testOracleSpecPaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testOracleSpecPaginationLastNewestFirst(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, os, _ := setupOracleSpecTest(t, ctx)
+	bs, os, _ := setupOracleSpecTest(t)
 	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
@@ -516,10 +502,10 @@ func testOracleSpecPaginationLastNewestFirst(t *testing.T) {
 }
 
 func testOracleSpecPaginationFirstAfterNewestFirst(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, os, _ := setupOracleSpecTest(t, ctx)
+	bs, os, _ := setupOracleSpecTest(t)
 	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
 	first := int32(3)
 	after := specs[2].Cursor().Encode()
@@ -539,10 +525,10 @@ func testOracleSpecPaginationFirstAfterNewestFirst(t *testing.T) {
 }
 
 func testOracleSpecPaginationLastBeforeNewestFirst(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	bs, os, _ := setupOracleSpecTest(t, ctx)
+	bs, os, _ := setupOracleSpecTest(t)
 	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
 	last := int32(3)
 	before := specs[7].Cursor().Encode()

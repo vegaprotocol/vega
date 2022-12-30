@@ -78,59 +78,51 @@ Feature: Closeout-cascades
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 1055  | 948    |
+      | sell | 1050  | 96     |
       | sell | 1000  | 10     |
-      | buy  | 50    | 4050   |
+      | buy  | 50    | 50     |
       | buy  | 10    | 50     |
+      | buy  | 5     | 5      |
+      | buy  | 1     | 100000 |
     And the network moves ahead "1" blocks
     Then the mark price should be "100" for the market "ETH/DEC19"
-    Then debug transfers
-    # trader3 got close-out, trader3's order has been sold to network, and then trader2 bought the order from the network
-    # as it had the highest buy price
-    Then debug trades
-    Then debug orders
-    # This step currently doesn't work. Looking at the debug order/trade output, the party does get closed out
-    # but we can't detect the events at this point. This needs to be fixed.
-    #And the following trades should be executed:
-    #| buyer   | price | size | seller  |
-    #| network |  100  | 50   | trader3 |
-    #| lpprov  |  100  | 50   | network |
+
+    # trader3 got closed-out, and trader2 got close-out from the trade with network to close-out trader3, auxiliary2 was in the trade to close-out trader2
+    And the following trades should be executed:
+      | buyer      | price | size | seller     |
+      | auxiliary2 | 10    | 10   | auxiliary1 |
+      | trader3    | 100   | 50   | auxiliary1 |
+      | trader2    | 50    | 50   | network    |
+      | network    | 50    | 50   | trader3    |
+      | auxiliary2 | 10    | 50   | network    |
+      | network    | 10    | 50   | trader2    |
 
     And the cumulated balance for all accounts should be worth "3000000002100"
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 1055  | 948    |
+      | sell | 1005  | 100    |
       | sell | 1000  | 10     |
-      | buy  | 50    | 0      |
-      | buy  | 10    | 20050  |
+      | buy  | 5     | 5      |
+      | buy  | 1     | 100000 |
     Then the mark price should be "100" for the market "ETH/DEC19"
 
     # check that trader3 is closed-out but trader2 is not
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      #| trader2 | ETH/DEC19 | 3000        | 4500   | 6000    | 9000    |
-      #| trader2 | ETH/DEC19 | 5000        | 7500   | 10000   | 15000   |
       | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
       | trader2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-    #maintenance_margin_trader2: 50*100*0.1=500
-    #Then the parties should have the following account balances:
-    #| party   | asset | market id | margin | general |
-    #| trader2 | BTC   | ETH/DEC19 | 2097   | 0       |
-    #| trader3 | BTC   | ETH/DEC19 | 0      | 0       |
+
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
       | trader2 | 0      | 0              | -2000        |
-      #| trader2 | 50     | 2500           | -2403        |
       | trader3 | 0      | 0              | -100         |
 
-    # check trader2 margin level, trader2 is not closed-out yet since new mark price is not updated
-    # eventhough  trader2 does not have enough margin
     Then the parties should have the following account balances:
       | party      | asset | market id | margin | general      |
-      #| trader2    | BTC   | ETH/DEC19 | 2097   | 0            |
+      | trader2    | BTC   | ETH/DEC19 | 0      | 0            |
       | trader3    | BTC   | ETH/DEC19 | 0      | 0            |
-      | auxiliary1 | BTC   | ETH/DEC19 | 114800 | 999999884295 |
-      | auxiliary2 | BTC   | ETH/DEC19 | 3200   | 999999997700 |
+      | auxiliary1 | BTC   | ETH/DEC19 | 114320 | 999999884775 |
+      | auxiliary2 | BTC   | ETH/DEC19 | 13180  | 999999989816 |
 
     # setup new mark price, which is the same as when trader2 traded with network
     Then the parties place the following orders:
@@ -138,11 +130,14 @@ Feature: Closeout-cascades
       | auxiliary2 | ETH/DEC19 | buy  | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1   |
       | auxiliary1 | ETH/DEC19 | sell | 10     | 10    | 1                | TYPE_LIMIT | TIF_GTC | aux-s-1   |
 
+    # close-out trade price is not counted as mark price
     And the mark price should be "100" for the market "ETH/DEC19"
     And then the network moves ahead "10" blocks
     And the mark price should be "10" for the market "ETH/DEC19"
 
-    #trader2 got closed-out
+    #trader2 and trader3 are still close-out
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
       | trader2 | 0      | 0              | -2000        |
+      | trader3 | 0      | 0              | -100         |
+
