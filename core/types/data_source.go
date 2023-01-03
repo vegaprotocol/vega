@@ -2,12 +2,16 @@ package types
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
+
+// ErrMultipleSameKeyNamesInFilterList is returned when filters with same key names exists inside a single list.
+var ErrMultipleSameKeyNamesInFilterList = errors.New("multiple keys with same name found in filter list")
 
 type DataSourceDefinitionInternalx struct {
 	Internal *DataSourceDefinitionInternal
@@ -64,10 +68,6 @@ func (s *DataSourceDefinitionInternalx) String() string {
 	return ""
 }
 
-func (s *DataSourceDefinitionInternalx) ToDataSourceSpec() *DataSourceSpec {
-	return nil
-}
-
 type DataSourceDefinitionExternalx struct {
 	External *DataSourceDefinitionExternal
 }
@@ -120,10 +120,6 @@ func (s *DataSourceDefinitionExternalx) String() string {
 	}
 
 	return ""
-}
-
-func (s *DataSourceDefinitionExternalx) ToDataSourceSpec() *DataSourceSpec {
-	return nil
 }
 
 type dataSourceType interface {
@@ -319,8 +315,16 @@ func NewDataSourceDefinition(tp int) *DataSourceDefinition {
 
 // /
 // UpdateFilters updates the DataSourceDefinition Filters.
-func (s *DataSourceDefinition) UpdateFilters(filters []*DataSourceSpecFilter) {
+func (s *DataSourceDefinition) UpdateFilters(filters []*DataSourceSpecFilter) error {
 	ds := &vegapb.DataSourceDefinition{}
+
+	fCheck := map[string]struct{}{}
+	for _, f := range filters {
+		if _, ok := fCheck[f.Key.Name]; ok {
+			return ErrMultipleSameKeyNamesInFilterList
+		}
+		fCheck[f.Key.Name] = struct{}{}
+	}
 
 	if s.SourceType != nil {
 		switch dsn := s.SourceType.oneOfProto().(type) {
@@ -342,6 +346,40 @@ func (s *DataSourceDefinition) UpdateFilters(filters []*DataSourceSpecFilter) {
 
 	dsd := DataSourceDefinitionFromProto(ds)
 	*s = *dsd
+
+	return nil
+}
+
+func (s *DataSourceDefinition) SetFilterDecimals(d uint64) *DataSourceDefinition {
+	ds := &vegapb.DataSourceDefinition{}
+
+	if s.SourceType != nil {
+		switch dsn := s.SourceType.oneOfProto().(type) {
+		case *vegapb.DataSourceDefinition_External:
+			filters := dsn.External.GetOracle().Filters
+			for i := range filters {
+				filters[i].Key.NumberDecimalPlaces = &d
+			}
+
+			ds = &vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_External{
+					External: &vegapb.DataSourceDefinitionExternal{
+						SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
+							Oracle: &vegapb.DataSourceSpecConfiguration{
+								Filters: filters,
+								Signers: dsn.External.GetOracle().Signers,
+							},
+						},
+					},
+				},
+			}
+		}
+	}
+
+	dsd := DataSourceDefinitionFromProto(ds)
+	*s = *dsd
+
+	return s
 }
 
 func (s DataSourceDefinition) ToDataSourceSpec() *DataSourceSpec {

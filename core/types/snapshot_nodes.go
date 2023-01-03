@@ -332,7 +332,7 @@ type ExecMarket struct {
 	LongRiskFactor             num.Decimal
 	RiskFactorConsensusReached bool
 	FeeSplitter                *FeeSplitter
-	SettlementData             *num.Uint
+	SettlementData             *num.Numeric
 	NextMTM                    int64
 }
 
@@ -2914,9 +2914,12 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		lastMVP, _ = num.DecimalFromString(em.LastMarketValueProxy)
 	}
 
-	var sp *num.Uint
+	var sp *num.Numeric
 	if em.SettlementData != "" {
-		sp, _ = num.UintFromString(em.SettlementData, 10)
+		spp, _ := num.NumericFromString(em.SettlementData)
+		if spp != nil {
+			sp = spp
+		}
 	}
 
 	ret := ExecMarket{
@@ -2949,11 +2952,6 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 }
 
 func (e ExecMarket) IntoProto() *snapshot.Market {
-	sp := ""
-	if e.SettlementData != nil {
-		sp = e.SettlementData.String()
-	}
-
 	ret := snapshot.Market{
 		Market:                     e.Market.IntoProto(),
 		PriceMonitor:               e.PriceMonitor.IntoProto(),
@@ -2972,7 +2970,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		RiskFactorLong:             e.LongRiskFactor.String(),
 		RiskFactorConsensusReached: e.RiskFactorConsensusReached,
 		FeeSplitter:                e.FeeSplitter.IntoProto(),
-		SettlementData:             sp,
+		SettlementData:             num.NumericToString(e.SettlementData),
 		NextMarkToMarket:           e.NextMTM,
 		LastTradedPrice:            e.LastTradedPrice.String(),
 	}

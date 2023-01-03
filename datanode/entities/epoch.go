@@ -26,6 +26,8 @@ type Epoch struct {
 	EndTime    *time.Time
 	TxHash     TxHash
 	VegaTime   time.Time
+	FirstBlock *int64
+	LastBlock  *int64
 }
 
 func (e *Epoch) ToProto() *vega.Epoch {
@@ -38,6 +40,12 @@ func (e *Epoch) ToProto() *vega.Epoch {
 	}
 	if e.EndTime != nil {
 		protoEpoch.Timestamps.EndTime = e.EndTime.UnixNano()
+	}
+	if e.FirstBlock != nil {
+		protoEpoch.Timestamps.FirstBlock = uint64(*e.FirstBlock)
+	}
+	if e.LastBlock != nil {
+		protoEpoch.Timestamps.LastBlock = uint64(*e.LastBlock)
 	}
 	return &protoEpoch
 }

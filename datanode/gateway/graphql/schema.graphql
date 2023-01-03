@@ -336,6 +336,8 @@ type LiquidityProviderFeeShare {
   equityLikeShare: String!
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
+  "The average liquidity score"
+  averageScore: String! 
 }
 
 "The equity like share of liquidity fee for each liquidity provider"
@@ -346,6 +348,8 @@ type ObservableLiquidityProviderFeeShare {
   equityLikeShare: String!
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
+  "The average liquidity score"
+  averageScore: String! 
 }
 
 "The liquidity commitments for this market"
@@ -796,12 +800,10 @@ type EpochTimestamps {
   expiry: Timestamp
   "RFC3339 timestamp - Vega time of epoch end, null if not ended"
   end: Timestamp
-
-  # @TODO - blocks support
-  # "Height of first block in the epoch, null if not started"
-  # firstBlock: String!
-  # "Height of last block in the epoch, null if not ended"
-  # lastBlock: String
+  "Height of first block in the epoch, null if not started"
+  firstBlock: String!
+  "Height of last block in the epoch, null if not ended"
+  lastBlock: String
 }
 
 "A node's key rotation event"
@@ -1334,9 +1336,6 @@ type Future {
 
   "The binding between the data source specification and the settlement data"
   dataSourceSpecBinding: DataSourceSpecToFutureBinding!
-
-  "The number of decimal places implied by the settlement data (such as price) emitted by the settlement data source"
-  settlementDataDecimals: Int!
 }
 
 """
@@ -1428,6 +1427,11 @@ type PropertyKey {
   name: String
   "The type of the property."
   type: PropertyKeyType!
+  """
+  An optional decimal place to be applied on the provided value.
+  Valid only for PropertyType of type DECIMAL, INTEGER.
+  """
+  numberDecimalPlaces: Int
 }
 
 """
@@ -3133,9 +3137,6 @@ type FutureProduct {
   used as settlement data.
   """
   dataSourceSpecBinding: DataSourceSpecToFutureBinding!
-
-  "The number of decimal places implied by the settlement data (such as price) emitted by the settlement oracle"
-  settlementDataDecimals: Int!
 }
 
 """

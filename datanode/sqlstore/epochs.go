@@ -15,9 +15,10 @@ package sqlstore
 import (
 	"context"
 
+	"github.com/georgysavva/scany/pgxscan"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
-	"github.com/georgysavva/scany/pgxscan"
 )
 
 type Epochs struct {
@@ -55,21 +56,30 @@ func (es *Epochs) Add(ctx context.Context, r entities.Epoch) error {
 func (es *Epochs) GetAll(ctx context.Context) ([]entities.Epoch, error) {
 	defer metrics.StartSQLQuery("Epochs", "GetAll")()
 	epochs := []entities.Epoch{}
-	err := pgxscan.Select(ctx, es.Connection, &epochs, `
-		SELECT DISTINCT ON (id) * from epochs ORDER BY id, vega_time desc;`)
+	query := `WITH epochs_current AS (SELECT DISTINCT ON (id) * FROM epochs ORDER BY id, vega_time DESC)
+		SELECT e.id, e.start_time, e.expire_time, e.end_time, e.tx_hash, e.vega_time, bs.height first_block, be.height last_block FROM epochs_current AS e
+    	LEFT JOIN blocks bs on e.start_time = bs.vega_time
+    	LEFT JOIN blocks be on e.end_time = be.vega_time;`
+	err := pgxscan.Select(ctx, es.Connection, &epochs, query)
 	return epochs, err
 }
 
 func (es *Epochs) Get(ctx context.Context, ID int64) (entities.Epoch, error) {
 	defer metrics.StartSQLQuery("Epochs", "Get")()
-	query := `SELECT DISTINCT ON (id) * FROM epochs WHERE id=$1 ORDER BY id, vega_time desc;`
+	query := `WITH epochs_current AS (SELECT DISTINCT ON (id) * FROM epochs WHERE id=$1 ORDER BY id, vega_time DESC)
+		SELECT e.id, e.start_time, e.expire_time, e.end_time, e.tx_hash, e.vega_time, bs.height first_block, be.height last_block FROM epochs_current AS e
+    	LEFT JOIN blocks bs on e.start_time = bs.vega_time
+    	LEFT JOIN blocks be on e.end_time = be.vega_time;`
 
 	epoch := entities.Epoch{}
 	return epoch, es.wrapE(pgxscan.Get(ctx, es.Connection, &epoch, query, ID))
 }
 
 func (es *Epochs) GetCurrent(ctx context.Context) (entities.Epoch, error) {
-	query := `SELECT * FROM epochs ORDER BY id desc, vega_time desc FETCH FIRST ROW ONLY;`
+	query := `WITH epochs_current AS (SELECT DISTINCT ON (id) * FROM epochs ORDER BY id DESC, vega_time DESC)
+		SELECT e.id, e.start_time, e.expire_time, e.end_time, e.tx_hash, e.vega_time, bs.height first_block, be.height last_block FROM epochs_current AS e
+    	LEFT JOIN blocks bs on e.start_time = bs.vega_time
+    	LEFT JOIN blocks be on e.end_time = be.vega_time FETCH FIRST ROW ONLY;`
 
 	epoch := entities.Epoch{}
 	defer metrics.StartSQLQuery("Epochs", "GetCurrent")()

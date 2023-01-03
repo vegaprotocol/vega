@@ -21,7 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 )
 
-// OnMatchedOracleData describes the callback function used to received.
+// OnMatchedOracleData describes the callback function used when an oracle data matches the spec.
 type OnMatchedOracleData func(ctx context.Context, data OracleData) error
 
 // OracleSpecPredicate describes the predicate used to filter the subscribers.
