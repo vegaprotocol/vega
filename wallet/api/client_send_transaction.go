@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -22,11 +21,10 @@ import (
 )
 
 type ClientSendTransactionParams struct {
-	Token              string      `json:"token"`
-	PublicKey          string      `json:"publicKey"`
-	SendingMode        string      `json:"sendingMode"`
-	EncodedTransaction string      `json:"encodedTransaction"`
-	Transaction        interface{} `json:"transaction"`
+	Token       string      `json:"token"`
+	PublicKey   string      `json:"publicKey"`
+	SendingMode string      `json:"sendingMode"`
+	Transaction interface{} `json:"transaction"`
 }
 
 type ClientParsedSendTransactionParams struct {
@@ -57,6 +55,12 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		return nil, invalidParams(err)
 	}
 
+	txReader := strings.NewReader(params.RawTransaction)
+	request := &walletpb.SubmitTransactionRequest{}
+	if err := jsonpb.Unmarshal(txReader, request); err != nil {
+		return nil, invalidParams(ErrTransactionIsNotValidVegaCommand)
+	}
+
 	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token, h.time.Now())
 	if err != nil {
 		return nil, invalidParams(err)
@@ -64,12 +68,6 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 
 	if !connectedWallet.CanUseKey(params.PublicKey) {
 		return nil, requestNotPermittedError(ErrPublicKeyIsNotAllowedToBeUsed)
-	}
-
-	txReader := strings.NewReader(params.RawTransaction)
-	request := &walletpb.SubmitTransactionRequest{}
-	if err := jsonpb.Unmarshal(txReader, request); err != nil {
-		return nil, invalidParams(ErrTransactionIsMalformed)
 	}
 
 	request.PubKey = params.PublicKey
@@ -234,29 +232,13 @@ func validateSendTransactionParams(rawParams jsonrpc.Params) (ClientParsedSendTr
 		return ClientParsedSendTransactionParams{}, ErrSendingModeCannotBeTypeUnspecified
 	}
 
-	if params.EncodedTransaction == "" && params.Transaction == nil {
+	if params.Transaction == nil {
 		return ClientParsedSendTransactionParams{}, ErrTransactionIsRequired
 	}
 
-	if params.EncodedTransaction != "" && params.Transaction != nil {
-		return ClientParsedSendTransactionParams{}, ErrEncodedTransactionAndTransactionSupplied
-	}
-
-	var tx []byte
-	var err error
-
-	if params.EncodedTransaction != "" {
-		tx, err = base64.StdEncoding.DecodeString(params.EncodedTransaction)
-		if err != nil {
-			return ClientParsedSendTransactionParams{}, ErrEncodedTransactionIsNotValidBase64String
-		}
-	}
-
-	if params.Transaction != nil {
-		tx, err = json.Marshal(params.Transaction)
-		if err != nil {
-			return ClientParsedSendTransactionParams{}, ErrEncodedTransactionIsNotValid
-		}
+	tx, err := json.Marshal(params.Transaction)
+	if err != nil {
+		return ClientParsedSendTransactionParams{}, ErrTransactionIsNotValidJSON
 	}
 
 	return ClientParsedSendTransactionParams{

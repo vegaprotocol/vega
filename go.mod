@@ -52,6 +52,7 @@ require (
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
 	github.com/emirpasic/gods v1.18.1
+	github.com/felixge/fgprof v0.9.3
 	github.com/fergusstrange/embedded-postgres v1.17.0
 	github.com/fullstorydev/grpcui v1.3.0
 	github.com/georgysavva/scany v1.0.0
@@ -128,6 +129,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
+	github.com/google/pprof v0.0.0-20211214055906-6f57359322fd // indirect
 	github.com/gtank/merlin v0.1.1 // indirect
 	github.com/gtank/ristretto255 v0.1.2 // indirect
 	github.com/hannahhoward/go-pubsub v0.0.0-20200423002714-8d62886cc36e // indirect
@@ -170,7 +172,7 @@ require (
 	github.com/ipfs/go-ipld-legacy v0.1.1 // indirect
 	github.com/ipfs/go-ipns v0.1.2 // indirect
 	github.com/ipfs/go-log/v2 v2.5.1 // indirect
-	github.com/ipfs/go-merkledag v0.6.0 // indirect
+	github.com/ipfs/go-merkledag v0.8.1 // indirect
 	github.com/ipfs/go-metrics-interface v0.0.1 // indirect
 	github.com/ipfs/go-mfs v0.2.1 // indirect
 	github.com/ipfs/go-namesys v0.5.0 // indirect

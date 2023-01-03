@@ -29,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/config/encoding"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
+	"github.com/felixge/fgprof"
 )
 
 const (
@@ -98,6 +99,7 @@ func New(log *logging.Logger, config Config) (*Pprofhandler, error) {
 	}
 
 	// start the pprof http server
+	http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
 	go func() {
 		p.log.Error("pprof web server closed", logging.Error(http.ListenAndServe(fmt.Sprintf("localhost:%d", config.Port), nil)))
 	}()

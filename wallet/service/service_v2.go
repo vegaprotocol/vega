@@ -8,9 +8,11 @@ import (
 	"net/http"
 	"net/url"
 
+	vfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/julienschmidt/httprouter"
 	"go.uber.org/zap"
 )
@@ -25,7 +27,7 @@ type TraceIDKey struct{}
 
 func (s *Service) CheckHealthV2(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	s.log.Debug("New request",
-		logging.String("url", r.URL.String()),
+		logging.String("url", vfmt.Escape(r.URL.String())),
 	)
 
 	w.WriteHeader(http.StatusOK)
@@ -37,7 +39,7 @@ type ListMethodsV2Response struct {
 
 func (s *Service) ListMethodsV2(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	s.log.Info("New request",
-		logging.String("url", r.URL.String()),
+		logging.String("url", vfmt.Escape(r.URL.String())),
 	)
 
 	registeredMethods := s.apiV2.RegisteredMethods()
@@ -65,7 +67,7 @@ func (s *Service) HandleRequestV2(w http.ResponseWriter, r *http.Request, _ http
 	traceID := vgrand.RandomStr(64)
 
 	s.log.Info("New request",
-		logging.String("url", r.URL.String()),
+		logging.String("url", vfmt.Escape(r.URL.String())),
 		logging.String("trace-id", traceID),
 	)
 
@@ -137,7 +139,7 @@ func (s *Service) unmarshallRequest(traceID string, r *http.Request) (*jsonrpc.R
 
 	strReq, _ := json.Marshal(request)
 	s.log.Info("Request successfully parsed",
-		logging.String("request", string(strReq)),
+		logging.String("request", vfmt.Escape(string(strReq))),
 		logging.String("trace-id", traceID),
 	)
 
@@ -233,7 +235,7 @@ func logResponse(logger *zap.Logger, lw *loggedResponseWriter) {
 		logger.Error("Client error",
 			logging.Int("http-status", lw.statusCode),
 			logging.String("response", string(lw.response)),
-			logging.String("request-id", lw.requestID),
+			logging.String("request-id", vfmt.Escape(lw.requestID)),
 			logging.String("trace-id", lw.traceID),
 		)
 		return
@@ -242,7 +244,7 @@ func logResponse(logger *zap.Logger, lw *loggedResponseWriter) {
 		logger.Error("Internal error",
 			logging.Int("http-status", lw.statusCode),
 			logging.Error(lw.internalError),
-			logging.String("request-id", lw.requestID),
+			logging.String("request-id", vfmt.Escape(lw.requestID)),
 			logging.String("trace-id", lw.traceID),
 		)
 		return
@@ -250,7 +252,7 @@ func logResponse(logger *zap.Logger, lw *loggedResponseWriter) {
 	logger.Info("Successful response",
 		logging.Int("http-status", lw.statusCode),
 		logging.String("response", string(lw.response)),
-		logging.String("request-id", lw.requestID),
+		logging.String("request-id", vfmt.Escape(lw.requestID)),
 		logging.String("trace-id", lw.traceID),
 	)
 }

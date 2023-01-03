@@ -580,7 +580,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		SuppliedStake:             m.getSuppliedStake().String(),
 		PriceMonitoringBounds:     bounds,
 		MarketValueProxy:          m.lastMarketValueProxy.BigInt().String(),
-		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps),
+		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps, m.liquidity.GetAverageLiquidityScores()),
 		NextMTM:                   m.nextMTM.UnixNano(),
 	}
 }
@@ -1831,20 +1831,6 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	// any changes in the book / orders owned by the lp providers
 	orderUpdates := []*types.Order{}
 	distressedParties := []string{}
-	defer func() {
-		// First we check for all distressed parties if they are liquidity
-		// providers, and if yea cancel their commitments
-		for _, party := range distressedParties {
-			if m.liquidity.IsLiquidityProvider(party) {
-				if err := m.cancelLiquidityProvision(ctx, party, true); err != nil {
-					m.log.Debug("could not cancel liquidity provision",
-						logging.MarketID(m.GetID()),
-						logging.PartyID(party),
-						logging.Error(err))
-				}
-			}
-		}
-	}()
 
 	distressedPos := make([]events.MarketPosition, 0, len(distressedMarginEvts))
 	for _, v := range distressedMarginEvts {
@@ -1863,6 +1849,20 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 			logging.Error(err),
 		)
 	}
+
+	// First we check for all distressed parties if they are liquidity
+	// providers, and if yea cancel their commitments
+	for _, party := range distressedParties {
+		if m.liquidity.IsLiquidityProvider(party) {
+			if err := m.cancelLiquidityProvision(ctx, party, true); err != nil {
+				m.log.Debug("could not cancel liquidity provision",
+					logging.MarketID(m.GetID()),
+					logging.PartyID(party),
+					logging.Error(err))
+			}
+		}
+	}
+
 	mktID := m.GetID()
 	// push rm orders into buf
 	// and remove the orders from the positions engine
@@ -3223,9 +3223,13 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
+	// ignore trading termination while the governance proposal hasn't been enacted
+	if m.mkt.State == types.MarketStateProposed {
+		return
+	}
 
-	if m.mkt.State != types.MarketStateProposed && m.mkt.State != types.MarketStatePending {
+	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
+	if m.mkt.State != types.MarketStatePending {
 		// we're either going to set state to trading terminated
 		// or we'll be performing the final settlement (setting market status to settled)
 		// in both cases, we want to MTM any pending trades
@@ -3376,13 +3380,14 @@ func (m *Market) stopAllLiquidityProvisionOnReject(ctx context.Context) error {
 	return nil
 }
 
-func lpsToLiquidityProviderFeeShare(lps map[string]*lp) []*types.LiquidityProviderFeeShare {
+func lpsToLiquidityProviderFeeShare(lps map[string]*lp, ls map[string]num.Decimal) []*types.LiquidityProviderFeeShare {
 	out := make([]*types.LiquidityProviderFeeShare, 0, len(lps))
 	for k, v := range lps {
 		out = append(out, &types.LiquidityProviderFeeShare{
 			Party:                 k,
 			EquityLikeShare:       v.share.String(),
 			AverageEntryValuation: v.avg.String(),
+			AverageScore:          ls[k].String(),
 		})
 	}
 
@@ -3407,6 +3412,8 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 
 	// We can't distribute any share when no balance.
 	if acc.Balance.IsZero() {
+		// reset next distribution period
+		m.liquidity.ResetAverageLiquidityScores()
 		return nil
 	}
 

@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -22,10 +21,9 @@ import (
 const TransactionSuccessfullySigned = "The transaction has been successfully signed."
 
 type ClientSignTransactionParams struct {
-	Token              string      `json:"token"`
-	PublicKey          string      `json:"publicKey"`
-	EncodedTransaction string      `json:"encodedTransaction"`
-	Transaction        interface{} `json:"transaction"`
+	Token       string      `json:"token"`
+	PublicKey   string      `json:"publicKey"`
+	Transaction interface{} `json:"transaction"`
 }
 
 type ClientParsedSignTransactionParams struct {
@@ -52,6 +50,11 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		return nil, invalidParams(err)
 	}
 
+	request := &walletpb.SubmitTransactionRequest{}
+	if err := jsonpb.Unmarshal(strings.NewReader(params.RawTransaction), request); err != nil {
+		return nil, invalidParams(ErrTransactionIsNotValidVegaCommand)
+	}
+
 	connectedWallet, err := h.sessions.GetConnectedWallet(params.Token, h.time.Now())
 	if err != nil {
 		return nil, invalidParams(err)
@@ -59,11 +62,6 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 
 	if !connectedWallet.CanUseKey(params.PublicKey) {
 		return nil, requestNotPermittedError(ErrPublicKeyIsNotAllowedToBeUsed)
-	}
-
-	request := &walletpb.SubmitTransactionRequest{}
-	if err := jsonpb.Unmarshal(strings.NewReader(params.RawTransaction), request); err != nil {
-		return nil, invalidParams(ErrTransactionIsMalformed)
 	}
 
 	request.PubKey = params.PublicKey
@@ -180,29 +178,13 @@ func validateSignTransactionParams(rawParams jsonrpc.Params) (ClientParsedSignTr
 		return ClientParsedSignTransactionParams{}, ErrPublicKeyIsRequired
 	}
 
-	if params.EncodedTransaction == "" && params.Transaction == nil {
+	if params.Transaction == nil {
 		return ClientParsedSignTransactionParams{}, ErrTransactionIsRequired
 	}
 
-	if params.EncodedTransaction != "" && params.Transaction != nil {
-		return ClientParsedSignTransactionParams{}, ErrEncodedTransactionAndTransactionSupplied
-	}
-
-	var tx []byte
-	var err error
-
-	if params.EncodedTransaction != "" {
-		tx, err = base64.StdEncoding.DecodeString(params.EncodedTransaction)
-		if err != nil {
-			return ClientParsedSignTransactionParams{}, ErrEncodedTransactionIsNotValidBase64String
-		}
-	}
-
-	if params.Transaction != nil {
-		tx, err = json.Marshal(params.Transaction)
-		if err != nil {
-			return ClientParsedSignTransactionParams{}, ErrEncodedTransactionIsNotValid
-		}
+	tx, err := json.Marshal(params.Transaction)
+	if err != nil {
+		return ClientParsedSignTransactionParams{}, ErrTransactionIsNotValidJSON
 	}
 
 	return ClientParsedSignTransactionParams{
