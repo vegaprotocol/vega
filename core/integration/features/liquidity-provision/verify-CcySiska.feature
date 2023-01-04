@@ -1,4 +1,4 @@
-Feature: check the impact from change of market parameter: market.liquidity.stakeToCcySiskas
+Feature: check the impact from change of market parameter: market.liquidity.stakeToCcyVolume
   Background:
     Given time is updated to "2020-11-30T00:00:00Z"
 
@@ -44,10 +44,10 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party2 | ETH/MAR22 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
       | party2 | ETH/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
 
-  Scenario: 001, market.liquidity.stakeToCcySiskas=2, 0007-POSN-010, 0013-ACCT-020
+  Scenario: 001, market.liquidity.stakeToCcyVolume=2, 0007-POSN-010, 0013-ACCT-020
     Given the following network parameters are set:
       | name                                          | value |
-      | market.liquidity.stakeToCcySiskas             | 2     |
+      | market.liquidity.stakeToCcyVolume             | 2     |
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | sell | ASK              | 500        | 20     | submission |
@@ -101,10 +101,10 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party1 | 52     | 704            | 0            |
       | party2 | -51    | -704           | 0            |
 
-  Scenario: 002, market.liquidity.stakeToCcySiskas=0.5,
+  Scenario: 002, market.liquidity.stakeToCcyVolume=0.5,
     Given the following network parameters are set:
       | name                                          | value |
-      | market.liquidity.stakeToCcySiskas             | 0.5   |
+      | market.liquidity.stakeToCcyVolume             | 0.5   |
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | sell | ASK              | 500        | 20     | submission |
@@ -158,10 +158,10 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party1 | 52     | 704            | 0            |
       | party2 | -51    | -704           | 0            |
 
-  Scenario: 003, market.liquidity.stakeToCcySiskas=0
+  Scenario: 003, market.liquidity.stakeToCcyVolume=0
     Given the following network parameters are set:
       | name                                          | value |
-      | market.liquidity.stakeToCcySiskas             | 0     |
+      | market.liquidity.stakeToCcyVolume             | 0     |
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | sell | ASK              | 500        | 20     | submission |
@@ -212,7 +212,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party1 | 51     | 500            | 0            |
       | party2 | -51    | -500           | 0            |
 
-  Scenario: 004, market.liquidity.stakeToCcySiskas=0, 3 LPs make commitment, 0044-LIME-008
+  Scenario: 004, market.liquidity.stakeToCcyVolume=0, 3 LPs make commitment, 0044-LIME-008
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount    |
       | party00 | USD   | 500000000 |
@@ -220,7 +220,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party02 | USD   | 500000000 |
     And the following network parameters are set:
       | name                                          | value |
-      | market.liquidity.stakeToCcySiskas             | 0     |
+      | market.liquidity.stakeToCcyVolume             | 0     |
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee  | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party00 | ETH/MAR22 | 17784             | 0.01 | sell | ASK              | 500        | 20     | submission |

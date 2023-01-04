@@ -8,6 +8,7 @@
 - [7067](https://github.com/vegaprotocol/vega/issues/7067) - Remove legacy technical commands on the wallet command line.
 - [7069](https://github.com/vegaprotocol/vega/issues/7069) - Remove deprecated `vegawallet info` command line.
 - [7010](https://github.com/vegaprotocol/vega/issues/7010) - Remove the deprecated `encodedTransaction` fields on wallet API endpoints.
+- [7232](https://github.com/vegaprotocol/vega/issues/7232) - Rename `stakeToCcySiskas` network parameter to `stakeToCcyVolume`
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
