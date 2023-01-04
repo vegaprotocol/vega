@@ -149,9 +149,16 @@ func (c Config) IsValidator() bool {
 	return c.NodeMode == cfgencoding.NodeModeValidator
 }
 
+func (c *Config) SetDefaultMaxMemoryPercent() {
+	// disable restriction if node is a validator
+	if c.NodeMode == cfgencoding.NodeModeValidator {
+		c.MaxMemoryPercent = 100
+	}
+}
+
 func (c Config) GetMaxMemoryFactor() (float64, error) {
-	if c.MaxMemoryPercent <= 0 || c.MaxMemoryPercent >= 100 {
-		return 0, errors.New("MaxMemoryPercent is out of range, expect > 0 and < 100")
+	if c.MaxMemoryPercent <= 0 || c.MaxMemoryPercent > 100 {
+		return 0, errors.New("MaxMemoryPercent is out of range, expect > 0 and <= 100")
 	}
 
 	return float64(c.MaxMemoryPercent) / 100., nil

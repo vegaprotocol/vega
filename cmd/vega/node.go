@@ -79,8 +79,11 @@ func (cmd *StartCmd) Execute(args []string) error {
 		return err
 	}
 
-	totalMem := memory.TotalMemory()
-	debug.SetMemoryLimit(int64(float64(totalMem) * memFactor))
+	// only set max memory if user didn't require 100%
+	if memFactor != 1 {
+		totalMem := memory.TotalMemory()
+		debug.SetMemoryLimit(int64(float64(totalMem) * memFactor))
+	}
 
 	if len(startCmd.TendermintHome) <= 0 {
 		startCmd.TendermintHome = "$HOME/.tendermint"
