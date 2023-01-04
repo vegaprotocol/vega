@@ -1457,6 +1457,164 @@ func Test6056(t *testing.T) {
 	assert.True(t, closed)
 }
 
+func TestOraclesWithMultipleFilterNameFails(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(20, 0)
+	tm := getTestMarket(t, now, nil, nil)
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	defer tm.ctrl.Finish()
+	// add 2 parties to the party engine
+	// this will create 2 parties, credit their account
+	// and move some monies to the market
+	// this will also output the closed accounts
+	addAccount(t, tm, party1)
+	addAccount(t, tm, party2)
+
+	// submit orders
+	// party1 buys
+	// party2 sells
+	orderBuy := &types.Order{
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Status:      types.OrderStatusActive,
+		ID:          "",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       num.NewUint(100),
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+	orderSell := &types.Order{
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Status:      types.OrderStatusActive,
+		ID:          "",
+		Side:        types.SideSell,
+		Party:       party2,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       num.NewUint(100),
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party2-sell-order",
+	}
+
+	// submit orders
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+
+	fmt.Printf("%s\n", orderBuy.String())
+	_, err := tm.market.SubmitOrder(ctx, orderBuy)
+	assert.Nil(t, err)
+	if err != nil {
+		t.Fail()
+	}
+	tm.now = tm.now.Add(time.Second)
+	tm.market.OnTick(ctx, tm.now)
+	fmt.Printf("%s\n", orderBuy.String())
+	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
+
+	_, err = tm.market.SubmitOrder(ctx, orderSell)
+	assert.Nil(t, err)
+	if err != nil {
+		t.Fail()
+	}
+	tm.now = tm.now.Add(time.Second)
+	tm.market.OnTick(ctx, tm.now)
+
+	// now update the market
+	updatedMkt := tm.mktCfg.DeepClone()
+
+	f1 := uint64(12)
+	f2 := uint64(21)
+	err = updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Data.UpdateFilters(
+		[]*types.DataSourceSpecFilter{
+			{
+				Key: &types.OracleSpecPropertyKey{
+					Name:                "prices.ETH.value",
+					Type:                datapb.PropertyKey_TYPE_INTEGER,
+					NumberDecimalPlaces: &f1,
+				},
+				Conditions: []*types.OracleSpecCondition{
+					{
+						Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+						Value:    "717098987000000000000000000000000000000",
+					},
+				},
+			},
+			{
+				Key: &types.OracleSpecPropertyKey{
+					Name:                "prices.ETH.value",
+					Type:                datapb.PropertyKey_TYPE_INTEGER,
+					NumberDecimalPlaces: &f2,
+				},
+				Conditions: []*types.OracleSpecCondition{
+					{
+						Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+						Value:    "957586060000000000000000000000000000000000000000",
+					},
+				},
+			},
+		},
+	)
+
+	assert.ErrorIs(t, types.ErrMultipleSameKeyNamesInFilterList, err)
+
+	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination.Data.UpdateFilters(
+		[]*types.DataSourceSpecFilter{
+			{
+				Key: &types.DataSourceSpecPropertyKey{
+					Name: "trading.terminated",
+					Type: datapb.PropertyKey_TYPE_BOOLEAN,
+				},
+				Conditions: []*types.DataSourceSpecCondition{
+					{
+						Operator: datapb.Condition_OPERATOR_EQUALS,
+						Value:    "false",
+					},
+				},
+			},
+		},
+	)
+
+	pubKeys := []*types.Signer{
+		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	}
+	err = tm.market.Update(context.Background(), updatedMkt, tm.oracleEngine)
+	require.NoError(t, err)
+
+	properties := map[string]string{}
+	properties["trading.terminated"] = "false"
+	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
+		Signers: pubKeys,
+		Data:    properties,
+	})
+	require.NoError(t, err)
+	tm.market.OnTick(ctx, tm.now)
+	require.Equal(t, types.MarketStateTradingTerminated, tm.market.State())
+
+	properties = map[string]string{}
+	properties["prices.ETH.value"] = "100"
+	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
+		Signers: pubKeys,
+		Data:    properties,
+	})
+	require.NoError(t, err)
+
+	tm.now = tm.now.Add(time.Second)
+	closed := tm.market.OnTick(ctx, tm.now)
+
+	// The market should be closed, because it was never updated
+	assert.True(t, closed)
+}
+
 func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)

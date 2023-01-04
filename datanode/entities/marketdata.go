@@ -156,12 +156,14 @@ type LiquidityProviderFeeShare struct {
 	Party                 string          `json:"party"`
 	EquityLikeShare       decimal.Decimal `json:"equityLikeShare"`
 	AverageEntryValuation decimal.Decimal `json:"averageEntryValuation"`
+	AverageScore          decimal.Decimal `json:"averageScore"`
 }
 
 func (fee LiquidityProviderFeeShare) Equals(other LiquidityProviderFeeShare) bool {
 	return fee.Party == other.Party &&
 		fee.EquityLikeShare.Equals(other.EquityLikeShare) &&
-		fee.AverageEntryValuation.Equals(other.AverageEntryValuation)
+		fee.AverageEntryValuation.Equals(other.AverageEntryValuation) &&
+		fee.AverageScore.Equal(other.AverageScore)
 }
 
 func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, error) {
@@ -313,11 +315,13 @@ func liquidityProviderFeeShareFromProto(feeShare *types.LiquidityProviderFeeShar
 
 	equityLikeShare, _ := decimal.NewFromString(feeShare.EquityLikeShare)
 	averageEntryValuation, _ := decimal.NewFromString(feeShare.AverageEntryValuation)
+	averageScore, _ := decimal.NewFromString(feeShare.AverageScore)
 
 	return &LiquidityProviderFeeShare{
 		Party:                 feeShare.Party,
 		EquityLikeShare:       equityLikeShare,
 		AverageEntryValuation: averageEntryValuation,
+		AverageScore:          averageScore,
 	}
 }
 
@@ -459,6 +463,7 @@ func liquidityProviderFeeSharesToProto(feeShares []*LiquidityProviderFeeShare) [
 			Party:                 feeShare.Party,
 			EquityLikeShare:       feeShare.EquityLikeShare.String(),
 			AverageEntryValuation: feeShare.AverageEntryValuation.String(),
+			AverageScore:          feeShare.AverageScore.String(),
 		}
 
 		results = append(results, &protoFeeShare)

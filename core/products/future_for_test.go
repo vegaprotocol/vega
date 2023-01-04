@@ -14,13 +14,18 @@ package products
 
 import (
 	"context"
-	"strconv"
+
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"code.vegaprotocol.io/vega/core/oracles"
 )
 
-func (f *Future) SetSettlementData(ctx context.Context, priceName string, settlementData uint64) {
+func (f *Future) SetSettlementData(ctx context.Context, priceName string, settlementData *num.Numeric) {
 	od := oracles.OracleData{Data: map[string]string{}}
-	od.Data[priceName] = strconv.FormatUint(settlementData, 10)
+	if settlementData.IsUint() {
+		od.Data[priceName] = settlementData.Uint().String()
+	} else {
+		od.Data[priceName] = settlementData.Decimal().String()
+	}
 	f.updateSettlementData(ctx, od)
 }

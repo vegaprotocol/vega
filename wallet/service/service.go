@@ -12,13 +12,13 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/commands"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	"code.vegaprotocol.io/vega/version"
+	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/wallet"
@@ -46,6 +46,7 @@ type Service struct {
 	handler     WalletHandler
 	auth        Auth
 	nodeForward NodeForward
+	pow         ProofOfWork
 	policy      Policy
 	apiV2       *jsonrpc.API
 }
@@ -94,8 +95,6 @@ type ImportWalletRequest struct {
 	Passphrase           string `json:"passphrase"`
 	RecoveryPhrase       string `json:"recoveryPhrase"`
 	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
-	// DEPRECATED: Use KeyDerivationVersion instead
-	Version uint32 `json:"version"`
 }
 
 func ParseImportWalletRequest(r *http.Request) (*ImportWalletRequest, commands.Errors) {
@@ -116,10 +115,6 @@ func ParseImportWalletRequest(r *http.Request) (*ImportWalletRequest, commands.E
 
 	if len(req.RecoveryPhrase) == 0 {
 		errs.AddForProperty("recoveryPhrase", commands.ErrIsRequired)
-	}
-
-	if req.KeyDerivationVersion == 0 {
-		req.KeyDerivationVersion = req.Version
 	}
 
 	if req.KeyDerivationVersion == 0 {
@@ -445,13 +440,21 @@ type NodeForward interface {
 	LastBlockHeightAndHash(context.Context) (*api.LastBlockHeightResponse, int, error)
 }
 
-func NewService(log *zap.Logger, net *network.Network, apiV2 *jsonrpc.API, h WalletHandler, a Auth, n NodeForward, policy Policy) *Service {
+// ProofOfWork ...
+//
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/proof_of_work_mock.go -package mocks code.vegaprotocol.io/vega/wallet/service ProofOfWork
+type ProofOfWork interface {
+	Generate(pubKey string, blockData *nodetypes.LastBlock) (*commandspb.ProofOfWork, error)
+}
+
+func NewService(log *zap.Logger, net *network.Network, apiV2 *jsonrpc.API, h WalletHandler, a Auth, n NodeForward, p ProofOfWork, policy Policy) *Service {
 	s := &Service{
 		Router:      httprouter.New(),
 		log:         log,
 		handler:     h,
 		auth:        a,
 		nodeForward: n,
+		pow:         p,
 		network:     net,
 		policy:      policy,
 		apiV2:       apiV2,
@@ -821,16 +824,19 @@ func (s *Service) CheckTx(token string, w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	// generate proof of work for the transaction
-	tid := vgcrypto.RandomHash()
-	powNonce, _, err := vgcrypto.PoW(blockData.Hash, tid, uint(blockData.SpamPowDifficulty), vgcrypto.Sha3)
+	tx.Pow, err = s.pow.Generate(req.PubKey, &nodetypes.LastBlock{
+		ChainID:                         blockData.ChainId,
+		BlockHeight:                     blockData.Height,
+		BlockHash:                       blockData.Hash,
+		ProofOfWorkHashFunction:         blockData.SpamPowHashFunction,
+		ProofOfWorkDifficulty:           blockData.SpamPowDifficulty,
+		ProofOfWorkPastBlocks:           blockData.SpamPowNumberOfPastBlocks,
+		ProofOfWorkTxPerBlock:           blockData.SpamPowNumberOfTxPerBlock,
+		ProofOfWorkIncreasingDifficulty: blockData.SpamPowIncreasingDifficulty,
+	})
 	if err != nil {
 		s.writeInternalError(w, err)
 		return
-	}
-	tx.Pow = &commandspb.ProofOfWork{
-		Tid:   tid,
-		Nonce: powNonce,
 	}
 
 	result, err := s.nodeForward.CheckTx(r.Context(), tx, cltIdx)
@@ -926,9 +932,16 @@ func (s *Service) signTx(token string, w http.ResponseWriter, r *http.Request, _
 		return
 	}
 
-	// generate proof of work for the transaction
-	tid := vgcrypto.RandomHash()
-	powNonce, _, err := vgcrypto.PoW(blockData.Hash, tid, uint(blockData.SpamPowDifficulty), vgcrypto.Sha3)
+	tx.Pow, err = s.pow.Generate(req.PubKey, &nodetypes.LastBlock{
+		ChainID:                         blockData.ChainId,
+		BlockHeight:                     blockData.Height,
+		BlockHash:                       blockData.Hash,
+		ProofOfWorkHashFunction:         blockData.SpamPowHashFunction,
+		ProofOfWorkDifficulty:           blockData.SpamPowDifficulty,
+		ProofOfWorkPastBlocks:           blockData.SpamPowNumberOfPastBlocks,
+		ProofOfWorkTxPerBlock:           blockData.SpamPowNumberOfTxPerBlock,
+		ProofOfWorkIncreasingDifficulty: blockData.SpamPowIncreasingDifficulty,
+	})
 	if err != nil {
 		s.policy.Report(SentTransaction{
 			Tx:    tx,
@@ -936,11 +949,6 @@ func (s *Service) signTx(token string, w http.ResponseWriter, r *http.Request, _
 			Error: err,
 		})
 		s.writeInternalError(w, err)
-		return
-	}
-	tx.Pow = &commandspb.ProofOfWork{
-		Tid:   tid,
-		Nonce: powNonce,
 	}
 
 	sentAt := time.Now()

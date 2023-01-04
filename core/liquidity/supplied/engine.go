@@ -113,14 +113,51 @@ func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v num.Decimal) {
 	e.probabilityOfTradingTauScaling = v
 }
 
-// CalculateSuppliedLiquidity returns the current supplied liquidity per specified current mark price and order set.
-func (e *Engine) CalculateSuppliedLiquidity(
+// CalculateLiquidityScore returns the current liquidity scores (volume-weighted probability of trading).
+func (e *Engine) CalculateLiquidityScore(
 	orders []*types.Order,
+	bestBid, bestAsk num.Decimal,
 	minLpPrice, maxLpPrice *num.Uint,
-) *num.Uint {
-	bLiq, sLiq := e.calculateBuySellLiquidityWithMinMaxLpPrice(orders, minLpPrice, maxLpPrice)
+) num.Decimal {
+	minPMPrice, maxPMPrice := e.pm.GetValidPriceRange()
 
-	return num.Min(bLiq, sLiq)
+	bLiq := num.DecimalZero()
+	sLiq := num.DecimalZero()
+	bSize := num.DecimalZero()
+	sSize := num.DecimalZero()
+	for _, o := range orders {
+		if o.Price.LT(minLpPrice) || o.Price.GT(maxLpPrice) {
+			continue
+		}
+		prob := num.DecimalZero()
+		// if order is outside of price monitoring bounds then probability is set to 0.
+		if o.Price.GTE(minPMPrice.Representation()) && o.Price.LTE(maxPMPrice.Representation()) {
+			prob = getProbabilityOfTrading(bestBid, bestAsk, minPMPrice.Original(), maxPMPrice.Original(), e.pot, o.Price.ToDecimal(), o.Side == types.SideBuy, e.minProbabilityOfTrading)
+		}
+		s := num.DecimalFromUint(num.NewUint(o.Remaining))
+		l := prob.Mul(s)
+		if o.Side == types.SideBuy {
+			bLiq = bLiq.Add(l)
+			bSize = bSize.Add(s)
+		}
+		if o.Side == types.SideSell {
+			sLiq = sLiq.Add(l)
+			sSize = sSize.Add(s)
+		}
+	}
+	// descale by total volume per side
+	if !bSize.IsZero() {
+		bLiq = bLiq.Div(bSize)
+	}
+	if !sSize.IsZero() {
+		sLiq = sLiq.Div(sSize)
+	}
+
+	// return the minimum of the two
+	if bLiq.LessThanOrEqual(sLiq) {
+		return bLiq
+	}
+	return sLiq
 }
 
 // CalculateLiquidityImpliedVolumes updates the LiquidityImpliedSize fields in LiquidityOrderReference so that the liquidity commitment is met.
@@ -132,7 +169,7 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(
 	minLpPrice, maxLpPrice *num.Uint,
 	buyShapes, sellShapes []*LiquidityOrder,
 ) {
-	buySupplied, sellSupplied := e.calculateBuySellLiquidityWithMinMaxLpPrice(orders, minLpPrice, maxLpPrice)
+	buySupplied, sellSupplied := e.CalculateUnweightedBuySellLiquidityWithinLPRange(orders, minLpPrice, maxLpPrice)
 
 	buyRemaining := liquidityObligation.Clone()
 	buyRemaining.Sub(buyRemaining, buySupplied)
@@ -143,8 +180,8 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(
 	e.updateSizes(sellRemaining, sellShapes)
 }
 
-// calculateBuySellLiquidityWithMinMaxLpPrice returns the current supplied liquidity per market specified in the constructor.
-func (e *Engine) calculateBuySellLiquidityWithMinMaxLpPrice(orders []*types.Order, minLpPrice, maxLpPrice *num.Uint) (*num.Uint, *num.Uint) {
+// CalculateUnweightedBuySellLiquidityWithinLPRange returns the sum of price x remaining volume for each order within LP range.
+func (e *Engine) CalculateUnweightedBuySellLiquidityWithinLPRange(orders []*types.Order, minLpPrice, maxLpPrice *num.Uint) (*num.Uint, *num.Uint) {
 	bLiq := num.UintZero()
 	sLiq := num.UintZero()
 	for _, o := range orders {

@@ -20,6 +20,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"code.vegaprotocol.io/vega/datanode/admin"
+
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"golang.org/x/sync/errgroup"
 
@@ -103,13 +105,22 @@ func (l *NodeCommand) runNode([]string) error {
 	// gRPC server
 	grpcServer := l.createGRPCServer(l.conf.API)
 
+	// Admin server
+	adminServer := admin.NewServer(l.Log, l.conf.Admin, l.vegaPaths, admin.NewDeHistoryAdminService(l.deHistoryService))
+
 	// watch configs
 	l.configWatcher.OnConfigUpdate(
-		func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) },
+		func(cfg config.Config) {
+			grpcServer.ReloadConf(cfg.API)
+			adminServer.ReloadConf(cfg.Admin)
+		},
 	)
 
 	// start the grpc server
 	eg.Go(func() error { return grpcServer.Start(ctx, nil) })
+
+	// start the admin server
+	eg.Go(func() error { return adminServer.Start(ctx) })
 
 	// start gateway
 	if l.conf.GatewayEnabled {
@@ -137,7 +148,6 @@ func (l *NodeCommand) runNode([]string) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		}
-
 		return nil
 	})
 
@@ -146,7 +156,12 @@ func (l *NodeCommand) runNode([]string) error {
 	l.Log.Info("Vega data node startup complete")
 
 	err := eg.Wait()
+
 	if errors.Is(err, context.Canceled) {
+		if l.conf.DeHistory.Enabled {
+			l.deHistoryService.Stop()
+		}
+
 		return nil
 	}
 

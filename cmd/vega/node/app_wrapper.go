@@ -29,10 +29,6 @@ func newAppW(app types.Application) *appW {
 	}
 }
 
-func (app *appW) ScheduleUpgrade(newApp types.Application) {
-	app.update = newApp
-}
-
 func (app *appW) Info(req types.RequestInfo) types.ResponseInfo {
 	return app.impl.Info(req)
 }

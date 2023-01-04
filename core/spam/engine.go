@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/hex"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/netparams"
 
@@ -26,13 +27,17 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-var increaseFactor = num.NewUint(2)
+var (
+	increaseFactor             = num.NewUint(2)
+	banDurationAsEpochFraction = num.DecimalOne().Div(num.DecimalFromInt64(48)) // 1/48 of an epoch will be the default 30 minutes ban
+	banFactor                  = num.DecimalFromFloat(0.5)
+)
 
 const (
 	rejectRatioForIncrease         float64 = 0.3
 	numberOfEpochsBan              uint64  = 4
 	numberOfBlocksForIncreaseCheck uint64  = 10
-	banFactor                              = 0.5
+	minBanDuration                         = time.Second * 30 // minimum ban duration
 )
 
 type StakingAccounts interface {
@@ -53,11 +58,12 @@ type Engine struct {
 	currentEpoch            *types.Epoch
 	policyNameToPolicy      map[string]Policy
 	hashKeys                []string
+	banDuration             time.Duration
 }
 
 type Policy interface {
 	Reset(epoch types.Epoch)
-	EndOfBlock(blockHeight uint64)
+	EndOfBlock(blockHeight uint64, now time.Time, banDuration time.Duration)
 	PreBlockAccept(tx abci.Tx) (bool, error)
 	PostBlockAccept(tx abci.Tx) (bool, error)
 	UpdateUintParam(name string, value *num.Uint) error
@@ -116,6 +122,18 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	e.log.Info("Spam protection started")
 
 	return e
+}
+
+// OnEpochDurationChanged updates the ban duration as a fraction of the epoch duration.
+func (e *Engine) OnEpochDurationChanged(_ context.Context, duration time.Duration) error {
+	epochImpliedDurationNano, _ := num.UintFromDecimal(num.DecimalFromInt64(duration.Nanoseconds()).Mul(banDurationAsEpochFraction))
+	epochImpliedDurationDuration := time.Duration(epochImpliedDurationNano.Uint64())
+	if epochImpliedDurationDuration < minBanDuration {
+		e.banDuration = minBanDuration
+	} else {
+		e.banDuration = epochImpliedDurationDuration
+	}
+	return nil
 }
 
 // OnMaxDelegationsChanged is called when the net param for max delegations per epoch has changed.
@@ -179,12 +197,12 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 }
 
 // EndOfBlock is called when the block is finished.
-func (e *Engine) EndOfBlock(blockHeight uint64) {
+func (e *Engine) EndOfBlock(blockHeight uint64, now time.Time) {
 	if e.log.GetLevel() <= logging.DebugLevel {
 		e.log.Debug("Spam protection EndOfBlock called", logging.Uint64("blockHeight", blockHeight))
 	}
 	for _, policy := range e.transactionTypeToPolicy {
-		policy.EndOfBlock(blockHeight)
+		policy.EndOfBlock(blockHeight, now, e.banDuration)
 	}
 }
 

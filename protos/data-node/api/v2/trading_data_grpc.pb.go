@@ -199,6 +199,8 @@ type TradingDataServiceClient interface {
 	//
 	// Get reward summaries
 	ListRewardSummaries(ctx context.Context, in *ListRewardSummariesRequest, opts ...grpc.CallOption) (*ListRewardSummariesResponse, error)
+	// List reward summaries by epoch
+	ListEpochRewardSummaries(ctx context.Context, in *ListEpochRewardSummariesRequest, opts ...grpc.CallOption) (*ListEpochRewardSummariesResponse, error)
 	// subscribe to rewards
 	ObserveRewards(ctx context.Context, in *ObserveRewardsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveRewardsClient, error)
 	// Deposit
@@ -328,10 +330,6 @@ type TradingDataServiceClient interface {
 	//
 	// List all history segments stored by this node
 	ListAllDeHistorySegments(ctx context.Context, in *ListAllDeHistorySegmentsRequest, opts ...grpc.CallOption) (*ListAllDeHistorySegmentsResponse, error)
-	// Fetch decentralized history segment
-	//
-	// Fetch a history segment from another peer in the network
-	FetchDeHistorySegment(ctx context.Context, in *FetchDeHistorySegmentRequest, opts ...grpc.CallOption) (*FetchDeHistorySegmentResponse, error)
 	// Get active decentralized history peer addresses
 	//
 	// List the addresses of all active decentralized history peers
@@ -976,6 +974,15 @@ func (c *tradingDataServiceClient) ListRewardSummaries(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListEpochRewardSummaries(ctx context.Context, in *ListEpochRewardSummariesRequest, opts ...grpc.CallOption) (*ListEpochRewardSummariesResponse, error) {
+	out := new(ListEpochRewardSummariesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListEpochRewardSummaries", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ObserveRewards(ctx context.Context, in *ObserveRewardsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveRewardsClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[10], "/datanode.api.v2.TradingDataService/ObserveRewards", opts...)
 	if err != nil {
@@ -1437,15 +1444,6 @@ func (c *tradingDataServiceClient) ListAllDeHistorySegments(ctx context.Context,
 	return out, nil
 }
 
-func (c *tradingDataServiceClient) FetchDeHistorySegment(ctx context.Context, in *FetchDeHistorySegmentRequest, opts ...grpc.CallOption) (*FetchDeHistorySegmentResponse, error) {
-	out := new(FetchDeHistorySegmentResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/FetchDeHistorySegment", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *tradingDataServiceClient) GetActiveDeHistoryPeerAddresses(ctx context.Context, in *GetActiveDeHistoryPeerAddressesRequest, opts ...grpc.CallOption) (*GetActiveDeHistoryPeerAddressesResponse, error) {
 	out := new(GetActiveDeHistoryPeerAddressesResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetActiveDeHistoryPeerAddresses", in, out, opts...)
@@ -1645,6 +1643,8 @@ type TradingDataServiceServer interface {
 	//
 	// Get reward summaries
 	ListRewardSummaries(context.Context, *ListRewardSummariesRequest) (*ListRewardSummariesResponse, error)
+	// List reward summaries by epoch
+	ListEpochRewardSummaries(context.Context, *ListEpochRewardSummariesRequest) (*ListEpochRewardSummariesResponse, error)
 	// subscribe to rewards
 	ObserveRewards(*ObserveRewardsRequest, TradingDataService_ObserveRewardsServer) error
 	// Deposit
@@ -1774,10 +1774,6 @@ type TradingDataServiceServer interface {
 	//
 	// List all history segments stored by this node
 	ListAllDeHistorySegments(context.Context, *ListAllDeHistorySegmentsRequest) (*ListAllDeHistorySegmentsResponse, error)
-	// Fetch decentralized history segment
-	//
-	// Fetch a history segment from another peer in the network
-	FetchDeHistorySegment(context.Context, *FetchDeHistorySegmentRequest) (*FetchDeHistorySegmentResponse, error)
 	// Get active decentralized history peer addresses
 	//
 	// List the addresses of all active decentralized history peers
@@ -1925,6 +1921,9 @@ func (UnimplementedTradingDataServiceServer) ListRewards(context.Context, *ListR
 func (UnimplementedTradingDataServiceServer) ListRewardSummaries(context.Context, *ListRewardSummariesRequest) (*ListRewardSummariesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRewardSummaries not implemented")
 }
+func (UnimplementedTradingDataServiceServer) ListEpochRewardSummaries(context.Context, *ListEpochRewardSummariesRequest) (*ListEpochRewardSummariesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListEpochRewardSummaries not implemented")
+}
 func (UnimplementedTradingDataServiceServer) ObserveRewards(*ObserveRewardsRequest, TradingDataService_ObserveRewardsServer) error {
 	return status.Errorf(codes.Unimplemented, "method ObserveRewards not implemented")
 }
@@ -2032,9 +2031,6 @@ func (UnimplementedTradingDataServiceServer) GetMostRecentDeHistorySegment(conte
 }
 func (UnimplementedTradingDataServiceServer) ListAllDeHistorySegments(context.Context, *ListAllDeHistorySegmentsRequest) (*ListAllDeHistorySegmentsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAllDeHistorySegments not implemented")
-}
-func (UnimplementedTradingDataServiceServer) FetchDeHistorySegment(context.Context, *FetchDeHistorySegmentRequest) (*FetchDeHistorySegmentResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FetchDeHistorySegment not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetActiveDeHistoryPeerAddresses(context.Context, *GetActiveDeHistoryPeerAddressesRequest) (*GetActiveDeHistoryPeerAddressesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetActiveDeHistoryPeerAddresses not implemented")
@@ -2877,6 +2873,24 @@ func _TradingDataService_ListRewardSummaries_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListEpochRewardSummaries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListEpochRewardSummariesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListEpochRewardSummaries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListEpochRewardSummaries",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListEpochRewardSummaries(ctx, req.(*ListEpochRewardSummariesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ObserveRewards_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ObserveRewardsRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -3548,24 +3562,6 @@ func _TradingDataService_ListAllDeHistorySegments_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingDataService_FetchDeHistorySegment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FetchDeHistorySegmentRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TradingDataServiceServer).FetchDeHistorySegment(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/datanode.api.v2.TradingDataService/FetchDeHistorySegment",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).FetchDeHistorySegment(ctx, req.(*FetchDeHistorySegmentRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _TradingDataService_GetActiveDeHistoryPeerAddresses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetActiveDeHistoryPeerAddressesRequest)
 	if err := dec(in); err != nil {
@@ -3746,6 +3742,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_ListRewardSummaries_Handler,
 		},
 		{
+			MethodName: "ListEpochRewardSummaries",
+			Handler:    _TradingDataService_ListEpochRewardSummaries_Handler,
+		},
+		{
 			MethodName: "GetDeposit",
 			Handler:    _TradingDataService_GetDeposit_Handler,
 		},
@@ -3864,10 +3864,6 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListAllDeHistorySegments",
 			Handler:    _TradingDataService_ListAllDeHistorySegments_Handler,
-		},
-		{
-			MethodName: "FetchDeHistorySegment",
-			Handler:    _TradingDataService_FetchDeHistorySegment_Handler,
 		},
 		{
 			MethodName: "GetActiveDeHistoryPeerAddresses",

@@ -280,26 +280,6 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) EstimateMargin(arg0, arg1 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EstimateMargin", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).EstimateMargin), varargs...)
 }
 
-// FetchDeHistorySegment mocks base method.
-func (m *MockTradingDataServiceClientV2) FetchDeHistorySegment(arg0 context.Context, arg1 *v2.FetchDeHistorySegmentRequest, arg2 ...grpc.CallOption) (*v2.FetchDeHistorySegmentResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "FetchDeHistorySegment", varargs...)
-	ret0, _ := ret[0].(*v2.FetchDeHistorySegmentResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FetchDeHistorySegment indicates an expected call of FetchDeHistorySegment.
-func (mr *MockTradingDataServiceClientV2MockRecorder) FetchDeHistorySegment(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchDeHistorySegment", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).FetchDeHistorySegment), varargs...)
-}
-
 // GetActiveDeHistoryPeerAddresses mocks base method.
 func (m *MockTradingDataServiceClientV2) GetActiveDeHistoryPeerAddresses(arg0 context.Context, arg1 *v2.GetActiveDeHistoryPeerAddressesRequest, arg2 ...grpc.CallOption) (*v2.GetActiveDeHistoryPeerAddressesResponse, error) {
 	m.ctrl.T.Helper()
@@ -1078,6 +1058,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ListERC20MultiSigSignerRem
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListERC20MultiSigSignerRemovedBundles", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListERC20MultiSigSignerRemovedBundles), varargs...)
+}
+
+// ListEpochRewardSummaries mocks base method.
+func (m *MockTradingDataServiceClientV2) ListEpochRewardSummaries(arg0 context.Context, arg1 *v2.ListEpochRewardSummariesRequest, arg2 ...grpc.CallOption) (*v2.ListEpochRewardSummariesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListEpochRewardSummaries", varargs...)
+	ret0, _ := ret[0].(*v2.ListEpochRewardSummariesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListEpochRewardSummaries indicates an expected call of ListEpochRewardSummaries.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListEpochRewardSummaries(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEpochRewardSummaries", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListEpochRewardSummaries), varargs...)
 }
 
 // ListEthereumKeyRotations mocks base method.

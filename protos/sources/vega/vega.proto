@@ -741,8 +741,8 @@ enum TransferType {
   TRANSFER_TYPE_DEPOSIT = 19;
   // Bond account penalised when liquidity commitment not met
   TRANSFER_TYPE_BOND_SLASHING = 20;
-  // Staking reward received
-  TRANSFER_TYPE_STAKE_REWARD = 21;
+  // Reward payout received
+  TRANSFER_TYPE_REWARD_PAYOUT = 21;
   // A network internal instruction for the collateral engine to move funds from a user's general account into the pending transfers pool
   TRANSFER_TYPE_TRANSFER_FUNDS_SEND = 22;
   // A network internal instruction for the collateral engine to move funds from the pending transfers pool account into the destination account
@@ -936,7 +936,8 @@ message LiquidityProviderFeeShare {
   string equity_like_share = 2;
   // The average entry valuation of the liquidity provider for the market
   string average_entry_valuation = 3;
-
+  // The average liquidity score
+  string average_score = 4;
 }
 
 // Represents a list of valid (at the current timestamp) price ranges per associated trigger
@@ -1292,6 +1293,16 @@ message RewardSummary {
   // Total amount of rewards for the asset
   string amount = 3;
 }
+
+// Details for rewards for a combination of asset, market, and reward type in a given epoch
+message EpochRewardSummary {
+  uint64 epoch = 1;
+  string asset_id = 2;
+  string market_id = 3;
+  string reward_type = 4;
+  string amount = 5;
+}
+
 
 message StateValueProposal {
   // state variable identifier

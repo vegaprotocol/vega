@@ -157,10 +157,10 @@ func (w *Watcher) watch(ctx context.Context, watcher *fsnotify.Watcher) {
 		case event := <-watcher.Events:
 			if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Rename == fsnotify.Rename {
 				if event.Op&fsnotify.Rename == fsnotify.Rename {
-					// add a small sleep here in order to handle vi
-					// vi do not send a write event / edit the file in place,
-					// it always create a temporary file, then delete the original one,
-					// and then rename the temp file with the name of the original file.
+					// add a small sleep here in order to handle vi as
+					// vi does not send a write event / edit the file in place,
+					// it always creates a temporary file, then deletes the original one,
+					// and then renames the temp file with the name of the original file.
 					// if we try to update the conf as soon as we get the event, the file is not
 					// always created and we get a no such file or directory error
 					time.Sleep(50 * time.Millisecond)

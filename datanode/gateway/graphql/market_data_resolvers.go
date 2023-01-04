@@ -185,6 +185,7 @@ func (r *myMarketDataResolver) LiquidityProviderFeeShare(_ context.Context, m *t
 			Party:                 &types.Party{Id: v.Party},
 			EquityLikeShare:       v.EquityLikeShare,
 			AverageEntryValuation: v.AverageEntryValuation,
+			AverageScore:          v.AverageScore,
 		})
 	}
 	return out, nil
@@ -288,6 +289,7 @@ func (r *myObservableMarketDataResolver) LiquidityProviderFeeShare(ctx context.C
 			PartyID:               v.Party,
 			EquityLikeShare:       v.EquityLikeShare,
 			AverageEntryValuation: v.AverageEntryValuation,
+			AverageScore:          v.AverageScore,
 		})
 	}
 	return out, nil

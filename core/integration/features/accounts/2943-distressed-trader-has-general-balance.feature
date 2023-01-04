@@ -62,7 +62,6 @@ Feature: Distressed parties should not have general balance left
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general       |
       | party4 | ETH   | ETH/DEC20 | 360    | 9999999999640 |
-      #| party4 | ETH   | ETH/DEC20 | 240    | 9999999999760 |
       | party5 | ETH   | ETH/DEC20 | 372    | 9999999999528 |
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
@@ -79,7 +78,7 @@ Feature: Distressed parties should not have general balance left
     ## The sum of the margin + general account == 24000 - 10000 (commitment amount)
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party3 | ETH   | ETH/DEC20 | 2626   | 1374   |
+      | party3 | ETH   | ETH/DEC20 | 2626   | 1374    |
 
     ## Now let's increase the mark price so party3 gets distressed
     When the parties place the following orders "1" blocks apart:
@@ -90,7 +89,7 @@ Feature: Distressed parties should not have general balance left
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general       |
-      | party3 | ETH   | ETH/DEC20 | 3152   | 1008          |
+      | party3 | ETH   | ETH/DEC20 | 3152   | 924           |
       | party4 | ETH   | ETH/DEC20 | 160    | 9999999999640 |
 
     ## Now let's increase the mark price so party3 gets distressed

@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"os"
 
+	"code.vegaprotocol.io/vega/datanode/admin"
+
 	"code.vegaprotocol.io/vega/datanode/dehistory"
 
 	"code.vegaprotocol.io/vega/datanode/api"
@@ -36,6 +38,7 @@ import (
 
 // Config ties together all other application configuration types.
 type Config struct {
+	Admin     admin.Config     `group:"Admin" namespace:"admin"`
 	API       api.Config       `group:"API" namespace:"api"`
 	CandlesV2 candlesv2.Config `group:"CandlesV2" namespace:"candlesv2"`
 	Logging   logging.Config   `group:"Logging" namespace:"logging"`
@@ -58,6 +61,7 @@ type Config struct {
 // config level, if there is an error initialising any of the configs then this is returned.
 func NewDefaultConfig() Config {
 	return Config{
+		Admin:                       admin.NewDefaultConfig(),
 		API:                         api.NewDefaultConfig(),
 		CandlesV2:                   candlesv2.NewDefaultConfig(),
 		SQLStore:                    sqlstore.NewDefaultConfig(),

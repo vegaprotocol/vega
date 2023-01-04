@@ -15,7 +15,8 @@
             {
               "key": {
                 "name": "price.DAI.value",
-                "type": "TYPE_INTEGER"
+                "type": "TYPE_INTEGER",
+                "numberDecimalPlaces": "2"
               },
               "conditions": [
               ]
@@ -41,7 +42,8 @@
             {
               "key": {
                 "name": "price.DAI.value",
-                "type": "TYPE_INTEGER"
+                "type": "TYPE_INTEGER",
+                "numberDecimalPlaces": "2"
               },
               "conditions": [
               ]

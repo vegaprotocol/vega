@@ -408,7 +408,6 @@ func InstrumentConfigurationFromProto(
 				QuoteName:                           pr.Future.QuoteName,
 				DataSourceSpecForSettlementData:     *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData),
 				DataSourceSpecForTradingTermination: *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination),
-				SettlementDataDecimalPlaces:         pr.Future.SettlementDataDecimals,
 				DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
 			},
 		}
@@ -434,7 +433,6 @@ type FutureProduct struct {
 	DataSourceSpecForSettlementData     DataSourceDefinition
 	DataSourceSpecForTradingTermination DataSourceDefinition
 	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
-	SettlementDataDecimalPlaces         uint32
 }
 
 func (f FutureProduct) IntoProto() *vegapb.FutureProduct {
@@ -443,7 +441,6 @@ func (f FutureProduct) IntoProto() *vegapb.FutureProduct {
 		QuoteName:                           f.QuoteName,
 		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(),
-		SettlementDataDecimals:              f.SettlementDataDecimalPlaces,
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.IntoProto(),
 	}
 }
@@ -462,10 +459,9 @@ func (f FutureProduct) DeepClone() *FutureProduct {
 
 func (f FutureProduct) String() string {
 	return fmt.Sprintf(
-		"quote(%s) settlementAsset(%s) settlementDataDecimalPlaces(%v) oracleSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
+		"quote(%s) settlementAsset(%s) oracleSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
 		f.QuoteName,
 		f.SettlementAsset,
-		f.SettlementDataDecimalPlaces,
 		reflectPointerToString(f.DataSourceSpecForSettlementData),
 		reflectPointerToString(f.DataSourceSpecForTradingTermination),
 		reflectPointerToString(f.DataSourceSpecBinding),

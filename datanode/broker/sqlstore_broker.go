@@ -62,7 +62,7 @@ type SQLStoreBroker struct {
 	log                          *logging.Logger
 	subscribers                  []SQLBrokerSubscriber
 	typeToSubs                   map[events.Type][]SQLBrokerSubscriber
-	eventSource                  eventSource
+	eventSource                  EventReceiver
 	transactionManager           TransactionManager
 	blockStore                   BlockStore
 	onBlockCommitted             func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool)
@@ -78,7 +78,7 @@ func NewSQLStoreBroker(
 	log *logging.Logger,
 	config Config,
 	chainID string,
-	eventsource eventSource,
+	eventsource EventReceiver,
 	transactionManager TransactionManager,
 	blockStore BlockStore,
 	onBlockCommitted func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool),
@@ -265,7 +265,8 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 				beginBlock := e.(entities.BeginBlockEvent)
 				return entities.BlockFromBeginBlock(beginBlock)
 			case events.CoreSnapshotEvent:
-				b.snapshotTaken = true
+				// if a snapshot is taken on a protocol upgrade block, we want it to be taken synchronously as part of handling of protocol upgrade
+				b.snapshotTaken = !e.StreamMessage().GetCoreSnapshotEvent().ProtocolUpgradeBlock
 				if err = b.handleEvent(blockCtx, e); err != nil {
 					return nil, err
 				}

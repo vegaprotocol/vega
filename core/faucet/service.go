@@ -20,8 +20,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	vfmt "code.vegaprotocol.io/vega/libs/fmt"
 	vghttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -29,7 +31,6 @@ import (
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
-	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cenkalti/backoff"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
@@ -173,8 +174,8 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	rlkey := fmt.Sprintf("minting for party %s and asset %s", req.Party, req.Asset)
 	if err := f.rl.NewRequest(rlkey, ip); err != nil {
 		f.log.Debug("Mint denied - rate limit",
-			logging.String("ip", ip),
-			logging.String("rlkey", rlkey),
+			logging.String("ip", vfmt.Escape(ip)),
+			logging.String("rlkey", vfmt.Escape(rlkey)),
 		)
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return

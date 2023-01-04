@@ -24,9 +24,12 @@ type Statistics struct {
 }
 
 type LastBlock struct {
-	ChainID                 string
-	BlockHeight             uint64
-	BlockHash               string
-	ProofOfWorkHashFunction string
-	ProofOfWorkDifficulty   uint32
+	ChainID                         string
+	BlockHeight                     uint64
+	BlockHash                       string
+	ProofOfWorkHashFunction         string
+	ProofOfWorkDifficulty           uint32
+	ProofOfWorkPastBlocks           uint32
+	ProofOfWorkTxPerBlock           uint32
+	ProofOfWorkIncreasingDifficulty bool
 }

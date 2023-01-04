@@ -19,6 +19,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/metrics"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	vfmt "code.vegaprotocol.io/vega/libs/fmt"
 	vghttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -31,7 +32,7 @@ func RemoteAddrMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 		if err != nil {
 			log.Debug("Failed to get remote address in middleware",
 				logging.String("remote-addr", r.RemoteAddr),
-				logging.String("x-forwarded-for", r.Header.Get("X-Forwarded-For")),
+				logging.String("x-forwarded-for", vfmt.Escape(r.Header.Get("X-Forwarded-For"))),
 			)
 		} else {
 			r = r.WithContext(vgcontext.WithRemoteIPAddr(r.Context(), ip))

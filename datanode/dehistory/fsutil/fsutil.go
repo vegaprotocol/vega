@@ -3,17 +3,15 @@ package fsutil
 import (
 	"archive/tar"
 	"compress/gzip"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 )
-
-var ErrMismatchedDeviceVersion = errors.New("mismatched device versions")
 
 // RemoveAllFromDirectoryIfExists used in place of os.RemoveAll when the directory should be emptied but not removed.
 func RemoveAllFromDirectoryIfExists(dir string) error {
@@ -135,66 +133,82 @@ func TarDirectoryWithDeterministicHeader(w io.Writer, devMajorVersion int64, sou
 	return nil
 }
 
-func DecompressAndUntarFile(compressedFilePath, decompressedFilesDestination string) (deviceMajVersion int64,
-	err error,
-) {
-	err = os.Mkdir(decompressedFilesDestination, fs.ModePerm)
+func GetSnapshotDatabaseVersion(snapshotFile string) (int64, error) {
+	sourceFile, err := os.Open(snapshotFile)
+	defer func() { _ = sourceFile.Close() }()
 	if err != nil {
-		return 0, fmt.Errorf("failed to make target diretory for uncompressed files %s: %w", decompressedFilesDestination, err)
+		return 0, fmt.Errorf("failed to open snapshot file %s: %w", snapshotFile, err)
+	}
+
+	zr, err := gzip.NewReader(sourceFile)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create zip file reader for file %s: %w", snapshotFile, err)
+	}
+
+	tr := tar.NewReader(zr)
+
+	header, err := tr.Next()
+	if err != nil {
+		return 0, fmt.Errorf("failed to read source file header: %w", err)
+	}
+
+	return header.Devmajor, nil
+}
+
+func DecompressAndUntarFile(compressedFilePath, decompressedFilesDestination string) error {
+	err := os.Mkdir(decompressedFilesDestination, fs.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to make target diretory for uncompressed files %s: %w", decompressedFilesDestination, err)
 	}
 
 	sourceFile, err := os.Open(compressedFilePath)
 	defer func() { _ = sourceFile.Close() }()
 	if err != nil {
-		return 0, fmt.Errorf("failed to create source file %s: %w", compressedFilePath, err)
+		return fmt.Errorf("failed to create source file %s: %w", compressedFilePath, err)
 	}
 
 	zr, err := gzip.NewReader(sourceFile)
 	if err != nil {
-		return 0, fmt.Errorf("failed to create zip file reader for file %s: %w", compressedFilePath, err)
+		return fmt.Errorf("failed to create zip file reader for file %s: %w", compressedFilePath, err)
 	}
 
-	deviceMajVersion, err = UntarFile(zr, decompressedFilesDestination)
+	err = UntarFile(zr, decompressedFilesDestination)
 	if err != nil {
-		return 0, err
+		return fmt.Errorf("failed to untar file %s: %w", compressedFilePath, err)
 	}
 
-	return deviceMajVersion, nil
+	return nil
 }
 
-func UntarFile(source io.Reader, decompressedFilesDestination string) (int64, error) {
+func UntarFile(source io.Reader, decompressedFilesDestination string) error {
 	tr := tar.NewReader(source)
 
-	deviceVersion := int64(-1)
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return 0, fmt.Errorf("failed to read source file: %w", err)
+			return fmt.Errorf("failed to read source file: %w", err)
 		}
 
 		targetFilePath := filepath.Join(decompressedFilesDestination, header.Name)
-
-		if deviceVersion == -1 {
-			deviceVersion = header.Devmajor
-		} else if header.Devmajor != deviceVersion {
-			return 0, ErrMismatchedDeviceVersion
+		if strings.Contains(targetFilePath, "..") {
+			continue
 		}
 
 		fileToWrite, err := os.OpenFile(targetFilePath, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 		if err != nil {
-			return 0, fmt.Errorf("failed to open uncompressed targetFile file %s: %w", targetFilePath, err)
+			return fmt.Errorf("failed to open uncompressed targetFile file %s: %w", targetFilePath, err)
 		}
 
 		if _, err := io.Copy(fileToWrite, tr); err != nil {
-			return 0, fmt.Errorf("failed to copy compressed data to uncompressed target file %s:%w", targetFilePath, err)
+			return fmt.Errorf("failed to copy compressed data to uncompressed target file %s:%w", targetFilePath, err)
 		}
 
 		if err := fileToWrite.Close(); err != nil {
-			return 0, fmt.Errorf("failed to close uncompressed target file %s:%w", targetFilePath, err)
+			return fmt.Errorf("failed to close uncompressed target file %s:%w", targetFilePath, err)
 		}
 	}
-	return deviceVersion, nil
+	return nil
 }

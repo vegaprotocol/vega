@@ -17,6 +17,7 @@ import (
 	"errors"
 	"strconv"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/spam"
@@ -73,13 +74,13 @@ func testProposalEndBlockReset(t *testing.T) {
 		accept, err = policy.PostBlockAccept(tx)
 		require.Equal(t, true, accept)
 		require.Nil(t, err)
-		policy.EndOfBlock(i)
+		policy.EndOfBlock(i, time.Now(), time.Minute*30)
 	}
 
 	tx := &testTx{party: "party1", proposal: "proposal1"}
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, errors.New("party has already proposed the maximum number of simple requests per epoch"), err)
+	require.Equal(t, errors.New("party has already submitted the maximum number of simple requests per epoch"), err)
 
 	bytes1, err := policy.Serialise()
 	require.Nil(t, err)
@@ -129,23 +130,20 @@ func testCommandPreRejectBannedParty(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		accept, err := policy.PostBlockAccept(tx)
 		require.Equal(t, false, accept)
-		require.Equal(t, errors.New("party has already proposed the maximum number of simple requests per epoch"), err)
+		require.Equal(t, errors.New("party has already submitted the maximum number of simple requests per epoch"), err)
 	}
 
-	// end the block for banning to take place
-	policy.EndOfBlock(1)
+	// end the block for banning to take place - it will be unblocked with the new epoch so it doesn't matter
+	tm, _ := time.Parse("2006-01-02 15:04", "2022-12-12 04:35")
+	policy.EndOfBlock(1, tm, time.Minute*30)
 
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, errors.New("party is banned from submitting simple in the current epoch"), err)
+	require.Equal(t, errors.New("party is banned from submitting simple until the earlier between 2022-12-12 05:05:00 +0000 UTC and the beginning of the next epoch"), err)
 
 	// advance epochs - verify still banned until epoch 4 (including)
-	for i := 0; i < 4; i++ {
-		policy.Reset(types.Epoch{Seq: uint64(i + 1)})
-		accept, err := policy.PreBlockAccept(tx)
-		require.Equal(t, false, accept)
-		require.Equal(t, errors.New("party is banned from submitting simple in the current epoch"), err)
-	}
+	policy.Reset(types.Epoch{Seq: uint64(2)})
+
 	// should be released from ban on epoch 5
 	policy.Reset(types.Epoch{Seq: 5})
 	accept, err = policy.PreBlockAccept(tx)
@@ -175,12 +173,12 @@ func testCommandPreRejectTooManyProposals(t *testing.T) {
 	}
 
 	// end block 0
-	policy.EndOfBlock(1)
+	policy.EndOfBlock(1, time.Now(), time.Minute*30)
 
 	// try to submit proposal - pre rejected because it already have 3 proposals
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, errors.New("party has already proposed the maximum number of simple requests per epoch"), err)
+	require.Equal(t, errors.New("party has already submitted the maximum number of simple requests per epoch"), err)
 
 	// advance to next epoch to reset limits
 	policy.Reset(types.Epoch{Seq: 1})
@@ -250,7 +248,7 @@ func testCommandPostRejectTooManyProposals(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		accept, err := policy.PostBlockAccept(tx)
 		require.Equal(t, false, accept)
-		require.Equal(t, errors.New("party has already proposed the maximum number of simple requests per epoch"), err)
+		require.Equal(t, errors.New("party has already submitted the maximum number of simple requests per epoch"), err)
 	}
 }
 
@@ -273,10 +271,10 @@ func testCommandCountersUpdated(t *testing.T) {
 		require.Nil(t, err)
 	}
 
-	policy.EndOfBlock(1)
+	policy.EndOfBlock(1, time.Now(), time.Minute*30)
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, errors.New("party has already proposed the maximum number of simple requests per epoch"), err)
+	require.Equal(t, errors.New("party has already submitted the maximum number of simple requests per epoch"), err)
 }
 
 func testCommandReset(t *testing.T) {
@@ -300,35 +298,36 @@ func testCommandReset(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		accept, err := policy.PostBlockAccept(tx)
 		require.Equal(t, false, accept)
-		require.Equal(t, errors.New("party has already proposed the maximum number of simple requests per epoch"), err)
+		require.Equal(t, errors.New("party has already submitted the maximum number of simple requests per epoch"), err)
 	}
 
-	// trigger ban of party1 until epoch 4
-	policy.EndOfBlock(1)
-	// verify reset at the start of new epoch, party1 should still be banned for the epoch until epoch 4
-	policy.Reset(types.Epoch{Seq: 1})
+	// trigger ban of party1 for 30 minutes
+	tm, _ := time.Parse("2006-01-02 15:04", "2022-12-12 04:35")
+	policy.EndOfBlock(1, tm, time.Minute*30)
+
+	policy.EndOfBlock(1, tm.Add(10*time.Minute), time.Minute*30)
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, errors.New("party is banned from submitting simple in the current epoch"), err)
+	require.Equal(t, errors.New("party is banned from submitting simple until the earlier between 2022-12-12 05:05:00 +0000 UTC and the beginning of the next epoch"), err)
 
-	// advance epochs until the ban is lifted fro party1
+	policy.EndOfBlock(1, tm.Add(20*time.Minute), time.Minute*30)
+	accept, err = policy.PreBlockAccept(tx)
+	require.Equal(t, false, accept)
+	require.Equal(t, errors.New("party is banned from submitting simple until the earlier between 2022-12-12 05:05:00 +0000 UTC and the beginning of the next epoch"), err)
+
+	// advance time until the ban is lifted fro party1
+	policy.EndOfBlock(1, tm.Add(30*time.Minute), time.Minute*30)
+
+	// ban is finished, but still not eligible to submit another command
+	accept, err = policy.PreBlockAccept(tx)
+	require.Equal(t, false, accept)
+	require.Equal(t, errors.New("party has already submitted the maximum number of simple requests per epoch"), err)
+
+	// end the epoch
 	policy.Reset(types.Epoch{Seq: 2})
-	accept, err = policy.PreBlockAccept(tx)
-	require.Equal(t, false, accept)
-	require.Equal(t, errors.New("party is banned from submitting simple in the current epoch"), err)
 
-	policy.Reset(types.Epoch{Seq: 3})
-	accept, err = policy.PreBlockAccept(tx)
-	require.Equal(t, false, accept)
-	require.Equal(t, errors.New("party is banned from submitting simple in the current epoch"), err)
-
-	policy.Reset(types.Epoch{Seq: 4})
-	accept, err = policy.PreBlockAccept(tx)
-	require.Equal(t, false, accept)
-	require.Equal(t, errors.New("party is banned from submitting simple in the current epoch"), err)
-
-	policy.Reset(types.Epoch{Seq: 5})
+	// new epoch new allowance
 	accept, err = policy.PreBlockAccept(tx)
 	require.Equal(t, true, accept)
-	require.Nil(t, err)
+	require.NoError(t, err)
 }
