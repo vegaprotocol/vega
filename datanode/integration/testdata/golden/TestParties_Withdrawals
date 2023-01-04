@@ -1,6 +1,6 @@
 {
 	"TestName": "TestParties_Withdrawals",
-	"Query": "{ partiesConnection{ edges { node { id withdrawalsConnection { edges { node { id, party { id }, amount, asset { id }, status, ref, expiry, txHash, createdTimestamp, withdrawnTimestamp } } } } } } }",
+	"Query": "{ partiesConnection{ edges { node { id withdrawalsConnection { edges { node { id, party { id }, amount, asset { id }, status, ref, txHash, createdTimestamp, withdrawnTimestamp } } } } } } }",
 	"Result": {
 		"partiesConnection": {
 			"edges": [
@@ -112,7 +112,6 @@
 											"id": "b4f2726571fbe8e33b442dc92ed2d7f0d810e21835b7371a7915a365f07ccd9b"
 										},
 										"createdTimestamp": "2022-11-08T09:31:37.698655Z",
-										"expiry": "1970-01-01T00:00:01.730971897Z",
 										"id": "88d17759f8eb6460dc85c1b2ecc626979b9d0f50aab12473ff96c01664c0426e",
 										"party": {
 											"id": "fa979747203d1d4729888f6650a65cfec4d9ad74427b169fbd9077deffa0d009"
@@ -771,7 +770,6 @@
 											"id": "1e742dff5284512a23dab7ecc8a5b6e369df8db06ecbc910a715fffc59b3a717"
 										},
 										"createdTimestamp": "2022-11-08T08:47:30.664554Z",
-										"expiry": "1969-12-31T23:58:57.8644032Z",
 										"id": "992ecf0cb075955ce011173a6a7ee983b6ff9fd61197e9acceb1898de985b3dd",
 										"party": {
 											"id": "47ada648d07f616f6e7d1b41956b90e55d127c439a06c1c96298a0849b828d25"
@@ -1014,7 +1012,6 @@
 											"id": "b775c642226bba19b61acbd17e0e8c29cbea01e608bcbeed31260179bbc024c8"
 										},
 										"createdTimestamp": "2022-11-08T09:01:36.386403Z",
-										"expiry": "1970-01-01T00:00:01.730970096Z",
 										"id": "78e57b17e23c0124a152e0c99527dd6971530f9145a49f0df29ef2fd6f317986",
 										"party": {
 											"id": "366e565cecc6217f36f4000615df4ac08cba9e4c22c4e476c7ede12784285e73"
@@ -1032,7 +1029,6 @@
 											"id": "b775c642226bba19b61acbd17e0e8c29cbea01e608bcbeed31260179bbc024c8"
 										},
 										"createdTimestamp": "2022-11-08T09:01:18.05943Z",
-										"expiry": "1970-01-01T00:00:01.730970078Z",
 										"id": "770d05596bbe6ed420071708f3136d7f8ccc69190de249869c8171c26d8b5506",
 										"party": {
 											"id": "366e565cecc6217f36f4000615df4ac08cba9e4c22c4e476c7ede12784285e73"
@@ -1050,7 +1046,6 @@
 											"id": "5a615c0fa27bb0aba364b09a5af2a5c1f05d5a0769b3bab6b98311e9194d1208"
 										},
 										"createdTimestamp": "2022-11-08T08:59:57.748418Z",
-										"expiry": "1970-01-01T00:00:01.730969997Z",
 										"id": "aec8e27bfb8e003bb5d275464b8236e4ce599b93ea6373eb688cf9ff0ab57717",
 										"party": {
 											"id": "366e565cecc6217f36f4000615df4ac08cba9e4c22c4e476c7ede12784285e73"
@@ -1068,7 +1063,6 @@
 											"id": "5a615c0fa27bb0aba364b09a5af2a5c1f05d5a0769b3bab6b98311e9194d1208"
 										},
 										"createdTimestamp": "2022-11-08T09:00:01.525724Z",
-										"expiry": "1970-01-01T00:00:01.730970001Z",
 										"id": "3879e2d8dd262b974d27de2a1c3774d77d94be1b6e2a182a372e0fb96266748f",
 										"party": {
 											"id": "366e565cecc6217f36f4000615df4ac08cba9e4c22c4e476c7ede12784285e73"
@@ -1086,7 +1080,6 @@
 											"id": "71ed1adfb73c79a658663f05a71f09f773b4f19869bef9e18e5163f34366faa9"
 										},
 										"createdTimestamp": "2022-11-08T08:57:15.582818Z",
-										"expiry": "1970-01-01T00:00:01.730969835Z",
 										"id": "041cbeed3e541acebaa1fb528030eb6dde6211c4d01e18066928edd40d659934",
 										"party": {
 											"id": "366e565cecc6217f36f4000615df4ac08cba9e4c22c4e476c7ede12784285e73"
@@ -1104,7 +1097,6 @@
 											"id": "e51e465052cfaf5f7f51e5b338213531a1f1b4271bc171474f9d0ea923252086"
 										},
 										"createdTimestamp": "2022-11-08T08:54:58.507231Z",
-										"expiry": "1970-01-01T00:00:01.730969698Z",
 										"id": "2c30ba96612900469970748cb0692cd02ad5861a06fbac147b3f88b8c38e5b46",
 										"party": {
 											"id": "366e565cecc6217f36f4000615df4ac08cba9e4c22c4e476c7ede12784285e73"
@@ -1122,7 +1114,6 @@
 											"id": "41da6d9faa63f968015de2fdea769045414cbf2497809a6950a9b3abcd735d0a"
 										},
 										"createdTimestamp": "2022-11-08T08:52:56.031558Z",
-										"expiry": "1970-01-01T00:00:01.730969576Z",
 										"id": "16661470cb3ea6294905ac236e5822a184c79d25d9e32cf936e572147092fd57",
 										"party": {
 											"id": "366e565cecc6217f36f4000615df4ac08cba9e4c22c4e476c7ede12784285e73"
@@ -1140,7 +1131,6 @@
 											"id": "b81fbe84f16898324516bc6afabd3eaab8137b05ad152ba6010ff3f5d3ed6e2a"
 										},
 										"createdTimestamp": "2022-11-08T08:48:17.541626Z",
-										"expiry": "1970-01-01T00:00:01.730969297Z",
 										"id": "2da31f4b694b675428f6d5e538c5aa3552665ca5eebde06546de4faa3a933ac8",
 										"party": {
 											"id": "366e565cecc6217f36f4000615df4ac08cba9e4c22c4e476c7ede12784285e73"
@@ -1158,7 +1148,6 @@
 											"id": "b4f2726571fbe8e33b442dc92ed2d7f0d810e21835b7371a7915a365f07ccd9b"
 										},
 										"createdTimestamp": "2022-11-08T08:46:58.492268Z",
-										"expiry": "1970-01-01T00:00:01.730969218Z",
 										"id": "d47fa0fd90e8cdb279b51f345d9977274fa78379253d1afb6d30bfe971871ee6",
 										"party": {
 											"id": "366e565cecc6217f36f4000615df4ac08cba9e4c22c4e476c7ede12784285e73"

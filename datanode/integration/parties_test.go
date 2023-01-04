@@ -17,7 +17,7 @@ import "testing"
 func TestParties(t *testing.T) {
 	queries := map[string]string{
 		"Deposits":           "{ partiesConnection{ edges { node { id depositsConnection{ edges { node { id, party { id }, amount, asset { id }, status, createdTimestamp, creditedTimestamp, txHash } } } } } } }",
-		"Withdrawals":        "{ partiesConnection{ edges { node { id withdrawalsConnection { edges { node { id, party { id }, amount, asset { id }, status, ref, expiry, txHash, createdTimestamp, withdrawnTimestamp } } } } } } }",
+		"Withdrawals":        "{ partiesConnection{ edges { node { id withdrawalsConnection { edges { node { id, party { id }, amount, asset { id }, status, ref, txHash, createdTimestamp, withdrawnTimestamp } } } } } } }",
 		"Delegations":        "{ partiesConnection{ edges { node { id delegationsConnection{ edges { node { node { id }, party{ id }, epoch, amount } } } } } } }",
 		"Proposals":          "{ partiesConnection{ edges { node { id proposalsConnection{ edges { node { id votes{ yes { totalNumber } no { totalNumber } } } } } } } } }",
 		"Votes":              "{ partiesConnection{ edges { node { id votesConnection{ edges { node { proposalId vote{ value } } } } } } } }",
