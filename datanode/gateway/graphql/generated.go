@@ -1138,7 +1138,7 @@ type ComplexityRoot struct {
 		Id                            func(childComplexity int) int
 		LiquidityProvisionsConnection func(childComplexity int, marketID *string, reference *string, pagination *v2.Pagination) int
 		MarginsConnection             func(childComplexity int, marketID *string, pagination *v2.Pagination) int
-		OrdersConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter) int
+		OrdersConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter, marketID *string) int
 		PositionsConnection           func(childComplexity int, market *string, pagination *v2.Pagination) int
 		ProposalsConnection           func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		RewardSummaries               func(childComplexity int, assetID *string) int
@@ -2049,7 +2049,7 @@ type OrderUpdateResolver interface {
 	Version(ctx context.Context, obj *vega.Order) (string, error)
 }
 type PartyResolver interface {
-	OrdersConnection(ctx context.Context, obj *vega.Party, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter) (*v2.OrderConnection, error)
+	OrdersConnection(ctx context.Context, obj *vega.Party, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter, marketID *string) (*v2.OrderConnection, error)
 	TradesConnection(ctx context.Context, obj *vega.Party, marketID *string, dataRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	AccountsConnection(ctx context.Context, obj *vega.Party, marketID *string, assetID *string, typeArg *vega.AccountType, pagination *v2.Pagination) (*v2.AccountsConnection, error)
 	PositionsConnection(ctx context.Context, obj *vega.Party, market *string, pagination *v2.Pagination) (*v2.PositionConnection, error)
@@ -6521,7 +6521,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.OrdersConnection(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination), args["filter"].(*v2.OrderFilter)), true
+		return e.complexity.Party.OrdersConnection(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination), args["filter"].(*v2.OrderFilter), args["marketId"].(*string)), true
 
 	case "Party.positionsConnection":
 		if e.complexity.Party.PositionsConnection == nil {
@@ -10040,6 +10040,15 @@ func (ec *executionContext) field_Party_ordersConnection_args(ctx context.Contex
 		}
 	}
 	args["filter"] = arg2
+	var arg3 *string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
+		arg3, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg3
 	return args, nil
 }
 
@@ -39473,7 +39482,7 @@ func (ec *executionContext) _Party_ordersConnection(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().OrdersConnection(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination), fc.Args["filter"].(*v2.OrderFilter))
+		return ec.resolvers.Party().OrdersConnection(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination), fc.Args["filter"].(*v2.OrderFilter), fc.Args["marketId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
