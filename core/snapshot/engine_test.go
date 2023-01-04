@@ -101,7 +101,7 @@ func getPopulatedTree(t *testing.T) *iavl.MutableTree {
 		},
 	}
 
-	tree, err := iavl.NewMutableTree(db.NewMemDB(), 0)
+	tree, err := iavl.NewMutableTree(db.NewMemDB(), 0, false)
 	tree.Load()
 	require.NoError(t, err)
 
@@ -153,7 +153,7 @@ func testTreeExportImport(t *testing.T) {
 	// via TM to the node restoring from a snapshot
 
 	// Make a new tree waiting to import the snapshot
-	importedTree, err := iavl.NewMutableTree(db.NewMemDB(), 0)
+	importedTree, err := iavl.NewMutableTree(db.NewMemDB(), 0, false)
 	importedTree.Load()
 	require.NoError(t, err)
 
