@@ -1,7 +1,7 @@
-µ
-≤
-@d1984e3d365faa05bcafbe41f50f90e3663ee7c0da22bb1e24b164e9532691b2n
-VEGAVEGA64999723000000000000000000 *1000000000000000000≤,
+ô
+ñ
+@d1984e3d365faa05bcafbe41f50f90e3663ee7c0da22bb1e24b164e9532691b2R
+VEGAVEGA *1000000000000000000≤,
 *0xcB84d72e61e383767C4DFEb2d8ff7f4FB89abc6eı›
 M
 *@d1984e3d365faa05bcafbe41f50f90e3663ee7c0da22bb1e24b164e9532691b2849617
@@ -1304,7 +1304,7 @@ $market.fee.factors.infrastructureFee0.001
 :
 3market.liquidity.providers.fee.distributionTimeStep60m
 (
-!market.liquidity.stakeToCcySiskas1.0
+!market.liquidity.stakeToCcyVolume1.0
 4
 -market.liquidity.targetstake.triggering.ratio0.7
 8

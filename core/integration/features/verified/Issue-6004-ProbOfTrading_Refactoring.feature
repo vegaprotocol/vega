@@ -27,7 +27,7 @@ Feature: test probability of trading used in LP vol when best bid/ask is changin
       | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
-      | market.liquidity.stakeToCcySiskas             | 1.0   |
+      | market.liquidity.stakeToCcyVolume             | 1.0   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
 
    And the average block duration is "1"
