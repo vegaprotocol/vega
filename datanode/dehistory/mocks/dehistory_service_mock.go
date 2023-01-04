@@ -69,17 +69,17 @@ func (mr *MockDeHistoryMockRecorder) GetMostRecentHistorySegmentFromPeers(arg0, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMostRecentHistorySegmentFromPeers", reflect.TypeOf((*MockDeHistory)(nil).GetMostRecentHistorySegmentFromPeers), arg0, arg1)
 }
 
-// LoadAllAvailableHistoryIntoDatanode mocks base method.
-func (m *MockDeHistory) LoadAllAvailableHistoryIntoDatanode(arg0 context.Context) (snapshot.LoadResult, error) {
+// LoadDeHistoryIntoDatanode mocks base method.
+func (m *MockDeHistory) LoadDeHistoryIntoDatanode(arg0 context.Context) (snapshot.LoadResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoadAllAvailableHistoryIntoDatanode", arg0)
+	ret := m.ctrl.Call(m, "LoadDeHistoryIntoDatanode", arg0)
 	ret0, _ := ret[0].(snapshot.LoadResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// LoadAllAvailableHistoryIntoDatanode indicates an expected call of LoadAllAvailableHistoryIntoDatanode.
-func (mr *MockDeHistoryMockRecorder) LoadAllAvailableHistoryIntoDatanode(arg0 interface{}) *gomock.Call {
+// LoadDeHistoryIntoDatanode indicates an expected call of LoadDeHistoryIntoDatanode.
+func (mr *MockDeHistoryMockRecorder) LoadDeHistoryIntoDatanode(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadAllAvailableHistoryIntoDatanode", reflect.TypeOf((*MockDeHistory)(nil).LoadAllAvailableHistoryIntoDatanode), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadDeHistoryIntoDatanode", reflect.TypeOf((*MockDeHistory)(nil).LoadDeHistoryIntoDatanode), arg0)
 }
