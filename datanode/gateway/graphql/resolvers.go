@@ -1328,7 +1328,7 @@ func (r *myPartyResolver) MarginsConnection(ctx context.Context, party *types.Pa
 }
 
 func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Party, dateRange *v2.DateRange,
-	pagination *v2.Pagination, filter *v2.OrderFilter, marketId *string,
+	pagination *v2.Pagination, filter *v2.OrderFilter, marketID *string,
 ) (*v2.OrderConnection, error) {
 	if party == nil {
 		return nil, errors.New("party is required")
@@ -1338,7 +1338,7 @@ func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Par
 		Pagination: pagination,
 		DateRange:  dateRange,
 		Filter:     filter,
-		MarketId:   marketId,
+		MarketId:   marketID,
 	}
 	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
 	if err != nil {

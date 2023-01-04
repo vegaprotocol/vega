@@ -1926,7 +1926,7 @@ type Party {
     pagination: Pagination
     "Filter orders"
     filter: OrderFilter
-    "Market id to limit the results to"
+    "Market ID to limit the results to"
     marketId: ID
   ): OrderConnection
 
