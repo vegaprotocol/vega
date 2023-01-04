@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/config"
@@ -34,6 +35,13 @@ import (
 	"github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/types"
 )
+
+const (
+	defaultTMConfigDir      = "config"
+	defaultTMConfigFileName = "config.toml"
+)
+
+var defaultTMConfigFilePath = filepath.Join(defaultTMConfigDir, defaultTMConfigFileName)
 
 type InitCmd struct {
 	config.VegaHomeFlag
@@ -121,6 +129,12 @@ func (opts *InitCmd) Execute(args []string) error {
 		tmCfg := tmcfg.DefaultConfig()
 		tmCfg.SetRoot(os.ExpandEnv(initCmd.TendermintHome))
 		tmcfg.EnsureRoot(tmCfg.RootDir)
+
+		// then update the config with our default and save it again
+		setTendermintDefaults(tmCfg)
+		configFilePath := filepath.Join(tmCfg.RootDir, defaultTMConfigFilePath)
+		tmcfg.WriteConfigFile(configFilePath, tmCfg)
+
 		if err := initTendermintConfiguration(output, logger, tmCfg); err != nil {
 			return fmt.Errorf("couldn't initialise tendermint %w", err)
 		}
@@ -144,6 +158,13 @@ func (opts *InitCmd) Execute(args []string) error {
 	}
 
 	return nil
+}
+
+func setTendermintDefaults(cfg *tmcfg.Config) {
+	cfg.Consensus.SkipTimeoutCommit = true
+	cfg.Consensus.CreateEmptyBlocksInterval = 1 * time.Second
+	cfg.P2P.MaxPacketMsgPayloadSize = 16384
+	cfg.Mempool.Version = "v1"
 }
 
 func initTendermintConfiguration(output config.Output, logger *logging.Logger, config *tmcfg.Config) error {
