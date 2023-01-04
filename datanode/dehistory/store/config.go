@@ -63,7 +63,7 @@ func (c Config) GetSwarmKey(log *logging.Logger, chainID string) string {
 		swarmKey = c.SwarmKeyOverride
 		log.Info("Using swarm key override as the swarm key", logging.String("swarm key", c.SwarmKeyOverride))
 	} else {
-		log.Infof("Using chain id as the swarm key", logging.String("swarm key", c.SwarmKeyOverride))
+		log.Info("Using chain id as the swarm key", logging.String("swarm key", c.SwarmKeyOverride))
 	}
 	return swarmKey
 }

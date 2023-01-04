@@ -3083,21 +3083,6 @@ func (t *tradingDataServiceV2) ListAllDeHistorySegments(context.Context, *v2.Lis
 	}, nil
 }
 
-func (t *tradingDataServiceV2) FetchDeHistorySegment(ctx context.Context, req *v2.FetchDeHistorySegmentRequest) (*v2.FetchDeHistorySegmentResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("FetchDeHistorySegment'")()
-	if t.deHistoryService == nil {
-		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
-	}
-	segment, err := t.deHistoryService.FetchHistorySegment(ctx, req.HistorySegmentId)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrFetchDeHistorySegment, err)
-	}
-
-	return &v2.FetchDeHistorySegmentResponse{
-		Segment: toHistorySegment(segment),
-	}, nil
-}
-
 func (t *tradingDataServiceV2) Ping(context.Context, *v2.PingRequest) (*v2.PingResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("Ping")()
 	return &v2.PingResponse{}, nil
