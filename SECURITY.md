@@ -13,7 +13,7 @@ Please see [Releases](https://github.com/vegaprotocol/vega/releases). We recomme
 
 ## Reporting a Vulnerability
 
-**Please DO NOT file a public ticket** mentioning the vulnerability.
+**Please DO NOT file a public ticket** mentioning the vulnerability. This is especially important for vulnerabilities that may result in loss or freezing of assets and those that may cause degradation or outages of the network.
 
 To find out how to disclose a vulnerability in Vega visit the [bug bounties](https://vega.xyz/bug-bounties) page or email security@vegaprotocol.io. 
 
