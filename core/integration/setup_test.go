@@ -250,7 +250,7 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: e.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityStakeToCCYSiskas,
+			Param:   netparams.MarketLiquidityStakeToCCYVolume,
 			Watcher: e.executionEngine.OnSuppliedStakeToObligationFactorUpdate,
 		},
 		netparams.WatchParam{

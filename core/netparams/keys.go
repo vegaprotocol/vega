@@ -21,7 +21,7 @@ const (
 	MarketAuctionMaximumDuration                    = "market.auction.maximumDuration"
 	MarketLiquidityBondPenaltyParameter             = "market.liquidity.bondPenaltyParameter"
 	MarketLiquidityMaximumLiquidityFeeFactorLevel   = "market.liquidity.maximumLiquidityFeeFactorLevel"
-	MarketLiquidityStakeToCCYSiskas                 = "market.liquidity.stakeToCcySiskas"
+	MarketLiquidityStakeToCCYVolume                 = "market.liquidity.stakeToCcyVolume"
 	MarketLiquidityProvidersFeeDistribitionTimeStep = "market.liquidity.providers.fee.distributionTimeStep"
 	MarketLiquidityTargetStakeTriggeringRatio       = "market.liquidity.targetstake.triggering.ratio"
 	MarketProbabilityOfTradingTauScaling            = "market.liquidity.probabilityOfTrading.tau.scaling"
@@ -185,7 +185,7 @@ var AllKeys = map[string]struct{}{
 	MarketAuctionMaximumDuration:                             {},
 	MarketLiquidityBondPenaltyParameter:                      {},
 	MarketLiquidityMaximumLiquidityFeeFactorLevel:            {},
-	MarketLiquidityStakeToCCYSiskas:                          {},
+	MarketLiquidityStakeToCCYVolume:                          {},
 	MarketLiquidityProvidersFeeDistribitionTimeStep:          {},
 	MarketLiquidityTargetStakeTriggeringRatio:                {},
 	MarketTargetStakeTimeWindow:                              {},
