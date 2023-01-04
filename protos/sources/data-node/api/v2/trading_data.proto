@@ -313,7 +313,7 @@ service TradingDataService {
     // Get information about a given node
     rpc GetNode(GetNodeRequest) returns (GetNodeResponse);
 
-    // Node
+    // Nodes list
     //
     // List information about the nodes on the network
     rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);

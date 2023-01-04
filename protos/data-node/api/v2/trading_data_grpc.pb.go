@@ -256,7 +256,7 @@ type TradingDataServiceClient interface {
 	//
 	// Get information about a given node
 	GetNode(ctx context.Context, in *GetNodeRequest, opts ...grpc.CallOption) (*GetNodeResponse, error)
-	// Node
+	// Nodes list
 	//
 	// List information about the nodes on the network
 	ListNodes(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error)
@@ -1700,7 +1700,7 @@ type TradingDataServiceServer interface {
 	//
 	// Get information about a given node
 	GetNode(context.Context, *GetNodeRequest) (*GetNodeResponse, error)
-	// Node
+	// Nodes list
 	//
 	// List information about the nodes on the network
 	ListNodes(context.Context, *ListNodesRequest) (*ListNodesResponse, error)
