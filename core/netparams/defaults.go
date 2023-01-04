@@ -40,6 +40,7 @@ var (
 
 	// Uints.
 	gteU0  = UintGTE(num.UintZero())
+	lteU1  = UintLTE(num.NewUint(1))
 	gteU1  = UintGTE(num.NewUint(1))
 	gteU5  = UintGTE(num.NewUint(5))
 	ltMaxU = UintLT(num.MaxUint())
@@ -186,7 +187,7 @@ func defaultNetParams() map[string]value {
 		// if we assume a block time of anything between 1 to 2 seconds
 		SnapshotIntervalLength: NewInt(gteI0).Mutable(true).MustUpdate("1000"),
 
-		FloatingPointUpdatesDuration: NewDuration().Mutable(true).MustUpdate("5m"),
+		FloatingPointUpdatesDuration: NewDuration(DurationGTE(10*time.Second), DurationLTE(1*time.Hour)).Mutable(true).MustUpdate("5m"),
 
 		// validators by stake
 		NumberOfTendermintValidators:               NewUint(gteU1, UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("30"),
@@ -206,7 +207,7 @@ func defaultNetParams() map[string]value {
 		SpamPoWDifficulty:           NewUint(gteU0, UintLTE(num.NewUint(256))).Mutable(true).MustUpdate("15"),
 		SpamPoWHashFunction:         NewString(checks.SpamPoWHashFunction([]string{crypto.Sha3})).Mutable(true).MustUpdate(crypto.Sha3),
 		SpamPoWNumberOfTxPerBlock:   NewUint(gteU1).Mutable(true).MustUpdate("2"),
-		SpamPoWIncreasingDifficulty: NewUint(gteU0).Mutable(true).MustUpdate("0"),
+		SpamPoWIncreasingDifficulty: NewUint(gteU0, lteU1).Mutable(true).MustUpdate("0"),
 
 		LimitsProposeMarketEnabledFrom: NewString(checkOptionalRFC3339Date).Mutable(true).MustUpdate(""), // none by default
 		LimitsProposeAssetEnabledFrom:  NewString(checkOptionalRFC3339Date).Mutable(true).MustUpdate(""), // none by default
