@@ -36,6 +36,8 @@ import (
 	snappb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"github.com/cosmos/iavl"
+	"github.com/syndtr/goleveldb/leveldb/filter"
+	"github.com/syndtr/goleveldb/leveldb/opt"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 )
@@ -439,13 +441,22 @@ func (e *Engine) initialiseTree() error {
 		e.db = db.NewMemDB()
 		e.metadb = NewMetaDB(NewMetaMemDB())
 	case goLevelDB:
-		conn, err := db.NewGoLevelDB(SnapshotDBName, e.dbPath)
+		conn, err := db.NewGoLevelDBWithOpts(SnapshotDBName, e.dbPath,
+			&opt.Options{
+				Filter:          filter.NewBloomFilter(10),
+				BlockCacher:     opt.NoCacher,
+				OpenFilesCacher: opt.NoCacher,
+			})
 		if err != nil {
 			return fmt.Errorf("could not open goleveldb: %w", err)
 		}
 		e.db = conn
 
-		metaConn, err := db.NewGoLevelDB(SnapshotMetaDBName, e.dbPath)
+		metaConn, err := db.NewGoLevelDBWithOpts(SnapshotMetaDBName, e.dbPath,
+			&opt.Options{
+				BlockCacher:     opt.NoCacher,
+				OpenFilesCacher: opt.NoCacher,
+			})
 		if err != nil {
 			return fmt.Errorf("could not open goleveldb: %w", err)
 		}
@@ -454,7 +465,7 @@ func (e *Engine) initialiseTree() error {
 		return types.ErrInvalidSnapshotStorageMethod
 	}
 
-	tree, err := iavl.NewMutableTree(e.db, 0)
+	tree, err := iavl.NewMutableTree(e.db, 0, false)
 	if err != nil {
 		e.log.Error("Could not create AVL tree", logging.Error(err))
 		return err
@@ -657,6 +668,7 @@ func (e *Engine) setSnapshotForHeight(height uint64) error {
 	if !ok {
 		return types.ErrMissingSnapshotVersion
 	}
+
 	tree, err := e.avl.GetImmutable(v)
 	if err != nil {
 		return err
@@ -924,10 +936,12 @@ func (e *Engine) saveCurrentTree() error {
 	if len(e.versions) >= cap(e.versions) {
 		if err := e.avl.DeleteVersion(e.versions[0]); err != nil {
 			// this is not a fatal error, but still we should be paying attention.
-			e.log.Warn("Could not delete old version",
+			e.log.Error("Could not delete old version",
 				logging.Int64("old-version", e.versions[0]),
 				logging.Error(err),
 			)
+		} else {
+			e.log.Info("old snapshot version deleted", logging.Int64("old-version", v))
 		}
 		// drop first version
 		copy(e.versions[0:], e.versions[1:])
@@ -940,7 +954,6 @@ func (e *Engine) saveCurrentTree() error {
 	// get ptr to current version
 	e.last = e.avl.ImmutableTree
 
-	// now save into the meta db
 	snap, err := types.SnapshotFromTree(e.last)
 	if err != nil {
 		return err
