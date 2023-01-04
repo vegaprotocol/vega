@@ -166,7 +166,7 @@ func (d *Service) GetSwarmKey() string {
 	return d.store.GetSwarmKey()
 }
 
-func (d *Service) LoadAllAvailableHistoryIntoDatanode(ctx context.Context) (snapshot.LoadResult, error) {
+func (d *Service) LoadDeHistoryIntoDatanode(ctx context.Context) (snapshot.LoadResult, error) {
 	defer func() { _ = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromDir) }()
 
 	err := os.MkdirAll(d.snapshotsCopyFromDir, fs.ModePerm)
@@ -181,7 +181,12 @@ func (d *Service) LoadAllAvailableHistoryIntoDatanode(ctx context.Context) (snap
 
 	start := time.Now()
 
-	currentStateSnapshot, contiguousHistory, err := d.copyAllAvailableHistoryIntoDir(ctx, d.snapshotsCopyFromDir)
+	datanodeBlockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, d.connConfig)
+	if err != nil {
+		return snapshot.LoadResult{}, fmt.Errorf("failed to get data node block span: %w", err)
+	}
+
+	currentStateSnapshot, contiguousHistory, err := d.copyMoreRecentHistoryIntoDir(ctx, datanodeBlockSpan, d.snapshotsCopyFromDir)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to copy all available data into copy from path: %w", err)
 	}
@@ -263,11 +268,11 @@ func (d *Service) publishSnapshots(ctx context.Context) error {
 	return nil
 }
 
-// copyAllAvailableHistoryIntoDir copy all contiguous history data, including data already loaded into the datanode to the target dir.
-func (d *Service) copyAllAvailableHistoryIntoDir(ctx context.Context, targetDir string) (snapshot.CurrentState, []snapshot.History,
+// copyMoreRecentHistoryIntoDir copies all contiguous history data later than that already in the datanode into the target directory.
+func (d *Service) copyMoreRecentHistoryIntoDir(ctx context.Context, blockSpan sqlstore.DatanodeBlockSpan, targetDir string) (snapshot.CurrentState, []snapshot.History,
 	error,
 ) {
-	contiguousHistory, err := d.GetContiguousHistory()
+	contiguousHistory, err := d.GetContiguousHistoryFromHighestHeight()
 	if err != nil {
 		return snapshot.CurrentState{}, nil, fmt.Errorf("failed to get contiguous history data")
 	}
@@ -279,24 +284,25 @@ func (d *Service) copyAllAvailableHistoryIntoDir(ctx context.Context, targetDir 
 	var highestCurrentStateSnapshot snapshot.CurrentState
 	contiguousHistorySnapshots := make([]snapshot.History, 0, len(contiguousHistory))
 	for _, history := range contiguousHistory {
-		currentStateSnaphot, historySnapshot, err := d.extractSnapshotDataFromHistory(ctx, history, targetDir)
-		if err != nil {
-			return snapshot.CurrentState{}, nil, fmt.Errorf("failed to extract data from history:%w", err)
-		}
+		if history.HeightTo > blockSpan.ToHeight {
+			currentStateSnaphot, historySnapshot, err := d.extractSnapshotDataFromHistory(ctx, history, targetDir)
+			if err != nil {
+				return snapshot.CurrentState{}, nil, fmt.Errorf("failed to extract data from history:%w", err)
+			}
 
-		if currentStateSnaphot.Height > highestCurrentStateSnapshot.Height {
-			highestCurrentStateSnapshot = currentStateSnaphot
-		}
+			if currentStateSnaphot.Height > highestCurrentStateSnapshot.Height {
+				highestCurrentStateSnapshot = currentStateSnaphot
+			}
 
-		contiguousHistorySnapshots = append(contiguousHistorySnapshots, historySnapshot)
+			contiguousHistorySnapshots = append(contiguousHistorySnapshots, historySnapshot)
+		}
 	}
 
 	return highestCurrentStateSnapshot, contiguousHistorySnapshots, nil
 }
 
-// GetContiguousHistory returns all available contiguous (no gaps) history from the current datanode height, or if
-// the datanode has no data it will return the contiguous history from the highest decentralized history segment.
-func (d *Service) GetContiguousHistory() ([]aggregation.AggregatedHistorySegment, error) {
+// GetContiguousHistoryFromHighestHeight returns all available contiguous (no gaps) history from the highest height.
+func (d *Service) GetContiguousHistoryFromHighestHeight() ([]aggregation.AggregatedHistorySegment, error) {
 	allHistorySegments, err := d.store.ListAllHistorySegmentsOldestFirst()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all history segments:%w", err)

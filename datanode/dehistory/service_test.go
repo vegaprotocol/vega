@@ -432,7 +432,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 
 	dehistoryService := setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
 
-	loaded, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
+	loaded, err := dehistoryService.LoadDeHistoryIntoDatanode(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1801), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(4000), loaded.LoadedToHeight)
@@ -491,7 +491,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[5].historyTableSummaries, dbSummary.historyTableSummaries)
 }
 
-func TestRestoringNodeWithHistoryFromBeforeTheNodesOldestBlockFails(t *testing.T) {
+func TestRestoringNodeWithDataOlderAndNewerThanItContainsLoadsTheNewerData(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	deHistoryStore.ResetIndex()
@@ -513,7 +513,62 @@ func TestRestoringNodeWithHistoryFromBeforeTheNodesOldestBlockFails(t *testing.T
 	assert.Equal(t, int64(1000), blocksFetched)
 	dehistoryService := setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
 
-	loaded, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
+	loaded, err := dehistoryService.LoadDeHistoryIntoDatanode(ctx)
+	require.NoError(t, err)
+
+	assert.Equal(t, int64(3001), loaded.LoadedFromHeight)
+	assert.Equal(t, int64(4000), loaded.LoadedToHeight)
+
+	// Now try to load in history from 0 to 5000
+	deHistoryStore.ResetIndex()
+	snapshotCopyFromPath = t.TempDir()
+	snapshotCopyToPath = t.TempDir()
+	inputSnapshotService = setupSnapshotService(sqlConfig, snapshotCopyFromPath, snapshotCopyToPath)
+
+	historySegment = goldenSourceHistorySegment[5000]
+
+	blocksFetched, err = fetchBlocks(ctx, log, deHistoryStore, historySegment.HistorySegmentID, 5000)
+	require.NoError(t, err)
+
+	assert.Equal(t, int64(5000), blocksFetched)
+	dehistoryService = setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+
+	result, err := dehistoryService.LoadDeHistoryIntoDatanode(ctx)
+	require.Nil(t, err)
+
+	assert.Equal(t, int64(4001), result.LoadedFromHeight)
+	assert.Equal(t, int64(5000), result.LoadedToHeight)
+
+	span, err := sqlstore.GetDatanodeBlockSpan(ctx, sqlConfig.ConnectionConfig)
+	require.Nil(t, err)
+
+	assert.Equal(t, int64(3001), span.FromHeight)
+	assert.Equal(t, int64(5000), span.ToHeight)
+}
+
+func TestRestoringNodeWithHistoryOnlyFromBeforeTheNodesOldestBlockFails(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	deHistoryStore.ResetIndex()
+
+	log := logging.NewTestLogger()
+
+	snapshotCopyFromPath := t.TempDir()
+	snapshotCopyToPath := t.TempDir()
+
+	inputSnapshotService := setupSnapshotService(sqlConfig, snapshotCopyFromPath, snapshotCopyToPath)
+
+	emptyDatabaseAndSetSchemaVersion(0)
+
+	historySegment := goldenSourceHistorySegment[4000]
+
+	blocksFetched, err := fetchBlocks(ctx, log, deHistoryStore, historySegment.HistorySegmentID, 1)
+	require.NoError(t, err)
+
+	assert.Equal(t, int64(1000), blocksFetched)
+	dehistoryService := setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+
+	loaded, err := dehistoryService.LoadDeHistoryIntoDatanode(ctx)
 	require.NoError(t, err)
 
 	assert.Equal(t, int64(3001), loaded.LoadedFromHeight)
@@ -533,7 +588,7 @@ func TestRestoringNodeWithHistoryFromBeforeTheNodesOldestBlockFails(t *testing.T
 	assert.Equal(t, int64(1000), blocksFetched)
 	dehistoryService = setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
 
-	_, err = dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
+	_, err = dehistoryService.LoadDeHistoryIntoDatanode(ctx)
 	require.NotNil(t, err)
 }
 
@@ -590,7 +645,7 @@ func TestRestoringNodeWithExistingDataFailsWhenLoadingWouldResultInNonContiguous
 
 	dehistoryService := setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
 
-	_, err = dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
+	_, err = dehistoryService.LoadDeHistoryIntoDatanode(ctx)
 	require.NotNil(t, err)
 }
 
@@ -620,7 +675,7 @@ func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {
 		assert.Equal(t, expectedBlocks, blocksFetched)
 		dehistoryService := setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
 
-		loaded, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
+		loaded, err := dehistoryService.LoadDeHistoryIntoDatanode(ctx)
 		require.NoError(t, err)
 
 		assert.Equal(t, int64(1), loaded.LoadedFromHeight)
@@ -653,7 +708,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 
 	dehistoryService := setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
 
-	loaded, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
+	loaded, err := dehistoryService.LoadDeHistoryIntoDatanode(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, int64(2001), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(3000), loaded.LoadedToHeight)
@@ -739,7 +794,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 
 	dehistoryService := setupDeHistoryService(ctx, log, inputSnapshotService, deHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
 
-	loaded, err := dehistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
+	loaded, err := dehistoryService.LoadDeHistoryIntoDatanode(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(2000), loaded.LoadedToHeight)

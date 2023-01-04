@@ -106,30 +106,50 @@ func (cmd *loadCmd) Execute(_ []string) error {
 		return nil
 	}
 
-	fmt.Printf("Decentralized history from block height %d to %d is available to load, current datanode block span is %d to %d\n",
-		from, to, span.FromHeight, span.ToHeight)
+	if from < span.FromHeight && to <= span.ToHeight {
+		fmt.Printf("Available Decentralized History data spans height %d to %d.  The from height is before the datanodes' block span, %d to %d."+
+			" To load history from before the datanodes oldest block you must specify the "+
+			" \"wipe-existing-data\" flag to wipe existing data from the datanode before loading.\n\n", from, to, span.FromHeight, span.ToHeight)
 
-	yes := true
-	if !cmd.Force {
-		yes = flags.YesOrNo("Do you want to load this history?")
+		return nil
 	}
 
-	if yes {
-		fmt.Printf("Loading history from block %d to %d...\n", from, to)
+	if from < span.FromHeight {
+		fmt.Printf("Available Decentralized History data spans height %d to %d. However as the datanode already contains"+
+			" data from height %d to %d only the history from height %d to %d will be loaded.  To load all the available history data"+
+			" run the load command with the \"wipe-existing-data\" flag which will empty the data node before restoring it from the history data\n\n",
+			from, to, span.FromHeight, span.ToHeight, span.ToHeight+1, to)
 
-		loaded, err := deHistoryService.LoadAllAvailableHistoryIntoDatanode(context.Background())
-		if err != nil {
-			return fmt.Errorf("failed to load all available history:%w", err)
+		if !cmd.Force {
+			if !flags.YesOrNo(fmt.Sprintf("Do you wish to continue and load all history from height %d to %d ?", span.ToHeight+1, to)) {
+				return nil
+			}
 		}
+	} else {
+		fmt.Printf("Decentralized history from block height %d to %d is available to load, current datanode block span is %d to %d\n\n",
+			from, to, span.FromHeight, span.ToHeight)
 
-		fmt.Printf("Loaded history from height %d to %d into the datanode\n", loaded.LoadedFromHeight, loaded.LoadedToHeight)
+		if !cmd.Force {
+			if !flags.YesOrNo("Do you want to load this history?") {
+				return nil
+			}
+		}
 	}
+
+	fmt.Println("Loading history...")
+
+	loaded, err := deHistoryService.LoadDeHistoryIntoDatanode(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to load all available history:%w", err)
+	}
+
+	fmt.Printf("Loaded history from height %d to %d into the datanode\n", loaded.LoadedFromHeight, loaded.LoadedToHeight)
 
 	return nil
 }
 
 func getSpanOfAllAvailableHistory(dehistoryService *dehistory.Service) (from int64, to int64, err error) {
-	contiguousHistory, err := dehistoryService.GetContiguousHistory()
+	contiguousHistory, err := dehistoryService.GetContiguousHistoryFromHighestHeight()
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to get contiguous history data")
 	}

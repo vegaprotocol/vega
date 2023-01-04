@@ -66,7 +66,7 @@ func TestInitialiseEmptyDataNode(t *testing.T) {
 
 	gomock.InOrder(first, second)
 
-	service.EXPECT().LoadAllAvailableHistoryIntoDatanode(gomock.Any()).Times(1)
+	service.EXPECT().LoadDeHistoryIntoDatanode(gomock.Any()).Times(1)
 
 	dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{})
 }
@@ -121,7 +121,7 @@ func TestInitialiseNonEmptyDataNode(t *testing.T) {
 
 	gomock.InOrder(first, second)
 
-	service.EXPECT().LoadAllAvailableHistoryIntoDatanode(gomock.Any()).Times(1)
+	service.EXPECT().LoadDeHistoryIntoDatanode(gomock.Any()).Times(1)
 
 	dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{
 		FromHeight: 0,
@@ -214,7 +214,7 @@ func TestWhenMinimumBlockCountExceedsAvailableHistory(t *testing.T) {
 
 	gomock.InOrder(first, second)
 
-	service.EXPECT().LoadAllAvailableHistoryIntoDatanode(gomock.Any()).Times(1)
+	service.EXPECT().LoadDeHistoryIntoDatanode(gomock.Any()).Times(1)
 
 	dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{})
 }
@@ -240,7 +240,7 @@ func TestInitialiseToASpecifiedSegment(t *testing.T) {
 		HistorySegmentID: "segment1",
 	}, nil)
 
-	service.EXPECT().LoadAllAvailableHistoryIntoDatanode(gomock.Any()).Times(1)
+	service.EXPECT().LoadDeHistoryIntoDatanode(gomock.Any()).Times(1)
 
 	dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{})
 }
