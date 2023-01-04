@@ -7,7 +7,7 @@ require (
 	code.vegaprotocol.io/quant v0.2.5
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/cosmos/iavl v0.19.1
+	github.com/cosmos/iavl v0.19.4
 	github.com/cucumber/godog v0.12.5
 	github.com/ethereum/go-ethereum v1.10.21
 	github.com/fatih/color v1.13.0

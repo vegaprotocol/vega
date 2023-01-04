@@ -106,6 +106,7 @@ func (opts *InitCmd) Execute(args []string) error {
 
 	cfg := config.NewDefaultConfig()
 	cfg.NodeMode = mode
+	cfg.SetDefaultMaxMemoryPercent()
 
 	if err := cfgLoader.Save(&cfg); err != nil {
 		return fmt.Errorf("couldn't save configuration file: %w", err)

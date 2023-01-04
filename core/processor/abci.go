@@ -617,6 +617,8 @@ func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApply
 	resp := tmtypes.ResponseApplySnapshotChunk{}
 	ready, err := app.snapshot.ApplySnapshotChunk(&chunk)
 	if err != nil {
+		app.log.Error("could not apply snapshot chunk", logging.Error(err))
+
 		switch err {
 		case types.ErrUnknownSnapshot:
 			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY_SNAPSHOT // we weren't ready?

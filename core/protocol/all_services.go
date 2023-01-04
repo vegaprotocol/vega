@@ -511,7 +511,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityStakeToCCYSiskas,
+			Param:   netparams.MarketLiquidityStakeToCCYVolume,
 			Watcher: svcs.executionEngine.OnSuppliedStakeToObligationFactorUpdate,
 		},
 		{
