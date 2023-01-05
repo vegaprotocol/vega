@@ -57,7 +57,7 @@ func (r liquidityMonitoringRow) name() string {
 }
 
 func (r liquidityMonitoringRow) timeWindow() int64 {
-	tw := r.row.MustDuration("time window")
+	tw := r.row.MustDurationStr("time window")
 	return int64(tw.Seconds())
 }
 

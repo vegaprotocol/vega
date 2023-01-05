@@ -11,8 +11,8 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
-    And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          |
+   And the markets:
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
@@ -27,12 +27,16 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     @Now
    Scenario: 001, LP gets distressed during continuous trading, no DPD setting (0044-LIME-002, 0035-LIQM-004)
 
-   Given the following network parameters are set:
+
+   Given the liquidity monitoring parameters:
+      | name                | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.24            | 24h          | 1              |
+   When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/MAR22 | updated-lqm-params   |
+   And the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter         | 0.2   |
-      | market.liquidity.targetstake.triggering.ratio | 0.24  |
 
    And the average block duration is "1"
 
@@ -152,12 +156,16 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     @Now
 Scenario: 002, LP gets slashed twice during continuous trading, 0044-LIME-002, No DPD setting
 
-   Given the following network parameters are set:
+
+   Given the liquidity monitoring parameters:
+      | name                | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.1              | 24h          | 1              |
+   When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/MAR22 | updated-lqm-params   |
+   And the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter         | 0.5   |
-      | market.liquidity.targetstake.triggering.ratio | 0.1   |
 
    And the average block duration is "1"
 

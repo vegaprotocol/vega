@@ -21,12 +21,18 @@ import (
 	"code.vegaprotocol.io/vega/core/netparams"
 )
 
+var unwatched = map[string]struct{}{
+	netparams.MarketLiquidityTargetStakeTriggeringRatio: {},
+	netparams.MarketTargetStakeScalingFactor:            {},
+	netparams.MarketTargetStakeTimeWindow:               {},
+}
+
 func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *godog.Table) error {
 	ctx := context.Background()
 	for _, row := range parseNetworkParametersTable(table) {
 		name := row.MustStr("name")
 
-		if !netParams.AnyWatchers(name) {
+		if _, ok := unwatched[name]; !ok && !netParams.AnyWatchers(name) {
 			return errNoWatchersSpecified(name)
 		}
 

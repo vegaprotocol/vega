@@ -18,6 +18,13 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1000    | 0.99        | 300               |
+    And the following network parameters are set:
+      | name                                          | value |
+      | market.stake.target.timeWindow                | 24h   |
+      | market.stake.target.scalingFactor             | 1     |
+      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | market.liquidity.targetstake.triggering.ratio | 0.1   |
+      | network.markPriceUpdateMaximumFrequency       | 0s    |
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config | lp price range |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     |          0.014 |
@@ -27,13 +34,6 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party1 | USD   | 100000000 |
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
-    And the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.bondPenaltyParameter         | 0.2   |
-      | market.liquidity.targetstake.triggering.ratio | 0.1   |
-      | network.markPriceUpdateMaximumFrequency       | 0s    |
     And the average block duration is "1"
     And the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
