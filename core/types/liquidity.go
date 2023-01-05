@@ -405,14 +405,13 @@ type LiquidityMonitoringParameters struct {
 }
 
 func (l LiquidityMonitoringParameters) IntoProto() *proto.LiquidityMonitoringParameters {
-	tr, _ := l.TriggeringRatio.Float64()
 	var params *proto.TargetStakeParameters
 	if l.TargetStakeParameters != nil {
 		params = l.TargetStakeParameters.IntoProto()
 	}
 	return &proto.LiquidityMonitoringParameters{
 		TargetStakeParameters: params,
-		TriggeringRatio:       tr,
+		TriggeringRatio:       l.TriggeringRatio.String(),
 		AuctionExtension:      l.AuctionExtension,
 	}
 }
@@ -438,19 +437,25 @@ func (l LiquidityMonitoringParameters) String() string {
 	)
 }
 
-func LiquidityMonitoringParametersFromProto(p *proto.LiquidityMonitoringParameters) *LiquidityMonitoringParameters {
+func LiquidityMonitoringParametersFromProto(p *proto.LiquidityMonitoringParameters) (*LiquidityMonitoringParameters, error) {
 	if p == nil {
-		return nil
+		return nil, nil
 	}
 	var params *TargetStakeParameters
 	if p.TargetStakeParameters != nil {
 		params = TargetStakeParametersFromProto(p.TargetStakeParameters)
 	}
+
+	tr, err := num.DecimalFromString(p.TriggeringRatio)
+	if err != nil {
+		return nil, fmt.Errorf("error getting trigerring ratio value from proto: %s", err)
+	}
+
 	return &LiquidityMonitoringParameters{
 		TargetStakeParameters: params,
 		AuctionExtension:      p.AuctionExtension,
-		TriggeringRatio:       num.DecimalFromFloat(p.TriggeringRatio),
-	}
+		TriggeringRatio:       tr,
+	}, nil
 }
 
 type LiquidityProvisionAmendment struct {

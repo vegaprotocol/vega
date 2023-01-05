@@ -248,7 +248,7 @@ func dummy() *all {
 								TimeWindow:    10,
 								ScalingFactor: 0.7,
 							},
-							TriggeringRatio:  0.5,
+							TriggeringRatio:  "0.5",
 							AuctionExtension: 10,
 						},
 						RiskParameters: &vega.NewMarketConfiguration_LogNormal{

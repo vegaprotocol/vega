@@ -464,7 +464,18 @@ func checkLiquidityMonitoring(parameters *protoTypes.LiquidityMonitoringParamete
 		return errs
 	}
 
-	if parameters.TriggeringRatio < 0 || parameters.TriggeringRatio > 1 {
+	if len(parameters.TriggeringRatio) == 0 {
+		return errs.FinalAddForProperty(fmt.Sprintf("%s.liquidity_monitoring_parameters.triggering_ratio", parentProperty), ErrIsNotValidNumber)
+	}
+
+	tr, err := num.DecimalFromString(parameters.TriggeringRatio)
+	if err != nil {
+		errs.AddForProperty(
+			fmt.Sprintf("%s.liquidity_monitoring_parameters.triggering_ratio", parentProperty),
+			fmt.Errorf("error parsing triggering ratio value: %s", err.Error()),
+		)
+	}
+	if tr.IsNegative() || tr.GreaterThan(num.DecimalOne()) {
 		errs.AddForProperty(
 			fmt.Sprintf("%s.liquidity_monitoring_parameters.triggering_ratio", parentProperty),
 			errors.New("should be between 0 (inclusive) and 1 (inclusive)"),
