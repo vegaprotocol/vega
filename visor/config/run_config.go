@@ -140,7 +140,7 @@ example:
 type RunConfig struct {
 	/*
 		description: Name of the upgrade.
-		note: It is recommended to use an upgrade version as a name.
+		note: It is recommended to use the upgrade version as the name (for example: 0.50.0).
 	*/
 	Name string `toml:"name"`
 	// description: Configuration of a Vega node.
