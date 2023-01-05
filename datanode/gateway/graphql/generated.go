@@ -509,7 +509,6 @@ type ComplexityRoot struct {
 		Amount        func(childComplexity int) int
 		AssetSource   func(childComplexity int) int
 		Creation      func(childComplexity int) int
-		Expiry        func(childComplexity int) int
 		Nonce         func(childComplexity int) int
 		Signatures    func(childComplexity int) int
 		TargetAddress func(childComplexity int) int
@@ -1138,7 +1137,7 @@ type ComplexityRoot struct {
 		Id                            func(childComplexity int) int
 		LiquidityProvisionsConnection func(childComplexity int, marketID *string, reference *string, pagination *v2.Pagination) int
 		MarginsConnection             func(childComplexity int, marketID *string, pagination *v2.Pagination) int
-		OrdersConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter) int
+		OrdersConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter, marketID *string) int
 		PositionsConnection           func(childComplexity int, market *string, pagination *v2.Pagination) int
 		ProposalsConnection           func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		RewardSummaries               func(childComplexity int, assetID *string) int
@@ -1756,7 +1755,6 @@ type ComplexityRoot struct {
 		Asset              func(childComplexity int) int
 		CreatedTimestamp   func(childComplexity int) int
 		Details            func(childComplexity int) int
-		Expiry             func(childComplexity int) int
 		Id                 func(childComplexity int) int
 		Party              func(childComplexity int) int
 		Ref                func(childComplexity int) int
@@ -2049,7 +2047,7 @@ type OrderUpdateResolver interface {
 	Version(ctx context.Context, obj *vega.Order) (string, error)
 }
 type PartyResolver interface {
-	OrdersConnection(ctx context.Context, obj *vega.Party, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter) (*v2.OrderConnection, error)
+	OrdersConnection(ctx context.Context, obj *vega.Party, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter, marketID *string) (*v2.OrderConnection, error)
 	TradesConnection(ctx context.Context, obj *vega.Party, marketID *string, dataRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	AccountsConnection(ctx context.Context, obj *vega.Party, marketID *string, assetID *string, typeArg *vega.AccountType, pagination *v2.Pagination) (*v2.AccountsConnection, error)
 	PositionsConnection(ctx context.Context, obj *vega.Party, market *string, pagination *v2.Pagination) (*v2.PositionConnection, error)
@@ -3759,13 +3757,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Erc20WithdrawalApproval.Creation(childComplexity), true
-
-	case "Erc20WithdrawalApproval.expiry":
-		if e.complexity.Erc20WithdrawalApproval.Expiry == nil {
-			break
-		}
-
-		return e.complexity.Erc20WithdrawalApproval.Expiry(childComplexity), true
 
 	case "Erc20WithdrawalApproval.nonce":
 		if e.complexity.Erc20WithdrawalApproval.Nonce == nil {
@@ -6521,7 +6512,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.OrdersConnection(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination), args["filter"].(*v2.OrderFilter)), true
+		return e.complexity.Party.OrdersConnection(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination), args["filter"].(*v2.OrderFilter), args["marketId"].(*string)), true
 
 	case "Party.positionsConnection":
 		if e.complexity.Party.PositionsConnection == nil {
@@ -9418,13 +9409,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Withdrawal.Details(childComplexity), true
 
-	case "Withdrawal.expiry":
-		if e.complexity.Withdrawal.Expiry == nil {
-			break
-		}
-
-		return e.complexity.Withdrawal.Expiry(childComplexity), true
-
 	case "Withdrawal.id":
 		if e.complexity.Withdrawal.Id == nil {
 			break
@@ -10040,6 +10024,15 @@ func (ec *executionContext) field_Party_ordersConnection_args(ctx context.Contex
 		}
 	}
 	args["filter"] = arg2
+	var arg3 *string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
+		arg3, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg3
 	return args, nil
 }
 
@@ -21265,50 +21258,6 @@ func (ec *executionContext) fieldContext_Erc20WithdrawalApproval_amount(ctx cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Erc20WithdrawalApproval_expiry(ctx context.Context, field graphql.CollectedField, obj *Erc20WithdrawalApproval) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Erc20WithdrawalApproval_expiry(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Expiry, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Erc20WithdrawalApproval_expiry(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Erc20WithdrawalApproval",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -39473,7 +39422,7 @@ func (ec *executionContext) _Party_ordersConnection(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().OrdersConnection(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination), fc.Args["filter"].(*v2.OrderFilter))
+		return ec.resolvers.Party().OrdersConnection(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination), fc.Args["filter"].(*v2.OrderFilter), fc.Args["marketId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -45483,8 +45432,6 @@ func (ec *executionContext) fieldContext_Query_erc20WithdrawalApproval(ctx conte
 				return ec.fieldContext_Erc20WithdrawalApproval_assetSource(ctx, field)
 			case "amount":
 				return ec.fieldContext_Erc20WithdrawalApproval_amount(ctx, field)
-			case "expiry":
-				return ec.fieldContext_Erc20WithdrawalApproval_expiry(ctx, field)
 			case "nonce":
 				return ec.fieldContext_Erc20WithdrawalApproval_nonce(ctx, field)
 			case "signatures":
@@ -47869,8 +47816,6 @@ func (ec *executionContext) fieldContext_Query_withdrawal(ctx context.Context, f
 				return ec.fieldContext_Withdrawal_status(ctx, field)
 			case "ref":
 				return ec.fieldContext_Withdrawal_ref(ctx, field)
-			case "expiry":
-				return ec.fieldContext_Withdrawal_expiry(ctx, field)
 			case "createdTimestamp":
 				return ec.fieldContext_Withdrawal_createdTimestamp(ctx, field)
 			case "withdrawnTimestamp":
@@ -58973,50 +58918,6 @@ func (ec *executionContext) fieldContext_Withdrawal_ref(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Withdrawal_expiry(ctx context.Context, field graphql.CollectedField, obj *vega.Withdrawal) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Withdrawal_expiry(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Expiry, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Withdrawal_expiry(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Withdrawal",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Timestamp does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Withdrawal_createdTimestamp(ctx context.Context, field graphql.CollectedField, obj *vega.Withdrawal) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Withdrawal_createdTimestamp(ctx, field)
 	if err != nil {
@@ -59235,8 +59136,6 @@ func (ec *executionContext) fieldContext_WithdrawalEdge_node(ctx context.Context
 				return ec.fieldContext_Withdrawal_status(ctx, field)
 			case "ref":
 				return ec.fieldContext_Withdrawal_ref(ctx, field)
-			case "expiry":
-				return ec.fieldContext_Withdrawal_expiry(ctx, field)
 			case "createdTimestamp":
 				return ec.fieldContext_Withdrawal_createdTimestamp(ctx, field)
 			case "withdrawnTimestamp":
@@ -65015,13 +64914,6 @@ func (ec *executionContext) _Erc20WithdrawalApproval(ctx context.Context, sel as
 		case "amount":
 
 			out.Values[i] = ec._Erc20WithdrawalApproval_amount(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "expiry":
-
-			out.Values[i] = ec._Erc20WithdrawalApproval_expiry(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -76687,13 +76579,6 @@ func (ec *executionContext) _Withdrawal(ctx context.Context, sel ast.SelectionSe
 		case "ref":
 
 			out.Values[i] = ec._Withdrawal_ref(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "expiry":
-
-			out.Values[i] = ec._Withdrawal_expiry(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)

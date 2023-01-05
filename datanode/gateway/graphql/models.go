@@ -309,8 +309,6 @@ type Erc20WithdrawalApproval struct {
 	AssetSource string `json:"assetSource"`
 	// The amount to be withdrawn
 	Amount string `json:"amount"`
-	// Timestamp in seconds for expiry of the approval
-	Expiry int64 `json:"expiry"`
 	// The nonce to be used in the request
 	Nonce string `json:"nonce"`
 	// Signature aggregate from the nodes, in the following format:

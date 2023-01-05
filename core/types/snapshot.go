@@ -340,6 +340,7 @@ func (s *Snapshot) nodesToChunks() {
 		Nr:   1,
 		Of:   1,
 	}
+
 	b, _ := proto.Marshal(all.IntoProto())
 	if len(b) < MaxChunkSize {
 		s.DataChunks = []*Chunk{
@@ -361,6 +362,7 @@ func (s *Snapshot) nodesToChunks() {
 		}
 		s.ByteChunks = append(s.ByteChunks, b[i:end])
 	}
+
 	s.hashByteChunks()
 }
 

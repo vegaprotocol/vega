@@ -12,8 +12,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 
-	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -56,28 +54,21 @@ func (cmd *fetchCmd) Execute(args []string) error {
 		return fmt.Errorf("datanode must be running for this command to work")
 	}
 
-	client, conn, err := getDatanodeClient(cmd.Config)
-	if err != nil {
-		return fmt.Errorf("failed to get datanode client:%w", err)
-	}
-	defer func() { _ = conn.Close() }()
-
+	client := getDatanodeAdminClient(log, cmd.Config)
 	blocksFetched, err := dehistory.FetchHistoryBlocks(context.Background(), func(s string, args ...interface{}) {
 		fmt.Printf(s+"\n", args...)
 	}, rootSegmentID,
 		func(ctx context.Context, historySegmentId string) (dehistory.FetchResult, error) {
-			resp, err := client.FetchDeHistorySegment(context.Background(), &v2.FetchDeHistorySegmentRequest{
-				HistorySegmentId: historySegmentId,
-			})
+			resp, err := client.FetchDeHistorySegment(context.Background(), historySegmentId)
 			if err != nil {
 				return dehistory.FetchResult{},
 					errorFromGrpcError("failed to fetch decentralized history segments", err)
 			}
 
 			return dehistory.FetchResult{
-				HeightFrom:               resp.Segment.FromHeight,
-				HeightTo:                 resp.Segment.ToHeight,
-				PreviousHistorySegmentID: resp.Segment.PreviousHistorySegmentId,
+				HeightFrom:               resp.HeightFrom,
+				HeightTo:                 resp.HeightTo,
+				PreviousHistorySegmentID: resp.PreviousHistorySegmentID,
 			}, nil
 		}, numBlocksToFetch)
 	if err != nil {

@@ -11,7 +11,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.targetstake.triggering.ratio | 0     |
-      | network.floatingPointUpdates.delay            | 5s    |
+      | network.floatingPointUpdates.delay            | 10s   |
       | market.auction.minimumDuration                | 10    |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
     And the average block duration is "1"

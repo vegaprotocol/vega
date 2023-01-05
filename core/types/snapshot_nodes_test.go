@@ -786,7 +786,7 @@ func TestListSnapFromTree(t *testing.T) {
 func createTree(t *testing.T) *iavl.MutableTree {
 	t.Helper()
 	db := db.NewMemDB()
-	tree, err := iavl.NewMutableTreeWithOpts(db, 0, nil)
+	tree, err := iavl.NewMutableTreeWithOpts(db, 0, nil, false)
 	require.NoError(t, err)
 	return tree
 }
