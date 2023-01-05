@@ -95,7 +95,7 @@ type VegaConfig struct {
 	/*
 		description: |
 			Visor communicates with the core node via RPC API that runs over UNIX socket.
-			This parameter allows to configure the UNIX socket to match the core node configuration.
+			This parameter allows to you configure the UNIX socket to match the core node configuration.
 		example:
 			type: toml
 			value: |
