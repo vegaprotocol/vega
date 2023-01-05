@@ -31,7 +31,7 @@ type BinaryConfig struct {
 	/*
 		description: Path to the binary.
 		note: |
-			Both absolute or relative path can be used.
+			The absolute or relative path can be used.
 			Relative path is relative to a parent folder of this config file.
 	*/
 	Path string `toml:"path"`
