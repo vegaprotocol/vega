@@ -95,7 +95,7 @@ type VegaConfig struct {
 	/*
 		description: |
 			Visor communicates with the core node via RPC API that runs over UNIX socket.
-			This parameter allows to you configure the UNIX socket to match the core node configuration.
+			This parameter allows you to configure the UNIX socket to match the core node configuration.
 		example:
 			type: toml
 			value: |
@@ -140,7 +140,7 @@ example:
 type RunConfig struct {
 	/*
 		description: Name of the upgrade.
-		note: It is recommended to use the upgrade version as the name (for example: 0.50.0).
+		note: It is recommended that you use the upgrade version as the name.
 	*/
 	Name string `toml:"name"`
 	// description: Configuration of a Vega node.
