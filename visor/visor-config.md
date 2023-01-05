@@ -26,8 +26,7 @@ during the first start up of the Core node process - not restarts.
 
 Default value: <code>10</code>
 
-<blockquote>There is a 2 seconds delay between each try. Setting the max retry number to 5 means the Visor will try to establish
-5 connections times in 10 seconds.
+<blockquote>There is a 2 second delay between each attempt. Setting the max retry number to 5 means Visor will try to establish a connection 5 times in 10 seconds.
 </blockquote>
 </dd>
 
