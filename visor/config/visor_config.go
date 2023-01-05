@@ -100,8 +100,8 @@ type VisorConfigFile struct {
 	RestartsDelaySeconds int `toml:"restartsDelaySeconds,optional"`
 	/*
 		description: |
-			Number of seconds that Visor waits after it sends termination singal (SIGTERM) to running processes.
-			After the time has elapsed the Visor force kills (SIGKILL) to running processes.
+			Number of seconds that Visor waits after it sends termination signal (SIGTERM) to running processes.
+			After the time has elapsed Visor force-kills (SIGKILL) any running processes.
 		default: 15
 	*/
 	StopSignalTimeoutSeconds int `toml:"stopSignalTimeoutSeconds,optional"`
