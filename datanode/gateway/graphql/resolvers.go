@@ -620,7 +620,6 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 	return &Erc20WithdrawalApproval{
 		AssetSource:   res.AssetSource,
 		Amount:        res.Amount,
-		Expiry:        res.Expiry,
 		Nonce:         res.Nonce,
 		Signatures:    res.Signatures,
 		TargetAddress: res.TargetAddress,
@@ -1328,7 +1327,7 @@ func (r *myPartyResolver) MarginsConnection(ctx context.Context, party *types.Pa
 }
 
 func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Party, dateRange *v2.DateRange,
-	pagination *v2.Pagination, filter *v2.OrderFilter,
+	pagination *v2.Pagination, filter *v2.OrderFilter, marketID *string,
 ) (*v2.OrderConnection, error) {
 	if party == nil {
 		return nil, errors.New("party is required")
@@ -1338,6 +1337,7 @@ func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Par
 		Pagination: pagination,
 		DateRange:  dateRange,
 		Filter:     filter,
+		MarketId:   marketID,
 	}
 	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
 	if err != nil {

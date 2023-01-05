@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
@@ -1009,6 +1010,10 @@ func (i *Uint) ToUint() (*num.Uint, error) {
 }
 
 func (i *Uint) Validate(value string) error {
+	if strings.HasPrefix(strings.TrimLeft(value, " "), "-") {
+		return errors.New("invalid uint")
+	}
+
 	val, overflow := num.UintFromString(value, 10)
 	if overflow {
 		return errors.New("invalid uint")
@@ -1035,6 +1040,11 @@ func (i *Uint) Update(value string) error {
 	if !i.mutable {
 		return errors.New("value is not mutable")
 	}
+
+	if strings.HasPrefix(strings.TrimLeft(value, " "), "-") {
+		return errors.New("invalid uint")
+	}
+
 	val, overflow := num.UintFromString(value, 10)
 	if overflow {
 		return errors.New("invalid uint")

@@ -6,7 +6,7 @@ Feature: Test for issue 5460
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.targetstake.triggering.ratio | 1     |
-      | network.floatingPointUpdates.delay            | 5s    |
+      | network.floatingPointUpdates.delay            | 10s   |
       | market.auction.minimumDuration                | 1    |
     And the following assets are registered:
       | id  | decimal places |

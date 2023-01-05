@@ -785,7 +785,6 @@ create table if not exists withdrawals (
     asset bytea not null,
     status withdrawal_status not null,
     ref text not null,
-    expiry timestamp with time zone not null,
     foreign_tx_hash text not null,
     created_timestamp timestamp with time zone not null,
     withdrawn_timestamp timestamp with time zone not null,

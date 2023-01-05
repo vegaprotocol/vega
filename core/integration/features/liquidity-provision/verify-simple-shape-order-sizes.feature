@@ -125,7 +125,7 @@ Feature: Verify the order size is correctly cumulated.
     # Trigger an auction to set the mark price
     Given the following network parameters are set:
       | name                                          | value |
-      | market.liquidity.stakeToCcySiskas             | 1     |
+      | market.liquidity.stakeToCcyVolume             | 1     |
      
     When the parties place the following orders:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
