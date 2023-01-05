@@ -171,6 +171,7 @@ func shouldInsertAValidMarketRecord(t *testing.T) {
 	block := addTestBlock(t, ctx, bs)
 
 	marketProto := getTestMarket()
+	marketProto.LiquidityMonitoringParameters.TriggeringRatio = "0.3"
 
 	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
@@ -372,7 +373,7 @@ func getTestMarket() *vega.Market {
 				TimeWindow:    0,
 				ScalingFactor: 0,
 			},
-			TriggeringRatio:  0,
+			TriggeringRatio:  "0",
 			AuctionExtension: 0,
 		},
 		TradingMode: vega.Market_TRADING_MODE_CONTINUOUS,

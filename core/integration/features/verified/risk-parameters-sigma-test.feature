@@ -42,12 +42,16 @@ Feature: test risk model parameter sigma
 
   @Now
   Scenario: 001, test market ETH/MAR53(sigma=50),
+
+    Given the liquidity monitoring parameters:
+      | name                | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.1              | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/MAR53 | updated-lqm-params   |
     And the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter         | 0.2   |
-      | market.liquidity.targetstake.triggering.ratio | 0.1   |
 
     And the average block duration is "1"
 
@@ -94,12 +98,16 @@ Feature: test risk model parameter sigma
 
   @Now
   Scenario: 002, test market ETH/MAR0 (kind of "normal" risk parameters setting),
+
+    Given the liquidity monitoring parameters:
+      | name              | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.1            | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/MAR0 | updated-lqm-params   |
     And the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter         | 0.2   |
-      | market.liquidity.targetstake.triggering.ratio | 0.1   |
 
     And the average block duration is "1"
 
