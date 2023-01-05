@@ -27,7 +27,7 @@ HOME_FOLDER_PATH
 - `config.toml` - a [Visor configuration](#visorconfiguration) file.
 - `run-config.toml` - a [Run configuration](#runconfiguration) file.
 - `current` - a symlink to the currently loaded configuration folder used to run the binaries. On Visor start up, when the `current` folder is missing, Visor will link to the `genesis` folder to use as `current` by default. During the upgrade, if not specified otherwise, Visor will try to link to a folder named after the version of the upgrade - for example `vX.X.X`. This symlink is automatically managed by Visor and it should not be tampered with manually.
-- `genesis` - a folder that Visor automatically links to `current` [Run configuration](#runconfiguration) if the `current` folder does not exists.
+- `genesis` - a default folder with [Run configuration](#runconfiguration) that Visor automatically links to `current` folder in case `current` folder does not exists.
 - `vX.X.X` - any folder with a name of the upgrade version that stores [Run configuration](#runconfiguration) for the upgrade.
 
 ### Upgrade flow
