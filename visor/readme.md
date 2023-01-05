@@ -11,7 +11,7 @@ A binaries runner for [Core](../core/README.md) and [Data Node](../datanode/READ
 
 ## Architecture
 
-Visor stores all it's required config files and state in a `home` folder. The basic folder structure can be geneate by `visor init` cmd or manually. It is vital that all necessery files and folders are present in the `home` folder, therefore using the `init` command is recommended.
+Visor stores all it's required config files and state in a `home` folder. The basic folder structure can be geneate by `visor init` cmd or manually.
 
 ### Home folder structure:
 ```
@@ -41,6 +41,18 @@ HOME_FOLDER_PATH
 
 After that, the whole process is repeated from points 3-5 every time another upgrade takes place.
 
+## Setup
+
+Visor stores all it's required config files and state in a `home` folder. The basic folder structure can be geneate by `visor init` cmd or manually.
+It is vital that all necessery files and folders are present in the `home` folder, therefore using the `init` command is recommended.
+
+It is recomened to run Visor itself with a service manager for example Systemd.
+
+1. Create Visor `home` folder - `visor init`.
+2. Configure Visor with [config](visor-config.md).
+3. Configure first upgrade folder with [run config](run-config.md).
+4. Start Visor with a service manager - `visor run --home home-path`.
+
 ## Configuration
 
 Visor has 2 different types of configuration. The ***Visor configuration*** and ***Run configuration*** where the first one is used to configure Visor itself and the latter is used to specify the protocol upgrade.
@@ -53,3 +65,7 @@ reflected by Visor.
 [Docs](visor-config.md)
 
 ### Run configuration
+
+A configuration for a specific upgrade. This configuration allows to specify binaries and their arguments to be be run in a specific upgrade.
+
+[Docs](run-config.md)

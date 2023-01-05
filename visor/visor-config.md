@@ -17,7 +17,8 @@ Root of the config file
 
 <dd>
 
-Visor communicates with the core node via RPC API. This variable allows a validator to specify how many times  Visor should try to establish a connection to the core node before the Visor process fails.
+Visor communicates with the core node via RPC API.
+This variable allows a validator to specify how many times Visor should try to establish a connection to the core node before the Visor process fails.
 The `maxNumberOfFirstConnectionRetries` is only taken into account during the first start up of the Core node process - not restarts.
 
 
@@ -42,7 +43,7 @@ the processes have failed before the Visor process fails.
 
 Default value: <code>3</code>
 
-<blockquote>The amount of time Visor should wait between restarts can be set by `maxNumberOfRestarts`.
+<blockquote>The amount of time Visor waits between restarts can be set by `restartsDelaySeconds`.
 </blockquote>
 </dd>
 
@@ -65,7 +66,8 @@ Default value: <code>5</code>
 
 <dd>
 
-Number of seconds that Visor waits after it sends termination signal (SIGTERM) to running processes. After the time has elapsed, Visor force-kills (SIGKILL) any running processes.
+Number of seconds that Visor waits after it sends termination signal (SIGTERM) to running processes.
+After the time has elapsed Visor force-kills (SIGKILL) any running processes.
 
 
 

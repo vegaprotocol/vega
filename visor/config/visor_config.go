@@ -73,12 +73,11 @@ example:
 type VisorConfigFile struct {
 	/*
 		description: |
-			Visor communicates with core node via RPC API. This variable allows a user to specify
-			how many times Visor should try to establish a connection to the core node before the Visor process fails.
-			The `maxNumberOfFirstConnectionRetries` is only taken into account
-			during the first start up of the core node process - not restarts.
+			Visor communicates with the core node via RPC API.
+			This variable allows a validator to specify how many times Visor should try to establish a connection to the core node before the Visor process fails.
+			The `maxNumberOfFirstConnectionRetries` is only taken into account during the first start up of the Core node process - not restarts.
 		note: |
-			There is a 2 second delay between each attempt. Setting the max retry number to 5 means the Visor will try to establish a connection 5 times in 10 seconds.
+			There is a 2 second delay between each attempt. Setting the max retry number to 5 means Visor will try to establish a connection 5 times in 10 seconds.
 		default: 10
 	*/
 	MaxNumberOfFirstConnectionRetries int `toml:"maxNumberOfFirstConnectionRetries,optional"`
@@ -88,7 +87,7 @@ type VisorConfigFile struct {
 			This allows a user to define the maximum number of restarts in case any of
 			the processes have failed before the Visor process fails.
 		note: |
-			The amount of time Visor should wait between restarts can be set by `maxNumberOfRestarts`.
+			The amount of time Visor waits between restarts can be set by `restartsDelaySeconds`.
 		default: 3
 	*/
 	MaxNumberOfRestarts int `toml:"maxNumberOfRestarts,optional"`
