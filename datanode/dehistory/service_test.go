@@ -302,8 +302,6 @@ func TestMain(t *testing.M) {
 		storeCfg.SwarmKeyOverride = uuid.NewV4().String()
 
 		storeCfg.SwarmPort = databasetest.GetNextFreePort()
-		storeCfg.UseIpfsDefaultPeers = false
-		storeCfg.StartWebUI = false
 
 		storeLog := logging.NewTestLogger()
 		storeLog.SetLevel(logging.InfoLevel)

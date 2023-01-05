@@ -2,6 +2,7 @@ package dehistory_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/datanode/dehistory"
@@ -68,7 +69,7 @@ func TestInitialiseEmptyDataNode(t *testing.T) {
 
 	service.EXPECT().LoadDeHistoryIntoDatanode(gomock.Any()).Times(1)
 
-	dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{})
+	dehistory.InitialiseDatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{})
 }
 
 func TestInitialiseNonEmptyDataNode(t *testing.T) {
@@ -123,7 +124,7 @@ func TestInitialiseNonEmptyDataNode(t *testing.T) {
 
 	service.EXPECT().LoadDeHistoryIntoDatanode(gomock.Any()).Times(1)
 
-	dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{
+	dehistory.InitialiseDatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{
 		FromHeight: 0,
 		ToHeight:   2243,
 		HasData:    true,
@@ -158,7 +159,7 @@ func TestLoadingHistoryWithinDatanodeCurrentSpanDoesNothing(t *testing.T) {
 	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
 		Return(peerResponse, map[string]*v2.GetMostRecentDeHistorySegmentResponse{"peer1": peerResponse.Response}, nil)
 
-	assert.Nil(t, dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{
+	assert.Nil(t, dehistory.InitialiseDatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{
 		FromHeight: 0,
 		ToHeight:   5000,
 		HasData:    true,
@@ -216,7 +217,7 @@ func TestWhenMinimumBlockCountExceedsAvailableHistory(t *testing.T) {
 
 	service.EXPECT().LoadDeHistoryIntoDatanode(gomock.Any()).Times(1)
 
-	dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{})
+	dehistory.InitialiseDatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{})
 }
 
 func TestInitialiseToASpecifiedSegment(t *testing.T) {
@@ -242,7 +243,7 @@ func TestInitialiseToASpecifiedSegment(t *testing.T) {
 
 	service.EXPECT().LoadDeHistoryIntoDatanode(gomock.Any()).Times(1)
 
-	dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{})
+	dehistory.InitialiseDatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{})
 }
 
 func TestAutoInitialiseWhenNoActivePeers(t *testing.T) {
@@ -257,10 +258,9 @@ func TestAutoInitialiseWhenNoActivePeers(t *testing.T) {
 
 	cfg.MinimumBlockCount = 1500
 	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
-		Return(nil, nil, dehistory.ErrNoActivePeersFound)
+		Return(nil, nil, errors.New("no peers found"))
 
-	assert.Equal(t, dehistory.ErrDeHistoryNotAvailable,
-		dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{}))
+	assert.NotNil(t, dehistory.InitialiseDatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{}))
 }
 
 func TestAutoInitialiseWhenNoHistoryAvailableFromPeers(t *testing.T) {
@@ -277,8 +277,7 @@ func TestAutoInitialiseWhenNoHistoryAvailableFromPeers(t *testing.T) {
 	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
 		Return(nil, map[string]*v2.GetMostRecentDeHistorySegmentResponse{}, nil)
 
-	assert.Equal(t, dehistory.ErrDeHistoryNotAvailable,
-		dehistory.DatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{}))
+	assert.NotNil(t, dehistory.InitialiseDatanodeFromDeHistory(ctx, cfg, log, service, sqlstore.DatanodeBlockSpan{}, []int{}))
 }
 
 func TestSelectRootSegment(t *testing.T) {

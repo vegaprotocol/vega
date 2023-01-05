@@ -7,8 +7,6 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 
-	"code.vegaprotocol.io/vega/datanode/config/encoding"
-
 	"github.com/ipfs/kubo/config"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -21,15 +19,11 @@ type Config struct {
 	PrivKey string `long:"priv-key" description:"the ipfs priv key of this node"`
 
 	// Optional Settings
-	UseIpfsDefaultPeers encoding.Bool `long:"use-ipfs-default-peers" description:"if true ipfs default peers will be appended to the bootstrap peers"`
-	BootstrapPeers      []string      `long:"bootstrap-peers" description:"a list of the multiaddress of bootstrap peers, will be used in addition to the ipfs default peers if enabled"`
-	SwarmPort           int           `long:"swarm-port" description:"ipfs swarm port"`
+	BootstrapPeers []string `long:"bootstrap-peers" description:"a list of the multiaddress of bootstrap peers, will be used in addition to the ipfs default peers if enabled"`
+	SwarmPort      int      `long:"swarm-port" description:"ipfs swarm port"`
 
 	// Without this there would be no way to isolate an environment if needed and process a given chains data (e.g. for dev)
 	SwarmKeyOverride string `long:"swarm-key-override" description:"optional swarm key override, the default behaviour is to use the datanode's chain id'"`
-
-	StartWebUI encoding.Bool `long:"start-web-ui" description:"if true the store will expose the ipfs web UI"`
-	WebUIPort  int           `long:"webui-port" description:"webui port"`
 
 	HistoryRetentionBlockSpan int64 `long:"history-retention-block-span" description:"the block span of history, from the most recent history segment, that should be retained"`
 }
@@ -45,13 +39,9 @@ func NewDefaultConfig() Config {
 		PeerID:  identity.PeerID,
 		PrivKey: identity.PrivKey,
 
-		BootstrapPeers:      []string{},
-		UseIpfsDefaultPeers: true,
+		BootstrapPeers: []string{},
 
 		SwarmPort: 4001,
-
-		StartWebUI: false,
-		WebUIPort:  5001,
 
 		HistoryRetentionBlockSpan: 604800, // One week of history at 1s per block
 	}
