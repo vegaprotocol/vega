@@ -358,7 +358,6 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 		svcs.delegation.OnTick,
 		svcs.notary.OnTick,
 		svcs.banking.OnTick,
-		svcs.rewards.OnTick,
 		svcs.limits.OnTick,
 	)
 }
