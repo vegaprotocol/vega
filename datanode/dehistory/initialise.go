@@ -23,16 +23,14 @@ import (
 
 var ErrChainNotFound = errors.New("no chain found")
 
-var ErrDeHistoryNotAvailable = errors.New("no decentralized history is available")
-
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/dehistory_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/dehistory DeHistory
 type DeHistory interface {
 	FetchHistorySegment(ctx context.Context, historySegmentID string) (store.SegmentIndexEntry, error)
-	LoadAllAvailableHistoryIntoDatanode(ctx context.Context) (snapshot.LoadResult, error)
+	LoadDeHistoryIntoDatanode(ctx context.Context) (snapshot.LoadResult, error)
 	GetMostRecentHistorySegmentFromPeers(ctx context.Context, grpcAPIPorts []int) (*PeerResponse, map[string]*v2.GetMostRecentDeHistorySegmentResponse, error)
 }
 
-func DatanodeFromDeHistory(parentCtx context.Context, cfg InitializationConfig, log *logging.Logger,
+func InitialiseDatanodeFromDeHistory(parentCtx context.Context, cfg InitializationConfig, log *logging.Logger,
 	deHistoryService DeHistory, currentSpan sqlstore.DatanodeBlockSpan,
 	grpcPorts []int,
 ) error {
@@ -45,17 +43,11 @@ func DatanodeFromDeHistory(parentCtx context.Context, cfg InitializationConfig, 
 		response, _, err := deHistoryService.GetMostRecentHistorySegmentFromPeers(ctx,
 			grpcPorts)
 		if err != nil {
-			if errors.Is(err, ErrNoActivePeersFound) {
-				log.Infof("no active peers found")
-				return ErrDeHistoryNotAvailable
-			}
-
-			return fmt.Errorf("failed to get most recent history segment from peers:%w", err)
+			return fmt.Errorf("failed to get most recent history segment from peers: %w", err)
 		}
 
 		if response == nil {
-			log.Infof("unable to get a most recent segment response from peers")
-			return ErrDeHistoryNotAvailable
+			return errors.New("unable to get a most recent segment response from peers")
 		}
 
 		mostRecentHistorySegment := response.Response.Segment
@@ -99,7 +91,7 @@ func DatanodeFromDeHistory(parentCtx context.Context, cfg InitializationConfig, 
 	log.Infof("fetched %d blocks from decentralised history", blocksFetched)
 
 	log.Infof("loading history into the datanode")
-	loaded, err := deHistoryService.LoadAllAvailableHistoryIntoDatanode(ctx)
+	loaded, err := deHistoryService.LoadDeHistoryIntoDatanode(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load history into the datanode%w", err)
 	}

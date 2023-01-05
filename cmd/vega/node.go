@@ -15,6 +15,7 @@ package main
 import (
 	"context"
 	"errors"
+	"runtime/debug"
 
 	"code.vegaprotocol.io/vega/cmd/vega/node"
 	"code.vegaprotocol.io/vega/core/config"
@@ -22,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/jessevdk/go-flags"
+	"github.com/pbnjay/memory"
 )
 
 type StartCmd struct {
@@ -69,6 +71,18 @@ func (cmd *StartCmd) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// setup max memory usage
+	memFactor, err := confWatcher.Get().GetMaxMemoryFactor()
+	if err != nil {
+		return err
+	}
+
+	// only set max memory if user didn't require 100%
+	if memFactor != 1 {
+		totalMem := memory.TotalMemory()
+		debug.SetMemoryLimit(int64(float64(totalMem) * memFactor))
 	}
 
 	if len(startCmd.TendermintHome) <= 0 {

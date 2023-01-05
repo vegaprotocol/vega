@@ -202,7 +202,6 @@ func testWithdrawalsGetByID(t *testing.T) {
 
 	got, err := ws.GetByID(ctx, withdrawalProto.Id)
 	assert.NoError(t, err)
-	withdrawal.Expiry = withdrawal.Expiry.Truncate(time.Microsecond)
 	withdrawal.CreatedTimestamp = withdrawal.CreatedTimestamp.Truncate(time.Microsecond)
 	withdrawal.WithdrawnTimestamp = withdrawal.WithdrawnTimestamp.Truncate(time.Microsecond)
 	assert.Equal(t, *withdrawal, got)
@@ -244,7 +243,6 @@ func testWithdrawalsGetByParty(t *testing.T) {
 	err = ws.Upsert(ctx, withdrawal)
 	require.NoError(t, err)
 
-	withdrawal.Expiry = withdrawal.Expiry.Truncate(time.Microsecond)
 	withdrawal.CreatedTimestamp = withdrawal.CreatedTimestamp.Truncate(time.Microsecond)
 	withdrawal.WithdrawnTimestamp = withdrawal.WithdrawnTimestamp.Truncate(time.Microsecond)
 
@@ -269,7 +267,6 @@ func testWithdrawalsGetByParty(t *testing.T) {
 	err = ws.Upsert(ctx, withdrawal)
 	require.NoError(t, err)
 
-	withdrawal.Expiry = withdrawal.Expiry.Truncate(time.Microsecond)
 	withdrawal.CreatedTimestamp = withdrawal.CreatedTimestamp.Truncate(time.Microsecond)
 	withdrawal.WithdrawnTimestamp = withdrawal.WithdrawnTimestamp.Truncate(time.Microsecond)
 
@@ -288,7 +285,6 @@ func getTestWithdrawal(id, party, asset, amount, txHash string, ts time.Time) *v
 		Asset:              asset,
 		Status:             vega.Withdrawal_STATUS_OPEN,
 		Ref:                "deadbeef",
-		Expiry:             ts.Unix() + 1,
 		TxHash:             txHash,
 		CreatedTimestamp:   ts.UnixNano(),
 		WithdrawnTimestamp: ts.UnixNano(),

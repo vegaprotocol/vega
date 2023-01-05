@@ -412,7 +412,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
       | party  | asset | amount |
       | party1 | VEGA  | 5248   | 
       | party2 | VEGA  | 1996   | 
-      | party3 | VEGA  | 7243   | 
+      | party3 | VEGA  | 7244   | 
       | node1  | VEGA  | 3370   | 
       | node2  | VEGA  | 2095   | 
       | node3  | VEGA  | 2144   |  

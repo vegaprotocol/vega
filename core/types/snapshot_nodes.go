@@ -2922,8 +2922,10 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		}
 	}
 
+	m, _ := MarketFromProto(em.Market)
+
 	ret := ExecMarket{
-		Market:                     MarketFromProto(em.Market),
+		Market:                     m,
 		PriceMonitor:               PriceMonitorFromProto(em.PriceMonitor),
 		AuctionState:               AuctionStateFromProto(em.AuctionState),
 		PeggedOrders:               PeggedOrdersStateFromProto(em.PeggedOrders),

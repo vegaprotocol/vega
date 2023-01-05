@@ -39,7 +39,7 @@ func initialiseTree(dbPath string) (*db.GoLevelDB, *iavl.MutableTree, error) {
 		return nil, nil, fmt.Errorf("failed to open database located at %s : %w", dbPath, err)
 	}
 
-	tree, err := iavl.NewMutableTree(conn, 0)
+	tree, err := iavl.NewMutableTree(conn, 0, false)
 	if err != nil {
 		return nil, nil, err
 	}

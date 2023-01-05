@@ -10,6 +10,7 @@ import (
 
 	"google.golang.org/protobuf/reflect/protoreflect"
 
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/protos/vega"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	events "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -129,19 +130,8 @@ func hash(data []byte) string {
 }
 
 func allBytes(cp *checkpoint.Checkpoint) []byte {
-	// the order in which we append is quite important
-	ret := append([]byte{}, cp.NetworkParameters...)
-	ret = append(ret, cp.Assets...)
-	ret = append(ret, cp.Collateral...)
-	ret = append(ret, cp.Delegation...)
-	ret = append(ret, cp.Epoch...)
-	ret = append(ret, cp.Block...)
-	ret = append(ret, cp.Governance...)
-	ret = append(ret, cp.Rewards...)
-	ret = append(ret, cp.Banking...)
-	ret = append(ret, cp.Validators...)
-	ret = append(ret, cp.Staking...)
-	return append(ret, cp.MultisigControl...)
+	buf := types.NewCheckpointFromProto(cp).HashBytes()
+	return buf.Bytes()
 }
 
 func (a *all) CheckpointData() ([]byte, string, error) {
@@ -258,7 +248,7 @@ func dummy() *all {
 								TimeWindow:    10,
 								ScalingFactor: 0.7,
 							},
-							TriggeringRatio:  0.5,
+							TriggeringRatio:  "0.5",
 							AuctionExtension: 10,
 						},
 						RiskParameters: &vega.NewMarketConfiguration_LogNormal{

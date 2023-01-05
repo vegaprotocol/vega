@@ -16,7 +16,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.65.1";
+    version: "v0.66.0";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz/datanode/rest"
@@ -313,7 +313,7 @@ service TradingDataService {
     // Get information about a given node
     rpc GetNode(GetNodeRequest) returns (GetNodeResponse);
 
-    // Node
+    // Nodes list
     //
     // List information about the nodes on the network
     rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
@@ -413,11 +413,6 @@ service TradingDataService {
     //
     // List all history segments stored by this node
     rpc ListAllDeHistorySegments(ListAllDeHistorySegmentsRequest) returns (ListAllDeHistorySegmentsResponse);
-
-    // Fetch decentralized history segment
-    //
-    // Fetch a history segment from another peer in the network
-    rpc FetchDeHistorySegment(FetchDeHistorySegmentRequest) returns (FetchDeHistorySegmentResponse);
 
     // Get active decentralized history peer addresses
     //
@@ -1288,21 +1283,20 @@ message GetERC20WithdrawalApprovalRequest {
 // The response with all information required to bundle the call to finalise the withdrawal on the erc20 bridge
 // function withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)
 message GetERC20WithdrawalApprovalResponse {
-    // The address of asset on ethereum
-    string asset_source = 1;
-    // The amount to be withdrawn
-    string amount = 2;
-    // The expiry / until what time the request is valid
-    int64 expiry = 3;
-    // The nonce, which is actually the internal reference for the withdrawal
-    string nonce = 4;
-    // The signatures bundle as hex encoded data, forward by 0x
-    // e.g: 0x + sig1 + sig2 + ... + sixN
-    string signatures = 5;
-    // The ethereum address to withdraw the funds to, 0x prefixed
-    string target_address = 6;
-    // The creation timestamps
-    int64 creation = 7;
+  reserved 3;
+  // The address of asset on ethereum
+  string asset_source = 1;
+  // The amount to be withdrawn
+  string amount = 2;
+  // The nonce, which is actually the internal reference for the withdrawal
+  string nonce = 4;
+  // The signatures bundle as hex encoded data, forward by 0x
+  // e.g: 0x + sig1 + sig2 + ... + sixN
+  string signatures = 5;
+  // The ethereum address to withdraw the funds to, 0x prefixed
+  string target_address = 6;
+  // The creation timestamps
+  int64 creation = 7;
 }
 
 // -- Trades --
@@ -2181,16 +2175,6 @@ message ListAllDeHistorySegmentsRequest {
 // Response with a list of all the nodes history segments
 message ListAllDeHistorySegmentsResponse {
     repeated HistorySegment segments = 1;
-}
-
-// Request to fetch a history segment from the network
-message FetchDeHistorySegmentRequest {
-    string history_segment_id  = 1;
-}
-
-// Response with details of the fetched history segment
-message FetchDeHistorySegmentResponse {
-    HistorySegment segment = 1;
 }
 
 // Request to get the addresses of active decentralized history peers

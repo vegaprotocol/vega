@@ -38,14 +38,6 @@ import (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/banking Assets,Notary,Collateral,Witness,TimeService,EpochService,Topology,MarketActivityTracker,ERC20BridgeView
 
-const (
-	// this is temporarily used until we remove expiry completely
-	// make the expiry 2 years, which will outlive anyway any
-	// vega network at first.
-	// 24 hours * 365 * days * 2 years.
-	withdrawalsDefaultExpiry = 24 * 365 * 2 * time.Hour
-)
-
 var (
 	ErrWrongAssetTypeUsedInBuiltinAssetChainEvent = errors.New("non builtin asset used for builtin asset chain event")
 	ErrWrongAssetTypeUsedInERC20ChainEvent        = errors.New("non ERC20 for ERC20 chain event")
@@ -439,7 +431,6 @@ func (e *Engine) finalizeWithdraw(
 func (e *Engine) newWithdrawal(
 	id, partyID, asset string,
 	amount *num.Uint,
-	expirationDate time.Time,
 	wext *types.WithdrawExt,
 ) (w *types.Withdrawal, ref *big.Int) {
 	partyID = strings.TrimPrefix(partyID, "0x")
@@ -450,15 +441,14 @@ func (e *Engine) newWithdrawal(
 	ref = big.NewInt(0).Add(e.withdrawalCnt, big.NewInt(now.Unix()))
 	e.withdrawalCnt.Add(e.withdrawalCnt, big.NewInt(1))
 	w = &types.Withdrawal{
-		ID:             id,
-		Status:         types.WithdrawalStatusOpen,
-		PartyID:        partyID,
-		Asset:          asset,
-		Amount:         amount,
-		ExpirationDate: expirationDate.Unix(),
-		Ext:            wext,
-		CreationDate:   now.UnixNano(),
-		Ref:            ref.String(),
+		ID:           id,
+		Status:       types.WithdrawalStatusOpen,
+		PartyID:      partyID,
+		Asset:        asset,
+		Amount:       amount,
+		Ext:          wext,
+		CreationDate: now.UnixNano(),
+		Ref:          ref.String(),
 	}
 	return
 }

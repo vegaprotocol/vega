@@ -34,7 +34,6 @@ type Withdrawal struct {
 	Asset              AssetID
 	Status             WithdrawalStatus
 	Ref                string
-	Expiry             time.Time
 	ForeignTxHash      string
 	CreatedTimestamp   time.Time
 	WithdrawnTimestamp time.Time
@@ -52,14 +51,12 @@ func WithdrawalFromProto(withdrawal *vega.Withdrawal, txHash TxHash, vegaTime ti
 	}
 
 	return &Withdrawal{
-		ID:      WithdrawalID(withdrawal.Id),
-		PartyID: PartyID(withdrawal.PartyId),
-		Amount:  amount,
-		Asset:   AssetID(withdrawal.Asset),
-		Status:  WithdrawalStatus(withdrawal.Status),
-		Ref:     withdrawal.Ref,
-		// According to the GraphQL resolver, the expiry is the Unix time, not UnixNano
-		Expiry:             time.Unix(withdrawal.Expiry, 0),
+		ID:                 WithdrawalID(withdrawal.Id),
+		PartyID:            PartyID(withdrawal.PartyId),
+		Amount:             amount,
+		Asset:              AssetID(withdrawal.Asset),
+		Status:             WithdrawalStatus(withdrawal.Status),
+		Ref:                withdrawal.Ref,
 		ForeignTxHash:      withdrawal.TxHash,
 		CreatedTimestamp:   NanosToPostgresTimestamp(withdrawal.CreatedTimestamp),
 		WithdrawnTimestamp: NanosToPostgresTimestamp(withdrawal.WithdrawnTimestamp),
@@ -77,7 +74,6 @@ func (w Withdrawal) ToProto() *vega.Withdrawal {
 		Asset:              w.Asset.String(),
 		Status:             vega.Withdrawal_Status(w.Status),
 		Ref:                w.Ref,
-		Expiry:             w.Expiry.Unix(),
 		TxHash:             w.ForeignTxHash,
 		CreatedTimestamp:   w.CreatedTimestamp.UnixNano(),
 		WithdrawnTimestamp: w.WithdrawnTimestamp.UnixNano(),

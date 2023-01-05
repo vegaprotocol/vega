@@ -94,10 +94,23 @@ type Topology struct {
 
 type pendingSigner struct {
 	*types.SignerEvent
+
 	check func() error
 }
 
 func (p pendingSigner) GetID() string { return p.ID }
+func (p pendingSigner) GetType() types.NodeVoteType {
+	var ty types.NodeVoteType
+	switch p.Kind {
+	case types.SignerEventKindAdded:
+		ty = types.NodeVoteTypeSignerAdded
+	case types.SignerEventKindRemoved:
+		ty = types.NodeVoteTypeSignerRemoved
+	}
+
+	return ty
+}
+
 func (p *pendingSigner) Check() error { return p.check() }
 
 type pendingThresholdSet struct {
@@ -106,6 +119,9 @@ type pendingThresholdSet struct {
 }
 
 func (p pendingThresholdSet) GetID() string { return p.ID }
+func (p pendingThresholdSet) GetType() types.NodeVoteType {
+	return types.NodeVoteTypeSignerThresholdSet
+}
 func (p *pendingThresholdSet) Check() error { return p.check() }
 
 func NewTopology(

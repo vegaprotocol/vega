@@ -376,7 +376,10 @@ type testRes struct {
 }
 
 func (t testRes) GetID() string { return t.id }
-func (t testRes) Check() error  { return t.check() }
+func (t testRes) GetType() commandspb.NodeVote_Type {
+	return commandspb.NodeVote_TYPE_FUNDS_DEPOSITED
+}
+func (t testRes) Check() error { return t.check() }
 
 func newPublicKey(k string) crypto.PublicKey {
 	pubKeyB := []byte(k)

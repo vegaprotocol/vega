@@ -1656,7 +1656,7 @@ type LiquidityMonitoringParameters {
   "Specifies parameters related to target stake calculation"
   targetStakeParameters: TargetStakeParameters!
   "Specifies the triggering ratio for entering liquidity auction"
-  triggeringRatio: Float!
+  triggeringRatio: String!
 }
 
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
@@ -1926,6 +1926,8 @@ type Party {
     pagination: Pagination
     "Filter orders"
     filter: OrderFilter
+    "Market ID to limit the results to"
+    marketId: ID
   ): OrderConnection
 
   tradesConnection(
@@ -2476,8 +2478,6 @@ type Erc20WithdrawalApproval {
   assetSource: String!
   "The amount to be withdrawn"
   amount: String!
-  "Timestamp in seconds for expiry of the approval"
-  expiry: Timestamp!
   "The nonce to be used in the request"
   nonce: String!
   """
@@ -2593,8 +2593,6 @@ type Withdrawal {
   status: WithdrawalStatus!
   "A reference the foreign chain can use to refer to when processing the withdrawal"
   ref: String!
-  "RFC3339Nano time until the withdrawal will be invalid"
-  expiry: Timestamp!
   "RFC3339Nano time at which the withdrawal was created"
   createdTimestamp: Timestamp!
   "RFC3339Nano time at which the withdrawal was finalised"

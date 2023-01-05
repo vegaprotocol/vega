@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 )
@@ -192,6 +193,9 @@ func UntarFile(source io.Reader, decompressedFilesDestination string) error {
 		}
 
 		targetFilePath := filepath.Join(decompressedFilesDestination, header.Name)
+		if strings.Contains(targetFilePath, "..") {
+			continue
+		}
 
 		fileToWrite, err := os.OpenFile(targetFilePath, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 		if err != nil {

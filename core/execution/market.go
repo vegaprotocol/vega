@@ -1831,20 +1831,6 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	// any changes in the book / orders owned by the lp providers
 	orderUpdates := []*types.Order{}
 	distressedParties := []string{}
-	defer func() {
-		// First we check for all distressed parties if they are liquidity
-		// providers, and if yea cancel their commitments
-		for _, party := range distressedParties {
-			if m.liquidity.IsLiquidityProvider(party) {
-				if err := m.cancelLiquidityProvision(ctx, party, true); err != nil {
-					m.log.Debug("could not cancel liquidity provision",
-						logging.MarketID(m.GetID()),
-						logging.PartyID(party),
-						logging.Error(err))
-				}
-			}
-		}
-	}()
 
 	distressedPos := make([]events.MarketPosition, 0, len(distressedMarginEvts))
 	for _, v := range distressedMarginEvts {
@@ -1863,6 +1849,20 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 			logging.Error(err),
 		)
 	}
+
+	// First we check for all distressed parties if they are liquidity
+	// providers, and if yea cancel their commitments
+	for _, party := range distressedParties {
+		if m.liquidity.IsLiquidityProvider(party) {
+			if err := m.cancelLiquidityProvision(ctx, party, true); err != nil {
+				m.log.Debug("could not cancel liquidity provision",
+					logging.MarketID(m.GetID()),
+					logging.PartyID(party),
+					logging.Error(err))
+			}
+		}
+	}
+
 	mktID := m.GetID()
 	// push rm orders into buf
 	// and remove the orders from the positions engine
@@ -3223,13 +3223,12 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
-
 	// ignore trading termination while the governance proposal hasn't been enacted
 	if m.mkt.State == types.MarketStateProposed {
 		return
 	}
 
+	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
 	if m.mkt.State != types.MarketStatePending {
 		// we're either going to set state to trading terminated
 		// or we'll be performing the final settlement (setting market status to settled)
