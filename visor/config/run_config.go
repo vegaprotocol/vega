@@ -67,7 +67,7 @@ type RPCConfig struct {
 }
 
 /*
-description: Allows to configure Vega binary and it's arguments.
+description: Allows you to configure the Vega binary and its arguments.
 example:
 
 	type: toml
