@@ -38,7 +38,7 @@ type BinaryConfig struct {
 	/*
 		description: Arguments that will be applied to the binary.
 		note: |
-			Each element the list represents one space seperated argument.
+			Each element the list represents one space separated argument.
 	*/
 	Args []string `toml:"args"`
 }
