@@ -9,7 +9,7 @@ Please see [Releases](https://github.com/vegaprotocol/vega/releases). We recomme
 | Scope | Date | Report Link |
 | ------- | ------- | ----------- |
 | `MultisigControl` | 20220513 | [pdf](https://github.com/vegaprotocol/MultisigControl/blob/develop/audit/2022-05-23_MultiSigControl_Decentralised_Limits_v2-0.pdf.pdf) |
-| 'Vega_Token_V2' | 20210823 | [pdf](https://github.com/vegaprotocol/Vega_Token_V2/tree/main/audit/2021-08-23_ERC20_Vesting.pdf)
+| `Vega_Token_V2` | 20210823 | [pdf](https://github.com/vegaprotocol/Vega_Token_V2/tree/main/audit/2021-08-23_ERC20_Vesting.pdf)
 
 ## Reporting a Vulnerability
 
