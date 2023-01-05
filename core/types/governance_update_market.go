@@ -55,7 +55,7 @@ func (a ProposalTermsUpdateMarket) DeepClone() proposalTerm {
 	}
 }
 
-func UpdateMarketFromProto(p *vegapb.ProposalTerms_UpdateMarket) *ProposalTermsUpdateMarket {
+func UpdateMarketFromProto(p *vegapb.ProposalTerms_UpdateMarket) (*ProposalTermsUpdateMarket, error) {
 	var updateMarket *UpdateMarket
 	if p.UpdateMarket != nil {
 		updateMarket = &UpdateMarket{}
@@ -63,13 +63,17 @@ func UpdateMarketFromProto(p *vegapb.ProposalTerms_UpdateMarket) *ProposalTermsU
 		updateMarket.MarketID = p.UpdateMarket.MarketId
 
 		if p.UpdateMarket.Changes != nil {
-			updateMarket.Changes = UpdateMarketConfigurationFromProto(p.UpdateMarket.Changes)
+			var err error
+			updateMarket.Changes, err = UpdateMarketConfigurationFromProto(p.UpdateMarket.Changes)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
 	return &ProposalTermsUpdateMarket{
 		UpdateMarket: updateMarket,
-	}
+	}, nil
 }
 
 type UpdateMarket struct {
@@ -188,7 +192,7 @@ func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration
 	return r
 }
 
-func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) *UpdateMarketConfiguration {
+func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*UpdateMarketConfiguration, error) {
 	md := make([]string, 0, len(p.Metadata))
 	md = append(md, p.Metadata...)
 
@@ -203,7 +207,11 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) *Up
 	}
 	var liquidityMonitoring *LiquidityMonitoringParameters
 	if p.LiquidityMonitoringParameters != nil {
-		liquidityMonitoring = LiquidityMonitoringParametersFromProto(p.LiquidityMonitoringParameters)
+		var err error
+		liquidityMonitoring, err = LiquidityMonitoringParametersFromProto(p.LiquidityMonitoringParameters)
+		if err != nil {
+			return nil, fmt.Errorf("error getting update market configuration from proto: %s", err)
+		}
 	}
 
 	lppr, _ := num.DecimalFromString(p.LpPriceRange)
@@ -223,7 +231,7 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) *Up
 			r.RiskParameters = UpdateMarketConfigurationLogNormalFromProto(rp)
 		}
 	}
-	return r
+	return r, nil
 }
 
 type UpdateInstrumentConfiguration struct {

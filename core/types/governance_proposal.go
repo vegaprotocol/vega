@@ -507,7 +507,7 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 		case *vegapb.ProposalTerms_NewMarket:
 			change, err = NewNewMarketFromProto(ch)
 		case *vegapb.ProposalTerms_UpdateMarket:
-			change = UpdateMarketFromProto(ch)
+			change, err = UpdateMarketFromProto(ch)
 		case *vegapb.ProposalTerms_UpdateNetworkParameter:
 			change = NewUpdateNetworkParameterFromProto(ch)
 		case *vegapb.ProposalTerms_NewAsset:

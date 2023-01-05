@@ -9,6 +9,7 @@
 - [7069](https://github.com/vegaprotocol/vega/issues/7069) - Remove deprecated `vegawallet info` command line.
 - [7010](https://github.com/vegaprotocol/vega/issues/7010) - Remove the deprecated `encodedTransaction` fields on wallet API endpoints.
 - [7232](https://github.com/vegaprotocol/vega/issues/7232) - Rename `stakeToCcySiskas` network parameter to `stakeToCcyVolume`
+- [7171](https://github.com/vegaprotocol/vega/issues/7171) - Change liquidity triggering ratio value type from float to string
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -

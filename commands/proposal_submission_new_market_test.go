@@ -47,6 +47,7 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a new market with liquidity monitoring succeeds", testNewMarketChangeSubmissionWithLiquidityMonitoringSucceeds)
 	t.Run("Submitting a liquidity monitoring change with wrong triggering ratio fails", testLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails)
 	t.Run("Submitting a liquidity monitoring change with right triggering ratio succeeds", testLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds)
+	t.Run("Submitting a liquidity monitoring change without triggering ratio parameter fails", testLiquidityMonitoringChangeSubmissionWithoutTriggeringRatioFails)
 	t.Run("Submitting a liquidity monitoring change without target stake parameters fails", testLiquidityMonitoringChangeSubmissionWithoutTargetStakeParametersFails)
 	t.Run("Submitting a liquidity monitoring change with target stake parameters succeeds", testLiquidityMonitoringChangeSubmissionWithTargetStakeParametersSucceeds)
 	t.Run("Submitting a liquidity monitoring change with non-positive time window fails", testLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindowFails)
@@ -433,14 +434,14 @@ func testNewMarketChangeSubmissionWithLiquidityMonitoringSucceeds(t *testing.T) 
 func testLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails(t *testing.T) {
 	testCases := []struct {
 		msg   string
-		value float64
+		value string
 	}{
 		{
 			msg:   "with probability of -1",
-			value: -1,
+			value: "-1",
 		}, {
 			msg:   "with probability of 2",
-			value: 2,
+			value: "2",
 		},
 	}
 	for _, tc := range testCases {
@@ -468,17 +469,17 @@ func testLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails(t *tes
 func testLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds(t *testing.T) {
 	testCases := []struct {
 		msg   string
-		value float64
+		value string
 	}{
 		{
 			msg:   "with ratio of 0",
-			value: 0,
+			value: "0",
 		}, {
 			msg:   "with ratio of 0.5",
-			value: 0.5,
+			value: "0.5",
 		}, {
 			msg:   "with ratio of 1",
-			value: 1,
+			value: "1",
 		},
 	}
 	for _, tc := range testCases {
@@ -503,13 +504,31 @@ func testLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds(t *
 	}
 }
 
-func testLiquidityMonitoringChangeSubmissionWithoutTargetStakeParametersFails(t *testing.T) {
+func testLiquidityMonitoringChangeSubmissionWithoutTriggeringRatioFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
 			Change: &protoTypes.ProposalTerms_NewMarket{
 				NewMarket: &protoTypes.NewMarket{
 					Changes: &protoTypes.NewMarketConfiguration{
 						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidity_monitoring_parameters.triggering_ratio"), commands.ErrIsNotValidNumber)
+}
+
+func testLiquidityMonitoringChangeSubmissionWithoutTargetStakeParametersFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
+							TriggeringRatio: "1",
+						},
 					},
 				},
 			},
@@ -558,6 +577,7 @@ func testLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindowFails(t *te
 						NewMarket: &protoTypes.NewMarket{
 							Changes: &protoTypes.NewMarketConfiguration{
 								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
+									TriggeringRatio: "1",
 									TargetStakeParameters: &protoTypes.TargetStakeParameters{
 										TimeWindow: tc.value,
 									},
@@ -614,6 +634,7 @@ func testLiquidityMonitoringChangeSubmissionWithNonPositiveScalingFactorFails(t 
 						NewMarket: &protoTypes.NewMarket{
 							Changes: &protoTypes.NewMarketConfiguration{
 								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
+									TriggeringRatio: "1",
 									TargetStakeParameters: &protoTypes.TargetStakeParameters{
 										ScalingFactor: tc.value,
 									},
