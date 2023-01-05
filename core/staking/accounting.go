@@ -84,6 +84,11 @@ type pendingStakeTotalSupply struct {
 func (p pendingStakeTotalSupply) GetID() string {
 	return hex.EncodeToString(vgcrypto.Hash([]byte(p.sts.String())))
 }
+
+func (p pendingStakeTotalSupply) GetType() types.NodeVoteType {
+	return types.NodeVoteTypeStakeTotalSupply
+}
+
 func (p *pendingStakeTotalSupply) Check() error { return p.check() }
 
 func NewAccounting(
