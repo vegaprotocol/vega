@@ -620,7 +620,6 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 	return &Erc20WithdrawalApproval{
 		AssetSource:   res.AssetSource,
 		Amount:        res.Amount,
-		Expiry:        res.Expiry,
 		Nonce:         res.Nonce,
 		Signatures:    res.Signatures,
 		TargetAddress: res.TargetAddress,
