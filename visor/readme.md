@@ -3,11 +3,11 @@
 A binaries runner for [Core](../core/README.md) and [Data Node](../datanode/README.md) that facilitates automatic protocol upgrades.
 
 ***Features:***
-- Visor allows to run Core and Data Node binaries based on custom configuration.
-- Visor is connected to Core node and listens for protocol upgrades.
-- When protocol upgrade is due, Visor automatically stops currently running binaries and starts new ones with the selected version.
-- Visor can be configured to automatically fetch binaries with correct version during the upgrade.
-- Visor is highly configurable and allows to configure number of restarts, restarts delays, specific upgrade configuration and much more.
+- Visor is connected to core nodes and listens for protocol upgrades.
+- Visor allows you to run core and data node binaries based on custom configuration.
+- When a protocol upgrade is ready to be used, Visor automatically stops currently running binaries and starts new ones with the selected version.
+- Visor can be configured to automatically fetch binaries with the correct version during the upgrade.
+- Visor is highly configurable and allows you to configure the number of restarts, restarts delays, specific upgrade configuration and much more.
 
 ## Architecture
 
