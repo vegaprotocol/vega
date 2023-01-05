@@ -224,7 +224,6 @@ func (e *executionTestSetup) registerTimeServiceCallbacks() {
 		e.ntry.OnTick,
 		e.banking.OnTick,
 		e.delegationEngine.OnTick,
-		e.rewardsEngine.OnTick,
 		e.builtinOracle.OnTick,
 		e.stateVarEngine.OnTick,
 		e.executionEngine.OnTick,
