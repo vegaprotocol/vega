@@ -14,7 +14,6 @@ package start
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -115,7 +114,7 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		apiPorts = append(apiPorts, l.conf.DeHistory.Initialise.GrpcAPIPorts...)
 		blockSpan, err := sqlstore.GetDatanodeBlockSpan(l.ctx, l.conf.SQLStore.ConnectionConfig)
 		if err != nil {
-			return fmt.Errorf("failed to get datanode block span:%w", err)
+			return fmt.Errorf("failed to get datanode block span: %w", err)
 		}
 
 		if blockSpan.HasData {
@@ -124,14 +123,9 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 			l.Log.Info("Datanode is empty")
 		}
 
-		if err = dehistory.DatanodeFromDeHistory(l.ctx, l.conf.DeHistory.Initialise,
+		if err = dehistory.InitialiseDatanodeFromDeHistory(l.ctx, l.conf.DeHistory.Initialise,
 			l.Log, l.deHistoryService, blockSpan, apiPorts); err != nil {
-			if errors.Is(err, dehistory.ErrDeHistoryNotAvailable) {
-				initialisedFromDeHistory = false
-				l.Log.Info("Unable to initialize from decentralized history, no history is available")
-			} else {
-				return fmt.Errorf("failed to initialize datanode from decentralized history:%w", err)
-			}
+			return fmt.Errorf("failed to initialize datanode from decentralized history: %w", err)
 		}
 	}
 

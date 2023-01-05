@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"net"
-	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -18,20 +16,16 @@ import (
 
 	"github.com/ipfs/kubo/core/corerepo"
 
-	"github.com/ipfs/kubo/core/node/libp2p"
-	"github.com/ipfs/kubo/repo/fsrepo"
-	sockets "github.com/libp2p/go-socket-activation"
-	manet "github.com/multiformats/go-multiaddr/net"
-
 	"code.vegaprotocol.io/vega/datanode/dehistory/fsutil"
 	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
 	"code.vegaprotocol.io/vega/logging"
+	"github.com/ipfs/kubo/core/node/libp2p"
+	"github.com/ipfs/kubo/repo/fsrepo"
 
 	"github.com/ipfs/go-cid"
 	files "github.com/ipfs/go-ipfs-files"
 	icore "github.com/ipfs/interface-go-ipfs-core"
 	"github.com/ipfs/interface-go-ipfs-core/path"
-	"github.com/ipfs/kubo/commands"
 	"github.com/ipfs/kubo/config"
 	serialize "github.com/ipfs/kubo/config/serialize"
 	"github.com/ipfs/kubo/core"
@@ -137,7 +131,7 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, d
 
 	log.Debugf("ipfs swarm port:%d", cfg.SwarmPort)
 	ipfsCfg, err := createIpfsNodeConfiguration(p.log, p.identity, cfg.BootstrapPeers,
-		cfg.SwarmPort, bool(cfg.UseIpfsDefaultPeers))
+		cfg.SwarmPort)
 
 	log.Debugf("ipfs bootstrap peers:%v", ipfsCfg.Bootstrap)
 
@@ -164,13 +158,6 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, d
 
 	if err = setupMetrics(p.ipfsNode); err != nil {
 		return nil, fmt.Errorf("failed to setup metrics:%w", err)
-	}
-
-	if cfg.StartWebUI {
-		err = p.startWebUI(plugins, cfg.WebUIPort)
-		if err != nil {
-			return nil, fmt.Errorf("failed to start web UI:%w", err)
-		}
 	}
 
 	return p, nil
@@ -396,23 +383,6 @@ func setupMetrics(ipfsNode *core.IpfsNode) error {
 		}
 	}
 
-	return nil
-}
-
-func (p *Store) startWebUI(plugins *loader.PluginLoader, port int) error {
-	commandsContext := &commands.Context{
-		ConfigRoot: p.ipfsPath,
-		ReqLog:     &commands.ReqLog{},
-		Plugins:    plugins,
-		ConstructNode: func() (n *core.IpfsNode, err error) {
-			return p.ipfsNode, nil
-		},
-	}
-
-	err := serveHTTPApi(p.log, p.ipfsNode, commandsContext, port)
-	if err != nil {
-		return fmt.Errorf("failed to serve http api:%w", err)
-	}
 	return nil
 }
 
@@ -681,9 +651,7 @@ func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string
 	return indexEntry, nil
 }
 
-func createIpfsNodeConfiguration(log *logging.Logger, identity config.Identity, bootstrapPeers []string, swarmPort int,
-	useIpfsDefaultPeers bool,
-) (*config.Config, error) {
+func createIpfsNodeConfiguration(log *logging.Logger, identity config.Identity, bootstrapPeers []string, swarmPort int) (*config.Config, error) {
 	cfg, err := config.InitWithIdentity(identity)
 
 	// Don't try and do local node discovery with mDNS; we're probably on the internet if running
@@ -704,12 +672,7 @@ func createIpfsNodeConfiguration(log *logging.Logger, identity config.Identity, 
 	}
 
 	cfg.Addresses.Swarm = updatedSwarmAddrs
-
-	if useIpfsDefaultPeers {
-		cfg.Bootstrap = append(cfg.Bootstrap, bootstrapPeers...)
-	} else {
-		cfg.Bootstrap = bootstrapPeers
-	}
+	cfg.Bootstrap = bootstrapPeers
 
 	prettyCfgJSON, _ := json.MarshalIndent(cfg, "", "  ")
 	log.Debugf("IPFS Node Config:\n%s", prettyCfgJSON)
@@ -747,89 +710,6 @@ func loadPlugins(externalPluginsPath string) (*loader.PluginLoader, error) {
 	}
 
 	return plugins, nil
-}
-
-func serveHTTPApi(log *logging.Logger, node *core.IpfsNode, cmdCtx *commands.Context, port int) error {
-	listeners, err := sockets.TakeListeners("io.ipfs.api")
-	if err != nil {
-		return fmt.Errorf("serveHTTPApi: socket activation failed: %s", err)
-	}
-
-	listenerAddrs := make(map[string]bool, len(listeners))
-	for _, listener := range listeners {
-		listenerAddrs[string(listener.Multiaddr().Bytes())] = true
-	}
-
-	addr := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", port)
-	apiMaddr, err := ma.NewMultiaddr(addr)
-	if err != nil {
-		return fmt.Errorf("serveHTTPApi: invalid API address: %q (err: %s)", addr, err)
-	}
-
-	apiLis, err := manet.Listen(apiMaddr)
-	if err != nil {
-		return fmt.Errorf("serveHTTPApi: manet.Listen(%s) failed: %s", apiMaddr, err)
-	}
-
-	listenerAddrs[string(apiMaddr.Bytes())] = true
-	listeners = append(listeners, apiLis)
-
-	for _, listener := range listeners {
-		// we might have listened to /tcp/0 - let's see what we are listing on
-		log.Infof("IPFS API server listening on %s\n", listener.Multiaddr())
-		// Browsers require TCP.
-		switch listener.Addr().Network() {
-		case "tcp", "tcp4", "tcp6":
-			log.Infof("IPFS WebUI: http://%s/webui\n", listener.Addr())
-		}
-	}
-
-	gatewayOpt := corehttp.GatewayOption(false, corehttp.WebUIPaths...)
-
-	opts := []corehttp.ServeOption{
-		corehttp.MetricsCollectionOption("api"),
-		corehttp.MetricsOpenCensusCollectionOption(),
-		corehttp.MetricsOpenCensusDefaultPrometheusRegistry(),
-		corehttp.CheckVersionOption(),
-		corehttp.CommandsOption(*cmdCtx),
-		corehttp.WebUIOption,
-		gatewayOpt,
-		corehttp.VersionOption(),
-		defaultMux("/debug/vars"),
-		defaultMux("/debug/pprof/"),
-		defaultMux("/debug/stack"),
-		corehttp.MutexFractionOption("/debug/pprof-mutex/"),
-		corehttp.BlockProfileRateOption("/debug/pprof-block/"),
-		corehttp.MetricsScrapingOption("/debug/metrics/prometheus"),
-		corehttp.LogOption(),
-	}
-
-	if err := node.Repo.SetAPIAddr(listeners[0].Multiaddr()); err != nil {
-		return fmt.Errorf("serveHTTPApi: SetAPIAddr() failed: %s", err)
-	}
-
-	for _, listener := range listeners {
-		go func(lis manet.Listener) {
-			// This will exit when the node is closed
-			err = corehttp.Serve(node, manet.NetListener(lis), opts...)
-			if err != nil {
-				log.Errorf("failed to serve IPFS API:%s", err)
-			}
-		}(listener)
-	}
-
-	return nil
-}
-
-// defaultMux tells mux to serve path using the default muxer. This is
-// mostly useful to hook up things that register in the default muxer,
-// and don't provide a convenient http.Handler entry point, such as
-// expvar and http/pprof.
-func defaultMux(path string) corehttp.ServeOption {
-	return func(node *core.IpfsNode, _ net.Listener, mux *http.ServeMux) (*http.ServeMux, error) {
-		mux.Handle(path, http.DefaultServeMux)
-		return mux, nil
-	}
 }
 
 func generateSwarmKeyFile(swarmKey string, repoPath string) error {
