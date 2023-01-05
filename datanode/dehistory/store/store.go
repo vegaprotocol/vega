@@ -14,6 +14,10 @@ import (
 	"strconv"
 	"strings"
 
+	"code.vegaprotocol.io/vega/datanode/metrics"
+
+	"github.com/ipfs/kubo/repo"
+
 	"github.com/ipfs/kubo/core/corerepo"
 
 	"code.vegaprotocol.io/vega/datanode/dehistory/fsutil"
@@ -69,6 +73,7 @@ type Store struct {
 	identity config.Identity
 	ipfsAPI  icore.CoreAPI
 	ipfsNode *core.IpfsNode
+	ipfsRepo repo.Repo
 	index    index
 	swarmKey string
 
@@ -141,7 +146,7 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, d
 
 	p.swarmKey = cfg.GetSwarmKey(log, chainID)
 
-	p.ipfsNode, err = createIpfsNode(ctx, log, p.ipfsPath, ipfsCfg, p.swarmKey)
+	p.ipfsNode, p.ipfsRepo, err = createIpfsNode(ctx, log, p.ipfsPath, ipfsCfg, p.swarmKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ipfs node:%w", err)
 	}
@@ -322,6 +327,12 @@ func (p *Store) AddSnapshotData(ctx context.Context, historySnapshot snapshot.Hi
 		return fmt.Errorf("failed to remove old history segments:%s", err)
 	}
 	p.log.Infof("removed %d old history segments", len(segments))
+
+	ipfsSize, err := p.ipfsRepo.GetStorageUsage(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get the ipfs storage usage: %w", err)
+	}
+	metrics.SetDeHistoryIpfsStoreBytes(float64(ipfsSize))
 
 	return nil
 }
@@ -733,10 +744,10 @@ func generateSwarmKeyFile(swarmKey string, repoPath string) error {
 	return nil
 }
 
-func createNode(ctx context.Context, log *logging.Logger, repoPath string) (*core.IpfsNode, error) {
+func createNode(ctx context.Context, log *logging.Logger, repoPath string) (*core.IpfsNode, repo.Repo, error) {
 	repo, err := fsrepo.Open(repoPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open ipfs repo:%w", err)
+		return nil, nil, fmt.Errorf("failed to open ipfs repo:%w", err)
 	}
 
 	// Construct the node
@@ -750,13 +761,13 @@ func createNode(ctx context.Context, log *logging.Logger, repoPath string) (*cor
 
 	node, err := core.NewNode(ctx, nodeOptions)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create new node:%w", err)
+		return nil, nil, fmt.Errorf("failed to create new node:%w", err)
 	}
 
 	printSwarmAddrs(node, log)
 
 	// Attach the Core API to the constructed node
-	return node, nil
+	return node, repo, nil
 }
 
 func printSwarmAddrs(node *core.IpfsNode, log *logging.Logger) {
@@ -791,22 +802,22 @@ func printSwarmAddrs(node *core.IpfsNode, log *logging.Logger) {
 
 func createIpfsNode(ctx context.Context, log *logging.Logger, repoPath string,
 	cfg *config.Config, swarmKey string,
-) (*core.IpfsNode, error) {
+) (*core.IpfsNode, repo.Repo, error) {
 	// Only inits the repo if it does not already exist
 	err := fsrepo.Init(repoPath, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialise ipfs configuration:%w", err)
+		return nil, nil, fmt.Errorf("failed to initialise ipfs configuration:%w", err)
 	}
 
 	// Update to take account of any new bootstrap nodes
 	err = updateRepoConfig(repoPath, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update ipfs configuration:%w", err)
+		return nil, nil, fmt.Errorf("failed to update ipfs configuration:%w", err)
 	}
 
 	err = generateSwarmKeyFile(swarmKey, repoPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate swarm key file:%w", err)
+		return nil, nil, fmt.Errorf("failed to generate swarm key file:%w", err)
 	}
 
 	return createNode(ctx, log, repoPath)
