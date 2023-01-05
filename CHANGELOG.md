@@ -14,7 +14,8 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/7216) - Support filtering by market for `ordersConnection` under party queries.
+- [7216](https://github.com/vegaprotocol/vega/issues/7216) - Support filtering by market for `ordersConnection` under party queries.
+- [7252](https://github.com/vegaprotocol/vega/issues/7252) - Add limits to `MarkPriceUpdateMaximumFrequency` network parameter
 
 ### 🐛 Fixes
 - [7207](https://github.com/vegaprotocol/vega/issues/7207) - Fix panic, return on error in pool configuration
