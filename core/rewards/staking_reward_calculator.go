@@ -118,13 +118,7 @@ func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *n
 		}
 		sort.Strings(sortedParties)
 
-		// NB: due to rounding errors this sum can be greater than 1
-		// to avoid overflow, we choose at random a party adjust it by the error
-		if weightSums.GreaterThan(decimalOne) {
-			precisionError := weightSums.Sub(decimalOne)
-			unluckyParty := sortedParties[rng.Intn(len(delegatorWeights))]
-			delegatorWeights[unluckyParty] = num.MaxD(num.DecimalZero(), delegatorWeights[unluckyParty].Sub(precisionError))
-		}
+		adjustWeights(delegatorWeights, weightSums, sortedParties, decimalOne, rng)
 
 		// calculate delegator amounts
 		// this may take a few rounds due to the cap on the reward a party can get
@@ -172,11 +166,36 @@ func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *n
 		}
 	}
 
+	if totalRewardPayout.GT(rewardBalance) {
+		log.Error("The reward payout is greater than the reward balance, this should never happen", logging.String("reward-payout", totalRewardPayout.String()), logging.String("reward-balance", rewardBalance.String()))
+	}
+
 	return &payout{
 		fromAccount:   accountID,
 		partyToAmount: rewards,
 		totalReward:   totalRewardPayout,
 		asset:         asset,
 		epochSeq:      epochSeq,
+	}
+}
+
+func adjustWeights(delegatorWeights map[string]num.Decimal, weightSums num.Decimal, sortedParties []string, decimalOne num.Decimal, rng *rand.Rand) {
+	// NB: due to rounding errors this sum can be greater than 1
+	// to avoid overflow, we choose at random a party adjust it by the error
+	// we keep looking until we find a candidate with sufficient weight to adjust by the precision error
+	for weightSums.GreaterThan(decimalOne) {
+		precisionError := weightSums.Sub(decimalOne)
+		for precisionError.GreaterThan(num.DecimalZero()) {
+			unluckyParty := sortedParties[rng.Intn(len(delegatorWeights))]
+			if delegatorWeights[unluckyParty].LessThan(precisionError) {
+				continue
+			}
+			delegatorWeights[unluckyParty] = num.MaxD(num.DecimalZero(), delegatorWeights[unluckyParty].Sub(precisionError))
+			break
+		}
+		weightSums = num.DecimalZero()
+		for _, d := range delegatorWeights {
+			weightSums = weightSums.Add((d))
+		}
 	}
 }

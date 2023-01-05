@@ -22,6 +22,7 @@
 - [7220](https://github.com/vegaprotocol/vega/issues/7220) - Fix panic when LP is closed out
 - [7029](https://github.com/vegaprotocol/vega/issues/7029) - Added admin `API` for Data Node to secure some `dehistory` commands
 - [7239](https://github.com/vegaprotocol/vega/issues/7239) - Added upper and lower bounds for floating point engine updates
+- [7253](https://github.com/vegaprotocol/vega/issues/7253) - improve the adjustment of delegators weight to avoid overflow
 
 ##  0.65.1
 
