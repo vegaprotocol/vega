@@ -1,15 +1,15 @@
 Feature: Ensure we can enter and leave liquidity auction
 
   Background:
-
-    Given the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
-    And the following network parameters are set:
+    Given the following network parameters are set:
       | name                              | value |
       | market.auction.minimumDuration    | 1     |
       | market.stake.target.scalingFactor | 1     |
       | limits.markets.maxPeggedOrders    | 1500  |
+    And the markets:
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+    
 
 
   Scenario: 001, LP only provides LP orders

@@ -126,12 +126,29 @@ Feature: test risk model parameter ranges
   @Now
   Scenario: 001, test different value of risk parameters within defined ranges in different market, AC: 0018-RSKM-001
 
+    Given the liquidity monitoring parameters:
+      | name                | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.1            | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/MAR0  | updated-lqm-params   |
+      | ETH/MAR11 | updated-lqm-params   |
+      | ETH/MAR12 | updated-lqm-params   |
+      | ETH/MAR21 | updated-lqm-params   |
+      | ETH/MAR22 | updated-lqm-params   |
+      | ETH/MAR23 | updated-lqm-params   |
+      | ETH/MAR31 | updated-lqm-params   |
+      | ETH/MAR32 | updated-lqm-params   |
+      | ETH/MAR41 | updated-lqm-params   |
+      | ETH/MAR42 | updated-lqm-params   |
+      | ETH/MAR43 | updated-lqm-params   |
+      | ETH/MAR51 | updated-lqm-params   |
+      | ETH/MAR52 | updated-lqm-params   |
+      | ETH/MAR53 | updated-lqm-params   |
+
     And the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter         | 0.2   |
-      | market.liquidity.targetstake.triggering.ratio | 0.1   |
 
     And the average block duration is "1"
 
@@ -416,12 +433,29 @@ Feature: test risk model parameter ranges
   @Now
   Scenario: 002, test market ETH/MAR23 (tau=1)
 
+    Given the liquidity monitoring parameters:
+      | name                | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.1              | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/MAR0  | updated-lqm-params   |
+      | ETH/MAR11 | updated-lqm-params   |
+      | ETH/MAR12 | updated-lqm-params   |
+      | ETH/MAR21 | updated-lqm-params   |
+      | ETH/MAR22 | updated-lqm-params   |
+      | ETH/MAR23 | updated-lqm-params   |
+      | ETH/MAR32 | updated-lqm-params   |
+      | ETH/MAR31 | updated-lqm-params   |
+      | ETH/MAR41 | updated-lqm-params   |
+      | ETH/MAR42 | updated-lqm-params   |
+      | ETH/MAR43 | updated-lqm-params   |
+      | ETH/MAR51 | updated-lqm-params   |
+      | ETH/MAR52 | updated-lqm-params   |
+      | ETH/MAR53 | updated-lqm-params   |
+
     And the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter         | 0.2   |
-      | market.liquidity.targetstake.triggering.ratio | 0.1   |
 
     And the average block duration is "1"
 
@@ -461,12 +495,29 @@ Feature: test risk model parameter ranges
 
   @Now
   Scenario: 003, test market ETH/MAR52(sigma=10),
+
+    Given the liquidity monitoring parameters:
+      | name                | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.1              | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/MAR0  | updated-lqm-params   |
+      | ETH/MAR11 | updated-lqm-params   |
+      | ETH/MAR12 | updated-lqm-params   |
+      | ETH/MAR21 | updated-lqm-params   |
+      | ETH/MAR22 | updated-lqm-params   |
+      | ETH/MAR23 | updated-lqm-params   |
+      | ETH/MAR31 | updated-lqm-params   |
+      | ETH/MAR32 | updated-lqm-params   |
+      | ETH/MAR41 | updated-lqm-params   |
+      | ETH/MAR42 | updated-lqm-params   |
+      | ETH/MAR43 | updated-lqm-params   |
+      | ETH/MAR51 | updated-lqm-params   |
+      | ETH/MAR52 | updated-lqm-params   |
+      | ETH/MAR53 | updated-lqm-params   |
     And the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter         | 0.2   |
-      | market.liquidity.targetstake.triggering.ratio | 0.1   |
 
     And the average block duration is "1"
 

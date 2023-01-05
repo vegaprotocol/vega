@@ -12,7 +12,7 @@
                 "--godog.format",
                 "pretty",
                 "-test.run",
-                "${workspaceFolder}/integration/features/settlement/settlement_at_expiry.feature"
+                "${workspaceFolder}/core/integration/features/settlement/settlement_at_expiry.feature"
             ]
         },
         {
@@ -20,13 +20,13 @@
             "type": "go",
             "request": "launch",
             "mode": "test",
-            "program": "${workspaceFolder}/integration/main_test.go",
+            "program": "${workspaceFolder}/core/integration/main_test.go",
             "_comment": "  * * *  change to your .feature file and specify line at which Scenario starts  * * *  ",
             "args": [
                 "--godog.format",
                 "pretty",
                 "-test.run",
-                "${workspaceFolder}/integration/features/settlement/settlement_at_expiry.feature:23"
+                "${workspaceFolder}/core/integration/features/settlement/settlement_at_expiry.feature:23"
             ]
         }
     ]

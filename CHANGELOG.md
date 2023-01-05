@@ -15,12 +15,14 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/7216) - Support filtering by market for `ordersConnection` under party queries.
+- [7216](https://github.com/vegaprotocol/vega/issues/7216) - Support filtering by market for `ordersConnection` under party queries.
+- [7252](https://github.com/vegaprotocol/vega/issues/7252) - Add limits to `MarkPriceUpdateMaximumFrequency` network parameter
 
 ### 🐛 Fixes
 - [7207](https://github.com/vegaprotocol/vega/issues/7207) - Fix panic, return on error in pool configuration
 - [7213](https://github.com/vegaprotocol/vega/issues/7213) - Implement separate `DB` for snapshots `metadata`
 - [7220](https://github.com/vegaprotocol/vega/issues/7220) - Fix panic when LP is closed out
+- [7235](https://github.com/vegaprotocol/vega/issues/7235) - Do not update existing markets when changing global default `LiquidityMonitoringParameters`
 - [7029](https://github.com/vegaprotocol/vega/issues/7029) - Added admin `API` for Data Node to secure some `dehistory` commands
 - [7239](https://github.com/vegaprotocol/vega/issues/7239) - Added upper and lower bounds for floating point engine updates
 - [7075](https://github.com/vegaprotocol/vega/issues/7075) - Remove unused expiry field in withdrawal

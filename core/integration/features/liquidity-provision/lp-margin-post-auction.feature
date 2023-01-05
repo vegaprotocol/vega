@@ -11,6 +11,12 @@ Feature: Assure LP margin is correct
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 3600    | 0.99        | 300               |
+    And the following network parameters are set:
+      | name                                          | value |
+      | market.stake.target.timeWindow                | 24h   |
+      | market.stake.target.scalingFactor             | 1.5   |
+      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | market.liquidity.targetstake.triggering.ratio | 0.24  |
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
@@ -25,13 +31,8 @@ Feature: Assure LP margin is correct
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
   Scenario: Assure LP margin is released when opening auction concludes with a price lower than indicative uncrossing price at the time of LP submission
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1.5   |
-      | market.liquidity.bondPenaltyParameter         | 0.2   |
-      | market.liquidity.targetstake.triggering.ratio | 0.24  |
-    And the average block duration is "1"
+
+    Given the average block duration is "1"
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | sell | ASK              | 500        | 17     | submission |

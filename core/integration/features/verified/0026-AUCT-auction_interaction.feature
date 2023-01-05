@@ -151,9 +151,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
   Scenario: When trying to exit opening auction liquidity monitoring is triggered due to insufficient supplied stake  (0026-AUCT-004, 0026-AUCT-005)
 
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.8   |
+    Given the liquidity monitoring parameters:
+      | name              | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.8            | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/DEC21 | updated-lqm-params   |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -217,9 +220,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
   Scenario: Once market is in continuous trading mode: post a persistent order that should trigger liquidity auction (not enough target stake), appropriate event is sent and market in TRADING_MODE_MONITORING_AUCTION (0026-AUCT-005, 0035-LIQM-003)
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.8   |
+    Given the liquidity monitoring parameters:
+      | name              | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.8            | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/DEC21 | updated-lqm-params   |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -290,9 +296,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3030         | 10000          | 30            |
 
   Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger liquidity auction (not enough target stake), still goes through, but auction is triggered the next block
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.8   |
+    Given the liquidity monitoring parameters:
+      | name              | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.8            | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/DEC21 | updated-lqm-params   |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -524,9 +533,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> leave auction mode (0068-MATC-033,0026-AUCT-005)
 
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.8   |
+    Given the liquidity monitoring parameters:
+      | name              | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.8            | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/DEC21 | updated-lqm-params   |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -614,9 +626,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 100     | 1010      | 1030      | 3468         | 4080           | 34            |
 
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity monitoring -> leave auction mode (0068-MATC-033,0026-AUCT-005)
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.8   |
+    Given the liquidity monitoring parameters:
+      | name              | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.8            | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/DEC21 | updated-lqm-params   |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -720,9 +735,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 4488         | 4488           | 44            |
 
   Scenario: Once market is in continuous trading mode: enter price monitoring auction -> extend with liquidity monitoring auction -> leave auction mode (0068-MATC-033,0026-AUCT-005)
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.8   |
+    Given the liquidity monitoring parameters:
+      | name              | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.8            | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/DEC21 | updated-lqm-params   |
 
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -775,9 +793,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity auction -> leave auction mode (0068-MATC-033, 0026-AUCT-005)
 
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.8   |
+    Given the liquidity monitoring parameters:
+      | name              | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.8            | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/DEC21 | updated-lqm-params   |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |

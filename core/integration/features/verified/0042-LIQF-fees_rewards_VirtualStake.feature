@@ -13,10 +13,6 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
-    And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
-      | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
-
     And the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 1h    |
@@ -25,6 +21,9 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
+    And the markets:
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
+      | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
 
     # block duration of 2 seconds
     And the average block duration is "2"

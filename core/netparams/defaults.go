@@ -55,6 +55,7 @@ var (
 	gte0s   = DurationGTE(0 * time.Second)
 	gte1s   = DurationGTE(1 * time.Second)
 	gte1m   = DurationGTE(1 * time.Minute)
+	lte1h   = DurationLTE(1 * time.Hour)
 	lte1d   = DurationLTE(24 * time.Hour)
 	lte255h = DurationLTE(255 * time.Hour)
 	lte1mo  = DurationLTE(30 * 24 * time.Hour)
@@ -218,7 +219,7 @@ func defaultNetParams() map[string]value {
 		MinBlockCapacity:           NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("32"),
 		MaxPeggedOrders:            NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("1500"),
 
-		MarkPriceUpdateMaximumFrequency:   NewDuration().Mutable(true).MustUpdate("5s"),
+		MarkPriceUpdateMaximumFrequency:   NewDuration(gte0s, lte1h).Mutable(true).MustUpdate("5s"),
 		ValidatorPerformanceScalingFactor: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
 	}
 

@@ -19,10 +19,6 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
     And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 3600    | 0.99        | 3                 |
-    And the markets:
-      | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     |
-      | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
-
     And the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 1h    |
@@ -31,6 +27,9 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | market.liquidity.targetstake.triggering.ratio       | 1     |
       | market.liquidity.providers.fee.distributionTimeStep | 10s   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
+    And the markets:
+      | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     |
+      | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
 
     Given the average block duration is "2"
 
