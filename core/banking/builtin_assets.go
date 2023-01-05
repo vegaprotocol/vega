@@ -16,7 +16,6 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/hex"
-	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
@@ -29,7 +28,7 @@ func (e *Engine) WithdrawBuiltinAsset(
 	ctx context.Context, id, party, assetID string, amount *num.Uint,
 ) error {
 	// build the withdrawal type
-	w, ref := e.newWithdrawal(id, party, assetID, amount, time.Time{}, nil)
+	w, ref := e.newWithdrawal(id, party, assetID, amount, nil)
 	w.Status = types.WithdrawalStatusRejected // default
 	e.withdrawals[w.ID] = withdrawalRef{w, ref}
 

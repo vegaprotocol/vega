@@ -977,7 +977,6 @@ func (t *tradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 	return &v2.GetERC20WithdrawalApprovalResponse{
 		AssetSource:   address,
 		Amount:        fmt.Sprintf("%v", w.Amount),
-		Expiry:        w.Expiry.UnixMicro(),
 		Nonce:         w.Ref,
 		TargetAddress: w.Ext.GetErc20().ReceiverAddress,
 		Signatures:    packNodeSignatures(signatures),

@@ -22,8 +22,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-var ErrNoActivePeersFound = errors.New("no active peers found")
-
 type Service struct {
 	log *logging.Logger
 	cfg Config
@@ -219,7 +217,7 @@ func (d *Service) GetMostRecentHistorySegmentFromPeers(ctx context.Context,
 	}
 
 	if len(activePeerAddresses) == 0 {
-		return nil, nil, ErrNoActivePeersFound
+		return nil, nil, errors.New("no active peers found")
 	}
 
 	return GetMostRecentHistorySegmentFromPeersAddresses(ctx, activePeerAddresses, d.GetSwarmKey(), grpcAPIPorts)

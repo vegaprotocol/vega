@@ -2478,8 +2478,6 @@ type Erc20WithdrawalApproval {
   assetSource: String!
   "The amount to be withdrawn"
   amount: String!
-  "Timestamp in seconds for expiry of the approval"
-  expiry: Timestamp!
   "The nonce to be used in the request"
   nonce: String!
   """
@@ -2595,8 +2593,6 @@ type Withdrawal {
   status: WithdrawalStatus!
   "A reference the foreign chain can use to refer to when processing the withdrawal"
   ref: String!
-  "RFC3339Nano time until the withdrawal will be invalid"
-  expiry: Timestamp!
   "RFC3339Nano time at which the withdrawal was created"
   createdTimestamp: Timestamp!
   "RFC3339Nano time at which the withdrawal was finalised"

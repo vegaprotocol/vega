@@ -14,7 +14,6 @@ package gql
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	types "code.vegaprotocol.io/vega/protos/vega"
@@ -32,11 +31,6 @@ func (r *myWithdrawalResolver) Amount(ctx context.Context, obj *types.Withdrawal
 
 func (r *myWithdrawalResolver) Asset(ctx context.Context, obj *types.Withdrawal) (*types.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.Asset)
-}
-
-func (r *myWithdrawalResolver) Expiry(ctx context.Context, obj *types.Withdrawal) (string, error) {
-	// this is a unix time stamp / non-nano
-	return vegatime.Format(time.Unix(obj.Expiry, 0)), nil
 }
 
 func (r *myWithdrawalResolver) TxHash(ctx context.Context, obj *types.Withdrawal) (*string, error) {

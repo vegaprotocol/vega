@@ -1283,21 +1283,20 @@ message GetERC20WithdrawalApprovalRequest {
 // The response with all information required to bundle the call to finalise the withdrawal on the erc20 bridge
 // function withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)
 message GetERC20WithdrawalApprovalResponse {
-    // The address of asset on ethereum
-    string asset_source = 1;
-    // The amount to be withdrawn
-    string amount = 2;
-    // The expiry / until what time the request is valid
-    int64 expiry = 3;
-    // The nonce, which is actually the internal reference for the withdrawal
-    string nonce = 4;
-    // The signatures bundle as hex encoded data, forward by 0x
-    // e.g: 0x + sig1 + sig2 + ... + sixN
-    string signatures = 5;
-    // The ethereum address to withdraw the funds to, 0x prefixed
-    string target_address = 6;
-    // The creation timestamps
-    int64 creation = 7;
+  reserved 3;
+  // The address of asset on ethereum
+  string asset_source = 1;
+  // The amount to be withdrawn
+  string amount = 2;
+  // The nonce, which is actually the internal reference for the withdrawal
+  string nonce = 4;
+  // The signatures bundle as hex encoded data, forward by 0x
+  // e.g: 0x + sig1 + sig2 + ... + sixN
+  string signatures = 5;
+  // The ethereum address to withdraw the funds to, 0x prefixed
+  string target_address = 6;
+  // The creation timestamps
+  int64 creation = 7;
 }
 
 // -- Trades --
