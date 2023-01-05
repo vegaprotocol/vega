@@ -107,7 +107,7 @@ type VegaConfig struct {
 }
 
 /*
-description: Allows to configure Data node binary and it's arguments.
+description: Allows you to configure a data node binary and its arguments.
 example:
 
 	type: toml
