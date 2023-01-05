@@ -19,7 +19,7 @@ import (
 )
 
 /*
-description: Allows to configure binary and it's arguments.
+description: Allows you to configure a binary and its arguments.
 example:
 
 	type: toml
