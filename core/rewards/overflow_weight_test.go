@@ -1,9 +1,7 @@
 package rewards
 
 import (
-	"math/rand"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -22,28 +20,25 @@ func TestMainnet(t *testing.T) {
 	asset := "VEGA"
 	rewardBalance, _ := num.UintFromString("5309254511561007668206", 10)
 	valScore := map[string]num.Decimal{
-		"126751c5830b50d39eb85412fb2964f46338cce6946ff455b73f1b1be3f5e8cc": num.MustDecimalFromString("0.050881379571504"),  //Greenfield
-		"25794776055552a92e7b27dd8f15563ffb78defe7694d6c4da8bb258daca897c": num.MustDecimalFromString("0.0834987626715796"), //Lovali
-		"43697a3e911d8b70c0ce672adde17a5c38ca8f6a0486bf85ed0546e1b9a82887": num.MustDecimalFromString("0.1113619817008983"), //B-Harvest
-		"4f69b1784656174e89eb094513b7136e88670b42517ed0e48cb6fd3062eb8478": num.MustDecimalFromString("0.1100534177603672"), //NodesGuru
-		"55504e9bfd914a7bbefa342c82f59a2f4dee344e5b6863a14c02a812f4fbde32": num.MustDecimalFromString("0.0881331817231271"), //RBF
-		"5ca98e0dd81143fafea3a3abcefafee73f3886ac97053db8b446593e75c10e9d": num.MustDecimalFromString("0.0808134106659369"), //P2P.ORG
-		"6f4a5c540b31d7643cd0187fab82fa26edae53f8aeb6fdcf9b257fd61c74b245": num.MustDecimalFromString("0.025347555405046"),  //Validatrium
-		"74023df02b8afc9eaf3e3e2e8b07eab1d2122ac3e74b1b0222daf4af565ad3dd": num.MustDecimalFromString("0.0694684349820005"), //XPRV
-		"8d33c6e06207ed5735c8b5b6c0c6234f44eb381b242a25a538ed3315369d2203": num.MustDecimalFromString("0.1113619817008983"), //Nala
-		"9c2a9590fd4767a8e4649c87bb79f43265833d20ad578ae15db338ca582ab042": num.MustDecimalFromString("0.0008843255783061"), //Staking cabin
-		"ac735acc9ab11cf1d8c59c2df2107e00092b4ac96451cb137a1629af5b66242a": num.MustDecimalFromString("0.0962839697186531"), //Figment
-		"b861c11eb825d55f835aec898b3caae66a681a354bcb59651d5b3faf02b34844": num.MustDecimalFromString("0.1113619817008983"), //Commodum
-		"f3022974212780ea1196af08fd2e8a9c0d784d0be8e97637bd5e763ac4c219bd": num.MustDecimalFromString("0.0605496168207846"), //Staking facilities
+		"126751c5830b50d39eb85412fb2964f46338cce6946ff455b73f1b1be3f5e8cc": num.MustDecimalFromString("0.050881379571504"),  // Greenfield
+		"25794776055552a92e7b27dd8f15563ffb78defe7694d6c4da8bb258daca897c": num.MustDecimalFromString("0.0834987626715796"), // Lovali
+		"43697a3e911d8b70c0ce672adde17a5c38ca8f6a0486bf85ed0546e1b9a82887": num.MustDecimalFromString("0.1113619817008983"), // B-Harvest
+		"4f69b1784656174e89eb094513b7136e88670b42517ed0e48cb6fd3062eb8478": num.MustDecimalFromString("0.1100534177603672"), // NodesGuru
+		"55504e9bfd914a7bbefa342c82f59a2f4dee344e5b6863a14c02a812f4fbde32": num.MustDecimalFromString("0.0881331817231271"), // RBF
+		"5ca98e0dd81143fafea3a3abcefafee73f3886ac97053db8b446593e75c10e9d": num.MustDecimalFromString("0.0808134106659369"), // P2P.ORG
+		"6f4a5c540b31d7643cd0187fab82fa26edae53f8aeb6fdcf9b257fd61c74b245": num.MustDecimalFromString("0.025347555405046"),  // Validatrium
+		"74023df02b8afc9eaf3e3e2e8b07eab1d2122ac3e74b1b0222daf4af565ad3dd": num.MustDecimalFromString("0.0694684349820005"), // XPRV
+		"8d33c6e06207ed5735c8b5b6c0c6234f44eb381b242a25a538ed3315369d2203": num.MustDecimalFromString("0.1113619817008983"), // Nala
+		"9c2a9590fd4767a8e4649c87bb79f43265833d20ad578ae15db338ca582ab042": num.MustDecimalFromString("0.0008843255783061"), // Staking cabin
+		"ac735acc9ab11cf1d8c59c2df2107e00092b4ac96451cb137a1629af5b66242a": num.MustDecimalFromString("0.0962839697186531"), // Figment
+		"b861c11eb825d55f835aec898b3caae66a681a354bcb59651d5b3faf02b34844": num.MustDecimalFromString("0.1113619817008983"), // Commodum
+		"f3022974212780ea1196af08fd2e8a9c0d784d0be8e97637bd5e763ac4c219bd": num.MustDecimalFromString("0.0605496168207846"), // Staking facilities
 	}
 	delegatorShare := num.MustDecimalFromString("0.883")
 	maxPayout, _ := num.UintFromString("700000000000000000000", 10)
-	layout := "2006-01-02T15:04:05Z"
-	tm, _ := time.Parse(layout, "2023-01-02T17:36:53Z")
-	rng := rand.New(rand.NewSource(tm.Unix()))
 	logger := logging.NewTestLogger()
 
-	po := calculateRewardsByStake(epochSeq, asset, accountID, rewardBalance, valScore, loadValidatorData(t), delegatorShare, maxPayout, rng, logger)
+	po := calculateRewardsByStake(epochSeq, asset, accountID, rewardBalance, valScore, loadValidatorData(t), delegatorShare, maxPayout, logger)
 	// 5309254511561007415197 = 5309.254511561
 	require.Equal(t, "5309254511561007415197", po.totalReward.String())
 }
@@ -51,19 +46,19 @@ func TestMainnet(t *testing.T) {
 func loadValidatorData(t *testing.T) []*types.ValidatorData {
 	t.Helper()
 	vd := []*types.ValidatorData{
-		validatorData_Greenfield(t),
-		validatorData_Lovali(t),
-		validatorData_B_Harvest(t),
-		validatorData_NodesGuru(t),
-		validatorData_RBF(t),
-		validatorData_P2P(t),
-		validatorData_Validatrium(t),
-		validatorData_XPRV(t),
-		validatorData_Nala(t),
-		validatorData_StakingCabin(t),
-		validatorData_Figment(t),
-		validatorData_Commodum(t),
-		validatorData_StakingFacilities(t),
+		validatorDataGreenfield(t),
+		validatorDataLovali(t),
+		validatorDataBHarvest(t),
+		validatorDataNodesGuru(t),
+		validatorDataRBF(t),
+		validatorDataP2P(t),
+		validatorDataValidatrium(t),
+		validatorDataXPRV(t),
+		validatorDataNala(t),
+		validatorDataStakingCabin(t),
+		validatorDataFigment(t),
+		validatorDataCommodum(t),
+		validatorDataStakingFacilities(t),
 	}
 
 	for _, v := range vd {
@@ -78,7 +73,7 @@ func loadValidatorData(t *testing.T) []*types.ValidatorData {
 	return vd
 }
 
-func validatorData_Greenfield(t *testing.T) *types.ValidatorData {
+func validatorDataGreenfield(t *testing.T) *types.ValidatorData {
 	t.Helper()
 
 	selfStake, _ := num.UintFromString("3000000000000000000000", 10)
@@ -146,7 +141,7 @@ func validatorData_Greenfield(t *testing.T) *types.ValidatorData {
 	}
 }
 
-func validatorData_Lovali(t *testing.T) *types.ValidatorData {
+func validatorDataLovali(t *testing.T) *types.ValidatorData {
 	t.Helper()
 
 	selfStake, _ := num.UintFromString("3000000000000000000000", 10)
@@ -238,7 +233,7 @@ func validatorData_Lovali(t *testing.T) *types.ValidatorData {
 	}
 }
 
-func validatorData_B_Harvest(t *testing.T) *types.ValidatorData {
+func validatorDataBHarvest(t *testing.T) *types.ValidatorData {
 	t.Helper()
 
 	selfStake, _ := num.UintFromString("42088032374378619877608", 10)
@@ -336,7 +331,7 @@ func validatorData_B_Harvest(t *testing.T) *types.ValidatorData {
 	}
 }
 
-func validatorData_NodesGuru(t *testing.T) *types.ValidatorData {
+func validatorDataNodesGuru(t *testing.T) *types.ValidatorData {
 	t.Helper()
 
 	selfStake, _ := num.UintFromString("3027453900000000000000", 10)
@@ -563,7 +558,7 @@ func validatorData_NodesGuru(t *testing.T) *types.ValidatorData {
 	}
 }
 
-func validatorData_RBF(t *testing.T) *types.ValidatorData {
+func validatorDataRBF(t *testing.T) *types.ValidatorData {
 	t.Helper()
 
 	selfStake, _ := num.UintFromString("3000000000000000000000", 10)
@@ -614,7 +609,7 @@ func validatorData_RBF(t *testing.T) *types.ValidatorData {
 	}
 }
 
-func validatorData_P2P(t *testing.T) *types.ValidatorData {
+func validatorDataP2P(t *testing.T) *types.ValidatorData {
 	t.Helper()
 
 	selfStake, _ := num.UintFromString("3000000000000000000000", 10)
@@ -700,7 +695,7 @@ func validatorData_P2P(t *testing.T) *types.ValidatorData {
 	}
 }
 
-func validatorData_Ryabina(t *testing.T) *types.ValidatorData {
+func validatorDataRyabina(t *testing.T) *types.ValidatorData {
 	t.Helper()
 
 	selfStake, _ := num.UintFromString("0", 10)
@@ -769,7 +764,7 @@ func validatorData_Ryabina(t *testing.T) *types.ValidatorData {
 	}
 }
 
-func validatorData_Validatrium(t *testing.T) *types.ValidatorData {
+func validatorDataValidatrium(t *testing.T) *types.ValidatorData {
 	t.Helper()
 
 	selfStake, _ := num.UintFromString("3000000000000000000000", 10)
@@ -802,7 +797,7 @@ func validatorData_Validatrium(t *testing.T) *types.ValidatorData {
 	}
 }
 
-func validatorData_XPRV(t *testing.T) *types.ValidatorData {
+func validatorDataXPRV(t *testing.T) *types.ValidatorData {
 	t.Helper()
 
 	selfStake, _ := num.UintFromString("3000000000000000000000", 10)
@@ -863,7 +858,7 @@ func validatorData_XPRV(t *testing.T) *types.ValidatorData {
 	}
 }
 
-func validatorData_Nala(t *testing.T) *types.ValidatorData {
+func validatorDataNala(t *testing.T) *types.ValidatorData {
 	t.Helper()
 
 	selfStake, _ := num.UintFromString("3000000000000000000000", 10)
@@ -977,7 +972,7 @@ func validatorData_Nala(t *testing.T) *types.ValidatorData {
 	}
 }
 
-func validatorData_StakingCabin(t *testing.T) *types.ValidatorData {
+func validatorDataStakingCabin(t *testing.T) *types.ValidatorData {
 	t.Helper()
 
 	selfStake, _ := num.UintFromString("3000000000000000000000", 10)
@@ -1009,7 +1004,7 @@ func validatorData_StakingCabin(t *testing.T) *types.ValidatorData {
 	}
 }
 
-func validatorData_Figment(t *testing.T) *types.ValidatorData {
+func validatorDataFigment(t *testing.T) *types.ValidatorData {
 	t.Helper()
 
 	selfStake, _ := num.UintFromString("3000000000000000000000", 10)
@@ -1092,7 +1087,7 @@ func validatorData_Figment(t *testing.T) *types.ValidatorData {
 	}
 }
 
-func validatorData_Commodum(t *testing.T) *types.ValidatorData {
+func validatorDataCommodum(t *testing.T) *types.ValidatorData {
 	t.Helper()
 
 	selfStake, _ := num.UintFromString("3000000000000000000000", 10)
@@ -1246,7 +1241,7 @@ func validatorData_Commodum(t *testing.T) *types.ValidatorData {
 	}
 }
 
-func validatorData_Chorus(t *testing.T) *types.ValidatorData {
+func validatorDataChorus(t *testing.T) *types.ValidatorData {
 	t.Helper()
 
 	selfStake, _ := num.UintFromString("0", 10)
@@ -1289,7 +1284,7 @@ func validatorData_Chorus(t *testing.T) *types.ValidatorData {
 	}
 }
 
-func validatorData_StakingFacilities(t *testing.T) *types.ValidatorData {
+func validatorDataStakingFacilities(t *testing.T) *types.ValidatorData {
 	t.Helper()
 
 	selfStake, _ := num.UintFromString("3000000000000000000000", 10)
@@ -1384,37 +1379,39 @@ func validatorData_StakingFacilities(t *testing.T) *types.ValidatorData {
 func TestWeightAdjustment(t *testing.T) {
 	parties := []string{"1", "2", "3"}
 	weights := map[string]num.Decimal{"1": num.DecimalFromFloat(0.2), "2": num.DecimalFromFloat(0.7), "3": num.DecimalFromFloat(0.1)}
-	layout := "2006-01-02T15:04:05Z"
-	tm, _ := time.Parse(layout, "2023-01-02T17:36:53Z")
-	rng := rand.New(rand.NewSource(tm.Unix()))
-
 	totalWeight := num.DecimalOne()
 
-	adjustWeights(weights, totalWeight, parties, num.DecimalOne(), rng)
+	adjustWeights(weights, totalWeight, parties, num.DecimalOne())
 	require.Equal(t, "0.2", weights["1"].String())
 	require.Equal(t, "0.7", weights["2"].String())
 	require.Equal(t, "0.1", weights["3"].String())
 
 	// add a precision error of 0.11
 	totalWeight = num.DecimalFromFloat(1.11)
-	adjustWeights(weights, totalWeight, parties, num.DecimalOne(), rng)
+	adjustWeights(weights, totalWeight, parties, num.DecimalOne())
 
-	// the adjustment must be to either 0.2 or 0.7
+	// the adjustment must be 0.7 (the largest weight)
 	require.Equal(t, "0.2", weights["1"].String())
 	require.Equal(t, "0.59", weights["2"].String())
 	require.Equal(t, "0.1", weights["3"].String())
 
-	// adjustment in theory can be done to any
+	// the adjustment must be in 0.59 (the largest weight)
 	totalWeight = num.DecimalFromFloat(1.1)
-	adjustWeights(weights, totalWeight, parties, num.DecimalOne(), rng)
-	require.Equal(t, "0.1", weights["1"].String())
-	require.Equal(t, "0.59", weights["2"].String())
+	adjustWeights(weights, totalWeight, parties, num.DecimalOne())
+	require.Equal(t, "0.2", weights["1"].String())
+	require.Equal(t, "0.49", weights["2"].String())
 	require.Equal(t, "0.1", weights["3"].String())
 
-	// add a precision error of 0.11 - now only the 0.59 can be adjusted
-	totalWeight = num.DecimalFromFloat(1.11)
-	adjustWeights(weights, totalWeight, parties, num.DecimalOne(), rng)
-	require.Equal(t, "0.1", weights["1"].String())
-	require.Equal(t, "0.48", weights["2"].String())
-	require.Equal(t, "0.1", weights["3"].String())
+	weights = map[string]num.Decimal{"1": num.DecimalFromFloat(0.21), "2": num.DecimalFromFloat(0.2), "3": num.DecimalFromFloat(0.2), "4": num.DecimalFromFloat(0.2), "5": num.DecimalFromFloat(0.2)}
+	parties = []string{"1", "2", "3", "4", "5"}
+
+	// no one delegator can be adjusted on its own, choose the first adjust it fully, then move on to the next and adjust the remaining
+	// the latter bit is not really tested because after adjusting the first weight, the total is actually already less than 1 so it stops.
+	totalWeight = num.DecimalFromFloat(1.25)
+	adjustWeights(weights, totalWeight, parties, num.DecimalOne())
+	require.Equal(t, "0", weights["1"].String())
+	require.Equal(t, "0.2", weights["2"].String())
+	require.Equal(t, "0.2", weights["3"].String())
+	require.Equal(t, "0.2", weights["4"].String())
+	require.Equal(t, "0.2", weights["5"].String())
 }
