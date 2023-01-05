@@ -17,6 +17,8 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strconv"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
@@ -220,7 +222,7 @@ func (lmp LiquidityMonitoringParameters) ToProto() *vega.LiquidityMonitoringPara
 	}
 	return &vega.LiquidityMonitoringParameters{
 		TargetStakeParameters: lmp.TargetStakeParameters.ToProto(),
-		TriggeringRatio:       lmp.TriggeringRatio,
+		TriggeringRatio:       strconv.FormatFloat(lmp.TriggeringRatio, 'f', -1, 64),
 		AuctionExtension:      lmp.AuctionExtension,
 	}
 }
@@ -239,9 +241,18 @@ func liquidityMonitoringParametersFromProto(lmp *vega.LiquidityMonitoringParamet
 		}
 	}
 
+	tr := float64(0)
+	var err error
+	if len(lmp.TriggeringRatio) > 0 {
+		tr, err = strconv.ParseFloat(strings.TrimSpace(lmp.TriggeringRatio), 64)
+		if err != nil {
+			return LiquidityMonitoringParameters{}, err
+		}
+	}
+
 	return LiquidityMonitoringParameters{
 		TargetStakeParameters: tsp,
-		TriggeringRatio:       lmp.TriggeringRatio,
+		TriggeringRatio:       tr,
 		AuctionExtension:      lmp.AuctionExtension,
 	}, nil
 }

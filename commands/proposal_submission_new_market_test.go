@@ -433,14 +433,14 @@ func testNewMarketChangeSubmissionWithLiquidityMonitoringSucceeds(t *testing.T) 
 func testLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails(t *testing.T) {
 	testCases := []struct {
 		msg   string
-		value float64
+		value string
 	}{
 		{
 			msg:   "with probability of -1",
-			value: -1,
+			value: "-1",
 		}, {
 			msg:   "with probability of 2",
-			value: 2,
+			value: "2",
 		},
 	}
 	for _, tc := range testCases {
@@ -468,17 +468,17 @@ func testLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails(t *tes
 func testLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds(t *testing.T) {
 	testCases := []struct {
 		msg   string
-		value float64
+		value string
 	}{
 		{
 			msg:   "with ratio of 0",
-			value: 0,
+			value: "0",
 		}, {
 			msg:   "with ratio of 0.5",
-			value: 0.5,
+			value: "0.5",
 		}, {
 			msg:   "with ratio of 1",
-			value: 1,
+			value: "1",
 		},
 	}
 	for _, tc := range testCases {

@@ -65,8 +65,8 @@ func (r liquidityMonitoringRow) scalingFactor() float64 {
 	return r.row.MustF64("scaling factor")
 }
 
-func (r liquidityMonitoringRow) triggeringRatio() float64 {
-	return r.row.MustF64("triggering ratio")
+func (r liquidityMonitoringRow) triggeringRatio() string {
+	return r.row.MustStr("triggering ratio")
 }
 
 func (r liquidityMonitoringRow) auctionExtension() int64 {

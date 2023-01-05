@@ -366,7 +366,7 @@ type LiquidityMonitoringParameters struct {
 	// Specifies parameters related to target stake calculation
 	TargetStakeParameters *TargetStakeParameters `json:"targetStakeParameters"`
 	// Specifies the triggering ratio for entering liquidity auction
-	TriggeringRatio float64 `json:"triggeringRatio"`
+	TriggeringRatio string `json:"triggeringRatio"`
 }
 
 // The equity like share of liquidity fee for each liquidity provider
