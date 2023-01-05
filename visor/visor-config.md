@@ -37,9 +37,9 @@ Default value: <code>10</code>
 
 <dd>
 
-Visor at it's core starts and manages processes of provided binaries.
-This alows to define maximum number of restarts in case that any of
-the processes has failed before the Visor process fails.
+Visor starts and manages the processes of provided binaries.
+This allows a user to define the maximum number of restarts in case any of
+the processes have failed before the Visor process fails.
 
 
 
