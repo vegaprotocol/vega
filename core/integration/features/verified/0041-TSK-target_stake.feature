@@ -42,10 +42,13 @@ Feature: Target stake
       | tt_4  | BTC   | 100000000 |
 
   Scenario: Max open interest changes over time (0041-TSTK-002, 0041-TSTK-003, 0042-LIQF-007)
-    Given the following network parameters are set:
-      | name                              | value |
-      | market.stake.target.timeWindow    | 10s   |
-      | market.stake.target.scalingFactor | 1.5   |
+
+    Given the liquidity monitoring parameters:
+      | name                | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.0            | 10s         | 1.5              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/DEC21 | updated-lqm-params   |
 
     # put some volume on the book so that others can increase their
     # positions and close out if needed too
@@ -189,10 +192,13 @@ Feature: Target stake
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
 
   Scenario: Max open interest changes over time, testing change of timewindow (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
-    Given the following network parameters are set:
-      | name                              | value |
-      | market.stake.target.timeWindow    | 20s   |
-      | market.stake.target.scalingFactor | 1.5   |
+
+    Given the liquidity monitoring parameters:
+      | name              | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.0            | 20s         | 1.5              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/DEC21 | updated-lqm-params   |
 
     # put some volume on the book so that others can increase their
     # positions and close out if needed too
@@ -260,10 +266,12 @@ Feature: Target stake
     # target_stake = 110 x 140 x 1.5 x 0.1=2310
     And the target stake should be "2310" for the market "ETH/DEC21"
 
-    When the following network parameters are set:
-      | name                              | value |
-      | market.stake.target.timeWindow    | 10s   |
-      | market.stake.target.scalingFactor | 1     |
+    Given the liquidity monitoring parameters:
+      | name              | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.0            | 10s         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/DEC21 | updated-lqm-params   |
 
     # target_stake = 110 x 140 x 1 x 0.1 =1540
     And the target stake should be "1540" for the market "ETH/DEC21"
@@ -276,10 +284,13 @@ Feature: Target stake
     And the target stake should be "1870" for the market "ETH/DEC21"
 
   Scenario: Target stake is calculate correctly during auction in presence of wash trades
-    Given the following network parameters are set:
-      | name                              | value |
-      | market.stake.target.timeWindow    | 10s   |
-      | market.stake.target.scalingFactor | 1     |
+
+    Given the liquidity monitoring parameters:
+      | name              | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 0.0            | 10s         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/DEC21 | updated-lqm-params   |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
