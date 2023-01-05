@@ -17,8 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"strconv"
-	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
@@ -212,7 +210,7 @@ func (tsp TargetStakeParameters) ToProto() *vega.TargetStakeParameters {
 
 type LiquidityMonitoringParameters struct {
 	TargetStakeParameters *TargetStakeParameters `json:"targetStakeParameters,omitempty"`
-	TriggeringRatio       float64                `json:"triggeringRatio,omitempty"`
+	TriggeringRatio       string                 `json:"triggeringRatio,omitempty"`
 	AuctionExtension      int64                  `json:"auctionExtension,omitempty"`
 }
 
@@ -222,7 +220,7 @@ func (lmp LiquidityMonitoringParameters) ToProto() *vega.LiquidityMonitoringPara
 	}
 	return &vega.LiquidityMonitoringParameters{
 		TargetStakeParameters: lmp.TargetStakeParameters.ToProto(),
-		TriggeringRatio:       strconv.FormatFloat(lmp.TriggeringRatio, 'f', -1, 64),
+		TriggeringRatio:       lmp.TriggeringRatio,
 		AuctionExtension:      lmp.AuctionExtension,
 	}
 }
@@ -241,18 +239,9 @@ func liquidityMonitoringParametersFromProto(lmp *vega.LiquidityMonitoringParamet
 		}
 	}
 
-	tr := float64(0)
-	var err error
-	if len(lmp.TriggeringRatio) > 0 {
-		tr, err = strconv.ParseFloat(strings.TrimSpace(lmp.TriggeringRatio), 64)
-		if err != nil {
-			return LiquidityMonitoringParameters{}, err
-		}
-	}
-
 	return LiquidityMonitoringParameters{
 		TargetStakeParameters: tsp,
-		TriggeringRatio:       tr,
+		TriggeringRatio:       lmp.TriggeringRatio,
 		AuctionExtension:      lmp.AuctionExtension,
 	}, nil
 }
