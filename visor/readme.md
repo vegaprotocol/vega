@@ -48,7 +48,7 @@ Visor has 2 different types of configuration. The ***Visor configuration*** and 
 
 ### Visor configuration
 
-A configuration for Visor itself. This configuration is automatically reloaded by Visor so the changes in edited file will be automatically
+A configuration for Visor itself. This configuration is automatically reloaded by Visor so changes in the edited file will be automatically
 reflected by Visor.
 
 [Docs](visor-config.md)
