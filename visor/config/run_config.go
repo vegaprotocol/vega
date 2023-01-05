@@ -145,7 +145,7 @@ type RunConfig struct {
 	Name string `toml:"name"`
 	// description: Configuration of a Vega node.
 	Vega VegaConfig `toml:"vega"`
-	// description: Configuration of a Data node.
+	// description: Configuration of a data node.
 	DataNode *DataNodeConfig `toml:"data_node"`
 }
 
