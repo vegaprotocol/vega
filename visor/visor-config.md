@@ -17,10 +17,8 @@ Root of the config file
 
 <dd>
 
-Visor communicates with Core node via RPC API. This variable allows to specify
-how many times should Visor try to establish connection to Core node before the Visor process fails.
-The `maxNumberOfFirstConnectionRetries` is only taken to the account
-during the first start up of the Core node process - not restarts.
+Visor communicates with the core node via RPC API. This variable allows a validator to specify how many times  Visor should try to establish a connection to the core node before the Visor process fails.
+The `maxNumberOfFirstConnectionRetries` is only taken into account during the first start up of the Core node process - not restarts.
 
 
 
