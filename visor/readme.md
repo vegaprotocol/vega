@@ -13,7 +13,7 @@ A binaries runner for [Core](../core/README.md) and [Data Node](../datanode/READ
 
 Visor stores all it's required config files and state in a `home` folder. The basic folder structure can be geneate by `visor init` cmd or manually. It is vital that all necessery files and folders are present in the `home` folder, therefore using the `init` command is recommended.
 
-***Home folder structure:***
+### Home folder structure:
 ```
 HOME_FOLDER_PATH
 ├── config.toml
