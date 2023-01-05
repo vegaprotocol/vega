@@ -24,11 +24,6 @@ Feature: Test liquidity provider reward distribution
     And the oracle spec for trading termination filtering data from "0xCAFECAFE" named "ethDec21Oracle":
       | property           | type         | binding             |
       | trading.terminated | TYPE_BOOLEAN | trading termination |
-    And the markets:
-      | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees          | price monitoring   | data source config |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1    | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     |
-      | ETH/DEC22 | ETH        | ETH   | lognormal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-2 | ethDec21Oracle     |
-
     And the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 1h    |
@@ -38,6 +33,10 @@ Feature: Test liquidity provider reward distribution
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 1s    |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
+    And the markets:
+      | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees          | price monitoring   | data source config |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1    | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     |
+      | ETH/DEC22 | ETH        | ETH   | lognormal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-2 | ethDec21Oracle     |
     And the average block duration is "1"
 
   Scenario: 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades

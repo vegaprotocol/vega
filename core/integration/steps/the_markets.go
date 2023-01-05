@@ -399,10 +399,10 @@ func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id",
 	}, []string{
-		"data source config",    // product update
-		"price monitoring",      // price monitoring update
-		"risk model",            // risk model update
-		"liquidity monitoring ", // liquidity monitoring update
+		"data source config",   // product update
+		"price monitoring",     // price monitoring update
+		"risk model",           // risk model update
+		"liquidity monitoring", // liquidity monitoring update
 		"lp price range",
 	})
 }
