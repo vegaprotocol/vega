@@ -14,6 +14,9 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
+## 0.66.1
+- [7269](https://github.com/vegaprotocol/vega/pull/7269) - Fix wallet release pipeline
+
 ## 0.66.0
 
 ### 🚨 Breaking changes
