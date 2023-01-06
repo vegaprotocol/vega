@@ -358,7 +358,6 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 		svcs.delegation.OnTick,
 		svcs.notary.OnTick,
 		svcs.banking.OnTick,
-		svcs.rewards.OnTick,
 		svcs.limits.OnTick,
 	)
 }
@@ -511,20 +510,12 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityStakeToCCYSiskas,
+			Param:   netparams.MarketLiquidityStakeToCCYVolume,
 			Watcher: svcs.executionEngine.OnSuppliedStakeToObligationFactorUpdate,
 		},
 		{
 			Param:   netparams.MarketValueWindowLength,
 			Watcher: svcs.executionEngine.OnMarketValueWindowLengthUpdate,
-		},
-		{
-			Param:   netparams.MarketTargetStakeScalingFactor,
-			Watcher: svcs.executionEngine.OnMarketTargetStakeScalingFactorUpdate,
-		},
-		{
-			Param:   netparams.MarketTargetStakeTimeWindow,
-			Watcher: svcs.executionEngine.OnMarketTargetStakeTimeWindowUpdate,
 		},
 		{
 			Param: netparams.BlockchainsEthereumConfig,
@@ -568,10 +559,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.MarketLiquidityBondPenaltyParameter,
 			Watcher: svcs.executionEngine.OnMarketLiquidityBondPenaltyUpdate,
-		},
-		{
-			Param:   netparams.MarketLiquidityTargetStakeTriggeringRatio,
-			Watcher: svcs.executionEngine.OnMarketLiquidityTargetStakeTriggeringRatio,
 		},
 		{
 			Param:   netparams.MarketAuctionMinimumDuration,

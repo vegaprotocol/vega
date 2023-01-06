@@ -336,6 +336,8 @@ type LiquidityProviderFeeShare {
   equityLikeShare: String!
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
+  "The average liquidity score"
+  averageScore: String! 
 }
 
 "The equity like share of liquidity fee for each liquidity provider"
@@ -346,6 +348,8 @@ type ObservableLiquidityProviderFeeShare {
   equityLikeShare: String!
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
+  "The average liquidity score"
+  averageScore: String! 
 }
 
 "The liquidity commitments for this market"
@@ -796,12 +800,10 @@ type EpochTimestamps {
   expiry: Timestamp
   "RFC3339 timestamp - Vega time of epoch end, null if not ended"
   end: Timestamp
-
-  # @TODO - blocks support
-  # "Height of first block in the epoch, null if not started"
-  # firstBlock: String!
-  # "Height of last block in the epoch, null if not ended"
-  # lastBlock: String
+  "Height of first block in the epoch, null if not started"
+  firstBlock: String!
+  "Height of last block in the epoch, null if not ended"
+  lastBlock: String
 }
 
 "A node's key rotation event"
@@ -1654,7 +1656,7 @@ type LiquidityMonitoringParameters {
   "Specifies parameters related to target stake calculation"
   targetStakeParameters: TargetStakeParameters!
   "Specifies the triggering ratio for entering liquidity auction"
-  triggeringRatio: Float!
+  triggeringRatio: String!
 }
 
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
@@ -1924,6 +1926,8 @@ type Party {
     pagination: Pagination
     "Filter orders"
     filter: OrderFilter
+    "Market ID to limit the results to"
+    marketId: ID
   ): OrderConnection
 
   tradesConnection(
@@ -2474,8 +2478,6 @@ type Erc20WithdrawalApproval {
   assetSource: String!
   "The amount to be withdrawn"
   amount: String!
-  "Timestamp in seconds for expiry of the approval"
-  expiry: Timestamp!
   "The nonce to be used in the request"
   nonce: String!
   """
@@ -2591,8 +2593,6 @@ type Withdrawal {
   status: WithdrawalStatus!
   "A reference the foreign chain can use to refer to when processing the withdrawal"
   ref: String!
-  "RFC3339Nano time until the withdrawal will be invalid"
-  expiry: Timestamp!
   "RFC3339Nano time at which the withdrawal was created"
   createdTimestamp: Timestamp!
   "RFC3339Nano time at which the withdrawal was finalised"

@@ -42,17 +42,16 @@ var withdrawalsOrdering = TableOrdering{
 func (w *Withdrawals) Upsert(ctx context.Context, withdrawal *entities.Withdrawal) error {
 	defer metrics.StartSQLQuery("Withdrawals", "Upsert")()
 	query := `insert into withdrawals(
-		id, party_id, amount, asset, status, ref, expiry, foreign_tx_hash,
+		id, party_id, amount, asset, status, ref, foreign_tx_hash,
 		created_timestamp, withdrawn_timestamp, ext, tx_hash, vega_time
 	)
-		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		on conflict (id, party_id, vega_time) do update
 		set
 			amount=EXCLUDED.amount,
 			asset=EXCLUDED.asset,
 			status=EXCLUDED.status,
 			ref=EXCLUDED.ref,
-			expiry=EXCLUDED.expiry,
 			foreign_tx_hash=EXCLUDED.foreign_tx_hash,
 			created_timestamp=EXCLUDED.created_timestamp,
 			withdrawn_timestamp=EXCLUDED.withdrawn_timestamp,
@@ -66,7 +65,6 @@ func (w *Withdrawals) Upsert(ctx context.Context, withdrawal *entities.Withdrawa
 		withdrawal.Asset,
 		withdrawal.Status,
 		withdrawal.Ref,
-		withdrawal.Expiry,
 		withdrawal.ForeignTxHash,
 		withdrawal.CreatedTimestamp,
 		withdrawal.WithdrawnTimestamp,
@@ -83,7 +81,7 @@ func (w *Withdrawals) Upsert(ctx context.Context, withdrawal *entities.Withdrawa
 func (w *Withdrawals) GetByID(ctx context.Context, withdrawalID string) (entities.Withdrawal, error) {
 	defer metrics.StartSQLQuery("Withdrawals", "GetByID")()
 	var withdrawal entities.Withdrawal
-	query := `select distinct on (id) id, party_id, amount, asset, status, ref, expiry,
+	query := `select distinct on (id) id, party_id, amount, asset, status, ref,
 									  foreign_tx_hash, created_timestamp, withdrawn_timestamp,
 									  ext, tx_hash, vega_time
 		from withdrawals
@@ -149,7 +147,7 @@ func getWithdrawalsByPartyQuery(partyID string, dateRange entities.DateRange) (s
 	var args []interface{}
 
 	query := `SELECT
-		id, party_id, amount, asset, status, ref, expiry, foreign_tx_hash,
+		id, party_id, amount, asset, status, ref, foreign_tx_hash,
 		created_timestamp, withdrawn_timestamp, ext, tx_hash, vega_time
 		FROM withdrawals_current`
 

@@ -64,8 +64,7 @@ func (l *liquidityMonitoring) GetType(name string) (*types.LiquidityMonitoringPa
 	if !ok {
 		return nil, fmt.Errorf("no liquidity monitoring \"%s\" registered", name)
 	}
-	tp := types.LiquidityMonitoringParametersFromProto(config)
-	return tp, nil
+	return types.LiquidityMonitoringParametersFromProto(config)
 }
 
 func (l *liquidityMonitoring) Get(name string) (*vegapb.LiquidityMonitoringParameters, error) {

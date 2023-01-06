@@ -100,7 +100,7 @@ type Snapshot interface {
 	ClearAndInitialise() error
 
 	// Calls related to statesync
-	List() ([]*types.Snapshot, error)
+	ListMeta() ([]*tmtypes.Snapshot, error)
 	ReceiveSnapshot(snap *types.Snapshot) error
 	RejectSnapshot() error
 	ApplySnapshotChunk(chunk *types.RawChunk) (bool, error)
@@ -560,21 +560,13 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 
 func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseListSnapshots {
 	app.log.Debug("ABCI service ListSnapshots requested")
-	snapshots, err := app.snapshot.List()
+	snapshots, err := app.snapshot.ListMeta()
 	resp := tmtypes.ResponseListSnapshots{}
 	if err != nil {
 		app.log.Error("Could not list snapshots", logging.Error(err))
 		return resp
 	}
-	resp.Snapshots = make([]*tmtypes.Snapshot, 0, len(snapshots))
-	for _, snap := range snapshots {
-		tmSnap, err := snap.ToTM()
-		if err != nil {
-			app.log.Error("Failed to convert snapshot to TM form", logging.Error(err))
-			continue
-		}
-		resp.Snapshots = append(resp.Snapshots, tmSnap)
-	}
+	resp.Snapshots = snapshots
 	return resp
 }
 
@@ -625,6 +617,8 @@ func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApply
 	resp := tmtypes.ResponseApplySnapshotChunk{}
 	ready, err := app.snapshot.ApplySnapshotChunk(&chunk)
 	if err != nil {
+		app.log.Error("could not apply snapshot chunk", logging.Error(err))
+
 		switch err {
 		case types.ErrUnknownSnapshot:
 			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY_SNAPSHOT // we weren't ready?

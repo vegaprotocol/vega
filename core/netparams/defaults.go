@@ -40,6 +40,7 @@ var (
 
 	// Uints.
 	gteU0  = UintGTE(num.UintZero())
+	lteU1  = UintLTE(num.NewUint(1))
 	gteU1  = UintGTE(num.NewUint(1))
 	gteU5  = UintGTE(num.NewUint(5))
 	ltMaxU = UintLT(num.MaxUint())
@@ -54,6 +55,7 @@ var (
 	gte0s   = DurationGTE(0 * time.Second)
 	gte1s   = DurationGTE(1 * time.Second)
 	gte1m   = DurationGTE(1 * time.Minute)
+	lte1h   = DurationLTE(1 * time.Hour)
 	lte1d   = DurationLTE(24 * time.Hour)
 	lte255h = DurationLTE(255 * time.Hour)
 	lte1mo  = DurationLTE(30 * 24 * time.Hour)
@@ -70,7 +72,7 @@ func defaultNetParams() map[string]value {
 		MarketAuctionMaximumDuration:                    NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate(week),
 		MarketLiquidityBondPenaltyParameter:             NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1"),
 		MarketLiquidityMaximumLiquidityFeeFactorLevel:   NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("1"),
-		MarketLiquidityStakeToCCYSiskas:                 NewDecimal(gteD0, lteD100).Mutable(true).MustUpdate("1"),
+		MarketLiquidityStakeToCCYVolume:                 NewDecimal(gteD0, lteD100).Mutable(true).MustUpdate("1"),
 		MarketLiquidityProvidersFeeDistribitionTimeStep: NewDuration(gte0s, lte1mo).Mutable(true).MustUpdate("0s"),
 		MarketLiquidityTargetStakeTriggeringRatio:       NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
 		MarketProbabilityOfTradingTauScaling:            NewDecimal(gteD1, lteD1000).Mutable(true).MustUpdate("1"),
@@ -186,7 +188,7 @@ func defaultNetParams() map[string]value {
 		// if we assume a block time of anything between 1 to 2 seconds
 		SnapshotIntervalLength: NewInt(gteI0).Mutable(true).MustUpdate("1000"),
 
-		FloatingPointUpdatesDuration: NewDuration().Mutable(true).MustUpdate("5m"),
+		FloatingPointUpdatesDuration: NewDuration(DurationGTE(10*time.Second), DurationLTE(1*time.Hour)).Mutable(true).MustUpdate("5m"),
 
 		// validators by stake
 		NumberOfTendermintValidators:               NewUint(gteU1, UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("30"),
@@ -206,7 +208,7 @@ func defaultNetParams() map[string]value {
 		SpamPoWDifficulty:           NewUint(gteU0, UintLTE(num.NewUint(256))).Mutable(true).MustUpdate("15"),
 		SpamPoWHashFunction:         NewString(checks.SpamPoWHashFunction([]string{crypto.Sha3})).Mutable(true).MustUpdate(crypto.Sha3),
 		SpamPoWNumberOfTxPerBlock:   NewUint(gteU1).Mutable(true).MustUpdate("2"),
-		SpamPoWIncreasingDifficulty: NewUint(gteU0).Mutable(true).MustUpdate("0"),
+		SpamPoWIncreasingDifficulty: NewUint(gteU0, lteU1).Mutable(true).MustUpdate("0"),
 
 		LimitsProposeMarketEnabledFrom: NewString(checkOptionalRFC3339Date).Mutable(true).MustUpdate(""), // none by default
 		LimitsProposeAssetEnabledFrom:  NewString(checkOptionalRFC3339Date).Mutable(true).MustUpdate(""), // none by default
@@ -217,7 +219,7 @@ func defaultNetParams() map[string]value {
 		MinBlockCapacity:           NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("32"),
 		MaxPeggedOrders:            NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("1500"),
 
-		MarkPriceUpdateMaximumFrequency:   NewDuration().Mutable(true).MustUpdate("5s"),
+		MarkPriceUpdateMaximumFrequency:   NewDuration(gte0s, lte1h).Mutable(true).MustUpdate("5s"),
 		ValidatorPerformanceScalingFactor: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
 	}
 

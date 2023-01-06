@@ -634,9 +634,14 @@ type Market struct {
 	asset            string
 }
 
-func MarketFromProto(mkt *proto.Market) *Market {
+func MarketFromProto(mkt *proto.Market) (*Market, error) {
 	asset, _ := mkt.GetAsset()
 	lppr, _ := num.DecimalFromString(mkt.LpPriceRange)
+	liquidityParameters, err := LiquidityMonitoringParametersFromProto(mkt.LiquidityMonitoringParameters)
+	if err != nil {
+		return nil, err
+	}
+
 	m := &Market{
 		ID:                            mkt.Id,
 		TradableInstrument:            TradableInstrumentFromProto(mkt.TradableInstrument),
@@ -645,14 +650,14 @@ func MarketFromProto(mkt *proto.Market) *Market {
 		Fees:                          FeesFromProto(mkt.Fees),
 		OpeningAuction:                AuctionDurationFromProto(mkt.OpeningAuction),
 		PriceMonitoringSettings:       PriceMonitoringSettingsFromProto(mkt.PriceMonitoringSettings),
-		LiquidityMonitoringParameters: LiquidityMonitoringParametersFromProto(mkt.LiquidityMonitoringParameters),
+		LiquidityMonitoringParameters: liquidityParameters,
 		TradingMode:                   mkt.TradingMode,
 		State:                         mkt.State,
 		MarketTimestamps:              MarketTimestampsFromProto(mkt.MarketTimestamps),
 		asset:                         asset,
 		LPPriceRange:                  lppr,
 	}
-	return m
+	return m, nil
 }
 
 func (m Market) IntoProto() *proto.Market {

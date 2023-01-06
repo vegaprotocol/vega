@@ -160,8 +160,6 @@ type Withdrawal struct {
 	CreationDate int64
 	// WithdrawalDate Timestamp for when the withdrawal was finalised by the network
 	WithdrawalDate int64
-	// ExpirationDate The time until when the withdrawal is valid
-	ExpirationDate int64
 	// Ext Foreign chain specifics
 	Ext *WithdrawExt
 }
@@ -175,7 +173,6 @@ func (w *Withdrawal) IntoProto() *vegapb.Withdrawal {
 		Status:             w.Status,
 		Ref:                w.Ref,
 		TxHash:             w.TxHash,
-		Expiry:             w.ExpirationDate,
 		CreatedTimestamp:   w.CreationDate,
 		WithdrawnTimestamp: w.WithdrawalDate,
 		Ext:                w.Ext.IntoProto(),
@@ -192,7 +189,6 @@ func WithdrawalFromProto(w *vegapb.Withdrawal) *Withdrawal {
 		Status:         w.Status,
 		Ref:            w.Ref,
 		TxHash:         w.TxHash,
-		ExpirationDate: w.Expiry,
 		CreationDate:   w.CreatedTimestamp,
 		WithdrawalDate: w.WithdrawnTimestamp,
 		Ext:            WithdrawExtFromProto(w.Ext),

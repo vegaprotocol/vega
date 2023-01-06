@@ -182,11 +182,10 @@ message PriceMonitoringSettings {
 
 // LiquidityMonitoringParameters contains settings used for liquidity monitoring
 message LiquidityMonitoringParameters {
-
   // Specifies parameters related to target stake calculation
   TargetStakeParameters target_stake_parameters = 1;
   // Specifies the triggering ratio for entering liquidity auction
-  double triggering_ratio = 2;
+  string triggering_ratio = 2;
   // Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction
   int64 auction_extension = 3;
 }

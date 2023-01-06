@@ -14,6 +14,7 @@ package commands
 
 import (
 	"context"
+	"runtime/debug"
 
 	"code.vegaprotocol.io/vega/cmd/data-node/commands/start"
 	"code.vegaprotocol.io/vega/datanode/config"
@@ -22,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/version"
 
 	"github.com/jessevdk/go-flags"
+	"github.com/pbnjay/memory"
 )
 
 type StartCmd struct {
@@ -50,6 +52,18 @@ func (cmd *StartCmd) Execute(args []string) error {
 	configWatcher, err := config.NewWatcher(context.Background(), log, vegaPaths, config.Use(parseFlagOpt))
 	if err != nil {
 		return err
+	}
+
+	// setup max memory usage
+	memFactor, err := configWatcher.Get().GetMaxMemoryFactor()
+	if err != nil {
+		return err
+	}
+
+	// only set max memory if user didn't require 100%
+	if memFactor != 1 {
+		totalMem := memory.TotalMemory()
+		debug.SetMemoryLimit(int64(float64(totalMem) * memFactor))
 	}
 
 	return (&start.NodeCommand{

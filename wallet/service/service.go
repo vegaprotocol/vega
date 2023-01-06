@@ -95,8 +95,6 @@ type ImportWalletRequest struct {
 	Passphrase           string `json:"passphrase"`
 	RecoveryPhrase       string `json:"recoveryPhrase"`
 	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
-	// DEPRECATED: Use KeyDerivationVersion instead
-	Version uint32 `json:"version"`
 }
 
 func ParseImportWalletRequest(r *http.Request) (*ImportWalletRequest, commands.Errors) {
@@ -117,10 +115,6 @@ func ParseImportWalletRequest(r *http.Request) (*ImportWalletRequest, commands.E
 
 	if len(req.RecoveryPhrase) == 0 {
 		errs.AddForProperty("recoveryPhrase", commands.ErrIsRequired)
-	}
-
-	if req.KeyDerivationVersion == 0 {
-		req.KeyDerivationVersion = req.Version
 	}
 
 	if req.KeyDerivationVersion == 0 {

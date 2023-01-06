@@ -13,7 +13,6 @@
 package rewards
 
 import (
-	"math/rand"
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -24,7 +23,7 @@ import (
 var minThresholdDelegatorReward, _ = num.DecimalFromString("0.001")
 
 // distribute rewards for a given asset account with the given settings of delegation and reward constraints.
-func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *num.Uint, valScore map[string]num.Decimal, validatorDelegation []*types.ValidatorData, delegatorShare num.Decimal, maxPayout *num.Uint, rng *rand.Rand, log *logging.Logger) *payout {
+func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *num.Uint, valScore map[string]num.Decimal, validatorDelegation []*types.ValidatorData, delegatorShare num.Decimal, maxPayout *num.Uint, log *logging.Logger) *payout {
 	minLeftOverForDistribution := num.UintZero()
 	if !maxPayout.IsZero() {
 		minLeftOverForDistribution, _ = num.UintFromDecimal(minThresholdDelegatorReward.Mul(maxPayout.ToDecimal()))
@@ -118,13 +117,7 @@ func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *n
 		}
 		sort.Strings(sortedParties)
 
-		// NB: due to rounding errors this sum can be greater than 1
-		// to avoid overflow, we choose at random a party adjust it by the error
-		if weightSums.GreaterThan(decimalOne) {
-			precisionError := weightSums.Sub(decimalOne)
-			unluckyParty := sortedParties[rng.Intn(len(delegatorWeights))]
-			delegatorWeights[unluckyParty] = num.MaxD(num.DecimalZero(), delegatorWeights[unluckyParty].Sub(precisionError))
-		}
+		adjustWeights(delegatorWeights, weightSums, sortedParties, decimalOne)
 
 		// calculate delegator amounts
 		// this may take a few rounds due to the cap on the reward a party can get
@@ -172,11 +165,40 @@ func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *n
 		}
 	}
 
+	if totalRewardPayout.GT(rewardBalance) {
+		log.Error("The reward payout is greater than the reward balance, this should never happen", logging.String("reward-payout", totalRewardPayout.String()), logging.String("reward-balance", rewardBalance.String()))
+	}
+
 	return &payout{
 		fromAccount:   accountID,
 		partyToAmount: rewards,
 		totalReward:   totalRewardPayout,
 		asset:         asset,
 		epochSeq:      epochSeq,
+	}
+}
+
+func adjustWeights(delegatorWeights map[string]num.Decimal, weightSums num.Decimal, sortedParties []string, decimalOne num.Decimal) {
+	// NB: due to rounding errors this sum can be greater than 1
+	// to avoid overflow, we choose the one with the highest weight, if that's not sufficient, we'll again choose the one with the highest weight and adjust
+	// it marginally until convergence.
+
+	for weightSums.GreaterThan(decimalOne) {
+		precisionError := weightSums.Sub(decimalOne)
+		maxWeight := num.DecimalZero()
+		maxWeightParty := ""
+
+		for _, p := range sortedParties {
+			if delegatorWeights[p].GreaterThan(maxWeight) {
+				maxWeight = delegatorWeights[p]
+				maxWeightParty = p
+			}
+		}
+
+		delegatorWeights[maxWeightParty] = num.MaxD(num.DecimalZero(), delegatorWeights[maxWeightParty].Sub(precisionError))
+		weightSums = num.DecimalZero()
+		for _, d := range delegatorWeights {
+			weightSums = weightSums.Add(d)
+		}
 	}
 }

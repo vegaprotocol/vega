@@ -554,6 +554,8 @@ message Deposit {
 
 // A withdrawal from the Vega network
 message Withdrawal {
+  reserved 7;
+
   // The status of the withdrawal
   enum Status {
     // Default value, always invalid
@@ -580,8 +582,6 @@ message Withdrawal {
   // The reference which is used by the foreign chain
   // to refer to this withdrawal
   string ref = 6;
-  // The time until when the withdrawal is valid
-  int64 expiry = 7;
   // The hash of the foreign chain for this transaction
   string tx_hash = 8;
   // Timestamp for when the network started to process this withdrawal
@@ -936,7 +936,8 @@ message LiquidityProviderFeeShare {
   string equity_like_share = 2;
   // The average entry valuation of the liquidity provider for the market
   string average_entry_valuation = 3;
-
+  // The average liquidity score
+  string average_score = 4;
 }
 
 // Represents a list of valid (at the current timestamp) price ranges per associated trigger

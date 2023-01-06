@@ -33,6 +33,7 @@ import (
 	types "code.vegaprotocol.io/vega/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	data "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -191,6 +192,10 @@ func (r *VegaResolverRoot) Deposit() DepositResolver {
 // Withdrawal ...
 func (r *VegaResolverRoot) Withdrawal() WithdrawalResolver {
 	return (*myWithdrawalResolver)(r)
+}
+
+func (r *VegaResolverRoot) PropertyKey() PropertyKeyResolver {
+	return (*myPropertyKeyResolver)(r)
 }
 
 func (r *VegaResolverRoot) LiquidityOrderReference() LiquidityOrderReferenceResolver {
@@ -615,7 +620,6 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 	return &Erc20WithdrawalApproval{
 		AssetSource:   res.AssetSource,
 		Amount:        res.Amount,
-		Expiry:        res.Expiry,
 		Nonce:         res.Nonce,
 		Signatures:    res.Signatures,
 		TargetAddress: res.TargetAddress,
@@ -1323,7 +1327,7 @@ func (r *myPartyResolver) MarginsConnection(ctx context.Context, party *types.Pa
 }
 
 func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Party, dateRange *v2.DateRange,
-	pagination *v2.Pagination, filter *v2.OrderFilter,
+	pagination *v2.Pagination, filter *v2.OrderFilter, marketID *string,
 ) (*v2.OrderConnection, error) {
 	if party == nil {
 		return nil, errors.New("party is required")
@@ -1333,6 +1337,7 @@ func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Par
 		Pagination: pagination,
 		DateRange:  dateRange,
 		Filter:     filter,
+		MarketId:   marketID,
 	}
 	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
 	if err != nil {
@@ -2554,7 +2559,18 @@ func getParty(ctx context.Context, _ *logging.Logger, client TradingDataServiceC
 	return res.Party, nil
 }
 
-// Market Data Resolvers
+// Market Data Resolvers.
+type myPropertyKeyResolver VegaResolverRoot
+
+func (r *myPropertyKeyResolver) NumberDecimalPlaces(ctx context.Context, obj *data.PropertyKey) (*int, error) {
+	ndp := obj.NumberDecimalPlaces
+	if ndp == nil {
+		return nil, nil
+	}
+	indp := new(int)
+	*indp = int(*ndp)
+	return indp, nil
+}
 
 // GetMarketDataHistoryByID returns all the market data information for a given market between the dates specified.
 func (r *myQueryResolver) GetMarketDataHistoryByID(ctx context.Context, id string, start, end *int64, skip, first, last *int) ([]*types.MarketData, error) {

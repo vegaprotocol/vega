@@ -977,7 +977,6 @@ func (t *tradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 	return &v2.GetERC20WithdrawalApprovalResponse{
 		AssetSource:   address,
 		Amount:        fmt.Sprintf("%v", w.Amount),
-		Expiry:        w.Expiry.UnixMicro(),
 		Nonce:         w.Ref,
 		TargetAddress: w.Ext.GetErc20().ReceiverAddress,
 		Signatures:    packNodeSignatures(signatures),
@@ -3080,21 +3079,6 @@ func (t *tradingDataServiceV2) ListAllDeHistorySegments(context.Context, *v2.Lis
 
 	return &v2.ListAllDeHistorySegmentsResponse{
 		Segments: historySegments,
-	}, nil
-}
-
-func (t *tradingDataServiceV2) FetchDeHistorySegment(ctx context.Context, req *v2.FetchDeHistorySegmentRequest) (*v2.FetchDeHistorySegmentResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("FetchDeHistorySegment'")()
-	if t.deHistoryService == nil {
-		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
-	}
-	segment, err := t.deHistoryService.FetchHistorySegment(ctx, req.HistorySegmentId)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrFetchDeHistorySegment, err)
-	}
-
-	return &v2.FetchDeHistorySegmentResponse{
-		Segment: toHistorySegment(segment),
 	}, nil
 }
 

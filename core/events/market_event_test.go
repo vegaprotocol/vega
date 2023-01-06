@@ -22,6 +22,7 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func changeOracleSpec(spec *types.DataSourceSpec) {
@@ -204,7 +205,7 @@ func TestMarketDeepClone(t *testing.T) {
 				TimeWindow:    1000,
 				ScalingFactor: 2.0,
 			},
-			TriggeringRatio:  123.45,
+			TriggeringRatio:  "123.45",
 			AuctionExtension: 5000,
 		},
 		TradingMode: vegapb.Market_TRADING_MODE_CONTINUOUS,
@@ -217,10 +218,12 @@ func TestMarketDeepClone(t *testing.T) {
 		},
 	}
 
-	me := types.MarketFromProto(&pme)
+	me, err := types.MarketFromProto(&pme)
+	require.NoError(t, err)
 	marketEvent := events.NewMarketCreatedEvent(ctx, *me)
 	mktProto := marketEvent.Market()
-	me2 := types.MarketFromProto(&mktProto)
+	me2, err := types.MarketFromProto(&mktProto)
+	require.NoError(t, err)
 
 	// Change the original and check we are not updating the wrapped event
 	me.ID = "Changed"

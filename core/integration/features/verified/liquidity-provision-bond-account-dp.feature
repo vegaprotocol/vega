@@ -14,6 +14,12 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
+    And the following network parameters are set:
+      | name                                          | value |
+      | market.stake.target.timeWindow                | 24h   |
+      | market.stake.target.scalingFactor             | 1     |
+      | market.liquidity.bondPenaltyParameter         | 0.1   |
+      | market.liquidity.targetstake.triggering.ratio | 0.24  |
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 2                       |
@@ -30,14 +36,7 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     @Now
   Scenario: Bond slashing on LP (0044-LIME-002, 0035-LIQM-004, 0044-LIME-009 )
 
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.bondPenaltyParameter         | 0.1   |
-      | market.liquidity.targetstake.triggering.ratio | 0.24  |
-
-    And the average block duration is "1"
+    Given the average block duration is "1"
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |

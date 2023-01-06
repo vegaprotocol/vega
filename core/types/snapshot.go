@@ -340,6 +340,7 @@ func (s *Snapshot) nodesToChunks() {
 		Nr:   1,
 		Of:   1,
 	}
+
 	b, _ := proto.Marshal(all.IntoProto())
 	if len(b) < MaxChunkSize {
 		s.DataChunks = []*Chunk{
@@ -361,6 +362,7 @@ func (s *Snapshot) nodesToChunks() {
 		}
 		s.ByteChunks = append(s.ByteChunks, b[i:end])
 	}
+
 	s.hashByteChunks()
 }
 
@@ -452,7 +454,7 @@ func (n SnapshotNamespace) String() string {
 	return string(n)
 }
 
-func SnapshotFromatFromU32(f uint32) (SnapshotFormat, error) {
+func SnapshotFormatFromU32(f uint32) (SnapshotFormat, error) {
 	i32 := int32(f)
 	if _, ok := snapshot.Format_name[i32]; !ok {
 		return SnapshotFormatUnspecified, ErrInvalidSnapshotFormat

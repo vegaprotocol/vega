@@ -65,7 +65,11 @@ func NewNewMarketFromProto(p *vegapb.ProposalTerms_NewMarket) (*ProposalTermsNew
 		newMarket = &NewMarket{}
 
 		if p.NewMarket.Changes != nil {
-			newMarket.Changes = NewMarketConfigurationFromProto(p.NewMarket.Changes)
+			var err error
+			newMarket.Changes, err = NewMarketConfigurationFromProto(p.NewMarket.Changes)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -199,7 +203,7 @@ func (n NewMarketConfiguration) String() string {
 	)
 }
 
-func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) *NewMarketConfiguration {
+func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMarketConfiguration, error) {
 	md := make([]string, 0, len(p.Metadata))
 	md = append(md, p.Metadata...)
 
@@ -214,7 +218,11 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) *NewMarke
 	}
 	var liquidityMonitoring *LiquidityMonitoringParameters
 	if p.LiquidityMonitoringParameters != nil {
-		liquidityMonitoring = LiquidityMonitoringParametersFromProto(p.LiquidityMonitoringParameters)
+		var err error
+		liquidityMonitoring, err = LiquidityMonitoringParametersFromProto(p.LiquidityMonitoringParameters)
+		if err != nil {
+			return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
+		}
 	}
 	lppr, _ := num.DecimalFromString(p.LpPriceRange)
 
@@ -235,7 +243,7 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) *NewMarke
 			r.RiskParameters = NewMarketConfigurationLogNormalFromProto(rp)
 		}
 	}
-	return r
+	return r, nil
 }
 
 type newRiskParams interface {

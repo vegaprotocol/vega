@@ -138,7 +138,7 @@ func TestMarketFromIntoProto(t *testing.T) {
 				TimeWindow:    20,
 				ScalingFactor: 0.7,
 			},
-			TriggeringRatio:  0.8,
+			TriggeringRatio:  "0.8",
 			AuctionExtension: 5,
 		},
 		TradingMode: proto.Market_TRADING_MODE_CONTINUOUS,
@@ -151,7 +151,10 @@ func TestMarketFromIntoProto(t *testing.T) {
 		},
 		LpPriceRange: "0.95",
 	}
-	domain := types.MarketFromProto(pMarket)
+
+	domain, err := types.MarketFromProto(pMarket)
+	require.NoError(t, err)
+
 	// we can check equality of individual fields, but perhaps this is the easiest way:
 	got := domain.IntoProto()
 	require.EqualValues(t, pMarket, got)

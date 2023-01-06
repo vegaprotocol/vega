@@ -183,8 +183,7 @@ func (e *Engine) WithdrawERC20(
 		},
 	}
 
-	expiry := e.timeService.GetTimeNow().Add(withdrawalsDefaultExpiry)
-	w, ref := e.newWithdrawal(id, party, assetID, amount, expiry, wext)
+	w, ref := e.newWithdrawal(id, party, assetID, amount, wext)
 	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.ID] = withdrawalRef{w, ref}
 

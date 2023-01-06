@@ -44,7 +44,6 @@ func TestWithdrawal_Push(t *testing.T) {
 		TxHash:         "",
 		CreationDate:   0,
 		WithdrawalDate: 0,
-		ExpirationDate: 0,
 		Ext:            &types.WithdrawExt{},
 	}))
 }

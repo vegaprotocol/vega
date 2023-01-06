@@ -309,8 +309,6 @@ type Erc20WithdrawalApproval struct {
 	AssetSource string `json:"assetSource"`
 	// The amount to be withdrawn
 	Amount string `json:"amount"`
-	// Timestamp in seconds for expiry of the approval
-	Expiry int64 `json:"expiry"`
 	// The nonce to be used in the request
 	Nonce string `json:"nonce"`
 	// Signature aggregate from the nodes, in the following format:
@@ -368,7 +366,7 @@ type LiquidityMonitoringParameters struct {
 	// Specifies parameters related to target stake calculation
 	TargetStakeParameters *TargetStakeParameters `json:"targetStakeParameters"`
 	// Specifies the triggering ratio for entering liquidity auction
-	TriggeringRatio float64 `json:"triggeringRatio"`
+	TriggeringRatio string `json:"triggeringRatio"`
 }
 
 // The equity like share of liquidity fee for each liquidity provider
@@ -379,6 +377,8 @@ type LiquidityProviderFeeShare struct {
 	EquityLikeShare string `json:"equityLikeShare"`
 	// The average entry valuation of the liquidity provider for the market
 	AverageEntryValuation string `json:"averageEntryValuation"`
+	// The average liquidity score
+	AverageScore string `json:"averageScore"`
 }
 
 type LossSocialization struct {
@@ -449,6 +449,8 @@ type ObservableLiquidityProviderFeeShare struct {
 	EquityLikeShare string `json:"equityLikeShare"`
 	// The average entry valuation of the liquidity provider for the market
 	AverageEntryValuation string `json:"averageEntryValuation"`
+	// The average liquidity score
+	AverageScore string `json:"averageScore"`
 }
 
 type OffsetPagination struct {

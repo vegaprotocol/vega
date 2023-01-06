@@ -14,7 +14,6 @@ package rewards
 
 import (
 	"context"
-	"math/rand"
 	"sort"
 	"time"
 
@@ -87,7 +86,6 @@ type Engine struct {
 	delegation            Delegation
 	collateral            Collateral
 	marketActivityTracker MarketActivityTracker
-	rng                   *rand.Rand
 	global                *globalRewardParams
 	newEpochStarted       bool // flag to signal new epoch so we can update the voting power at the end of the block
 	epochSeq              string
@@ -185,13 +183,6 @@ func (e *Engine) UpdateMaxPayoutPerParticipantForStakingRewardScheme(ctx context
 func (e *Engine) UpdateDelegatorShareForStakingRewardScheme(ctx context.Context, delegatorShare num.Decimal) error {
 	e.global.delegatorShare = delegatorShare
 	return nil
-}
-
-// Whenever we have a time update, update rand seeder cached value.
-func (e *Engine) OnTick(ctx context.Context, t time.Time) {
-	// resetting the seed every block, to both get some more unpredictability and still deterministic
-	// and play nicely with snapshot
-	e.rng = rand.New(rand.NewSource(t.Unix()))
 }
 
 // OnEpochEvent calculates the reward amounts parties get for available reward schemes.
@@ -327,13 +318,13 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset string, rewardType 
 		if asset == e.global.asset {
 			balance, _ := num.UintFromDecimal(account.Balance.ToDecimal().Mul(factor))
 			e.log.Info("reward balance", logging.String("epoch", epochSeq), logging.String("reward-type", rewardType.String()), logging.String("account-balance", account.Balance.String()), logging.String("factor", factor.String()), logging.String("effective-balance", balance.String()))
-			return calculateRewardsByStake(epochSeq, account.Asset, account.ID, balance, validatorNormalisedScores, validatorData, e.global.delegatorShare, e.global.maxPayoutPerParticipant, e.rng, e.log)
+			return calculateRewardsByStake(epochSeq, account.Asset, account.ID, balance, validatorNormalisedScores, validatorData, e.global.delegatorShare, e.global.maxPayoutPerParticipant, e.log)
 		}
 		return nil
 	case types.AccountTypeFeesInfrastructure: // given to delegator based on stake
 		balance, _ := num.UintFromDecimal(account.Balance.ToDecimal().Mul(factor))
 		e.log.Info("reward balance", logging.String("epoch", epochSeq), logging.String("reward-type", rewardType.String()), logging.String("account-balance", account.Balance.String()), logging.String("factor", factor.String()), logging.String("effective-balance", balance.String()))
-		return calculateRewardsByStake(epochSeq, account.Asset, account.ID, balance, validatorNormalisedScores, validatorData, e.global.delegatorShare, num.UintZero(), e.rng, e.log)
+		return calculateRewardsByStake(epochSeq, account.Asset, account.ID, balance, validatorNormalisedScores, validatorData, e.global.delegatorShare, num.UintZero(), e.log)
 	case types.AccountTypeMakerReceivedFeeReward: // given to receivers of maker fee in the asset based on their total received fee proportion
 		if !e.isValidAccountForMarket(account) {
 			return nil

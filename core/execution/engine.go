@@ -937,34 +937,6 @@ func (e *Engine) OnMarketValueWindowLengthUpdate(_ context.Context, d time.Durat
 	return nil
 }
 
-func (e *Engine) OnMarketTargetStakeScalingFactorUpdate(_ context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update market stake scaling factor",
-			logging.Decimal("scaling-factor", d),
-		)
-	}
-
-	for _, mkt := range e.marketsCpy {
-		if err := mkt.OnMarketTargetStakeScalingFactorUpdate(d); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (e *Engine) OnMarketTargetStakeTimeWindowUpdate(_ context.Context, d time.Duration) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update market stake time window",
-			logging.Duration("time-window", d),
-		)
-	}
-
-	for _, mkt := range e.marketsCpy {
-		mkt.OnMarketTargetStakeTimeWindowUpdate(d)
-	}
-	return nil
-}
-
 func (e *Engine) OnMarketLiquidityProvidersFeeDistributionTimeStep(_ context.Context, d time.Duration) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update liquidity providers fee distribution time step",
@@ -1014,19 +986,6 @@ func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(
 
 	e.npv.maxLiquidityFee = d
 
-	return nil
-}
-
-func (e *Engine) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update target stake triggering ratio",
-			logging.Decimal("max-liquidity-fee", d),
-		)
-	}
-
-	for _, mkt := range e.marketsCpy {
-		mkt.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, d)
-	}
 	return nil
 }
 

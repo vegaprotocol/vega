@@ -38,6 +38,13 @@ type B struct {
 
 func (b *B) Reset() { *b = B{} }
 
+func TestNegativeUint(t *testing.T) {
+	require.Error(t, errors.New("invalid uint"), netparams.NewUint().Mutable(true).Update("-30"))
+	require.Error(t, errors.New("invalid uint"), netparams.NewUint().Mutable(true).Update("- 30"))
+	require.Error(t, errors.New("invalid uint"), netparams.NewUint().Mutable(true).Update("    -     3 0"))
+	require.NoError(t, netparams.NewUint().Mutable(true).Update("30"))
+}
+
 func TestJSONValues(t *testing.T) {
 	validator := func(v interface{}) error {
 		a, ok := v.(*A)

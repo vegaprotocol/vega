@@ -91,13 +91,13 @@ func (s *CandleUpdates) run(ctx context.Context) {
 					candles, err := s.getCandleUpdates(ctx, lastCandle)
 					if err != nil {
 						if !errorGettingCandleUpdates {
-							s.log.Errorf("failed to get candles for candle id %s: %w", s.candleID, err)
+							s.log.Errorf("failed to get candles for candle id", logging.String("candle", s.candleID), logging.Error(err))
 						}
 
 						errorGettingCandleUpdates = true
 					} else {
 						if errorGettingCandleUpdates {
-							s.log.Infof("successfully got candles for candle id %s", s.candleID)
+							s.log.Infof("successfully got candles for candle", logging.String("candle", s.candleID))
 						}
 						errorGettingCandleUpdates = false
 
