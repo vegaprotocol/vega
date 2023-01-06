@@ -101,7 +101,8 @@ jobs:
       - name: Check version
         if: ${{ env.GOARCH == 'amd64' }}
         working-directory: build
-        run: ./${{ matrix.app }} version
+        # vega has command `version` but wallet has `softwave version` to check its version
+        run: ./${{ matrix.app }} version || ./${{ matrix.app }} software version
 
       - name: Bundle binary in archive
         uses: thedoctor0/zip-release@master
@@ -199,7 +200,7 @@ jobs:
       - name: Check version
         if: ${{ env.GOARCH == 'amd64' }}
         working-directory: build
-        run: ./${{ matrix.app }} version
+        run: ./${{ matrix.app }} version || ./${{ matrix.app }} software version
 
       - name: Bundle binary in archive
         uses: thedoctor0/zip-release@master
@@ -301,7 +302,7 @@ jobs:
       - name: Check version
         if: ${{ env.GOARCH == 'amd64' }}
         working-directory: build
-        run: .\${{ matrix.app }}.exe version
+        run: .\${{ matrix.app }}.exe version || .\${{ matrix.app }}.exe software version
 
       - name: Bundle binary in archive
         uses: thedoctor0/zip-release@master
