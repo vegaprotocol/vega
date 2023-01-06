@@ -18,6 +18,8 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/spam"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/subscribers"
@@ -84,6 +86,10 @@ type ProofOfWorkParams interface {
 	IsReady() bool
 }
 
+type SpamEngine interface {
+	GetSpamStatistics(partyID string) spam.Statistics
+}
+
 // GRPCServer represent the grpc api provided by the vega node.
 type GRPC struct {
 	Config
@@ -96,6 +102,7 @@ type GRPC struct {
 	evtfwd     EvtForwarder
 	evtService EventService
 	powParams  ProofOfWorkParams
+	spamEngine *spam.Engine
 
 	// used in order to gracefully close streams
 	ctx   context.Context
@@ -116,6 +123,7 @@ func NewGRPC(
 	timeService *vegatime.Svc,
 	eventService *subscribers.Service,
 	powParams ProofOfWorkParams,
+	spamEngine *spam.Engine,
 ) *GRPC {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -133,6 +141,7 @@ func NewGRPC(
 		evtfwd:     evtfwd,
 		evtService: eventService,
 		powParams:  powParams,
+		spamEngine: spamEngine,
 	}
 }
 
