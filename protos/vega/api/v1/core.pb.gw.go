@@ -264,6 +264,58 @@ func local_request_CoreService_CheckRawTransaction_0(ctx context.Context, marsha
 
 }
 
+func request_CoreService_GetSpamStatistics_0(ctx context.Context, marshaler runtime.Marshaler, client CoreServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetSpamStatisticsRequest
+	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["party_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
+	}
+
+	protoReq.PartyId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
+	}
+
+	msg, err := client.GetSpamStatistics(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_CoreService_GetSpamStatistics_0(ctx context.Context, marshaler runtime.Marshaler, server CoreServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetSpamStatisticsRequest
+	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["party_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
+	}
+
+	protoReq.PartyId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
+	}
+
+	msg, err := server.GetSpamStatistics(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 // RegisterCoreServiceHandlerServer registers the http handlers for service CoreService to "mux".
 // UnaryRPC     :call CoreServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -435,6 +487,29 @@ func RegisterCoreServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		}
 
 		forward_CoreService_CheckRawTransaction_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("GET", pattern_CoreService_GetSpamStatistics_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/vega.api.v1.CoreService/GetSpamStatistics", runtime.WithHTTPPathPattern("/statistics/spam/{party_id}"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_CoreService_GetSpamStatistics_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_CoreService_GetSpamStatistics_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -639,6 +714,26 @@ func RegisterCoreServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
+	mux.Handle("GET", pattern_CoreService_GetSpamStatistics_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/vega.api.v1.CoreService/GetSpamStatistics", runtime.WithHTTPPathPattern("/statistics/spam/{party_id}"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_CoreService_GetSpamStatistics_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_CoreService_GetSpamStatistics_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -658,6 +753,8 @@ var (
 	pattern_CoreService_CheckTransaction_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"transaction", "check"}, ""))
 
 	pattern_CoreService_CheckRawTransaction_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"transaction", "raw", "check"}, ""))
+
+	pattern_CoreService_GetSpamStatistics_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"statistics", "spam", "party_id"}, ""))
 )
 
 var (
@@ -676,4 +773,6 @@ var (
 	forward_CoreService_CheckTransaction_0 = runtime.ForwardResponseMessage
 
 	forward_CoreService_CheckRawTransaction_0 = runtime.ForwardResponseMessage
+
+	forward_CoreService_GetSpamStatistics_0 = runtime.ForwardResponseMessage
 )

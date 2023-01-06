@@ -255,6 +255,7 @@ func (g *GRPC) Start() {
 		evtForwarder: g.evtfwd,
 		eventService: g.evtService,
 		powParams:    g.powParams,
+		spamEngine:   g.spamEngine,
 	}
 	g.core = coreSvc
 	protoapi.RegisterCoreServiceServer(g.srv, coreSvc)
