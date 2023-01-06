@@ -25,10 +25,11 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
-	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 var initialTime = time.Date(2020, 10, 20, 1, 1, 1, 0, time.UTC)
@@ -46,6 +47,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	)
 
 	e1.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	e1.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	e2.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	e2.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	e3.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -243,6 +245,7 @@ func TestSnapshotChangeOnUpdate(t *testing.T) {
 	)
 
 	e1.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	e1.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	e1.orderbook.EXPECT().GetOrdersPerParty(gomock.Any()).AnyTimes()
 	e1.orderbook.EXPECT().GetLiquidityOrders(gomock.Any()).AnyTimes()
 
