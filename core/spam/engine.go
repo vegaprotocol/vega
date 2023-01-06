@@ -38,6 +38,7 @@ const (
 	numberOfEpochsBan              uint64  = 4
 	numberOfBlocksForIncreaseCheck uint64  = 10
 	minBanDuration                         = time.Second * 30 // minimum ban duration
+	formatBase                             = 10
 )
 
 type StakingAccounts interface {
@@ -70,6 +71,7 @@ type Policy interface {
 	UpdateIntParam(name string, value int64) error
 	Serialise() ([]byte, error)
 	Deserialise(payload *types.Payload) error
+	GetStats(partyID string) Statistic
 }
 
 // ReloadConf updates the internal configuration of the spam engine.
@@ -230,4 +232,49 @@ func (e *Engine) PostBlockAccept(tx abci.Tx) (bool, error) {
 		e.log.Debug("Spam protection PostBlockAccept called for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
 	}
 	return e.transactionTypeToPolicy[command].PostBlockAccept(tx)
+}
+
+func (e *Engine) GetSpamStatistics(partyID string) Statistics {
+	stats := Statistics{}
+
+	for txType, policy := range e.transactionTypeToPolicy {
+		statistic := policy.GetStats(partyID)
+		switch txType {
+		case txn.ProposeCommand:
+			stats.Proposals = statistic
+		case txn.DelegateCommand:
+			stats.Delegations = statistic
+		case txn.TransferFundsCommand:
+			stats.Transfers = statistic
+		case txn.AnnounceNodeCommand:
+			stats.NodeAnnouncements = statistic
+		case txn.VoteCommand:
+
+			total, err := num.DecimalFromString(statistic.Total)
+			if err != nil || total.Equal(num.DecimalZero()) {
+				continue
+			}
+
+			rejected, err := num.DecimalFromString(statistic.BlockCount)
+			if err != nil {
+				continue
+			}
+
+			ratio := rejected.Div(total)
+
+			statistics := VoteStatistic{
+				Total:         statistic.Total,
+				Rejected:      statistic.BlockCount,
+				RejectedRatio: ratio.String(),
+				Limit:         statistic.Limit,
+				BlockedUntil:  statistic.BlockedUntil,
+			}
+
+			stats.Votes = statistics
+		default:
+			continue
+		}
+	}
+
+	return stats
 }

@@ -16,10 +16,13 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"code.vegaprotocol.io/vega/core/spam"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/evtforward"
@@ -61,6 +64,7 @@ type coreService struct {
 	eventService EventService
 	subCancels   []func()
 	powParams    ProofOfWorkParams
+	spamEngine   SpamEngine
 
 	chainID                  string
 	genesisTime              time.Time
@@ -665,4 +669,53 @@ func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.Su
 	}
 
 	return successResponse, nil
+}
+
+func (s *coreService) GetSpamStatistics(_ context.Context, req *protoapi.GetSpamStatisticsRequest) (*protoapi.GetSpamStatisticsResponse, error) {
+	if req.PartyId == "" {
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
+	}
+
+	spamStats := s.spamEngine.GetSpamStatistics(req.PartyId)
+
+	resp := &protoapi.GetSpamStatisticsResponse{
+		Statistics: &protoapi.SpamStatistics{
+			Proposals:         statisticToProto(spamStats.Proposals),
+			Delegations:       statisticToProto(spamStats.Delegations),
+			Transfers:         statisticToProto(spamStats.Transfers),
+			NodeAnnouncements: statisticToProto(spamStats.NodeAnnouncements),
+			Votes:             voteStatisticsToProto(spamStats.Votes),
+		},
+	}
+
+	return resp, nil
+}
+
+func statisticToProto(stat spam.Statistic) *protoapi.SpamStatistic {
+	return &protoapi.SpamStatistic{
+		CountForEpoch: stat.Total,
+		CountForBlock: stat.BlockCount,
+		MaxForEpoch:   stat.Limit,
+		Until:         parseBlockedUntil(stat.BlockedUntil),
+	}
+}
+
+func voteStatisticsToProto(stat spam.VoteStatistic) *protoapi.VoteSpamStatistic {
+	return &protoapi.VoteSpamStatistic{
+		CountForEpoch:      stat.Total,
+		RejectedCount:      stat.Rejected,
+		RejectedPercentage: stat.RejectedRatio,
+		BlockLimit:         stat.Limit,
+		Until:              parseBlockedUntil(stat.BlockedUntil),
+	}
+}
+
+func parseBlockedUntil(blockedUntil int64) *string {
+	if blockedUntil <= 0 {
+		return nil
+	}
+
+	until := strconv.FormatInt(blockedUntil, 10)
+
+	return &until
 }

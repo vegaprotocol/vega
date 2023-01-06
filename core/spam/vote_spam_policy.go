@@ -16,6 +16,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -432,4 +433,24 @@ func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (vsp *VoteSpamPolicy) GetStats(partyID string) Statistic {
+	vsp.lock.RLock()
+	defer vsp.lock.RUnlock()
+
+	stats := Statistic{
+		Limit: banFactor.String(),
+	}
+
+	bStats, ok := vsp.partyBlockRejects[partyID]
+	if !ok {
+		return stats
+	}
+
+	stats.Total = strconv.FormatUint(bStats.total, formatBase)
+	stats.BlockCount = strconv.FormatUint(bStats.rejected, formatBase)
+	stats.BlockedUntil = vsp.bannedParties[partyID]
+
+	return stats
 }

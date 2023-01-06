@@ -63,6 +63,11 @@ service CoreService {
   //
   // Check a raw signed transaction
   rpc CheckRawTransaction(CheckRawTransactionRequest) returns (CheckRawTransactionResponse);
+
+  // Get Spam statistics
+  //
+  // Retrieve the spam statistics for a given party
+  rpc GetSpamStatistics(GetSpamStatisticsRequest) returns (GetSpamStatisticsResponse);
 }
 
 // Request for a new event sent by the blockchain queue to be propagated on Vega
@@ -342,4 +347,51 @@ message LastBlockHeightResponse {
   bool spam_pow_increasing_difficulty = 7;
   // the network chain id from which the block comes from
   string chain_id = 8;
+}
+
+// A request to retrieve the spam statistics of a party for the given epoch
+message GetSpamStatisticsRequest {
+  string party_id = 1;
+}
+
+// The statistics for a given spam policy
+message SpamStatistic {
+  // The current transaction count received from the party during this epoch for this policy
+  string count_for_epoch = 1;
+  // The current transaction count received from the party during the current block for this policy
+  string count_for_block = 2;
+  // The maximum number of transactions allowed for this policy in an epoch
+  string max_for_epoch = 3;
+  // If blocked the timestamp when the party will be unblocked
+  optional string until = 4;
+}
+
+// The vote statistics for the voting spam policies
+// which are calculated as a ratio of the total votes
+// that have been rejected.
+message VoteSpamStatistic {
+  // The current vote count received from the party during this epoch
+  string count_for_epoch = 1;
+  // The number of votes from the party that have been rejected during this epoch
+  string rejected_count = 2;
+  // The percentage of total votes that have been rejected
+  string rejected_percentage = 3;
+  // The maximum rejection limit that is allowed for this policy in an epoch
+  string block_limit = 4;
+  // If blocked the timestamp when the party will be unblocked
+  optional string until = 5;
+}
+
+// The complete spam statistics captured for a given party
+message SpamStatistics {
+  SpamStatistic proposals = 1;
+  SpamStatistic delegations = 2;
+  SpamStatistic transfers = 3;
+  SpamStatistic node_announcements = 4;
+  VoteSpamStatistic votes = 5;
+}
+
+// A response containing all the spam statistics of a party for the current epoch
+message GetSpamStatisticsResponse {
+  SpamStatistics statistics = 1;
 }
