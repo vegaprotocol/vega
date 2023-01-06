@@ -210,7 +210,7 @@ func (tsp TargetStakeParameters) ToProto() *vega.TargetStakeParameters {
 
 type LiquidityMonitoringParameters struct {
 	TargetStakeParameters *TargetStakeParameters `json:"targetStakeParameters,omitempty"`
-	TriggeringRatio       float64                `json:"triggeringRatio,omitempty"`
+	TriggeringRatio       string                 `json:"triggeringRatio,omitempty"`
 	AuctionExtension      int64                  `json:"auctionExtension,omitempty"`
 }
 

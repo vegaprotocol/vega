@@ -57,7 +57,7 @@ func (r liquidityMonitoringRow) name() string {
 }
 
 func (r liquidityMonitoringRow) timeWindow() int64 {
-	tw := r.row.MustDuration("time window")
+	tw := r.row.MustDurationStr("time window")
 	return int64(tw.Seconds())
 }
 
@@ -65,8 +65,8 @@ func (r liquidityMonitoringRow) scalingFactor() float64 {
 	return r.row.MustF64("scaling factor")
 }
 
-func (r liquidityMonitoringRow) triggeringRatio() float64 {
-	return r.row.MustF64("triggering ratio")
+func (r liquidityMonitoringRow) triggeringRatio() string {
+	return r.row.MustStr("triggering ratio")
 }
 
 func (r liquidityMonitoringRow) auctionExtension() int64 {

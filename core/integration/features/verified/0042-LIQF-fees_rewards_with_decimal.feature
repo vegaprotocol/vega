@@ -394,10 +394,6 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 100000  | 0.99        | 3                 |
-    And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          |
-      | ETH/MAR22 | USD        | USD   | log-normal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-
     And the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 1h    |
@@ -406,6 +402,9 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
+    And the markets:
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
+      | ETH/MAR22 | USD        | USD   | log-normal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
 
     Given the average block duration is "2"
 

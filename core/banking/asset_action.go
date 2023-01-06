@@ -50,6 +50,25 @@ func (t *assetAction) GetID() string {
 	return t.id
 }
 
+func (t *assetAction) GetType() types.NodeVoteType {
+	switch {
+	case t.IsBuiltinAssetDeposit():
+		return types.NodeVoteTypeFundsDeposited
+	case t.IsERC20Deposit():
+		return types.NodeVoteTypeFundsDeposited
+	case t.IsERC20AssetList():
+		return types.NodeVoteTypeAssetListed
+	case t.IsERC20AssetLimitsUpdated():
+		return types.NodeVoteTypeAssetLimitsUpdated
+	case t.IsERC20BridgeStopped():
+		return types.NodeVoteTypeBridgeStopped
+	case t.IsERC20BridgeResumed():
+		return types.NodeVoteTypeBridgeResumed
+	default:
+		return types.NodeVoteTypeUnspecified
+	}
+}
+
 func (t *assetAction) IsBuiltinAssetDeposit() bool {
 	return t.builtinD != nil
 }

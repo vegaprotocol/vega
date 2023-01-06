@@ -224,7 +224,6 @@ func (e *executionTestSetup) registerTimeServiceCallbacks() {
 		e.ntry.OnTick,
 		e.banking.OnTick,
 		e.delegationEngine.OnTick,
-		e.rewardsEngine.OnTick,
 		e.builtinOracle.OnTick,
 		e.stateVarEngine.OnTick,
 		e.executionEngine.OnTick,
@@ -258,14 +257,6 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: e.executionEngine.OnMarketValueWindowLengthUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketTargetStakeScalingFactor,
-			Watcher: e.executionEngine.OnMarketTargetStakeScalingFactorUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketTargetStakeTimeWindow,
-			Watcher: e.executionEngine.OnMarketTargetStakeTimeWindowUpdate,
-		},
-		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
 			Watcher: e.executionEngine.OnMarketLiquidityProvidersFeeDistributionTimeStep,
 		},
@@ -280,10 +271,6 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityBondPenaltyParameter,
 			Watcher: e.executionEngine.OnMarketLiquidityBondPenaltyUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityTargetStakeTriggeringRatio,
-			Watcher: e.executionEngine.OnMarketLiquidityTargetStakeTriggeringRatio,
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketAuctionMinimumDuration,

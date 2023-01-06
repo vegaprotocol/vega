@@ -1,6 +1,23 @@
 # Changelog
 
-## Unreleased 0.66.0
+## Unreleased 0.67.0
+
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+## 0.66.1
+- [7269](https://github.com/vegaprotocol/vega/pull/7269) - Fix wallet release pipeline
+
+## 0.66.0
 
 ### 🚨 Breaking changes
 - [6957](https://github.com/vegaprotocol/vega/issues/6957) - Remove `client.<get|request>_permissions` endpoints on the wallet.
@@ -9,9 +26,7 @@
 - [7069](https://github.com/vegaprotocol/vega/issues/7069) - Remove deprecated `vegawallet info` command line.
 - [7010](https://github.com/vegaprotocol/vega/issues/7010) - Remove the deprecated `encodedTransaction` fields on wallet API endpoints.
 - [7232](https://github.com/vegaprotocol/vega/issues/7232) - Rename `stakeToCcySiskas` network parameter to `stakeToCcyVolume`
-
-### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7171](https://github.com/vegaprotocol/vega/issues/7171) - Change liquidity triggering ratio value type from float to string
 
 ### 🛠 Improvements
 - [7216](https://github.com/vegaprotocol/vega/issues/7216) - Support filtering by market for `ordersConnection` under party queries.
@@ -21,8 +36,10 @@
 - [7207](https://github.com/vegaprotocol/vega/issues/7207) - Fix panic, return on error in pool configuration
 - [7213](https://github.com/vegaprotocol/vega/issues/7213) - Implement separate `DB` for snapshots `metadata`
 - [7220](https://github.com/vegaprotocol/vega/issues/7220) - Fix panic when LP is closed out
+- [7235](https://github.com/vegaprotocol/vega/issues/7235) - Do not update existing markets when changing global default `LiquidityMonitoringParameters`
 - [7029](https://github.com/vegaprotocol/vega/issues/7029) - Added admin `API` for Data Node to secure some `dehistory` commands
 - [7239](https://github.com/vegaprotocol/vega/issues/7239) - Added upper and lower bounds for floating point engine updates
+- [7253](https://github.com/vegaprotocol/vega/issues/7253) - improve the adjustment of delegator weight to avoid overflow
 - [7075](https://github.com/vegaprotocol/vega/issues/7075) - Remove unused expiry field in withdrawal
 
 ##  0.65.1
@@ -35,6 +52,7 @@
 - [7189](https://github.com/vegaprotocol/vega/issues/7189) - Include LP orders outside PM price range but within LP price in the liquidity score.
 - [7195](https://github.com/vegaprotocol/vega/issues/7195) - Ignore oracle messages while market is in proposed state
 - [7198](https://github.com/vegaprotocol/vega/issues/7198) - Reduce `RAM` usage when tendermint calls list snapshot
+- [6996](https://github.com/vegaprotocol/vega/issues/6996) - Add Visor docs
 
 ## 0.65.0
 
