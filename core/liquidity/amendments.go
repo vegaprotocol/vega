@@ -80,7 +80,9 @@ func (e *Engine) AmendLiquidityProvision(
 	// update version
 	lp.Version++
 
-	e.setShapesReferencesOnLiquidityProvision(lp, lpa.Buys, lpa.Sells, idGen)
+	orderEvts := e.SetShapesReferencesOnLiquidityProvision(ctx, lp, lpa.Buys, lpa.Sells, idGen)
+	// seed the dummy orders with the generated IDs in order to avoid broken references
+	e.broker.SendBatch(orderEvts)
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 	e.provisions.Set(party, lp)
 	return cancels, nil
