@@ -20,12 +20,13 @@ import (
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	proto "code.vegaprotocol.io/vega/protos/vega"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestAmendDeployedCommitment(t *testing.T) {
@@ -154,7 +155,12 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, mustOrderFromProto(evt.Order()))
+				order := evt.Order()
+				// skip the seeded orders
+				if order.Status == types.OrderStatusStopped {
+					continue
+				}
+				found = append(found, mustOrderFromProto(order))
 			}
 		}
 
@@ -242,7 +248,12 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, mustOrderFromProto(evt.Order()))
+				order := evt.Order()
+				// skip the seeded orders
+				if order.Status == types.OrderStatusStopped {
+					continue
+				}
+				found = append(found, mustOrderFromProto(order))
 			}
 		}
 
@@ -334,7 +345,12 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, mustOrderFromProto(evt.Order()))
+				order := evt.Order()
+				// skip the seeded orders
+				if order.Status == types.OrderStatusStopped {
+					continue
+				}
+				found = append(found, mustOrderFromProto(order))
 			}
 		}
 
@@ -612,7 +628,12 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, mustOrderFromProto(evt.Order()))
+				order := evt.Order()
+				// skip the seeded orders
+				if order.Status == types.OrderStatusStopped {
+					continue
+				}
+				found = append(found, mustOrderFromProto(order))
 			}
 		}
 
@@ -640,7 +661,12 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, mustOrderFromProto(evt.Order()))
+				order := evt.Order()
+				// skip the seeded orders
+				if order.Status == types.OrderStatusStopped {
+					continue
+				}
+				found = append(found, mustOrderFromProto(order))
 			}
 		}
 
@@ -752,7 +778,12 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, mustOrderFromProto(evt.Order()))
+				order := evt.Order()
+				// skip the seeded orders
+				if order.Status == types.OrderStatusStopped {
+					continue
+				}
+				found = append(found, mustOrderFromProto(order))
 			}
 		}
 

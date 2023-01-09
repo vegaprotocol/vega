@@ -51,17 +51,8 @@ func (m *Market) SubmitLiquidityProvision(
 		needsBondRollback bool
 	)
 
-	if err := m.liquidity.ValidateLiquidityProvisionSubmission(sub, true); err != nil {
-		return err
-	}
-
 	if err := m.ensureLPCommitmentAmount(sub.CommitmentAmount); err != nil {
 		return err
-	}
-
-	// if the party is alrready an LP we reject the new submission
-	if m.liquidity.IsLiquidityProvider(party) {
-		return ErrPartyAlreadyLiquidityProvider
 	}
 
 	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, m.idgen); err != nil {
@@ -884,8 +875,6 @@ func (m *Market) amendLiquidityProvisionContinuous(
 func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) error {
-	// first parameter is the update to the orders, but we know that during
-	// auction no orders shall be return, so let's just look at the error
 	cancels, err := m.liquidity.AmendLiquidityProvision(ctx, sub, party, m.idgen)
 	if err != nil {
 		m.log.Panic("error while amending liquidity provision, this should not happen at this point, the LP was validated earlier",

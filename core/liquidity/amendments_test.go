@@ -20,14 +20,15 @@ import (
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/libs/crypto"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"code.vegaprotocol.io/vega/core/liquidity"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -57,6 +58,7 @@ func testCanAmend(t *testing.T) {
 	idgen := idgeneration.New(crypto.RandomHash())
 	// initially submit our provision to be amended, does not matter what's in
 	tng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	tng.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	err := tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
 	assert.NoError(t, err)
 	lp := tng.engine.LiquidityProvisionByPartyID(party)

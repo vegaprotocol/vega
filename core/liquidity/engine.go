@@ -405,37 +405,65 @@ func (e *Engine) SubmitLiquidityProvision(
 	lp.CommitmentAmount = lps.CommitmentAmount
 	lp.Status = types.LiquidityProvisionStatusPending
 
-	e.setShapesReferencesOnLiquidityProvision(lp, lps.Buys, lps.Sells, idgen)
+	orderEvts := e.SetShapesReferencesOnLiquidityProvision(ctx, lp, lps.Buys, lps.Sells, idgen)
+	// seed the dummy orders with the generated IDs in order to avoid broken references
+	e.broker.SendBatch(orderEvts)
 
 	return nil
 }
 
-func (e *Engine) setShapesReferencesOnLiquidityProvision(
+func (e *Engine) SetShapesReferencesOnLiquidityProvision(
+	ctx context.Context,
 	lp *types.LiquidityProvision,
 	buys []*types.LiquidityOrder,
 	sells []*types.LiquidityOrder,
 	idGen IDGen,
-) {
+) []events.Event {
 	// this order is just a stub to send to the id generator,
 	// and get an ID assigned per references in the shapes
-	order := &types.Order{}
 	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(buys))
+	orderEvts := make([]events.Event, 0, len(buys)+len(sells))
+
 	for _, buy := range buys {
-		order.ID = idGen.NextID()
+		order := &types.Order{
+			ID:                   idGen.NextID(),
+			MarketID:             e.marketID,
+			Party:                lp.Party,
+			Side:                 types.SideBuy,
+			Price:                num.UintZero(),
+			Status:               types.OrderStatusStopped,
+			Reference:            lp.Reference,
+			LiquidityProvisionID: lp.ID,
+			CreatedAt:            lp.CreatedAt,
+		}
 		lp.Buys = append(lp.Buys, &types.LiquidityOrderReference{
 			OrderID:        order.ID,
 			LiquidityOrder: buy,
 		})
+		orderEvts = append(orderEvts, events.NewOrderEvent(ctx, order))
 	}
 
 	lp.Sells = make([]*types.LiquidityOrderReference, 0, len(sells))
 	for _, sell := range sells {
-		order.ID = idGen.NextID()
+		order := &types.Order{
+			ID:                   idGen.NextID(),
+			MarketID:             e.marketID,
+			Party:                lp.Party,
+			Side:                 types.SideSell,
+			Price:                num.UintZero(),
+			Status:               types.OrderStatusStopped,
+			Reference:            lp.Reference,
+			LiquidityProvisionID: lp.ID,
+			CreatedAt:            lp.CreatedAt,
+		}
 		lp.Sells = append(lp.Sells, &types.LiquidityOrderReference{
 			OrderID:        order.ID,
 			LiquidityOrder: sell,
 		})
+		orderEvts = append(orderEvts, events.NewOrderEvent(ctx, order))
 	}
+
+	return orderEvts
 }
 
 // LiquidityProvisionByPartyID returns the LP associated to a Party if any.
@@ -753,7 +781,6 @@ func (e *Engine) createOrdersFromShape(
 		order = e.buildOrder(side, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference, lp.ID)
 		order.ID = ref.OrderID
 		newOrders = append(newOrders, order)
-		ref.OrderID = order.ID
 	}
 
 	return newOrders, toCancel

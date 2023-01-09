@@ -106,7 +106,7 @@ jobs:
 
       - name: Sanity check docker image
         run: |
-          docker run --rm vegaprotocol/${{ matrix.app }}:local version
+          docker run --rm vegaprotocol/${{ matrix.app }}:local version || docker run --rm vegaprotocol/${{ matrix.app }}:local software version
 
       - name: Build and push to Docker registries
         id: docker_build

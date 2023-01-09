@@ -12,7 +12,7 @@
 - [7114](https://github.com/vegaprotocol/vega/issues/7114) - Expose user spam statistics via `API`
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7260](https://github.com/vegaprotocol/vega/issues/7260) - Fix bug where pagination `before` or `after` cursors were ignored if `first` or `last` not set
 
 ## 0.66.1
 - [7269](https://github.com/vegaprotocol/vega/pull/7269) - Fix wallet release pipeline
@@ -170,6 +170,7 @@
 - [6924](https://github.com/vegaprotocol/vega/issues/6924) - Fix deterministic sorting when nodes have equal scores and we have to choose who is in the signer set
 - [6812](https://github.com/vegaprotocol/vega/issues/6812) - Network name is derived solely from the filename to cause less confusion if the network `config` is renamed
 - [6831](https://github.com/vegaprotocol/vega/issues/6831) - Fix settlement state in snapshots and market settlement.
+- [6856](https://github.com/vegaprotocol/vega/issues/6856) - When creating liquidity provision, seed dummy orders in order to prevent broken references when querying the market later
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
 - [6766](https://github.com/vegaprotocol/vega/issues/6766) - Handle relative vega home path being passed in `postgres` snapshots
 - [6885](https://github.com/vegaprotocol/vega/issues/6885) - Don't ignore 'bootstrap peers' `IPFS` configuration setting in `datanode`
