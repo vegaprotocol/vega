@@ -71,7 +71,8 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a future market change with oracle spec succeeds", testNewFutureMarketChangeSubmissionWithOracleSpecSucceeds)
 	t.Run("Submitting a future market change without pub-keys fails", testNewFutureMarketChangeSubmissionWithoutPubKeysFails)
 	t.Run("Submitting a future market change with wrong pub-keys fails", testNewFutureMarketChangeSubmissionWithWrongPubKeysFails)
-	t.Run("Submitting a future market change with pub-keys succeeds", testNewFutureMarketChangeSubmissionWithPubKeysSucceeds)
+	t.Run("Submitting a future market change with bad pubkey or address fails", testNewFutureMarketChangeSubmissionWithBadPubKeysOrderAddressFail)
+	t.Run("Submitting a future market change with good pubkey or address succeed", testNewFutureMarketChangeSubmissionWithGoodPubKeysOrderAddressSucceed)
 	t.Run("Submitting a future market change without filters fails", testNewFutureMarketChangeSubmissionWithoutFiltersFails)
 	t.Run("Submitting a future market change with filters succeeds", testNewFutureMarketChangeSubmissionWithFiltersSucceeds)
 	t.Run("Submitting a future market change with filter without key fails", testNewFutureMarketChangeSubmissionWithFilterWithoutKeyFails)
@@ -1191,6 +1192,33 @@ func testNewFutureMarketChangeSubmissionWithoutOracleSpecFails(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination"), commands.ErrIsRequired)
 }
 
+// func testNewFutureMarketChangeSubmissionWithInvalidOracleSpecVegaPubkeySignerFails(t *testing.T) {
+// 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+// 		Terms: &protoTypes.ProposalTerms{
+// 			Change: &protoTypes.ProposalTerms_NewMarket{
+// 				NewMarket: &protoTypes.NewMarket{
+// 					Changes: &protoTypes.NewMarketConfiguration{
+// 						Instrument: &protoTypes.InstrumentConfiguration{
+// 							Product: &protoTypes.InstrumentConfiguration_Future{
+// 								Future: &protoTypes.FutureProduct{
+// 									DataSourceSpecForSettlementData: &protoTypes.DataSourceDefinition{
+// 										SourceType: &protoTypes.DataSourceDefinitionExternal_Oracle{
+
+// 										}
+// 									}
+// 								},
+// 							},
+// 						},
+// 					},
+// 				},
+// 			},
+// 		},
+// 	})
+
+// 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data"), commands.ErrIsRequired)
+// 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination"), commands.ErrIsRequired)
+// }
+
 func testNewFutureMarketChangeSubmissionMissingSingleOracleSpecFails(t *testing.T) {
 	testNewFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t, "data_source_spec_for_settlement_data")
 	testNewFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t, "data_source_spec_for_trading_termination")
@@ -1317,10 +1345,12 @@ func testNewFutureMarketChangeSubmissionWithWrongPubKeysFails(t *testing.T) {
 	}
 }
 
-func testNewFutureMarketChangeSubmissionWithPubKeysSucceeds(t *testing.T) {
+func testNewFutureMarketChangeSubmissionWithBadPubKeysOrderAddressFail(t *testing.T) {
 	pubKeys := []*types.Signer{
 		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
 		types.CreateSignerFromString("0xCAFEDUDE", types.DataSignerTypePubKey),
+		types.CreateSignerFromString("0xCAFEDUDE", types.DataSignerTypeEthAddress),
+		types.CreateSignerFromString("36393436346533356263623865386132393030636130663837616361663235326435306366326162326663373336393438343561313662376338613064633666", types.DataSignerTypePubKey),
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -1357,6 +1387,56 @@ func testNewFutureMarketChangeSubmissionWithPubKeysSucceeds(t *testing.T) {
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers"), commands.ErrIsRequired)
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers.0"), commands.ErrIsNotValid)
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers.1"), commands.ErrIsNotValid)
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers.3"), commands.ErrIsNotValidVegaPubkey)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers.2"), commands.ErrIsNotValidEthereumAddress)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers.1"), commands.ErrIsNotValidVegaPubkey)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers.0"), commands.ErrIsNotValidVegaPubkey)
+}
+
+func testNewFutureMarketChangeSubmissionWithGoodPubKeysOrderAddressSucceed(t *testing.T) {
+	pubKeys := []*types.Signer{
+		types.CreateSignerFromString("0x8565a19c49bcD6Fa7b6EB0221a50606F9c9cC683", types.DataSignerTypeEthAddress),
+		types.CreateSignerFromString("bd069246503a57271375f1995c46e03db88c4e1a564077b33a9872f905650dc4", types.DataSignerTypePubKey),
+	}
+
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Signers: types.SignersIntoProto(pubKeys),
+										},
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Signers: types.SignersIntoProto(pubKeys),
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers.0"), commands.ErrIsNotValid)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers.1"), commands.ErrIsNotValid)
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers.1"), commands.ErrIsNotValidEthereumAddress)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers.0"), commands.ErrIsNotValidVegaPubkey)
 }
 
 func testNewFutureMarketChangeSubmissionWithoutFiltersFails(t *testing.T) {

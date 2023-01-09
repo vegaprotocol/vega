@@ -14,7 +14,6 @@ package gql
 
 import (
 	"context"
-	"strconv"
 
 	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -119,7 +118,13 @@ func resolveDataSourceSpec(d *vegapb.DataSourceSpec) (ds *DataSourceSpec) {
 	if d.UpdatedAt != 0 {
 		ds.UpdatedAt = ptr.From(d.UpdatedAt)
 	}
-	ds.Status = DataSourceSpecStatus(strconv.FormatInt(int64(d.Status), 10))
+
+	switch d.Status {
+	case vegapb.DataSourceSpec_STATUS_ACTIVE:
+		ds.Status = DataSourceSpecStatusStatusActive
+	case vegapb.DataSourceSpec_STATUS_DEACTIVATED:
+		ds.Status = DataSourceSpecStatusStatusDeactivated
+	}
 
 	if d.Data != nil {
 		ds.Data = resolveDataSourceDefinition(d.Data)

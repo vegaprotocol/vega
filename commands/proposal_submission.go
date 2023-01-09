@@ -9,11 +9,13 @@ import (
 	"strings"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 const ReferenceMaxLen int = 100
@@ -612,6 +614,10 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 			signer := types.SignerFromProto(key)
 			if signer.IsEmpty() {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValid)
+			} else if pubkey := signer.GetSignerPubKey(); pubkey != nil && !crypto.IsValidVegaPubKey(pubkey.Key) {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidVegaPubkey)
+			} else if address := signer.GetSignerETHAddress(); address != nil && !common.IsHexAddress(address.Address) {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidEthereumAddress)
 			}
 		}
 
