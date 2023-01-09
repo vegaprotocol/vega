@@ -71,7 +71,7 @@ type Policy interface {
 	UpdateIntParam(name string, value int64) error
 	Serialise() ([]byte, error)
 	Deserialise(payload *types.Payload) error
-	GetStats(partyID string) Statistic
+	GetStats(partyID string) []Statistic
 }
 
 // ReloadConf updates the internal configuration of the spam engine.
@@ -238,21 +238,37 @@ func (e *Engine) GetSpamStatistics(partyID string) Statistics {
 	stats := Statistics{}
 
 	for txType, policy := range e.transactionTypeToPolicy {
-		statistic := policy.GetStats(partyID)
+		pStats := policy.GetStats(partyID)
 		switch txType {
 		case txn.ProposeCommand:
-			stats.Proposals = statistic
-		case txn.DelegateCommand:
-			stats.Delegations = statistic
-		case txn.TransferFundsCommand:
-			stats.Transfers = statistic
-		case txn.AnnounceNodeCommand:
-			stats.NodeAnnouncements = statistic
-		case txn.VoteCommand:
-			stats.Votes = VoteStatistic{
-				Total:        statistic.Total,
-				BlockedUntil: statistic.BlockedUntil,
+			if len(pStats) > 0 {
+				stats.Proposals = pStats[0]
 			}
+		case txn.DelegateCommand:
+			if len(pStats) > 0 {
+				stats.Delegations = pStats[0]
+			}
+		case txn.TransferFundsCommand:
+			if len(pStats) > 0 {
+				stats.Transfers = pStats[0]
+			}
+		case txn.AnnounceNodeCommand:
+			if len(pStats) > 0 {
+				stats.NodeAnnouncements = pStats[0]
+			}
+		case txn.VoteCommand:
+			vs := make([]VoteStatistic, len(pStats))
+
+			for i, ps := range pStats {
+				vs[i] = VoteStatistic{
+					Proposal:    ps.Name,
+					Total:       ps.Total,
+					MaxForEpoch: ps.Limit,
+					BannedUntil: ps.BannedUntil,
+				}
+			}
+
+			stats.Votes = vs
 		default:
 			continue
 		}

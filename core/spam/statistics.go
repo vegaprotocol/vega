@@ -5,16 +5,19 @@ type Statistics struct {
 	Delegations       Statistic
 	Transfers         Statistic
 	NodeAnnouncements Statistic
-	Votes             VoteStatistic
+	Votes             []VoteStatistic
 }
 
 type VoteStatistic struct {
-	Total        string
-	BlockedUntil int64
+	Proposal    string
+	Total       string
+	MaxForEpoch string
+	BannedUntil int64
 }
 
 type Statistic struct {
-	Total        string
-	Limit        string
-	BlockedUntil int64
+	Name        string
+	Total       string
+	Limit       string
+	BannedUntil int64
 }

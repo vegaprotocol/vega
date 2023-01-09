@@ -435,19 +435,23 @@ func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	return true, nil
 }
 
-func (vsp *VoteSpamPolicy) GetStats(partyID string) Statistic {
+func (vsp *VoteSpamPolicy) GetStats(partyID string) []Statistic {
 	vsp.lock.RLock()
 	defer vsp.lock.RUnlock()
 
-	stats := Statistic{}
+	partyStats := vsp.partyToVote[partyID]
 
-	bStats, ok := vsp.partyBlockRejects[partyID]
-	if !ok {
-		return stats
+	stats := make([]Statistic, 0, len(partyStats))
+	bannedUntil := vsp.bannedParties[partyID]
+
+	for proposal, votes := range partyStats {
+		stats = append(stats, Statistic{
+			Name:        proposal,
+			Total:       strconv.FormatUint(votes, 10),
+			Limit:       strconv.FormatUint(vsp.numVotes, 10),
+			BannedUntil: bannedUntil,
+		})
 	}
-
-	stats.Total = strconv.FormatUint(bStats.total, formatBase)
-	stats.BlockedUntil = vsp.bannedParties[partyID]
 
 	return stats
 }

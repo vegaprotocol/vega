@@ -280,13 +280,15 @@ func (ssp *SimpleSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	return true, nil
 }
 
-func (ssp *SimpleSpamPolicy) GetStats(party string) Statistic {
+func (ssp *SimpleSpamPolicy) GetStats(party string) []Statistic {
 	ssp.lock.RLock()
 	defer ssp.lock.RUnlock()
 
-	return Statistic{
-		Total:        strconv.FormatUint(ssp.partyToCount[party], formatBase),
-		Limit:        strconv.FormatUint(ssp.maxAllowedCommands, formatBase),
-		BlockedUntil: ssp.bannedParties[party],
+	return []Statistic{
+		{
+			Total:       strconv.FormatUint(ssp.partyToCount[party], formatBase),
+			Limit:       strconv.FormatUint(ssp.maxAllowedCommands, formatBase),
+			BannedUntil: ssp.bannedParties[party],
+		},
 	}
 }

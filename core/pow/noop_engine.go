@@ -51,6 +51,6 @@ func (e *NoopEngine) BlockData() (uint64, string) {
 	return e.blockHeight, e.blockHash
 }
 
-func (e *NoopEngine) GetSpamStatistics(_ string) (uint64, int64) {
-	return 0, 0
+func (e *NoopEngine) GetSpamStatistics(_ string) SpamStatistics {
+	return SpamStatistics{}
 }

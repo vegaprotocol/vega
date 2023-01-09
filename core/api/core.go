@@ -22,6 +22,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/pow"
+
 	"code.vegaprotocol.io/vega/core/spam"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -678,7 +680,7 @@ func (s *coreService) GetSpamStatistics(_ context.Context, req *protoapi.GetSpam
 	}
 
 	spamStats := s.spamEngine.GetSpamStatistics(req.PartyId)
-	powTx, powBannedUntil := s.powEngine.GetSpamStatistics(req.PartyId)
+	powStats := s.powEngine.GetSpamStatistics(req.PartyId)
 
 	resp := &protoapi.GetSpamStatisticsResponse{
 		Statistics: &protoapi.SpamStatistics{
@@ -687,7 +689,7 @@ func (s *coreService) GetSpamStatistics(_ context.Context, req *protoapi.GetSpam
 			Transfers:         statisticToProto(spamStats.Transfers),
 			NodeAnnouncements: statisticToProto(spamStats.NodeAnnouncements),
 			Votes:             voteStatisticsToProto(spamStats.Votes),
-			Pow:               powStatisticsToProto(powTx, powBannedUntil),
+			Pow:               powStatisticsToProto(powStats),
 		},
 	}
 
@@ -698,21 +700,37 @@ func statisticToProto(stat spam.Statistic) *protoapi.SpamStatistic {
 	return &protoapi.SpamStatistic{
 		CountForEpoch: stat.Total,
 		MaxForEpoch:   stat.Limit,
-		Until:         parseBlockedUntil(stat.BlockedUntil),
+		BannedUntil:   parseBlockedUntil(stat.BannedUntil),
 	}
 }
 
-func voteStatisticsToProto(stat spam.VoteStatistic) *protoapi.VoteSpamStatistic {
-	return &protoapi.VoteSpamStatistic{
-		CountForEpoch: stat.Total,
-		Until:         parseBlockedUntil(stat.BlockedUntil),
+func voteStatisticsToProto(stats []spam.VoteStatistic) []*protoapi.VoteSpamStatistic {
+	pStats := make([]*protoapi.VoteSpamStatistic, len(stats))
+	for i, stat := range stats {
+		pStats[i] = &protoapi.VoteSpamStatistic{
+			Proposal:      stat.Proposal,
+			CountForEpoch: stat.Total,
+			MaxForEpoch:   stat.MaxForEpoch,
+			BannedUntil:   parseBlockedUntil(stat.BannedUntil),
+		}
 	}
+	return pStats
 }
 
-func powStatisticsToProto(numPowTx uint64, bannedUntil int64) *protoapi.PoWStatistic {
+func powStatisticsToProto(stats pow.SpamStatistics) *protoapi.PoWStatistic {
+	bStats := make([]*protoapi.PoWBlockState, len(stats.BlockStates))
+
+	for i, stat := range stats.BlockStates {
+		bStats[i] = &protoapi.PoWBlockState{
+			BlockHeight:      stat.BlockHeight,
+			TransactionsSeen: stat.TransactionsSeen,
+			Difficulty:       stat.Difficulty,
+		}
+	}
+
 	return &protoapi.PoWStatistic{
-		TotalTxsInScope: numPowTx,
-		Until:           parseBlockedUntil(bannedUntil),
+		BlockStates: bStats,
+		BannedUntil: parseBlockedUntil(stats.BannedUntil),
 	}
 }
 

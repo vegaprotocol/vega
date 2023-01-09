@@ -66,6 +66,17 @@ type state struct {
 	blockToPartyState map[uint64]map[string]*partyStateForBlock
 }
 
+type BlockState struct {
+	BlockHeight      uint64
+	TransactionsSeen uint64
+	Difficulty       uint64
+}
+
+type SpamStatistics struct {
+	BlockStates []BlockState
+	BannedUntil int64
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/pow TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
@@ -562,24 +573,28 @@ func (e *Engine) BlockData() (uint64, string) {
 	return e.currentBlock, e.blockHash[e.currentBlock%ringSize]
 }
 
-func (e *Engine) GetSpamStatistics(partyID string) (uint64, int64) {
+func (e *Engine) GetSpamStatistics(partyID string) SpamStatistics {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 
-	totalTx := uint64(0)
+	stats := make([]BlockState, 0, len(e.activeStates)) //
 
 	for _, state := range e.activeStates {
-		for _, blockToPartyState := range state.blockToPartyState {
+		for block, blockToPartyState := range state.blockToPartyState {
 			if partyState, ok := blockToPartyState[partyID]; ok {
-				totalTx += uint64(partyState.seenCount)
+				stats = append(stats, BlockState{
+					BlockHeight:      block,
+					TransactionsSeen: uint64(partyState.seenCount),
+					Difficulty:       uint64(partyState.observedDifficulty),
+				})
 			}
 		}
 	}
 
-	until, ok := e.bannedParties[partyID]
-	if !ok {
-		return totalTx, 0
-	}
+	until := e.bannedParties[partyID]
 
-	return totalTx, until.UnixNano()
+	return SpamStatistics{
+		BlockStates: stats,
+		BannedUntil: until.UnixNano(),
+	}
 }

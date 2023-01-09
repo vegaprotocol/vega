@@ -361,24 +361,35 @@ message SpamStatistic {
   // The maximum number of transactions allowed for this policy in an epoch
   string max_for_epoch = 2;
   // If blocked the timestamp when the party will be unblocked as RFC3339Nano
-  optional string until = 4;
+  optional string banned_until = 4;
 }
 
 // The vote statistics for the voting spam policies
 // which are calculated as a ratio of the total votes
 // that have been rejected.
 message VoteSpamStatistic {
+  string proposal = 1;
   // The current vote count received from the party for the given policy during this epoch
-  string count_for_epoch = 1;
+  string count_for_epoch = 2;
+  // The maximum number of votes per proposal allowed in an epoch
+  string max_for_epoch = 3;
   // If blocked the timestamp when the party will be unblocked as RFC3339Nano
-  optional string until = 2;
+  optional string banned_until = 4;
 }
 
+// The PoW state for a given block
+message PoWBlockState {
+  uint64 block_height = 1;
+  uint64 transactions_seen = 2;
+  uint64 difficulty = 3;
+}
+
+// Proof of work statistics for a party
 message PoWStatistic {
-  // The total number of transactions that are in scope for PoW calculations
-  uint64 total_txs_in_scope = 1;
+  // Block state for each block in scope for PoW calculation
+  repeated PoWBlockState block_states = 1;
   // PoW banned until timestamp as RFC3339Nano
-  optional string until = 2;
+  optional string banned_until = 2;
 }
 
 // The complete spam statistics captured for a given party
@@ -387,7 +398,7 @@ message SpamStatistics {
   SpamStatistic delegations = 2;
   SpamStatistic transfers = 3;
   SpamStatistic node_announcements = 4;
-  VoteSpamStatistic votes = 5;
+  repeated VoteSpamStatistic votes = 5;
   PoWStatistic pow = 6;
 }
 
