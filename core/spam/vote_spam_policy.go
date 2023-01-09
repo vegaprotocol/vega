@@ -439,9 +439,7 @@ func (vsp *VoteSpamPolicy) GetStats(partyID string) Statistic {
 	vsp.lock.RLock()
 	defer vsp.lock.RUnlock()
 
-	stats := Statistic{
-		Limit: banFactor.String(),
-	}
+	stats := Statistic{}
 
 	bStats, ok := vsp.partyBlockRejects[partyID]
 	if !ok {
@@ -449,7 +447,6 @@ func (vsp *VoteSpamPolicy) GetStats(partyID string) Statistic {
 	}
 
 	stats.Total = strconv.FormatUint(bStats.total, formatBase)
-	stats.BlockCount = strconv.FormatUint(bStats.rejected, formatBase)
 	stats.BlockedUntil = vsp.bannedParties[partyID]
 
 	return stats

@@ -249,28 +249,10 @@ func (e *Engine) GetSpamStatistics(partyID string) Statistics {
 		case txn.AnnounceNodeCommand:
 			stats.NodeAnnouncements = statistic
 		case txn.VoteCommand:
-
-			total, err := num.DecimalFromString(statistic.Total)
-			if err != nil || total.Equal(num.DecimalZero()) {
-				continue
+			stats.Votes = VoteStatistic{
+				Total:        statistic.Total,
+				BlockedUntil: statistic.BlockedUntil,
 			}
-
-			rejected, err := num.DecimalFromString(statistic.BlockCount)
-			if err != nil {
-				continue
-			}
-
-			ratio := rejected.Div(total)
-
-			statistics := VoteStatistic{
-				Total:         statistic.Total,
-				Rejected:      statistic.BlockCount,
-				RejectedRatio: ratio.String(),
-				Limit:         statistic.Limit,
-				BlockedUntil:  statistic.BlockedUntil,
-			}
-
-			stats.Votes = statistics
 		default:
 			continue
 		}

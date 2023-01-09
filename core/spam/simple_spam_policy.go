@@ -286,7 +286,6 @@ func (ssp *SimpleSpamPolicy) GetStats(party string) Statistic {
 
 	return Statistic{
 		Total:        strconv.FormatUint(ssp.partyToCount[party], formatBase),
-		BlockCount:   strconv.FormatUint(ssp.blockPartyToCount[party], formatBase),
 		Limit:        strconv.FormatUint(ssp.maxAllowedCommands, formatBase),
 		BlockedUntil: ssp.bannedParties[party],
 	}

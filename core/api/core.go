@@ -65,6 +65,7 @@ type coreService struct {
 	subCancels   []func()
 	powParams    ProofOfWorkParams
 	spamEngine   SpamEngine
+	powEngine    PowEngine
 
 	chainID                  string
 	genesisTime              time.Time
@@ -677,6 +678,7 @@ func (s *coreService) GetSpamStatistics(_ context.Context, req *protoapi.GetSpam
 	}
 
 	spamStats := s.spamEngine.GetSpamStatistics(req.PartyId)
+	powTx, powBannedUntil := s.powEngine.GetSpamStatistics(req.PartyId)
 
 	resp := &protoapi.GetSpamStatisticsResponse{
 		Statistics: &protoapi.SpamStatistics{
@@ -685,6 +687,7 @@ func (s *coreService) GetSpamStatistics(_ context.Context, req *protoapi.GetSpam
 			Transfers:         statisticToProto(spamStats.Transfers),
 			NodeAnnouncements: statisticToProto(spamStats.NodeAnnouncements),
 			Votes:             voteStatisticsToProto(spamStats.Votes),
+			Pow:               powStatisticsToProto(powTx, powBannedUntil),
 		},
 	}
 
@@ -694,7 +697,6 @@ func (s *coreService) GetSpamStatistics(_ context.Context, req *protoapi.GetSpam
 func statisticToProto(stat spam.Statistic) *protoapi.SpamStatistic {
 	return &protoapi.SpamStatistic{
 		CountForEpoch: stat.Total,
-		CountForBlock: stat.BlockCount,
 		MaxForEpoch:   stat.Limit,
 		Until:         parseBlockedUntil(stat.BlockedUntil),
 	}
@@ -702,11 +704,15 @@ func statisticToProto(stat spam.Statistic) *protoapi.SpamStatistic {
 
 func voteStatisticsToProto(stat spam.VoteStatistic) *protoapi.VoteSpamStatistic {
 	return &protoapi.VoteSpamStatistic{
-		CountForEpoch:      stat.Total,
-		RejectedCount:      stat.Rejected,
-		RejectedPercentage: stat.RejectedRatio,
-		BlockLimit:         stat.Limit,
-		Until:              parseBlockedUntil(stat.BlockedUntil),
+		CountForEpoch: stat.Total,
+		Until:         parseBlockedUntil(stat.BlockedUntil),
+	}
+}
+
+func powStatisticsToProto(numPowTx uint64, bannedUntil int64) *protoapi.PoWStatistic {
+	return &protoapi.PoWStatistic{
+		TotalTxsInScope: numPowTx,
+		Until:           parseBlockedUntil(bannedUntil),
 	}
 }
 

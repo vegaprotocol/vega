@@ -9,16 +9,12 @@ type Statistics struct {
 }
 
 type VoteStatistic struct {
-	Total         string
-	Rejected      string
-	RejectedRatio string
-	Limit         string
-	BlockedUntil  int64
+	Total        string
+	BlockedUntil int64
 }
 
 type Statistic struct {
 	Total        string
-	BlockCount   string
 	Limit        string
 	BlockedUntil int64
 }

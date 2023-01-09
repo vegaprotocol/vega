@@ -90,6 +90,10 @@ type SpamEngine interface {
 	GetSpamStatistics(partyID string) spam.Statistics
 }
 
+type PowEngine interface {
+	GetSpamStatistics(partyID string) (uint64, int64)
+}
+
 // GRPCServer represent the grpc api provided by the vega node.
 type GRPC struct {
 	Config
@@ -102,7 +106,8 @@ type GRPC struct {
 	evtfwd     EvtForwarder
 	evtService EventService
 	powParams  ProofOfWorkParams
-	spamEngine *spam.Engine
+	spamEngine SpamEngine
+	powEngine  PowEngine
 
 	// used in order to gracefully close streams
 	ctx   context.Context
@@ -123,7 +128,8 @@ func NewGRPC(
 	timeService *vegatime.Svc,
 	eventService *subscribers.Service,
 	powParams ProofOfWorkParams,
-	spamEngine *spam.Engine,
+	spamEngine SpamEngine,
+	powEngine PowEngine,
 ) *GRPC {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -142,6 +148,7 @@ func NewGRPC(
 		evtService: eventService,
 		powParams:  powParams,
 		spamEngine: spamEngine,
+		powEngine:  powEngine,
 	}
 }
 
@@ -256,6 +263,7 @@ func (g *GRPC) Start() {
 		eventService: g.evtService,
 		powParams:    g.powParams,
 		spamEngine:   g.spamEngine,
+		powEngine:    g.powEngine,
 	}
 	g.core = coreSvc
 	protoapi.RegisterCoreServiceServer(g.srv, coreSvc)

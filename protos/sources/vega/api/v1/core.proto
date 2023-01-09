@@ -358,11 +358,9 @@ message GetSpamStatisticsRequest {
 message SpamStatistic {
   // The current transaction count received from the party during this epoch for this policy
   string count_for_epoch = 1;
-  // The current transaction count received from the party during the current block for this policy
-  string count_for_block = 2;
   // The maximum number of transactions allowed for this policy in an epoch
-  string max_for_epoch = 3;
-  // If blocked the timestamp when the party will be unblocked
+  string max_for_epoch = 2;
+  // If blocked the timestamp when the party will be unblocked as RFC3339Nano
   optional string until = 4;
 }
 
@@ -370,16 +368,17 @@ message SpamStatistic {
 // which are calculated as a ratio of the total votes
 // that have been rejected.
 message VoteSpamStatistic {
-  // The current vote count received from the party during this epoch
+  // The current vote count received from the party for the given policy during this epoch
   string count_for_epoch = 1;
-  // The number of votes from the party that have been rejected during this epoch
-  string rejected_count = 2;
-  // The percentage of total votes that have been rejected
-  string rejected_percentage = 3;
-  // The maximum rejection limit that is allowed for this policy in an epoch
-  string block_limit = 4;
-  // If blocked the timestamp when the party will be unblocked
-  optional string until = 5;
+  // If blocked the timestamp when the party will be unblocked as RFC3339Nano
+  optional string until = 2;
+}
+
+message PoWStatistic {
+  // The total number of transactions that are in scope for PoW calculations
+  uint64 total_txs_in_scope = 1;
+  // PoW banned until timestamp as RFC3339Nano
+  optional string until = 2;
 }
 
 // The complete spam statistics captured for a given party
@@ -389,6 +388,7 @@ message SpamStatistics {
   SpamStatistic transfers = 3;
   SpamStatistic node_announcements = 4;
   VoteSpamStatistic votes = 5;
+  PoWStatistic pow = 6;
 }
 
 // A response containing all the spam statistics of a party for the current epoch

@@ -561,3 +561,25 @@ func (e *Engine) BlockData() (uint64, string) {
 	}
 	return e.currentBlock, e.blockHash[e.currentBlock%ringSize]
 }
+
+func (e *Engine) GetSpamStatistics(partyID string) (uint64, int64) {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+
+	totalTx := uint64(0)
+
+	for _, state := range e.activeStates {
+		for _, blockToPartyState := range state.blockToPartyState {
+			if partyState, ok := blockToPartyState[partyID]; ok {
+				totalTx += uint64(partyState.seenCount)
+			}
+		}
+	}
+
+	until, ok := e.bannedParties[partyID]
+	if !ok {
+		return totalTx, 0
+	}
+
+	return totalTx, until.UnixNano()
+}

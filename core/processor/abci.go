@@ -88,6 +88,7 @@ type PoWEngine interface {
 	CheckTx(tx abci.Tx) error
 	DeliverTx(tx abci.Tx) error
 	Commit()
+	GetSpamStatistics(partyID string) (totalTx uint64, bannedUntil int64)
 }
 
 //nolint:interfacebloat

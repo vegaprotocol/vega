@@ -182,3 +182,7 @@ func (n *Protocol) GetProtocolUpgradeService() *protocolupgrade.Engine {
 func (n *Protocol) GetSpamEngine() *spam.Engine {
 	return n.services.spam
 }
+
+func (n *Protocol) GetPowEngine() processor.PoWEngine {
+	return n.services.pow
+}

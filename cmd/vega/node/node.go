@@ -248,6 +248,7 @@ func (n *Command) startAPIs() error {
 		n.protocol.GetEventService(),
 		n.protocol.GetPoW(),
 		n.protocol.GetSpamEngine(),
+		n.protocol.GetPowEngine(),
 	)
 
 	n.coreService = coreapi.NewService(n.ctx, n.Log, n.conf.CoreAPI, n.protocol.GetBroker())
