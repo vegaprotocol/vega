@@ -30,6 +30,7 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 				obj: &vegapb.OracleSpec{
 					ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
 						Spec: &vegapb.DataSourceSpec{
+							Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
 							Data: &vegapb.DataSourceDefinition{
 								SourceType: &vegapb.DataSourceDefinition_External{
 									External: &vegapb.DataSourceDefinitionExternal{
@@ -59,7 +60,7 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 					},
 				},
 			},
-			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"sourceType":{"sourceType":{"signers":[{"Signer":{"PubKey":{"key":"key"}}},{"Signer":{"EthAddress":{"address":"address"}}}]}}},"status":"0"}}`,
+			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"sourceType":{"sourceType":{"signers":[{"Signer":{"PubKey":{"key":"key"}}},{"Signer":{"EthAddress":{"address":"address"}}}]}}},"status":"STATUS_ACTIVE"}}`,
 			wantErr: assert.NoError,
 		}, {
 			name: "success: DataSourceDefinition_Internal",
@@ -67,6 +68,7 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 				obj: &vegapb.OracleSpec{
 					ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
 						Spec: &vegapb.DataSourceSpec{
+							Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
 							Data: &vegapb.DataSourceDefinition{
 								SourceType: &vegapb.DataSourceDefinition_Internal{
 									Internal: &vegapb.DataSourceDefinitionInternal{
@@ -87,7 +89,7 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 					},
 				},
 			},
-			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"sourceType":{"sourceType":{"conditions":[{"operator":12,"value":"blah"}]}}},"status":"0"}}`,
+			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"sourceType":{"sourceType":{"conditions":[{"operator":12,"value":"blah"}]}}},"status":"STATUS_ACTIVE"}}`,
 			wantErr: assert.NoError,
 		},
 	}
