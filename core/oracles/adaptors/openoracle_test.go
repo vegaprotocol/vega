@@ -193,7 +193,7 @@ func testOpenOracleAdaptorNormalisingCompatibleAndValidDataSucceeds(t *testing.T
 			"prices.GRT.timestamp":  "1611924180",
 		},
 		Signers: []*types.Signer{
-			types.CreateSignerFromString("0xfCEAdAFab14d46e20144F48824d0C09B1a03F2BC", types.DataSignerTypePubKey),
+			types.CreateSignerFromString("0xfCEAdAFab14d46e20144F48824d0C09B1a03F2BC", types.DataSignerTypeEthAddress),
 		},
 	}
 

@@ -20,16 +20,14 @@ type OracleResponse struct {
 
 // UnmarshalVerify will unmarshal a json raw payload
 // into and OracleResponse
-// if the unmarshal is successful then the content is verified
+// if the unmarshal is successful then the content is verified.
 func UnmarshalVerify(payload []byte, address string) (*OracleResponse, error) {
 	oresp, err := Unmarshal(payload)
 	if err != nil {
 		return nil, err
 	}
 
-	pk, kv, err := Verify(*oresp)
-	fmt.Printf("%v\n%v\n", pk, kv)
-
+	_, _, err = Verify(*oresp)
 	return oresp, err
 }
 

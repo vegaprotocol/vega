@@ -47,7 +47,7 @@ func (a *OpenOracleAdaptor) Normalise(_ crypto.PublicKey, data []byte) (*oracles
 
 	pubKeysSigners := make([]*types.Signer, len(pubKeys))
 	for i, pk := range pubKeys {
-		pubKeysSigners[i] = types.CreateSignerFromString(pk, types.DataSignerTypePubKey)
+		pubKeysSigners[i] = types.CreateSignerFromString(pk, types.DataSignerTypeEthAddress)
 	}
 	return &oracles.OracleData{
 		Signers: pubKeysSigners,

@@ -56,5 +56,4 @@ func TestValidOpenOracle(t *testing.T) {
 	assert.Len(t, addresses, 1)
 	assert.Equal(t, addresses[0], address)
 	assert.NotNil(t, values)
-
 }
