@@ -74,7 +74,7 @@ Feature: test negative PDP (position decimal places)
 
 
     @Now
-    Scenario: 002, test negative PDP when trading mode is continuous (0003-MTMK-015, 0019-MCAL-010, 0029-FEES-014)
+    Scenario: 002, test negative PDP when trading mode is continuous (0003-MTMK-014, 0003-MTMK-015, 0019-MCAL-010, 0029-FEES-014)
         Given the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
             | lp2 | party0 | USD/DEC22 | 35569             | 0.001 | sell | ASK              | 500        | 20     | submission |
@@ -83,8 +83,8 @@ Feature: test negative PDP (position decimal places)
         # LP places limit orders which oversupply liquidity
         And the parties place the following orders:
             | party  | market id | side | volume | price | type       | tif     |
-            | party0 | USD/DEC22 | sell |   1481 |    13 | TYPE_LIMIT | TIF_GTC |
-            | party0 | USD/DEC22 | buy  |   1206 |     8 | TYPE_LIMIT | TIF_GTC |
+            | party0 | USD/DEC22 | sell | 1481   | 13    | TYPE_LIMIT | TIF_GTC |
+            | party0 | USD/DEC22 | buy  | 1206   | 8     | TYPE_LIMIT | TIF_GTC |
 
         And the parties place the following orders:
             | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -174,3 +174,38 @@ Feature: test negative PDP (position decimal places)
             | party0 | USD/DEC22 | 474100      | 521510 | 568920  | 663740  |
             | party1 | USD/DEC22 | 1264        | 1390   | 1516    | 1769    |
             | party2 | USD/DEC22 | 5322        | 5854   | 6386    | 7450    |
+
+        #party3 place order at price 8 to change the mark price again
+        And the parties place the following orders with ticks:
+            | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+            | party3 | USD/DEC22 | sell | 1      | 8     | 1                | TYPE_LIMIT | TIF_GTC | buy-ref-3 |
+
+        And the following trades should be executed:
+            | seller | price | size | buyer  |
+            | party3 | 9     | 1    | party1 |
+
+        And the market data for the market "USD/DEC22" should be:
+            | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+            | 8          | TRADING_MODE_CONTINUOUS | 360000  | 8         | 13        | 3414         | 35569          | 12            |
+
+        Then the parties should have the following profit and loss:
+            | party  | volume | unrealised pnl | realised pnl |
+            | party1 | 11     | -210           | 0            |
+            | party2 | -10    | 200            | 0            |
+            | party3 | -2     | 10             | 0            |
+            | party0 | 1      | 0              | 0            |
+
+        #MTM with price change from 9 to 8, party1 has long position of volume 11, price 9 ->8, MTM -1*11*10*1=-110; party2 has short position of volume 10, price 10 ->9, MTM 10*10*1=100;
+        And the parties should have the following account balances:
+            | party  | asset | market id | margin | general  | bond  |
+            | party0 | ETH   | USD/DEC22 | 505706 | 4458726  | 35569 |
+            | party1 | ETH   | USD/DEC22 | 1230   | 99998561 | 0     |
+            | party2 | ETH   | USD/DEC22 | 5823   | 99994377 | 0     |
+        # Margin_maintenance_party0 = max(1481*10*3.5569036*8,1206*10*0.801225765*8)=421422
+        And the parties should have the following margin levels:
+            | party  | market id | maintenance | search | initial | release |
+            | party0 | USD/DEC22 | 421422      | 463564 | 505706  | 589990  |
+            | party1 | USD/DEC22 | 1025        | 1127   | 1230    | 1435    |
+            | party2 | USD/DEC22 | 4853        | 5338   | 5823    | 6794    |
+
+
