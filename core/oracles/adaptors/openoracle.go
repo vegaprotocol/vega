@@ -15,11 +15,10 @@ package adaptors
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/openoracle"
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
-
-	"code.vegaprotocol.io/oracles-relay/openoracle"
 )
 
 // OpenOracleAdaptor is a specific oracle Adaptor for Open Oracle / Open Price Feed
@@ -48,7 +47,7 @@ func (a *OpenOracleAdaptor) Normalise(_ crypto.PublicKey, data []byte) (*oracles
 
 	pubKeysSigners := make([]*types.Signer, len(pubKeys))
 	for i, pk := range pubKeys {
-		pubKeysSigners[i] = types.CreateSignerFromString(pk, types.DataSignerTypePubKey)
+		pubKeysSigners[i] = types.CreateSignerFromString(pk, types.DataSignerTypeEthAddress)
 	}
 	return &oracles.OracleData{
 		Signers: pubKeysSigners,

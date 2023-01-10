@@ -3,7 +3,6 @@ module code.vegaprotocol.io/vega
 go 1.19
 
 require (
-	code.vegaprotocol.io/oracles-relay v0.0.0-20220819135656-783260e20264
 	code.vegaprotocol.io/quant v0.2.5
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
@@ -69,12 +68,12 @@ require (
 	github.com/jackc/pgtype v1.12.0
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/libp2p/go-libp2p-core v0.19.1
-	github.com/libp2p/go-socket-activation v0.1.0
 	github.com/machinebox/graphql v0.2.2
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/muesli/termenv v0.11.0
 	github.com/multiformats/go-multiaddr v0.6.0
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20220317090546-adb2f9614b17
+	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/pressly/goose/v3 v3.6.1
 	github.com/soheilhy/cmux v0.1.4
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20220101234140-673ab2c3ae75
@@ -250,7 +249,6 @@ require (
 	github.com/opencontainers/runtime-spec v1.0.2 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/openzipkin/zipkin-go v0.4.0 // indirect
-	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
 	github.com/polydawn/refmt v0.0.0-20201211092308-30ac6d18308e // indirect
 	github.com/prometheus/statsd_exporter v0.21.0 // indirect
 	github.com/raulk/go-watchdog v1.3.0 // indirect
@@ -397,3 +395,5 @@ replace (
 	github.com/fergusstrange/embedded-postgres => github.com/vegaprotocol/embedded-postgres v1.13.1-0.20221123183204-2e7a2feee5bb
 	github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.3.1-uint256
 )
+
+replace github.com/tendermint/tendermint => github.com/informalsystems/tendermint v0.34.24
