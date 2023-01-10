@@ -10,14 +10,14 @@ type Statistics struct {
 
 type VoteStatistic struct {
 	Proposal    string
-	Total       string
-	MaxForEpoch string
+	Total       uint64
+	MaxForEpoch uint64
 	BannedUntil int64
 }
 
 type Statistic struct {
 	Name        string
-	Total       string
-	Limit       string
+	Total       uint64
+	Limit       uint64
 	BannedUntil int64
 }

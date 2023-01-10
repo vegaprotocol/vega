@@ -16,15 +16,10 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"code.vegaprotocol.io/vega/core/pow"
-
-	"code.vegaprotocol.io/vega/core/spam"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/evtforward"
@@ -679,67 +674,18 @@ func (s *coreService) GetSpamStatistics(_ context.Context, req *protoapi.GetSpam
 		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
 	}
 
-	spamStats := s.spamEngine.GetSpamStatistics(req.PartyId)
-	powStats := s.powEngine.GetSpamStatistics(req.PartyId)
+	spamStats := &protoapi.SpamStatistics{}
+	// Spam engine is not set when NullBlockChain is used
+	if s.spamEngine != nil {
+		spamStats = s.spamEngine.GetSpamStatistics(req.PartyId)
+	}
+
+	// Noop PoW Engine is used for NullBlockChain so this should be safe
+	spamStats.Pow = s.powEngine.GetSpamStatistics(req.PartyId)
 
 	resp := &protoapi.GetSpamStatisticsResponse{
-		Statistics: &protoapi.SpamStatistics{
-			Proposals:         statisticToProto(spamStats.Proposals),
-			Delegations:       statisticToProto(spamStats.Delegations),
-			Transfers:         statisticToProto(spamStats.Transfers),
-			NodeAnnouncements: statisticToProto(spamStats.NodeAnnouncements),
-			Votes:             voteStatisticsToProto(spamStats.Votes),
-			Pow:               powStatisticsToProto(powStats),
-		},
+		Statistics: spamStats,
 	}
 
 	return resp, nil
-}
-
-func statisticToProto(stat spam.Statistic) *protoapi.SpamStatistic {
-	return &protoapi.SpamStatistic{
-		CountForEpoch: stat.Total,
-		MaxForEpoch:   stat.Limit,
-		BannedUntil:   parseBlockedUntil(stat.BannedUntil),
-	}
-}
-
-func voteStatisticsToProto(stats []spam.VoteStatistic) []*protoapi.VoteSpamStatistic {
-	pStats := make([]*protoapi.VoteSpamStatistic, len(stats))
-	for i, stat := range stats {
-		pStats[i] = &protoapi.VoteSpamStatistic{
-			Proposal:      stat.Proposal,
-			CountForEpoch: stat.Total,
-			MaxForEpoch:   stat.MaxForEpoch,
-			BannedUntil:   parseBlockedUntil(stat.BannedUntil),
-		}
-	}
-	return pStats
-}
-
-func powStatisticsToProto(stats pow.SpamStatistics) *protoapi.PoWStatistic {
-	bStats := make([]*protoapi.PoWBlockState, len(stats.BlockStates))
-
-	for i, stat := range stats.BlockStates {
-		bStats[i] = &protoapi.PoWBlockState{
-			BlockHeight:      stat.BlockHeight,
-			TransactionsSeen: stat.TransactionsSeen,
-			Difficulty:       stat.Difficulty,
-		}
-	}
-
-	return &protoapi.PoWStatistic{
-		BlockStates: bStats,
-		BannedUntil: parseBlockedUntil(stats.BannedUntil),
-	}
-}
-
-func parseBlockedUntil(blockedUntil int64) *string {
-	if blockedUntil <= 0 {
-		return nil
-	}
-
-	until := strconv.FormatInt(blockedUntil, 10)
-
-	return &until
 }

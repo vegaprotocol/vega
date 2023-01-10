@@ -357,11 +357,18 @@ message GetSpamStatisticsRequest {
 // The statistics for a given spam policy
 message SpamStatistic {
   // The current transaction count received from the party during this epoch for this policy
-  string count_for_epoch = 1;
+  uint64 count_for_epoch = 1;
   // The maximum number of transactions allowed for this policy in an epoch
-  string max_for_epoch = 2;
+  uint64 max_for_epoch = 2;
   // If blocked the timestamp when the party will be unblocked as RFC3339Nano
   optional string banned_until = 4;
+}
+
+message VoteSpamStatistics {
+  // List of statistics for proposals voted on by the party
+  repeated VoteSpamStatistic statistics = 1;
+  // If blocked the timestamp when the party will be unblocked as RFC3339Nano
+  optional string banned_until = 2;
 }
 
 // The vote statistics for the voting spam policies
@@ -369,19 +376,19 @@ message SpamStatistic {
 // that have been rejected.
 message VoteSpamStatistic {
   string proposal = 1;
-  // The current vote count received from the party for the given policy during this epoch
-  string count_for_epoch = 2;
+  // The current vote count received from the party for the given proposal during this epoch
+  uint64 count_for_epoch = 2;
   // The maximum number of votes per proposal allowed in an epoch
-  string max_for_epoch = 3;
-  // If blocked the timestamp when the party will be unblocked as RFC3339Nano
-  optional string banned_until = 4;
+  uint64 max_for_epoch = 3;
 }
 
 // The PoW state for a given block
 message PoWBlockState {
   uint64 block_height = 1;
-  uint64 transactions_seen = 2;
-  uint64 difficulty = 3;
+  string block_hash = 2;
+  uint64 transactions_seen = 3;
+  uint64 observed_difficulty = 4;
+  uint64 expected_difficulty = 5;
 }
 
 // Proof of work statistics for a party
@@ -398,7 +405,7 @@ message SpamStatistics {
   SpamStatistic delegations = 2;
   SpamStatistic transfers = 3;
   SpamStatistic node_announcements = 4;
-  repeated VoteSpamStatistic votes = 5;
+  VoteSpamStatistics votes = 5;
   PoWStatistic pow = 6;
 }
 

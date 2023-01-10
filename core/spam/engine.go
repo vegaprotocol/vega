@@ -15,8 +15,11 @@ package spam
 import (
 	"context"
 	"encoding/hex"
+	"strconv"
 	"sync"
 	"time"
+
+	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"code.vegaprotocol.io/vega/core/netparams"
 
@@ -234,41 +237,55 @@ func (e *Engine) PostBlockAccept(tx abci.Tx) (bool, error) {
 	return e.transactionTypeToPolicy[command].PostBlockAccept(tx)
 }
 
-func (e *Engine) GetSpamStatistics(partyID string) Statistics {
-	stats := Statistics{}
+func parseBannedUntil(until int64) *string {
+	if until == 0 {
+		return nil
+	}
+	t := strconv.FormatInt(until, 10)
+	return &t
+}
+
+func (e *Engine) GetSpamStatistics(partyID string) *protoapi.SpamStatistics {
+	stats := &protoapi.SpamStatistics{}
 
 	for txType, policy := range e.transactionTypeToPolicy {
 		pStats := policy.GetStats(partyID)
+
+		ssProto := &protoapi.SpamStatistic{}
+		var bannedUntil int64
+
+		if len(pStats) > 0 {
+			ssProto = &protoapi.SpamStatistic{
+				CountForEpoch: pStats[0].Total,
+				MaxForEpoch:   pStats[0].Limit,
+				BannedUntil:   parseBannedUntil(pStats[0].BannedUntil),
+			}
+
+			bannedUntil = pStats[0].BannedUntil
+		}
+
 		switch txType {
 		case txn.ProposeCommand:
-			if len(pStats) > 0 {
-				stats.Proposals = pStats[0]
-			}
+			stats.Proposals = ssProto
 		case txn.DelegateCommand:
-			if len(pStats) > 0 {
-				stats.Delegations = pStats[0]
-			}
+			stats.Delegations = ssProto
 		case txn.TransferFundsCommand:
-			if len(pStats) > 0 {
-				stats.Transfers = pStats[0]
-			}
+			stats.Transfers = ssProto
 		case txn.AnnounceNodeCommand:
-			if len(pStats) > 0 {
-				stats.NodeAnnouncements = pStats[0]
-			}
+			stats.NodeAnnouncements = ssProto
 		case txn.VoteCommand:
-			vs := make([]VoteStatistic, len(pStats))
-
+			vs := make([]*protoapi.VoteSpamStatistic, len(pStats))
 			for i, ps := range pStats {
-				vs[i] = VoteStatistic{
-					Proposal:    ps.Name,
-					Total:       ps.Total,
-					MaxForEpoch: ps.Limit,
-					BannedUntil: ps.BannedUntil,
+				vs[i] = &protoapi.VoteSpamStatistic{
+					Proposal:      ps.Name,
+					CountForEpoch: ps.Total,
+					MaxForEpoch:   ps.Limit,
 				}
 			}
-
-			stats.Votes = vs
+			stats.Votes = &protoapi.VoteSpamStatistics{
+				Statistics:  vs,
+				BannedUntil: parseBannedUntil(bannedUntil),
+			}
 		default:
 			continue
 		}

@@ -16,7 +16,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -447,8 +446,8 @@ func (vsp *VoteSpamPolicy) GetStats(partyID string) []Statistic {
 	for proposal, votes := range partyStats {
 		stats = append(stats, Statistic{
 			Name:        proposal,
-			Total:       strconv.FormatUint(votes, 10),
-			Limit:       strconv.FormatUint(vsp.numVotes, 10),
+			Total:       votes,
+			Limit:       vsp.numVotes,
 			BannedUntil: bannedUntil,
 		})
 	}

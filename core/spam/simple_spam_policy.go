@@ -16,7 +16,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 
@@ -286,8 +285,8 @@ func (ssp *SimpleSpamPolicy) GetStats(party string) []Statistic {
 
 	return []Statistic{
 		{
-			Total:       strconv.FormatUint(ssp.partyToCount[party], formatBase),
-			Limit:       strconv.FormatUint(ssp.maxAllowedCommands, formatBase),
+			Total:       ssp.partyToCount[party],
+			Limit:       ssp.maxAllowedCommands,
 			BannedUntil: ssp.bannedParties[party],
 		},
 	}

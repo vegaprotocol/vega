@@ -16,8 +16,11 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"strconv"
 	"sync"
 	"time"
+
+	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/types"
@@ -64,17 +67,6 @@ type partyStateForBlock struct {
 
 type state struct {
 	blockToPartyState map[uint64]map[string]*partyStateForBlock
-}
-
-type BlockState struct {
-	BlockHeight      uint64
-	TransactionsSeen uint64
-	Difficulty       uint64
-}
-
-type SpamStatistics struct {
-	BlockStates []BlockState
-	BannedUntil int64
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/pow TimeService
@@ -253,6 +245,7 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 	for i, p := range e.activeParams {
 		if txBlock >= p.fromBlock && (p.untilBlock == nil || *p.untilBlock >= txBlock) {
 			stateInd = i
+			break
 		}
 	}
 	state := e.activeStates[stateInd]
@@ -290,6 +283,7 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 	if partyState.seenCount < uint(params.spamPoWNumberOfTxPerBlock) {
 		partyState.observedDifficulty += uint(d)
 		partyState.seenCount++
+
 		if e.log.IsDebug() {
 			e.log.Debug("transaction accepted", logging.String("tid", tx.GetPoWTID()))
 		}
@@ -303,7 +297,7 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 	}
 
 	// calculate the expected difficulty - allow spamPoWNumberOfTxPerBlock for every level of increased difficulty
-	totalExpectedDifficulty := calculateExpectedDifficulty(params.spamPoWDifficulty, uint(params.spamPoWNumberOfTxPerBlock), partyState.seenCount+1)
+	totalExpectedDifficulty, _ := calculateExpectedDifficulty(params.spamPoWDifficulty, uint(params.spamPoWNumberOfTxPerBlock), partyState.seenCount+1)
 
 	// if the observed difficulty sum is less than the expected difficulty, ban the party and reject the tx
 	if partyState.observedDifficulty+uint(d) < totalExpectedDifficulty {
@@ -315,6 +309,7 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 
 	partyState.observedDifficulty += +uint(d)
 	partyState.seenCount++
+
 	return nil
 }
 
@@ -326,9 +321,13 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 //	      seenTx = 33
 //
 // expected difficulty = 10 * 5 + 10 * 6 + 10 * 7 + 3 * 8 = 204.
-func calculateExpectedDifficulty(spamPoWDifficulty uint, spamPoWNumberOfTxPerBlock uint, seenTx uint) uint {
+func calculateExpectedDifficulty(spamPoWDifficulty uint, spamPoWNumberOfTxPerBlock uint, seenTx uint) (uint, uint) {
 	if seenTx <= spamPoWNumberOfTxPerBlock {
-		return seenTx * spamPoWDifficulty
+		if seenTx == spamPoWNumberOfTxPerBlock {
+			return seenTx * spamPoWDifficulty, spamPoWDifficulty + 1
+		}
+
+		return seenTx * spamPoWDifficulty, spamPoWDifficulty
 	}
 	total := uint(0)
 	diff := spamPoWDifficulty
@@ -343,7 +342,12 @@ func calculateExpectedDifficulty(spamPoWDifficulty uint, spamPoWNumberOfTxPerBlo
 		}
 		diff++
 	}
-	return total
+
+	if seenTx%spamPoWNumberOfTxPerBlock == 0 {
+		diff++
+	}
+
+	return total, diff
 }
 
 func (e *Engine) findParamsForBlockHeight(height uint64) int {
@@ -573,28 +577,65 @@ func (e *Engine) BlockData() (uint64, string) {
 	return e.currentBlock, e.blockHash[e.currentBlock%ringSize]
 }
 
-func (e *Engine) GetSpamStatistics(partyID string) SpamStatistics {
+func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 
-	stats := make([]BlockState, 0, len(e.activeStates)) //
+	stats := make([]*protoapi.PoWBlockState, 0, len(e.activeStates)) //
 
 	for _, state := range e.activeStates {
 		for block, blockToPartyState := range state.blockToPartyState {
+
+			stateInd := 0
+			for i, p := range e.activeParams {
+				if block >= p.fromBlock && (p.untilBlock == nil || *p.untilBlock >= block) {
+					stateInd = i
+					break
+				}
+			}
+			params := e.activeParams[stateInd]
+			blockIndex := block % ringSize
+
 			if partyState, ok := blockToPartyState[partyID]; ok {
-				stats = append(stats, BlockState{
-					BlockHeight:      block,
-					TransactionsSeen: uint64(partyState.seenCount),
-					Difficulty:       uint64(partyState.observedDifficulty),
+				stats = append(stats, &protoapi.PoWBlockState{
+					BlockHeight:        block,
+					BlockHash:          e.blockHash[blockIndex],
+					TransactionsSeen:   uint64(partyState.seenCount),
+					ObservedDifficulty: uint64(partyState.observedDifficulty),
+					ExpectedDifficulty: calculateSpamExpectedDifficulty(params.spamPoWDifficulty,
+						uint(params.spamPoWNumberOfTxPerBlock),
+						partyState.seenCount,
+						partyState.observedDifficulty,
+					),
 				})
 			}
 		}
 	}
 
-	until := e.bannedParties[partyID]
+	until := e.bannedParties[partyID].UnixNano()
 
-	return SpamStatistics{
-		BlockStates: stats,
-		BannedUntil: until.UnixNano(),
+	var bannedUntil *string
+
+	if until > 0 {
+		untilStr := strconv.FormatInt(until, 10)
+		bannedUntil = &untilStr
 	}
+
+	return &protoapi.PoWStatistic{
+		BlockStates: stats,
+		BannedUntil: bannedUntil,
+	}
+}
+
+func calculateSpamExpectedDifficulty(spamPoWDifficulty, spamPoWNumberOfTxPerBlock, seenTx uint, observedDifficulty uint) uint64 {
+	// calculate the total expected difficulty based on the number of transactions seen
+	totalDifficulty, powDiff := calculateExpectedDifficulty(spamPoWDifficulty, spamPoWNumberOfTxPerBlock, seenTx)
+	// add the current PoW difficulty to the current expected difficulty to get the expected total difficulty for the next transaction
+	totalDifficulty += powDiff
+	nextExpectedDifficulty := totalDifficulty - observedDifficulty
+	if nextExpectedDifficulty < spamPoWDifficulty {
+		nextExpectedDifficulty = spamPoWDifficulty
+	}
+
+	return uint64(nextExpectedDifficulty)
 }

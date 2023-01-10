@@ -149,13 +149,105 @@ func TestMempoolTidRejection(t *testing.T) {
 }
 
 func TestExpectedDifficulty(t *testing.T) {
-	require.Equal(t, uint(60), calculateExpectedDifficulty(20, 5, 3))   // 3 * 20
-	require.Equal(t, uint(100), calculateExpectedDifficulty(20, 5, 5))  // 5 * 20
-	require.Equal(t, uint(121), calculateExpectedDifficulty(20, 5, 6))  // 5 * 20 + 21
-	require.Equal(t, uint(184), calculateExpectedDifficulty(20, 5, 9))  // 5 * 20 + 4 * 21
-	require.Equal(t, uint(205), calculateExpectedDifficulty(20, 5, 10)) // 5 * 20 + 5 * 21
-	require.Equal(t, uint(430), calculateExpectedDifficulty(20, 5, 20)) // 5 * 20 + 5 * 21 + 5 * 22 + 5 * 23
-	require.Equal(t, uint(478), calculateExpectedDifficulty(20, 5, 22)) // 5 * 20 + 5 * 21 + 5 * 22 + 5 * 23 + 2 * 24
+	type args struct {
+		spamPowDifficulty         uint
+		spamPoWNumberOfTxPerBlock uint
+		seenTx                    uint
+	}
+
+	tests := []struct {
+		name           string
+		args           args
+		wantTotal      uint
+		wantDifficulty uint
+	}{
+		{
+			name: "3 transactions",
+			args: args{
+				spamPowDifficulty:         20,
+				spamPoWNumberOfTxPerBlock: 5,
+				seenTx:                    3,
+			},
+			wantTotal:      60, // 3 * 20
+			wantDifficulty: 20,
+		},
+		{
+			name: "5 transactions",
+			args: args{
+				spamPowDifficulty:         20,
+				spamPoWNumberOfTxPerBlock: 5,
+				seenTx:                    5,
+			},
+			wantTotal:      100, // 5 * 20
+			wantDifficulty: 21,
+		},
+		{
+			name: "6 transactions",
+			args: args{
+				spamPowDifficulty:         20,
+				spamPoWNumberOfTxPerBlock: 5,
+				seenTx:                    6,
+			},
+			wantTotal:      121, // 5 * 20 + 21
+			wantDifficulty: 21,
+		},
+		{
+			name: "9 transactions",
+			args: args{
+				spamPowDifficulty:         20,
+				spamPoWNumberOfTxPerBlock: 5,
+				seenTx:                    9,
+			},
+			wantTotal:      184, // 5 * 20 + 4 + 21
+			wantDifficulty: 21,
+		},
+		{
+			name: "10 transactions",
+			args: args{
+				spamPowDifficulty:         20,
+				spamPoWNumberOfTxPerBlock: 5,
+				seenTx:                    10,
+			},
+			wantTotal:      205, // 5 * 20 + 5 * 21
+			wantDifficulty: 22,
+		},
+		{
+			name: "20 transactions",
+			args: args{
+				spamPowDifficulty:         20,
+				spamPoWNumberOfTxPerBlock: 5,
+				seenTx:                    20,
+			},
+			wantTotal:      430, // 5 * 20 + 5 * 21 + 5 * 22 + 5 * 23
+			wantDifficulty: 24,
+		},
+		{
+			name: "22 transactions",
+			args: args{
+				spamPowDifficulty:         20,
+				spamPoWNumberOfTxPerBlock: 5,
+				seenTx:                    22,
+			},
+			wantTotal:      478, // 5 * 20 + 5 * 21 + 5 * 22 + 5 * 23 + 2 * 24
+			wantDifficulty: 24,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotTotal, gotDifficulty := calculateExpectedDifficulty(tt.args.spamPowDifficulty, tt.args.spamPoWNumberOfTxPerBlock, tt.args.seenTx)
+			require.Equal(t, tt.wantTotal, gotTotal)
+			require.Equal(t, tt.wantDifficulty, gotDifficulty)
+		})
+	}
+
+	// require.Equal(t, uint(60), calculateExpectedDifficulty(20, 5, 3))   // 3 * 20
+	// require.Equal(t, uint(100), calculateExpectedDifficulty(20, 5, 5))  // 5 * 20
+	// require.Equal(t, uint(121), calculateExpectedDifficulty(20, 5, 6))  // 5 * 20 + 21
+	// require.Equal(t, uint(184), calculateExpectedDifficulty(20, 5, 9))  // 5 * 20 + 4 * 21
+	// require.Equal(t, uint(205), calculateExpectedDifficulty(20, 5, 10)) // 5 * 20 + 5 * 21
+	// require.Equal(t, uint(430), calculateExpectedDifficulty(20, 5, 20)) // 5 * 20 + 5 * 21 + 5 * 22 + 5 * 23
+	// require.Equal(t, uint(478), calculateExpectedDifficulty(20, 5, 22)) // 5 * 20 + 5 * 21 + 5 * 22 + 5 * 23 + 2 * 24
 }
 
 func TestBeginBlock(t *testing.T) {
@@ -359,3 +451,87 @@ func (tx *testTx) Command() txn.Command        { return txn.AmendOrderCommand }
 func (tx *testTx) BlockHeight() uint64         { return tx.blockHeight }
 func (tx *testTx) GetCmd() interface{}         { return nil }
 func (tx *testTx) Validate() error             { return nil }
+
+func Test_ExpectedSpamDifficulty(t *testing.T) {
+	type args struct {
+		spamPowDifficulty         uint
+		spamPoWNumberOfTxPerBlock uint
+		seenTx                    uint
+		observedDifficulty        uint
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want uint64
+	}{
+		{
+			name: "Expected difficulty after 12 txs",
+			args: args{
+				spamPowDifficulty:         10,
+				spamPoWNumberOfTxPerBlock: 5,
+				seenTx:                    12,
+				observedDifficulty:        132,
+			},
+			want: 10,
+		},
+		{
+			name: "Expected difficulty after 13 txs",
+			args: args{
+				spamPowDifficulty:         10,
+				spamPoWNumberOfTxPerBlock: 5,
+				seenTx:                    13,
+				observedDifficulty:        142,
+			},
+			want: 11,
+		},
+		{
+			name: "Expected difficulty after 14 txs",
+			args: args{
+				spamPowDifficulty:         10,
+				spamPoWNumberOfTxPerBlock: 5,
+				seenTx:                    14,
+				observedDifficulty:        153,
+			},
+			want: 12,
+		},
+		{
+			name: "Expected difficulty after 15 txs",
+			args: args{
+				spamPowDifficulty:         10,
+				spamPoWNumberOfTxPerBlock: 5,
+				seenTx:                    15,
+				observedDifficulty:        166,
+			},
+			want: 12, // after 15txs, the difficulty is increased to 13, but we should have 1 extra in the credit from the previous block
+		},
+		{
+			name: "Expected difficulty after 16 txs",
+			args: args{
+				spamPowDifficulty:         10,
+				spamPoWNumberOfTxPerBlock: 5,
+				seenTx:                    16,
+				observedDifficulty:        178,
+			},
+			want: 13,
+		},
+		{
+			name: "Expected difficulty after 17 txs",
+			args: args{
+				spamPowDifficulty:         10,
+				spamPoWNumberOfTxPerBlock: 5,
+				seenTx:                    17,
+				observedDifficulty:        193,
+			},
+			want: 11,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := calculateSpamExpectedDifficulty(tt.args.spamPowDifficulty, tt.args.spamPoWNumberOfTxPerBlock, tt.args.seenTx, tt.args.observedDifficulty); got != tt.want {
+				t.Errorf("ExpectedSpamDifficulty() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

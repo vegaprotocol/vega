@@ -18,10 +18,6 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/pow"
-
-	"code.vegaprotocol.io/vega/core/spam"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/subscribers"
@@ -89,11 +85,11 @@ type ProofOfWorkParams interface {
 }
 
 type SpamEngine interface {
-	GetSpamStatistics(partyID string) spam.Statistics
+	GetSpamStatistics(partyID string) *protoapi.SpamStatistics
 }
 
 type PowEngine interface {
-	GetSpamStatistics(partyID string) pow.SpamStatistics
+	GetSpamStatistics(partyID string) *protoapi.PoWStatistic
 }
 
 // GRPCServer represent the grpc api provided by the vega node.
