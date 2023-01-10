@@ -127,7 +127,7 @@ func (s SignerPubKey) Serialize() []byte {
 func DeserializePubKey(data []byte) SignerPubKey {
 	return SignerPubKey{
 		PubKey: &PubKey{
-			Key: hex.EncodeToString(data),
+			Key: string(data),
 		},
 	}
 }
@@ -266,7 +266,7 @@ func (s SignerETHAddress) Serialize() []byte {
 func DeserializeETHAddress(data []byte) SignerETHAddress {
 	return SignerETHAddress{
 		ETHAddress: &ETHAddress{
-			Address: hex.EncodeToString(data),
+			Address: "0x" + string(data),
 		},
 	}
 }
@@ -407,6 +407,7 @@ func SignersIntoProto(s []*Signer) []*datapb.Signer {
 		for i, signer := range s {
 			sign := signer.oneOfProto()
 			protoSigners[i] = sign.(*datapb.Signer)
+			// protoSigners[i] = signer.IntoProto()
 		}
 	}
 
