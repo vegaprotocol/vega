@@ -106,7 +106,7 @@ const (
 	StakingAndDelegationRewardMaxPayoutPerEpoch       = "reward.staking.delegation.maxPayoutPerEpoch"
 	StakingAndDelegationRewardsMinValidators          = "reward.staking.delegation.minValidators"
 	StakingAndDelegationRewardOptimalStakeMultiplier  = "reward.staking.delegation.optimalStakeMultiplier"
-
+	
 	RewardMarketCreationQuantumMultiple = "rewards.marketCreationQuantumMultiple"
 
 	// spam policies params.
@@ -117,7 +117,8 @@ const (
 	SpamProtectionMaxDelegations         = "spam.protection.max.delegations"
 	SpamProtectionMinTokensForDelegation = "spam.protection.delegation.min.tokens"
 	SpamProtectionMaxBatchSize           = "spam.protection.max.batchSize"
-
+	SpamProtectionMinimiumWithdrawalQuantumMultiple     = "spam.protection.minimumWithdrawalQuantumMultiple"
+	
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
 
