@@ -642,6 +642,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.banking.OnMinTransferQuantumMultiple,
 		},
 		{
+			Param:   netparams.SpamProtectionMinimumWithdrawalQuantumMultiple,
+			Watcher: svcs.banking.OnMinWithdrawQuantumMultiple,
+		},
+		{
 			Param: netparams.BlockchainsEthereumConfig,
 			Watcher: func(_ context.Context, cfg interface{}) error {
 				// nothing to do if not a validator
