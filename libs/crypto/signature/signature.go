@@ -14,6 +14,7 @@ package crypto
 
 import (
 	"errors"
+	"fmt"
 
 	wcrypto "code.vegaprotocol.io/vega/wallet/crypto"
 
@@ -22,9 +23,11 @@ import (
 )
 
 var (
-	ErrAddressesDoesNotMatch = errors.New("addresses does not match")
-	ErrInvalidSignature      = errors.New("invalid signature")
-	ErrEthInvalidSignature   = errors.New("invalid ethereum signature")
+	ErrAddressesDoesNotMatch = func(expected, recovered common.Address) error {
+		return fmt.Errorf("addresses does not match, expected(%s) recovered(%s)", expected.Hex(), recovered.Hex())
+	}
+	ErrInvalidSignature    = errors.New("invalid signature")
+	ErrEthInvalidSignature = errors.New("invalid ethereum signature")
 )
 
 func VerifyEthereumSignature(message, signature []byte, hexAddress string) error {
@@ -55,7 +58,7 @@ func VerifyEthereumSignature(message, signature []byte, hexAddress string) error
 	// ensure the signer is the expected ethereum wallet
 	signerAddress := ecrypto.PubkeyToAddress(*pubkey)
 	if address != signerAddress {
-		return ErrAddressesDoesNotMatch
+		return ErrAddressesDoesNotMatch(address, signerAddress)
 	}
 
 	return nil
