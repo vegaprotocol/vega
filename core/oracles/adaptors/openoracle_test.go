@@ -17,12 +17,12 @@ import (
 	"encoding/json"
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/openoracle"
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/oracles/adaptors"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 
-	"code.vegaprotocol.io/oracles-relay/openoracle"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

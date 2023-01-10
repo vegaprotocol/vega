@@ -15,11 +15,10 @@ package adaptors
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/openoracle"
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
-
-	"code.vegaprotocol.io/oracles-relay/openoracle"
 )
 
 // OpenOracleAdaptor is a specific oracle Adaptor for Open Oracle / Open Price Feed
