@@ -106,19 +106,19 @@ const (
 	StakingAndDelegationRewardMaxPayoutPerEpoch       = "reward.staking.delegation.maxPayoutPerEpoch"
 	StakingAndDelegationRewardsMinValidators          = "reward.staking.delegation.minValidators"
 	StakingAndDelegationRewardOptimalStakeMultiplier  = "reward.staking.delegation.optimalStakeMultiplier"
-	
+
 	RewardMarketCreationQuantumMultiple = "rewards.marketCreationQuantumMultiple"
 
 	// spam policies params.
-	SpamProtectionMaxVotes               = "spam.protection.max.votes"
-	SpamProtectionMinTokensForVoting     = "spam.protection.voting.min.tokens"
-	SpamProtectionMaxProposals           = "spam.protection.max.proposals"
-	SpamProtectionMinTokensForProposal   = "spam.protection.proposal.min.tokens"
-	SpamProtectionMaxDelegations         = "spam.protection.max.delegations"
-	SpamProtectionMinTokensForDelegation = "spam.protection.delegation.min.tokens"
-	SpamProtectionMaxBatchSize           = "spam.protection.max.batchSize"
-	SpamProtectionMinimiumWithdrawalQuantumMultiple     = "spam.protection.minimumWithdrawalQuantumMultiple"
-	
+	SpamProtectionMaxVotes                          = "spam.protection.max.votes"
+	SpamProtectionMinTokensForVoting                = "spam.protection.voting.min.tokens"
+	SpamProtectionMaxProposals                      = "spam.protection.max.proposals"
+	SpamProtectionMinTokensForProposal              = "spam.protection.proposal.min.tokens"
+	SpamProtectionMaxDelegations                    = "spam.protection.max.delegations"
+	SpamProtectionMinTokensForDelegation            = "spam.protection.delegation.min.tokens"
+	SpamProtectionMaxBatchSize                      = "spam.protection.max.batchSize"
+	SpamProtectionMinimiumWithdrawalQuantumMultiple = "spam.protection.minimumWithdrawalQuantumMultiple"
+
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
 
@@ -288,4 +288,5 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionMaxBatchSize:                               {},
 	MarkPriceUpdateMaximumFrequency:                          {},
 	ValidatorPerformanceScalingFactor:                        {},
+	SpamProtectionMinimiumWithdrawalQuantumMultiple:          {},
 }
