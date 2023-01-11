@@ -769,11 +769,13 @@ create table if not exists deposits (
     vega_time timestamp with time zone not null,
     primary key (id, party_id, vega_time)
 );
+CREATE INDEX ON deposits(party_id);
 
 select create_hypertable('deposits', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
 CREATE VIEW deposits_current AS (
-    SELECT DISTINCT ON (id) * FROM deposits ORDER BY id, vega_time DESC
+    -- Assume that party_id is always the same for a given deposit ID to allow filter to be pushed down
+    SELECT DISTINCT ON (id, party_id) * FROM deposits ORDER BY id, party_id, vega_time DESC
 );
 
 create type withdrawal_status as enum('STATUS_UNSPECIFIED', 'STATUS_OPEN', 'STATUS_REJECTED', 'STATUS_FINALIZED');
@@ -794,10 +796,13 @@ create table if not exists withdrawals (
     primary key (id, party_id, vega_time)
 );
 
+CREATE INDEX ON withdrawals(party_id);
+
 select create_hypertable('withdrawals', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
 CREATE VIEW withdrawals_current AS (
-    SELECT DISTINCT ON (id) * FROM withdrawals ORDER BY id, vega_time DESC
+    -- Assume that party_id is always the same for a given withdrawal ID to allow filter to be pushed down
+    SELECT DISTINCT ON (id, party_id) * FROM withdrawals ORDER BY id, party_id, vega_time DESC
 );
 
 CREATE TYPE proposal_state AS enum('STATE_UNSPECIFIED', 'STATE_FAILED', 'STATE_OPEN', 'STATE_PASSED', 'STATE_REJECTED', 'STATE_DECLINED', 'STATE_ENACTED', 'STATE_WAITING_FOR_NODE_VOTE');
