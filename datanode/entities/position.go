@@ -32,6 +32,10 @@ type positionSettlement interface {
 	TxHash() string
 }
 
+type positionState interface {
+	Size() int64
+}
+
 type lossSocialization interface {
 	Amount() *num.Int
 	TxHash() string
@@ -48,6 +52,14 @@ type settleMarket interface {
 	TxHash() string
 }
 
+type PendingPosition struct {
+	OpenVolume              int64
+	RealisedPnl             decimal.Decimal
+	UnrealisedPnl           decimal.Decimal
+	AverageEntryPrice       decimal.Decimal
+	AverageEntryMarketPrice decimal.Decimal
+}
+
 type Position struct {
 	MarketID                MarketID
 	PartyID                 PartyID
@@ -60,6 +72,9 @@ type Position struct {
 	Adjustment              decimal.Decimal // what a party was missing which triggered loss socialization
 	TxHash                  TxHash
 	VegaTime                time.Time
+	// keep track of trades that haven't been settled as separate fields
+	// these will be zeroed out once we process settlement events
+	Pending PendingPosition
 }
 
 func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
@@ -73,7 +88,16 @@ func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
 		AverageEntryMarketPrice: num.DecimalZero(),
 		Loss:                    num.DecimalZero(),
 		Adjustment:              num.DecimalZero(),
+		Pending: PendingPosition{
+			RealisedPnl:             num.DecimalZero(),
+			UnrealisedPnl:           num.DecimalZero(),
+			AverageEntryPrice:       num.DecimalZero(),
+			AverageEntryMarketPrice: num.DecimalZero(),
+		},
 	}
+}
+
+func (p *Position) UpdateWithPositionState(e positionState) {
 }
 
 func (p *Position) UpdateWithPositionSettlement(e positionSettlement) {
@@ -91,6 +115,16 @@ func (p *Position) UpdateWithPositionSettlement(e positionSettlement) {
 	}
 	p.mtm(e.Price(), e.PositionFactor())
 	p.TxHash = TxHash(e.TxHash())
+	p.syncPending()
+}
+
+func (p *Position) syncPending() {
+	// update pending fields to match current ones
+	p.Pending.OpenVolume = p.OpenVolume
+	p.Pending.RealisedPnl = p.RealisedPnl
+	p.Pending.UnrealisedPnl = p.UnrealisedPnl
+	p.Pending.AverageEntryPrice = p.AverageEntryPrice
+	p.Pending.AverageEntryMarketPrice = p.AverageEntryMarketPrice
 }
 
 func (p *Position) UpdateWithLossSocialization(e lossSocialization) {
@@ -104,6 +138,7 @@ func (p *Position) UpdateWithLossSocialization(e lossSocialization) {
 
 	p.RealisedPnl = p.RealisedPnl.Add(amountLoss)
 	p.TxHash = TxHash(e.TxHash())
+	p.syncPending()
 }
 
 func (p *Position) UpdateWithSettleDistressed(e settleDistressed) {
@@ -115,6 +150,7 @@ func (p *Position) UpdateWithSettleDistressed(e settleDistressed) {
 	p.AverageEntryPrice = num.DecimalZero()
 	p.OpenVolume = 0
 	p.TxHash = TxHash(e.TxHash())
+	p.syncPending()
 }
 
 func (p *Position) UpdateWithSettleMarket(e settleMarket) {
@@ -126,6 +162,7 @@ func (p *Position) UpdateWithSettleMarket(e settleMarket) {
 	p.UnrealisedPnl = num.DecimalZero()
 	p.OpenVolume = 0
 	p.TxHash = TxHash(e.TxHash())
+	p.syncPending()
 }
 
 func (p *Position) ToProto() *vega.Position {

@@ -23,6 +23,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+type positionState interface {
+	events.Event
+	MarketID() string
+	PartyID() string
+	Size() int64
+	// we don't use these, but these methods are unique to this event type
+	// add them here so we don't end up handling any of the other events by mistake
+	PotentialBuys() int64
+	PotentialSells() int64
+	VWBuyPrice() *num.Uint
+	VWSellPrice() *num.Uint
+}
+
 type positionEventBase interface {
 	events.Event
 	MarketID() string
@@ -84,6 +97,7 @@ func (p *Position) Types() []events.Type {
 		events.SettleDistressedEvent,
 		events.LossSocializationEvent,
 		events.SettleMarketEvent,
+		events.PositionStateEvent,
 	}
 }
 
@@ -102,6 +116,8 @@ func (p *Position) Push(ctx context.Context, evt events.Event) error {
 		return p.handleSettleDistressed(ctx, event)
 	case settleMarket:
 		return p.handleSettleMarket(ctx, event)
+	case positionState:
+		return errors.New("todo")
 	default:
 		return errors.Errorf("unknown event type %s", evt.Type().String())
 	}
