@@ -300,7 +300,7 @@ func (vsp *VoteSpamPolicy) EndOfBlock(blockHeight uint64, now time.Time, banDura
 	// check if we need to increase the limits, i.e. if we're below the max and we've not increased in the last n blocks
 	if (vsp.lastIncreaseBlock == 0 || blockHeight > vsp.lastIncreaseBlock+numberOfBlocksForIncreaseCheck) && num.UintZero().Mul(vsp.minVotingTokens, vsp.minVotingTokensFactor).LT(maxMinVotingTokens) {
 		average := vsp.calcRejectAverage()
-		if average > rejectRatioForIncrease {
+		if average.GreaterThan(rejectRatioForIncrease) {
 			vsp.lastIncreaseBlock = blockHeight
 			vsp.minVotingTokensFactor = num.UintZero().Mul(vsp.minVotingTokensFactor, increaseFactor)
 			vsp.effectiveMinTokens = num.UintZero().Mul(vsp.minVotingTokensFactor, vsp.minVotingTokens)
@@ -309,7 +309,7 @@ func (vsp *VoteSpamPolicy) EndOfBlock(blockHeight uint64, now time.Time, banDura
 }
 
 // calculate the mean rejection rate in the last <numberOfBlocksForIncreaseCheck>.
-func (vsp *VoteSpamPolicy) calcRejectAverage() float64 {
+func (vsp *VoteSpamPolicy) calcRejectAverage() num.Decimal {
 	var total uint64
 	var rejected uint64
 	var i uint64
@@ -319,7 +319,10 @@ func (vsp *VoteSpamPolicy) calcRejectAverage() float64 {
 			rejected += vsp.recentBlocksRejectStats[i].rejected
 		}
 	}
-	return float64(rejected) / float64(total)
+	if total == 0 {
+		return num.DecimalZero()
+	}
+	return num.DecimalFromInt64(int64(rejected)).Div(num.DecimalFromInt64(int64((total))))
 }
 
 // PostBlockAccept checks if votes that made it to the block should be rejected based on the number of votes preceding the block + votes seen in the block
