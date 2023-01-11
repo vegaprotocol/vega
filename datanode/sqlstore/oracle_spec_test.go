@@ -115,7 +115,6 @@ func testGetSpecByID(t *testing.T) {
 	require.NoError(t, err)
 
 	want, err := entities.DataSourceSpecFromProto(specProtos[0].ExternalDataSourceSpec.Spec, got.ExternalDataSourceSpec.Spec.TxHash, block.VegaTime)
-
 	assert.NoError(t, err)
 	// truncate the time to microseconds as postgres doesn't support nanosecond granularity.
 	want.UpdatedAt = want.UpdatedAt.Truncate(time.Microsecond)
@@ -163,7 +162,7 @@ func testGetSpecs(t *testing.T) {
 
 func getTestSpecs() []*vegapb.OracleSpec {
 	pk1 := types.CreateSignerFromString("b105f00d", types.DataSignerTypePubKey)
-	pk2 := types.CreateSignerFromString("0x124dd8a6044ef048614aea0aac86643a8ae1312d", types.DataSignerTypeEthAddress)
+	pk2 := types.CreateSignerFromString("baddcafe", types.DataSignerTypePubKey)
 
 	return []*vegapb.OracleSpec{
 		{
