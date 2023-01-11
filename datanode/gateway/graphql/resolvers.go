@@ -1174,9 +1174,9 @@ func (r *myQueryResolver) NetworkLimits(ctx context.Context) (*types.NetworkLimi
 }
 
 func (r *myQueryResolver) MostRecentHistorySegment(ctx context.Context) (*v2.HistorySegment, error) {
-	req := &v2.GetMostRecentDeHistorySegmentRequest{}
+	req := &v2.GetMostRecentNetworkHistorySegmentRequest{}
 
-	resp, err := r.tradingDataClientV2.GetMostRecentDeHistorySegment(ctx, req)
+	resp, err := r.tradingDataClientV2.GetMostRecentNetworkHistorySegment(ctx, req)
 	if err != nil {
 		return nil, err
 	}

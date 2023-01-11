@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/dehistory/store"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
@@ -56,10 +56,10 @@ type BlockService interface {
 	GetLastBlock(ctx context.Context) (entities.Block, error)
 }
 
-// DeHistoryService ...
+// NetworkHistoryService ...
 //
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/dehistory_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api DeHistoryService
-type DeHistoryService interface {
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/networkhistory_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api NetworkHistoryService
+type NetworkHistoryService interface {
 	GetHighestBlockHeightHistorySegment() (store.SegmentIndexEntry, error)
 	ListAllHistorySegments() ([]store.SegmentIndexEntry, error)
 	FetchHistorySegment(ctx context.Context, historySegmentID string) (store.SegmentIndexEntry, error)
@@ -111,7 +111,7 @@ type GRPCServer struct {
 	marketDepthService         *service.MarketDepth
 	ledgerService              *service.Ledger
 	protocolUpgradeService     *service.ProtocolUpgrade
-	deHistoryService           DeHistoryService
+	networkHistoryService      NetworkHistoryService
 	coreSnapshotService        *service.SnapshotData
 
 	eventObserver *eventObserver
@@ -161,7 +161,7 @@ func NewGRPCServer(
 	marketDepthService *service.MarketDepth,
 	ledgerService *service.Ledger,
 	protocolUpgradeService *service.ProtocolUpgrade,
-	deHistoryService DeHistoryService,
+	networkHistoryService NetworkHistoryService,
 	coreSnapshotService *service.SnapshotData,
 ) *GRPCServer {
 	// setup logger
@@ -208,7 +208,7 @@ func NewGRPCServer(
 		marketDataService:          marketDataService,
 		ledgerService:              ledgerService,
 		protocolUpgradeService:     protocolUpgradeService,
-		deHistoryService:           deHistoryService,
+		networkHistoryService:      networkHistoryService,
 		coreSnapshotService:        coreSnapshotService,
 
 		eventObserver: &eventObserver{
@@ -410,7 +410,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		ethereumKeyRotationService: g.ethereumKeyRotationService,
 		blockService:               g.blockService,
 		protocolUpgradeService:     g.protocolUpgradeService,
-		deHistoryService:           g.deHistoryService,
+		networkHistoryService:      g.networkHistoryService,
 		coreSnapshotService:        g.coreSnapshotService,
 	}
 

@@ -128,14 +128,14 @@ var (
 	ErrGetNetworkLimits = errors.New("failed to get network limits")
 	// Rewards.
 	ErrGetRewards = errors.New("failed to get rewards")
-	// Decentralized History.
-	ErrGetActivePeerAddresses      = errors.New("failed to get active peer addresses")
-	ErrGetMostRecentHistorySegment = errors.New("failed to get most recent history segment")
-	ErrListAllDeHistorySegment     = errors.New("failed to list all history segments")
-	ErrFetchDeHistorySegment       = errors.New("failed to fetch segment")
-	ErrDeHistoryNotEnabled         = errors.New("dehistory not enabled")
-	ErrCopyHistorySegmentToFile    = errors.New("failed to copy history segment to file")
-	ErrMissingNodeID               = errors.New("missing node id")
+	// Network History.
+	ErrGetActivePeerAddresses       = errors.New("failed to get active peer addresses")
+	ErrGetMostRecentHistorySegment  = errors.New("failed to get most recent history segment")
+	ErrListAllNetworkHistorySegment = errors.New("failed to list all history segments")
+	ErrFetchNetworkHistorySegment   = errors.New("failed to fetch segment")
+	ErrNetworkHistoryNotEnabled     = errors.New("network history not enabled")
+	ErrCopyHistorySegmentToFile     = errors.New("failed to copy history segment to file")
+	ErrMissingNodeID                = errors.New("missing node id")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

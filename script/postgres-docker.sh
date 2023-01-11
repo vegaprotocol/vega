@@ -16,8 +16,8 @@ else
         fi
 fi
 
-SNAPSHOTS_COPY_TO_PATH=${VEGA_STATE}/data-node/dehistory/snapshotscopyto
-SNAPSHOTS_COPY_FROM_PATH=${VEGA_STATE}/data-node/dehistory/snapshotscopyfrom
+SNAPSHOTS_COPY_TO_PATH=${VEGA_STATE}/data-node/networkhistory/snapshotscopyto
+SNAPSHOTS_COPY_FROM_PATH=${VEGA_STATE}/data-node/networkhistory/snapshotscopyfrom
 
 mkdir -p "$SNAPSHOTS_COPY_TO_PATH"
 chmod 777 "$SNAPSHOTS_COPY_TO_PATH"
