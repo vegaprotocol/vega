@@ -585,7 +585,6 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 
 	for _, state := range e.activeStates {
 		for block, blockToPartyState := range state.blockToPartyState {
-
 			stateInd := 0
 			for i, p := range e.activeParams {
 				if block >= p.fromBlock && (p.untilBlock == nil || *p.untilBlock >= block) {
