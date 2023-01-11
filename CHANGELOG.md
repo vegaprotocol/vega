@@ -17,6 +17,7 @@
 - [7283](https://github.com/vegaprotocol/vega/issues/7283) - Fix validation of future product oracles signers
 - [7278](https://github.com/vegaprotocol/vega/issues/7278) - Use `Informal systems` fork of Tendermint
 - [7294](https://github.com/vegaprotocol/vega/issues/7294) - Submission of `OpenOracle` data is broken
+- [7286](https://github.com/vegaprotocol/vega/issues/7286) - Fix serialisation of `oracle specs`
 
 ## 0.66.1
 - [7269](https://github.com/vegaprotocol/vega/pull/7269) - Fix wallet release pipeline
