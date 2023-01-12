@@ -14,13 +14,13 @@ The vega core node is also now a builtin tendermint application. This means that
 vega tendermint --help
 ```
 
-## Configuration changes
+# Configuration changes
 
-### Vega
+## Vega
 
 The vega configuration file can be found under `$VEGA_HOME/config/node/config.toml`
 
-#### Settings added in v0.67.0
+### Settings added in v0.67.0
 
 **_MaxMemoryPercent_** - A value to control the maximum amount the vega node will use. The accept range of value is 1-100, 100 basically removing any memory usage restriction. By default set to 33 when initialising a full node (accounting for a possible datanode running as well on the same hardware) and 100 when initialising a validator.
 
@@ -61,7 +61,7 @@ Usage Example:
  StartHeight = -1
 ```
 
-#### Settings removed in v0.67.0
+### Settings removed in v0.67.0
 
 **_UlimitNOFile_** - previously used to increase the amount of fd allowed to be created by the node, it was required for the internal use of badger which have been removed.
 
@@ -74,7 +74,7 @@ Usage Example:
 **_[NodeWallet.ETH]_** - This have been removed from the _[NodeWallet]_ section to be set into it's own _[Ethereum]_ section.
 
 
-### Tendermint
+## Tendermint
 
 Here's a list of settings from the tendermint configuration that needs to be set so vega operate properly. You can find the tendermint configuration under `$TENDERMINT_HOME/config/config.toml`. Others can be kept to the defaults.
 
