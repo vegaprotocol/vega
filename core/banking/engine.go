@@ -145,8 +145,9 @@ type Engine struct {
 	recurringTransfersMap map[string]*types.RecurringTransfer
 
 	bridgeState *bridgeState
+	bridgeView  ERC20BridgeView
 
-	bridgeView ERC20BridgeView
+	minWithdrawQuantumMultiple num.Decimal
 }
 
 type withdrawalRef struct {
@@ -195,12 +196,18 @@ func New(
 		recurringTransfersMap:      map[string]*types.RecurringTransfer{},
 		transferFeeFactor:          num.DecimalZero(),
 		minTransferQuantumMultiple: num.DecimalZero(),
+		minWithdrawQuantumMultiple: num.DecimalZero(),
 		marketActivityTracker:      marketActivityTracker,
 		bridgeState: &bridgeState{
 			active: true,
 		},
 		bridgeView: bridgeView,
 	}
+}
+
+func (e *Engine) OnMinWithdrawQuantumMultiple(ctx context.Context, f num.Decimal) error {
+	e.minWithdrawQuantumMultiple = f
+	return nil
 }
 
 // ReloadConf updates the internal configuration.

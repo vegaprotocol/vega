@@ -162,13 +162,13 @@ func defaultNetParams() map[string]value {
 		StakingAndDelegationRewardOptimalStakeMultiplier:  NewDecimal(gteD1).Mutable(true).MustUpdate("3.0"),
 
 		// spam protection policies
-		SpamProtectionMaxVotes:               NewInt(gteI1).Mutable(true).MustUpdate("3"),
-		SpamProtectionMinTokensForVoting:     NewDecimal(gteD1).Mutable(true).MustUpdate("100000000000000000000"),
-		SpamProtectionMaxProposals:           NewInt(gteI1).Mutable(true).MustUpdate("3"),
-		SpamProtectionMinTokensForProposal:   NewDecimal(gteD1).Mutable(true).MustUpdate("100000000000000000000000"),
-		SpamProtectionMaxDelegations:         NewInt(gteI1).Mutable(true).MustUpdate("390"),
-		SpamProtectionMinTokensForDelegation: NewDecimal(gteD1).Mutable(true).MustUpdate("1000000000000000000"),
-
+		SpamProtectionMaxVotes:                         NewInt(gteI1).Mutable(true).MustUpdate("3"),
+		SpamProtectionMinTokensForVoting:               NewDecimal(gteD1).Mutable(true).MustUpdate("100000000000000000000"),
+		SpamProtectionMaxProposals:                     NewInt(gteI1).Mutable(true).MustUpdate("3"),
+		SpamProtectionMinTokensForProposal:             NewDecimal(gteD1).Mutable(true).MustUpdate("100000000000000000000000"),
+		SpamProtectionMaxDelegations:                   NewInt(gteI1).Mutable(true).MustUpdate("390"),
+		SpamProtectionMinTokensForDelegation:           NewDecimal(gteD1).Mutable(true).MustUpdate("1000000000000000000"),
+		SpamProtectionMinimumWithdrawalQuantumMultiple: NewDecimal(DecimalGT(num.MustDecimalFromString("0")), DecimalLT(num.MustDecimalFromString("10e6"))).Mutable(true).MustUpdate("10"),
 		// no validation for this initially as we configure the
 		// the bootstrapping asset.
 		// validation will be added at node startup, so we can use dynamic stuff
