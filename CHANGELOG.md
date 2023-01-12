@@ -16,6 +16,7 @@
 
 ### 🛠 Improvements
 - [7302](https://github.com/vegaprotocol/vega/issues/7302) - Add withdrawal minimal amount
+- [5487](https://github.com/vegaprotocol/vega/issues/5487) - Add `UPGRADING.md`
 
 ### 🐛 Fixes
 - [7260](https://github.com/vegaprotocol/vega/issues/7260) - Fix bug where pagination `before` or `after` cursors were ignored if `first` or `last` not set

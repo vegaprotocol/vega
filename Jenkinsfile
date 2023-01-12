@@ -206,7 +206,7 @@ pipeline {
                     steps {
                         dir('vega') {
                             ansiColor('xterm') {
-                                sh 'mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report "*.md" "docs/**/*.md"'
+                                sh 'mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report "*.md" "docs/**/*.md" "!UPGRADING.md"'
                             }
                         }
                         sh 'printenv'
