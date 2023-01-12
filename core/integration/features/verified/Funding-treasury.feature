@@ -1,4 +1,4 @@
-Feature: Position resolution case 5 lognormal risk model
+Feature: check the insurance pool getting shared equally between all markets with the same settlement asset + the on-chain treasury for the asset.
 
   Background:
 
@@ -52,7 +52,7 @@ Feature: Position resolution case 5 lognormal risk model
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book; 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001, 0013-ACCT-022
+  Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book; and fund treasure. 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001, 0013-ACCT-022
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
