@@ -382,6 +382,8 @@ message VoteSpamStatistic {
   uint64 count_for_epoch = 2;
   // The maximum number of votes per proposal allowed in an epoch
   uint64 max_for_epoch = 3;
+  // The effective minimum number of tokens required to vote on the proposal
+  uint64 min_tokens_required = 4;
 }
 
 // The PoW state for a given block
@@ -392,14 +394,11 @@ message PoWBlockState {
   string block_hash = 2;
   // Total number of transactions seen in the block
   uint64 transactions_seen = 3;
-  // The effective minimum difficulty required for the block if
-  // increasing difficulty is required
-  optional uint64 effective_minimum_difficulty = 4;
   // The minimum expected difficulty for the next transaction in the block
   // This is only provided if increasing difficulty is required
-  optional uint64 expected_difficulty = 5;
+  optional uint64 expected_difficulty = 4;
   // The hashing function used to calculate the block hash
-  string hash_function = 6;
+  string hash_function = 5;
 }
 
 // Proof of work statistics for a party
