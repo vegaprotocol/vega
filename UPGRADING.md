@@ -9,6 +9,11 @@ vega datanode --help
 vega wallet --help
 ```
 
+The vega core node is also now a builtin tendermint application. This means that it's not necessary anymore to run tendermint separately. Most tendermint commands used to managed a tendermint chain are also available under the vega toolchain:
+```
+vega tendermint --help
+```
+
 ## Configuration changes
 
 ### Vega
