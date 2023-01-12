@@ -8,7 +8,7 @@ import (
 
 // ConnectedWallet is the projection of the wallet through the permissions
 // and authentication system. On a regular wallet, there are no restrictions
-// on what we can call, which doesn't fit the model of having restricted
+// on what we can call, which doesn't fit the model of having allowed
 // access, so we wrap the "regular wallet" behind the "connected wallet".
 type ConnectedWallet struct {
 	// name is the name of the wallet.
@@ -17,10 +17,10 @@ type ConnectedWallet struct {
 	// Hostname is the hostname for which the connection is set.
 	hostname string
 
-	// restrictedKeys holds the keys that have been selected by the client
+	// allowedKeys holds the keys that have been selected by the client
 	// during the permissions request.
 	// The order should match the order of generation in the wallet.
-	restrictedKeys []RestrictedKey
+	allowedKeys []AllowedKey
 
 	// noRestrictions is a hack to know if we should skip permission
 	// verification when we are connected with a long-living API token.
@@ -40,11 +40,11 @@ func (s *ConnectedWallet) Hostname() string {
 	return s.hostname
 }
 
-// RestrictedKeys returns the keys a connection has access to. If a third-party
+// AllowedKeys returns the keys a connection has access to. If a third-party
 // application tries to use a keys that does not belong to this set, then the
 // request should fail.
-func (s *ConnectedWallet) RestrictedKeys() []RestrictedKey {
-	return s.restrictedKeys
+func (s *ConnectedWallet) AllowedKeys() []AllowedKey {
+	return s.allowedKeys
 }
 
 // RequireInteraction tells if an interaction with the user is needed for
@@ -64,8 +64,8 @@ func (s *ConnectedWallet) CanListKeys() bool {
 
 // CanUseKey determines if the permissions allow the specified key to be used.
 func (s *ConnectedWallet) CanUseKey(publicKeyToUse string) bool {
-	for _, restrictedKey := range s.restrictedKeys {
-		if restrictedKey.PublicKey() == publicKeyToUse {
+	for _, allowedKey := range s.allowedKeys {
+		if allowedKey.PublicKey() == publicKeyToUse {
 			return true
 		}
 	}
@@ -75,44 +75,44 @@ func (s *ConnectedWallet) CanUseKey(publicKeyToUse string) bool {
 
 func (s *ConnectedWallet) RefreshFromWallet(freshWallet wallet.Wallet) error {
 	if s.noRestrictions {
-		s.restrictedKeys = allUsableKeys(freshWallet)
+		s.allowedKeys = allUsableKeys(freshWallet)
 		return nil
 	}
 
-	rks, err := restrictedKeys(freshWallet, s.hostname)
+	rks, err := allowedKeys(freshWallet, s.hostname)
 	if err != nil {
-		return fmt.Errorf("could not resolve the restricted keys when refreshing the connection: %w", err)
+		return fmt.Errorf("could not resolve the allowed keys when refreshing the connection: %w", err)
 	}
 
 	s.canListKeys = rks != nil
-	s.restrictedKeys = rks
+	s.allowedKeys = rks
 
 	return nil
 }
 
-type RestrictedKey struct {
+type AllowedKey struct {
 	publicKey string
 	name      string
 }
 
-func (r RestrictedKey) PublicKey() string {
+func (r AllowedKey) PublicKey() string {
 	return r.publicKey
 }
 
-func (r RestrictedKey) Name() string {
+func (r AllowedKey) Name() string {
 	return r.name
 }
 
 func NewConnectedWallet(hostname string, w wallet.Wallet) (ConnectedWallet, error) {
-	rks, err := restrictedKeys(w, hostname)
+	rks, err := allowedKeys(w, hostname)
 	if err != nil {
-		return ConnectedWallet{}, fmt.Errorf("could not resolve the restricted keys: %w", err)
+		return ConnectedWallet{}, fmt.Errorf("could not resolve the allowed keys: %w", err)
 	}
 
 	return ConnectedWallet{
 		noRestrictions: false,
 		canListKeys:    rks != nil,
-		restrictedKeys: rks,
+		allowedKeys:    rks,
 		hostname:       hostname,
 		name:           w.Name(),
 	}, nil
@@ -122,51 +122,51 @@ func NewLongLivingConnectedWallet(w wallet.Wallet) (ConnectedWallet, error) {
 	return ConnectedWallet{
 		noRestrictions: true,
 		canListKeys:    true,
-		restrictedKeys: allUsableKeys(w),
+		allowedKeys:    allUsableKeys(w),
 		hostname:       "",
 		name:           w.Name(),
 	}, nil
 }
 
-func restrictedKeys(w wallet.Wallet, hostname string) ([]RestrictedKey, error) {
+func allowedKeys(w wallet.Wallet, hostname string) ([]AllowedKey, error) {
 	perms := w.Permissions(hostname)
 
 	if !perms.PublicKeys.Enabled() {
 		return nil, nil
 	}
 
-	if !perms.PublicKeys.HasRestrictedKeys() {
-		// If there is no restricted keys set for this hostname, we load all valid
+	if !perms.PublicKeys.HasAllowedKeys() {
+		// If there is no allowed keys set for this hostname, we load all valid
 		// keys.
 		return allUsableKeys(w), nil
 	}
 
-	restrictedKeys := make([]RestrictedKey, 0, len(perms.PublicKeys.RestrictedKeys))
-	for _, pubKey := range perms.PublicKeys.RestrictedKeys {
+	allowedKeys := make([]AllowedKey, 0, len(perms.PublicKeys.AllowedKeys))
+	for _, pubKey := range perms.PublicKeys.AllowedKeys {
 		keyPair, err := w.DescribeKeyPair(pubKey)
 		if err != nil {
 			return nil, fmt.Errorf("could not load the key pair associated to the public key %q: %w", pubKey, err)
 		}
 		// There is no need to check for the tainted keys, here, as this list
 		// should only contain usable keys.
-		restrictedKeys = append(restrictedKeys, RestrictedKey{
+		allowedKeys = append(allowedKeys, AllowedKey{
 			publicKey: keyPair.PublicKey(),
 			name:      keyPair.Name(),
 		})
 	}
-	return restrictedKeys, nil
+	return allowedKeys, nil
 }
 
-func allUsableKeys(w wallet.Wallet) []RestrictedKey {
+func allUsableKeys(w wallet.Wallet) []AllowedKey {
 	allKeyPairs := w.ListKeyPairs()
-	restrictedKeys := make([]RestrictedKey, 0, len(allKeyPairs))
+	allowedKeys := make([]AllowedKey, 0, len(allKeyPairs))
 	for _, keyPair := range allKeyPairs {
 		if !keyPair.IsTainted() {
-			restrictedKeys = append(restrictedKeys, RestrictedKey{
+			allowedKeys = append(allowedKeys, AllowedKey{
 				publicKey: keyPair.PublicKey(),
 				name:      keyPair.Name(),
 			})
 		}
 	}
-	return restrictedKeys
+	return allowedKeys
 }

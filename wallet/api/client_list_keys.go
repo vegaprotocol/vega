@@ -37,13 +37,13 @@ func (h *ClientListKeys) Handle(ctx context.Context, connectedWallet ConnectedWa
 		}
 	}
 
-	restrictedKeys := connectedWallet.RestrictedKeys()
+	allowedKeys := connectedWallet.AllowedKeys()
 
-	keys := make([]ClientNamedPublicKey, 0, len(restrictedKeys))
-	for _, restrictedKey := range restrictedKeys {
+	keys := make([]ClientNamedPublicKey, 0, len(allowedKeys))
+	for _, allowedKey := range allowedKeys {
 		keys = append(keys, ClientNamedPublicKey{
-			Name:      restrictedKey.Name(),
-			PublicKey: restrictedKey.PublicKey(),
+			Name:      allowedKey.Name(),
+			PublicKey: allowedKey.PublicKey(),
 		})
 	}
 

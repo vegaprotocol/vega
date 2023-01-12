@@ -39,8 +39,8 @@ func testConnectingToWalletWithValidParamsSucceeds(t *testing.T) {
 	hostname := vgrand.RandomStr(5) + ".xyz"
 	expectedPermissions := wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: []string{},
+			Access:      wallet.ReadAccess,
+			AllowedKeys: []string{},
 		},
 	}
 	expectedSelectedWallet := walletWithPerms(t, hostname, expectedPermissions)
@@ -82,8 +82,8 @@ func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t
 	hostname := vgrand.RandomStr(5) + ".xyz"
 	expectedPermissions := wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: []string{},
+			Access:      wallet.ReadAccess,
+			AllowedKeys: []string{},
 		},
 	}
 	expectedSelectedWallet := walletWithPerms(t, hostname, expectedPermissions)

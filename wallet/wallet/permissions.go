@@ -26,12 +26,12 @@ func (p Permissions) CanUseKey(pubKey string) bool {
 		return false
 	}
 
-	// No restricted keys specified. All keys can be listed.
-	if len(p.PublicKeys.RestrictedKeys) == 0 {
+	// No allowed keys specified. All keys can be listed.
+	if len(p.PublicKeys.AllowedKeys) == 0 {
 		return true
 	}
 
-	for _, k := range p.PublicKeys.RestrictedKeys {
+	for _, k := range p.PublicKeys.AllowedKeys {
 		if k == pubKey {
 			return true
 		}
@@ -87,17 +87,17 @@ func AccessModeToString(m AccessMode) string {
 //   - list_keys
 type PublicKeysPermission struct {
 	Access AccessMode `json:"access"`
-	// RestrictedKeys lists all the keys a third-party application has access to.
+	// AllowedKeys lists all the keys a third-party application has access to.
 	// All keys are valid and usable (no tainted key).
-	RestrictedKeys []string `json:"restrictedKeys"`
+	AllowedKeys []string `json:"allowedKeys"`
 }
 
 func (p PublicKeysPermission) Enabled() bool {
 	return p.Access != NoAccess
 }
 
-func (p PublicKeysPermission) HasRestrictedKeys() bool {
-	return len(p.RestrictedKeys) != 0
+func (p PublicKeysPermission) HasAllowedKeys() bool {
+	return len(p.AllowedKeys) != 0
 }
 
 // NoPublicKeysPermission returns a revoked access for public keys.

@@ -81,7 +81,7 @@ func testListingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	if err := expectedWallet.UpdatePermissions(hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access: "read",
-			RestrictedKeys: []string{
+			AllowedKeys: []string{
 				firstKey.PublicKey(),
 			},
 		},

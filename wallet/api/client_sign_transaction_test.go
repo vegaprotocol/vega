@@ -100,8 +100,8 @@ func testSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 	hostname := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
 	kp, err := wallet1.GenerateKeyPair(nil)
@@ -185,8 +185,8 @@ func testRefusingSigningOfTransactionDoesNotSignTransaction(t *testing.T) {
 	hostname := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
 	kp, err := wallet1.GenerateKeyPair(nil)
@@ -223,8 +223,8 @@ func testCancellingTheReviewDoesNotSignTransaction(t *testing.T) {
 	hostname := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
 	kp, err := wallet1.GenerateKeyPair(nil)
@@ -261,8 +261,8 @@ func testInterruptingTheRequestDoesNotSignTransaction(t *testing.T) {
 	hostname := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
 	kp, err := wallet1.GenerateKeyPair(nil)
@@ -300,8 +300,8 @@ func testGettingInternalErrorDuringReviewDoesNotSignTransaction(t *testing.T) {
 	hostname := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
 	kp, err := wallet1.GenerateKeyPair(nil)
@@ -339,8 +339,8 @@ func testNoHealthyNodeAvailableDoesNotSignTransaction(t *testing.T) {
 	hostname := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
 	kp, err := wallet1.GenerateKeyPair(nil)
@@ -383,8 +383,8 @@ func testFailingToGetLastBlockDoesNotSignTransaction(t *testing.T) {
 	hostname := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
 	kp, err := wallet1.GenerateKeyPair(nil)

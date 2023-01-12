@@ -1968,7 +1968,7 @@
     {
       "name": "admin.taint_key",
       "summary": "Marks the specified public key as tainted.",
-      "description": "This method marks the specified public key as tainted. It makes it unusable for transaction signing.\n\nWhen a key is tainted, it is automatically removed from the restricted keys if specified. If the key is the only one to be set, the permission to access the public keys is revoked. If no restricted key is specified, but all keys in the wallet are tainted, the permission of the public keys is revoked as well.",
+      "description": "This method marks the specified public key as tainted. It makes it unusable for transaction signing.\n\nWhen a key is tainted, it is automatically removed from the allowed keys if specified. If the key is the only one to be set, the permission to access the public keys is revoked. If no allowed key is specified, but all keys in the wallet are tainted, the permission of the public keys is revoked as well.",
       "tags": [
         {
           "name": "admin"
@@ -2173,7 +2173,7 @@
               "permissions": {
                 "publicKeys": {
                   "access": "read",
-                  "restrictedKeys": [
+                  "allowedKeys": [
                     "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
                   ]
                 }
@@ -2342,7 +2342,7 @@
               "value": {
                 "publicKeys": {
                   "access": "read",
-                  "restrictedKeys": [
+                  "allowedKeys": [
                     "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
                   ]
                 }
@@ -2355,7 +2355,7 @@
               "permissions": {
                 "publicKeys": {
                   "access": "read",
-                  "restrictedKeys": [
+                  "allowedKeys": [
                     "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
                   ]
                 }
@@ -3386,13 +3386,13 @@
             "description": "The permissions related to public keys.",
             "required": [
               "access",
-              "restrictedKeys"
+              "allowedKeys"
             ],
             "properties": {
               "access": {
                 "$ref": "#/components/schemas/access_mode"
               },
-              "restrictedKeys": {
+              "allowedKeys": {
                 "type": "array",
                 "description": "The subset of public keys the user selected for this hostname. If empty, the wallet assumes all keys are accessible.",
                 "items": {
