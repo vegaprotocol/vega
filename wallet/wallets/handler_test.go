@@ -50,8 +50,6 @@ func TestHandler(t *testing.T) {
 	t.Run("Recreating a wallet with same name and different passphrase fails", testHandlerRecreatingWalletWithSameNameButDifferentPassphraseFails)
 	t.Run("Login to existing wallet succeeds", testHandlerLoginToExistingWalletSucceeds)
 	t.Run("Login to non-existing wallet fails", testHandlerLoginToNonExistingWalletFails)
-	t.Run("Logout logged in wallet succeeds", testHandlerLogoutLoggedInWalletSucceeds)
-	t.Run("Logout not-logged in wallet succeeds", testHandlerLogoutNotLoggedInWalletSucceeds)
 	t.Run("Generating new key pair securely succeeds", testHandlerGeneratingNewKeyPairSecurelySucceeds)
 	t.Run("Generating new key pair securely with invalid name fails", testHandlerGeneratingNewKeyPairSecurelyWithInvalidNameFails)
 	t.Run("Generating new key pair securely without wallet fails", testHandlerGeneratingNewKeyPairSecurelyWithoutWalletFails)
@@ -60,15 +58,12 @@ func TestHandler(t *testing.T) {
 	t.Run("Generating new key pair with invalid name fails", testHandlerGeneratingNewKeyPairWithInvalidNameFails)
 	t.Run("Generating new key pair without wallet fails", testHandlerGeneratingNewKeyPairWithoutWalletFails)
 	t.Run("Listing public keys succeeds", testHandlerListingPublicKeysSucceeds)
-	t.Run("Listing public keys with logged out wallet fails", testHandlerListingPublicKeysWithLoggedOutWalletFails)
 	t.Run("Listing public keys with invalid name fails", testHandlerListingPublicKeysWithInvalidNameFails)
 	t.Run("Listing public keys without wallet fails", testHandlerListingPublicKeysWithoutWalletFails)
 	t.Run("Listing key pairs succeeds", testHandlerListingKeyPairsSucceeds)
 	t.Run("Listing key pairs with invalid name fails", testHandlerListingKeyPairsWithInvalidNameFails)
-	t.Run("Listing key pairs with logged out wallet fails", testHandlerListingKeyPairsWithLoggedOutWalletFails)
 	t.Run("Listing key pairs without wallet fails", testHandlerListingKeyPairsWithoutWalletFails)
 	t.Run("Getting public key succeeds", testHandlerGettingPublicKeySucceeds)
-	t.Run("Getting public key with logged out wallet fails", testHandlerGettingPublicKeyWithLoggedOutWalletFails)
 	t.Run("Getting public key without wallet fails", testHandlerGettingPublicKeyWithoutWalletFails)
 	t.Run("Getting public key with invalid name fails", testHandlerGettingPublicKeyWithInvalidNameFails)
 	t.Run("Getting non-existing public key fails", testGettingNonExistingPublicKeyFails)
@@ -83,11 +78,8 @@ func TestHandler(t *testing.T) {
 	t.Run("Updating key pair metadata with non-existing public key fails", testHandlerUpdatingKeyPairMetaWithNonExistingPublicKeyFails)
 	t.Run("Get wallet path succeeds", testHandlerGettingWalletPathSucceeds)
 	t.Run("Signing transaction request succeeds", testHandlerSigningTxSucceeds)
-	t.Run("Signing transaction request with logged out wallet fails", testHandlerSigningTxWithLoggedOutWalletFails)
 	t.Run("Signing transaction request with tainted key fails", testHandlerSigningTxWithTaintedKeyFails)
 	t.Run("Signing and verifying a message succeeds", testHandlerSigningAndVerifyingMessageSucceeds)
-	t.Run("Signing a message with logged out wallet fails", testHandlerSigningMessageWithLoggedOutWalletFails)
-	t.Run("Verifying a message with logged out wallet succeeds", testHandlerVerifyingMessageWithLoggedOutWalletSucceeds)
 }
 
 func testHandlerCreatingWalletSucceeds(t *testing.T) {
@@ -349,37 +341,6 @@ func testHandlerLoginToNonExistingWalletFails(t *testing.T) {
 	assert.ErrorIs(t, err, wallets.ErrWalletDoesNotExists)
 }
 
-func testHandlerLogoutLoggedInWalletSucceeds(t *testing.T) {
-	h := getTestHandler(t)
-	defer h.ctrl.Finish()
-
-	// given
-	passphrase := vgrand.RandomStr(5)
-	name := vgrand.RandomStr(5)
-
-	// when
-	recoveryPhrase, err := h.CreateWallet(name, passphrase)
-
-	// then
-	require.NoError(t, err)
-	assert.NotEmpty(t, recoveryPhrase)
-
-	// when
-	assert.NotPanics(t, func() {
-		h.LogoutWallet(vgrand.RandomStr(5))
-	})
-}
-
-func testHandlerLogoutNotLoggedInWalletSucceeds(t *testing.T) {
-	h := getTestHandler(t)
-	defer h.ctrl.Finish()
-
-	// when
-	assert.NotPanics(t, func() {
-		h.LogoutWallet(vgrand.RandomStr(5))
-	})
-}
-
 func testHandlerGeneratingNewKeyPairSecurelySucceeds(t *testing.T) {
 	h := getTestHandler(t)
 	defer h.ctrl.Finish()
@@ -434,7 +395,7 @@ func testHandlerGeneratingNewKeyPairSecurelyWithInvalidNameFails(t *testing.T) {
 	key, err := h.SecureGenerateKeyPair(otherName, passphrase, []wallet.Metadata{})
 
 	// then
-	assert.EqualError(t, err, fmt.Sprintf("couldn't get wallet %s: wallet does not exist", otherName))
+	assert.EqualError(t, err, fmt.Sprintf("couldn't unlock wallet %q: wallet does not exist", otherName))
 	assert.Empty(t, key)
 }
 
@@ -450,7 +411,7 @@ func testHandlerGeneratingNewKeyPairSecurelyWithoutWalletFails(t *testing.T) {
 	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
-	assert.EqualError(t, err, fmt.Sprintf("couldn't get wallet %s: wallet does not exist", name))
+	assert.EqualError(t, err, fmt.Sprintf("couldn't unlock wallet %q: wallet does not exist", name))
 	assert.Empty(t, key)
 }
 
@@ -565,7 +526,7 @@ func testHandlerGeneratingNewKeyPairWithInvalidNameFails(t *testing.T) {
 	keyPair, err := h.GenerateKeyPair(otherName, passphrase, nil)
 
 	// then
-	assert.EqualError(t, err, fmt.Sprintf("couldn't get wallet %s: wallet does not exist", otherName))
+	assert.EqualError(t, err, fmt.Sprintf("couldn't unlock wallet %q: wallet does not exist", otherName))
 	assert.Empty(t, keyPair)
 }
 
@@ -581,7 +542,7 @@ func testHandlerGeneratingNewKeyPairWithoutWalletFails(t *testing.T) {
 	keyPair, err := h.GenerateKeyPair(name, passphrase, nil)
 
 	// then
-	assert.EqualError(t, err, fmt.Sprintf("couldn't get wallet %s: wallet does not exist", name))
+	assert.EqualError(t, err, fmt.Sprintf("couldn't unlock wallet %q: wallet does not exist", name))
 	assert.Empty(t, keyPair)
 }
 
@@ -619,41 +580,6 @@ func testHandlerListingPublicKeysSucceeds(t *testing.T) {
 	assert.Equal(t, keyPair.AlgorithmName(), returnedPublicKey.AlgorithmName())
 	assert.Equal(t, keyPair.AlgorithmVersion(), returnedPublicKey.AlgorithmVersion())
 	assert.Equal(t, keyPair.Metadata(), returnedPublicKey.Metadata())
-}
-
-func testHandlerListingPublicKeysWithLoggedOutWalletFails(t *testing.T) {
-	h := getTestHandler(t)
-	defer h.ctrl.Finish()
-
-	// given
-	passphrase := vgrand.RandomStr(5)
-	name := vgrand.RandomStr(5)
-
-	// when
-	recoveryPhrase, err := h.CreateWallet(name, passphrase)
-
-	// then
-	require.NoError(t, err)
-	assert.NotEmpty(t, recoveryPhrase)
-
-	// when
-	keyPair, err := h.GenerateKeyPair(name, passphrase, nil)
-
-	// then
-	require.NoError(t, err)
-	assert.NotNil(t, keyPair)
-
-	// when
-	assert.NotPanics(t, func() {
-		h.LogoutWallet(name)
-	})
-
-	// when
-	publicKeys, err := h.ListPublicKeys(name)
-
-	// then
-	require.ErrorIs(t, err, wallet.ErrWalletNotLoggedIn)
-	assert.Len(t, publicKeys, 0)
 }
 
 func testHandlerListingPublicKeysWithInvalidNameFails(t *testing.T) {
@@ -730,41 +656,6 @@ func testHandlerListingKeyPairsSucceeds(t *testing.T) {
 	assert.Equal(t, keyPair.AlgorithmName(), returnedPublicKey.AlgorithmName())
 	assert.Equal(t, keyPair.AlgorithmVersion(), returnedPublicKey.AlgorithmVersion())
 	assert.Equal(t, keyPair.Metadata(), returnedPublicKey.Metadata())
-}
-
-func testHandlerListingKeyPairsWithLoggedOutWalletFails(t *testing.T) {
-	h := getTestHandler(t)
-	defer h.ctrl.Finish()
-
-	// given
-	passphrase := vgrand.RandomStr(5)
-	name := vgrand.RandomStr(5)
-
-	// when
-	recoveryPhrase, err := h.CreateWallet(name, passphrase)
-
-	// then
-	require.NoError(t, err)
-	assert.NotEmpty(t, recoveryPhrase)
-
-	// when
-	keyPair, err := h.GenerateKeyPair(name, passphrase, nil)
-
-	// then
-	require.NoError(t, err)
-	assert.NotNil(t, keyPair)
-
-	// when
-	assert.NotPanics(t, func() {
-		h.LogoutWallet(name)
-	})
-
-	// when
-	publicKeys, err := h.ListKeyPairs(name)
-
-	// then
-	require.Error(t, err, wallet.ErrWalletNotLoggedIn)
-	assert.Len(t, publicKeys, 0)
 }
 
 func testHandlerListingKeyPairsWithInvalidNameFails(t *testing.T) {
@@ -848,40 +739,6 @@ func testHandlerGettingPublicKeySucceeds(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, key, keyPair.Key())
-}
-
-func testHandlerGettingPublicKeyWithLoggedOutWalletFails(t *testing.T) {
-	h := getTestHandler(t)
-	defer h.ctrl.Finish()
-
-	// given
-	passphrase := vgrand.RandomStr(5)
-	name := vgrand.RandomStr(5)
-
-	// when
-	recoveryPhrase, err := h.CreateWallet(name, passphrase)
-
-	// then
-	require.NoError(t, err)
-	assert.NotEmpty(t, recoveryPhrase)
-
-	// when
-	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
-
-	// then
-	require.NoError(t, err)
-	assert.NotEmpty(t, key)
-
-	// when
-	assert.NotPanics(t, func() {
-		h.LogoutWallet(name)
-	})
-
-	// when
-	keyPair, err := h.GetPublicKey(name, key)
-
-	require.Error(t, err)
-	assert.Empty(t, keyPair)
 }
 
 func testHandlerGettingPublicKeyWithInvalidNameFails(t *testing.T) {
@@ -1032,7 +889,7 @@ func testHandlerTaintingKeyPairWithoutWalletFails(t *testing.T) {
 	err := h.TaintKey(name, "non-existing-pub-key", passphrase)
 
 	// then
-	assert.EqualError(t, err, fmt.Sprintf("couldn't get wallet %s: wallet does not exist", name))
+	assert.EqualError(t, err, fmt.Sprintf("couldn't unlock wallet %q: wallet does not exist", name))
 }
 
 func testHandlerTaintingKeyThatIsAlreadyTaintedFails(t *testing.T) {
@@ -1290,49 +1147,6 @@ func testHandlerSigningTxSucceeds(t *testing.T) {
 	assert.NotEmpty(t, tx.Signature.Value)
 }
 
-func testHandlerSigningTxWithLoggedOutWalletFails(t *testing.T) {
-	h := getTestHandler(t)
-	defer h.ctrl.Finish()
-
-	// given
-	passphrase := vgrand.RandomStr(5)
-	name := vgrand.RandomStr(5)
-
-	// when
-	recoveryPhrase, err := h.CreateWallet(name, passphrase)
-
-	// then
-	require.NoError(t, err)
-	assert.NotEmpty(t, recoveryPhrase)
-
-	// when
-	pubKey, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
-
-	// then
-	require.NoError(t, err)
-	assert.NotEmpty(t, pubKey)
-
-	// when
-	assert.NotPanics(t, func() {
-		h.LogoutWallet(name)
-	})
-
-	// given
-	req := &walletpb.SubmitTransactionRequest{
-		PubKey: pubKey,
-		Command: &walletpb.SubmitTransactionRequest_OrderCancellation{
-			OrderCancellation: &commandspb.OrderCancellation{},
-		},
-	}
-
-	// when
-	tx, err := h.SignTx(name, req, 42, vgrand.RandomStr(5))
-
-	// then
-	require.ErrorIs(t, err, wallet.ErrWalletNotLoggedIn)
-	assert.Nil(t, tx)
-}
-
 func testHandlerSigningTxWithTaintedKeyFails(t *testing.T) {
 	h := getTestHandler(t)
 	defer h.ctrl.Finish()
@@ -1409,89 +1223,6 @@ func testHandlerSigningAndVerifyingMessageSucceeds(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.NotEmpty(t, sig)
-
-	// when
-	verified, err := h.VerifyAny(data, sig, pubKey)
-
-	// then
-	require.NoError(t, err)
-	assert.True(t, verified)
-}
-
-func testHandlerSigningMessageWithLoggedOutWalletFails(t *testing.T) {
-	h := getTestHandler(t)
-	defer h.ctrl.Finish()
-
-	// given
-	passphrase := vgrand.RandomStr(5)
-	name := vgrand.RandomStr(5)
-
-	// when
-	recoveryPhrase, err := h.CreateWallet(name, passphrase)
-
-	// then
-	require.NoError(t, err)
-	assert.NotEmpty(t, recoveryPhrase)
-
-	// when
-	pubKey, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
-
-	// then
-	require.NoError(t, err)
-	assert.NotEmpty(t, pubKey)
-
-	// when
-	assert.NotPanics(t, func() {
-		h.LogoutWallet(name)
-	})
-
-	// given
-	data := []byte("Je ne connaîtrai pas la peur car la peur tue l'esprit. La peur est la petite mort qui conduit à l'oblitération totale.")
-
-	// when
-	sig, err := h.SignAny(name, data, pubKey)
-
-	// then
-	require.ErrorIs(t, err, wallet.ErrWalletNotLoggedIn)
-	assert.Empty(t, sig)
-}
-
-func testHandlerVerifyingMessageWithLoggedOutWalletSucceeds(t *testing.T) {
-	h := getTestHandler(t)
-	defer h.ctrl.Finish()
-
-	// given
-	passphrase := vgrand.RandomStr(5)
-	name := vgrand.RandomStr(5)
-
-	// when
-	recoveryPhrase, err := h.CreateWallet(name, passphrase)
-
-	// then
-	require.NoError(t, err)
-	assert.NotEmpty(t, recoveryPhrase)
-
-	// when
-	pubKey, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
-
-	// then
-	require.NoError(t, err)
-	assert.NotEmpty(t, pubKey)
-
-	// given
-	data := []byte("Je ne connaîtrai pas la peur car la peur tue l'esprit. La peur est la petite mort qui conduit à l'oblitération totale.")
-
-	// when
-	sig, err := h.SignAny(name, data, pubKey)
-
-	// then
-	require.NoError(t, err)
-	assert.NotEmpty(t, sig)
-
-	// when
-	assert.NotPanics(t, func() {
-		h.LogoutWallet(name)
-	})
 
 	// when
 	verified, err := h.VerifyAny(data, sig, pubKey)

@@ -8,33 +8,27 @@ import (
 )
 
 type AdminCloseConnectionsToWalletParams struct {
-	Network string `json:"network"`
-	Wallet  string `json:"wallet"`
+	Wallet string `json:"wallet"`
 }
 
 type AdminCloseConnectionsToWallet struct {
-	servicesManager *ServicesManager
+	connectionsManager ConnectionsManager
 }
 
 // Handle closes all the connections from any hostname to the specified wallet
 // opened in the service that run against the specified network.
 // It does not fail if the service or the connections are already closed.
-func (h *AdminCloseConnectionsToWallet) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminCloseConnectionsToWallet) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminCloseConnectionsToWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
 	}
 
-	sessions, err := h.servicesManager.Sessions(params.Network)
-	if err != nil {
-		return nil, nil //nolint:nilerr
-	}
-
-	connections := sessions.ListConnections()
+	connections := h.connectionsManager.ListSessionConnections()
 
 	for _, connection := range connections {
 		if connection.Wallet == params.Wallet {
-			sessions.DisconnectWallet(connection.Hostname, params.Wallet)
+			h.connectionsManager.EndSessionConnection(connection.Hostname, params.Wallet)
 		}
 	}
 
@@ -51,10 +45,6 @@ func validateAdminCloseConnectionsToWalletParams(rawParams jsonrpc.Params) (Admi
 		return AdminCloseConnectionsToWalletParams{}, ErrParamsDoNotMatch
 	}
 
-	if params.Network == "" {
-		return AdminCloseConnectionsToWalletParams{}, ErrNetworkIsRequired
-	}
-
 	if params.Wallet == "" {
 		return AdminCloseConnectionsToWalletParams{}, ErrWalletIsRequired
 	}
@@ -62,8 +52,8 @@ func validateAdminCloseConnectionsToWalletParams(rawParams jsonrpc.Params) (Admi
 	return params, nil
 }
 
-func NewAdminCloseConnectionsToWallet(servicesManager *ServicesManager) *AdminCloseConnectionsToWallet {
+func NewAdminCloseConnectionsToWallet(connectionsManager ConnectionsManager) *AdminCloseConnectionsToWallet {
 	return &AdminCloseConnectionsToWallet{
-		servicesManager: servicesManager,
+		connectionsManager: connectionsManager,
 	}
 }

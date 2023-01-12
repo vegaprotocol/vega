@@ -98,10 +98,10 @@ type verifyMessageHandler struct {
 	ctrl *gomock.Controller
 }
 
-func (h *verifyMessageHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminSignMessageResult, *jsonrpc.ErrorDetails) {
+func (h *verifyMessageHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminSignMessageResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminSignMessageResult)
 		if !ok {

@@ -23,6 +23,17 @@ func newMockedStore() *mockedStore {
 	}
 }
 
+func (m *mockedStore) UnlockWallet(_ context.Context, name, passphrase string) error {
+	_, ok := m.wallets[name]
+	if !ok {
+		return wallets.ErrWalletDoesNotExists
+	}
+	if passphrase != m.passphrase {
+		return errWrongPassphrase
+	}
+	return nil
+}
+
 func (m *mockedStore) WalletExists(_ context.Context, name string) (bool, error) {
 	_, ok := m.wallets[name]
 	return ok, nil
@@ -36,19 +47,21 @@ func (m *mockedStore) ListWallets(_ context.Context) ([]string, error) {
 	return ws, nil
 }
 
-func (m *mockedStore) SaveWallet(_ context.Context, w wallet.Wallet, passphrase string) error {
+func (m *mockedStore) CreateWallet(_ context.Context, w wallet.Wallet, passphrase string) error {
 	m.passphrase = passphrase
 	m.wallets[w.Name()] = w
 	return nil
 }
 
-func (m *mockedStore) GetWallet(_ context.Context, name, passphrase string) (wallet.Wallet, error) {
+func (m *mockedStore) UpdateWallet(_ context.Context, w wallet.Wallet) error {
+	m.wallets[w.Name()] = w
+	return nil
+}
+
+func (m *mockedStore) GetWallet(_ context.Context, name string) (wallet.Wallet, error) {
 	w, ok := m.wallets[name]
 	if !ok {
 		return nil, wallets.ErrWalletDoesNotExists
-	}
-	if passphrase != m.passphrase {
-		return nil, errWrongPassphrase
 	}
 	return w, nil
 }

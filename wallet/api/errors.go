@@ -3,14 +3,27 @@ package api
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
-	coreversion "code.vegaprotocol.io/vega/version"
 	"code.vegaprotocol.io/vega/wallet/api/node/types"
 )
 
 const (
+	// Implementation-defined server-errors.
+
+	// ErrorCodeRequestHasBeenInterrupted refers to a request that has been
+	// interrupted by the server or the third-party application. It could
+	// originate from a timeout or an explicit cancellation.
+	ErrorCodeRequestHasBeenInterrupted jsonrpc.ErrorCode = -32001
+
+	// ErrorCodeHostnameResolutionFailure refers to the inability for the server
+	// to resolve the hostname from the request.
+	ErrorCodeHostnameResolutionFailure jsonrpc.ErrorCode = -32002
+
+	// ErrorCodeAuthenticationFailure refers to a request that have authentication
+	// problems.
+	ErrorCodeAuthenticationFailure jsonrpc.ErrorCode = -32003
+
 	// Network error codes are errors that comes from the network itself and its
 	// nodes. It ranges from 1000 to 1999, included.
 	// Apart from the communication failure, network errors are valued based on
@@ -58,16 +71,6 @@ const (
 	// missing to ensure correct handling of a request.
 	ErrorCodeRequestHasBeenCanceledByApplication jsonrpc.ErrorCode = 2001
 
-	// ErrorCodeIncompatibilityBetweenNetworkAndSoftware refers to a
-	// software that relies on a specific version of the network but the
-	// network it tried to connect to is not the one expected.
-	ErrorCodeIncompatibilityBetweenNetworkAndSoftware jsonrpc.ErrorCode = 2002
-
-	// ErrorCodeServicePortAlreadyBound refers to a service that attempt to run
-	// on a port that is already bound. The user should try to shut down the
-	// software using that port, or update the configuration to use another port.
-	ErrorCodeServicePortAlreadyBound jsonrpc.ErrorCode = 2003
-
 	// User error codes are errors that results from the user. It ranges
 	// from 3000 to 3999, included.
 
@@ -89,17 +92,15 @@ const (
 
 var (
 	ErrAPITokenExpirationCannotBeInThePast                = errors.New("the token expiration date cannot be set to a past date")
-	ErrAdminEndpointsNotExposed                           = errors.New("administrative endpoints are not exposed, for security reasons")
 	ErrApplicationCanceledTheRequest                      = errors.New("the application canceled the request")
 	ErrBlockHashIsRequired                                = errors.New("the block hash is required")
 	ErrBlockHeightIsRequired                              = errors.New("the block-height is required")
 	ErrCannotRotateKeysOnIsolatedWallet                   = errors.New("cannot rotate keys on an isolated wallet")
 	ErrChainIDIsRequired                                  = errors.New("the chain ID is required")
-	ErrConnectionTokenIsRequired                          = errors.New("the connection token is required")
 	ErrCouldNotConnectToWallet                            = errors.New("could not connect to the wallet")
 	ErrCouldNotGetChainIDFromNode                         = errors.New("could not get the chain ID from the node")
 	ErrCouldNotGetLastBlockInformation                    = errors.New("could not get information about the last block on the network")
-	ErrCouldNotRequestPermissions                         = errors.New("could not request permissions")
+	ErrCouldNotListKeys                                   = errors.New("could not list the keys")
 	ErrCouldNotSendTransaction                            = errors.New("could not send transaction")
 	ErrCouldNotSignTransaction                            = errors.New("could not sign transaction")
 	ErrCurrentPublicKeyDoesNotExist                       = errors.New("the current public key does not exist")
@@ -122,7 +123,6 @@ var (
 	ErrNetworkConfigurationDoesNotHaveGRPCNodes           = errors.New("the network does not have gRPC hosts configured")
 	ErrNetworkCouldNotProcessTransaction                  = errors.New("the network could not process the transaction")
 	ErrNetworkDoesNotExist                                = errors.New("the network does not exist")
-	ErrNetworkIsRequired                                  = errors.New("the network is required")
 	ErrNetworkNameIsRequired                              = errors.New("the network name is required")
 	ErrNetworkOrNodeAddressIsRequired                     = errors.New("a network or a node address is required")
 	ErrNetworkRejectedInvalidTransaction                  = errors.New("the network rejected the transaction because it's invalid")
@@ -155,8 +155,6 @@ var (
 	ErrSpecifyingNetworkAndLastBlockDataIsNotSupported    = errors.New("specifying a network and the last block data is not supported")
 	ErrSpecifyingNetworkAndNodeAddressIsNotSupported      = errors.New("specifying a network and a node address is not supported")
 	ErrSubmissionBlockHeightIsRequired                    = errors.New("the submission block height is required")
-	ErrTokenDoesNotExist                                  = errors.New("the token does not exist")
-	ErrTokenIsRequired                                    = errors.New("the token is required")
 	ErrTransactionFailed                                  = errors.New("the transaction failed")
 	ErrTransactionIsNotValidVegaCommand                   = errors.New("the transaction is not a valid Vega command")
 	ErrTransactionIsNotValidJSON                          = errors.New("the transaction is not a valid JSON")
@@ -166,10 +164,9 @@ var (
 	ErrUserRejectedTheRequest                             = errors.New("the user rejected the request")
 	ErrWalletAlreadyExists                                = errors.New("a wallet with the same name already exists")
 	ErrWalletDoesNotExist                                 = errors.New("the wallet does not exist")
+	ErrWalletIsLocked                                     = errors.New("the wallet is locked")
 	ErrWalletIsRequired                                   = errors.New("the wallet is required")
 	ErrWalletKeyDerivationVersionIsRequired               = errors.New("the wallet key derivation version is required")
-	ErrWalletNameIsRequired                               = errors.New("the wallet name is required")
-	ErrWalletPassphraseIsRequired                         = errors.New("the wallet passphrase is required")
 	ErrWrongPassphrase                                    = errors.New("wrong passphrase")
 )
 
@@ -235,7 +232,7 @@ func connectionClosedError(err error) *jsonrpc.ErrorDetails {
 }
 
 func requestInterruptedError(err error) *jsonrpc.ErrorDetails {
-	return jsonrpc.NewServerError(jsonrpc.ErrorCodeRequestHasBeenInterrupted, err)
+	return jsonrpc.NewServerError(ErrorCodeRequestHasBeenInterrupted, err)
 }
 
 func userCancellationError(err error) *jsonrpc.ErrorDetails {
@@ -248,14 +245,6 @@ func userRejectionError() *jsonrpc.ErrorDetails {
 
 func applicationCancellationError(err error) *jsonrpc.ErrorDetails {
 	return applicationError(ErrorCodeRequestHasBeenCanceledByApplication, err)
-}
-
-func incompatibilityBetweenSoftwareAndNetworkError(networkVersion string) *jsonrpc.ErrorDetails {
-	return applicationError(ErrorCodeIncompatibilityBetweenNetworkAndSoftware, fmt.Errorf("this software is not compatible with this network as the network is running version %s but this software expects the version %s", networkVersion, coreversion.Get()))
-}
-
-func servicePortAlreadyBound(err error) *jsonrpc.ErrorDetails {
-	return applicationError(ErrorCodeServicePortAlreadyBound, err)
 }
 
 func internalError(err error) *jsonrpc.ErrorDetails {

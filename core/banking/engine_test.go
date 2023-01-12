@@ -192,7 +192,6 @@ func testDepositFailure(t *testing.T) {
 	eng.erc.f(eng.erc.r, false)
 
 	// then we call time update, expect collateral to never be called
-	eng.col.EXPECT().Deposit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.OnTick(context.Background(), time.Now())
 }

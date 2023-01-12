@@ -2,24 +2,19 @@ package api_test
 
 import (
 	"context"
-	"sort"
 	"testing"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
-	"code.vegaprotocol.io/vega/wallet/api/session"
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAdminCloseConnectionsToWallet(t *testing.T) {
 	t.Run("Closing a connection with invalid params fails", testAdminCloseConnectionsToWalletWithInvalidParamsFails)
 	t.Run("Closing a connection with valid params succeeds", testAdminCloseConnectionsToWalletWithValidParamsSucceeds)
-	t.Run("Closing a connection on unknown network doesn't fail", testAdminCloseConnectionsToWalletOnUnknownNetworkDoesNotFail)
-	t.Run("Closing a connection on unknown wallet doesn't fail", testAdminCloseConnectionsToWalletOnUnknownWalletDoesNotFail)
 }
 
 func testAdminCloseConnectionsToWalletWithInvalidParamsFails(t *testing.T) {
@@ -39,17 +34,9 @@ func testAdminCloseConnectionsToWalletWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty wallet",
 			params: api.AdminCloseConnectionsToWalletParams{
-				Network: vgrand.RandomStr(5),
-				Wallet:  "",
+				Wallet: "",
 			},
 			expectedError: api.ErrWalletIsRequired,
-		}, {
-			name: "with empty network",
-			params: api.AdminCloseConnectionsToWalletParams{
-				Wallet:  vgrand.RandomStr(5),
-				Network: "",
-			},
-			expectedError: api.ErrNetworkIsRequired,
 		},
 	}
 
@@ -73,176 +60,59 @@ func testAdminCloseConnectionsToWalletWithInvalidParamsFails(t *testing.T) {
 func testAdminCloseConnectionsToWalletWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
-	network := vgrand.RandomStr(5)
-	url := "http://" + vgrand.RandomStr(5)
-	hostname := vgrand.RandomStr(5)
-	otherHostname := vgrand.RandomStr(5)
-	expectedWallet, _ := walletWithKey(t)
-	otherWallet1, _ := walletWithKey(t)
-	otherWallet2, _ := walletWithKey(t)
+	hostname1 := vgrand.RandomStr(5)
+	hostname2 := vgrand.RandomStr(5)
+	wallet1 := vgrand.RandomStr(5)
+	wallet2 := vgrand.RandomStr(5)
+	wallet3 := vgrand.RandomStr(5)
 
 	// setup
 	handler := newCloseConnectionsToWalletHandler(t)
-	sessions := session.NewSessions()
-	if _, err := sessions.ConnectWallet(hostname, expectedWallet); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := sessions.ConnectWallet(hostname, otherWallet2); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := sessions.ConnectWallet(hostname, otherWallet1); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := sessions.ConnectWallet(otherHostname, expectedWallet); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := sessions.ConnectWallet(otherHostname, otherWallet2); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := sessions.ConnectWallet(otherHostname, otherWallet1); err != nil {
-		t.Fatal(err)
-	}
-	if err := handler.servicesManager.RegisterService(network, url, sessions, dummyServiceShutdownSwitch()); err != nil {
-		t.Fatal(err)
-	}
+	// -- expected calls
+	handler.connectionsManager.EXPECT().ListSessionConnections().Times(1).Return([]api.Connection{
+		{
+			Hostname: hostname1,
+			Wallet:   wallet1,
+		}, {
+			Hostname: hostname1,
+			Wallet:   wallet2,
+		}, {
+			Hostname: hostname1,
+			Wallet:   wallet3,
+		}, {
+			Hostname: hostname2,
+			Wallet:   wallet1,
+		}, {
+			Hostname: hostname2,
+			Wallet:   wallet2,
+		}, {
+			Hostname: hostname2,
+			Wallet:   wallet3,
+		},
+	})
+	handler.connectionsManager.EXPECT().EndSessionConnection(hostname1, wallet1).Times(1)
+	handler.connectionsManager.EXPECT().EndSessionConnection(hostname2, wallet1).Times(1)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminCloseConnectionsToWalletParams{
-		Network: network,
-		Wallet:  expectedWallet.Name(),
+		Wallet: wallet1,
 	})
 
 	// then
 	require.Nil(t, errorDetails)
-	assert.NotContains(t, sessions.ListConnections(), session.Connection{
-		Hostname: hostname,
-		Wallet:   expectedWallet.Name(),
-	})
-	assert.NotContains(t, sessions.ListConnections(), session.Connection{
-		Hostname: otherHostname,
-		Wallet:   expectedWallet.Name(),
-	})
-}
-
-func testAdminCloseConnectionsToWalletOnUnknownNetworkDoesNotFail(t *testing.T) {
-	// given
-	ctx := context.Background()
-	network := vgrand.RandomStr(5)
-	url := "http://" + vgrand.RandomStr(5)
-	hostname := vgrand.RandomStr(5)
-	otherHostname := vgrand.RandomStr(5)
-	expectedWallet, _ := walletWithKey(t)
-	otherWallet, _ := walletWithKey(t)
-
-	// setup
-	handler := newCloseConnectionsToWalletHandler(t)
-	sessions := session.NewSessions()
-	if _, err := sessions.ConnectWallet(hostname, expectedWallet); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := sessions.ConnectWallet(otherHostname, expectedWallet); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := sessions.ConnectWallet(hostname, otherWallet); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := sessions.ConnectWallet(otherHostname, otherWallet); err != nil {
-		t.Fatal(err)
-	}
-	if err := handler.servicesManager.RegisterService(network, url, sessions, dummyServiceShutdownSwitch()); err != nil {
-		t.Fatal(err)
-	}
-
-	// when
-	errorDetails := handler.handle(t, ctx, api.AdminCloseConnectionsToWalletParams{
-		Network: network,
-		Wallet:  vgrand.RandomStr(5),
-	})
-
-	// then
-	require.Nil(t, errorDetails)
-	connections := sessions.ListConnections()
-	assert.Len(t, connections, 4)
-	expectedConnections := []session.Connection{
-		{Hostname: hostname, Wallet: expectedWallet.Name()},
-		{Hostname: otherHostname, Wallet: expectedWallet.Name()},
-		{Hostname: hostname, Wallet: otherWallet.Name()},
-		{Hostname: otherHostname, Wallet: otherWallet.Name()},
-	}
-	sort.SliceStable(expectedConnections, func(i, j int) bool {
-		if expectedConnections[i].Hostname == expectedConnections[j].Hostname {
-			return expectedConnections[i].Wallet < expectedConnections[j].Wallet
-		}
-		return expectedConnections[i].Hostname < expectedConnections[j].Hostname
-	})
-	assert.Equal(t, connections, expectedConnections)
-}
-
-func testAdminCloseConnectionsToWalletOnUnknownWalletDoesNotFail(t *testing.T) {
-	// given
-	ctx := context.Background()
-	network := vgrand.RandomStr(5)
-	url := "http://" + vgrand.RandomStr(5)
-	hostname := vgrand.RandomStr(5)
-	otherHostname := vgrand.RandomStr(5)
-	expectedWallet, _ := walletWithKey(t)
-	otherWallet, _ := walletWithKey(t)
-
-	// setup
-	handler := newCloseConnectionsToWalletHandler(t)
-	sessions := session.NewSessions()
-	if _, err := sessions.ConnectWallet(hostname, expectedWallet); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := sessions.ConnectWallet(otherHostname, expectedWallet); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := sessions.ConnectWallet(hostname, otherWallet); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := sessions.ConnectWallet(otherHostname, otherWallet); err != nil {
-		t.Fatal(err)
-	}
-	if err := handler.servicesManager.RegisterService(network, url, sessions, dummyServiceShutdownSwitch()); err != nil {
-		t.Fatal(err)
-	}
-
-	// when
-	errorDetails := handler.handle(t, ctx, api.AdminCloseConnectionsToWalletParams{
-		Network: network,
-		Wallet:  vgrand.RandomStr(5),
-	})
-
-	// then
-	require.Nil(t, errorDetails)
-	connections := sessions.ListConnections()
-	expectedConnections := []session.Connection{
-		{Hostname: hostname, Wallet: expectedWallet.Name()},
-		{Hostname: otherHostname, Wallet: expectedWallet.Name()},
-		{Hostname: hostname, Wallet: otherWallet.Name()},
-		{Hostname: otherHostname, Wallet: otherWallet.Name()},
-	}
-	sort.SliceStable(expectedConnections, func(i, j int) bool {
-		if expectedConnections[i].Hostname == expectedConnections[j].Hostname {
-			return expectedConnections[i].Wallet < expectedConnections[j].Wallet
-		}
-		return expectedConnections[i].Hostname < expectedConnections[j].Hostname
-	})
-	assert.Equal(t, connections, expectedConnections)
 }
 
 type adminCloseConnectionsToWalletHandler struct {
 	*api.AdminCloseConnectionsToWallet
-	ctrl            *gomock.Controller
-	servicesManager *api.ServicesManager
-	walletStore     *mocks.MockWalletStore
-	tokenStore      *mocks.MockTokenStore
+	ctrl               *gomock.Controller
+	connectionsManager *mocks.MockConnectionsManager
+	walletStore        *mocks.MockWalletStore
 }
 
-func (h *adminCloseConnectionsToWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
+func (h *adminCloseConnectionsToWalletHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) *jsonrpc.ErrorDetails {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	require.Empty(t, rawResult)
 	return err
 }
@@ -253,15 +123,12 @@ func newCloseConnectionsToWalletHandler(t *testing.T) *adminCloseConnectionsToWa
 	ctrl := gomock.NewController(t)
 
 	walletStore := mocks.NewMockWalletStore(ctrl)
-	tokenStore := mocks.NewMockTokenStore(ctrl)
-	tokenStore.EXPECT().ListTokens().AnyTimes().Return([]session.TokenSummary{}, nil)
-	servicesManager := api.NewServicesManager(tokenStore, walletStore)
+	connectionsManager := mocks.NewMockConnectionsManager(ctrl)
 
 	return &adminCloseConnectionsToWalletHandler{
-		AdminCloseConnectionsToWallet: api.NewAdminCloseConnectionsToWallet(servicesManager),
+		AdminCloseConnectionsToWallet: api.NewAdminCloseConnectionsToWallet(connectionsManager),
 		ctrl:                          ctrl,
-		servicesManager:               servicesManager,
+		connectionsManager:            connectionsManager,
 		walletStore:                   walletStore,
-		tokenStore:                    tokenStore,
 	}
 }

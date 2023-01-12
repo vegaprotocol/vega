@@ -43,16 +43,6 @@ func HashStrToHex(s string) string {
 	return hex.EncodeToString(Hash([]byte(s)))
 }
 
-// HashHexStrToHex hash a hex encoded string with sha3 256
-// returns a hex encoded string of the result.
-func HashHexStrToHex(s string) string {
-	x, err := hex.DecodeString(s)
-	if err != nil {
-		panic(fmt.Sprintf("a hexadecimal string is required: %v", err))
-	}
-	return hex.EncodeToString(Hash(x))
-}
-
 func RandomHash() string {
 	data := make([]byte, 10)
 	if _, err := rand.Read(data); err != nil {

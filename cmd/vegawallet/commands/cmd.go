@@ -9,7 +9,6 @@ import (
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 	vgzap "code.vegaprotocol.io/vega/libs/zap"
 	"code.vegaprotocol.io/vega/paths"
@@ -83,7 +82,7 @@ func autoCompleteWallet(cmd *cobra.Command, vegaHome string, property string) {
 		}
 
 		listWallet := api.NewAdminListWallets(s)
-		rawResult, errorDetails := listWallet.Handle(context.Background(), nil, jsonrpc.RequestMetadata{})
+		rawResult, errorDetails := listWallet.Handle(context.Background(), nil)
 		if errorDetails != nil {
 			return nil, cobra.ShellCompDirectiveDefault
 		}

@@ -2,12 +2,15 @@ package service
 
 import (
 	"fmt"
+
+	"code.vegaprotocol.io/vega/wallet/service/v1"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/store_mock.go -package mocks code.vegaprotocol.io/vega/wallet/service Store
 type Store interface {
+	GetRsaKeys() (*v1.RSAKeys, error)
 	RSAKeysExists() (bool, error)
-	SaveRSAKeys(*RSAKeys) error
+	SaveRSAKeys(*v1.RSAKeys) error
 }
 
 func InitialiseService(store Store, overwrite bool) error {
@@ -21,7 +24,7 @@ func InitialiseService(store Store, overwrite bool) error {
 		}
 	}
 
-	keys, err := GenerateRSAKeys()
+	keys, err := v1.GenerateRSAKeys()
 	if err != nil {
 		return fmt.Errorf("couldn't generate RSA keys: %w", err)
 	}

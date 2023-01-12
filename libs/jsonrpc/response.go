@@ -46,10 +46,10 @@ const (
 	// -32000 to -32099 codes are reserved for implementation-defined server-errors.
 	// See https://www.jsonrpc.org/specification#error_object for more information.
 
-	// ErrorCodeRequestHasBeenInterrupted refers to a request that has been
-	// interrupted by the server or the third-party application. It could
-	// originate from a timeout or an explicit cancellation.
-	ErrorCodeRequestHasBeenInterrupted ErrorCode = -32001
+	// ErrorCodeServerError is a generic implementation-defined server error.
+	// This can be used when error that does not cleanly map to the error codes
+	// above occurs in the server.
+	ErrorCodeServerError ErrorCode = -32000
 )
 
 // ErrorDetails is returned when an RPC call encounters an error.
@@ -92,7 +92,15 @@ func NewInvalidRequest(data error) *ErrorDetails {
 	}
 }
 
-func NewMethodNotFound(data error) *ErrorDetails {
+func NewMethodNotFound(methodName string) *ErrorDetails {
+	return &ErrorDetails{
+		Code:    ErrorCodeMethodNotFound,
+		Message: "Method not found",
+		Data:    fmt.Sprintf("method %q is not supported", methodName),
+	}
+}
+
+func NewUnsupportedMethod(data error) *ErrorDetails {
 	return &ErrorDetails{
 		Code:    ErrorCodeMethodNotFound,
 		Message: "Method not found",
@@ -140,7 +148,7 @@ func NewCustomError(code ErrorCode, message string, data error) *ErrorDetails {
 
 func NewErrorResponse(id string, details *ErrorDetails) *Response {
 	return &Response{
-		Version: JSONRPC2,
+		Version: VERSION2,
 		Error:   details,
 		ID:      id,
 	}
@@ -148,7 +156,7 @@ func NewErrorResponse(id string, details *ErrorDetails) *Response {
 
 func NewSuccessfulResponse(id string, result Result) *Response {
 	return &Response{
-		Version: JSONRPC2,
+		Version: VERSION2,
 		Result:  result,
 		ID:      id,
 	}

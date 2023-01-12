@@ -2,128 +2,74 @@ package api_test
 
 import (
 	"context"
-	"sort"
 	"testing"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
-	"code.vegaprotocol.io/vega/wallet/api/session"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAdminListConnections(t *testing.T) {
-	t.Run("Listing the connections with invalid params fails", testAdminListConnectionsWithInvalidParamsFails)
-	t.Run("Listing the connections with valid params succeeds", testAdminListConnectionsWithValidParamsSucceeds)
+	t.Run("Listing the connections succeeds", testAdminListConnectionsSucceeds)
 }
 
-func testAdminListConnectionsWithInvalidParamsFails(t *testing.T) {
-	tcs := []struct {
-		name          string
-		params        interface{}
-		expectedError error
-	}{
+func testAdminListConnectionsSucceeds(t *testing.T) {
+	// given
+	ctx := context.Background()
+	hostname1 := vgrand.RandomStr(5)
+	hostname2 := vgrand.RandomStr(5)
+	wallet1 := vgrand.RandomStr(5)
+	wallet2 := vgrand.RandomStr(5)
+	wallet3 := vgrand.RandomStr(5)
+	list := []api.Connection{
 		{
-			name:          "with nil params",
-			params:        nil,
-			expectedError: api.ErrParamsRequired,
+			Hostname: hostname1,
+			Wallet:   wallet1,
 		}, {
-			name:          "with wrong type of params",
-			params:        "test",
-			expectedError: api.ErrParamsDoNotMatch,
+			Hostname: hostname1,
+			Wallet:   wallet2,
 		}, {
-			name: "with empty network",
-			params: api.AdminListConnectionsParams{
-				Network: "",
-			},
-			expectedError: api.ErrNetworkIsRequired,
+			Hostname: hostname1,
+			Wallet:   wallet3,
+		}, {
+			Hostname: hostname2,
+			Wallet:   wallet1,
+		}, {
+			Hostname: hostname2,
+			Wallet:   wallet2,
+		}, {
+			Hostname: hostname2,
+			Wallet:   wallet3,
 		},
 	}
 
-	for _, tc := range tcs {
-		t.Run(tc.name, func(tt *testing.T) {
-			// given
-			ctx := context.Background()
-
-			// setup
-			handler := newListConnectionsHandler(tt)
-
-			// when
-			response, errorDetails := handler.handle(t, ctx, tc.params)
-
-			// then
-			assertInvalidParams(tt, errorDetails, tc.expectedError)
-			assert.Empty(tt, response)
-		})
-	}
-}
-
-func testAdminListConnectionsWithValidParamsSucceeds(t *testing.T) {
-	// given
-	ctx := context.Background()
-	network := vgrand.RandomStr(5)
-	url := "http://" + vgrand.RandomStr(5)
-	hostname := vgrand.RandomStr(5)
-	otherHostname := vgrand.RandomStr(5)
-	expectedWallet, _ := walletWithKey(t)
-	otherWallet, _ := walletWithKey(t)
-
 	// setup
 	handler := newListConnectionsHandler(t)
-	sessions := session.NewSessions()
-	if _, err := sessions.ConnectWallet(hostname, expectedWallet); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := sessions.ConnectWallet(otherHostname, expectedWallet); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := sessions.ConnectWallet(hostname, otherWallet); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := sessions.ConnectWallet(otherHostname, otherWallet); err != nil {
-		t.Fatal(err)
-	}
-	if err := handler.servicesManager.RegisterService(network, url, sessions, dummyServiceShutdownSwitch()); err != nil {
-		t.Fatal(err)
-	}
+	// -- expected calls
+	handler.connectionsManager.EXPECT().ListSessionConnections().Times(1).Return(list)
 
 	// when
-	response, errorDetails := handler.handle(t, ctx, api.AdminListConnectionsParams{
-		Network: network,
-	})
+	response, errorDetails := handler.handle(t, ctx, nil)
 
 	// then
 	require.Nil(t, errorDetails)
-	expectedConnections := []session.Connection{
-		{Hostname: hostname, Wallet: expectedWallet.Name()},
-		{Hostname: otherHostname, Wallet: expectedWallet.Name()},
-		{Hostname: hostname, Wallet: otherWallet.Name()},
-		{Hostname: otherHostname, Wallet: otherWallet.Name()},
-	}
-	sort.SliceStable(expectedConnections, func(i, j int) bool {
-		if expectedConnections[i].Hostname == expectedConnections[j].Hostname {
-			return expectedConnections[i].Wallet < expectedConnections[j].Wallet
-		}
-		return expectedConnections[i].Hostname < expectedConnections[j].Hostname
-	})
-	assert.Equal(t, response.ActiveConnections, expectedConnections)
+	assert.Equal(t, list, response.ActiveConnections)
 }
 
 type adminListConnectionsHandler struct {
 	*api.AdminListConnections
-	ctrl            *gomock.Controller
-	servicesManager *api.ServicesManager
-	walletStore     *mocks.MockWalletStore
-	tokenStore      *mocks.MockTokenStore
+	ctrl               *gomock.Controller
+	connectionsManager *mocks.MockConnectionsManager
 }
 
-func (h *adminListConnectionsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminListConnectionsResult, *jsonrpc.ErrorDetails) {
+func (h *adminListConnectionsHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminListConnectionsResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminListConnectionsResult)
 		if !ok {
@@ -139,16 +85,11 @@ func newListConnectionsHandler(t *testing.T) *adminListConnectionsHandler {
 
 	ctrl := gomock.NewController(t)
 
-	walletStore := mocks.NewMockWalletStore(ctrl)
-	tokenStore := mocks.NewMockTokenStore(ctrl)
-	tokenStore.EXPECT().ListTokens().AnyTimes().Return([]session.TokenSummary{}, nil)
-	servicesManager := api.NewServicesManager(tokenStore, walletStore)
+	connectionsManager := mocks.NewMockConnectionsManager(ctrl)
 
 	return &adminListConnectionsHandler{
-		AdminListConnections: api.NewAdminListConnections(servicesManager),
+		AdminListConnections: api.NewAdminListConnections(connectionsManager),
 		ctrl:                 ctrl,
-		servicesManager:      servicesManager,
-		walletStore:          walletStore,
-		tokenStore:           tokenStore,
+		connectionsManager:   connectionsManager,
 	}
 }

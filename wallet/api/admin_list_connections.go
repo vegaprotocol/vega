@@ -4,58 +4,24 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
-	"code.vegaprotocol.io/vega/wallet/api/session"
-	"github.com/mitchellh/mapstructure"
 )
 
-type AdminListConnectionsParams struct {
-	Network string `json:"network"`
-}
-
 type AdminListConnectionsResult struct {
-	ActiveConnections []session.Connection `json:"activeConnections"`
+	ActiveConnections []Connection `json:"activeConnections"`
 }
 
 type AdminListConnections struct {
-	servicesManager *ServicesManager
+	connectionsManager ConnectionsManager
 }
 
-// Handle closes all opened connections to a running service and stop the service.
-func (h *AdminListConnections) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
-	params, err := validateAdminListConnectionsParams(rawParams)
-	if err != nil {
-		return nil, invalidParams(err)
-	}
-
-	sessions, err := h.servicesManager.Sessions(params.Network)
-	if err != nil {
-		return nil, invalidParams(err)
-	}
-
+func (h *AdminListConnections) Handle(_ context.Context, _ jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	return AdminListConnectionsResult{
-		ActiveConnections: sessions.ListConnections(),
+		ActiveConnections: h.connectionsManager.ListSessionConnections(),
 	}, nil
 }
 
-func validateAdminListConnectionsParams(rawParams jsonrpc.Params) (AdminListConnectionsParams, error) {
-	if rawParams == nil {
-		return AdminListConnectionsParams{}, ErrParamsRequired
-	}
-
-	params := AdminListConnectionsParams{}
-	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return AdminListConnectionsParams{}, ErrParamsDoNotMatch
-	}
-
-	if params.Network == "" {
-		return AdminListConnectionsParams{}, ErrNetworkIsRequired
-	}
-
-	return params, nil
-}
-
-func NewAdminListConnections(servicesManager *ServicesManager) *AdminListConnections {
+func NewAdminListConnections(connectionsManager ConnectionsManager) *AdminListConnections {
 	return &AdminListConnections{
-		servicesManager: servicesManager,
+		connectionsManager: connectionsManager,
 	}
 }
