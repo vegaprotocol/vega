@@ -105,11 +105,6 @@ Feature: Position resolution case 5 lognormal risk model
       | buy  | 10     | 1     |
       | sell | 10     | 2000  |
 
-    # Then the parties should have the following profit and loss:
-    #   | party | volume | unrealised pnl | realised pnl |
-    #   | aux   | 1      | 0              | 0            |
-    #   | aux2  | -1     | 0              | 0            |
-
     # insurance pool generation - trade
     When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
