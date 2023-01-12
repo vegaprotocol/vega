@@ -91,7 +91,7 @@ func testRevokingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	if err := expectedWallet.UpdatePermissions(hostname1, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access: "read",
-			RestrictedKeys: []string{
+			AllowedKeys: []string{
 				firstKey.PublicKey(),
 			},
 		},
@@ -102,7 +102,7 @@ func testRevokingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	permissions2 := wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access: "read",
-			RestrictedKeys: []string{
+			AllowedKeys: []string{
 				firstKey.PublicKey(),
 			},
 		},
