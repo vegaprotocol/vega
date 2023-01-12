@@ -22,7 +22,7 @@ The vega configuration file can be found under `$VEGA_HOME/config/node/config.to
 
 #### Settings added in v0.67.0
 
-_MaxMemoryPercent_ - A value to control the maximum amount the vega node will use. The accept range of value is 1-100, 100 basically removing any memory usage restriction. By default set to 33 when initialising a full node (accounting for a possible datanode running as well on the same hardware) and 100 when initialising a validator.
+**_MaxMemoryPercent_** - A value to control the maximum amount the vega node will use. The accept range of value is 1-100, 100 basically removing any memory usage restriction. By default set to 33 when initialising a full node (accounting for a possible datanode running as well on the same hardware) and 100 when initialising a validator.
 
 Usage example:
 ```
@@ -30,9 +30,9 @@ Usage example:
 MaxMemoryPercent = 50
 ```
 
-_[Ethereum] section_ - This whole secton have been added in order to setup the configuration of the ethereum node the validators are using to validate events on the ethereum chain, it's required to set it for a validator node, unused when running a non validator node.
+**_[Ethereum] section_** - This whole secton have been added in order to setup the configuration of the ethereum node the validators are using to validate events on the ethereum chain, it's required to set it for a validator node, unused when running a non validator node.
 
-note: *The validator nodes require to connect against a ethereum archive node*
+**note: The validator nodes require to connect against a ethereum archive node**
 
 Usage example:
 ```
@@ -44,7 +44,7 @@ Usage example:
  RetryDelay = "15s"
 ```
 
-_EvtForward.Ethereum.PollEventRetryDuration_ - Configure how often the ethereum event source will try to find new activity on the ethereum bridge.
+**_EvtForward.Ethereum.PollEventRetryDuration_** - Configure how often the ethereum event source will try to find new activity on the ethereum bridge.
 
 Usage Example:
 ```
@@ -53,7 +53,7 @@ Usage Example:
   PollEventRetryDuration = "20s"
 ```
 
-_Snapshot.StartHeight_ - this parameter already existed but it's default has changed to `-1`, we recommend you set it to this value as it set the node to restart from the last local snapshot
+**_Snapshot.StartHeight_** - this parameter already existed but it's default has changed to `-1`, we recommend you set it to this value as it set the node to restart from the last local snapshot
 
 Usage Example:
 ```
@@ -64,11 +64,12 @@ Usage Example:
 
 #### Settings removed in v0.67.0
 
-_UlimitNOFile_ - previously used to increase the amount of fd allowed to be created by the node, it was required for the internal use of badger which have been removed.
-_Admin.Server.Enabled_ - previously used to disable the admin server, this is not an option anymore as this is required for protocol upgrades.
+**_UlimitNOFile_** - previously used to increase the amount of fd allowed to be created by the node, it was required for the internal use of badger which have been removed.
 
-_Blockchain.Tendermint.ClientAddr_, _Blockchain.Tendermint.ClientEndpoint_, _Blockchain.Tendermint.ServerPort_, _Blockchain.Tendermint.ServerAddr_ - vega is now using a builtin tendermint application, there's no need to setup configuration with an external tendermint node.
+**_Admin.Server.Enabled_** - previously used to disable the admin server, this is not an option anymore as this is required for protocol upgrades.
 
-_[Monitoring] section_ - this section have been removed.
+**_Blockchain.Tendermint.ClientAddr_**, **_Blockchain.Tendermint.ClientEndpoint_**, **_Blockchain.Tendermint.ServerPort_**, **_Blockchain.Tendermint.ServerAddr_** - vega is now using a builtin tendermint application, there's no need to setup configuration with an external tendermint node.
 
-_[NodeWallet.ETH]_ - This have been removed from the _[NodeWallet]_ section to be set into it's owne [Ethereum] section.
+**_[Monitoring] section_** - this section have been removed.
+
+**_[NodeWallet.ETH]_** - This have been removed from the _[NodeWallet]_ section to be set into it's own _[Ethereum]_ section.
