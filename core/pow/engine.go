@@ -600,7 +600,7 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 					BlockHeight:      block,
 					BlockHash:        e.blockHash[blockIndex],
 					TransactionsSeen: uint64(partyState.seenCount),
-					ExpectedDifficulty: calculateSpamExpectedDifficulty(params.spamPoWDifficulty,
+					ExpectedDifficulty: getMinDifficultyForNextTx(params.spamPoWDifficulty,
 						uint(params.spamPoWNumberOfTxPerBlock),
 						partyState.seenCount,
 						partyState.observedDifficulty,
@@ -626,14 +626,14 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 	}
 }
 
-func calculateSpamExpectedDifficulty(spamPoWDifficulty, spamPoWNumberOfTxPerBlock, seenTx uint, observedDifficulty uint) uint64 {
+func getMinDifficultyForNextTx(baseDifficulty, txPerBlock, seenTx, observedDifficulty uint) uint64 {
 	// calculate the total expected difficulty based on the number of transactions seen
-	totalDifficulty, powDiff := calculateExpectedDifficulty(spamPoWDifficulty, spamPoWNumberOfTxPerBlock, seenTx)
+	totalDifficulty, powDiff := calculateExpectedDifficulty(baseDifficulty, txPerBlock, seenTx)
 	// add the current PoW difficulty to the current expected difficulty to get the expected total difficulty for the next transaction
 	totalDifficulty += powDiff
 	nextExpectedDifficulty := totalDifficulty - observedDifficulty
-	if nextExpectedDifficulty < spamPoWDifficulty {
-		nextExpectedDifficulty = spamPoWDifficulty
+	if nextExpectedDifficulty < baseDifficulty {
+		nextExpectedDifficulty = baseDifficulty
 	}
 
 	return uint64(nextExpectedDifficulty)

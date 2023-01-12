@@ -529,7 +529,7 @@ func Test_ExpectedSpamDifficulty(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := calculateSpamExpectedDifficulty(tt.args.spamPowDifficulty, tt.args.spamPoWNumberOfTxPerBlock, tt.args.seenTx, tt.args.observedDifficulty); got != tt.want {
+			if got := getMinDifficultyForNextTx(tt.args.spamPowDifficulty, tt.args.spamPoWNumberOfTxPerBlock, tt.args.seenTx, tt.args.observedDifficulty); got != tt.want {
 				t.Errorf("ExpectedSpamDifficulty() = %v, want %v", got, tt.want)
 			}
 		})
