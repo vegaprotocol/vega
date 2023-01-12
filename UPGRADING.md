@@ -25,7 +25,7 @@ The vega configuration file can be found under `$VEGA_HOME/config/node/config.to
 **_MaxMemoryPercent_** - A value to control the maximum amount the vega node will use. The accept range of value is 1-100, 100 basically removing any memory usage restriction. By default set to 33 when initialising a full node (accounting for a possible datanode running as well on the same hardware) and 100 when initialising a validator.
 
 Usage example:
-```
+```Toml
 # set the memory usage to 50% max of the available resources on the hardware
 MaxMemoryPercent = 50
 ```
@@ -35,7 +35,7 @@ MaxMemoryPercent = 50
 **note: The validator nodes require to connect against a ethereum archive node**
 
 Usage example:
-```
+```Toml
 [Ethereum]
  # control the log level of this package
  Level = "Info"
@@ -47,7 +47,7 @@ Usage example:
 **_EvtForward.Ethereum.PollEventRetryDuration_** - Configure how often the ethereum event source will try to find new activity on the ethereum bridge.
 
 Usage Example:
-```
+```Toml
 [EvtForward]
  [EvtForward.Ethereum]
   PollEventRetryDuration = "20s"
@@ -56,11 +56,10 @@ Usage Example:
 **_Snapshot.StartHeight_** - this parameter already existed but it's default has changed to `-1`, we recommend you set it to this value as it set the node to restart from the last local snapshot
 
 Usage Example:
-```
+```Toml
 [Snapshot]
  StartHeight = -1
 ```
-
 
 #### Settings removed in v0.67.0
 
@@ -73,3 +72,35 @@ Usage Example:
 **_[Monitoring] section_** - this section have been removed.
 
 **_[NodeWallet.ETH]_** - This have been removed from the _[NodeWallet]_ section to be set into it's own _[Ethereum]_ section.
+
+
+### Tendermint
+
+Here's a list of settings from the tendermint configuration that needs to be set so vega operate properly. You can find the tendermint configuration under `$TENDERMINT_HOME/config/config.toml`. Others can be kept to the defaults.
+
+```Toml
+[p2p]
+# Maximum size of a message packet payload, in bytes
+max_packet_msg_payload_size = 16384
+
+[mempool]
+# Mempool version to use:
+#   1) "v0" - (default) FIFO mempool.
+#   2) "v1" - prioritized mempool.
+version = "v1"
+# Maximum number of transactions in the mempool
+size = 10000
+# Size of the cache (used to filter transactions we saw earlier) in transactions
+cache_size = 20000
+
+[consensus]
+# How long we wait after committing a block, before starting on the new
+# height (this gives us a chance to receive some more precommits, even
+# though we already have +2/3).
+timeout_commit = "0s"
+# Make progress as soon as we have all the precommits (as if TimeoutCommit = 0)
+skip_timeout_commit = true
+# EmptyBlocks mode and possible interval between empty blocks
+create_empty_blocks = true
+create_empty_blocks_interval = "1s"
+```
