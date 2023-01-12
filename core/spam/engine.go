@@ -34,14 +34,13 @@ var (
 	increaseFactor             = num.NewUint(2)
 	banDurationAsEpochFraction = num.DecimalOne().Div(num.DecimalFromInt64(48)) // 1/48 of an epoch will be the default 30 minutes ban
 	banFactor                  = num.DecimalFromFloat(0.5)
+	rejectRatioForIncrease     = num.DecimalFromFloat(0.3)
 )
 
 const (
-	rejectRatioForIncrease         float64 = 0.3
-	numberOfEpochsBan              uint64  = 4
-	numberOfBlocksForIncreaseCheck uint64  = 10
-	minBanDuration                         = time.Second * 30 // minimum ban duration
-	formatBase                             = 10
+	numberOfEpochsBan              uint64 = 4
+	numberOfBlocksForIncreaseCheck uint64 = 10
+	minBanDuration                        = time.Second * 30 // minimum ban duration
 )
 
 type StakingAccounts interface {

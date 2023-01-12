@@ -107,9 +107,9 @@ func (fs *FeeSplitter) AvgTradeValue() num.Decimal {
 	}
 	fs.changed = true
 	// n == 2 or more
-	n := num.NewDecimalFromFloat(float64(fs.window))
+	n := num.DecimalFromInt64(int64(fs.window))
 	// nmin == 1 or more
-	nmin := num.NewDecimalFromFloat(float64(fs.window - 1))
+	nmin := num.DecimalFromInt64(int64(fs.window - 1))
 	// avg = avg * ((n-1)/n) + tv/n
 	fs.avg = fs.avg.Mul(nmin.Div(n)).Add(tv.Div(n))
 	return fs.avg
