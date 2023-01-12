@@ -104,3 +104,96 @@ skip_timeout_commit = true
 create_empty_blocks = true
 create_empty_blocks_interval = "1s"
 ```
+
+## Data node
+
+The data node configuration file can be found under `$DATANODE_HOME/config/data-node/config.toml`
+
+### Settings added in v0.67.0
+
+**_MaxMemoryPercent_** - A value to control the maximum amount the vega node will use. The accept range of value is 1-100 the default value is 33 assuming that the datanode is running on the same host as the vega core node and postgres.
+
+Usage example:
+```Toml
+# set the memory usage to 50% max of the available resources on the hardware
+MaxMemoryPercent = 50
+```
+
+**_AutoInitialiseFromDeHistory_** - Should the datanode be bootstrapping it's state from other datanodes in the network.
+
+Usage example:
+```Toml
+AutoInitialiseFromDeCentralisedHistory = false
+```
+**_ChainID_** - The chain ID of the current vega mainnet, this is being set automatically when running `init` for the first time.
+
+Usage example:
+```Toml
+ChainID = "vega-mainnet-0009"
+```
+
+**_[Admin] section_** - The configuration for the admin local API, this is generate automatically when running `init` for the first time.
+
+Usage example:
+```Toml
+[Admin]
+  Level = "Info"
+  [Admin.Server]
+    SocketPath = "/var/folders/l7/lq57j66j6hjdllwffykpqf_h0000gn/T/datanode.sock"
+    HTTPPath = "/datanode/rpc"
+```
+
+**_SQLStore.WipeOnStartup_** - This setting would delete the postgres database on every start, clearing up all state, we recommend to set this to false
+
+Usage example:
+```Toml
+[SQLStore]
+ WipeOnStartup = false
+```
+
+**_SQLStore.ConnectionRetryConfig_**, **_SQLStore.LogRotationConfig_** - Advanced configuration for the postgres connector. We recommend you use the default setting created when running the `init` command.
+
+**_Gateway.MaxSubscriptionPerClient_** - The maximum amount of Graphql subsciption allowed per client connection.
+
+Usage example:
+```Toml
+[Gateway]
+ MaxSubscriptionPerClient = 100
+```
+
+**_Gateway.GraphQL.Endpoint_** - The endpoint serving the GraphQL API, the default is set to the standard endpoint for GraphQL APIs.
+
+```Toml
+[Gateway]
+ [Gateway.GraphQL]
+  Endpoint = "/graphql"
+```
+
+**_Broker.UseBufferedEventSource_** - The broker is the connection between the vega core node and data node, this connection needs to be stable at any time to ensure the data node can reconcile all the state out of the vega events. This setting allow the datanode to use a buffer when it's not able to consume events as fast as the vega core node produce them, we recommend to set this to true
+
+Usage example:
+```Toml
+[Broker]
+ UseBufferedEventSource = true
+```
+
+**_[Broker.BufferedEventSourceConfig] section_** - This section configure the buffered event source mentioned previously. We recommend to use the default from the `init` command.
+
+**_[NetworkHistory] section_** - This configure the p2p history of the data nodes on the network. We recommend you use the default configuration create when running the `init` command.
+
+### Settings removed in v0.67.0
+
+**_UlimitNOFile_** - previously used to increase the amount of fd allowed to be created by the node, it was required for the internal use of badger which have been removed.
+
+**_API.ExposeLegacyAPI_**, **_API.LegacyAPIPortOffset_** - The legacy API have been fully removed in the new version, these fields are un-necessary.
+
+# Command line changes
+
+## Datanode
+
+### New in version 0.67
+
+The init command now requires the chain-id of the current vega network. For example if we were to initial a datanode for the current mainnet, we would run the following command:
+```Shell
+vega datanode init --home="$DATANODE_HOME" "vega-mainnet-0009"
+```
