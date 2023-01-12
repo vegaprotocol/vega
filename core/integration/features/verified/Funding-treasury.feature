@@ -123,10 +123,6 @@ Feature: Position resolution case 5 lognormal risk model
       | buy  | 1     | 10     |
       | buy  | 140   | 1      |
 
-    #designatedLooser has position of vol 290; price 150; calculated risk factor long: 0.336895684; risk factor short: 0.4878731
-    #what's on the order book to cover the position is shown above, which makes the exit price 13 =(1*10+140*1)/11, slippage per unit is 150-13=137
-    #margin level is PositionVol*(markPrice*RiskFactor+SlippagePerUnit) = 290*(150*0.336895684+137)=54384
-
     # insurance pool generation - modify order book
     Then the parties cancel the following orders:
       | party           | reference      |
@@ -197,11 +193,6 @@ Feature: Position resolution case 5 lognormal risk model
       | party            | asset | market id | margin | general      |
       | buySideProvider  | USD   | ETH/DEC19 | 67146  | 999999932820 |
       | sellSideProvider | USD   | ETH/DEC19 | 859769 | 999999148951 |
-
-    # Double entry accounting is maintained at all points
-    # i.e. every transfer event has a source account and destination account and the balance of the source account before the transfer equals to the balance of source account minus the transfer amount after the transfer and balance of the destination account before the transfer plus the transfer amount equals to the balance of the destination account after the transfer.
-    # source account(before transfer)- transfer amount = destination account: 81259-5820=75439
-    # destination account (before transfer) + transfer amount = destination account: 839594+5820=845414
 
     Then the following transfers should happen:
       | from            | to               | from account            | to account              | market id | amount | asset |
