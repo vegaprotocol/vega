@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"code.vegaprotocol.io/vega/core/delegation/mocks"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -458,12 +460,14 @@ func Test_ExpectedSpamDifficulty(t *testing.T) {
 		spamPoWNumberOfTxPerBlock uint
 		seenTx                    uint
 		observedDifficulty        uint
+		increaseDifficulty        bool
 	}
 
 	tests := []struct {
-		name string
-		args args
-		want uint64
+		name  string
+		args  args
+		isNil bool
+		want  uint64
 	}{
 		{
 			name: "Expected difficulty after 12 txs",
@@ -472,8 +476,10 @@ func Test_ExpectedSpamDifficulty(t *testing.T) {
 				spamPoWNumberOfTxPerBlock: 5,
 				seenTx:                    12,
 				observedDifficulty:        132,
+				increaseDifficulty:        true,
 			},
-			want: 10,
+			isNil: false,
+			want:  10,
 		},
 		{
 			name: "Expected difficulty after 13 txs",
@@ -482,8 +488,10 @@ func Test_ExpectedSpamDifficulty(t *testing.T) {
 				spamPoWNumberOfTxPerBlock: 5,
 				seenTx:                    13,
 				observedDifficulty:        142,
+				increaseDifficulty:        true,
 			},
-			want: 11,
+			isNil: false,
+			want:  11,
 		},
 		{
 			name: "Expected difficulty after 14 txs",
@@ -492,8 +500,10 @@ func Test_ExpectedSpamDifficulty(t *testing.T) {
 				spamPoWNumberOfTxPerBlock: 5,
 				seenTx:                    14,
 				observedDifficulty:        153,
+				increaseDifficulty:        true,
 			},
-			want: 12,
+			isNil: false,
+			want:  12,
 		},
 		{
 			name: "Expected difficulty after 15 txs",
@@ -502,8 +512,10 @@ func Test_ExpectedSpamDifficulty(t *testing.T) {
 				spamPoWNumberOfTxPerBlock: 5,
 				seenTx:                    15,
 				observedDifficulty:        166,
+				increaseDifficulty:        true,
 			},
-			want: 12, // after 15txs, the difficulty is increased to 13, but we should have 1 extra in the credit from the previous block
+			isNil: false,
+			want:  12, // after 15txs, the difficulty is increased to 13, but we should have 1 extra in the credit from the previous block
 		},
 		{
 			name: "Expected difficulty after 16 txs",
@@ -512,8 +524,10 @@ func Test_ExpectedSpamDifficulty(t *testing.T) {
 				spamPoWNumberOfTxPerBlock: 5,
 				seenTx:                    16,
 				observedDifficulty:        178,
+				increaseDifficulty:        true,
 			},
-			want: 13,
+			isNil: false,
+			want:  13,
 		},
 		{
 			name: "Expected difficulty after 17 txs",
@@ -522,16 +536,38 @@ func Test_ExpectedSpamDifficulty(t *testing.T) {
 				spamPoWNumberOfTxPerBlock: 5,
 				seenTx:                    17,
 				observedDifficulty:        193,
+				increaseDifficulty:        true,
 			},
-			want: 11,
+			isNil: false,
+			want:  11,
+		},
+		{
+			name: "Expected difficulty when increaseDifficulty is false",
+			args: args{
+				spamPowDifficulty:         10,
+				spamPoWNumberOfTxPerBlock: 5,
+				seenTx:                    17,
+				observedDifficulty:        193,
+				increaseDifficulty:        false,
+			},
+			isNil: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getMinDifficultyForNextTx(tt.args.spamPowDifficulty, tt.args.spamPoWNumberOfTxPerBlock, tt.args.seenTx, tt.args.observedDifficulty); got != tt.want {
-				t.Errorf("ExpectedSpamDifficulty() = %v, want %v", got, tt.want)
+			got := getMinDifficultyForNextTx(
+				tt.args.spamPowDifficulty,
+				tt.args.spamPoWNumberOfTxPerBlock,
+				tt.args.seenTx,
+				tt.args.observedDifficulty,
+				tt.args.increaseDifficulty)
+			if tt.isNil {
+				assert.Nil(t, got)
+				return
 			}
+
+			assert.Equal(t, tt.want, *got, "getMinDifficultyForNextTx() = %v, want %v", *got, tt.want)
 		})
 	}
 }

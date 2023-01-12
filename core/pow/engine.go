@@ -585,25 +585,35 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 
 	for _, state := range e.activeStates {
 		for block, blockToPartyState := range state.blockToPartyState {
-			stateInd := 0
-			for i, p := range e.activeParams {
-				if block >= p.fromBlock && (p.untilBlock == nil || *p.untilBlock >= block) {
-					stateInd = i
-					break
-				}
-			}
-			params := e.activeParams[stateInd]
-			blockIndex := block % ringSize
-
 			if partyState, ok := blockToPartyState[partyID]; ok {
+				stateInd := 0
+				for i, p := range e.activeParams {
+					if block >= p.fromBlock && (p.untilBlock == nil || *p.untilBlock >= block) {
+						stateInd = i
+						break
+					}
+				}
+
+				params := e.activeParams[stateInd]
+				blockIndex := block % ringSize
+
+				var minDifficulty *uint64
+
+				if params.spamPoWIncreasingDifficulty {
+					powDifficulty := uint64(params.spamPoWDifficulty)
+					minDifficulty = &powDifficulty
+				}
+
 				stats = append(stats, &protoapi.PoWBlockState{
-					BlockHeight:      block,
-					BlockHash:        e.blockHash[blockIndex],
-					TransactionsSeen: uint64(partyState.seenCount),
+					BlockHeight:       block,
+					BlockHash:         e.blockHash[blockIndex],
+					TransactionsSeen:  uint64(partyState.seenCount),
+					MinimumDifficulty: minDifficulty,
 					ExpectedDifficulty: getMinDifficultyForNextTx(params.spamPoWDifficulty,
 						uint(params.spamPoWNumberOfTxPerBlock),
 						partyState.seenCount,
 						partyState.observedDifficulty,
+						params.spamPoWIncreasingDifficulty,
 					),
 					HashFunction: params.spamPoWHashFunction,
 				})
@@ -626,7 +636,11 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 	}
 }
 
-func getMinDifficultyForNextTx(baseDifficulty, txPerBlock, seenTx, observedDifficulty uint) uint64 {
+func getMinDifficultyForNextTx(baseDifficulty, txPerBlock, seenTx, observedDifficulty uint, increaseDifficulty bool) *uint64 {
+	if !increaseDifficulty {
+		return nil
+	}
+
 	// calculate the total expected difficulty based on the number of transactions seen
 	totalDifficulty, powDiff := calculateExpectedDifficulty(baseDifficulty, txPerBlock, seenTx)
 	// add the current PoW difficulty to the current expected difficulty to get the expected total difficulty for the next transaction
@@ -636,5 +650,7 @@ func getMinDifficultyForNextTx(baseDifficulty, txPerBlock, seenTx, observedDiffi
 		nextExpectedDifficulty = baseDifficulty
 	}
 
-	return uint64(nextExpectedDifficulty)
+	minDifficultyForNextTx := uint64(nextExpectedDifficulty)
+
+	return &minDifficultyForNextTx
 }
