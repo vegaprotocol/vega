@@ -17,7 +17,7 @@ type TimeService interface {
 type WalletStore interface {
 	UnlockWallet(ctx context.Context, name, passphrase string) error
 	GetWallet(ctx context.Context, name string) (wallet.Wallet, error)
-	OnUpdate(callbackFn func(w wallet.Wallet))
+	OnUpdate(callbackFn func(ctx context.Context, w wallet.Wallet))
 }
 
 // TokenStore is the component used to retrieve and update the API tokens from the
@@ -28,4 +28,6 @@ type TokenStore interface {
 	DescribeToken(token Token) (TokenDescription, error)
 	SaveToken(tokenConfig TokenDescription) error
 	DeleteToken(token Token) error
+	OnUpdate(callbackFn func(ctx context.Context, tokens ...TokenDescription))
+	Close()
 }

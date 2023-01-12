@@ -68,7 +68,6 @@ func (w *Wallet) MakeParties(n uint64) ([]*Party, error) {
 		}
 
 		kp, err := w.handler.GenerateKeyPair(walletName, passphrase, nil)
-
 		if err != nil {
 			return nil, err
 		}

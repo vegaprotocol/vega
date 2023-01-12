@@ -44,7 +44,7 @@ func NewCmdAPIToken(w io.Writer, rf *RootFlags) *cobra.Command {
 func ensureAPITokenStoreIsInit(rf *RootFlags) error {
 	vegaPaths := paths.New(rf.Home)
 
-	isInit, err := tokenStoreV1.IsStoreInitialized(vegaPaths)
+	isInit, err := tokenStoreV1.IsStoreBootstrapped(vegaPaths)
 	if err != nil {
 		return fmt.Errorf("could not verify the initialization state of the token store: %w", err)
 	}

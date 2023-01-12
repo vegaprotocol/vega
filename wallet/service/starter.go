@@ -12,7 +12,6 @@ import (
 	vgclose "code.vegaprotocol.io/vega/libs/close"
 	vgjob "code.vegaprotocol.io/vega/libs/job"
 	vgzap "code.vegaprotocol.io/vega/libs/zap"
-	"code.vegaprotocol.io/vega/paths"
 	coreversion "code.vegaprotocol.io/vega/version"
 	"code.vegaprotocol.io/vega/wallet/api"
 	nodeapi "code.vegaprotocol.io/vega/wallet/api/node"
@@ -41,7 +40,7 @@ type InteractorBuilderFunc func(ctx context.Context) api.Interactor
 
 // LoggerBuilderFunc is used to build a logger. It returns the built logger and a
 // zap.AtomicLevel to allow the caller to dynamically change the log level.
-type LoggerBuilderFunc func(path paths.StatePath, level string) (*zap.Logger, zap.AtomicLevel, error)
+type LoggerBuilderFunc func(level string) (*zap.Logger, zap.AtomicLevel, error)
 
 type ConnectionsManagerBuilderFunc func() *connections.Manager
 
@@ -242,7 +241,7 @@ func (m *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *netwo
 func (m *Starter) buildServiceLogger(network string) (*zap.Logger, zap.AtomicLevel, error) {
 	// We set the logger with the "INFO" level by default. It will be changed once
 	// we get to retrieve the log level from the network configuration.
-	logger, level, err := m.loggerBuilderFunc(paths.WalletServiceLogsHome, "info")
+	logger, level, err := m.loggerBuilderFunc("info")
 	if err != nil {
 		return nil, zap.AtomicLevel{}, err
 	}
