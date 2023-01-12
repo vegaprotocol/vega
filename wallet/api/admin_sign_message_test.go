@@ -14,9 +14,9 @@ import (
 )
 
 func TestAdminSignMessage(t *testing.T) {
-	t.Run("signing message with invalid params fails", testSigningMessageWithInvalidParamsFails)
-	t.Run("signing message with wallet that doesn't exist fails", testSigningMessageWithWalletThatDoesntExistFails)
-	t.Run("signing message failing to get wallet fails", testSigningMessageFailingToGetWalletFails)
+	t.Run("Signing message with invalid params fails", testSigningMessageWithInvalidParamsFails)
+	t.Run("Signing message with wallet that doesn't exist fails", testSigningMessageWithWalletThatDoesntExistFails)
+	t.Run("Signing message failing to get wallet fails", testSigningMessageFailingToGetWalletFails)
 }
 
 func testSigningMessageWithInvalidParamsFails(t *testing.T) {
@@ -127,7 +127,8 @@ func testSigningMessageFailingToGetWalletFails(t *testing.T) {
 	handler := newSignMessageHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, params.Wallet).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, params.Wallet, params.Passphrase).Times(1).Return(nil, assert.AnError)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, params.Wallet, params.Passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, params.Wallet).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, params)
@@ -152,10 +153,10 @@ type signMessageHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *signMessageHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminSignMessageResult, *jsonrpc.ErrorDetails) {
+func (h *signMessageHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminSignMessageResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminSignMessageResult)
 		if !ok {

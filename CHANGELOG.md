@@ -3,7 +3,12 @@
 ## Unreleased 0.67.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6895](https://github.com/vegaprotocol/vega/issues/6895) - Move the authentication of wallet API version 2 to the transport layer (HTTP). This brings several breaking changes:
+  - A unified HTTP response payload has been introduced for structured response and error handling for data coming from the HTTP layer.
+  - the `/api/v2/methods` endpoints now uses the new HTTP response payload.
+  - the `/api/v2/requests` endpoint can either return the HTTP or the JSON-RPC response payload depending on the situation.
+  - the token has been moved out of the JSON-RPC requests, to HTTP `Authorization` header.
+
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -

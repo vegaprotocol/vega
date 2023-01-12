@@ -45,8 +45,7 @@ func NewReaders() Readers {
 	}
 }
 
-// Handle creates a wallet and generates its first key.
-func (h *AdminImportNetwork) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminImportNetwork) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateImportNetworkParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

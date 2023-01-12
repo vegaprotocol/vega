@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -40,7 +39,7 @@ func NewCmdRotateKey(w io.Writer, rf *RootFlags) *cobra.Command {
 		}
 
 		rotateKey := api.NewAdminRotateKey(s)
-		rawResult, errDetails := rotateKey.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		rawResult, errDetails := rotateKey.Handle(context.Background(), params)
 		if errDetails != nil {
 			return api.AdminRotateKeyResult{}, errors.New(errDetails.Data)
 		}

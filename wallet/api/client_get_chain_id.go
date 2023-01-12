@@ -15,7 +15,7 @@ type ClientGetChainID struct {
 	nodeSelector walletnode.Selector
 }
 
-func (h *ClientGetChainID) Handle(ctx context.Context, _ jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *ClientGetChainID) Handle(ctx context.Context) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	currentNode, err := h.nodeSelector.Node(ctx, noNodeSelectionReporting)
 	if err != nil {
 		return nil, nodeCommunicationError(ErrNoHealthyNodeAvailable)

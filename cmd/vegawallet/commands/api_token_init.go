@@ -9,7 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	"code.vegaprotocol.io/vega/paths"
-	tokenStore "code.vegaprotocol.io/vega/wallet/api/session/store/v1"
+	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/v1"
 	"github.com/spf13/cobra"
 )
 
@@ -80,7 +80,7 @@ func InitAPIToken(home string, f *InitAPITokenFlags) error {
 	vegaPaths := paths.New(home)
 
 	// Verify the init state of the tokens store
-	init, err := tokenStore.IsStoreInitialized(vegaPaths)
+	init, err := tokenStoreV1.IsStoreInitialized(vegaPaths)
 	if err != nil {
 		return fmt.Errorf("could not verify the initialization state of the tokens store: %w", err)
 	}
@@ -89,7 +89,7 @@ func InitAPIToken(home string, f *InitAPITokenFlags) error {
 		if err != nil {
 			return err
 		}
-		if _, err = tokenStore.InitializeStore(vegaPaths, passphrase); err != nil {
+		if _, err = tokenStoreV1.InitializeStore(vegaPaths, passphrase); err != nil {
 			return fmt.Errorf("couldn't initialise the tokens store: %w", err)
 		}
 	}

@@ -27,7 +27,7 @@ type AdminIsolateKey struct {
 }
 
 // Handle isolates a key in a specific wallet.
-func (h *AdminIsolateKey) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminIsolateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminIsolateKeyParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -39,11 +39,15 @@ func (h *AdminIsolateKey) Handle(ctx context.Context, rawParams jsonrpc.Params, 
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
-	w, err := h.walletStore.GetWallet(ctx, params.Wallet, params.Passphrase)
-	if err != nil {
+	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
 		if errors.Is(err, wallet.ErrWrongPassphrase) {
 			return nil, invalidParams(err)
 		}
+		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	}
+
+	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
+	if err != nil {
 		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
 
@@ -56,7 +60,7 @@ func (h *AdminIsolateKey) Handle(ctx context.Context, rawParams jsonrpc.Params, 
 		return nil, internalError(fmt.Errorf("could not isolate the key: %w", err))
 	}
 
-	if err := h.walletStore.SaveWallet(ctx, isolatedWallet, params.IsolatedWalletPassphrase); err != nil {
+	if err := h.walletStore.CreateWallet(ctx, isolatedWallet, params.IsolatedWalletPassphrase); err != nil {
 		return nil, internalError(fmt.Errorf("could not save the wallet with isolated key: %w", err))
 	}
 

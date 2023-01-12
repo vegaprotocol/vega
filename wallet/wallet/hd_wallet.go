@@ -34,8 +34,12 @@ type HDWallet struct {
 	// not the master node. This is a node derived from the master. Its
 	// derivation index is constant (see OriginIndex). This node is referred as
 	// "wallet node".
-	node        *slip10.Node
-	id          string
+	node *slip10.Node
+
+	// id is the unique wallet identifier that is used to identify the origin
+	// of a set of keys, like a key rotation.
+	id string
+
 	permissions map[string]Permissions
 }
 
@@ -349,6 +353,23 @@ func (w *HDWallet) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(jsonW)
+}
+
+func (w *HDWallet) Clone() Wallet {
+	m, err := w.MarshalJSON()
+	if err != nil {
+		panic(fmt.Errorf("could not marshal the original wallet for cloning: %w", err))
+	}
+
+	clonedW := &HDWallet{}
+
+	if err := json.Unmarshal(m, clonedW); err != nil {
+		panic(fmt.Errorf("could not unmarshal the original wallet into a clone: %w", err))
+	}
+
+	clonedW.SetName(w.Name())
+
+	return clonedW
 }
 
 func (w *HDWallet) UnmarshalJSON(data []byte) error {

@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -9,11 +8,11 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/api"
-	tokenStore "code.vegaprotocol.io/vega/wallet/api/session/store/v1"
+	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
+	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/v1"
 	"github.com/spf13/cobra"
 )
 
@@ -31,28 +30,23 @@ var (
 	`)
 )
 
-type DeleteAPITokenHandler func(f DeleteAPITokenFlags, params api.AdminDeleteAPITokenParams) error
+type DeleteAPITokenHandler func(f DeleteAPITokenFlags) error
 
 func NewCmdDeleteAPIToken(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(f DeleteAPITokenFlags, params api.AdminDeleteAPITokenParams) error {
+	h := func(f DeleteAPITokenFlags) error {
 		vegaPaths := paths.New(rf.Home)
 
-		store, err := tokenStore.LoadStore(vegaPaths, f.passphrase)
+		store, err := tokenStoreV1.LoadStore(vegaPaths, f.passphrase)
 		if err != nil {
 			if errors.Is(err, api.ErrWrongPassphrase) {
 				return err
 			}
-			return fmt.Errorf("couldn't load the tokens store: %w", err)
+			return fmt.Errorf("couldn't load the token store: %w", err)
 		}
-
-		deleteAPIToken := api.NewAdminDeleteAPIToken(store)
-		if _, errorDetails := deleteAPIToken.Handle(context.Background(), params, jsonrpc.RequestMetadata{}); errorDetails != nil {
-			return errors.New(errorDetails.Data)
-		}
-		return nil
+		return connections.DeleteAPIToken(store, f.Token)
 	}
 
-	return BuildCmdDeleteAPIToken(w, ensureAPITokensStoreIsInit, h, rf)
+	return BuildCmdDeleteAPIToken(w, ensureAPITokenStoreIsInit, h, rf)
 }
 
 func BuildCmdDeleteAPIToken(w io.Writer, preCheck APITokePreCheck, handler DeleteAPITokenHandler, rf *RootFlags) *cobra.Command {
@@ -68,8 +62,7 @@ func BuildCmdDeleteAPIToken(w io.Writer, preCheck APITokePreCheck, handler Delet
 				return err
 			}
 
-			params, err := f.Validate()
-			if err != nil {
+			if err := f.Validate(); err != nil {
 				return err
 			}
 
@@ -79,7 +72,7 @@ func BuildCmdDeleteAPIToken(w io.Writer, preCheck APITokePreCheck, handler Delet
 				}
 			}
 
-			if err := handler(*f, params); err != nil {
+			if err := handler(*f); err != nil {
 				return err
 			}
 
@@ -119,24 +112,22 @@ type DeleteAPITokenFlags struct {
 	passphrase     string
 }
 
-func (f *DeleteAPITokenFlags) Validate() (api.AdminDeleteAPITokenParams, error) {
+func (f *DeleteAPITokenFlags) Validate() error {
 	if len(f.Token) == 0 {
-		return api.AdminDeleteAPITokenParams{}, flags.MustBeSpecifiedError("token")
+		return flags.MustBeSpecifiedError("token")
 	}
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminDeleteAPITokenParams{}, err
+		return err
 	}
 	f.passphrase = passphrase
 
 	if !f.Force && vgterm.HasNoTTY() {
-		return api.AdminDeleteAPITokenParams{}, ErrForceFlagIsRequiredWithoutTTY
+		return ErrForceFlagIsRequiredWithoutTTY
 	}
 
-	return api.AdminDeleteAPITokenParams{
-		Token: f.Token,
-	}, nil
+	return nil
 }
 
 func printDeletedAPIToken(w io.Writer) {
