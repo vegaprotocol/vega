@@ -457,7 +457,7 @@ func (vsp *VoteSpamPolicy) GetVoteSpamStats(partyID string) *protoapi.VoteSpamSt
 			Proposal:          proposal,
 			CountForEpoch:     votes,
 			MaxForEpoch:       vsp.numVotes,
-			MinTokensRequired: vsp.minVotingTokens.Uint64(),
+			MinTokensRequired: vsp.minVotingTokens.String(),
 		})
 	}
 

@@ -383,7 +383,7 @@ message VoteSpamStatistic {
   // The maximum number of votes per proposal allowed in an epoch
   uint64 max_for_epoch = 3;
   // The effective minimum number of tokens required to vote on the proposal
-  uint64 min_tokens_required = 4;
+  string min_tokens_required = 4;
 }
 
 // The PoW state for a given block
