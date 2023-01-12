@@ -351,6 +351,7 @@ message LastBlockHeightResponse {
 
 // A request to retrieve the spam statistics of a party for the given epoch
 message GetSpamStatisticsRequest {
+  // Id for the party whose statistics are requested
   string party_id = 1;
 }
 
@@ -364,6 +365,7 @@ message SpamStatistic {
   optional string banned_until = 4;
 }
 
+// The voting statistics by proposal for a given party for the current epoch
 message VoteSpamStatistics {
   // List of statistics for proposals voted on by the party
   repeated VoteSpamStatistic statistics = 1;
@@ -384,11 +386,18 @@ message VoteSpamStatistic {
 
 // The PoW state for a given block
 message PoWBlockState {
+  // Block height for the current Proof of Work state statistics
   uint64 block_height = 1;
+  // Hash of the current block
   string block_hash = 2;
+  // Total number of transactions seen in the block
   uint64 transactions_seen = 3;
+  // Total observed difficulty by the party in the block
   uint64 observed_difficulty = 4;
+  // The minimum expected difficulty for the next transaction in the block
   uint64 expected_difficulty = 5;
+  // The hashing function used to calculate the block hash
+  string hash_function = 6;
 }
 
 // Proof of work statistics for a party
@@ -401,11 +410,17 @@ message PoWStatistic {
 
 // The complete spam statistics captured for a given party
 message SpamStatistics {
+  // Statistics for proposal transactions made by the party
   SpamStatistic proposals = 1;
+  // Statistics for delegation transactions made by the party
   SpamStatistic delegations = 2;
+  // Statistics for transfer transactions made by the party
   SpamStatistic transfers = 3;
+  // Statistics for node announcement transactions made by the party
   SpamStatistic node_announcements = 4;
+  // Statistics for proposal votes made by the party
   VoteSpamStatistics votes = 5;
+  // Statistics for proof of work difficulty observed per block for the party
   PoWStatistic pow = 6;
 }
 

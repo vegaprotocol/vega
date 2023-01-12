@@ -606,6 +606,7 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 						partyState.seenCount,
 						partyState.observedDifficulty,
 					),
+					HashFunction: params.spamPoWHashFunction,
 				})
 			}
 		}
