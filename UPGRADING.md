@@ -189,11 +189,40 @@ Usage example:
 
 # Command line changes
 
+## Vega
+
+The `node` subcommand have been deprecated in favour of `start`, you should start using the new command as the previous one will be fully removed in a future release.
+
+The `tm` subcommand have been deprecated in favour of `tendermint`, you should start using the new command as the previous one will be fully removed in a future release. Also, vega being now a tendermint builtin application, some of the commands exposed by the subcommand have also been removed like the `node` subcommand.
+
+The `init` and `start` command now takes an optional `--tendermint-home` used to specify the home of the tendermint configuration and state. If ignored, the default tendermint home is used (`$HOME/.tendermint`).
+
+The `init` command also takes an optional `--no-tendermint` which will avoid creating the tendermint configuration.
+
+The `protocol_upgrade_proposal` subcommand has been introduce, this is used by validator nodes to share on chain their intent to upgrade to a newer version of the protocol.
+
+The vega toolchain now also expose some of the other programs under the following subcommands:
+- `tools`: Some tools use for introspection of the vega chain
+- `wallet`: the vega wallet
+- `datanode`: the vega data node
+- `blockexplorer`: the api use by the block explorer
+
+Refer to their documentation for more information or use the standard `--help` for more details
+
+For extended help about the vega toolchain run:
+```Shell
+vega --help
+```
+
 ## Datanode
 
-### New in version 0.67
+The `node` subcommand have been deprecated in favour of `start`, you should start using the new command as the previous one will be fully removed in a future release.
 
-The init command now requires the chain-id of the current vega network. For example if we were to initial a datanode for the current mainnet, we would run the following command:
+The `init` command now requires the chain-id of the current vega network. For example if we were to initial a datanode for the current mainnet, we would run the following command:
 ```Shell
 vega datanode init --home="$DATANODE_HOME" "vega-mainnet-0009"
 ```
+
+The new `network-history` subcommand provide tools to manage the history of the data node which is shared accross the network through IPFS.
+
+The new `last-block` command returns the last block processed by the data node.
