@@ -392,12 +392,10 @@ message PoWBlockState {
   string block_hash = 2;
   // Total number of transactions seen in the block
   uint64 transactions_seen = 3;
-  // Total observed difficulty by the party in the block
-  uint64 observed_difficulty = 4;
   // The minimum expected difficulty for the next transaction in the block
-  uint64 expected_difficulty = 5;
+  uint64 expected_difficulty = 4;
   // The hashing function used to calculate the block hash
-  string hash_function = 6;
+  string hash_function = 5;
 }
 
 // Proof of work statistics for a party
