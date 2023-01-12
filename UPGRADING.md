@@ -14,6 +14,8 @@ The vega core node is also now a builtin tendermint application. This means that
 vega tendermint --help
 ```
 
+With the version 0.67.0 `vegavisor` was introduced to help manage protocol upgrade. This tool is not required to run the node but recommended in order to ease upgrade of the software when expected by the network. You can find more information about vega visor [here](https://github.com/vegaprotocol/vega/blob/develop/visor/readme.md).
+
 # Configuration changes
 
 ## Vega
