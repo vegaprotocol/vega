@@ -394,7 +394,7 @@ message PoWBlockState {
   uint64 transactions_seen = 3;
   // The effective minimum difficulty required for the block if
   // increasing difficulty is required
-  optional uint64 minimum_difficulty = 4;
+  optional uint64 effective_minimum_difficulty = 4;
   // The minimum expected difficulty for the next transaction in the block
   // This is only provided if increasing difficulty is required
   optional uint64 expected_difficulty = 5;

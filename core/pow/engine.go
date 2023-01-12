@@ -605,10 +605,10 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 				}
 
 				stats = append(stats, &protoapi.PoWBlockState{
-					BlockHeight:       block,
-					BlockHash:         e.blockHash[blockIndex],
-					TransactionsSeen:  uint64(partyState.seenCount),
-					MinimumDifficulty: minDifficulty,
+					BlockHeight:                block,
+					BlockHash:                  e.blockHash[blockIndex],
+					TransactionsSeen:           uint64(partyState.seenCount),
+					EffectiveMinimumDifficulty: minDifficulty,
 					ExpectedDifficulty: getMinDifficultyForNextTx(params.spamPoWDifficulty,
 						uint(params.spamPoWNumberOfTxPerBlock),
 						partyState.seenCount,
