@@ -189,10 +189,10 @@ type updateNetworkHandler struct {
 	networkStore *mocks.MockNetworkStore
 }
 
-func (h *updateNetworkHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
+func (h *updateNetworkHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) *jsonrpc.ErrorDetails {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	assert.Nil(t, rawResult)
 	return err
 }

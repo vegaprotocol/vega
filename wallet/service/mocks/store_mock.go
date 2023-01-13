@@ -7,7 +7,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	service "code.vegaprotocol.io/vega/wallet/service"
+	v1 "code.vegaprotocol.io/vega/wallet/service/v1"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -34,6 +34,21 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
+// GetRsaKeys mocks base method.
+func (m *MockStore) GetRsaKeys() (*v1.RSAKeys, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRsaKeys")
+	ret0, _ := ret[0].(*v1.RSAKeys)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRsaKeys indicates an expected call of GetRsaKeys.
+func (mr *MockStoreMockRecorder) GetRsaKeys() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRsaKeys", reflect.TypeOf((*MockStore)(nil).GetRsaKeys))
+}
+
 // RSAKeysExists mocks base method.
 func (m *MockStore) RSAKeysExists() (bool, error) {
 	m.ctrl.T.Helper()
@@ -50,7 +65,7 @@ func (mr *MockStoreMockRecorder) RSAKeysExists() *gomock.Call {
 }
 
 // SaveRSAKeys mocks base method.
-func (m *MockStore) SaveRSAKeys(arg0 *service.RSAKeys) error {
+func (m *MockStore) SaveRSAKeys(arg0 *v1.RSAKeys) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveRSAKeys", arg0)
 	ret0, _ := ret[0].(error)

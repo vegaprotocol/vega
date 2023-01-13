@@ -28,7 +28,7 @@ type AdminAnnotateKey struct {
 // Handle attaches metadata to the specified public key. It doesn't update in
 // place. It overwrites. All existing metadata have to be specified to not
 // lose them.
-func (h *AdminAnnotateKey) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminAnnotateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAnnotateKeyParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -40,11 +40,15 @@ func (h *AdminAnnotateKey) Handle(ctx context.Context, rawParams jsonrpc.Params,
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
-	w, err := h.walletStore.GetWallet(ctx, params.Wallet, params.Passphrase)
-	if err != nil {
+	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
 		if errors.Is(err, wallet.ErrWrongPassphrase) {
 			return nil, invalidParams(err)
 		}
+		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	}
+
+	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
+	if err != nil {
 		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
 
@@ -57,7 +61,7 @@ func (h *AdminAnnotateKey) Handle(ctx context.Context, rawParams jsonrpc.Params,
 		return nil, internalError(fmt.Errorf("could not annotate the key: %w", err))
 	}
 
-	if err := h.walletStore.SaveWallet(ctx, w, params.Passphrase); err != nil {
+	if err := h.walletStore.UpdateWallet(ctx, w); err != nil {
 		return nil, internalError(fmt.Errorf("could not save the wallet: %w", err))
 	}
 

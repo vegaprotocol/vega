@@ -6,7 +6,7 @@ import (
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/wallet/api"
+	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,9 +31,9 @@ func testGenerateAPITokenValidFlagsSucceeds(t *testing.T) {
 		WalletPassphraseFile: walletPassphraseFilePath,
 	}
 
-	expectedReq := api.AdminGenerateAPITokenParams{
+	expectedReq := connections.GenerateAPITokenParams{
 		Description: description,
-		Wallet: api.AdminGenerateAPITokenWalletParams{
+		Wallet: connections.GenerateAPITokenWalletParams{
 			Name:       wallet,
 			Passphrase: walletPassphrase,
 		},

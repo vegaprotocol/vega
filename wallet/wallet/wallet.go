@@ -27,6 +27,7 @@ type Wallet interface {
 	RevokePermissions(hostname string)
 	PurgePermissions()
 	UpdatePermissions(hostname string, perms Permissions) error
+	Clone() Wallet
 }
 
 // nolint: interfacebloat

@@ -63,9 +63,11 @@ func (w *Wallet) MakeParties(n uint64) ([]*Party, error) {
 		if _, err = w.handler.CreateWallet(walletName, passphrase); err != nil {
 			return nil, err
 		}
-		w.handler.LoginWallet(walletName, passphrase)
+		if err := w.handler.LoginWallet(walletName, passphrase); err != nil {
+			return nil, err
+		}
+
 		kp, err := w.handler.GenerateKeyPair(walletName, passphrase, nil)
-		w.handler.LogoutWallet(walletName)
 
 		if err != nil {
 			return nil, err
@@ -91,15 +93,10 @@ func (w *Wallet) Login(wallet string) {
 	_ = w.handler.LoginWallet(wallet, w.passphrase)
 }
 
-func (w *Wallet) Logout(wallet string) {
-	w.handler.LogoutWallet(wallet)
-}
-
 func (w *Wallet) SubmitTransaction(conn *Connection, party *Party, txn *walletpb.SubmitTransactionRequest) error {
 	blockHeight, _ := conn.LastBlockHeight()
 
 	w.Login(party.wallet)
-	defer w.Logout(party.wallet)
 
 	// Add public key to the transaction
 	txn.PubKey = party.pubkey

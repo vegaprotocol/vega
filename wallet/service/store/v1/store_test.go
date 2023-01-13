@@ -8,8 +8,8 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/paths"
-	"code.vegaprotocol.io/vega/wallet/service"
-	v1 "code.vegaprotocol.io/vega/wallet/service/store/v1"
+	storeV1 "code.vegaprotocol.io/vega/wallet/service/store/v1"
+	v1 "code.vegaprotocol.io/vega/wallet/service/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,7 +27,7 @@ func TestFileStoreV1(t *testing.T) {
 func testNewStoreSucceeds(t *testing.T) {
 	vegaHome := newVegaHome(t)
 
-	s, err := v1.InitialiseStore(vegaHome)
+	s, err := storeV1.InitialiseStore(vegaHome)
 
 	require.NoError(t, err)
 	assert.NotNil(t, s)
@@ -39,7 +39,7 @@ func testFileStoreV1SaveAlreadyExistingRSAKeysSucceeds(t *testing.T) {
 
 	// given
 	s := initialiseFromPath(t, vegaHome)
-	keys := &service.RSAKeys{
+	keys := &v1.RSAKeys{
 		Pub:  []byte("my public key"),
 		Priv: []byte("my private key"),
 	}
@@ -62,7 +62,7 @@ func testFileStoreV1SaveRSAKeysSucceeds(t *testing.T) {
 
 	// given
 	s := initialiseFromPath(t, vegaHome)
-	keys := &service.RSAKeys{
+	keys := &v1.RSAKeys{
 		Pub:  []byte("my public key"),
 		Priv: []byte("my private key"),
 	}
@@ -102,7 +102,7 @@ func testFileStoreV1VerifyingExistingRSAKeysSucceeds(t *testing.T) {
 
 	// given
 	s := initialiseFromPath(t, vegaHome)
-	keys := &service.RSAKeys{
+	keys := &v1.RSAKeys{
 		Pub:  []byte("my public key"),
 		Priv: []byte("my private key"),
 	}
@@ -142,7 +142,7 @@ func testFileStoreV1GetExistingRSAKeysSucceeds(t *testing.T) {
 
 	// given
 	s := initialiseFromPath(t, vegaHome)
-	keys := &service.RSAKeys{
+	keys := &v1.RSAKeys{
 		Pub:  []byte("my public key"),
 		Priv: []byte("my private key"),
 	}
@@ -163,9 +163,9 @@ func testFileStoreV1GetExistingRSAKeysSucceeds(t *testing.T) {
 	assert.Equal(t, keys, returnedKeys)
 }
 
-func initialiseFromPath(t *testing.T, vegaHome *paths.CustomPaths) *v1.Store {
+func initialiseFromPath(t *testing.T, vegaHome *paths.CustomPaths) *storeV1.Store {
 	t.Helper()
-	s, err := v1.InitialiseStore(vegaHome)
+	s, err := storeV1.InitialiseStore(vegaHome)
 	if err != nil {
 		t.Fatalf("couldn't initialise store: %v", err)
 	}

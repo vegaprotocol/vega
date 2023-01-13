@@ -121,6 +121,12 @@ paths = ["_test.go", "helpers.go"]
 linters = ["revive"]
 text = "context-as-argument"
 
+# Don't complain about underscores in test methods.
+[[issues.exclude-rules]]
+paths = ["_test.go", "helpers.go"]
+linters = ["revive"]
+text = "var-naming"
+
 [linters-settings.forbidigo]
 forbid = ["fmt\\.Print.*"]
 
