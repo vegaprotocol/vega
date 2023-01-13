@@ -17,7 +17,6 @@ import (
 	"errors"
 	"sort"
 	"sync"
-	"sync/atomic"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 
@@ -142,7 +141,7 @@ func (w *Witness) restore(witness *types.Witness, p *types.Payload) error {
 			state = voteSent
 		}
 
-		atomic.StoreUint32(&w.resources[r.ID].state, state)
+		w.resources[r.ID].state.Store(state)
 	}
 
 	w.wss.mu.Lock()
@@ -163,8 +162,7 @@ func (w *Witness) RestoreResource(r Resource, cb func(interface{}, bool)) error 
 	res.res = r
 	ctx, cfunc := context.WithDeadline(context.Background(), res.checkUntil)
 	res.cfunc = cfunc
-	state := atomic.LoadUint32(&res.state)
-	if w.top.IsValidator() && state != voteSent {
+	if w.top.IsValidator() && res.state.Load() != voteSent {
 		go w.start(ctx, res)
 	}
 	return nil

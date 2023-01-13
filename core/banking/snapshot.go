@@ -16,6 +16,7 @@ import (
 	"context"
 	"math/big"
 	"sort"
+	"sync/atomic"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/types"
@@ -122,7 +123,7 @@ func (e *Engine) serialiseAssetActions() ([]byte, error) {
 
 		aa = append(aa, &types.AssetAction{
 			ID:                      v.id,
-			State:                   v.state,
+			State:                   v.state.Load(),
 			BlockNumber:             v.blockHeight,
 			Asset:                   assetID,
 			TxIndex:                 v.logIndex,
@@ -364,9 +365,11 @@ func (e *Engine) restoreAssetActions(aa *types.BankingAssetActions, p *types.Pay
 			bridgeResumed = &types.ERC20EventBridgeResumed{BridgeResumed: true}
 		}
 
+		state := &atomic.Uint32{}
+		state.Store(v.State)
 		aa := &assetAction{
 			id:                      v.ID,
-			state:                   v.State,
+			state:                   state,
 			blockHeight:             v.BlockNumber,
 			asset:                   asset,
 			logIndex:                v.TxIndex,

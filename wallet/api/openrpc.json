@@ -8,7 +8,7 @@
     {
       "name": "client.connect_wallet",
       "summary": "Initiates a connection between a wallet and a third-party application.",
-      "description": "This method initiates a connection between a wallet and a third-party application.\n\nThe user has to review the request, and, if they accept it, select the wallet they want to use for this connection.\n\nA connection token is generated and returned to the third-party application. This token is meant to be used in protected methods.\n\n**Supported connections:**\n- Multiple wallets connected for the same hostname. Each connection will have a different token.\n- A single wallet connected to multiple hostnames. Each connection will have a different token.\n- Combination of the above setups.\n\nHowever, it's not possible to have multiple connections on the same wallet for the same hostname. The previous connection will be terminated and a new token will be generated.\n\nThis method should be the entry point of every third-party application.",
+      "description": "This method initiates a connection between a wallet and a third-party application.\n\nThe user has to review the request, and, if they accept it, select the wallet they want to use for this connection.\n\n**Supported connections:**\n- Multiple wallets connected for the same hostname.\n- A single wallet connected to multiple hostnames.\n- Combination of the above setups.\n\nHowever, it's not possible to have multiple connections on the same wallet for the same hostname. The previous connection will be terminated and a new one will be initiated.\n\nThis method should be the entry point of every third-party application.",
       "tags": [
         {
           "name": "client"
@@ -26,15 +26,7 @@
         "name": "Success",
         "required": true,
         "schema": {
-          "type": "object",
-          "required": [
-            "token"
-          ],
-          "properties": {
-            "token": {
-              "$ref": "#/components/schemas/token"
-            }
-          }
+          "type": "null"
         }
       },
       "errors": [
@@ -60,9 +52,7 @@
           ],
           "result": {
             "name": "Success",
-            "value": {
-              "token": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            }
+            "value": "null"
           }
         }
       ]
@@ -70,7 +60,7 @@
     {
       "name": "client.disconnect_wallet",
       "summary": "Ends the connection between the third-party application and the wallet.",
-      "description": "This method ends the connection between the third-party application and the wallet. The token is, then, no longer valid.\n\nCalling this method with an invalid token doesn't fail.",
+      "description": "This method ends the connection between the third-party application and the wallet.",
       "tags": [
         {
           "name": "client"
@@ -83,15 +73,7 @@
         }
       ],
       "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "token",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/token"
-          }
-        }
-      ],
+      "params": [],
       "result": {
         "name": "No result",
         "schema": false
@@ -99,13 +81,8 @@
       "examples": [
         {
           "name": "Disconnection from \"vega.xyz\"",
-          "description": "The third-party application \"vega.xyz\" requests a disconnection to a wallet using a valid token.",
-          "params": [
-            {
-              "name": "token",
-              "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            }
-          ],
+          "description": "The third-party application \"vega.xyz\" requests a disconnection to a wallet.",
+          "params": [],
           "result": {
             "name": "Success",
             "value": null
@@ -126,15 +103,7 @@
         }
       ],
       "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "token",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/token"
-          }
-        }
-      ],
+      "params": [],
       "result": {
         "name": "Success",
         "required": true,
@@ -162,12 +131,7 @@
         {
           "name": "List keys allowed on \"vega.xyz\"",
           "description": "The third-party application \"vega.xyz\" wants to list the public keys it has access to.",
-          "params": [
-            {
-              "name": "token",
-              "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            }
-          ],
+          "params": [],
           "result": {
             "name": "Success",
             "value": {
@@ -200,13 +164,6 @@
       ],
       "paramStructure": "by-name",
       "params": [
-        {
-          "name": "token",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/token"
-          }
-        },
         {
           "name": "publicKey",
           "required": true,
@@ -263,10 +220,6 @@
           "description": "The third-party application \"vega.xyz\" requests to sign a transaction and the user accepts.",
           "params": [
             {
-              "name": "token",
-              "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            },
-            {
               "name": "publicKey",
               "value": "3fd42fd5ceb22d99ac45086f1d82d516118a5cb7ad9a2e096cd78ca2c8960c80"
             },
@@ -275,8 +228,10 @@
               "value": "TYPE_SYNC"
             },
             {
-              "name": "encodedTransaction",
-              "value": "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
+              "name": "transaction",
+              "value": {
+
+              }
             }
           ],
           "result": {
@@ -304,13 +259,6 @@
       ],
       "paramStructure": "by-name",
       "params": [
-        {
-          "name": "token",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/token"
-          }
-        },
         {
           "name": "publicKey",
           "required": true,
@@ -397,10 +345,6 @@
           "name": "Sending a transaction for \"vega.xyz\"",
           "description": "The third-party application \"vega.xyz\" requests to send a transaction and the user accepts.",
           "params": [
-            {
-              "name": "token",
-              "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            },
             {
               "name": "publicKey",
               "value": "3fd42fd5ceb22d99ac45086f1d82d516118a5cb7ad9a2e096cd78ca2c8960c80"
@@ -2024,7 +1968,7 @@
     {
       "name": "admin.taint_key",
       "summary": "Marks the specified public key as tainted.",
-      "description": "This method marks the specified public key as tainted. It makes it unusable for transaction signing.\n\nWhen a key is tainted, it is automatically removed from the restricted keys if specified. If the key is the only one to be set, the permission to access the public keys is revoked. If no restricted key is specified, but all keys in the wallet are tainted, the permission of the public keys is revoked as well.",
+      "description": "This method marks the specified public key as tainted. It makes it unusable for transaction signing.\n\nWhen a key is tainted, it is automatically removed from the allowed keys if specified. If the key is the only one to be set, the permission to access the public keys is revoked. If no allowed key is specified, but all keys in the wallet are tainted, the permission of the public keys is revoked as well.",
       "tags": [
         {
           "name": "admin"
@@ -2229,7 +2173,7 @@
               "permissions": {
                 "publicKeys": {
                   "access": "read",
-                  "restrictedKeys": [
+                  "allowedKeys": [
                     "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
                   ]
                 }
@@ -2398,7 +2342,7 @@
               "value": {
                 "publicKeys": {
                   "access": "read",
-                  "restrictedKeys": [
+                  "allowedKeys": [
                     "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
                   ]
                 }
@@ -2411,7 +2355,7 @@
               "permissions": {
                 "publicKeys": {
                   "access": "read",
-                  "restrictedKeys": [
+                  "allowedKeys": [
                     "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
                   ]
                 }
@@ -3079,15 +3023,7 @@
         }
       ],
       "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "network",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
+      "params": [],
       "result": {
         "name": "Success",
         "required": true,
@@ -3122,12 +3058,7 @@
       "examples": [
         {
           "name": "List the connection of a service",
-          "params": [
-            {
-              "name": "network",
-              "value": "mainnet1"
-            }
-          ],
+          "params": [],
           "result": {
             "name": "Success",
             "value": {
@@ -3165,13 +3096,6 @@
       "paramStructure": "by-name",
       "params": [
         {
-          "name": "network",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
           "name": "hostname",
           "required": true,
           "schema": {
@@ -3197,10 +3121,6 @@
         {
           "name": "Close a connection",
           "params": [
-            {
-              "name": "network",
-              "value": "mainnet1"
-            },
             {
               "name": "hostname",
               "value": "vega.xyz"
@@ -3232,13 +3152,6 @@
       "paramStructure": "by-name",
       "params": [
         {
-          "name": "network",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
           "name": "hostname",
           "required": true,
           "schema": {
@@ -3257,10 +3170,6 @@
         {
           "name": "Close all connections to a given hostname",
           "params": [
-            {
-              "name": "network",
-              "value": "mainnet1"
-            },
             {
               "name": "hostname",
               "value": "vega.xyz"
@@ -3288,13 +3197,6 @@
       "paramStructure": "by-name",
       "params": [
         {
-          "name": "network",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
           "name": "wallet",
           "required": true,
           "schema": {
@@ -3313,10 +3215,6 @@
         {
           "name": "Close all connections to a given wallet",
           "params": [
-            {
-              "name": "network",
-              "value": "mainnet1"
-            },
             {
               "name": "wallet",
               "value": "my-btc-wallet"
@@ -3395,10 +3293,6 @@
             }
           }
         }
-      },
-      "token": {
-        "type": "string",
-        "description": "A unique connection token randomly generated for each new connection. It's used to access the protected methods."
       },
       "public_key": {
         "type": "string",
@@ -3492,13 +3386,13 @@
             "description": "The permissions related to public keys.",
             "required": [
               "access",
-              "restrictedKeys"
+              "allowedKeys"
             ],
             "properties": {
               "access": {
                 "$ref": "#/components/schemas/access_mode"
               },
-              "restrictedKeys": {
+              "allowedKeys": {
                 "type": "array",
                 "description": "The subset of public keys the user selected for this hostname. If empty, the wallet assumes all keys are accessible.",
                 "items": {

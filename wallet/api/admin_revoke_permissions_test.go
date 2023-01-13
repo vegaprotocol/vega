@@ -91,7 +91,7 @@ func testRevokingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	if err := expectedWallet.UpdatePermissions(hostname1, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access: "read",
-			RestrictedKeys: []string{
+			AllowedKeys: []string{
 				firstKey.PublicKey(),
 			},
 		},
@@ -102,7 +102,7 @@ func testRevokingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	permissions2 := wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access: "read",
-			RestrictedKeys: []string{
+			AllowedKeys: []string{
 				firstKey.PublicKey(),
 			},
 		},
@@ -115,8 +115,9 @@ func testRevokingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	handler := newRevokePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
-	handler.walletStore.EXPECT().SaveWallet(ctx, expectedWallet, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UpdateWallet(ctx, expectedWallet).Times(1).Return(nil)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
@@ -187,7 +188,8 @@ func testAdminRevokePermissionsGettingInternalErrorDuringWalletRetrievalFails(t 
 	handler := newRevokePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(nil, assert.AnError)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
@@ -214,8 +216,9 @@ func testAdminRevokePermissionsGettingInternalErrorDuringWalletSavingFails(t *te
 	handler := newRevokePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
-	handler.walletStore.EXPECT().SaveWallet(ctx, expectedWallet, passphrase).Times(1).Return(assert.AnError)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UpdateWallet(ctx, expectedWallet).Times(1).Return(assert.AnError)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
@@ -235,10 +238,10 @@ type revokePermissionsHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *revokePermissionsHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
+func (h *revokePermissionsHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) *jsonrpc.ErrorDetails {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	require.Empty(t, rawResult)
 	return err
 }

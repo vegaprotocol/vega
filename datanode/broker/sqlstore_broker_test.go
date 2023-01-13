@@ -22,8 +22,8 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/broker"
-	"code.vegaprotocol.io/vega/datanode/dehistory"
 	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/networkhistory"
 	"code.vegaprotocol.io/vega/datanode/service"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
@@ -460,7 +460,7 @@ func createTestBroker(transactionManager broker.TransactionManager, blockStore b
 
 	blockCommitedFunc := func(context.Context, string, int64, bool) {}
 
-	protocolUpgradeHandler := dehistory.NewProtocolUpgradeHandler(log,
+	protocolUpgradeHandler := networkhistory.NewProtocolUpgradeHandler(log,
 		tes.protocolUpgradeSvc, tes, func(ctx context.Context, chainID string, toHeight int64) error {
 			return nil
 		})

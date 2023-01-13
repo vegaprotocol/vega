@@ -14,6 +14,7 @@ package banking
 
 import (
 	"errors"
+	"sync/atomic"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/assets/common"
@@ -25,7 +26,7 @@ var ErrUnknownAssetAction = errors.New("unknown asset action")
 
 type assetAction struct {
 	id    string
-	state uint32
+	state *atomic.Uint32
 	asset *assets.Asset
 
 	// erc20 specifics

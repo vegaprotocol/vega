@@ -10,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgzap "code.vegaprotocol.io/vega/libs/zap"
 	"code.vegaprotocol.io/vega/paths"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -64,7 +63,7 @@ func NewCmdRawTransactionSend(w io.Writer, rf *RootFlags) *cobra.Command {
 		sendTransaction := api.NewAdminSendRawTransaction(netStore, func(hosts []string, retries uint64) (walletnode.Selector, error) {
 			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries)
 		})
-		rawResult, errorDetails := sendTransaction.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		rawResult, errorDetails := sendTransaction.Handle(context.Background(), params)
 		if errorDetails != nil {
 			return api.AdminSendRawTransactionResult{}, errors.New(errorDetails.Data)
 		}

@@ -116,7 +116,7 @@ func testImportingWalletWithValidParamsSucceeds(t *testing.T) {
 	handler := newImportWalletHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(false, nil)
-	handler.walletStore.EXPECT().SaveWallet(ctx, gomock.Any(), passphrase).Times(1).DoAndReturn(func(_ context.Context, w wallet.Wallet, passphrase string) error {
+	handler.walletStore.EXPECT().CreateWallet(ctx, gomock.Any(), passphrase).Times(1).DoAndReturn(func(_ context.Context, w wallet.Wallet, passphrase string) error {
 		importedWallet = w
 		return nil
 	})
@@ -208,7 +208,7 @@ func testGettingInternalErrorDuringSavingDoesNotImportWallet(t *testing.T) {
 	handler := newImportWalletHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(false, nil)
-	handler.walletStore.EXPECT().SaveWallet(ctx, gomock.Any(), passphrase).Times(1).Return(assert.AnError)
+	handler.walletStore.EXPECT().CreateWallet(ctx, gomock.Any(), passphrase).Times(1).Return(assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportWalletParams{
@@ -230,10 +230,10 @@ type importWalletHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *importWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminImportWalletResult, *jsonrpc.ErrorDetails) {
+func (h *importWalletHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminImportWalletResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminImportWalletResult)
 		if !ok {

@@ -732,7 +732,7 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, error
 
 	// workers
 	wg := &sync.WaitGroup{}
-	inputCnt := int64(0)
+	inputCnt := atomic.Int64{}
 	inputs := make([]nsInput, 0, len(e.namespaces))
 
 	// we first iterate over the namespaces and collect all the top level tree keys
@@ -745,12 +745,12 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, error
 
 		for _, tk := range treeKeys {
 			inputs = append(inputs, nsInput{treeKey: tk, namespace: ns})
-			inputCnt++
+			inputCnt.Add(1)
 		}
 	}
 	// channel for the results
 	resChan := make(chan nsSnapResult, numWorkers)
-	// generate <NumWorkers> workes passing the input channel and the result channel
+	// generate <NumWorkers> workers passing the input channel and the result channel
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
 		go worker(e, inputChan, resChan, wg, &inputCnt)
@@ -967,7 +967,7 @@ func (e *Engine) saveCurrentTree() error {
 	return e.metadb.Save(v, tmSnap)
 }
 
-func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg *sync.WaitGroup, cnt *int64) {
+func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg *sync.WaitGroup, cnt *atomic.Int64) {
 	// Decreasing internal counter for wait-group as soon as goroutine finishes
 	defer wg.Done()
 
@@ -982,7 +982,7 @@ func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg
 		// nothing has changed (or both values were nil)
 		if stopped {
 			resChan <- nsSnapResult{input: input, updated: true, toRemove: stopped}
-			if atomic.AddInt64(cnt, -1) <= 0 {
+			if cnt.Add(-1) <= 0 {
 				close(nsInputChan)
 				close(resChan)
 			}
@@ -1040,13 +1040,13 @@ func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg
 			logging.Float64("took", time.Since(t0).Seconds()),
 		)
 
-		atomic.AddInt64(cnt, genCnt)
+		cnt.Add(genCnt)
 		for _, inp := range inputs {
 			nsInputChan <- inp
 		}
 
 		resChan <- nsSnapResult{input: input, state: v, updated: true}
-		if atomic.AddInt64(cnt, -1) <= 0 {
+		if cnt.Add(-1) <= 0 {
 			close(nsInputChan)
 			close(resChan)
 		}

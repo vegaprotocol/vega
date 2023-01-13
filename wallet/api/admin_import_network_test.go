@@ -235,10 +235,10 @@ type importNetworkHandler struct {
 	networkStore *mocks.MockNetworkStore
 }
 
-func (h *importNetworkHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminImportNetworkResult, *jsonrpc.ErrorDetails) {
+func (h *importNetworkHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminImportNetworkResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminImportNetworkResult)
 		if !ok {

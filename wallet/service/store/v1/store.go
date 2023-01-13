@@ -5,7 +5,7 @@ import (
 
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/paths"
-	"code.vegaprotocol.io/vega/wallet/service"
+	"code.vegaprotocol.io/vega/wallet/service/v1"
 )
 
 type Store struct {
@@ -46,7 +46,7 @@ func (s *Store) GetRSAKeysPath() (string, string) {
 	return s.pubRsaKeyFilePath, s.privRsaKeyFilePath
 }
 
-func (s *Store) SaveRSAKeys(keys *service.RSAKeys) error {
+func (s *Store) SaveRSAKeys(keys *v1.RSAKeys) error {
 	if err := vgfs.WriteFile(s.privRsaKeyFilePath, keys.Priv); err != nil {
 		return fmt.Errorf("unable to save private key: %w", err)
 	}
@@ -58,7 +58,7 @@ func (s *Store) SaveRSAKeys(keys *service.RSAKeys) error {
 	return nil
 }
 
-func (s *Store) GetRsaKeys() (*service.RSAKeys, error) {
+func (s *Store) GetRsaKeys() (*v1.RSAKeys, error) {
 	pub, err := vgfs.ReadFile(s.pubRsaKeyFilePath)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func (s *Store) GetRsaKeys() (*service.RSAKeys, error) {
 		return nil, err
 	}
 
-	return &service.RSAKeys{
+	return &v1.RSAKeys{
 		Pub:  pub,
 		Priv: priv,
 	}, nil

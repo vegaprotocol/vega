@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -37,7 +36,7 @@ func NewCmdListKeys(w io.Writer, rf *RootFlags) *cobra.Command {
 		}
 
 		listKeys := api.NewAdminListKeys(s)
-		rawResult, errDetails := listKeys.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		rawResult, errDetails := listKeys.Handle(context.Background(), params)
 		if errDetails != nil {
 			return api.AdminListKeysResult{}, errors.New(errDetails.Data)
 		}
