@@ -708,6 +708,7 @@ type UpdateInstrumentConfiguration struct {
 	Product *vega.UpdateFutureProduct `json:"product"`
 }
 
+// Event types
 type BusEventType string
 
 const (
@@ -826,14 +827,14 @@ func (e BusEventType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Status describe the status of the data spec
+// Describes the status of the data spec
 type DataSourceSpecStatus string
 
 const (
-	// describes an active data spec.
+	// Describes an active data spec
 	DataSourceSpecStatusStatusActive DataSourceSpecStatus = "STATUS_ACTIVE"
-	// describes a data spec that is not listening to data
-	// anymore.
+	// Describes a data spec that is not listening to data
+	// anymore
 	DataSourceSpecStatusStatusDeactivated DataSourceSpecStatus = "STATUS_DEACTIVATED"
 )
 

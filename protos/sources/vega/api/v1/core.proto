@@ -21,7 +21,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 
 
 service CoreService {
-  // Submit Transaction
+  // Submit transaction
   //
   // Submit a signed transaction
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
@@ -33,7 +33,7 @@ service CoreService {
 
   // Statistics
   //
-  // Get Statistics on Vega
+  // Get statistics on Vega
   rpc Statistics(StatisticsRequest) returns (StatisticsResponse);
 
   // Blockchain height
@@ -43,9 +43,11 @@ service CoreService {
 
   // Vega time
   //
-  // Get Time
+  // Get current Vega time
   rpc GetVegaTime(GetVegaTimeRequest) returns (GetVegaTimeResponse);
 
+  // Events subscription
+  //
   // Subscribe to a stream of events from the core
   rpc ObserveEventBus(stream ObserveEventBusRequest) returns (stream ObserveEventBusResponse);
 

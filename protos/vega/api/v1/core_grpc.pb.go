@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CoreServiceClient interface {
-	// Submit Transaction
+	// Submit transaction
 	//
 	// Submit a signed transaction
 	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionResponse, error)
@@ -32,7 +32,7 @@ type CoreServiceClient interface {
 	PropagateChainEvent(ctx context.Context, in *PropagateChainEventRequest, opts ...grpc.CallOption) (*PropagateChainEventResponse, error)
 	// Statistics
 	//
-	// Get Statistics on Vega
+	// Get statistics on Vega
 	Statistics(ctx context.Context, in *StatisticsRequest, opts ...grpc.CallOption) (*StatisticsResponse, error)
 	// Blockchain height
 	//
@@ -40,8 +40,10 @@ type CoreServiceClient interface {
 	LastBlockHeight(ctx context.Context, in *LastBlockHeightRequest, opts ...grpc.CallOption) (*LastBlockHeightResponse, error)
 	// Vega time
 	//
-	// Get Time
+	// Get current Vega time
 	GetVegaTime(ctx context.Context, in *GetVegaTimeRequest, opts ...grpc.CallOption) (*GetVegaTimeResponse, error)
+	// Events subscription
+	//
 	// Subscribe to a stream of events from the core
 	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (CoreService_ObserveEventBusClient, error)
 	// Submit raw transaction
@@ -186,7 +188,7 @@ func (c *coreServiceClient) GetSpamStatistics(ctx context.Context, in *GetSpamSt
 // All implementations must embed UnimplementedCoreServiceServer
 // for forward compatibility
 type CoreServiceServer interface {
-	// Submit Transaction
+	// Submit transaction
 	//
 	// Submit a signed transaction
 	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionResponse, error)
@@ -196,7 +198,7 @@ type CoreServiceServer interface {
 	PropagateChainEvent(context.Context, *PropagateChainEventRequest) (*PropagateChainEventResponse, error)
 	// Statistics
 	//
-	// Get Statistics on Vega
+	// Get statistics on Vega
 	Statistics(context.Context, *StatisticsRequest) (*StatisticsResponse, error)
 	// Blockchain height
 	//
@@ -204,8 +206,10 @@ type CoreServiceServer interface {
 	LastBlockHeight(context.Context, *LastBlockHeightRequest) (*LastBlockHeightResponse, error)
 	// Vega time
 	//
-	// Get Time
+	// Get current Vega time
 	GetVegaTime(context.Context, *GetVegaTimeRequest) (*GetVegaTimeResponse, error)
+	// Events subscription
+	//
 	// Subscribe to a stream of events from the core
 	ObserveEventBus(CoreService_ObserveEventBusServer) error
 	// Submit raw transaction
