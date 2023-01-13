@@ -15,6 +15,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [7317](https://github.com/vegaprotocol/vega/issues/7317) - Add database schema docs
 - [7302](https://github.com/vegaprotocol/vega/issues/7302) - Add withdrawal minimal amount
 - [5487](https://github.com/vegaprotocol/vega/issues/5487) - Add `UPGRADING.md`
 
