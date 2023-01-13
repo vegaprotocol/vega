@@ -14,6 +14,7 @@ package pow
 
 import (
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
+	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 )
 
 type NoopEngine struct {
@@ -49,4 +50,8 @@ func (e *NoopEngine) SpamPoWIncreasingDifficulty() bool { return false }
 
 func (e *NoopEngine) BlockData() (uint64, string) {
 	return e.blockHeight, e.blockHash
+}
+
+func (e *NoopEngine) GetSpamStatistics(_ string) *protoapi.PoWStatistic {
+	return &protoapi.PoWStatistic{}
 }
