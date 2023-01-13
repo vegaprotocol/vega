@@ -1948,8 +1948,8 @@ type PoWBlockState struct {
 	BlockHash string `protobuf:"bytes,2,opt,name=block_hash,json=blockHash,proto3" json:"block_hash,omitempty"`
 	// Total number of transactions seen in the block
 	TransactionsSeen uint64 `protobuf:"varint,3,opt,name=transactions_seen,json=transactionsSeen,proto3" json:"transactions_seen,omitempty"`
-	// The minimum expected difficulty for the next transaction in the block
-	// This is only provided if increasing difficulty is required
+	// This is the minimum required difficulty for the next transaction submitted on this block
+	// if it is possible to submit more transactions on this block, otherwise nil.
 	ExpectedDifficulty *uint64 `protobuf:"varint,4,opt,name=expected_difficulty,json=expectedDifficulty,proto3,oneof" json:"expected_difficulty,omitempty"`
 	// The hashing function used to calculate the block hash
 	HashFunction string `protobuf:"bytes,5,opt,name=hash_function,json=hashFunction,proto3" json:"hash_function,omitempty"`

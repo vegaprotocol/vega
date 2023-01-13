@@ -394,8 +394,8 @@ message PoWBlockState {
   string block_hash = 2;
   // Total number of transactions seen in the block
   uint64 transactions_seen = 3;
-  // The minimum expected difficulty for the next transaction in the block
-  // This is only provided if increasing difficulty is required
+  // This is the minimum required difficulty for the next transaction submitted on this block
+  // if it is possible to submit more transactions on this block, otherwise nil.
   optional uint64 expected_difficulty = 4;
   // The hashing function used to calculate the block hash
   string hash_function = 5;
