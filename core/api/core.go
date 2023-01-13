@@ -61,6 +61,8 @@ type coreService struct {
 	eventService EventService
 	subCancels   []func()
 	powParams    ProofOfWorkParams
+	spamEngine   SpamEngine
+	powEngine    PowEngine
 
 	chainID                  string
 	genesisTime              time.Time
@@ -665,4 +667,26 @@ func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.Su
 	}
 
 	return successResponse, nil
+}
+
+func (s *coreService) GetSpamStatistics(_ context.Context, req *protoapi.GetSpamStatisticsRequest) (*protoapi.GetSpamStatisticsResponse, error) {
+	if req.PartyId == "" {
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
+	}
+
+	spamStats := &protoapi.SpamStatistics{}
+	// Spam engine is not set when NullBlockChain is used
+	if s.spamEngine != nil {
+		spamStats = s.spamEngine.GetSpamStatistics(req.PartyId)
+	}
+
+	// Noop PoW Engine is used for NullBlockChain so this should be safe
+	spamStats.Pow = s.powEngine.GetSpamStatistics(req.PartyId)
+
+	resp := &protoapi.GetSpamStatisticsResponse{
+		ChainId:    s.chainID,
+		Statistics: spamStats,
+	}
+
+	return resp, nil
 }

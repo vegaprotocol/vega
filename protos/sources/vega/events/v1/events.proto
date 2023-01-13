@@ -838,3 +838,4 @@ message BusEvent {
   string chain_id = 5;
   string tx_hash = 6;
 }
+

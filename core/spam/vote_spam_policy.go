@@ -20,6 +20,8 @@ import (
 	"sync"
 	"time"
 
+	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
+
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -435,4 +437,32 @@ func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (vsp *VoteSpamPolicy) GetSpamStats(_ string) *protoapi.SpamStatistic {
+	return nil
+}
+
+func (vsp *VoteSpamPolicy) GetVoteSpamStats(partyID string) *protoapi.VoteSpamStatistics {
+	vsp.lock.RLock()
+	defer vsp.lock.RUnlock()
+
+	partyStats := vsp.partyToVote[partyID]
+
+	stats := make([]*protoapi.VoteSpamStatistic, 0, len(partyStats))
+	bannedUntil := vsp.bannedParties[partyID]
+
+	for proposal, votes := range partyStats {
+		stats = append(stats, &protoapi.VoteSpamStatistic{
+			Proposal:          proposal,
+			CountForEpoch:     votes,
+			MinTokensRequired: vsp.minVotingTokens.String(),
+		})
+	}
+
+	return &protoapi.VoteSpamStatistics{
+		Statistics:  stats,
+		MaxForEpoch: vsp.numVotes,
+		BannedUntil: parseBannedUntil(bannedUntil),
+	}
 }

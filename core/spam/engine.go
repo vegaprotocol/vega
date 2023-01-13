@@ -15,8 +15,11 @@ package spam
 import (
 	"context"
 	"encoding/hex"
+	"strconv"
 	"sync"
 	"time"
+
+	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"code.vegaprotocol.io/vega/core/netparams"
 
@@ -70,6 +73,8 @@ type Policy interface {
 	UpdateIntParam(name string, value int64) error
 	Serialise() ([]byte, error)
 	Deserialise(payload *types.Payload) error
+	GetSpamStats(partyID string) *protoapi.SpamStatistic
+	GetVoteSpamStats(partyID string) *protoapi.VoteSpamStatistics
 }
 
 // ReloadConf updates the internal configuration of the spam engine.
@@ -230,4 +235,35 @@ func (e *Engine) PostBlockAccept(tx abci.Tx) (bool, error) {
 		e.log.Debug("Spam protection PostBlockAccept called for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
 	}
 	return e.transactionTypeToPolicy[command].PostBlockAccept(tx)
+}
+
+func parseBannedUntil(until int64) *string {
+	if until == 0 {
+		return nil
+	}
+	t := strconv.FormatInt(until, 10)
+	return &t
+}
+
+func (e *Engine) GetSpamStatistics(partyID string) *protoapi.SpamStatistics {
+	stats := &protoapi.SpamStatistics{}
+
+	for txType, policy := range e.transactionTypeToPolicy {
+		switch txType {
+		case txn.ProposeCommand:
+			stats.Proposals = policy.GetSpamStats(partyID)
+		case txn.DelegateCommand:
+			stats.Delegations = policy.GetSpamStats(partyID)
+		case txn.TransferFundsCommand:
+			stats.Transfers = policy.GetSpamStats(partyID)
+		case txn.AnnounceNodeCommand:
+			stats.NodeAnnouncements = policy.GetSpamStats(partyID)
+		case txn.VoteCommand:
+			stats.Votes = policy.GetVoteSpamStats(partyID)
+		default:
+			continue
+		}
+	}
+
+	return stats
 }

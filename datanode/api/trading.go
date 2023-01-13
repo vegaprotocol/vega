@@ -89,3 +89,8 @@ func (t *coreProxyService) ObserveEventBus(
 func (t *coreProxyService) PropagateChainEvent(ctx context.Context, req *protoapi.PropagateChainEventRequest) (*protoapi.PropagateChainEventResponse, error) {
 	return nil, errors.New("unimplemented")
 }
+
+func (t *coreProxyService) GetSpamStatistics(ctx context.Context, in *protoapi.GetSpamStatisticsRequest) (*protoapi.GetSpamStatisticsResponse, error) {
+	defer metrics.StartActiveSubscriptionCountGRPC("GetSpamStatistics")()
+	return t.coreServiceClient.GetSpamStatistics(ctx, in)
+}

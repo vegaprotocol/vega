@@ -19,6 +19,8 @@ import (
 	"sync"
 	"time"
 
+	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
+
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -277,4 +279,19 @@ func (ssp *SimpleSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (ssp *SimpleSpamPolicy) GetSpamStats(party string) *protoapi.SpamStatistic {
+	ssp.lock.RLock()
+	defer ssp.lock.RUnlock()
+
+	return &protoapi.SpamStatistic{
+		CountForEpoch: ssp.partyToCount[party],
+		MaxForEpoch:   ssp.maxAllowedCommands,
+		BannedUntil:   parseBannedUntil(ssp.bannedParties[party]),
+	}
+}
+
+func (ssp *SimpleSpamPolicy) GetVoteSpamStats(_ string) *protoapi.VoteSpamStatistics {
+	return nil
 }

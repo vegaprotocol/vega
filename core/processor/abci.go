@@ -24,6 +24,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
+
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/blockchain"
@@ -88,6 +90,7 @@ type PoWEngine interface {
 	CheckTx(tx abci.Tx) error
 	DeliverTx(tx abci.Tx) error
 	Commit()
+	GetSpamStatistics(partyID string) *protoapi.PoWStatistic
 }
 
 //nolint:interfacebloat
