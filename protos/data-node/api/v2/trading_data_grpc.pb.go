@@ -362,21 +362,21 @@ type TradingDataServiceClient interface {
 	//
 	// List core snapshots taken
 	ListCoreSnapshots(ctx context.Context, in *ListCoreSnapshotsRequest, opts ...grpc.CallOption) (*ListCoreSnapshotsResponse, error)
-	// Get most recent network history segment
+	// Network history most recent segment
 	//
-	// Get the networks most recently history segment
+	// Get the network's most recently history segment
 	GetMostRecentNetworkHistorySegment(ctx context.Context, in *GetMostRecentNetworkHistorySegmentRequest, opts ...grpc.CallOption) (*GetMostRecentNetworkHistorySegmentResponse, error)
-	// List all network history segments
+	// Network history all segments
 	//
 	// List all history segments stored by this node
 	ListAllNetworkHistorySegments(ctx context.Context, in *ListAllNetworkHistorySegmentsRequest, opts ...grpc.CallOption) (*ListAllNetworkHistorySegmentsResponse, error)
-	// Get active network history peer addresses
+	// Network history peer addresses
 	//
 	// List the addresses of all active network history peers
 	GetActiveNetworkHistoryPeerAddresses(ctx context.Context, in *GetActiveNetworkHistoryPeerAddressesRequest, opts ...grpc.CallOption) (*GetActiveNetworkHistoryPeerAddressesResponse, error)
 	// Ping
 	//
-	// Ping the datanode
+	// Ping the data node
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 }
 
@@ -1846,21 +1846,21 @@ type TradingDataServiceServer interface {
 	//
 	// List core snapshots taken
 	ListCoreSnapshots(context.Context, *ListCoreSnapshotsRequest) (*ListCoreSnapshotsResponse, error)
-	// Get most recent network history segment
+	// Network history most recent segment
 	//
-	// Get the networks most recently history segment
+	// Get the network's most recently history segment
 	GetMostRecentNetworkHistorySegment(context.Context, *GetMostRecentNetworkHistorySegmentRequest) (*GetMostRecentNetworkHistorySegmentResponse, error)
-	// List all network history segments
+	// Network history all segments
 	//
 	// List all history segments stored by this node
 	ListAllNetworkHistorySegments(context.Context, *ListAllNetworkHistorySegmentsRequest) (*ListAllNetworkHistorySegmentsResponse, error)
-	// Get active network history peer addresses
+	// Network history peer addresses
 	//
 	// List the addresses of all active network history peers
 	GetActiveNetworkHistoryPeerAddresses(context.Context, *GetActiveNetworkHistoryPeerAddressesRequest) (*GetActiveNetworkHistoryPeerAddressesResponse, error)
 	// Ping
 	//
-	// Ping the datanode
+	// Ping the data node
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	mustEmbedUnimplementedTradingDataServiceServer()
 }

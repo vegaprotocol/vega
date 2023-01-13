@@ -444,29 +444,29 @@ service TradingDataService {
 
     // Network History
     //
-    // Network History allows the data-node to reach out to peer nodes to fetch the most recent history, as well as
+    // Network history allows the data node to reach out to peer nodes to fetch the most recent history, as well as
     // older history if desired, such that it can quickly get itself up to the latest block height of the network and start
     // to consume events for the latest block from the Vega core.
-    // See https://github.com/vegaprotocol/vega/tree/develop/datanode/networkhistory/README.md for a full description of Network History
+    // See https://github.com/vegaprotocol/vega/tree/develop/datanode/networkhistory/README.md for a full description of network history
 
-    // Get most recent network history segment
+    // Network history most recent segment
     //
-    // Get the networks most recently history segment
+    // Get the network's most recently history segment
     rpc GetMostRecentNetworkHistorySegment(GetMostRecentNetworkHistorySegmentRequest) returns (GetMostRecentNetworkHistorySegmentResponse);
 
-    // List all network history segments
+    // Network history all segments
     //
     // List all history segments stored by this node
     rpc ListAllNetworkHistorySegments(ListAllNetworkHistorySegmentsRequest) returns (ListAllNetworkHistorySegmentsResponse);
 
-    // Get active network history peer addresses
+    // Network history peer addresses
     //
     // List the addresses of all active network history peers
     rpc GetActiveNetworkHistoryPeerAddresses(GetActiveNetworkHistoryPeerAddressesRequest) returns (GetActiveNetworkHistoryPeerAddressesResponse);
 
     // Ping
     //
-    // Ping the datanode
+    // Ping the data node
     rpc Ping(PingRequest) returns (PingResponse);
 
 }
