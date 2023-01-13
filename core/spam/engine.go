@@ -62,6 +62,7 @@ type Engine struct {
 	policyNameToPolicy      map[string]Policy
 	hashKeys                []string
 	banDuration             time.Duration
+	chainID                 string
 }
 
 type Policy interface {

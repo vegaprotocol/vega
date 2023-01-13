@@ -369,8 +369,10 @@ message SpamStatistic {
 message VoteSpamStatistics {
   // List of statistics for proposals voted on by the party
   repeated VoteSpamStatistic statistics = 1;
+  // The maximum number of votes per proposal allowed in an epoch
+  uint64 max_for_epoch = 2;
   // If blocked the timestamp when the party will be unblocked as RFC3339Nano
-  optional string banned_until = 2;
+  optional string banned_until = 3;
 }
 
 // The vote statistics for the voting spam policies
@@ -380,10 +382,8 @@ message VoteSpamStatistic {
   string proposal = 1;
   // The current vote count received from the party for the given proposal during this epoch
   uint64 count_for_epoch = 2;
-  // The maximum number of votes per proposal allowed in an epoch
-  uint64 max_for_epoch = 3;
   // The effective minimum number of tokens required to vote on the proposal
-  string min_tokens_required = 4;
+  string min_tokens_required = 3;
 }
 
 // The PoW state for a given block
@@ -427,5 +427,6 @@ message SpamStatistics {
 
 // A response containing all the spam statistics of a party for the current epoch
 message GetSpamStatisticsResponse {
-  SpamStatistics statistics = 1;
+  string chain_id = 1;
+  SpamStatistics statistics = 2;
 }

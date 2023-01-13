@@ -577,25 +577,36 @@ func (e *Engine) BlockData() (uint64, string) {
 	return e.currentBlock, e.blockHash[e.currentBlock%ringSize]
 }
 
+func getParamsForBlock(block uint64, activeParams []*params) *params {
+	stateInd := 0
+	for i, p := range activeParams {
+		if block >= p.fromBlock && (p.untilBlock == nil || *p.untilBlock >= block) {
+			stateInd = i
+			break
+		}
+	}
+
+	params := activeParams[stateInd]
+	return params
+}
+
 func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 
 	stats := make([]*protoapi.PoWBlockState, 0, len(e.activeStates)) //
 
+	currentBlockStatsExists := false
+
 	for _, state := range e.activeStates {
 		for block, blockToPartyState := range state.blockToPartyState {
-			if partyState, ok := blockToPartyState[partyID]; ok {
-				stateInd := 0
-				for i, p := range e.activeParams {
-					if block >= p.fromBlock && (p.untilBlock == nil || *p.untilBlock >= block) {
-						stateInd = i
-						break
-					}
-				}
+			if block == e.currentBlock {
+				currentBlockStatsExists = true
+			}
 
-				params := e.activeParams[stateInd]
+			if partyState, ok := blockToPartyState[partyID]; ok {
 				blockIndex := block % ringSize
+				params := getParamsForBlock(block, e.activeParams)
 
 				stats = append(stats, &protoapi.PoWBlockState{
 					BlockHeight:      block,
@@ -611,6 +622,19 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 				})
 			}
 		}
+	}
+
+	// If we don't have any spam stats for the current block, add it
+	if !currentBlockStatsExists {
+		params := getParamsForBlock(e.currentBlock, e.activeParams)
+		expected := uint64(params.spamPoWDifficulty)
+		stats = append(stats, &protoapi.PoWBlockState{
+			BlockHeight:        e.currentBlock,
+			BlockHash:          e.blockHash[e.currentBlock%ringSize],
+			TransactionsSeen:   0,
+			ExpectedDifficulty: &expected,
+			HashFunction:       params.spamPoWHashFunction,
+		})
 	}
 
 	until := e.bannedParties[partyID].UnixNano()

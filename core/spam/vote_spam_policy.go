@@ -456,13 +456,13 @@ func (vsp *VoteSpamPolicy) GetVoteSpamStats(partyID string) *protoapi.VoteSpamSt
 		stats = append(stats, &protoapi.VoteSpamStatistic{
 			Proposal:          proposal,
 			CountForEpoch:     votes,
-			MaxForEpoch:       vsp.numVotes,
 			MinTokensRequired: vsp.minVotingTokens.String(),
 		})
 	}
 
 	return &protoapi.VoteSpamStatistics{
 		Statistics:  stats,
+		MaxForEpoch: vsp.numVotes,
 		BannedUntil: parseBannedUntil(bannedUntil),
 	}
 }

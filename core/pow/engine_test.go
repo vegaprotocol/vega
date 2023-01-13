@@ -200,7 +200,7 @@ func TestExpectedDifficulty(t *testing.T) {
 				spamPoWNumberOfTxPerBlock: 5,
 				seenTx:                    9,
 			},
-			wantTotal:      184, // 5 * 20 + 4 + 21
+			wantTotal:      184, // 5 * 20 + 4 * 21
 			wantDifficulty: 21,
 		},
 		{
@@ -242,14 +242,6 @@ func TestExpectedDifficulty(t *testing.T) {
 			require.Equal(t, tt.wantDifficulty, gotDifficulty)
 		})
 	}
-
-	// require.Equal(t, uint(60), calculateExpectedDifficulty(20, 5, 3))   // 3 * 20
-	// require.Equal(t, uint(100), calculateExpectedDifficulty(20, 5, 5))  // 5 * 20
-	// require.Equal(t, uint(121), calculateExpectedDifficulty(20, 5, 6))  // 5 * 20 + 21
-	// require.Equal(t, uint(184), calculateExpectedDifficulty(20, 5, 9))  // 5 * 20 + 4 * 21
-	// require.Equal(t, uint(205), calculateExpectedDifficulty(20, 5, 10)) // 5 * 20 + 5 * 21
-	// require.Equal(t, uint(430), calculateExpectedDifficulty(20, 5, 20)) // 5 * 20 + 5 * 21 + 5 * 22 + 5 * 23
-	// require.Equal(t, uint(478), calculateExpectedDifficulty(20, 5, 22)) // 5 * 20 + 5 * 21 + 5 * 22 + 5 * 23 + 2 * 24
 }
 
 func TestBeginBlock(t *testing.T) {

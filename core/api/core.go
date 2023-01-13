@@ -684,6 +684,7 @@ func (s *coreService) GetSpamStatistics(_ context.Context, req *protoapi.GetSpam
 	spamStats.Pow = s.powEngine.GetSpamStatistics(req.PartyId)
 
 	resp := &protoapi.GetSpamStatisticsResponse{
+		ChainId:    s.chainID,
 		Statistics: spamStats,
 	}
 
