@@ -397,27 +397,27 @@ service TradingDataService {
     // List core snapshots taken
     rpc ListCoreSnapshots(ListCoreSnapshotsRequest) returns (ListCoreSnapshotsResponse);
 
-    // Decentralized History
+    // Network History
     //
-    // Decentralised History allows the data-node to reach out to peer nodes to fetch the most recent history, as well as
+    // Network History allows the data-node to reach out to peer nodes to fetch the most recent history, as well as
     // older history if desired, such that it can quickly get itself up to the latest block height of the network and start
     // to consume events for the latest block from the Vega core.
-    // See https://github.com/vegaprotocol/vega/tree/develop/datanode/dehistory/README.md for a full description of Decentralised History
+    // See https://github.com/vegaprotocol/vega/tree/develop/datanode/networkhistory/README.md for a full description of Network History
 
-    // Get most recent decentralized history segment
+    // Get most recent network history segment
     //
     // Get the networks most recently history segment
-    rpc GetMostRecentDeHistorySegment(GetMostRecentDeHistorySegmentRequest) returns (GetMostRecentDeHistorySegmentResponse);
+    rpc GetMostRecentNetworkHistorySegment(GetMostRecentNetworkHistorySegmentRequest) returns (GetMostRecentNetworkHistorySegmentResponse);
 
-    // List all decentralized history segments
+    // List all network history segments
     //
     // List all history segments stored by this node
-    rpc ListAllDeHistorySegments(ListAllDeHistorySegmentsRequest) returns (ListAllDeHistorySegmentsResponse);
+    rpc ListAllNetworkHistorySegments(ListAllNetworkHistorySegmentsRequest) returns (ListAllNetworkHistorySegmentsResponse);
 
-    // Get active decentralized history peer addresses
+    // Get active network history peer addresses
     //
-    // List the addresses of all active decentralized history peers
-    rpc GetActiveDeHistoryPeerAddresses(GetActiveDeHistoryPeerAddressesRequest) returns (GetActiveDeHistoryPeerAddressesResponse);
+    // List the addresses of all active network history peers
+    rpc GetActiveNetworkHistoryPeerAddresses(GetActiveNetworkHistoryPeerAddressesRequest) returns (GetActiveNetworkHistoryPeerAddressesResponse);
 
     // Ping
     //
@@ -2143,13 +2143,13 @@ message CoreSnapshotEdge {
     string cursor = 2;
 }
 
-// -- Decentralized History --
-// Decentralised History allows the data-node to reach out to peer nodes to fetch the most recent history, as well as
+// -- Network History --
+// Network History allows the data-node to reach out to peer nodes to fetch the most recent history, as well as
 // older history if desired, such that it can quickly get itself up to the latest block height of the network and start
 // to consume events for the latest block from the Vega core.
-// See https://github.com/vegaprotocol/vega/tree/develop/datanode/dehistory/README.md for a full description of Decentralised History
+// See https://github.com/vegaprotocol/vega/tree/develop/datanode/networkhistory/README.md for a full description of Network History
 
-// Describes a decentralized history segment
+// Describes a network history segment
 message HistorySegment {
     int64 from_height = 1;
     int64 to_height = 2;
@@ -2159,30 +2159,30 @@ message HistorySegment {
 }
 
 // Request to get the most recent history segment
-message GetMostRecentDeHistorySegmentRequest {
+message GetMostRecentNetworkHistorySegmentRequest {
 }
 
 // Get most recent history segment response
-message GetMostRecentDeHistorySegmentResponse {
+message GetMostRecentNetworkHistorySegmentResponse {
     HistorySegment segment = 1;
     string swarm_key  = 2;
 }
 
 // Request to list all the nodes history segments
-message ListAllDeHistorySegmentsRequest {
+message ListAllNetworkHistorySegmentsRequest {
 }
 
 // Response with a list of all the nodes history segments
-message ListAllDeHistorySegmentsResponse {
+message ListAllNetworkHistorySegmentsResponse {
     repeated HistorySegment segments = 1;
 }
 
-// Request to get the addresses of active decentralized history peers
-message GetActiveDeHistoryPeerAddressesRequest {
+// Request to get the addresses of active network history peers
+message GetActiveNetworkHistoryPeerAddressesRequest {
 }
 
-// Response containing the addresses of active decentralized history peers
-message GetActiveDeHistoryPeerAddressesResponse {
+// Response containing the addresses of active network history peers
+message GetActiveNetworkHistoryPeerAddressesResponse {
     repeated string ip_addresses = 1;
 }
 

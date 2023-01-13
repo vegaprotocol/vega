@@ -28,10 +28,10 @@ import (
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/config"
-	"code.vegaprotocol.io/vega/datanode/dehistory"
-	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/gateway/server"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/datanode/networkhistory"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/libs/pprof"
@@ -48,8 +48,8 @@ type NodeCommand struct {
 	embeddedPostgres              *embeddedpostgres.EmbeddedPostgres
 	transactionalConnectionSource *sqlstore.ConnectionSource
 
-	deHistoryService *dehistory.Service
-	snapshotService  *snapshot.Service
+	networkHistoryService *networkhistory.Service
+	snapshotService       *snapshot.Service
 
 	vegaCoreServiceClient api.CoreServiceClient
 
@@ -106,7 +106,7 @@ func (l *NodeCommand) runNode([]string) error {
 	grpcServer := l.createGRPCServer(l.conf.API)
 
 	// Admin server
-	adminServer := admin.NewServer(l.Log, l.conf.Admin, l.vegaPaths, admin.NewDeHistoryAdminService(l.deHistoryService))
+	adminServer := admin.NewServer(l.Log, l.conf.Admin, l.vegaPaths, admin.NewNetworkHistoryAdminService(l.networkHistoryService))
 
 	// watch configs
 	l.configWatcher.OnConfigUpdate(
@@ -158,8 +158,8 @@ func (l *NodeCommand) runNode([]string) error {
 	err := eg.Wait()
 
 	if errors.Is(err, context.Canceled) {
-		if l.conf.DeHistory.Enabled {
-			l.deHistoryService.Stop()
+		if l.conf.NetworkHistory.Enabled {
+			l.networkHistoryService.Stop()
 		}
 
 		return nil
@@ -208,7 +208,7 @@ func (l *NodeCommand) createGRPCServer(config api.Config) *api.GRPCServer {
 		l.marketDepthService,
 		l.ledgerService,
 		l.protocolUpgradeService,
-		l.deHistoryService,
+		l.networkHistoryService,
 		l.coreSnapshotService,
 	)
 	return grpcServer

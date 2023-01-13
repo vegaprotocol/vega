@@ -9,7 +9,7 @@
   - the `/api/v2/requests` endpoint can either return the HTTP or the JSON-RPC response payload depending on the situation.
   - the token has been moved out of the JSON-RPC requests, to HTTP `Authorization` header.
 - [7293](https://github.com/vegaprotocol/vega/issues/7293) - Rename restricted keys to allowed keys
-
+- [7255](https://github.com/vegaprotocol/vega/issues/7255) - Rename `dehistory` to network history 
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
