@@ -15,6 +15,8 @@ package protocol
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/core/spam"
+
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/broker"
@@ -175,4 +177,12 @@ func (n *Protocol) GetPoW() api.ProofOfWorkParams {
 
 func (n *Protocol) GetProtocolUpgradeService() *protocolupgrade.Engine {
 	return n.services.protocolUpgradeEngine
+}
+
+func (n *Protocol) GetSpamEngine() *spam.Engine {
+	return n.services.spam
+}
+
+func (n *Protocol) GetPowEngine() processor.PoWEngine {
+	return n.services.pow
 }

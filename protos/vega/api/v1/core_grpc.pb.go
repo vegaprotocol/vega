@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CoreServiceClient interface {
-	// Submit Transaction
+	// Submit transaction
 	//
 	// Submit a signed transaction
 	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionResponse, error)
@@ -32,7 +32,7 @@ type CoreServiceClient interface {
 	PropagateChainEvent(ctx context.Context, in *PropagateChainEventRequest, opts ...grpc.CallOption) (*PropagateChainEventResponse, error)
 	// Statistics
 	//
-	// Get Statistics on Vega
+	// Get statistics on Vega
 	Statistics(ctx context.Context, in *StatisticsRequest, opts ...grpc.CallOption) (*StatisticsResponse, error)
 	// Blockchain height
 	//
@@ -40,8 +40,10 @@ type CoreServiceClient interface {
 	LastBlockHeight(ctx context.Context, in *LastBlockHeightRequest, opts ...grpc.CallOption) (*LastBlockHeightResponse, error)
 	// Vega time
 	//
-	// Get Time
+	// Get current Vega time
 	GetVegaTime(ctx context.Context, in *GetVegaTimeRequest, opts ...grpc.CallOption) (*GetVegaTimeResponse, error)
+	// Events subscription
+	//
 	// Subscribe to a stream of events from the core
 	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (CoreService_ObserveEventBusClient, error)
 	// Submit raw transaction
@@ -56,6 +58,10 @@ type CoreServiceClient interface {
 	//
 	// Check a raw signed transaction
 	CheckRawTransaction(ctx context.Context, in *CheckRawTransactionRequest, opts ...grpc.CallOption) (*CheckRawTransactionResponse, error)
+	// Get Spam statistics
+	//
+	// Retrieve the spam statistics for a given party
+	GetSpamStatistics(ctx context.Context, in *GetSpamStatisticsRequest, opts ...grpc.CallOption) (*GetSpamStatisticsResponse, error)
 }
 
 type coreServiceClient struct {
@@ -169,11 +175,20 @@ func (c *coreServiceClient) CheckRawTransaction(ctx context.Context, in *CheckRa
 	return out, nil
 }
 
+func (c *coreServiceClient) GetSpamStatistics(ctx context.Context, in *GetSpamStatisticsRequest, opts ...grpc.CallOption) (*GetSpamStatisticsResponse, error) {
+	out := new(GetSpamStatisticsResponse)
+	err := c.cc.Invoke(ctx, "/vega.api.v1.CoreService/GetSpamStatistics", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CoreServiceServer is the server API for CoreService service.
 // All implementations must embed UnimplementedCoreServiceServer
 // for forward compatibility
 type CoreServiceServer interface {
-	// Submit Transaction
+	// Submit transaction
 	//
 	// Submit a signed transaction
 	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionResponse, error)
@@ -183,7 +198,7 @@ type CoreServiceServer interface {
 	PropagateChainEvent(context.Context, *PropagateChainEventRequest) (*PropagateChainEventResponse, error)
 	// Statistics
 	//
-	// Get Statistics on Vega
+	// Get statistics on Vega
 	Statistics(context.Context, *StatisticsRequest) (*StatisticsResponse, error)
 	// Blockchain height
 	//
@@ -191,8 +206,10 @@ type CoreServiceServer interface {
 	LastBlockHeight(context.Context, *LastBlockHeightRequest) (*LastBlockHeightResponse, error)
 	// Vega time
 	//
-	// Get Time
+	// Get current Vega time
 	GetVegaTime(context.Context, *GetVegaTimeRequest) (*GetVegaTimeResponse, error)
+	// Events subscription
+	//
 	// Subscribe to a stream of events from the core
 	ObserveEventBus(CoreService_ObserveEventBusServer) error
 	// Submit raw transaction
@@ -207,6 +224,10 @@ type CoreServiceServer interface {
 	//
 	// Check a raw signed transaction
 	CheckRawTransaction(context.Context, *CheckRawTransactionRequest) (*CheckRawTransactionResponse, error)
+	// Get Spam statistics
+	//
+	// Retrieve the spam statistics for a given party
+	GetSpamStatistics(context.Context, *GetSpamStatisticsRequest) (*GetSpamStatisticsResponse, error)
 	mustEmbedUnimplementedCoreServiceServer()
 }
 
@@ -240,6 +261,9 @@ func (UnimplementedCoreServiceServer) CheckTransaction(context.Context, *CheckTr
 }
 func (UnimplementedCoreServiceServer) CheckRawTransaction(context.Context, *CheckRawTransactionRequest) (*CheckRawTransactionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckRawTransaction not implemented")
+}
+func (UnimplementedCoreServiceServer) GetSpamStatistics(context.Context, *GetSpamStatisticsRequest) (*GetSpamStatisticsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSpamStatistics not implemented")
 }
 func (UnimplementedCoreServiceServer) mustEmbedUnimplementedCoreServiceServer() {}
 
@@ -424,6 +448,24 @@ func _CoreService_CheckRawTransaction_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CoreService_GetSpamStatistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSpamStatisticsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoreServiceServer).GetSpamStatistics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/vega.api.v1.CoreService/GetSpamStatistics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoreServiceServer).GetSpamStatistics(ctx, req.(*GetSpamStatisticsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CoreService_ServiceDesc is the grpc.ServiceDesc for CoreService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -462,6 +504,10 @@ var CoreService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckRawTransaction",
 			Handler:    _CoreService_CheckRawTransaction_Handler,
+		},
+		{
+			MethodName: "GetSpamStatistics",
+			Handler:    _CoreService_GetSpamStatistics_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

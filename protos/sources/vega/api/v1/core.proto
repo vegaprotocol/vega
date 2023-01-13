@@ -21,7 +21,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 
 
 service CoreService {
-  // Submit Transaction
+  // Submit transaction
   //
   // Submit a signed transaction
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
@@ -33,7 +33,7 @@ service CoreService {
 
   // Statistics
   //
-  // Get Statistics on Vega
+  // Get statistics on Vega
   rpc Statistics(StatisticsRequest) returns (StatisticsResponse);
 
   // Blockchain height
@@ -43,9 +43,11 @@ service CoreService {
 
   // Vega time
   //
-  // Get Time
+  // Get current Vega time
   rpc GetVegaTime(GetVegaTimeRequest) returns (GetVegaTimeResponse);
 
+  // Events subscription
+  //
   // Subscribe to a stream of events from the core
   rpc ObserveEventBus(stream ObserveEventBusRequest) returns (stream ObserveEventBusResponse);
 
@@ -63,6 +65,11 @@ service CoreService {
   //
   // Check a raw signed transaction
   rpc CheckRawTransaction(CheckRawTransactionRequest) returns (CheckRawTransactionResponse);
+
+  // Get Spam statistics
+  //
+  // Retrieve the spam statistics for a given party
+  rpc GetSpamStatistics(GetSpamStatisticsRequest) returns (GetSpamStatisticsResponse);
 }
 
 // Request for a new event sent by the blockchain queue to be propagated on Vega
@@ -342,4 +349,86 @@ message LastBlockHeightResponse {
   bool spam_pow_increasing_difficulty = 7;
   // the network chain id from which the block comes from
   string chain_id = 8;
+}
+
+// A request to retrieve the spam statistics of a party for the given epoch
+message GetSpamStatisticsRequest {
+  // Id for the party whose statistics are requested
+  string party_id = 1;
+}
+
+// The statistics for a given spam policy
+message SpamStatistic {
+  // The current transaction count received from the party during this epoch for this policy
+  uint64 count_for_epoch = 1;
+  // The maximum number of transactions allowed for this policy in an epoch
+  uint64 max_for_epoch = 2;
+  // If blocked the timestamp when the party will be unblocked as RFC3339Nano
+  optional string banned_until = 4;
+}
+
+// The voting statistics by proposal for a given party for the current epoch
+message VoteSpamStatistics {
+  // List of statistics for proposals voted on by the party
+  repeated VoteSpamStatistic statistics = 1;
+  // The maximum number of votes per proposal allowed in an epoch
+  uint64 max_for_epoch = 2;
+  // If blocked the timestamp when the party will be unblocked as RFC3339Nano
+  optional string banned_until = 3;
+}
+
+// The vote statistics for the voting spam policies
+// which are calculated as a ratio of the total votes
+// that have been rejected.
+message VoteSpamStatistic {
+  string proposal = 1;
+  // The current vote count received from the party for the given proposal during this epoch
+  uint64 count_for_epoch = 2;
+  // The effective minimum number of tokens required to vote on the proposal
+  string min_tokens_required = 3;
+}
+
+// The PoW state for a given block
+message PoWBlockState {
+  // Block height for the current Proof of Work state statistics
+  uint64 block_height = 1;
+  // Hash of the current block
+  string block_hash = 2;
+  // Total number of transactions seen in the block
+  uint64 transactions_seen = 3;
+  // This is the minimum required difficulty for the next transaction submitted on this block
+  // if it is possible to submit more transactions on this block, otherwise nil.
+  optional uint64 expected_difficulty = 4;
+  // The hashing function used to calculate the block hash
+  string hash_function = 5;
+}
+
+// Proof of work statistics for a party
+message PoWStatistic {
+  // Block state for each block in scope for PoW calculation
+  repeated PoWBlockState block_states = 1;
+  // PoW banned until timestamp as RFC3339Nano
+  optional string banned_until = 2;
+}
+
+// The complete spam statistics captured for a given party
+message SpamStatistics {
+  // Statistics for proposal transactions made by the party
+  SpamStatistic proposals = 1;
+  // Statistics for delegation transactions made by the party
+  SpamStatistic delegations = 2;
+  // Statistics for transfer transactions made by the party
+  SpamStatistic transfers = 3;
+  // Statistics for node announcement transactions made by the party
+  SpamStatistic node_announcements = 4;
+  // Statistics for proposal votes made by the party
+  VoteSpamStatistics votes = 5;
+  // Statistics for proof of work difficulty observed per block for the party
+  PoWStatistic pow = 6;
+}
+
+// A response containing all the spam statistics of a party for the current epoch
+message GetSpamStatisticsResponse {
+  string chain_id = 1;
+  SpamStatistics statistics = 2;
 }
