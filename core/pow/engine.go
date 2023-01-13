@@ -594,7 +594,7 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 
-	stats := make([]*protoapi.PoWBlockState, 0, len(e.activeStates)) //
+	stats := make([]*protoapi.PoWBlockState, 0)
 
 	currentBlockStatsExists := false
 
