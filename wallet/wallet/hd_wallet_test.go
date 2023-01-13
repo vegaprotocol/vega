@@ -28,7 +28,7 @@ func TestHDWallet(t *testing.T) {
 	t.Run("Generating key pair succeeds", testHDWalletGeneratingKeyPairSucceeds)
 	t.Run("Generating key pair on isolated wallet fails", testHDWalletGeneratingKeyPairOnIsolatedWalletFails)
 	t.Run("Tainting key pair succeeds", testHDWalletTaintingKeyPairSucceeds)
-	t.Run("Tainting key pair removes the key from the restricted keys", testHDWalletTaintingKeyPairRemovesTheKeyFromRestrictedKeys)
+	t.Run("Tainting key pair removes the key from the allowed keys", testHDWalletTaintingKeyPairRemovesTheKeyFromAllowedKeys)
 	t.Run("Tainting the last key pair voids the permissions", testHDWalletTaintingLastKeyPairVoidsThePermissions)
 	t.Run("Tainting key pair that is already tainted fails", testHDWalletTaintingKeyThatIsAlreadyTaintedFails)
 	t.Run("Tainting unknown key pair fails", testHDWalletTaintingUnknownKeyFails)
@@ -331,7 +331,7 @@ func testHDWalletTaintingKeyPairSucceeds(t *testing.T) {
 	}
 }
 
-func testHDWalletTaintingKeyPairRemovesTheKeyFromRestrictedKeys(t *testing.T) {
+func testHDWalletTaintingKeyPairRemovesTheKeyFromAllowedKeys(t *testing.T) {
 	// given
 	name := vgrand.RandomStr(5)
 
@@ -363,7 +363,7 @@ func testHDWalletTaintingKeyPairRemovesTheKeyFromRestrictedKeys(t *testing.T) {
 	err = w.UpdatePermissions(hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access: wallet.ReadAccess,
-			RestrictedKeys: []string{
+			AllowedKeys: []string{
 				kp1.PublicKey(),
 				kp2.PublicKey(),
 			},
@@ -391,7 +391,7 @@ func testHDWalletTaintingKeyPairRemovesTheKeyFromRestrictedKeys(t *testing.T) {
 	permissions := w.Permissions(hostname)
 
 	// then
-	require.NotContains(t, permissions.PublicKeys.RestrictedKeys, kp1.PublicKey())
+	require.NotContains(t, permissions.PublicKeys.AllowedKeys, kp1.PublicKey())
 
 	// when
 	err = w.TaintKey(kp2.PublicKey())
@@ -439,7 +439,7 @@ func testHDWalletTaintingLastKeyPairVoidsThePermissions(t *testing.T) {
 	err = w.UpdatePermissions(hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access: wallet.ReadAccess,
-			RestrictedKeys: []string{
+			AllowedKeys: []string{
 				kp1.PublicKey(),
 			},
 		},
@@ -1459,13 +1459,13 @@ func testHDWalletUnmarshalingWalletSucceeds(t *testing.T) {
 		}, {
 			name:               "version 2 with permissions",
 			expectedVersion:    2,
-			marshaled:          `{"version":2,"node":"CZ13XhuFZ8K7TxNTAdKmMXh+OIVX6TFxTToXgnAqGlcO5eTY/5AVqZkWRIU3zfr8hvE7i2yIYAB6HT28ibi1fg==","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":null,"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{"vega.xyz":{"publicKeys":{"access":"read","restrictedKeys":["b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"]}}}}`,
+			marshaled:          `{"version":2,"node":"CZ13XhuFZ8K7TxNTAdKmMXh+OIVX6TFxTToXgnAqGlcO5eTY/5AVqZkWRIU3zfr8hvE7i2yIYAB6HT28ibi1fg==","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":null,"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{"vega.xyz":{"publicKeys":{"access":"read","allowedKeys":["b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"]}}}}`,
 			expectedPublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 			expectedPrivateKey: "0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 			expectedPermissions: wallet.Permissions{
 				PublicKeys: wallet.PublicKeysPermission{
 					Access: "read",
-					RestrictedKeys: []string{
+					AllowedKeys: []string{
 						"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 					},
 				},
@@ -1785,29 +1785,29 @@ func testHDWalletUpdatingPermissionsWithInconsistentSetupFails(t *testing.T) {
 			name: "with non-existing keys on the wallet",
 			permissions: wallet.Permissions{
 				PublicKeys: wallet.PublicKeysPermission{
-					Access:         wallet.ReadAccess,
-					RestrictedKeys: []string{kp1.PublicKey(), kp2.PublicKey(), randomKey},
+					Access:      wallet.ReadAccess,
+					AllowedKeys: []string{kp1.PublicKey(), kp2.PublicKey(), randomKey},
 				},
 			},
-			expectedError: fmt.Errorf("this restricted key %s does not exist on wallet", randomKey),
+			expectedError: fmt.Errorf("this allowed key %s does not exist on wallet", randomKey),
 		}, {
-			name: "with restricted keys and no access",
+			name: "with allowed keys and no access",
 			permissions: wallet.Permissions{
 				PublicKeys: wallet.PublicKeysPermission{
-					Access:         wallet.NoAccess,
-					RestrictedKeys: []string{kp1.PublicKey()},
+					Access:      wallet.NoAccess,
+					AllowedKeys: []string{kp1.PublicKey()},
 				},
 			},
-			expectedError: wallet.ErrCannotSetRestrictedKeysWithNoAccess,
+			expectedError: wallet.ErrCannotSetAllowedKeysWithNoAccess,
 		}, {
 			name: "with tainted key",
 			permissions: wallet.Permissions{
 				PublicKeys: wallet.PublicKeysPermission{
-					Access:         wallet.ReadAccess,
-					RestrictedKeys: []string{taintedKey.PublicKey()},
+					Access:      wallet.ReadAccess,
+					AllowedKeys: []string{taintedKey.PublicKey()},
 				},
 			},
-			expectedError: fmt.Errorf("this restricted key %s is tainted", taintedKey.PublicKey()),
+			expectedError: fmt.Errorf("this allowed key %s is tainted", taintedKey.PublicKey()),
 		},
 	}
 
@@ -1940,8 +1940,8 @@ func testHDWalletRevokingPermissionsSucceeds(t *testing.T) {
 	// when
 	err = w.UpdatePermissions("vega.xyz", wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: []string{w.ListKeyPairs()[0].PublicKey()},
+			Access:      wallet.ReadAccess,
+			AllowedKeys: []string{w.ListKeyPairs()[0].PublicKey()},
 		},
 	})
 
@@ -1951,8 +1951,8 @@ func testHDWalletRevokingPermissionsSucceeds(t *testing.T) {
 	// given
 	tokenPermissions := wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: []string{w.ListKeyPairs()[0].PublicKey()},
+			Access:      wallet.ReadAccess,
+			AllowedKeys: []string{w.ListKeyPairs()[0].PublicKey()},
 		},
 	}
 
@@ -1998,8 +1998,8 @@ func testHDWalletPurgingPermissionsSucceeds(t *testing.T) {
 	// when
 	err = w.UpdatePermissions("vega.xyz", wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: []string{w.ListKeyPairs()[0].PublicKey()},
+			Access:      wallet.ReadAccess,
+			AllowedKeys: []string{w.ListKeyPairs()[0].PublicKey()},
 		},
 	})
 
@@ -2009,8 +2009,8 @@ func testHDWalletPurgingPermissionsSucceeds(t *testing.T) {
 	// when
 	err = w.UpdatePermissions("token.vega.xyz", wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: []string{w.ListKeyPairs()[0].PublicKey()},
+			Access:      wallet.ReadAccess,
+			AllowedKeys: []string{w.ListKeyPairs()[0].PublicKey()},
 		},
 	})
 

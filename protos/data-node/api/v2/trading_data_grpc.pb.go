@@ -322,18 +322,18 @@ type TradingDataServiceClient interface {
 	ListProtocolUpgradeProposals(ctx context.Context, in *ListProtocolUpgradeProposalsRequest, opts ...grpc.CallOption) (*ListProtocolUpgradeProposalsResponse, error)
 	// List core snapshots taken
 	ListCoreSnapshots(ctx context.Context, in *ListCoreSnapshotsRequest, opts ...grpc.CallOption) (*ListCoreSnapshotsResponse, error)
-	// Get most recent decentralized history segment
+	// Get most recent network history segment
 	//
 	// Get the networks most recently history segment
-	GetMostRecentDeHistorySegment(ctx context.Context, in *GetMostRecentDeHistorySegmentRequest, opts ...grpc.CallOption) (*GetMostRecentDeHistorySegmentResponse, error)
-	// List all decentralized history segments
+	GetMostRecentNetworkHistorySegment(ctx context.Context, in *GetMostRecentNetworkHistorySegmentRequest, opts ...grpc.CallOption) (*GetMostRecentNetworkHistorySegmentResponse, error)
+	// List all network history segments
 	//
 	// List all history segments stored by this node
-	ListAllDeHistorySegments(ctx context.Context, in *ListAllDeHistorySegmentsRequest, opts ...grpc.CallOption) (*ListAllDeHistorySegmentsResponse, error)
-	// Get active decentralized history peer addresses
+	ListAllNetworkHistorySegments(ctx context.Context, in *ListAllNetworkHistorySegmentsRequest, opts ...grpc.CallOption) (*ListAllNetworkHistorySegmentsResponse, error)
+	// Get active network history peer addresses
 	//
-	// List the addresses of all active decentralized history peers
-	GetActiveDeHistoryPeerAddresses(ctx context.Context, in *GetActiveDeHistoryPeerAddressesRequest, opts ...grpc.CallOption) (*GetActiveDeHistoryPeerAddressesResponse, error)
+	// List the addresses of all active network history peers
+	GetActiveNetworkHistoryPeerAddresses(ctx context.Context, in *GetActiveNetworkHistoryPeerAddressesRequest, opts ...grpc.CallOption) (*GetActiveNetworkHistoryPeerAddressesResponse, error)
 	// Ping
 	//
 	// Ping the datanode
@@ -1426,27 +1426,27 @@ func (c *tradingDataServiceClient) ListCoreSnapshots(ctx context.Context, in *Li
 	return out, nil
 }
 
-func (c *tradingDataServiceClient) GetMostRecentDeHistorySegment(ctx context.Context, in *GetMostRecentDeHistorySegmentRequest, opts ...grpc.CallOption) (*GetMostRecentDeHistorySegmentResponse, error) {
-	out := new(GetMostRecentDeHistorySegmentResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetMostRecentDeHistorySegment", in, out, opts...)
+func (c *tradingDataServiceClient) GetMostRecentNetworkHistorySegment(ctx context.Context, in *GetMostRecentNetworkHistorySegmentRequest, opts ...grpc.CallOption) (*GetMostRecentNetworkHistorySegmentResponse, error) {
+	out := new(GetMostRecentNetworkHistorySegmentResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetMostRecentNetworkHistorySegment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *tradingDataServiceClient) ListAllDeHistorySegments(ctx context.Context, in *ListAllDeHistorySegmentsRequest, opts ...grpc.CallOption) (*ListAllDeHistorySegmentsResponse, error) {
-	out := new(ListAllDeHistorySegmentsResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListAllDeHistorySegments", in, out, opts...)
+func (c *tradingDataServiceClient) ListAllNetworkHistorySegments(ctx context.Context, in *ListAllNetworkHistorySegmentsRequest, opts ...grpc.CallOption) (*ListAllNetworkHistorySegmentsResponse, error) {
+	out := new(ListAllNetworkHistorySegmentsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListAllNetworkHistorySegments", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *tradingDataServiceClient) GetActiveDeHistoryPeerAddresses(ctx context.Context, in *GetActiveDeHistoryPeerAddressesRequest, opts ...grpc.CallOption) (*GetActiveDeHistoryPeerAddressesResponse, error) {
-	out := new(GetActiveDeHistoryPeerAddressesResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetActiveDeHistoryPeerAddresses", in, out, opts...)
+func (c *tradingDataServiceClient) GetActiveNetworkHistoryPeerAddresses(ctx context.Context, in *GetActiveNetworkHistoryPeerAddressesRequest, opts ...grpc.CallOption) (*GetActiveNetworkHistoryPeerAddressesResponse, error) {
+	out := new(GetActiveNetworkHistoryPeerAddressesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetActiveNetworkHistoryPeerAddresses", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1766,18 +1766,18 @@ type TradingDataServiceServer interface {
 	ListProtocolUpgradeProposals(context.Context, *ListProtocolUpgradeProposalsRequest) (*ListProtocolUpgradeProposalsResponse, error)
 	// List core snapshots taken
 	ListCoreSnapshots(context.Context, *ListCoreSnapshotsRequest) (*ListCoreSnapshotsResponse, error)
-	// Get most recent decentralized history segment
+	// Get most recent network history segment
 	//
 	// Get the networks most recently history segment
-	GetMostRecentDeHistorySegment(context.Context, *GetMostRecentDeHistorySegmentRequest) (*GetMostRecentDeHistorySegmentResponse, error)
-	// List all decentralized history segments
+	GetMostRecentNetworkHistorySegment(context.Context, *GetMostRecentNetworkHistorySegmentRequest) (*GetMostRecentNetworkHistorySegmentResponse, error)
+	// List all network history segments
 	//
 	// List all history segments stored by this node
-	ListAllDeHistorySegments(context.Context, *ListAllDeHistorySegmentsRequest) (*ListAllDeHistorySegmentsResponse, error)
-	// Get active decentralized history peer addresses
+	ListAllNetworkHistorySegments(context.Context, *ListAllNetworkHistorySegmentsRequest) (*ListAllNetworkHistorySegmentsResponse, error)
+	// Get active network history peer addresses
 	//
-	// List the addresses of all active decentralized history peers
-	GetActiveDeHistoryPeerAddresses(context.Context, *GetActiveDeHistoryPeerAddressesRequest) (*GetActiveDeHistoryPeerAddressesResponse, error)
+	// List the addresses of all active network history peers
+	GetActiveNetworkHistoryPeerAddresses(context.Context, *GetActiveNetworkHistoryPeerAddressesRequest) (*GetActiveNetworkHistoryPeerAddressesResponse, error)
 	// Ping
 	//
 	// Ping the datanode
@@ -2026,14 +2026,14 @@ func (UnimplementedTradingDataServiceServer) ListProtocolUpgradeProposals(contex
 func (UnimplementedTradingDataServiceServer) ListCoreSnapshots(context.Context, *ListCoreSnapshotsRequest) (*ListCoreSnapshotsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListCoreSnapshots not implemented")
 }
-func (UnimplementedTradingDataServiceServer) GetMostRecentDeHistorySegment(context.Context, *GetMostRecentDeHistorySegmentRequest) (*GetMostRecentDeHistorySegmentResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetMostRecentDeHistorySegment not implemented")
+func (UnimplementedTradingDataServiceServer) GetMostRecentNetworkHistorySegment(context.Context, *GetMostRecentNetworkHistorySegmentRequest) (*GetMostRecentNetworkHistorySegmentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMostRecentNetworkHistorySegment not implemented")
 }
-func (UnimplementedTradingDataServiceServer) ListAllDeHistorySegments(context.Context, *ListAllDeHistorySegmentsRequest) (*ListAllDeHistorySegmentsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListAllDeHistorySegments not implemented")
+func (UnimplementedTradingDataServiceServer) ListAllNetworkHistorySegments(context.Context, *ListAllNetworkHistorySegmentsRequest) (*ListAllNetworkHistorySegmentsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAllNetworkHistorySegments not implemented")
 }
-func (UnimplementedTradingDataServiceServer) GetActiveDeHistoryPeerAddresses(context.Context, *GetActiveDeHistoryPeerAddressesRequest) (*GetActiveDeHistoryPeerAddressesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetActiveDeHistoryPeerAddresses not implemented")
+func (UnimplementedTradingDataServiceServer) GetActiveNetworkHistoryPeerAddresses(context.Context, *GetActiveNetworkHistoryPeerAddressesRequest) (*GetActiveNetworkHistoryPeerAddressesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetActiveNetworkHistoryPeerAddresses not implemented")
 }
 func (UnimplementedTradingDataServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
@@ -3526,56 +3526,56 @@ func _TradingDataService_ListCoreSnapshots_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingDataService_GetMostRecentDeHistorySegment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetMostRecentDeHistorySegmentRequest)
+func _TradingDataService_GetMostRecentNetworkHistorySegment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMostRecentNetworkHistorySegmentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingDataServiceServer).GetMostRecentDeHistorySegment(ctx, in)
+		return srv.(TradingDataServiceServer).GetMostRecentNetworkHistorySegment(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/datanode.api.v2.TradingDataService/GetMostRecentDeHistorySegment",
+		FullMethod: "/datanode.api.v2.TradingDataService/GetMostRecentNetworkHistorySegment",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).GetMostRecentDeHistorySegment(ctx, req.(*GetMostRecentDeHistorySegmentRequest))
+		return srv.(TradingDataServiceServer).GetMostRecentNetworkHistorySegment(ctx, req.(*GetMostRecentNetworkHistorySegmentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingDataService_ListAllDeHistorySegments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListAllDeHistorySegmentsRequest)
+func _TradingDataService_ListAllNetworkHistorySegments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAllNetworkHistorySegmentsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingDataServiceServer).ListAllDeHistorySegments(ctx, in)
+		return srv.(TradingDataServiceServer).ListAllNetworkHistorySegments(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/datanode.api.v2.TradingDataService/ListAllDeHistorySegments",
+		FullMethod: "/datanode.api.v2.TradingDataService/ListAllNetworkHistorySegments",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).ListAllDeHistorySegments(ctx, req.(*ListAllDeHistorySegmentsRequest))
+		return srv.(TradingDataServiceServer).ListAllNetworkHistorySegments(ctx, req.(*ListAllNetworkHistorySegmentsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingDataService_GetActiveDeHistoryPeerAddresses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetActiveDeHistoryPeerAddressesRequest)
+func _TradingDataService_GetActiveNetworkHistoryPeerAddresses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetActiveNetworkHistoryPeerAddressesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingDataServiceServer).GetActiveDeHistoryPeerAddresses(ctx, in)
+		return srv.(TradingDataServiceServer).GetActiveNetworkHistoryPeerAddresses(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/datanode.api.v2.TradingDataService/GetActiveDeHistoryPeerAddresses",
+		FullMethod: "/datanode.api.v2.TradingDataService/GetActiveNetworkHistoryPeerAddresses",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).GetActiveDeHistoryPeerAddresses(ctx, req.(*GetActiveDeHistoryPeerAddressesRequest))
+		return srv.(TradingDataServiceServer).GetActiveNetworkHistoryPeerAddresses(ctx, req.(*GetActiveNetworkHistoryPeerAddressesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3858,16 +3858,16 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_ListCoreSnapshots_Handler,
 		},
 		{
-			MethodName: "GetMostRecentDeHistorySegment",
-			Handler:    _TradingDataService_GetMostRecentDeHistorySegment_Handler,
+			MethodName: "GetMostRecentNetworkHistorySegment",
+			Handler:    _TradingDataService_GetMostRecentNetworkHistorySegment_Handler,
 		},
 		{
-			MethodName: "ListAllDeHistorySegments",
-			Handler:    _TradingDataService_ListAllDeHistorySegments_Handler,
+			MethodName: "ListAllNetworkHistorySegments",
+			Handler:    _TradingDataService_ListAllNetworkHistorySegments_Handler,
 		},
 		{
-			MethodName: "GetActiveDeHistoryPeerAddresses",
-			Handler:    _TradingDataService_GetActiveDeHistoryPeerAddresses_Handler,
+			MethodName: "GetActiveNetworkHistoryPeerAddresses",
+			Handler:    _TradingDataService_GetActiveNetworkHistoryPeerAddresses_Handler,
 		},
 		{
 			MethodName: "Ping",

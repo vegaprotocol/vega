@@ -92,7 +92,7 @@ func testUpdatingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	permissions := wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access: "read",
-			RestrictedKeys: []string{
+			AllowedKeys: []string{
 				firstKey.PublicKey(),
 			},
 		},

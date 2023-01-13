@@ -114,8 +114,8 @@ func testSendingTransactionWithInvalidParamsFails(t *testing.T) {
 			hostname := vgrand.RandomStr(5)
 			wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 				PublicKeys: wallet.PublicKeysPermission{
-					Access:         wallet.ReadAccess,
-					RestrictedKeys: nil,
+					Access:      wallet.ReadAccess,
+					AllowedKeys: nil,
 				},
 			})
 			connectedWallet, err := api.NewConnectedWallet(hostname, wallet1)
@@ -142,8 +142,8 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	hostname := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
 	kp, err := wallet1.GenerateKeyPair(nil)
@@ -233,8 +233,8 @@ func testRefusingSendingOfTransactionDoesNotSendTransaction(t *testing.T) {
 	hostname := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
 	kp, err := wallet1.GenerateKeyPair(nil)
@@ -272,8 +272,8 @@ func testCancellingTheReviewDoesNotSendTransaction(t *testing.T) {
 	hostname := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
 	kp, err := wallet1.GenerateKeyPair(nil)
@@ -311,8 +311,8 @@ func testInterruptingTheRequestDoesNotSendTransaction(t *testing.T) {
 	hostname := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
 	kp, err := wallet1.GenerateKeyPair(nil)
@@ -351,8 +351,8 @@ func testGettingInternalErrorDuringReviewDoesNotSendTransaction(t *testing.T) {
 	hostname := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
 	kp, err := wallet1.GenerateKeyPair(nil)
@@ -391,8 +391,8 @@ func testNoHealthyNodeAvailableDoesNotSendTransaction(t *testing.T) {
 	hostname := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
 	kp, err := wallet1.GenerateKeyPair(nil)
@@ -436,8 +436,8 @@ func testFailingToGetLastBlockDoesNotSendTransaction(t *testing.T) {
 	hostname := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
 	kp, err := wallet1.GenerateKeyPair(nil)
@@ -482,8 +482,8 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 	hostname := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
 	kp, err := wallet1.GenerateKeyPair(nil)

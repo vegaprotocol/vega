@@ -28,6 +28,7 @@ import (
 
 var (
 	ErrInvalidWithdrawalReferenceNonce       = errors.New("invalid withdrawal reference nonce")
+	ErrWithdrawalAmountUnderMinimalRequired  = errors.New("invalid withdrawal, amount under minimum required")
 	ErrAssetAlreadyBeingListed               = errors.New("asset already being listed")
 	ErrWithdrawalDisabledWhenBridgeIsStopped = errors.New("withdrawal issuance is disabled when the erc20 is stopped")
 )
@@ -55,7 +56,7 @@ func (e *Engine) EnableERC20(
 
 	aa := &assetAction{
 		id:          id,
-		state:       pendingState,
+		state:       newPendingState(),
 		erc20AL:     al,
 		asset:       asset,
 		blockHeight: blockNumber,
@@ -80,10 +81,9 @@ func (e *Engine) UpdateERC20(
 			logging.AssetID(event.VegaAssetID),
 		)
 	}
-
 	aa := &assetAction{
 		id:                      id,
-		state:                   pendingState,
+		state:                   newPendingState(),
 		erc20AssetLimitsUpdated: event,
 		asset:                   asset,
 		blockHeight:             blockNumber,
@@ -123,7 +123,7 @@ func (e *Engine) DepositERC20(
 
 	aa := &assetAction{
 		id:          dep.ID,
-		state:       pendingState,
+		state:       newPendingState(),
 		erc20D:      d,
 		asset:       asset,
 		blockHeight: blockNumber,
@@ -195,6 +195,22 @@ func (e *Engine) WithdrawERC20(
 			logging.AssetID(assetID),
 			logging.Error(err))
 		return err
+	}
+
+	// check for minimal amount reached
+	quantum := asset.Type().Details.Quantum
+	// no reason this would produce an error
+	minAmount, _ := num.UintFromDecimal(quantum.Mul(e.minWithdrawQuantumMultiple))
+
+	// now verify amount
+	if amount.LT(minAmount) {
+		e.log.Debug("cannot withdraw funds, the request is less than minimum withdrawal amount",
+			logging.BigUint("min-amount", minAmount),
+			logging.BigUint("requested-amount", amount),
+		)
+		w.Status = types.WithdrawalStatusRejected
+		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
+		return ErrWithdrawalAmountUnderMinimalRequired
 	}
 
 	if a, ok := asset.ERC20(); !ok {

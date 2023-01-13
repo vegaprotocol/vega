@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/hex"
+	"sync/atomic"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
@@ -74,9 +75,12 @@ func (e *Engine) DepositBuiltinAsset(
 	b := make([]byte, 8)
 	binary.BigEndian.PutUint64(b, nonce)
 
+	state := &atomic.Uint32{}
+	state.Store(pendingState)
+
 	aa := &assetAction{
 		id:       dep.ID,
-		state:    pendingState,
+		state:    state,
 		builtinD: d,
 		asset:    asset,
 		txHash:   hex.EncodeToString(vgcrypto.Hash(b)),

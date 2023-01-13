@@ -23,9 +23,9 @@ var (
 
 		This mechanism is useful when the key pair has been compromised.
 
-		When a key is tainted, it is automatically removed from the restricted
+		When a key is tainted, it is automatically removed from the allowed
 		keys if specified. If the key is the only one to be set, the permission
-		to access the public keys is revoked. If no restricted key is specified,
+		to access the public keys is revoked. If no allowed key is specified,
 		but all keys in the wallet are tainted, the permission of the public
 		keys is revoked as well.
 	`)

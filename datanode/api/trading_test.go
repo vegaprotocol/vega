@@ -84,7 +84,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 
 	mockCoreServiceClient.EXPECT().GetState().Return(connectivity.Ready).AnyTimes()
 
-	mockDeHistoryService := mocks.NewMockDeHistoryService(mockCtrl)
+	mockNetworkHistoryService := mocks.NewMockNetworkHistoryService(mockCtrl)
 
 	eventSource, err := broker.NewEventReceiverSender(conf.Broker, logging.NewTestLogger(), "")
 	if err != nil {
@@ -182,7 +182,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 		sqlMarketDepthService,
 		sqlLedgerService,
 		sqlProtocolUpgradeService,
-		mockDeHistoryService,
+		mockNetworkHistoryService,
 		sqlCoreSnapshotService,
 	)
 	if g == nil {

@@ -46,7 +46,7 @@ type Manager struct {
 type walletConnection struct {
 	// connectedWallet is the projection of the wallet through the permissions
 	// and authentication system. On a regular wallet, there are no restrictions
-	// on what we can call, which doesn't fit the model of having restricted
+	// on what we can call, which doesn't fit the model of having allowed
 	// access, so we wrap the "regular wallet" behind the "connected wallet".
 	connectedWallet api.ConnectedWallet
 

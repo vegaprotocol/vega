@@ -91,7 +91,7 @@ func testAdminDescribingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	if err := expectedWallet.UpdatePermissions(hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access: "read",
-			RestrictedKeys: []string{
+			AllowedKeys: []string{
 				firstKey.PublicKey(),
 			},
 		},
@@ -119,7 +119,7 @@ func testAdminDescribingPermissionsWithValidParamsSucceeds(t *testing.T) {
 		Permissions: wallet.Permissions{
 			PublicKeys: wallet.PublicKeysPermission{
 				Access: "read",
-				RestrictedKeys: []string{
+				AllowedKeys: []string{
 					firstKey.PublicKey(),
 				},
 			},

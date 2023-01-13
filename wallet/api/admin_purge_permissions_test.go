@@ -81,7 +81,7 @@ func testPurgingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	if err := expectedWallet.UpdatePermissions(hostname1, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access: "read",
-			RestrictedKeys: []string{
+			AllowedKeys: []string{
 				firstKey.PublicKey(),
 			},
 		},
@@ -92,7 +92,7 @@ func testPurgingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	if err := expectedWallet.UpdatePermissions(hostname2, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access: "read",
-			RestrictedKeys: []string{
+			AllowedKeys: []string{
 				firstKey.PublicKey(),
 			},
 		},
