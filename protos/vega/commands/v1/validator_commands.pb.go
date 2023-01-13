@@ -246,7 +246,7 @@ func (x *ValidatorHeartbeat) GetVegaSignature() *Signature {
 	return nil
 }
 
-// Used announce a node as a new pending validator
+// Used to announce a node as a new pending validator
 type AnnounceNode struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -543,7 +543,6 @@ type ChainEvent struct {
 	// The event
 	//
 	// Types that are assignable to Event:
-	//
 	//	*ChainEvent_Builtin
 	//	*ChainEvent_Erc20
 	//	*ChainEvent_StakingEvent
@@ -664,7 +663,7 @@ func (*ChainEvent_StakingEvent) isChainEvent_Event() {}
 
 func (*ChainEvent_Erc20Multisig) isChainEvent_Event() {}
 
-// A transaction to allow validator to rotate their Vega keys
+// A transaction to allow a validator to rotate their Vega keys
 type KeyRotateSubmission struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -740,7 +739,7 @@ func (x *KeyRotateSubmission) GetCurrentPubKeyHash() string {
 	return ""
 }
 
-// A transaction to allow validator to rotate their ethereum keys
+// A transaction to allow a validator to rotate their ethereum keys
 type EthereumKeyRotateSubmission struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -825,6 +824,7 @@ func (x *EthereumKeyRotateSubmission) GetEthereumSignature() *Signature {
 	return nil
 }
 
+// A transaction for a validator to submit a floating point value
 type StateVariableProposal struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -873,6 +873,7 @@ func (x *StateVariableProposal) GetProposal() *vega.StateValueProposal {
 	return nil
 }
 
+// A transaction for a validator to suggest a protocol upgrade
 type ProtocolUpgradeProposal struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -930,16 +931,17 @@ func (x *ProtocolUpgradeProposal) GetVegaReleaseTag() string {
 	return ""
 }
 
+// A transaction for a validator to submit signatures to a smart contract
 type IssueSignatures struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ethereum address which will submit the signatures to the smart-contract
+	// The ethereum address which will submit the signatures to the smart contract
 	Submitter string `protobuf:"bytes,1,opt,name=submitter,proto3" json:"submitter,omitempty"`
 	// The kind of signatures to generate, namely for whether a signer is being added or removed
 	Kind NodeSignatureKind `protobuf:"varint,2,opt,name=kind,proto3,enum=vega.commands.v1.NodeSignatureKind" json:"kind,omitempty"`
-	// The ID of the node that will be signed in or out of the smartcontract
+	// The ID of the node that will be signed in or out of the smart contract
 	ValidatorNodeId string `protobuf:"bytes,3,opt,name=validator_node_id,json=validatorNodeId,proto3" json:"validator_node_id,omitempty"` // the node for which to emit the signatures.
 }
 

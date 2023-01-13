@@ -169,12 +169,12 @@ func (Market_TradingMode) EnumDescriptor() ([]byte, []int) {
 }
 
 // An auction duration is used to configure 3 auction periods:
-//  1. `duration > 0`, `volume == 0`:
-//     The auction will last for at least N seconds
-//  2. `duration == 0`, `volume > 0`:
-//     The auction will end once the given volume will match at uncrossing
-//  3. `duration > 0`, `volume > 0`:
-//     The auction will take at least N seconds, but can end sooner if the market can trade a certain volume
+// 1. `duration > 0`, `volume == 0`:
+//   The auction will last for at least N seconds
+// 2. `duration == 0`, `volume > 0`:
+//   The auction will end once the given volume will match at uncrossing
+// 3. `duration > 0`, `volume > 0`:
+//   The auction will take at least N seconds, but can end sooner if the market can trade a certain volume
 type AuctionDuration struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -445,7 +445,6 @@ type Instrument struct {
 	// The product the instrument is composed of
 	//
 	// Types that are assignable to Product:
-	//
 	//	*Instrument_Future
 	Product isInstrument_Product `protobuf_oneof:"product"`
 }
@@ -932,7 +931,6 @@ type TradableInstrument struct {
 	// Risk model for use by the instrument
 	//
 	// Types that are assignable to RiskModel:
-	//
 	//	*TradableInstrument_LogNormalRiskModel
 	//	*TradableInstrument_SimpleRiskModel
 	RiskModel isTradableInstrument_RiskModel `protobuf_oneof:"risk_model"`

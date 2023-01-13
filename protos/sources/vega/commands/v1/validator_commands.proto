@@ -18,7 +18,7 @@ message ValidatorHeartbeat {
   Signature vega_signature = 3;
 }
 
-// Used announce a node as a new pending validator
+// Used to announce a node as a new pending validator
 message AnnounceNode {
   // Vega public key, required field
   string vega_pub_key = 1;
@@ -134,7 +134,7 @@ message ChainEvent {
   }
 }
 
-// A transaction to allow validator to rotate their Vega keys
+// A transaction to allow a validator to rotate their Vega keys
 message KeyRotateSubmission {
   // New Vega public key derivation index
   uint32 new_pub_key_index = 1;
@@ -146,7 +146,7 @@ message KeyRotateSubmission {
   string current_pub_key_hash = 4;
 }
 
-// A transaction to allow validator to rotate their ethereum keys
+// A transaction to allow a validator to rotate their ethereum keys
 message EthereumKeyRotateSubmission {
   // Target block at which the key rotation will take effect on
   uint64 target_block = 1;
@@ -159,12 +159,12 @@ message EthereumKeyRotateSubmission {
   // Signature that can be verified using the new ethereum address
   Signature ethereum_signature = 5;
 }
-
+// A transaction for a validator to submit a floating point value
 message StateVariableProposal {
   // The state value proposal details
   vega.StateValueProposal proposal = 1;
 }
-
+// A transaction for a validator to suggest a protocol upgrade
 message ProtocolUpgradeProposal {
    // The block height at which to perform the upgrade
    uint64 upgrade_block_height = 1;
@@ -172,12 +172,12 @@ message ProtocolUpgradeProposal {
    string vega_release_tag = 2;
 }
 
-
+// A transaction for a validator to submit signatures to a smart contract
 message IssueSignatures {
-  // The ethereum address which will submit the signatures to the smart-contract
+  // The ethereum address which will submit the signatures to the smart contract
   string submitter = 1;
   // The kind of signatures to generate, namely for whether a signer is being added or removed
   NodeSignatureKind kind = 2;
-  // The ID of the node that will be signed in or out of the smartcontract
+  // The ID of the node that will be signed in or out of the smart contract
   string validator_node_id = 3; // the node for which to emit the signatures.
 }

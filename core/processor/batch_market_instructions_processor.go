@@ -44,7 +44,7 @@ func (p *BMIProcessor) ProcessBatch(
 	idx := 0
 
 	// first we generate the IDs for all new orders,
-	// these needs to be determinitistics
+	// these need to be determinitistic
 	idgen := idgeneration.New(determinitisticID)
 	submissionsIDs := make([]string, 0, len(batch.Submissions))
 	for i := 0; i < len(batch.Submissions); i++ {

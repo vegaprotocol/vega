@@ -24,6 +24,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// A list of fields for a ledger entry
 type LedgerEntryField int32
 
 const (
@@ -135,7 +136,7 @@ func (AccountField) EnumDescriptor() ([]byte, []int) {
 	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{1}
 }
 
-// -- Transfers --
+// The direction of a transfer
 type TransferDirection int32
 
 const (
@@ -188,6 +189,7 @@ func (TransferDirection) EnumDescriptor() ([]byte, []int) {
 	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{2}
 }
 
+// Filter for the type(s) of governance proposals to view
 type ListGovernanceDataRequest_Type int32
 
 const (
@@ -480,7 +482,6 @@ func (x *PageInfo) GetEndCursor() string {
 	return ""
 }
 
-// -- Accounts --
 // Represents an account for an asset on Vega for a particular owner or party
 type AccountBalance struct {
 	state         protoimpl.MessageState
@@ -498,7 +499,7 @@ type AccountBalance struct {
 	Balance string `protobuf:"bytes,3,opt,name=balance,proto3" json:"balance,omitempty"`
 	// Asset identifier for the account
 	Asset string `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
-	// Market identifier for the account, if [`AccountType`](#vega.AccountType).`ACCOUNT_TYPE_GENERAL` this will be empty
+	// Market identifier for the account, if it's a general account, this will be empty
 	MarketId string `protobuf:"bytes,5,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// The account type related to this account
 	Type vega.AccountType `protobuf:"varint,6,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
@@ -790,7 +791,7 @@ func (x *AccountEdge) GetCursor() string {
 	return ""
 }
 
-// Request to subscribe to a stream of (Accounts)[#AccountBalance]
+// Request to subscribe to a stream of accounts
 type ObserveAccountsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -872,7 +873,6 @@ type ObserveAccountsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Response:
-	//
 	//	*ObserveAccountsResponse_Snapshot
 	//	*ObserveAccountsResponse_Updates
 	Response isObserveAccountsResponse_Response `protobuf_oneof:"response"`
@@ -1099,7 +1099,7 @@ type InfoResponse struct {
 
 	// A semver formatted version of the data node
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	// The commit hash from which the data-node was built
+	// The commit hash from which the data node was built
 	CommitHash string `protobuf:"bytes,2,opt,name=commit_hash,json=commitHash,proto3" json:"commit_hash,omitempty"`
 }
 
@@ -1578,7 +1578,7 @@ func (x *ListOrderVersionsResponse) GetOrders() *OrderConnection {
 	return nil
 }
 
-// Request to subscribe to a stream of (Orders)[#vega.Order]
+// Request to subscribe to a stream of orders
 type ObserveOrdersRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1652,7 +1652,6 @@ type ObserveOrdersResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Response:
-	//
 	//	*ObserveOrdersResponse_Snapshot
 	//	*ObserveOrdersResponse_Updates
 	Response isObserveOrdersResponse_Response `protobuf_oneof:"response"`
@@ -1833,7 +1832,6 @@ func (x *OrderUpdates) GetOrders() []*vega.Order {
 	return nil
 }
 
-// -- Positions --
 // Request for a list of positions for a party
 // Optionally, if a market identifier is set, the results will be filtered for that market only
 type ListPositionsRequest struct {
@@ -2061,7 +2059,7 @@ func (x *PositionConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Request to subscribe to a stream of (Positions)[#vega.Position]
+// Request to subscribe to a stream of positions
 type ObservePositionsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2125,7 +2123,6 @@ type ObservePositionsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Response:
-	//
 	//	*ObservePositionsResponse_Snapshot
 	//	*ObservePositionsResponse_Updates
 	Response isObservePositionsResponse_Response `protobuf_oneof:"response"`
@@ -2313,10 +2310,9 @@ type LedgerEntryFilter struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// close_on_account_filters is used to open/close the output set of entries under the AccountFrom/AccountTo values.
-	// If true -> the output set will contain entries which sending and receiving accounts
-	// all match the criteria given in the `AccountFilter` type.
-	// Otherwise will contain entries that have a match the settings in both accounts (sending or receiving) or in one of them.
+	// close_on_account_filters determines whether an entry must have accounts matching both the account_from_filter
+	// and the account_to_filter. If true, entries must have matches in both filters.
+	// If false, entries matching only the account_from_filter or the account_to_filter will also be included.
 	CloseOnAccountFilters bool                `protobuf:"varint,1,opt,name=close_on_account_filters,json=closeOnAccountFilters,proto3" json:"close_on_account_filters,omitempty"`
 	AccountFromFilter     *AccountFilter      `protobuf:"bytes,2,opt,name=account_from_filter,json=accountFromFilter,proto3" json:"account_from_filter,omitempty"`
 	AccountToFilter       *AccountFilter      `protobuf:"bytes,3,opt,name=account_to_filter,json=accountToFilter,proto3" json:"account_to_filter,omitempty"`
@@ -2392,21 +2388,21 @@ type AggregatedLedgerEntry struct {
 	Timestamp int64 `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// The amount of ledger entries for the set of requested accounts at the time above
 	Quantity string `protobuf:"bytes,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	// If filtering by transfer type, the transfer type
+	// The transfer type
 	TransferType vega.TransferType `protobuf:"varint,4,opt,name=transfer_type,json=transferType,proto3,enum=vega.TransferType" json:"transfer_type,omitempty"`
-	// If filtering by asset, the asset ID
+	// The asset ID
 	AssetId *string `protobuf:"bytes,5,opt,name=asset_id,json=assetId,proto3,oneof" json:"asset_id,omitempty"`
 	// The type of account sent from
 	SenderAccountType vega.AccountType `protobuf:"varint,6,opt,name=sender_account_type,json=senderAccountType,proto3,enum=vega.AccountType" json:"sender_account_type,omitempty"`
 	// The type of account received to
 	ReceiverAccountType vega.AccountType `protobuf:"varint,7,opt,name=receiver_account_type,json=receiverAccountType,proto3,enum=vega.AccountType" json:"receiver_account_type,omitempty"`
-	// If filtering by sender party, the party ID
+	// The sender's party ID
 	SenderPartyId *string `protobuf:"bytes,8,opt,name=sender_party_id,json=senderPartyId,proto3,oneof" json:"sender_party_id,omitempty"`
-	// If filtering by receiver party, the party ID
+	// The receiver's party ID
 	ReceiverPartyId *string `protobuf:"bytes,9,opt,name=receiver_party_id,json=receiverPartyId,proto3,oneof" json:"receiver_party_id,omitempty"`
-	// If filtering by sender market, the market ID
+	// The sender market ID
 	SenderMarketId *string `protobuf:"bytes,10,opt,name=sender_market_id,json=senderMarketId,proto3,oneof" json:"sender_market_id,omitempty"`
-	// If filtering by receiver market, the market ID
+	// The receiver market ID
 	ReceiverMarketId *string `protobuf:"bytes,11,opt,name=receiver_market_id,json=receiverMarketId,proto3,oneof" json:"receiver_market_id,omitempty"`
 }
 
@@ -2512,7 +2508,6 @@ func (x *AggregatedLedgerEntry) GetReceiverMarketId() string {
 	return ""
 }
 
-// -- LedgerEntries --
 type ListLedgerEntriesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2847,7 +2842,6 @@ func (x *ListBalanceChangesResponse) GetBalances() *AggregatedBalanceConnection 
 	return nil
 }
 
-// -- Balances --
 type GetBalanceHistoryRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3247,7 +3241,7 @@ func (x *AggregatedBalance) GetAccountType() vega.AccountType {
 	return vega.AccountType(0)
 }
 
-// -- Market Data --
+// Response for Market Data History
 type ObserveMarketsDepthRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4101,7 +4095,7 @@ func (x *MarketDataConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Request to subscribe to a stream of MarketsData
+// Request to subscribe to a stream of data for all markets
 // Optionally, the list can be additionally filtered by market
 type MarketsDataSubscribeRequest struct {
 	state         protoimpl.MessageState
@@ -4423,7 +4417,6 @@ func (x *TransferConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// -- Network Limits --
 // Request for the current network limits
 type GetNetworkLimitsRequest struct {
 	state         protoimpl.MessageState
@@ -4674,10 +4667,8 @@ type Candle struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Timestamp for the point in time when the candle was initially created/opened, in nanoseconds since the epoch
-	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	Start int64 `protobuf:"varint,1,opt,name=start,proto3" json:"start,omitempty"`
 	// Timestamp for the point in time when the candle was last updated, in nanoseconds since the epoch
-	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	LastUpdate int64 `protobuf:"varint,2,opt,name=last_update,json=lastUpdate,proto3" json:"last_update,omitempty"`
 	// Highest price for trading during the candle interval
 	High string `protobuf:"bytes,3,opt,name=high,proto3" json:"high,omitempty"`
@@ -4772,7 +4763,7 @@ func (x *Candle) GetVolume() uint64 {
 	return 0
 }
 
-// Request to subscribe to a stream of (Candles)[#vega.Candle]
+// Request to subscribe to a stream of candles
 type ObserveCandleDataRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4876,11 +4867,9 @@ type ListCandleDataRequest struct {
 
 	// Candle identifier, required field.
 	CandleId string `protobuf:"bytes,1,opt,name=candle_id,json=candleId,proto3" json:"candle_id,omitempty"`
-	// Timestamp to retrieve candles since, in nanoseconds since the epoch,
-	// required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
+	// Timestamp to retrieve candles since, in nanoseconds since the epoch, required field
 	FromTimestamp int64 `protobuf:"varint,2,opt,name=from_timestamp,json=fromTimestamp,proto3" json:"from_timestamp,omitempty"`
-	// Timestamp to retrieve candles since, in nanoseconds since the epoch,
-	// required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
+	// Timestamp to retrieve candles since, in nanoseconds since the epoch, required field
 	ToTimestamp int64 `protobuf:"varint,3,opt,name=to_timestamp,json=toTimestamp,proto3" json:"to_timestamp,omitempty"`
 	// Time interval for the candles, required field specified as a valid postgres interval
 	Interval vega.Interval `protobuf:"varint,4,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
@@ -5114,7 +5103,6 @@ func (x *CandleDataConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// -- Votes --
 // Request for Votes
 type ListVotesRequest struct {
 	state         protoimpl.MessageState
@@ -7588,7 +7576,6 @@ func (x *OracleDataConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// -- Markets --
 type GetMarketRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -7887,7 +7874,6 @@ func (x *MarketConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// -- Parties --
 type GetPartyRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -9288,7 +9274,6 @@ func (x *ObserveRewardsResponse) GetReward() *vega.Reward {
 	return nil
 }
 
-// -- Deposits --
 // A request to get a specific deposit by identifier
 type GetDepositRequest struct {
 	state         protoimpl.MessageState
@@ -9610,7 +9595,6 @@ func (x *DepositsConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// -- Withdrawals --
 // A request to get a specific withdrawal by identifier
 type GetWithdrawalRequest struct {
 	state         protoimpl.MessageState
@@ -9933,7 +9917,6 @@ func (x *WithdrawalsConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// -- Assets --
 type GetAssetRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -10240,7 +10223,6 @@ func (x *AssetsConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// -- Liquidity Provisions --
 type ListLiquidityProvisionsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -10576,7 +10558,6 @@ func (x *ObserveLiquidityProvisionsResponse) GetLiquidityProvisions() []*vega.Li
 	return nil
 }
 
-// -- Governance Data --
 type GetGovernanceDataRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -11341,7 +11322,6 @@ func (x *ObserveDelegationsResponse) GetDelegation() *vega.Delegation {
 	return nil
 }
 
-// -- Nodes --
 type GetNetworkDataRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -11949,7 +11929,7 @@ func (x *NodeSignaturesConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// -- Epochs --
+// Request to fetch epoch data
 type GetEpochRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -12044,7 +12024,6 @@ func (x *GetEpochResponse) GetEpoch() *vega.Epoch {
 	return nil
 }
 
-// -- Estimates --
 // Request to fetch the estimated fee if an order were to trade immediately
 type EstimateFeeRequest struct {
 	state         protoimpl.MessageState
@@ -12602,7 +12581,6 @@ func (x *NetworkParameterConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// -- Checkpoints --
 // The actual data regarding a checkpoint
 type Checkpoint struct {
 	state         protoimpl.MessageState
@@ -13187,7 +13165,6 @@ func (x *GetRiskFactorsResponse) GetRiskFactor() *vega.RiskFactor {
 	return nil
 }
 
-// -- EventBus --
 // Request to subscribe to a stream of one or more event types from the Vega event bus
 type ObserveEventBusRequest struct {
 	state         protoimpl.MessageState
@@ -13319,7 +13296,6 @@ func (x *ObserveEventBusResponse) GetEvents() []*v1.BusEvent {
 	return nil
 }
 
-// -- Transfer Responses --
 type ObserveLedgerMovementsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -13619,7 +13595,6 @@ func (x *KeyRotationConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// -- Ethereum Key Rotations --
 // Request to list ethereum key rotations for nodes, optionally filtered by node
 type ListEthereumKeyRotationsRequest struct {
 	state         protoimpl.MessageState
@@ -13834,8 +13809,7 @@ func (x *EthereumKeyRotationEdge) GetCursor() string {
 	return ""
 }
 
-// -- Vega Time --
-// Request for the current time of the vega network
+// Request for the current time of the Vega network
 type GetVegaTimeRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

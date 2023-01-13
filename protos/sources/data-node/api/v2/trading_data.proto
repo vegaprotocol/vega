@@ -29,18 +29,20 @@ service TradingDataService {
     // If a given account has never had a balance, it will be absent from the list.
     rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse);
 
-    // Subscribe to a stream of Accounts
+    // Accounts subscription
+    //
+    // Subscribe to a stream of accounts
     rpc ObserveAccounts(ObserveAccountsRequest) returns (stream ObserveAccountsResponse);
 
-    // Info
+    // Data node info
     //
-    // Retrieves information about the data-node.
-    // Response contains a semver formatted version of the data node and the commit hash, from which the data-node was built,
+    // Retrieves information about the data node.
+    // Response contains a semver formatted version of the data node and the commit hash, from which the data node was built
     rpc Info(InfoRequest) returns (InfoResponse);
 
     // Order
     //
-    // Gets the current version of an order, or optionally provide a version id to retrieve a given version.
+    // Gets the current version of an order, or optionally provide a version ID to retrieve a given version.
     rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
 
     // Orders list
@@ -53,18 +55,22 @@ service TradingDataService {
     // List all versions of an order in the order history
     rpc ListOrderVersions(ListOrderVersionsRequest) returns (ListOrderVersionsResponse);
 
-    // Subscribe to a stream of Orders
+    // Orders subscription
+    //
+    // Subscribe to a stream of orders
     rpc ObserveOrders(ObserveOrdersRequest) returns (stream ObserveOrdersResponse);
 
     // Positions
     //
-    // Get a list of Positions by Party using cursor based pagination
+    // Get a list of positions by party (public key) using cursor based pagination
     rpc ListPositions(ListPositionsRequest) returns (ListPositionsResponse);
 
-    // Subscribe to a stream of Positions
+    // Positions subscription
+    //
+    // Subscribe to a stream of positions
     rpc ObservePositions(ObservePositionsRequest) returns (stream ObservePositionsResponse);
 
-    // LedgerEntries
+    // Ledger entries
     //
     // Get ledger entries by asset, market, party, account type, transfer type within the given date range.
     // This query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
@@ -84,11 +90,11 @@ service TradingDataService {
     //
     // `ListBalanceChanges` is for querying the change in account balances over a period of time.
     //
-    // An account is defined a 4-tuple of (asset_id, type, party_id, market_id).
-    // - Every account has associated asset and type.
+    // An account is defined as a set of (asset_id, type, party_id, market_id).
+    // - Every account has an associated asset and type.
     // - Certain account types (for example, the global reward pool) do not have an associated party.
     //   These are denoted by the special party identifier 'network'
-    // - Certain account types do not have an associated market (for example general party accounts)
+    // - Certain account types do not have an associated market (for example general party accounts).
     //   These are denoted by the special market identifier '' (the empty string)
     //
     // `ListBalanceChangesRequest` will return a list of
@@ -98,7 +104,7 @@ service TradingDataService {
 
     // Market Data
     //
-    // Get the lastest market data for a given market
+    // Get the latest market data for a given market
     rpc GetLatestMarketData(GetLatestMarketDataRequest) returns (GetLatestMarketDataResponse);
 
     // Market Data list
@@ -111,15 +117,24 @@ service TradingDataService {
     // Get the latest market depth for a given market
     rpc GetLatestMarketDepth(GetLatestMarketDepthRequest) returns (GetLatestMarketDepthResponse);
 
+    // Market depth subscription
+    //
+    // Subscribe to a stream of the latest market depth for a given market
     rpc ObserveMarketsDepth(ObserveMarketsDepthRequest) returns (stream ObserveMarketsDepthResponse);
 
+    // Market depth updates subscription
+    //
+    // Subscribe to a stream of updates on market depth for a given market
     rpc ObserveMarketsDepthUpdates(ObserveMarketsDepthUpdatesRequest) returns (stream ObserveMarketsDepthUpdatesResponse);
 
+    // Market data subscription
+    //
+    // Subscribe to a stream of data about a given market
     rpc ObserveMarketsData(ObserveMarketsDataRequest) returns (stream ObserveMarketsDataResponse);
 
     // Market data history
     //
-    // Get Market Data History for a Market ID between given dates using a cursor based pagination model
+    // Get market data history for a market ID between given dates using a cursor based pagination model
     rpc GetMarketDataHistoryByID(GetMarketDataHistoryByIDRequest) returns (GetMarketDataHistoryByIDResponse);
 
     // Transfers list
@@ -134,9 +149,12 @@ service TradingDataService {
 
     // Candles list
     //
-    // Get candle data for a given candle id
+    // Get candle data for a given candle ID
     rpc ListCandleData(ListCandleDataRequest) returns (ListCandleDataResponse);
-    // Subscribe to a stream of Candle updates
+    
+    // Candle updates
+    //
+    // Subscribe to a stream of candle updates
     rpc ObserveCandleData(ObserveCandleDataRequest) returns (stream ObserveCandleDataResponse);
 
     // Candle intervals list
@@ -148,6 +166,9 @@ service TradingDataService {
     //
     // Get Votes for a Party ID using a cursor based pagination model
     rpc ListVotes(ListVotesRequest) returns (ListVotesResponse);
+    
+    // Votes subscription
+    //
     // Subscribe to a stream of votes
     rpc ObserveVotes(ObserveVotesRequest) returns (stream ObserveVotesResponse);
 
@@ -178,7 +199,7 @@ service TradingDataService {
 
     // Trade (latest)
     //
-    // Get latest Trade
+    // Get latest trade
     rpc GetLastTrade(GetLastTradeRequest) returns (GetLastTradeResponse);
 
     // Trades list
@@ -186,7 +207,9 @@ service TradingDataService {
     // Get a list of all trades, optionally filtered by party/market/order using a cursor based pagination model
     rpc ListTrades(ListTradesRequest) returns (ListTradesResponse);
 
-    // Subscribe to a stream of Trades, optionally filtered by party/market
+    // Trades subscription
+    //
+    // Subscribe to a stream of trades, optionally filtered by party/market
     rpc ObserveTrades(ObserveTradesRequest) returns (stream ObserveTradesResponse);
 
     // Oracle Spec
@@ -221,14 +244,17 @@ service TradingDataService {
 
     // Parties
     //
-    // Get Parties using a cursor based pagination model
+    // Get parties using a cursor based pagination model
     rpc ListParties(ListPartiesRequest) returns (ListPartiesResponse);
 
     // Margin Levels list
     //
-    // Get Margin Levels using a cursor based pagination model
+    // Get margin levels using a cursor based pagination model
     rpc ListMarginLevels(ListMarginLevelsRequest) returns (ListMarginLevelsResponse);
-    // Subscribe to a stream of Margin Levels
+
+    // Margin levels subscription
+    //
+    // Subscribe to a stream of margin levels
     rpc ObserveMarginLevels(ObserveMarginLevelsRequest) returns (stream ObserveMarginLevelsResponse);
 
     // Rewards list
@@ -241,10 +267,14 @@ service TradingDataService {
     // Get reward summaries
     rpc ListRewardSummaries(ListRewardSummariesRequest) returns (ListRewardSummariesResponse);
 
+    // Reward summaries by epoch
+    //
     // List reward summaries by epoch
     rpc ListEpochRewardSummaries(ListEpochRewardSummariesRequest) returns (ListEpochRewardSummariesResponse);
 
-    // subscribe to rewards
+    // Rewards subscription
+    //
+    // Subscribe to a stream of rewards
     rpc ObserveRewards(ObserveRewardsRequest) returns (stream ObserveRewardsResponse);
 
     // Deposit
@@ -269,38 +299,47 @@ service TradingDataService {
 
     // Asset
     //
-    // Get a single asset using it's identifier
+    // Get a single asset using its identifier
     rpc GetAsset(GetAssetRequest) returns (GetAssetResponse);
 
     // Assets list
     //
-    // Get a list of asset using cusor based pagination
+    // Get a list of assets using cusor based pagination
     rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse);
 
     // Liquidity Provisions list
     //
-    // Get a liquidity provision list for a given market using a cursor based pagination
+    // Get a list of liquidity provisions for a given market using a cursor based pagination
     rpc ListLiquidityProvisions(ListLiquidityProvisionsRequest) returns (ListLiquidityProvisionsResponse);
+
+    // Liquidity provision subscription
+    //
     // Get a liquidity provision subscription for a given market and party
     rpc ObserveLiquidityProvisions(ObserveLiquidityProvisionsRequest) returns (stream ObserveLiquidityProvisionsResponse);
 
     // Governance
     //
-    // Get a single proposal details
+    // Get a single proposal's details
     rpc GetGovernanceData(GetGovernanceDataRequest) returns (GetGovernanceDataResponse);
 
     // Governance list
     //
     // List proposals using a cursor based pagination model
     rpc ListGovernanceData(ListGovernanceDataRequest) returns (ListGovernanceDataResponse);
-
+    
+    // Governance proposals subscription
+    //
+    // Subscribe to a stream of governance proposals
     rpc ObserveGovernance(ObserveGovernanceRequest) returns (stream ObserveGovernanceResponse);
 
     // Delegation list
     //
     // List delegations
     rpc ListDelegations(ListDelegationsRequest) returns (ListDelegationsResponse);
-    // subscribe to delegation events
+    
+    // Delegation events subscription
+    //
+    // Subscribe to delegation events
     rpc ObserveDelegations(ObserveDelegationsRequest) returns (stream ObserveDelegationsResponse);
 
     // Network data
@@ -325,7 +364,7 @@ service TradingDataService {
 
     // Epoch
     //
-    // Get data for a specific epoch, if id omitted it gets the current epoch
+    // Get data for a specific epoch, if ID is omitted, it retrieves the current epoch
     rpc GetEpoch(GetEpochRequest) returns (GetEpochResponse);
 
     // Estimate fee
@@ -370,7 +409,7 @@ service TradingDataService {
 
     // Transfer Responses
     //
-    // Subscribe to a stream of Transfer Responses
+    // Subscribe to a stream of transfer responses
     rpc ObserveLedgerMovements(ObserveLedgerMovementsRequest) returns (stream ObserveLedgerMovementsResponse);
 
     // Key Rotations list
@@ -388,12 +427,18 @@ service TradingDataService {
     // Get the current time of the network
     rpc GetVegaTime(GetVegaTimeRequest) returns (GetVegaTimeResponse);
 
-    // Protocol Upgrade status
+    // Protocol upgrade status
+    //
+    // Get status of protocol upgrades
     rpc GetProtocolUpgradeStatus(GetProtocolUpgradeStatusRequest) returns (GetProtocolUpgradeStatusResponse);
 
+    // Protocol upgrade proposals
+    //
     // List protocol upgrades proposals, optionally filtering on status or approver.
     rpc ListProtocolUpgradeProposals(ListProtocolUpgradeProposalsRequest) returns (ListProtocolUpgradeProposalsResponse);
 
+    // Snapshots
+    //
     // List core snapshots taken
     rpc ListCoreSnapshots(ListCoreSnapshotsRequest) returns (ListCoreSnapshotsResponse);
 
@@ -458,6 +503,7 @@ message PageInfo {
 }
 
 // -- Accounts --
+
 // Represents an account for an asset on Vega for a particular owner or party
 message AccountBalance {
     // Unique account identifier (used internally by Vega)
@@ -471,7 +517,7 @@ message AccountBalance {
     string balance = 3;
     // Asset identifier for the account
     string asset = 4;
-    // Market identifier for the account, if [`AccountType`](#vega.AccountType).`ACCOUNT_TYPE_GENERAL` this will be empty
+    // Market identifier for the account, if it's a general account, this will be empty
     string market_id = 5;
     // The account type related to this account
     vega.AccountType type = 6;
@@ -503,7 +549,7 @@ message AccountEdge {
     string cursor = 2;
 }
 
-// Request to subscribe to a stream of (Accounts)[#AccountBalance]
+// Request to subscribe to a stream of accounts
 message ObserveAccountsRequest {
     // Market identifier
     string market_id = 1;
@@ -535,7 +581,7 @@ message AccountUpdates{
     repeated AccountBalance accounts = 1;
 }
 
-// -- Info --
+// -- Data node info --
 
 // node info
 message InfoRequest {}
@@ -543,7 +589,7 @@ message InfoRequest {}
 message InfoResponse {
     // A semver formatted version of the data node
     string version = 1;
-    // The commit hash from which the data-node was built
+    // The commit hash from which the data node was built
     string commit_hash = 2;
 }
 
@@ -602,7 +648,7 @@ message ListOrderVersionsResponse {
     OrderConnection orders = 1;
 }
 
-// Request to subscribe to a stream of (Orders)[#vega.Order]
+// Request to subscribe to a stream of orders
 message ObserveOrdersRequest {
     // The fields for market identifier and party identifier are optional filters:
     // If omitted all orders, for all parties on all markets will be returned on the stream
@@ -640,6 +686,7 @@ message OrderUpdates{
 }
 
 // -- Positions --
+
 // Request for a list of positions for a party
 // Optionally, if a market identifier is set, the results will be filtered for that market only
 message ListPositionsRequest {
@@ -667,7 +714,7 @@ message PositionConnection {
     PageInfo page_info = 2;
 }
 
-// Request to subscribe to a stream of (Positions)[#vega.Position]
+// Request to subscribe to a stream of positions
 message ObservePositionsRequest {
     // Optional party identifier
     optional string party_id = 1;
@@ -698,16 +745,16 @@ message PositionUpdates{
 // LedgerEntryFilter sets filters on returned set of ledger entries.
 // LedgerEntry objects can be filtered by asset_id, market_id, party_id for sending and receiving account, as well as on transfer types.
 message LedgerEntryFilter {
-    // close_on_account_filters is used to open/close the output set of entries under the AccountFrom/AccountTo values.
-    // If true -> the output set will contain entries which sending and receiving accounts
-    // all match the criteria given in the `AccountFilter` type.
-    // Otherwise will contain entries that have a match the settings in both accounts (sending or receiving) or in one of them.
+    // close_on_account_filters determines whether an entry must have accounts matching both the account_from_filter
+    // and the account_to_filter. If true, entries must have matches in both filters.
+    // If false, entries matching only the account_from_filter or the account_to_filter will also be included.
     bool close_on_account_filters = 1;
     AccountFilter account_from_filter = 2;
     AccountFilter account_to_filter = 3;
     repeated vega.TransferType transfer_types = 5;
 }
 
+// A list of fields for a ledger entry
 enum LedgerEntryField {
     LEDGER_ENTRY_FIELD_UNSPECIFIED = 0;
     LEDGER_ENTRY_FIELD_ACCOUNT_FROM_ID = 1;
@@ -716,31 +763,32 @@ enum LedgerEntryField {
 }
 
 message AggregatedLedgerEntry {
-    // Removing ID field as it is not used, there is no id for an aggregated ledger entry.
+    // Removing ID field as it is not used, there is no ID for an aggregated ledger entry.
     reserved 1;
     // Timestamp to of block the result is referring to, in nanoseconds since the epoch
     int64 timestamp = 2;
     // The amount of ledger entries for the set of requested accounts at the time above
     string quantity = 3;
-    // If filtering by transfer type, the transfer type
+    // The transfer type
     vega.TransferType transfer_type = 4;
-    // If filtering by asset, the asset ID
+    // The asset ID
     optional string asset_id = 5;
     // The type of account sent from
     vega.AccountType sender_account_type = 6;
     // The type of account received to
     vega.AccountType receiver_account_type = 7;
-    // If filtering by sender party, the party ID
+    // The sender's party ID
     optional string sender_party_id = 8;
-    // If filtering by receiver party, the party ID
+    // The receiver's party ID
     optional string receiver_party_id = 9;
-    // If filtering by sender market, the market ID
+    // The sender market ID
     optional string sender_market_id = 10;
-    // If filtering by receiver market, the market ID
+    // The receiver market ID
     optional string receiver_market_id = 11;
 }
 
 // -- LedgerEntries --
+
 message ListLedgerEntriesRequest {
     // Limit the ledger entries considered according to the filter supplied
     LedgerEntryFilter filter = 1;
@@ -777,6 +825,7 @@ message ListBalanceChangesResponse {
 
 
 // -- Balances --
+
 message GetBalanceHistoryRequest {
     // Limit the accounts considered according to the filter supplied
     AccountFilter filter = 1;
@@ -838,6 +887,8 @@ message AggregatedBalance {
 }
 
 // -- Market Data --
+
+// Response for Market Data History
 message ObserveMarketsDepthRequest {
     repeated string market_ids = 1;
 }
@@ -934,7 +985,7 @@ message MarketDataConnection {
     PageInfo page_info = 2;
 }
 
-// Request to subscribe to a stream of MarketsData
+// Request to subscribe to a stream of data for all markets
 // Optionally, the list can be additionally filtered by market
 message MarketsDataSubscribeRequest {
     // Market identifier
@@ -946,6 +997,8 @@ message MarketsDataSubscribeResponse {
 }
 
 // -- Transfers --
+
+// The direction of a transfer
 enum TransferDirection {
     TRANSFER_DIRECTION_UNSPECIFIED = 0;
     TRANSFER_DIRECTION_TRANSFER_FROM = 1;
@@ -979,6 +1032,7 @@ message TransferConnection {
 }
 
 // -- Network Limits --
+
 // Request for the current network limits
 message GetNetworkLimitsRequest {}
 
@@ -1013,10 +1067,8 @@ message ListCandleIntervalsResponse {
 // referred to commonly as a candlestick or candle
 message Candle {
     // Timestamp for the point in time when the candle was initially created/opened, in nanoseconds since the epoch
-    // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
     int64 start = 1;
     // Timestamp for the point in time when the candle was last updated, in nanoseconds since the epoch
-    // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
     int64 last_update = 2;
     // Highest price for trading during the candle interval
     string high = 3;
@@ -1030,7 +1082,7 @@ message Candle {
     uint64 volume = 7;
 }
 
-// Request to subscribe to a stream of (Candles)[#vega.Candle]
+// Request to subscribe to a stream of candles
 message ObserveCandleDataRequest {
     // The unique identifier for the candle
     string candle_id = 1;
@@ -1045,12 +1097,10 @@ message ListCandleDataRequest {
     // Candle identifier, required field.
     string candle_id = 1;
 
-    // Timestamp to retrieve candles since, in nanoseconds since the epoch,
-    // required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
+    // Timestamp to retrieve candles since, in nanoseconds since the epoch, required field
     int64 from_timestamp = 2;
 
-    // Timestamp to retrieve candles since, in nanoseconds since the epoch,
-    // required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
+    // Timestamp to retrieve candles since, in nanoseconds since the epoch, required field
     int64 to_timestamp = 3;
 
     // Time interval for the candles, required field specified as a valid postgres interval
@@ -1077,6 +1127,7 @@ message CandleDataConnection {
 }
 
 // -- Votes --
+
 // Request for Votes
 message ListVotesRequest {
   // Party of which the votes are requested
@@ -1415,6 +1466,7 @@ message OracleDataConnection {
 }
 
 // -- Markets --
+
 message GetMarketRequest {
     string market_id = 1;
 }
@@ -1442,6 +1494,7 @@ message MarketConnection {
 }
 
 // -- Parties --
+
 message GetPartyRequest {
     string party_id = 1;
 }
@@ -1578,6 +1631,7 @@ message ObserveRewardsResponse {
 }
 
 // -- Deposits --
+
 // A request to get a specific deposit by identifier
 message GetDepositRequest {
     // The identifier of the deposit
@@ -1614,6 +1668,7 @@ message DepositsConnection {
 }
 
 // -- Withdrawals --
+
 // A request to get a specific withdrawal by identifier
 message GetWithdrawalRequest {
     // The identifier of the withdrawal
@@ -1651,6 +1706,7 @@ message WithdrawalsConnection {
 }
 
 // -- Assets --
+
 message GetAssetRequest {
     string asset_id = 1;
 }
@@ -1679,6 +1735,7 @@ message AssetsConnection {
 }
 
 // -- Liquidity Provisions --
+
 message ListLiquidityProvisionsRequest {
     // The target market for the liquidity provision orders
     optional string market_id = 1;
@@ -1716,6 +1773,7 @@ message ObserveLiquidityProvisionsResponse {
 }
 
 // -- Governance Data --
+
 message GetGovernanceDataRequest {
     optional string proposal_id = 1;
     optional string reference = 2;
@@ -1726,6 +1784,7 @@ message GetGovernanceDataResponse {
 }
 
 message ListGovernanceDataRequest {
+    // Filter for the type(s) of governance proposals to view
     enum Type {
         TYPE_UNSPECIFIED = 0;
         // List all proposals
@@ -1805,6 +1864,7 @@ message ObserveDelegationsResponse {
 }
 
 // -- Nodes --
+
 message GetNetworkDataRequest {}
 
 message GetNetworkDataResponse {
@@ -1862,6 +1922,8 @@ message NodeSignaturesConnection {
 }
 
 // -- Epochs --
+
+// Request to fetch epoch data
 message GetEpochRequest {
    optional uint64 id = 1;
 }
@@ -1871,6 +1933,7 @@ message GetEpochResponse {
 }
 
 // -- Estimates --
+
 // Request to fetch the estimated fee if an order were to trade immediately
 message EstimateFeeRequest {
     // MarketID (used to specify the fee factors)
@@ -1936,6 +1999,7 @@ message NetworkParameterConnection {
 }
 
 // -- Checkpoints --
+
 // The actual data regarding a checkpoint
 message Checkpoint {
     string hash = 1;
@@ -1992,6 +2056,7 @@ message GetRiskFactorsResponse {
 }
 
 // -- EventBus --
+
 // Request to subscribe to a stream of one or more event types from the Vega event bus
 message ObserveEventBusRequest {
     // One or more types of event, required field
@@ -2017,13 +2082,14 @@ message ObserveEventBusResponse {
 }
 
 // -- Transfer Responses --
+
 message ObserveLedgerMovementsRequest {}
 
 message ObserveLedgerMovementsResponse {
     vega.LedgerMovement ledger_movement = 1;
 }
 
-// -- Key Rotations --
+// -- Key rotations --
 
 // Request to list all key rotations
 message ListKeyRotationsRequest {
@@ -2046,7 +2112,8 @@ message KeyRotationConnection {
     PageInfo page_info = 2;
 }
 
-// -- Ethereum Key Rotations --
+// -- Ethereum key rotations --
+
 // Request to list ethereum key rotations for nodes, optionally filtered by node
 message ListEthereumKeyRotationsRequest {
     optional string node_id = 1;
@@ -2069,7 +2136,8 @@ message EthereumKeyRotationEdge {
 }
 
 // -- Vega Time --
-// Request for the current time of the vega network
+
+// Request for the current time of the Vega network
 message GetVegaTimeRequest {}
 
 // Response for the current consensus coordinated time on the Vega network, referred to as "VegaTime"

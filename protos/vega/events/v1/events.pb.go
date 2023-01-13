@@ -358,16 +358,16 @@ type Transfer_Status int32
 const (
 	// Default value
 	Transfer_STATUS_UNSPECIFIED Transfer_Status = 0
-	// Indicate a transfer still being processed
+	// Indicates a transfer still being processed
 	Transfer_STATUS_PENDING Transfer_Status = 1
-	// Indicate of an transfer accepted by the vega network
+	// Indicates a transfer accepted by the Vega network
 	Transfer_STATUS_DONE Transfer_Status = 2
-	// Indicate of an transfer rejected by the vega network
+	// Indicates a transfer rejected by the Vega network
 	Transfer_STATUS_REJECTED Transfer_Status = 3
-	// Indicate of a transfer stopped by the vega network
+	// Indicates a transfer stopped by the Vega network
 	// e.g: no funds left to cover the transfer
 	Transfer_STATUS_STOPPED Transfer_Status = 4
-	// Indicate of a transfer cancel by the user
+	// Indicates a transfer cancelled by the user
 	Transfer_STATUS_CANCELLED Transfer_Status = 5
 )
 
@@ -475,11 +475,11 @@ type StakeLinking_Status int32
 const (
 	// Default value
 	StakeLinking_STATUS_UNSPECIFIED StakeLinking_Status = 0
-	// Indicate an event waiting for confirmation from the vega network
+	// Indicates an event waiting for confirmation from the Vega network
 	StakeLinking_STATUS_PENDING StakeLinking_Status = 1
-	// Indicate of an event accepted by the vega network
+	// Indicates an event accepted by the Vega network
 	StakeLinking_STATUS_ACCEPTED StakeLinking_Status = 2
-	// Indaicate of an event rejected by the vega network
+	// Indicates an event rejected by the Vega network
 	StakeLinking_STATUS_REJECTED StakeLinking_Status = 3
 )
 
@@ -846,7 +846,6 @@ type Transfer struct {
 	Timestamp       int64            `protobuf:"varint,10,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	Reason          *string          `protobuf:"bytes,11,opt,name=reason,proto3,oneof" json:"reason,omitempty"`
 	// Types that are assignable to Kind:
-	//
 	//	*Transfer_OneOff
 	//	*Transfer_Recurring
 	Kind isTransfer_Kind `protobuf_oneof:"kind"`
@@ -1676,7 +1675,7 @@ func (x *RewardPayoutEvent) GetMarket() string {
 	return ""
 }
 
-// ValidatorScoreEvent is the score a validator gets for a given epoch
+//ValidatorScoreEvent is the score a validator gets for a given epoch
 type ValidatorScoreEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1780,7 +1779,7 @@ func (x *ValidatorScoreEvent) GetMultisigScore() string {
 	return ""
 }
 
-// DelegationBalanceEvent - updates on the delegation balance of a party to a node in the current epoch in effect
+//DelegationBalanceEvent - updates on the delegation balance of a party to a node in the current epoch in effect
 type DelegationBalanceEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1923,7 +1922,6 @@ type TransactionResult struct {
 	// The hash of the transaction
 	Hash string `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty"` // The transaction itself as received by the network
 	// Types that are assignable to Transaction:
-	//
 	//	*TransactionResult_OrderSubmission
 	//	*TransactionResult_OrderAmendment
 	//	*TransactionResult_OrderCancellation
@@ -1948,7 +1946,6 @@ type TransactionResult struct {
 	// extra details about the transaction processing
 	//
 	// Types that are assignable to Extra:
-	//
 	//	*TransactionResult_Success
 	//	*TransactionResult_Failure
 	Extra isTransactionResult_Extra `protobuf_oneof:"extra"`
@@ -2327,7 +2324,6 @@ type TxErrorEvent struct {
 	// The transaction that failed
 	//
 	// Types that are assignable to Transaction:
-	//
 	//	*TxErrorEvent_OrderSubmission
 	//	*TxErrorEvent_OrderAmendment
 	//	*TxErrorEvent_OrderCancellation
@@ -4022,7 +4018,7 @@ func (x *ProtocolUpgradeEvent) GetStatus() ProtocolUpgradeProposalStatus {
 	return ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_UNSPECIFIED
 }
 
-// StateVarEvent - updates on state changes in state variable consensus
+//StateVarEvent - updates on state changes in state variable consensus
 type StateVar struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4383,7 +4379,6 @@ type BusEvent struct {
 	// The type of bus event (one of the list below)
 	Type BusEventType `protobuf:"varint,3,opt,name=type,proto3,enum=vega.events.v1.BusEventType" json:"type,omitempty"`
 	// Types that are assignable to Event:
-	//
 	//	*BusEvent_TimeUpdate
 	//	*BusEvent_LedgerMovements
 	//	*BusEvent_PositionResolution
