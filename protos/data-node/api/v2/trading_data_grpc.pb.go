@@ -75,16 +75,16 @@ type TradingDataServiceClient interface {
 	//   - listing ledger entries with filtering on the sending AND receiving account
 	//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 	ListLedgerEntries(ctx context.Context, in *ListLedgerEntriesRequest, opts ...grpc.CallOption) (*ListLedgerEntriesResponse, error)
-	//  Balances
+	//	Balances
 	//
 	// `ListBalanceChanges` is for querying the change in account balances over a period of time.
 	//
 	// An account is defined as a set of (asset_id, type, party_id, market_id).
-	// - Every account has an associated asset and type.
-	// - Certain account types (for example, the global reward pool) do not have an associated party.
-	//   These are denoted by the special party identifier 'network'
-	// - Certain account types do not have an associated market (for example general party accounts).
-	//   These are denoted by the special market identifier '' (the empty string)
+	//   - Every account has an associated asset and type.
+	//   - Certain account types (for example, the global reward pool) do not have an associated party.
+	//     These are denoted by the special party identifier 'network'
+	//   - Certain account types do not have an associated market (for example general party accounts).
+	//     These are denoted by the special market identifier ” (the empty string)
 	//
 	// `ListBalanceChangesRequest` will return a list of
 	// `(vega_time, asset_id, account_type, party_id, market_id, balance)`
@@ -1559,16 +1559,16 @@ type TradingDataServiceServer interface {
 	//   - listing ledger entries with filtering on the sending AND receiving account
 	//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 	ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error)
-	//  Balances
+	//	Balances
 	//
 	// `ListBalanceChanges` is for querying the change in account balances over a period of time.
 	//
 	// An account is defined as a set of (asset_id, type, party_id, market_id).
-	// - Every account has an associated asset and type.
-	// - Certain account types (for example, the global reward pool) do not have an associated party.
-	//   These are denoted by the special party identifier 'network'
-	// - Certain account types do not have an associated market (for example general party accounts).
-	//   These are denoted by the special market identifier '' (the empty string)
+	//   - Every account has an associated asset and type.
+	//   - Certain account types (for example, the global reward pool) do not have an associated party.
+	//     These are denoted by the special party identifier 'network'
+	//   - Certain account types do not have an associated market (for example general party accounts).
+	//     These are denoted by the special market identifier ” (the empty string)
 	//
 	// `ListBalanceChangesRequest` will return a list of
 	// `(vega_time, asset_id, account_type, party_id, market_id, balance)`

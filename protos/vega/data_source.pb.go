@@ -84,6 +84,7 @@ type DataSourceDefinition struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to SourceType:
+	//
 	//	*DataSourceDefinition_Internal
 	//	*DataSourceDefinition_External
 	SourceType isDataSourceDefinition_SourceType `protobuf_oneof:"source_type"`
@@ -217,6 +218,7 @@ type DataSourceDefinitionInternal struct {
 	// Types of internal data sources
 	//
 	// Types that are assignable to SourceType:
+	//
 	//	*DataSourceDefinitionInternal_Time
 	SourceType isDataSourceDefinitionInternal_SourceType `protobuf_oneof:"source_type"`
 }
@@ -287,6 +289,7 @@ type DataSourceDefinitionExternal struct {
 	// Types of External data sources
 	//
 	// Types that are assignable to SourceType:
+	//
 	//	*DataSourceDefinitionExternal_Oracle
 	SourceType isDataSourceDefinitionExternal_SourceType `protobuf_oneof:"source_type"`
 }

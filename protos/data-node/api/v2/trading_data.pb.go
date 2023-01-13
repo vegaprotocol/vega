@@ -873,6 +873,7 @@ type ObserveAccountsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Response:
+	//
 	//	*ObserveAccountsResponse_Snapshot
 	//	*ObserveAccountsResponse_Updates
 	Response isObserveAccountsResponse_Response `protobuf_oneof:"response"`
@@ -1652,6 +1653,7 @@ type ObserveOrdersResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Response:
+	//
 	//	*ObserveOrdersResponse_Snapshot
 	//	*ObserveOrdersResponse_Updates
 	Response isObserveOrdersResponse_Response `protobuf_oneof:"response"`
@@ -2123,6 +2125,7 @@ type ObservePositionsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Response:
+	//
 	//	*ObservePositionsResponse_Snapshot
 	//	*ObservePositionsResponse_Updates
 	Response isObservePositionsResponse_Response `protobuf_oneof:"response"`

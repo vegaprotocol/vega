@@ -1019,6 +1019,7 @@ type Transfer struct {
 	// Specific details of the transfer
 	//
 	// Types that are assignable to Kind:
+	//
 	//	*Transfer_OneOff
 	//	*Transfer_Recurring
 	Kind isTransfer_Kind `protobuf_oneof:"kind"`

@@ -122,6 +122,7 @@ type Signer struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Signer:
+	//
 	//	*Signer_PubKey
 	//	*Signer_EthAddress
 	Signer isSigner_Signer `protobuf_oneof:"signer"`

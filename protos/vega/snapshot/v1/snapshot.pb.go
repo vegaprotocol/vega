@@ -379,6 +379,7 @@ type Payload struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Data:
+	//
 	//	*Payload_ActiveAssets
 	//	*Payload_PendingAssets
 	//	*Payload_BankingWithdrawals
