@@ -76,12 +76,13 @@ func fprintErrorJSON(w io.Writer, err error) {
 
 func autoCompleteWallet(cmd *cobra.Command, vegaHome string, property string) {
 	err := cmd.RegisterFlagCompletionFunc(property, func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		s, err := wallets.InitialiseStore(vegaHome)
+		walletStore, err := wallets.InitialiseStore(vegaHome)
 		if err != nil {
 			return nil, cobra.ShellCompDirectiveDefault
 		}
+		defer walletStore.Close()
 
-		listWallet := api.NewAdminListWallets(s)
+		listWallet := api.NewAdminListWallets(walletStore)
 		rawResult, errorDetails := listWallet.Handle(context.Background(), nil)
 		if errorDetails != nil {
 			return nil, cobra.ShellCompDirectiveDefault

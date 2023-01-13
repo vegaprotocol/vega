@@ -34,12 +34,13 @@ type UpdatePassphraseHandler func(api.AdminUpdatePassphraseParams) error
 
 func NewCmdUpdatePassphrase(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminUpdatePassphraseParams) error {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		updatePassphrase := api.NewAdminUpdatePassphrase(s)
+		updatePassphrase := api.NewAdminUpdatePassphrase(walletStore)
 
 		_, errDetails := updatePassphrase.Handle(context.Background(), params)
 		if errDetails != nil {

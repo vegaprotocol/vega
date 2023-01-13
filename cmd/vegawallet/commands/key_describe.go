@@ -30,12 +30,13 @@ type DescribeKeyHandler func(api.AdminDescribeKeyParams) (api.AdminDescribeKeyRe
 
 func NewCmdDescribeKey(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminDescribeKeyParams) (api.AdminDescribeKeyResult, error) {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return api.AdminDescribeKeyResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		describeKey := api.NewAdminDescribeKey(s)
+		describeKey := api.NewAdminDescribeKey(walletStore)
 		rawResult, errDetails := describeKey.Handle(context.Background(), params)
 		if errDetails != nil {
 			return api.AdminDescribeKeyResult{}, errors.New(errDetails.Data)
