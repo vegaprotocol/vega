@@ -870,8 +870,6 @@ type ComplexityRoot struct {
 	}
 
 	NetworkLimits struct {
-		BootstrapBlockCount      func(childComplexity int) int
-		BootstrapFinished        func(childComplexity int) int
 		CanProposeAsset          func(childComplexity int) int
 		CanProposeMarket         func(childComplexity int) int
 		GenesisLoaded            func(childComplexity int) int
@@ -5270,20 +5268,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketTimestamps.Proposed(childComplexity), true
-
-	case "NetworkLimits.bootstrapBlockCount":
-		if e.complexity.NetworkLimits.BootstrapBlockCount == nil {
-			break
-		}
-
-		return e.complexity.NetworkLimits.BootstrapBlockCount(childComplexity), true
-
-	case "NetworkLimits.bootstrapFinished":
-		if e.complexity.NetworkLimits.BootstrapFinished == nil {
-			break
-		}
-
-		return e.complexity.NetworkLimits.BootstrapFinished(childComplexity), true
 
 	case "NetworkLimits.canProposeAsset":
 		if e.complexity.NetworkLimits.CanProposeAsset == nil {
@@ -31862,50 +31846,6 @@ func (ec *executionContext) fieldContext_NetworkLimits_canProposeAsset(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _NetworkLimits_bootstrapFinished(ctx context.Context, field graphql.CollectedField, obj *vega.NetworkLimits) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_NetworkLimits_bootstrapFinished(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.BootstrapFinished, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_NetworkLimits_bootstrapFinished(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "NetworkLimits",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _NetworkLimits_proposeMarketEnabled(ctx context.Context, field graphql.CollectedField, obj *vega.NetworkLimits) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_NetworkLimits_proposeMarketEnabled(ctx, field)
 	if err != nil {
@@ -31989,50 +31929,6 @@ func (ec *executionContext) fieldContext_NetworkLimits_proposeAssetEnabled(ctx c
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _NetworkLimits_bootstrapBlockCount(ctx context.Context, field graphql.CollectedField, obj *vega.NetworkLimits) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_NetworkLimits_bootstrapBlockCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.BootstrapBlockCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(uint32)
-	fc.Result = res
-	return ec.marshalNInt2uint32(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_NetworkLimits_bootstrapBlockCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "NetworkLimits",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -46434,14 +46330,10 @@ func (ec *executionContext) fieldContext_Query_networkLimits(ctx context.Context
 				return ec.fieldContext_NetworkLimits_canProposeMarket(ctx, field)
 			case "canProposeAsset":
 				return ec.fieldContext_NetworkLimits_canProposeAsset(ctx, field)
-			case "bootstrapFinished":
-				return ec.fieldContext_NetworkLimits_bootstrapFinished(ctx, field)
 			case "proposeMarketEnabled":
 				return ec.fieldContext_NetworkLimits_proposeMarketEnabled(ctx, field)
 			case "proposeAssetEnabled":
 				return ec.fieldContext_NetworkLimits_proposeAssetEnabled(ctx, field)
-			case "bootstrapBlockCount":
-				return ec.fieldContext_NetworkLimits_bootstrapBlockCount(ctx, field)
 			case "genesisLoaded":
 				return ec.fieldContext_NetworkLimits_genesisLoaded(ctx, field)
 			case "proposeMarketEnabledFrom":
@@ -68254,13 +68146,6 @@ func (ec *executionContext) _NetworkLimits(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "bootstrapFinished":
-
-			out.Values[i] = ec._NetworkLimits_bootstrapFinished(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "proposeMarketEnabled":
 
 			out.Values[i] = ec._NetworkLimits_proposeMarketEnabled(ctx, field, obj)
@@ -68271,13 +68156,6 @@ func (ec *executionContext) _NetworkLimits(ctx context.Context, sel ast.Selectio
 		case "proposeAssetEnabled":
 
 			out.Values[i] = ec._NetworkLimits_proposeAssetEnabled(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "bootstrapBlockCount":
-
-			out.Values[i] = ec._NetworkLimits_bootstrapBlockCount(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
