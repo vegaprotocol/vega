@@ -36,7 +36,7 @@ type Watcher struct {
 	configFilePath string
 
 	// to be used as an atomic
-	hasChanged         int32
+	hasChanged         atomic.Bool
 	cfgUpdateListeners []func(Config)
 	cfgHandlers        []func(*Config) error
 
@@ -99,7 +99,7 @@ func NewWatcher(ctx context.Context, log *logging.Logger, vegaPaths paths.Paths,
 }
 
 func (w *Watcher) OnTimeUpdate(_ context.Context, _ time.Time) {
-	if atomic.LoadInt32(&w.hasChanged) == 0 {
+	if !w.hasChanged.Load() {
 		// no changes we can return straight away
 		return
 	}
@@ -121,7 +121,7 @@ func (w *Watcher) OnTimeUpdate(_ context.Context, _ time.Time) {
 	}
 
 	// reset the atomic
-	atomic.StoreInt32(&w.hasChanged, 0)
+	w.hasChanged.Store(false)
 }
 
 // Get return the last update of the configuration.
@@ -205,9 +205,7 @@ func (w *Watcher) watch(ctx context.Context, watcher *fsnotify.Watcher) {
 					w.log.Error("unable to load configuration", logging.Error(err))
 					continue
 				}
-				// set hasChanged to 1 to trigger configs update
-				// next block
-				atomic.StoreInt32(&w.hasChanged, 1)
+				w.hasChanged.Store(true)
 			}
 		case err := <-watcher.Errors:
 			w.log.Error("config watcher received error event", logging.Error(err))

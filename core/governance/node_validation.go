@@ -52,7 +52,7 @@ type NodeValidation struct {
 
 type nodeProposal struct {
 	*proposal
-	state   uint32
+	state   atomic.Uint32
 	checker func() error
 }
 
@@ -120,7 +120,7 @@ func (n *NodeValidation) onResChecked(i interface{}, valid bool) {
 	if valid {
 		newState = okProposal
 	}
-	atomic.StoreUint32(&np.state, newState)
+	np.state.Store(newState)
 }
 
 func (n *NodeValidation) getProposal(id string) (*nodeProposal, bool) {
@@ -157,12 +157,9 @@ func (n *NodeValidation) OnTick(t time.Time) (accepted []*proposal, rejected []*
 	for _, prop := range n.nodeProposals {
 		// this proposal has passed the node-voting period, or all nodes have voted/approved
 		// time expired, or all vote aggregated, and own vote sent
-		state := atomic.LoadUint32(&prop.state)
-		if state == pendingValidationProposal {
+		switch prop.state.Load() {
+		case pendingValidationProposal:
 			continue
-		}
-
-		switch state {
 		case okProposal:
 			accepted = append(accepted, prop.proposal)
 		case rejectedProposal:
@@ -208,6 +205,7 @@ func (n *NodeValidation) Start(ctx context.Context, p *types.Proposal) error {
 	if err != nil {
 		return err
 	}
+
 	np := &nodeProposal{
 		proposal: &proposal{
 			Proposal:     p,
@@ -215,9 +213,10 @@ func (n *NodeValidation) Start(ctx context.Context, p *types.Proposal) error {
 			no:           map[string]*types.Vote{},
 			invalidVotes: map[string]*types.Vote{},
 		},
-		state:   pendingValidationProposal,
+		state:   atomic.Uint32{},
 		checker: checker,
 	}
+	np.state.Store(pendingValidationProposal)
 	n.nodeProposals = append(n.nodeProposals, np)
 
 	return n.witness.StartCheck(
@@ -236,9 +235,10 @@ func (n *NodeValidation) restore(ctx context.Context, p *types.Proposal) error {
 			no:           map[string]*types.Vote{},
 			invalidVotes: map[string]*types.Vote{},
 		},
-		state:   pendingValidationProposal,
+		state:   atomic.Uint32{},
 		checker: checker,
 	}
+	np.state.Store(pendingValidationProposal)
 	n.nodeProposals = append(n.nodeProposals, np)
 	if err := n.witness.RestoreResource(np, n.onResChecked); err != nil {
 		n.log.Panic("unable to restore witness resource", logging.String("id", np.ID), logging.Error(err))
