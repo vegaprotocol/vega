@@ -6,6 +6,8 @@ import (
 	"os"
 	"sort"
 
+	"github.com/jackc/pgx/v4/pgxpool"
+
 	coreConfig "code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/aggregation"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
@@ -104,7 +106,13 @@ func (cmd *showCmd) Execute(_ []string) error {
 		output.AvailableHistoryBlockEnd = contiguousHistory[len(contiguousHistory)-1].HeightTo
 	}
 
-	span, err := sqlstore.GetDatanodeBlockSpan(context.Background(), cmd.Config.SQLStore.ConnectionConfig)
+	pool, err := getCommandConnPool(cmd.Config.SQLStore.ConnectionConfig)
+	if err != nil {
+		handleErr(log, cmd.Output.IsJSON(), "failed to get command conn pool", err)
+	}
+	defer pool.Close()
+
+	span, err := sqlstore.GetDatanodeBlockSpan(context.Background(), pool)
 	if err != nil {
 		handleErr(log, cmd.Output.IsJSON(), "failed to get datanode block span", err)
 		os.Exit(1)
@@ -125,6 +133,17 @@ func (cmd *showCmd) Execute(_ []string) error {
 	}
 
 	return nil
+}
+
+func getCommandConnPool(conf sqlstore.ConnectionConfig) (*pgxpool.Pool, error) {
+	conf.MaxConnPoolSize = 3
+
+	connPool, err := sqlstore.CreateConnectionPool(conf)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create connection pool: %w", err)
+	}
+
+	return connPool, nil
 }
 
 func GetHighestContiguousHistoryFromHistorySegments(histories []*v2.HistorySegment) []aggregation.AggregatedHistorySegment {

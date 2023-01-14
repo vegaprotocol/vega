@@ -26,12 +26,13 @@ var ErrChainNotFound = errors.New("no chain found")
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/networkhistory_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/networkhistory NetworkHistory
 type NetworkHistory interface {
 	FetchHistorySegment(ctx context.Context, historySegmentID string) (store.SegmentIndexEntry, error)
-	LoadNetworkHistoryIntoDatanode(ctx context.Context) (snapshot.LoadResult, error)
+	LoadNetworkHistoryIntoDatanode(ctx context.Context, cfg sqlstore.ConnectionConfig) (snapshot.LoadResult, error)
 	GetMostRecentHistorySegmentFromPeers(ctx context.Context, grpcAPIPorts []int) (*PeerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, error)
+	GetDatanodeBlockSpan(ctx context.Context) (sqlstore.DatanodeBlockSpan, error)
 }
 
 func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg InitializationConfig, log *logging.Logger,
-	networkHistoryService NetworkHistory, currentSpan sqlstore.DatanodeBlockSpan,
+	connCfg sqlstore.ConnectionConfig, networkHistoryService NetworkHistory,
 	grpcPorts []int,
 ) error {
 	ctx, ctxCancelFn := context.WithTimeout(parentCtx, cfg.TimeOut.Duration)
@@ -56,6 +57,11 @@ func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg Initial
 			logging.String("segment", mostRecentHistorySegment.String()), logging.String("peer", response.PeerAddr))
 
 		toSegmentID = mostRecentHistorySegment.HistorySegmentId
+
+		currentSpan, err := networkHistoryService.GetDatanodeBlockSpan(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get datanode block span: %w", err)
+		}
 
 		if currentSpan.HasData {
 			if currentSpan.ToHeight >= mostRecentHistorySegment.ToHeight {
@@ -91,7 +97,7 @@ func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg Initial
 	log.Infof("fetched %d blocks from network history", blocksFetched)
 
 	log.Infof("loading history into the datanode")
-	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanode(ctx)
+	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanode(ctx, connCfg)
 	if err != nil {
 		return fmt.Errorf("failed to load history into the datanode%w", err)
 	}
