@@ -749,8 +749,8 @@ message LedgerEntryFilter {
     // and the account_to_filter. If true, entries must have matches in both filters.
     // If false, entries matching only the account_from_filter or the account_to_filter will also be included.
     bool close_on_account_filters = 1;
-    AccountFilter account_from_filter = 2;
-    AccountFilter account_to_filter = 3;
+    AccountFilter from_account_filter = 2;
+    AccountFilter to_account_filter = 3;
     repeated vega.TransferType transfer_types = 5;
 }
 
@@ -774,17 +774,21 @@ message AggregatedLedgerEntry {
     // The asset ID
     optional string asset_id = 5;
     // The type of account sent from
-    vega.AccountType sender_account_type = 6;
+    vega.AccountType from_account_type = 6;
     // The type of account received to
-    vega.AccountType receiver_account_type = 7;
+    vega.AccountType to_account_type = 7;
     // The sender's party ID
-    optional string sender_party_id = 8;
+    optional string from_account_party_id = 8;
     // The receiver's party ID
-    optional string receiver_party_id = 9;
+    optional string to_account_party_id = 9;
     // The sender market ID
-    optional string sender_market_id = 10;
+    optional string from_account_market_id = 10;
     // The receiver market ID
-    optional string receiver_market_id = 11;
+    optional string to_account_market_id = 11;
+    // Sender account balance after the transfer
+    string from_account_balance = 12;
+    // Receiver account balance after the transfer
+    string to_account_balance = 13;
 }
 
 // -- LedgerEntries --

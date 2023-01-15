@@ -210,20 +210,24 @@ func (a PostTransferBalances) IntoProto() []*proto.PostTransferBalance {
 }
 
 type LedgerEntry struct {
-	FromAccount *AccountDetails
-	ToAccount   *AccountDetails
-	Amount      *num.Uint
-	Type        TransferType
-	Timestamp   int64
+	FromAccount        *AccountDetails
+	ToAccount          *AccountDetails
+	Amount             *num.Uint
+	Type               TransferType
+	Timestamp          int64
+	FromAccountBalance *num.Uint
+	ToAccountBalance   *num.Uint
 }
 
 func (l *LedgerEntry) IntoProto() *proto.LedgerEntry {
 	return &proto.LedgerEntry{
-		FromAccount: l.FromAccount.IntoProto(),
-		ToAccount:   l.ToAccount.IntoProto(),
-		Amount:      num.UintToString(l.Amount),
-		Type:        l.Type,
-		Timestamp:   l.Timestamp,
+		FromAccount:        l.FromAccount.IntoProto(),
+		ToAccount:          l.ToAccount.IntoProto(),
+		Amount:             num.UintToString(l.Amount),
+		Type:               l.Type,
+		Timestamp:          l.Timestamp,
+		FromAccountBalance: num.UintToString(l.FromAccountBalance),
+		ToAccountBalance:   num.UintToString(l.ToAccountBalance),
 	}
 }
 

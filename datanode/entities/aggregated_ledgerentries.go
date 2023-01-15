@@ -20,12 +20,14 @@ type AggregatedLedgerEntry struct {
 	TransferType *LedgerMovementType
 	AssetID      *AssetID
 
-	SenderPartyID       *PartyID
-	ReceiverPartyID     *PartyID
-	SenderMarketID      *MarketID
-	ReceiverMarketID    *MarketID
-	SenderAccountType   *types.AccountType
-	ReceiverAccountType *types.AccountType
+	FromAccountPartyID  *PartyID
+	ToAccountPartyID    *PartyID
+	FromAccountMarketID *MarketID
+	ToAccountMarketID   *MarketID
+	FromAccountType     *types.AccountType
+	ToAccountType       *types.AccountType
+	FromAccountBalance  decimal.Decimal
+	ToAccountBalance    decimal.Decimal
 }
 
 func (ledgerEntries *AggregatedLedgerEntry) ToProto() *v2.AggregatedLedgerEntry {
@@ -45,41 +47,44 @@ func (ledgerEntries *AggregatedLedgerEntry) ToProto() *v2.AggregatedLedgerEntry 
 		}
 	}
 
-	if ledgerEntries.SenderPartyID != nil {
-		partyIDString := ledgerEntries.SenderPartyID.String()
+	if ledgerEntries.FromAccountPartyID != nil {
+		partyIDString := ledgerEntries.FromAccountPartyID.String()
 		if partyIDString != "" {
-			lep.SenderPartyId = &partyIDString
+			lep.FromAccountPartyId = &partyIDString
 		}
 	}
 
-	if ledgerEntries.ReceiverPartyID != nil {
-		partyIDString := ledgerEntries.ReceiverPartyID.String()
+	if ledgerEntries.ToAccountPartyID != nil {
+		partyIDString := ledgerEntries.ToAccountPartyID.String()
 		if partyIDString != "" {
-			lep.ReceiverPartyId = &partyIDString
+			lep.ToAccountPartyId = &partyIDString
 		}
 	}
 
-	if ledgerEntries.SenderMarketID != nil {
-		marketIDString := ledgerEntries.SenderMarketID.String()
+	if ledgerEntries.FromAccountMarketID != nil {
+		marketIDString := ledgerEntries.FromAccountMarketID.String()
 		if marketIDString != "" {
-			lep.SenderMarketId = &marketIDString
+			lep.FromAccountMarketId = &marketIDString
 		}
 	}
 
-	if ledgerEntries.ReceiverMarketID != nil {
-		marketIDString := ledgerEntries.ReceiverMarketID.String()
+	if ledgerEntries.ToAccountMarketID != nil {
+		marketIDString := ledgerEntries.ToAccountMarketID.String()
 		if marketIDString != "" {
-			lep.ReceiverMarketId = &marketIDString
+			lep.ToAccountMarketId = &marketIDString
 		}
 	}
 
-	if ledgerEntries.SenderAccountType != nil {
-		lep.SenderAccountType = *ledgerEntries.SenderAccountType
+	if ledgerEntries.FromAccountType != nil {
+		lep.FromAccountType = *ledgerEntries.FromAccountType
 	}
 
-	if ledgerEntries.ReceiverAccountType != nil {
-		lep.ReceiverAccountType = *ledgerEntries.ReceiverAccountType
+	if ledgerEntries.ToAccountType != nil {
+		lep.ToAccountType = *ledgerEntries.ToAccountType
 	}
+
+	lep.FromAccountBalance = ledgerEntries.FromAccountBalance.String()
+	lep.ToAccountBalance = ledgerEntries.ToAccountBalance.String()
 
 	return lep
 }

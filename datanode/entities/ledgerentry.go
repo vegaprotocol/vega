@@ -22,32 +22,38 @@ import (
 )
 
 type LedgerEntry struct {
-	LedgerEntryTime time.Time
-	AccountFromID   AccountID
-	AccountToID     AccountID
-	Quantity        decimal.Decimal
-	TxHash          TxHash
-	VegaTime        time.Time
-	TransferTime    time.Time
-	Type            LedgerMovementType
+	LedgerEntryTime    time.Time
+	FromAccountID      AccountID
+	ToAccountID        AccountID
+	Quantity           decimal.Decimal
+	TxHash             TxHash
+	VegaTime           time.Time
+	TransferTime       time.Time
+	Type               LedgerMovementType
+	FromAccountBalance decimal.Decimal
+	ToAccountBalance   decimal.Decimal
 }
 
 var LedgerEntryColumns = []string{
 	"ledger_entry_time",
 	"account_from_id", "account_to_id", "quantity",
 	"tx_hash", "vega_time", "transfer_time", "type",
+	"account_from_balance",
+	"account_to_balance",
 }
 
 func (le LedgerEntry) ToRow() []any {
 	return []any{
 		le.LedgerEntryTime,
-		le.AccountFromID,
-		le.AccountToID,
+		le.FromAccountID,
+		le.ToAccountID,
 		le.Quantity,
 		le.TxHash,
 		le.VegaTime,
 		le.TransferTime,
 		le.Type,
+		le.FromAccountBalance,
+		le.ToAccountBalance,
 	}
 }
 

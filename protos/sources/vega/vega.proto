@@ -825,6 +825,10 @@ message LedgerEntry {
   TransferType type = 4;
   // Timestamps
   int64 timestamp = 5;
+  // Sender account balance after the transfer
+  string from_account_balance = 6;
+  // Receiver account balance after the transfer
+  string to_account_balance = 7;
 }
 
 // Represents the balance for an account during a transfer

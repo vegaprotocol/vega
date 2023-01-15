@@ -69,7 +69,7 @@ func (ls *Ledger) GetByLedgerEntryTime(ctx context.Context, ledgerEntryTime time
 	le := entities.LedgerEntry{}
 
 	return le, ls.wrapE(pgxscan.Get(ctx, ls.Connection, &le,
-		`SELECT ledger_entry_time, quantity, tx_hash, vega_time, transfer_time, type
+		`SELECT ledger_entry_time, quantity, tx_hash, vega_time, transfer_time, type, account_from_balance, account_to_balance
 		 FROM ledger WHERE ledger_entry_time =$1`,
 		ledgerEntryTime))
 }
@@ -78,7 +78,7 @@ func (ls *Ledger) GetAll(ctx context.Context) ([]entities.LedgerEntry, error) {
 	defer metrics.StartSQLQuery("Ledger", "GetAll")()
 	ledgerEntries := []entities.LedgerEntry{}
 	err := pgxscan.Select(ctx, ls.Connection, &ledgerEntries, `
-		SELECT ledger_entry_time, quantity, tx_hash, vega_time, transfer_time, type
+		SELECT ledger_entry_time, quantity, tx_hash, vega_time, transfer_time, type, account_from_balance, account_to_balance
 		FROM ledger`)
 	return ledgerEntries, err
 }
@@ -130,7 +130,8 @@ func (ls *Ledger) Query(
 	pageQuery := fmt.Sprintf(`SELECT
 			vega_time, quantity, transfer_type, asset_id,
 			account_from_market_id, account_from_party_id, account_from_account_type,
-			account_to_market_id, account_to_party_id, account_to_account_type
+			account_to_market_id, account_to_party_id, account_to_account_type,
+			account_from_balance, account_to_balance
 		FROM entries
 		%s`, whereDate)
 
@@ -176,6 +177,8 @@ type ledgerEntriesScanned struct {
 
 	AccountFromMarketID entities.MarketID
 	AccountToMarketID   entities.MarketID
+	AccountFromBalance  decimal.Decimal
+	AccountToBalance    decimal.Decimal
 }
 
 func parseScanned(scanned []ledgerEntriesScanned) []entities.AggregatedLedgerEntry {
@@ -186,12 +189,14 @@ func parseScanned(scanned []ledgerEntriesScanned) []entities.AggregatedLedgerEnt
 				VegaTime:            scanned[i].VegaTime,
 				Quantity:            scanned[i].Quantity,
 				AssetID:             &scanned[i].AssetID,
-				SenderPartyID:       &scanned[i].AccountFromPartyID,
-				ReceiverPartyID:     &scanned[i].AccountToPartyID,
-				SenderAccountType:   &scanned[i].AccountFromAccountType,
-				ReceiverAccountType: &scanned[i].AccountToAccountType,
-				SenderMarketID:      &scanned[i].AccountFromMarketID,
-				ReceiverMarketID:    &scanned[i].AccountToMarketID,
+				FromAccountPartyID:  &scanned[i].AccountFromPartyID,
+				ToAccountPartyID:    &scanned[i].AccountToPartyID,
+				FromAccountType:     &scanned[i].AccountFromAccountType,
+				ToAccountType:       &scanned[i].AccountToAccountType,
+				FromAccountMarketID: &scanned[i].AccountFromMarketID,
+				ToAccountMarketID:   &scanned[i].AccountToMarketID,
+				FromAccountBalance:  scanned[i].AccountFromBalance,
+				ToAccountBalance:    scanned[i].AccountToBalance,
 			})
 
 			tt := scanned[i].TransferType
@@ -211,12 +216,13 @@ func parseScanned(scanned []ledgerEntriesScanned) []entities.AggregatedLedgerEnt
 func createDynamicQuery(filterQueries [3]string, closeOnAccountFilters entities.CloseOnLimitOperation) string {
 	whereClause := ""
 
-	tableNameAccountFromQuery := "ledger_entries_account_from_filter"
+	tableNameFromAccountQuery := "ledger_entries_from_account_filter"
 	query := `
 		%s AS (
 			SELECT
 				ledger.vega_time AS vega_time, ledger.quantity, ledger.type AS transfer_type,
 				ledger.account_from_id, ledger.account_to_id,
+				ledger.account_from_balance, ledger.account_to_balance,
 				account_from.asset_id AS asset_id,
 				account_from.party_id AS account_from_party_id,
 				account_from.market_id AS account_from_market_id,
@@ -233,13 +239,14 @@ func createDynamicQuery(filterQueries [3]string, closeOnAccountFilters entities.
 		entries AS (
 			SELECT vega_time, quantity, transfer_type, asset_id,
 				account_from_market_id, account_from_party_id, account_from_account_type,
-				account_to_market_id, account_to_party_id, account_to_account_type
+				account_to_market_id, account_to_party_id, account_to_account_type,
+				account_from_balance, account_to_balance
 			FROM %s
 			%s
 		)
 	`
 
-	tableNameAccountToQuery := "ledger_entries_account_to_filter"
+	tableNameToAccountQuery := "ledger_entries_to_account_filter"
 	tableNameCloseOnFilterQuery := "ledger_entries_closed_on_account_filters"
 	tableNameOpenOnFilterQuery := "ledger_entries_open_on_account_filters"
 	tableNameTransferType := "ledger_entries_transfer_type_filter"
@@ -247,7 +254,7 @@ func createDynamicQuery(filterQueries [3]string, closeOnAccountFilters entities.
 	tableName := ""
 
 	if filterQueries[0] != "" {
-		tableName = tableNameAccountFromQuery
+		tableName = tableNameFromAccountQuery
 		whereClause = fmt.Sprintf("WHERE %s", filterQueries[0])
 
 		if filterQueries[1] != "" {
@@ -261,7 +268,7 @@ func createDynamicQuery(filterQueries [3]string, closeOnAccountFilters entities.
 		}
 	} else {
 		if filterQueries[1] != "" {
-			tableName = tableNameAccountToQuery
+			tableName = tableNameToAccountQuery
 			whereClause = fmt.Sprintf("WHERE %s", filterQueries[1])
 		}
 	}

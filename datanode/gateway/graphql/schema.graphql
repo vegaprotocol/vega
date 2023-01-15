@@ -375,8 +375,8 @@ input AccountFilter {
 "Filter for historical entry ledger queries"
 input LedgerEntryFilter {
   CloseOnAccountFilters: Boolean
-  SenderAccountFilter: AccountFilter
-  ReceiverAccountFilter: AccountFilter
+  FromAccountFilter: AccountFilter
+  ToAccountFilter: AccountFilter
 
   TransferTypes: [TransferType]
 }
@@ -3470,15 +3470,19 @@ type TransferBalance {
 
 type LedgerEntry {
   "Account from which the asset was taken"
-  accountFromId: AccountDetails!
+  fromAccountId: AccountDetails!
   "Account to which the balance was transferred"
-  accountToId: AccountDetails!
+  toAccountId: AccountDetails!
   "The amount transferred"
   amount: String!
   "Type of ledger entry"
   type: TransferType!
   "RFC3339Nano time at which the transfer was made"
   timestamp: Timestamp!
+  "Sender account balance after the transfer"
+  fromAccountBalance: String!
+  "Receiver account balance after the transfer"
+  toAccountBalance: String!
 }
 
 type TransferResponse {
@@ -3829,17 +3833,21 @@ type AggregatedLedgerEntry {
   "Type of the transfer for this ledger entry"
   transferType: TransferType
   "Party identifier, if query was grouped by sender party - else null"
-  senderPartyId: ID
+  fromAccountPartyId: ID
   "Party identifier, if query was grouped by receiver party - else null"
-  receiverPartyId: ID
+  toAccountPartyId: ID
   "Market identifier, if query was grouped by sender market - else null"
-  senderMarketId: ID
+  fromAccountMarketId: ID
   "Market identifier, if query was grouped by receiver market - else null"
-  receiverMarketId: ID
+  toAccountMarketId: ID
   "Account type, if query was grouped by sender account type - else null"
-  senderAccountType: AccountType
+  fromAccountType: AccountType
   "Account type, if query was grouped by receiver account type - else null"
-  receiverAccountType: AccountType
+  toAccountType: AccountType
+  "Sender account balance after the transfer"
+  fromAccountBalance: String!
+  "Receiver account balance after the transfer"
+  toAccountBalance: String!
 }
 
 type AggregatedLedgerEntriesEdge {

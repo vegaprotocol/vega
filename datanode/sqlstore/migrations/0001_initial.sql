@@ -163,14 +163,16 @@ WHERE conflated_balances.vega_time < (SELECT coalesce(min(balances.vega_time), '
 
 create table ledger
 (
-    ledger_entry_time       TIMESTAMP WITH TIME ZONE NOT NULL,
-    account_from_id bytea                      NOT NULL,
-    account_to_id   bytea                      NOT NULL,
-    quantity        HUGEINT                  NOT NULL,
-    tx_hash         BYTEA                    NOT NULL,
-    vega_time       TIMESTAMP WITH TIME ZONE NOT NULL,
-    transfer_time   TIMESTAMP WITH TIME ZONE NOT NULL,
-    type            TEXT,
+    ledger_entry_time              TIMESTAMP WITH TIME ZONE NOT NULL,
+    account_from_id                bytea                    NOT NULL,
+    account_to_id                  bytea                    NOT NULL,
+    quantity                       HUGEINT                  NOT NULL,
+    tx_hash                        BYTEA                    NOT NULL,
+    vega_time                      TIMESTAMP WITH TIME ZONE NOT NULL,
+    transfer_time                  TIMESTAMP WITH TIME ZONE NOT NULL,
+    account_from_balance  HUGEINT                  NOT NULL,
+    account_to_balance    HUGEINT                  NOT NULL,
+    type                           TEXT,
     PRIMARY KEY(ledger_entry_time)
 );
 SELECT create_hypertable('ledger', 'ledger_entry_time', chunk_time_interval => INTERVAL '1 day');
