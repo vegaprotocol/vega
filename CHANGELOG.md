@@ -15,6 +15,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [7317](https://github.com/vegaprotocol/vega/issues/7317) - Add database schema docs
 - [7302](https://github.com/vegaprotocol/vega/issues/7302) - Add withdrawal minimal amount
 - [5487](https://github.com/vegaprotocol/vega/issues/5487) - Add `UPGRADING.md`
 - [7114](https://github.com/vegaprotocol/vega/issues/7114) - Expose user spam statistics via `API`
@@ -28,6 +29,8 @@
 - [7278](https://github.com/vegaprotocol/vega/issues/7278) - Use `Informal systems` fork of Tendermint
 - [7294](https://github.com/vegaprotocol/vega/issues/7294) - Submission of `OpenOracle` data is broken
 - [7286](https://github.com/vegaprotocol/vega/issues/7286) - Fix serialisation of `oracle specs`
+- [7327](https://github.com/vegaprotocol/vega/issues/7327) - Improve and add API info, remove unused `AccountField` enum in `GraphQL`
+
 
 ## 0.66.1
 - [7269](https://github.com/vegaprotocol/vega/pull/7269) - Fix wallet release pipeline

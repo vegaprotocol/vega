@@ -358,16 +358,16 @@ type Transfer_Status int32
 const (
 	// Default value
 	Transfer_STATUS_UNSPECIFIED Transfer_Status = 0
-	// Indicate a transfer still being processed
+	// Indicates a transfer still being processed
 	Transfer_STATUS_PENDING Transfer_Status = 1
-	// Indicate of an transfer accepted by the vega network
+	// Indicates a transfer accepted by the Vega network
 	Transfer_STATUS_DONE Transfer_Status = 2
-	// Indicate of an transfer rejected by the vega network
+	// Indicates a transfer rejected by the Vega network
 	Transfer_STATUS_REJECTED Transfer_Status = 3
-	// Indicate of a transfer stopped by the vega network
+	// Indicates a transfer stopped by the Vega network
 	// e.g: no funds left to cover the transfer
 	Transfer_STATUS_STOPPED Transfer_Status = 4
-	// Indicate of a transfer cancel by the user
+	// Indicates a transfer cancelled by the user
 	Transfer_STATUS_CANCELLED Transfer_Status = 5
 )
 
@@ -475,11 +475,11 @@ type StakeLinking_Status int32
 const (
 	// Default value
 	StakeLinking_STATUS_UNSPECIFIED StakeLinking_Status = 0
-	// Indicate an event waiting for confirmation from the vega network
+	// Indicates an event waiting for confirmation from the Vega network
 	StakeLinking_STATUS_PENDING StakeLinking_Status = 1
-	// Indicate of an event accepted by the vega network
+	// Indicates an event accepted by the Vega network
 	StakeLinking_STATUS_ACCEPTED StakeLinking_Status = 2
-	// Indaicate of an event rejected by the vega network
+	// Indicates an event rejected by the Vega network
 	StakeLinking_STATUS_REJECTED StakeLinking_Status = 3
 )
 

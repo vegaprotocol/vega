@@ -54,7 +54,7 @@ message ERC20AssetLimitsUpdated {
   string source_ethereum_address = 2;
   // The updated lifetime limits
   string lifetime_limits = 3;
-  // The updated withdraw threshold
+  // The updated withdrawal threshold
   string withdraw_threshold = 4;
 }
 

@@ -3486,7 +3486,7 @@
       },
       "sending_mode": {
         "type": "string",
-        "description": "The chosen mode to send the transaction:\n- `TYPE_SYNC` returns the result of running the transaction.\n- `TYPE_ASYNC` returns right away without waiting to hear if the transaction is even valid.\n- `TYPE_COMMIT` waits until the transaction is committed in a block or until some timeout is reached or returns return right away if the transaction is not valid.",
+        "description": "The chosen mode to send the transaction:\n- `TYPE_SYNC` returns the result of running the transaction.\n- `TYPE_ASYNC` returns right away without waiting to hear if the transaction is even valid.\n- `TYPE_COMMIT` waits until the transaction is committed in a block, or until some timeout is reached, or returns return right away if the transaction is not valid.",
         "enum": [
           "TYPE_SYNC",
           "TYPE_ASYNC",

@@ -336,8 +336,6 @@ models:
   AccountType:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.AccountType
-  AccountField:
-    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.AccountField
   AccountFilter:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AccountFilter
   AggregatedBalance:
