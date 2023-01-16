@@ -54,6 +54,18 @@ func (t *TestMultisigTopology) ExcessSigners(addresses []string) bool {
 	return false
 }
 
+func (t *TestMultisigTopology) GetSigners() []string {
+	signers := make([]string, 0, len(t.validators))
+	for k := range t.validators {
+		signers = append(signers, k)
+	}
+	return signers
+}
+
+func (t *TestMultisigTopology) GetThreshold() uint32 {
+	return 666
+}
+
 func TestScores(t *testing.T) {
 	t.Run("test calculation of stake score with no anti-whaling", testStakeScore)
 	t.Run("test calculation of performance score", testPerformanceScore)
