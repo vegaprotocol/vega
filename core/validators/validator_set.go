@@ -277,8 +277,13 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 	sortValidatorDescRankingScoreAscBlockcompare(tendermintValidators, rankingScore, byStatusChangeBlock, t.rng)
 	sortValidatorDescRankingScoreAscBlockcompare(remainingValidators, rankingScore, byBlockAdded, t.rng)
 
-	// if there are not enought slots, demote from tm to remaining
-	tendermintValidators, remainingValidators, removedFromTM := handleSlotChanges(tendermintValidators, remainingValidators, ValidatorStatusTendermint, ValidatorStatusErsatz, t.numberOfTendermintValidators, int64(t.currentBlockHeight+1), rankingScore)
+	signers := map[string]struct{}{}
+	for _, sig := range t.multiSigTopology.GetSigners() {
+		signers[sig] = struct{}{}
+	}
+
+	// if there are not enough slots, demote from tm to remaining
+	tendermintValidators, remainingValidators, removedFromTM := handleSlotChanges(tendermintValidators, remainingValidators, ValidatorStatusTendermint, ValidatorStatusErsatz, t.numberOfTendermintValidators, int64(t.currentBlockHeight+1), rankingScore, signers, t.multiSigTopology.GetThreshold())
 	t.log.Info("removedFromTM", logging.Strings("IDs", removedFromTM))
 
 	// now we're sorting the remaining validators - some of which may be eratz, some may have been tendermint (as demoted above) and some just in the waiting list
@@ -307,7 +312,7 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 	}
 
 	// demote from ersatz to pending due to more ersatz than slots allowed
-	ersatzValidators, waitingListValidators, _ = handleSlotChanges(ersatzValidators, waitingListValidators, ValidatorStatusErsatz, ValidatorStatusPending, t.numberOfErsatzValidators, int64(t.currentBlockHeight+1), rankingScore)
+	ersatzValidators, waitingListValidators, _ = handleSlotChanges(ersatzValidators, waitingListValidators, ValidatorStatusErsatz, ValidatorStatusPending, t.numberOfErsatzValidators, int64(t.currentBlockHeight+1), rankingScore, map[string]struct{}{}, 0)
 	sortValidatorDescRankingScoreAscBlockcompare(ersatzValidators, rankingScore, byBlockAdded, t.rng)
 	sortValidatorDescRankingScoreAscBlockcompare(waitingListValidators, rankingScore, byBlockAdded, t.rng)
 	// apply promotions and demotions from ersatz to pending and vice versa
@@ -391,7 +396,7 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 }
 
 // handleSlotChanges the number of slots may have increased or decreased and so we slide the nodes into the different sets based on the change.
-func handleSlotChanges(seriesA []*valState, seriesB []*valState, statusA ValidatorStatus, statusB ValidatorStatus, maxForSeriesA int, nextBlockHeight int64, rankingScore map[string]num.Decimal) ([]*valState, []*valState, []string) {
+func handleSlotChanges(seriesA []*valState, seriesB []*valState, statusA ValidatorStatus, statusB ValidatorStatus, maxForSeriesA int, nextBlockHeight int64, rankingScore map[string]num.Decimal, signers map[string]struct{}, multisigThreshold uint32) ([]*valState, []*valState, []string) {
 	removedFromSeriesA := []string{}
 
 	if len(seriesA) == maxForSeriesA {
@@ -399,21 +404,48 @@ func handleSlotChanges(seriesA []*valState, seriesB []*valState, statusA Validat
 		return seriesA, seriesB, removedFromSeriesA
 	}
 
+	removed := 0
+	removedSigners := 0
+
+	// count how many signers we have in the validtor set - we need to do that as the contract may not have been updated with the signers yet but the
+	// list of validators has been updated.
+	numSigners := 0
+	for _, vs := range seriesA {
+		if _, ok := signers[vs.data.EthereumAddress]; ok {
+			numSigners++
+		}
+	}
+
 	// the number of slots for series A has decrease, move some into series B
+	// when demoting from tendermint - we only allow removal of one signer per round as long as there are sufficient validators remaining
+	// to satisfy the threshold.
 	if len(seriesA) > maxForSeriesA {
 		nDescreased := len(seriesA) - maxForSeriesA
 		for i := 0; i < nDescreased; i++ {
 			toDemote := seriesA[len(seriesA)-1-i]
+			if _, ok := signers[toDemote.data.EthereumAddress]; ok {
+				if len(signers) > 0 && uint32(1000*(numSigners-1)/len(signers)) <= multisigThreshold {
+					break
+				}
+				removed++
+				removedSigners++
+			} else {
+				removed++
+			}
+
 			toDemote.status = statusB
 			toDemote.statusChangeBlock = nextBlockHeight
 
 			// add to the remaining validators so it can compete with the ersatzvalidators
 			seriesB = append(seriesB, toDemote)
 			removedFromSeriesA = append(removedFromSeriesA, toDemote.data.ID)
+			if removedSigners > 0 {
+				break
+			}
 		}
 
 		// they've been added to seriesB slice, remove them from seriesA
-		seriesA = seriesA[:maxForSeriesA]
+		seriesA = seriesA[:len(seriesA)-removed]
 		return seriesA, seriesB, removedFromSeriesA
 	}
 

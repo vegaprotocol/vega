@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/stretchr/testify/require"
@@ -41,6 +42,230 @@ func TestValidatorSet(t *testing.T) {
 	t.Run("test swap of from ez to tendermint with slot increase in tendermint", testSwapAndTendermintSlotIncrease)
 }
 
+func TestDecreaseNumberOfTendermintValidators(t *testing.T) {
+	tm := int64(1654747635)
+	rng := rand.New(rand.NewSource(tm))
+	byStatusChangeBlock := func(val1, val2 *valState) bool { return val1.statusChangeBlock < val2.statusChangeBlock }
+	rankingScore := map[string]num.Decimal{
+		"70b29f15c7d3cc430283dfee07e17775f041427749f7f1f8b9979bdde15ae908": num.NewDecimalFromFloat(0.6),
+		"db14f8d4e4beebd085b22c7332d8a12d3e3841319ba78542a418c02d7740d117": num.NewDecimalFromFloat(0.3),
+		"20a7d70939c3453613b6d0477650f8845a6dbc0e58d2416e0aa5c27500f563b3": num.NewDecimalFromFloat(0.7),
+		"4a329b356c4a875077eb5babcc5b7b91f27d75fe35c52a1dc85fe079b9e14066": num.NewDecimalFromFloat(0.2),
+		"4dd0e9f844b16777210d2815f81d8cc6f6ecc4f9bf7b895fcee3ab982e5c1ebd": num.DecimalOne(),
+	}
+
+	topology := &Topology{}
+	topology.UpdateNumberOfTendermintValidators(context.Background(), num.NewUint(3))
+
+	valStates := []*valState{
+		{
+			data: ValidatorData{
+				ID:              "70b29f15c7d3cc430283dfee07e17775f041427749f7f1f8b9979bdde15ae908",
+				EthereumAddress: crypto.RandomHash(),
+			},
+			statusChangeBlock: 1,
+			status:            ValidatorStatusTendermint,
+		},
+		{
+			data: ValidatorData{
+				ID:              "db14f8d4e4beebd085b22c7332d8a12d3e3841319ba78542a418c02d7740d117",
+				EthereumAddress: crypto.RandomHash(),
+			},
+			statusChangeBlock: 1,
+			status:            ValidatorStatusTendermint,
+		},
+		{
+			data: ValidatorData{
+				ID:              "20a7d70939c3453613b6d0477650f8845a6dbc0e58d2416e0aa5c27500f563b3",
+				EthereumAddress: crypto.RandomHash(),
+			},
+			statusChangeBlock: 1,
+			status:            ValidatorStatusTendermint,
+		},
+		{
+			data: ValidatorData{
+				ID:              "4a329b356c4a875077eb5babcc5b7b91f27d75fe35c52a1dc85fe079b9e14066",
+				EthereumAddress: crypto.RandomHash(),
+			},
+			statusChangeBlock: 1,
+			status:            ValidatorStatusTendermint,
+		},
+		{
+			data: ValidatorData{
+				ID:              "4dd0e9f844b16777210d2815f81d8cc6f6ecc4f9bf7b895fcee3ab982e5c1ebd",
+				EthereumAddress: crypto.RandomHash(),
+			},
+			statusChangeBlock: 1,
+			status:            ValidatorStatusTendermint,
+		},
+	}
+
+	// only 4 of the 5 validators are signers on the bridge
+	signers := map[string]struct{}{}
+	for _, vs := range valStates {
+		signers[vs.data.EthereumAddress] = struct{}{}
+	}
+	// 4dd0e9f844b16777210d2815f81d8cc6f6ecc4f9bf7b895fcee3ab982e5c1ebd currently having a ranking score of 1 is not a signer
+	delete(signers, valStates[len(valStates)-1].data.EthereumAddress)
+	sortValidatorDescRankingScoreAscBlockcompare(valStates, rankingScore, byStatusChangeBlock, rng)
+
+	// effectively can't remove any signer from the bridge and all validators are currently signers
+	threshold := uint32(999)
+
+	tendermintValidators, remainingValidators, removedFromTM := handleSlotChanges(valStates, []*valState{}, ValidatorStatusTendermint, ValidatorStatusErsatz, 3, int64(3), rankingScore, signers, threshold)
+	require.Equal(t, 5, len(tendermintValidators))
+	require.Equal(t, 0, len(remainingValidators))
+	require.Equal(t, 0, len(removedFromTM))
+
+	count := 0
+	for _, valState := range valStates {
+		if valState.status == ValidatorStatusTendermint {
+			count++
+		}
+	}
+	require.Equal(t, 5, count)
+
+	// let change the ranking score of the validator who is not a signer to be lowest so that it can be removed regardless of the threshold
+	rankingScore["4dd0e9f844b16777210d2815f81d8cc6f6ecc4f9bf7b895fcee3ab982e5c1ebd"] = num.DecimalFromFloat(0.1)
+	sortValidatorDescRankingScoreAscBlockcompare(valStates, rankingScore, byStatusChangeBlock, rng)
+
+	tendermintValidators, remainingValidators, removedFromTM = handleSlotChanges(valStates, []*valState{}, ValidatorStatusTendermint, ValidatorStatusErsatz, 3, int64(3), rankingScore, signers, threshold)
+	require.Equal(t, 4, len(tendermintValidators))
+	require.Equal(t, 1, len(remainingValidators))
+	require.Equal(t, 1, len(removedFromTM))
+
+	require.Equal(t, "4dd0e9f844b16777210d2815f81d8cc6f6ecc4f9bf7b895fcee3ab982e5c1ebd", removedFromTM[0])
+	count = 0
+	for _, valState := range valStates {
+		if valState.status == ValidatorStatusTendermint {
+			count++
+		}
+	}
+	require.Equal(t, 4, count)
+
+	// run for another epoch - non can be decreased anymore with the current threshold
+	tendermintValidators, remainingValidators, removedFromTM = handleSlotChanges(tendermintValidators, remainingValidators, ValidatorStatusTendermint, ValidatorStatusErsatz, 3, int64(3), rankingScore, signers, threshold)
+	require.Equal(t, 4, len(tendermintValidators))
+	require.Equal(t, 1, len(remainingValidators))
+	require.Equal(t, 0, len(removedFromTM))
+
+	// change the threshold to 700 - expcect one validator to be removed
+	threshold = 700
+	tendermintValidators, remainingValidators, removedFromTM = handleSlotChanges(tendermintValidators, remainingValidators, ValidatorStatusTendermint, ValidatorStatusErsatz, 3, int64(3), rankingScore, signers, threshold)
+	require.Equal(t, 3, len(tendermintValidators))
+	require.Equal(t, 2, len(remainingValidators))
+	require.Equal(t, 1, len(removedFromTM))
+
+	require.Equal(t, "4a329b356c4a875077eb5babcc5b7b91f27d75fe35c52a1dc85fe079b9e14066", removedFromTM[0])
+	count = 0
+	for _, valState := range valStates {
+		if valState.status == ValidatorStatusTendermint {
+			count++
+		}
+	}
+	require.Equal(t, 3, count)
+}
+
+func TestDecreaseNumberOfTendermintValidatorsNotUpdatingContract(t *testing.T) {
+	tm := int64(1654747635)
+	rng := rand.New(rand.NewSource(tm))
+	byStatusChangeBlock := func(val1, val2 *valState) bool { return val1.statusChangeBlock < val2.statusChangeBlock }
+	rankingScore := map[string]num.Decimal{
+		"70b29f15c7d3cc430283dfee07e17775f041427749f7f1f8b9979bdde15ae908": num.NewDecimalFromFloat(0.6),
+		"db14f8d4e4beebd085b22c7332d8a12d3e3841319ba78542a418c02d7740d117": num.NewDecimalFromFloat(0.3),
+		"20a7d70939c3453613b6d0477650f8845a6dbc0e58d2416e0aa5c27500f563b3": num.NewDecimalFromFloat(0.7),
+		"4a329b356c4a875077eb5babcc5b7b91f27d75fe35c52a1dc85fe079b9e14066": num.NewDecimalFromFloat(0.2),
+		"4dd0e9f844b16777210d2815f81d8cc6f6ecc4f9bf7b895fcee3ab982e5c1ebd": num.DecimalOne(),
+	}
+
+	topology := &Topology{}
+	topology.UpdateNumberOfTendermintValidators(context.Background(), num.NewUint(3))
+
+	valStates := []*valState{
+		{
+			data: ValidatorData{
+				ID:              "70b29f15c7d3cc430283dfee07e17775f041427749f7f1f8b9979bdde15ae908",
+				EthereumAddress: crypto.RandomHash(),
+			},
+			statusChangeBlock: 1,
+			status:            ValidatorStatusTendermint,
+		},
+		{
+			data: ValidatorData{
+				ID:              "db14f8d4e4beebd085b22c7332d8a12d3e3841319ba78542a418c02d7740d117",
+				EthereumAddress: crypto.RandomHash(),
+			},
+			statusChangeBlock: 1,
+			status:            ValidatorStatusTendermint,
+		},
+		{
+			data: ValidatorData{
+				ID:              "20a7d70939c3453613b6d0477650f8845a6dbc0e58d2416e0aa5c27500f563b3",
+				EthereumAddress: crypto.RandomHash(),
+			},
+			statusChangeBlock: 1,
+			status:            ValidatorStatusTendermint,
+		},
+		{
+			data: ValidatorData{
+				ID:              "4a329b356c4a875077eb5babcc5b7b91f27d75fe35c52a1dc85fe079b9e14066",
+				EthereumAddress: crypto.RandomHash(),
+			},
+			statusChangeBlock: 1,
+			status:            ValidatorStatusTendermint,
+		},
+		{
+			data: ValidatorData{
+				ID:              "4dd0e9f844b16777210d2815f81d8cc6f6ecc4f9bf7b895fcee3ab982e5c1ebd",
+				EthereumAddress: crypto.RandomHash(),
+			},
+			statusChangeBlock: 1,
+			status:            ValidatorStatusTendermint,
+		},
+	}
+
+	signer3Address := valStates[3].data.EthereumAddress
+
+	// starting with 5 signatures on the bridge
+	signers := map[string]struct{}{}
+	for _, vs := range valStates {
+		signers[vs.data.EthereumAddress] = struct{}{}
+	}
+	sortValidatorDescRankingScoreAscBlockcompare(valStates, rankingScore, byStatusChangeBlock, rng)
+
+	threshold := uint32(666)
+
+	// one validator is removed
+	tendermintValidators, remainingValidators, removedFromTM := handleSlotChanges(valStates, []*valState{}, ValidatorStatusTendermint, ValidatorStatusErsatz, 3, int64(3), rankingScore, signers, threshold)
+	require.Equal(t, 4, len(tendermintValidators))
+	require.Equal(t, 1, len(remainingValidators))
+	require.Equal(t, 1, len(removedFromTM))
+
+	count := 0
+	for _, valState := range valStates {
+		if valState.status == ValidatorStatusTendermint {
+			count++
+		}
+	}
+	require.Equal(t, 4, count)
+
+	// we don't update the contract so it still has 5 signers - meaning it should not allow us to remove another validator now
+	rankingScore["4dd0e9f844b16777210d2815f81d8cc6f6ecc4f9bf7b895fcee3ab982e5c1ebd"] = num.DecimalFromFloat(0.1)
+	sortValidatorDescRankingScoreAscBlockcompare(valStates, rankingScore, byStatusChangeBlock, rng)
+
+	tendermintValidators, remainingValidators, removedFromTM = handleSlotChanges(tendermintValidators, remainingValidators, ValidatorStatusTendermint, ValidatorStatusErsatz, 3, int64(3), rankingScore, signers, threshold)
+	require.Equal(t, 4, len(tendermintValidators))
+	require.Equal(t, 1, len(remainingValidators))
+	require.Equal(t, 0, len(removedFromTM))
+
+	// now update the contract to remove the signer
+	delete(signers, signer3Address)
+	tendermintValidators, remainingValidators, removedFromTM = handleSlotChanges(tendermintValidators, remainingValidators, ValidatorStatusTendermint, ValidatorStatusErsatz, 3, int64(3), rankingScore, signers, threshold)
+	require.Equal(t, 3, len(tendermintValidators))
+	require.Equal(t, 2, len(remainingValidators))
+	require.Equal(t, 1, len(removedFromTM))
+}
+
 func TestApplyPromotionAllThingsEqual(t *testing.T) {
 	tm := int64(1654747635)
 	for i := 0; i < 100; i++ {
@@ -60,54 +285,81 @@ func TestApplyPromotionAllThingsEqual(t *testing.T) {
 		valStates := []*valState{
 			{
 				data: ValidatorData{
-					ID: "70b29f15c7d3cc430283dfee07e17775f041427749f7f1f8b9979bdde15ae908",
+					ID:              "70b29f15c7d3cc430283dfee07e17775f041427749f7f1f8b9979bdde15ae908",
+					EthereumAddress: crypto.RandomHash(),
 				},
 				statusChangeBlock: 1,
 				status:            ValidatorStatusTendermint,
 			},
 			{
 				data: ValidatorData{
-					ID: "db14f8d4e4beebd085b22c7332d8a12d3e3841319ba78542a418c02d7740d117",
+					ID:              "db14f8d4e4beebd085b22c7332d8a12d3e3841319ba78542a418c02d7740d117",
+					EthereumAddress: crypto.RandomHash(),
 				},
 				statusChangeBlock: 1,
 				status:            ValidatorStatusTendermint,
 			},
 			{
 				data: ValidatorData{
-					ID: "20a7d70939c3453613b6d0477650f8845a6dbc0e58d2416e0aa5c27500f563b3",
+					ID:              "20a7d70939c3453613b6d0477650f8845a6dbc0e58d2416e0aa5c27500f563b3",
+					EthereumAddress: crypto.RandomHash(),
 				},
 				statusChangeBlock: 1,
 				status:            ValidatorStatusTendermint,
 			},
 			{
 				data: ValidatorData{
-					ID: "4a329b356c4a875077eb5babcc5b7b91f27d75fe35c52a1dc85fe079b9e14066",
+					ID:              "4a329b356c4a875077eb5babcc5b7b91f27d75fe35c52a1dc85fe079b9e14066",
+					EthereumAddress: crypto.RandomHash(),
 				},
 				statusChangeBlock: 1,
 				status:            ValidatorStatusTendermint,
 			},
 			{
 				data: ValidatorData{
-					ID: "4dd0e9f844b16777210d2815f81d8cc6f6ecc4f9bf7b895fcee3ab982e5c1ebd",
+					ID:              "4dd0e9f844b16777210d2815f81d8cc6f6ecc4f9bf7b895fcee3ab982e5c1ebd",
+					EthereumAddress: crypto.RandomHash(),
 				},
 				statusChangeBlock: 1,
 				status:            ValidatorStatusTendermint,
 			},
 		}
 
+		signer1Address := valStates[1].data.EthereumAddress
+
 		rand.Seed(time.Now().UnixNano())
 		rand.Shuffle(len(valStates), func(i, j int) { valStates[i], valStates[j] = valStates[j], valStates[i] })
 
 		sortValidatorDescRankingScoreAscBlockcompare(valStates, rankingScore, byStatusChangeBlock, rng)
 
-		tendermintValidators, remainingValidators, removedFromTM := handleSlotChanges(valStates, []*valState{}, ValidatorStatusTendermint, ValidatorStatusErsatz, 3, int64(3), rankingScore)
-		require.Equal(t, len(tendermintValidators), 3)
-		require.Equal(t, len(remainingValidators), 2)
-		require.Equal(t, len(removedFromTM), 2)
+		signers := map[string]struct{}{}
+		for _, vs := range valStates {
+			signers[vs.data.EthereumAddress] = struct{}{}
+		}
+
+		tendermintValidators, remainingValidators, removedFromTM := handleSlotChanges(valStates, []*valState{}, ValidatorStatusTendermint, ValidatorStatusErsatz, 3, int64(3), rankingScore, signers, 666)
+		require.Equal(t, 4, len(tendermintValidators))
+		require.Equal(t, 1, len(remainingValidators))
+		require.Equal(t, 1, len(removedFromTM))
 
 		require.Equal(t, "db14f8d4e4beebd085b22c7332d8a12d3e3841319ba78542a418c02d7740d117", removedFromTM[0])
-		require.Equal(t, "70b29f15c7d3cc430283dfee07e17775f041427749f7f1f8b9979bdde15ae908", removedFromTM[1])
 		count := 0
+		for _, valState := range valStates {
+			if valState.status == ValidatorStatusTendermint {
+				count++
+			}
+		}
+		require.Equal(t, 4, count)
+
+		delete(signers, signer1Address)
+
+		tendermintValidators, remainingValidators, removedFromTM = handleSlotChanges(tendermintValidators, []*valState{}, ValidatorStatusTendermint, ValidatorStatusErsatz, 3, int64(3), rankingScore, signers, 666)
+		require.Equal(t, 3, len(tendermintValidators))
+		require.Equal(t, 1, len(remainingValidators))
+		require.Equal(t, 1, len(removedFromTM))
+
+		require.Equal(t, "70b29f15c7d3cc430283dfee07e17775f041427749f7f1f8b9979bdde15ae908", removedFromTM[0])
+		count = 0
 		for _, valState := range valStates {
 			if valState.status == ValidatorStatusTendermint {
 				count++
@@ -1183,4 +1435,12 @@ func (*DummyMultiSigTopology) IsSigner(address string) bool {
 
 func (*DummyMultiSigTopology) ExcessSigners(addresses []string) bool {
 	return false
+}
+
+func (*DummyMultiSigTopology) GetThreshold() uint32 {
+	return 666
+}
+
+func (*DummyMultiSigTopology) GetSigners() []string {
+	return []string{}
 }

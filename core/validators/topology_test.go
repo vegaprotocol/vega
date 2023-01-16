@@ -74,6 +74,14 @@ func (*DummyMultiSigTopology) ExcessSigners(addresses []string) bool {
 	return false
 }
 
+func (*DummyMultiSigTopology) GetThreshold() uint32 {
+	return 666
+}
+
+func (*DummyMultiSigTopology) GetSigners() []string {
+	return []string{}
+}
+
 type testTop struct {
 	*validators.Topology
 	ctrl        *gomock.Controller
