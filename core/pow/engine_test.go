@@ -544,6 +544,18 @@ func Test_ExpectedSpamDifficulty(t *testing.T) {
 			},
 			isNil: true,
 		},
+		{
+			name: "Expected difficulty when increaseDifficulty is false but fewer seen than allowed in block",
+			args: args{
+				spamPowDifficulty:         10,
+				spamPoWNumberOfTxPerBlock: 100,
+				seenTx:                    1,
+				observedDifficulty:        10,
+				increaseDifficulty:        false,
+			},
+			isNil: false,
+			want:  10,
+		},
 	}
 
 	for _, tt := range tests {

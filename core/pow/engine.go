@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -654,6 +655,10 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 
 func getMinDifficultyForNextTx(baseDifficulty, txPerBlock, seenTx, observedDifficulty uint, increaseDifficulty bool) *uint64 {
 	if !increaseDifficulty {
+		if seenTx < txPerBlock {
+			return ptr.From(uint64(baseDifficulty))
+		}
+		// they cannot submit any more against this block, do not return a next-difficulty
 		return nil
 	}
 
