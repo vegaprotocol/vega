@@ -20,6 +20,7 @@
 - [5487](https://github.com/vegaprotocol/vega/issues/5487) - Add `UPGRADING.md`
 - [7114](https://github.com/vegaprotocol/vega/issues/7114) - Expose user spam statistics via `API`
 - [7316](https://github.com/vegaprotocol/vega/issues/7316) - Add a bunch of database indexes following audit of queries
+- [7331](https://github.com/vegaprotocol/vega/issues/7331) - Control the decrease of the number of validators when network parameter is decreased
 
 ### 🐛 Fixes
 - [7260](https://github.com/vegaprotocol/vega/issues/7260) - Fix bug where pagination `before` or `after` cursors were ignored if `first` or `last` not set

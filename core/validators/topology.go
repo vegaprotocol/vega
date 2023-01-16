@@ -58,6 +58,8 @@ type Wallet interface {
 type MultiSigTopology interface {
 	IsSigner(address string) bool
 	ExcessSigners(addresses []string) bool
+	GetSigners() []string
+	GetThreshold() uint32
 }
 
 type ValidatorPerformance interface {
