@@ -370,44 +370,8 @@ func (r *VegaResolverRoot) EpochRewardSummary() EpochRewardSummaryResolver {
 	return (*epochRewardSummaryResolver)(r)
 }
 
-func (r *VegaResolverRoot) LedgerEntryFilter() LedgerEntryFilterResolver {
-	return (*ledgerEntryFilterResolver)(r)
-}
-
 func (r *VegaResolverRoot) OrderFilter() OrderFilterResolver {
 	return (*orderFilterResolver)(r)
-}
-
-type ledgerEntryFilterResolver VegaResolverRoot
-
-func (r *ledgerEntryFilterResolver) SenderAccountFilter(ctx context.Context, obj *v2.LedgerEntryFilter, data *v2.AccountFilter) error {
-	if data != nil {
-		obj.AccountFromFilter = data
-		_, err := r.tradingDataClientV2.ListLedgerEntries(
-			ctx,
-			&v2.ListLedgerEntriesRequest{
-				Filter: obj,
-			})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (r *ledgerEntryFilterResolver) ReceiverAccountFilter(ctx context.Context, obj *v2.LedgerEntryFilter, data *v2.AccountFilter) error {
-	if data != nil {
-		obj.AccountToFilter = data
-		_, err := r.tradingDataClientV2.ListLedgerEntries(
-			ctx,
-			&v2.ListLedgerEntriesRequest{
-				Filter: obj,
-			})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 type protocolUpgradeProposalResolver VegaResolverRoot

@@ -350,15 +350,19 @@ type ExternalDataSourceSpec struct {
 
 type LedgerEntry struct {
 	// Account from which the asset was taken
-	AccountFromID *vega.AccountDetails `json:"accountFromId"`
+	FromAccountID *vega.AccountDetails `json:"fromAccountId"`
 	// Account to which the balance was transferred
-	AccountToID *vega.AccountDetails `json:"accountToId"`
+	ToAccountID *vega.AccountDetails `json:"toAccountId"`
 	// The amount transferred
 	Amount string `json:"amount"`
 	// Type of ledger entry
 	Type vega.TransferType `json:"type"`
 	// RFC3339Nano time at which the transfer was made
 	Timestamp int64 `json:"timestamp"`
+	// Sender account balance after the transfer
+	FromAccountBalance string `json:"fromAccountBalance"`
+	// Receiver account balance after the transfer
+	ToAccountBalance string `json:"toAccountBalance"`
 }
 
 // Configuration of a market liquidity monitoring parameters
