@@ -41,7 +41,10 @@ var ErrBadID = errors.New("bad id (must be hex string)")
 //go:embed migrations/*.sql
 var EmbedMigrations embed.FS
 
-const SQLMigrationsDir = "migrations"
+const (
+	SQLMigrationsDir = "migrations"
+	InfiniteInterval = "forever"
+)
 
 func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 	goose.SetBaseFS(EmbedMigrations)
@@ -332,6 +335,11 @@ func ApplyDataRetentionPolicies(config Config) error {
 			return fmt.Errorf("removing retention policy from %s: %w", policy.HypertableOrCaggName, err)
 		}
 
+		// If we're keeping data forever, don't bother adding a policy at all
+		if policy.DataRetentionPeriod == InfiniteInterval {
+			continue
+		}
+
 		if _, err := db.Exec(fmt.Sprintf("SELECT add_retention_policy('%s', INTERVAL '%s');", policy.HypertableOrCaggName, policy.DataRetentionPeriod)); err != nil {
 			return fmt.Errorf("adding retention policy to %s: %w", policy.HypertableOrCaggName, err)
 		}
@@ -341,6 +349,10 @@ func ApplyDataRetentionPolicies(config Config) error {
 }
 
 func checkPolicyPeriodIsAtOrAboveMinimum(minimumInSeconds int64, policy RetentionPolicy, db *sql.DB) (bool, error) {
+	if policy.DataRetentionPeriod == InfiniteInterval {
+		return true, nil
+	}
+
 	query := fmt.Sprintf("SELECT EXTRACT(epoch FROM INTERVAL '%s')", policy.DataRetentionPeriod)
 	row := db.QueryRow(query)
 
