@@ -27,6 +27,7 @@
 - [7281](https://github.com/vegaprotocol/vega/issues/7281) - Fix formatting of status enum for `dataSourceSpec` in `GraphQL`
 - [7283](https://github.com/vegaprotocol/vega/issues/7283) - Fix validation of future product oracles signers
 - [7306](https://github.com/vegaprotocol/vega/issues/7306) - Improve speed of querying deposits and withdrawals by party
+- [7337](https://github.com/vegaprotocol/vega/issues/7337) - Add `UpdateAsset` change types to proposal terms `GraphQL` resolver
 - [7278](https://github.com/vegaprotocol/vega/issues/7278) - Use `Informal systems` fork of Tendermint
 - [7294](https://github.com/vegaprotocol/vega/issues/7294) - Submission of `OpenOracle` data is broken
 - [7286](https://github.com/vegaprotocol/vega/issues/7286) - Fix serialisation of `oracle specs`
