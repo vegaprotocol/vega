@@ -121,7 +121,7 @@ func TestAccount(t *testing.T) {
 
 	var cursor string
 
-	t.Run("query account balance first page and last pave", func(t *testing.T) {
+	t.Run("query account balance first page and last page", func(t *testing.T) {
 		balances, pageInfo, err := accountStore.QueryBalances(ctx, noFilter, firstPage)
 		require.NoError(t, err)
 		require.Len(t, balances, 1)
