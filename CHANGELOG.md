@@ -17,6 +17,7 @@
 
 ### 🛠 Improvements
 - [7317](https://github.com/vegaprotocol/vega/issues/7317) - Add database schema docs
+- [7279](https://github.com/vegaprotocol/vega/issues/7279) - Add `--archive` and `--lite` to `datanode init`
 - [7302](https://github.com/vegaprotocol/vega/issues/7302) - Add withdrawal minimal amount
 - [5487](https://github.com/vegaprotocol/vega/issues/5487) - Add `UPGRADING.md`
 - [7114](https://github.com/vegaprotocol/vega/issues/7114) - Expose user spam statistics via `API`
