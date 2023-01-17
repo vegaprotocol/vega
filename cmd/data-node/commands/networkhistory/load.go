@@ -5,9 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
@@ -41,10 +40,30 @@ func (cmd *loadCmd) Execute(_ []string) error {
 		return fmt.Errorf("failed to fix config:%w", err)
 	}
 
-	// Wiping data from networkhistory before loading then loading the data should never happen in any circumstance
+	if datanodeLive(cmd.Config) {
+		return fmt.Errorf("datanode must be shutdown before data can be loaded")
+	}
+
+	if !cmd.Force {
+		if !flags.YesOrNo("Running this command will kill all existing database connections, do you with to continue?") {
+			return nil
+		}
+	}
+
+	if err := networkhistory.KillAllConnectionsToDatabase(context.Background(), cmd.SQLStore.ConnectionConfig); err != nil {
+		return fmt.Errorf("failed to kill all connections to database: %w", err)
+	}
+
+	connPool, err := getCommandConnPool(cmd.Config.SQLStore.ConnectionConfig)
+	if err != nil {
+		return fmt.Errorf("failed to get command connection pool: %w", err)
+	}
+	defer connPool.Close()
+
+	// Wiping data from networkhistory before loading then trying to load the data should never happen in any circumstance
 	cmd.Config.NetworkHistory.WipeOnStartup = false
 
-	hasSchema, err := sqlstore.HasVegaSchema(context.Background(), cmd.SQLStore.ConnectionConfig)
+	hasSchema, err := sqlstore.HasVegaSchema(context.Background(), connPool)
 	if err != nil {
 		return fmt.Errorf("failed to check for existing schema:%w", err)
 	}
@@ -58,10 +77,6 @@ func (cmd *loadCmd) Execute(_ []string) error {
 		}
 	}
 
-	if datanodeLive(cmd.Config) {
-		return fmt.Errorf("datanode must be shutdown before data can be loaded")
-	}
-
 	if hasSchema && cmd.WipeExistingData {
 		err := sqlstore.WipeDatabaseAndMigrateSchemaToVersion(log, cmd.Config.SQLStore.ConnectionConfig, 0, sqlstore.EmbedMigrations)
 		if err != nil {
@@ -69,7 +84,7 @@ func (cmd *loadCmd) Execute(_ []string) error {
 		}
 	}
 
-	snapshotService, err := snapshot.NewSnapshotService(log, cmd.Config.NetworkHistory.Snapshot, cmd.Config.SQLStore.ConnectionConfig,
+	snapshotService, err := snapshot.NewSnapshotService(log, cmd.Config.NetworkHistory.Snapshot, connPool,
 		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
 		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
 			if err = sqlstore.MigrateToSchemaVersion(log, cmd.Config.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
@@ -90,7 +105,7 @@ func (cmd *loadCmd) Execute(_ []string) error {
 	}
 
 	networkHistoryService, err := networkhistory.NewWithStore(ctx, log, cmd.Config.ChainID, cmd.Config.NetworkHistory,
-		cmd.Config.SQLStore.ConnectionConfig, snapshotService, networkHistoryStore, cmd.Config.API.Port,
+		connPool, snapshotService, networkHistoryStore, cmd.Config.API.Port,
 		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
 		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo))
 	if err != nil {
@@ -102,7 +117,7 @@ func (cmd *loadCmd) Execute(_ []string) error {
 		return fmt.Errorf("failed to get span of all available history:%w", err)
 	}
 
-	span, err := sqlstore.GetDatanodeBlockSpan(ctx, cmd.SQLStore.ConnectionConfig)
+	span, err := sqlstore.GetDatanodeBlockSpan(ctx, connPool)
 	if err != nil {
 		return fmt.Errorf("failed to get datanode block span:%w", err)
 	}
@@ -144,7 +159,7 @@ func (cmd *loadCmd) Execute(_ []string) error {
 
 	fmt.Println("Loading history...")
 
-	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanode(context.Background())
+	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanode(context.Background(), cmd.Config.SQLStore.ConnectionConfig)
 	if err != nil {
 		return fmt.Errorf("failed to load all available history:%w", err)
 	}

@@ -38,7 +38,7 @@ func (b *BlockCommitHandler) OnBlockCommitted(ctx context.Context, chainID strin
 	if blockHeight > 0 && bool(b.cfg.Publish) && snapTaken {
 		err := b.snapshotData(ctx, chainID, blockHeight)
 		if err != nil {
-			b.log.Errorf("failed to snapshot data:%w", err)
+			b.log.Errorf("failed to snapshot data: %v", err)
 		}
 	}
 }

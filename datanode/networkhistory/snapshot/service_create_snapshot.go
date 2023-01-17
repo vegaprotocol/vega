@@ -21,7 +21,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type MetaData struct {
@@ -53,7 +52,7 @@ func (b *Service) createNewSnapshot(ctx context.Context, chainID string, toHeigh
 		return MetaData{}, fmt.Errorf("chain id is required")
 	}
 
-	dbMetaData, err := NewDatabaseMetaData(ctx, b.connConfig)
+	dbMetaData, err := NewDatabaseMetaData(ctx, b.connPool)
 	if err != nil {
 		return MetaData{}, fmt.Errorf("failed to get data dump metadata: %w", err)
 	}
@@ -72,14 +71,7 @@ func (b *Service) createNewSnapshot(ctx context.Context, chainID string, toHeigh
 
 	cleanUp = append(cleanUp, func() { b.createSnapshotLock.Unlock() })
 
-	conn, err := pgxpool.Connect(ctx, b.connConfig.GetConnectionString())
-	if err != nil {
-		runAllInReverseOrder(cleanUp)
-		return MetaData{}, fmt.Errorf("unable to connect to database: %w", err)
-	}
-	cleanUp = append(cleanUp, func() { conn.Close() })
-
-	copyDataTx, err := conn.Begin(ctx)
+	copyDataTx, err := b.connPool.Begin(ctx)
 	if err != nil {
 		runAllInReverseOrder(cleanUp)
 		return MetaData{}, fmt.Errorf("failed to begin copy table data transaction: %w", err)

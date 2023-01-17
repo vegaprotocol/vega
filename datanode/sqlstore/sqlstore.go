@@ -185,14 +185,8 @@ func CreateVegaSchema(log *logging.Logger, connConfig ConnectionConfig) error {
 	return nil
 }
 
-func HasVegaSchema(ctx context.Context, conf ConnectionConfig) (bool, error) {
-	conn, err := pgxpool.Connect(ctx, conf.GetConnectionString())
-	if err != nil {
-		return false, fmt.Errorf("unable to connect to database: %w", err)
-	}
-	defer conn.Close()
-
-	tableNames, err := GetAllTableNames(ctx, conn)
+func HasVegaSchema(ctx context.Context, connPool *pgxpool.Pool) (bool, error) {
+	tableNames, err := GetAllTableNames(ctx, connPool)
 	if err != nil {
 		return false, fmt.Errorf("failed to get all table names:%w", err)
 	}
@@ -249,32 +243,25 @@ type DatanodeBlockSpan struct {
 	HasData    bool
 }
 
-func GetDatanodeBlockSpan(ctx context.Context, connConfig ConnectionConfig) (DatanodeBlockSpan, error) {
-	hasVegaSchema, err := HasVegaSchema(ctx, connConfig)
+func GetDatanodeBlockSpan(ctx context.Context, connPool *pgxpool.Pool) (DatanodeBlockSpan, error) {
+	hasVegaSchema, err := HasVegaSchema(ctx, connPool)
 	if err != nil {
-		return DatanodeBlockSpan{}, fmt.Errorf("failed to get check if database if empty:%w", err)
+		return DatanodeBlockSpan{}, fmt.Errorf("failed to get check is database if empty:%w", err)
 	}
 
 	var span DatanodeBlockSpan
 	if hasVegaSchema {
-		conn, err := pgxpool.Connect(ctx, connConfig.GetConnectionString())
-		if err != nil {
-			return DatanodeBlockSpan{}, fmt.Errorf("failed to connect to database: %w", err)
-		}
-		defer conn.Close()
-
-		oldestBlock, err := GetOldestHistoryBlockUsingConnection(ctx, conn)
+		oldestBlock, err := GetOldestHistoryBlockUsingConnection(ctx, connPool)
 		if err != nil {
 			if errors.Is(err, entities.ErrNotFound) {
 				return DatanodeBlockSpan{
 					HasData: false,
 				}, nil
 			}
-
 			return DatanodeBlockSpan{}, fmt.Errorf("failed to get oldest history block:%w", err)
 		}
 
-		lastBlock, err := GetLastBlockUsingConnection(ctx, conn)
+		lastBlock, err := GetLastBlockUsingConnection(ctx, connPool)
 		if err != nil {
 			return DatanodeBlockSpan{}, fmt.Errorf("failed to get last block:%w", err)
 		}

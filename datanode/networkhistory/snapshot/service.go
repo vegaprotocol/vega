@@ -7,16 +7,16 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jackc/pgx/v4/pgxpool"
+
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot/mutex"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
 )
 
 type Service struct {
-	log    *logging.Logger
-	config Config
-
-	connConfig sqlstore.ConnectionConfig
+	log      *logging.Logger
+	config   Config
+	connPool *pgxpool.Pool
 
 	createSnapshotLock       mutex.CtxMutex
 	snapshotsCopyFromPath    string
@@ -24,7 +24,7 @@ type Service struct {
 	migrateDatabaseToVersion func(version int64) error
 }
 
-func NewSnapshotService(log *logging.Logger, config Config, connConfig sqlstore.ConnectionConfig,
+func NewSnapshotService(log *logging.Logger, config Config, connPool *pgxpool.Pool,
 	snapshotsCopyFromPath string,
 	snapshotsCopyToPath string,
 	migrateDatabaseToVersion func(version int64) error,
@@ -45,7 +45,7 @@ func NewSnapshotService(log *logging.Logger, config Config, connConfig sqlstore.
 	s := &Service{
 		log:                      log,
 		config:                   config,
-		connConfig:               connConfig,
+		connPool:                 connPool,
 		createSnapshotLock:       mutex.New(),
 		snapshotsCopyFromPath:    snapshotsCopyFromPath,
 		snapshotsCopyToPath:      snapshotsCopyToPath,

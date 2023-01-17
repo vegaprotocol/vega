@@ -86,8 +86,9 @@ func (cmd *fetchCmd) Execute(args []string) error {
 func verifyChainID(log *logging.Logger, connConfig sqlstore.ConnectionConfig, chainID string) error {
 	connSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), connConfig)
 	if err != nil {
-		return fmt.Errorf("failed to connect to database:%w", err)
+		return fmt.Errorf("failed to create new transactional connection source: %w", err)
 	}
+
 	defer connSource.Close()
 
 	store := sqlstore.NewChain(connSource)
