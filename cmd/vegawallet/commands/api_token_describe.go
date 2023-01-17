@@ -33,15 +33,16 @@ func NewCmdDescribeAPIToken(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(f DescribeAPITokenFlags) (connections.TokenDescription, error) {
 		vegaPaths := paths.New(rf.Home)
 
-		store, err := tokenStoreV1.LoadStore(vegaPaths, f.passphrase)
+		tokenStore, err := tokenStoreV1.InitialiseStore(vegaPaths, f.passphrase)
 		if err != nil {
 			if errors.Is(err, api.ErrWrongPassphrase) {
 				return connections.TokenDescription{}, err
 			}
 			return connections.TokenDescription{}, fmt.Errorf("couldn't load the token store: %w", err)
 		}
+		defer tokenStore.Close()
 
-		return connections.DescribeAPIToken(store, f.Token)
+		return connections.DescribeAPIToken(tokenStore, f.Token)
 	}
 
 	return BuildCmdDescribeAPIToken(w, ensureAPITokenStoreIsInit, h, rf)

@@ -36,7 +36,9 @@ import (
 	"code.vegaprotocol.io/vega/version"
 
 	"github.com/pkg/errors"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -240,6 +242,38 @@ func (t *tradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.Li
 			Edges:    edges,
 			PageInfo: pageInfo.ToProto(),
 		},
+	}, nil
+}
+
+func (t *tradingDataServiceV2) ExportLedgerEntries(ctx context.Context, req *v2.ExportLedgerEntriesRequest) (*v2.ExportLedgerEntriesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ExportLedgerEntriesV2")()
+	if t.accountService == nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceSQLStoreNotAvailable, nil)
+	}
+
+	dateRange := entities.DateRangeFromProto(req.DateRange)
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid cursor: %w", err))
+	}
+
+	raw, pageInfo, err := t.ledgerService.Export(ctx, req.PartyId, req.AssetId, dateRange, pagination)
+	if err != nil {
+		apiError(codes.Aborted, err)
+	}
+
+	header := metadata.New(map[string]string{
+		"Content-Type":       "text/csv",
+		"Content-diposition": fmt.Sprintf("attachment;filename=%s", "ledger_entries_export.csv"),
+	})
+
+	if err := grpc.SendHeader(ctx, header); err != nil {
+		return nil, apiError(codes.Internal, fmt.Errorf("unable to send 'x-response-id' header"))
+	}
+
+	return &v2.ExportLedgerEntriesResponse{
+		Data:     raw,
+		PageInfo: pageInfo.ToProto(),
 	}, nil
 }
 

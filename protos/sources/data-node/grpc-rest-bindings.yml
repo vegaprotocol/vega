@@ -29,6 +29,8 @@ http:
       get: "/api/v2/balance/changes"
     - selector: datanode.api.v2.TradingDataService.ListLedgerEntries
       get: "/api/v2/ledgerentry/history"
+    - selector: datanode.api.v2.TradingDataService.ExportLedgerEntries
+      get: "/api/v2/ledgerentry/export"
     - selector: datanode.api.v2.TradingDataService.GetLatestMarketData
       get: "/api/v2/market/data/{market_id}/latest"
     - selector: datanode.api.v2.TradingDataService.ListLatestMarketData

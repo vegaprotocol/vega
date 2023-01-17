@@ -16,7 +16,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.66.1";
+    version: "v0.67.0-dev";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz/datanode/rest"
@@ -85,6 +85,15 @@ service TradingDataService {
     //   - listing ledger entries with filtering on the sending AND receiving account
     //   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
     rpc ListLedgerEntries(ListLedgerEntriesRequest) returns (ListLedgerEntriesResponse) {}
+
+    // Export ledger entries records ledger entries to a csv file.
+    // May or may not contain a date range - if no date range is provided, list all records for all times.
+    //
+    //
+    // Ledger entries can be exported by:
+    //   - export ledger entries for a single party for a given asset within a given time range
+    //   - export ledger entries for a single party for a given asset for all times
+    rpc ExportLedgerEntries(ExportLedgerEntriesRequest) returns (ExportLedgerEntriesResponse) {}
 
     //  Balances
     //
@@ -800,8 +809,20 @@ message ListLedgerEntriesRequest {
     optional DateRange date_range = 3;
 }
 
+message ExportLedgerEntriesRequest {
+    string party_id = 1;
+    string asset_id = 2;
+    optional Pagination pagination = 3;
+    optional DateRange date_range = 4;
+}
+
 message ListLedgerEntriesResponse {
     AggregatedLedgerEntriesConnection ledger_entries = 1;
+}
+
+message ExportLedgerEntriesResponse {
+    bytes data = 1;
+    PageInfo page_info = 2;
 }
 
 message AggregatedLedgerEntriesEdge {
