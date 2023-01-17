@@ -14,6 +14,7 @@ package sqlstore
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -159,6 +160,50 @@ func (ls *Ledger) Query(
 	ledgerEntries := parseScanned(results)
 	res, pageInfo := entities.PageEntities[*v2.AggregatedLedgerEntriesEdge](ledgerEntries, pagination)
 	return &res, pageInfo, nil
+}
+
+func (ls *Ledger) Export(
+	ctx context.Context,
+	partyID, assetID string,
+	dateRange entities.DateRange,
+	pagination entities.CursorPagination,
+) ([]byte, entities.PageInfo, error) {
+	if partyID == "" {
+		return nil, entities.PageInfo{}, ErrLedgerEntryExportForParty
+	}
+
+	filter := &entities.LedgerEntryFilter{
+		FromAccountFilter: entities.AccountFilter{
+			AssetID:  entities.AssetID(assetID),
+			PartyIDs: []entities.PartyID{entities.PartyID(partyID)},
+		},
+	}
+
+	aggregatedEntries, pageInfo, err := ls.Query(ctx, filter, dateRange, pagination)
+	if err != nil {
+		return nil, entities.PageInfo{}, err
+	}
+
+	columns := []string{
+		"VegaTime", "AssetId", "SenderPartyId", "SenderMarketId", "SenderAccountType",
+		"ReceiverPartyId", "ReceiverMarketId", "ReceiverAccountType", "Quantity", "TransferType",
+	}
+
+	data, err := json.MarshalIndent(columns, "", " ")
+	if err != nil {
+		return nil, entities.PageInfo{}, fmt.Errorf("failed to prepare columns: %w", err)
+	}
+
+	if aggregatedEntries != nil {
+		content, err := json.MarshalIndent(*aggregatedEntries, "", "  ")
+		if err != nil {
+			return nil, entities.PageInfo{}, fmt.Errorf("failed to write content: %w", err)
+		}
+
+		data = append(data, content...)
+	}
+
+	return data, pageInfo, nil
 }
 
 // ledgerEntriesScanned is a local type used as a mediator between pgxscan scanner
