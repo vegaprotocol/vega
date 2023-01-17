@@ -25,6 +25,7 @@
 - [7331](https://github.com/vegaprotocol/vega/issues/7331) - Control the decrease of the number of validators when network parameter is decreased
 - [6754](https://github.com/vegaprotocol/vega/issues/6754) - Add `csv` export for ledger entries
 - [7093](https://github.com/vegaprotocol/vega/issues/7093) - Pick up the long-living tokens after the wallet service is started
+- [7328](https://github.com/vegaprotocol/vega/issues/7328) - Add missing documentation of JSON-RPC methods `admin.update_passphrase`
 
 ### 🐛 Fixes
 - [7260](https://github.com/vegaprotocol/vega/issues/7260) - Fix bug where pagination `before` or `after` cursors were ignored if `first` or `last` not set
