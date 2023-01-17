@@ -214,7 +214,7 @@ func (pc *VisorConfig) WatchForUpdate(ctx context.Context) error {
 				if !ok {
 					return nil
 				}
-				if event.Op&fsnotify.Write == fsnotify.Write {
+				if event.Has(fsnotify.Write) {
 					// add a small sleep here in order to handle vi
 					// vi do not send a write event / edit the file in place,
 					// it always create a temporary file, then delete the original one,

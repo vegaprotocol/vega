@@ -53,7 +53,7 @@ func (mr *MockWalletStoreMockRecorder) GetWallet(arg0, arg1 interface{}) *gomock
 }
 
 // OnUpdate mocks base method.
-func (m *MockWalletStore) OnUpdate(arg0 func(wallet.Wallet)) {
+func (m *MockWalletStore) OnUpdate(arg0 func(context.Context, wallet.Wallet)) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "OnUpdate", arg0)
 }
@@ -138,6 +138,18 @@ func (m *MockTokenStore) EXPECT() *MockTokenStoreMockRecorder {
 	return m.recorder
 }
 
+// Close mocks base method.
+func (m *MockTokenStore) Close() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Close")
+}
+
+// Close indicates an expected call of Close.
+func (mr *MockTokenStoreMockRecorder) Close() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockTokenStore)(nil).Close))
+}
+
 // DeleteToken mocks base method.
 func (m *MockTokenStore) DeleteToken(arg0 connections.Token) error {
 	m.ctrl.T.Helper()
@@ -180,6 +192,18 @@ func (m *MockTokenStore) ListTokens() ([]connections.TokenSummary, error) {
 func (mr *MockTokenStoreMockRecorder) ListTokens() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTokens", reflect.TypeOf((*MockTokenStore)(nil).ListTokens))
+}
+
+// OnUpdate mocks base method.
+func (m *MockTokenStore) OnUpdate(arg0 func(context.Context, ...connections.TokenDescription)) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OnUpdate", arg0)
+}
+
+// OnUpdate indicates an expected call of OnUpdate.
+func (mr *MockTokenStoreMockRecorder) OnUpdate(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnUpdate", reflect.TypeOf((*MockTokenStore)(nil).OnUpdate), arg0)
 }
 
 // SaveToken mocks base method.

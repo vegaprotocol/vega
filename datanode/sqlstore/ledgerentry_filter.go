@@ -8,7 +8,12 @@ import (
 	"code.vegaprotocol.io/vega/protos/vega"
 )
 
-var ErrLedgerEntryFilterForParty = errors.New("filtering ledger entries should be limited to a single party")
+var (
+	ErrLedgerEntryFilterForParty = errors.New("filtering ledger entries should be limited to a single party")
+
+	ErrLedgerEntryExportForParty = errors.New("exporting ledger entries should be limited to a single party")
+	ErrLedgerEntryExportForAsset = errors.New("exporting ledger entries should be limited to a single asset")
+)
 
 // Return an SQL query string and corresponding bind arguments to return
 // ledger entries rows resulting from different filter options.

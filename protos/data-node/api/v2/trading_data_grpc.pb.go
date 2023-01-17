@@ -75,6 +75,13 @@ type TradingDataServiceClient interface {
 	//   - listing ledger entries with filtering on the sending AND receiving account
 	//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 	ListLedgerEntries(ctx context.Context, in *ListLedgerEntriesRequest, opts ...grpc.CallOption) (*ListLedgerEntriesResponse, error)
+	// Export ledger entries records ledger entries to a csv file.
+	// May or may not contain a date range - if no date range is provided, list all records for all times.
+	//
+	// Ledger entries can be exported by:
+	//   - export ledger entries for a single party for a given asset within a given time range
+	//   - export ledger entries for a single party for a given asset for all times
+	ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (*ExportLedgerEntriesResponse, error)
 	//	Balances
 	//
 	// `ListBalanceChanges` is for querying the change in account balances over a period of time.
@@ -541,6 +548,15 @@ func (x *tradingDataServiceObservePositionsClient) Recv() (*ObservePositionsResp
 func (c *tradingDataServiceClient) ListLedgerEntries(ctx context.Context, in *ListLedgerEntriesRequest, opts ...grpc.CallOption) (*ListLedgerEntriesResponse, error) {
 	out := new(ListLedgerEntriesResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListLedgerEntries", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (*ExportLedgerEntriesResponse, error) {
+	out := new(ExportLedgerEntriesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ExportLedgerEntries", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1559,6 +1575,13 @@ type TradingDataServiceServer interface {
 	//   - listing ledger entries with filtering on the sending AND receiving account
 	//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 	ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error)
+	// Export ledger entries records ledger entries to a csv file.
+	// May or may not contain a date range - if no date range is provided, list all records for all times.
+	//
+	// Ledger entries can be exported by:
+	//   - export ledger entries for a single party for a given asset within a given time range
+	//   - export ledger entries for a single party for a given asset for all times
+	ExportLedgerEntries(context.Context, *ExportLedgerEntriesRequest) (*ExportLedgerEntriesResponse, error)
 	//	Balances
 	//
 	// `ListBalanceChanges` is for querying the change in account balances over a period of time.
@@ -1898,6 +1921,9 @@ func (UnimplementedTradingDataServiceServer) ObservePositions(*ObservePositionsR
 }
 func (UnimplementedTradingDataServiceServer) ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListLedgerEntries not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ExportLedgerEntries(context.Context, *ExportLedgerEntriesRequest) (*ExportLedgerEntriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExportLedgerEntries not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ListBalanceChanges(context.Context, *ListBalanceChangesRequest) (*ListBalanceChangesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListBalanceChanges not implemented")
@@ -2316,6 +2342,24 @@ func _TradingDataService_ListLedgerEntries_Handler(srv interface{}, ctx context.
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).ListLedgerEntries(ctx, req.(*ListLedgerEntriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ExportLedgerEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExportLedgerEntriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ExportLedgerEntries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ExportLedgerEntries",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ExportLedgerEntries(ctx, req.(*ExportLedgerEntriesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3712,6 +3756,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListLedgerEntries",
 			Handler:    _TradingDataService_ListLedgerEntries_Handler,
+		},
+		{
+			MethodName: "ExportLedgerEntries",
+			Handler:    _TradingDataService_ExportLedgerEntries_Handler,
 		},
 		{
 			MethodName: "ListBalanceChanges",

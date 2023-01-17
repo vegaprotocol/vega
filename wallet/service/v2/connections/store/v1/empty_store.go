@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"errors"
 
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
@@ -30,6 +31,10 @@ func (e EmptyStore) SaveToken(_ connections.TokenDescription) error {
 func (e EmptyStore) DeleteToken(_ connections.Token) error {
 	return ErrTokenDoesNotExist
 }
+
+func (e EmptyStore) OnUpdate(_ func(context.Context, ...connections.TokenDescription)) {}
+
+func (e EmptyStore) Close() {}
 
 func NewEmptyStore() *EmptyStore {
 	return &EmptyStore{}
