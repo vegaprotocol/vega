@@ -152,8 +152,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
   Scenario: When trying to exit opening auction liquidity monitoring is triggered due to insufficient supplied stake  (0026-AUCT-004, 0026-AUCT-005)
 
     Given the liquidity monitoring parameters:
-      | name              | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 0.8            | 24h         | 1              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring |
       | ETH/DEC21 | updated-lqm-params   |
@@ -221,8 +221,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
   Scenario: Once market is in continuous trading mode: post a persistent order that should trigger liquidity auction (not enough target stake), appropriate event is sent and market in TRADING_MODE_MONITORING_AUCTION (0026-AUCT-005, 0035-LIQM-003)
     Given the liquidity monitoring parameters:
-      | name              | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 0.8            | 24h         | 1              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring |
       | ETH/DEC21 | updated-lqm-params   |
@@ -297,8 +297,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
   Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger liquidity auction (not enough target stake), still goes through, but auction is triggered the next block
     Given the liquidity monitoring parameters:
-      | name              | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 0.8            | 24h         | 1              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring |
       | ETH/DEC21 | updated-lqm-params   |
@@ -346,7 +346,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1414         | 1000           | 14            |
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1414         | 1000           | 14            |
 
   Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger liquidity auction (no best ask), the order trades, market goes into auction mode and an appropriate event is sent and market goes into TRADING_MODE_MONITORING_AUCTION the next block (0035-LIQM-002)
@@ -491,7 +491,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | buy  | 991   | 1      |
       | buy  | 990   | 1      |
 
-  Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger price auction, check that the order gets stopped, appropriate event is sent and market remains in TRADING_MODE_CONTINUOUS
+  Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger price auction, check that the order gets stopped, appropriate event is sent and market remains in TRADING_MODE_CONTINUOUS, 0024-OSTA-012
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
@@ -526,6 +526,14 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party  | market id | reason                                               |
       | party1 | ETH/DEC21 | ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS |
 
+    When the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                                       |
+      | party2 | ETH/DEC21 | sell | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC | no-reject |                                                             |
+      | party1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_FOK | reject-me | OrderError: non-persistent order trades out of price bounds |
+    Then the following orders should be stopped:
+      | party  | market id | reason                                               |
+      | party1 | ETH/DEC21 | ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS |
+
     Then the network moves ahead "5" blocks
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -534,8 +542,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> leave auction mode (0068-MATC-033,0026-AUCT-005)
 
     Given the liquidity monitoring parameters:
-      | name              | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 0.8            | 24h         | 1              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring |
       | ETH/DEC21 | updated-lqm-params   |
@@ -582,7 +590,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           | horizon | min bound | max bound | 
+      | trading mode                    | auction trigger           | horizon | min bound | max bound |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 100     | 993       | 1012      |
 
     # submit the order during auction so we can cancel it later on
@@ -627,8 +635,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity monitoring -> leave auction mode (0068-MATC-033,0026-AUCT-005)
     Given the liquidity monitoring parameters:
-      | name              | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 0.8            | 24h         | 1              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring |
       | ETH/DEC21 | updated-lqm-params   |
@@ -667,7 +675,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | party2 | ETH/DEC21 | sell |  2     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | trigger-liq |
+      | party2 | ETH/DEC21 | sell | 2      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | trigger-liq |
       | party1 | ETH/DEC21 | buy  | 10     | 1010  | 3                | TYPE_LIMIT | TIF_GTC | trigger-liq |
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | last traded price | trading mode            | target stake | supplied stake | open interest |
@@ -736,8 +744,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
   Scenario: Once market is in continuous trading mode: enter price monitoring auction -> extend with liquidity monitoring auction -> leave auction mode (0068-MATC-033,0026-AUCT-005)
     Given the liquidity monitoring parameters:
-      | name              | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 0.8            | 24h         | 1              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring |
       | ETH/DEC21 | updated-lqm-params   |
@@ -794,8 +802,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity auction -> leave auction mode (0068-MATC-033, 0026-AUCT-005)
 
     Given the liquidity monitoring parameters:
-      | name              | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 0.8            | 24h         | 1              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring |
       | ETH/DEC21 | updated-lqm-params   |
