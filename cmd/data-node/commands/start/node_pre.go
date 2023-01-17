@@ -91,14 +91,6 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		}()
 	}
 
-	if l.conf.NetworkHistory.Enabled {
-		l.Log.Info("Initializing Network History")
-		err = l.initialiseNetworkHistory()
-		if err != nil {
-			return fmt.Errorf("failed to initialise network history:%w", err)
-		}
-	}
-
 	if l.conf.SQLStore.WipeOnStartup {
 		if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(l.Log, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations); err != nil {
 			return fmt.Errorf("failed to wiped database:%w", err)
@@ -107,31 +99,36 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 	}
 
 	initialisedFromNetworkHistory := false
-	if bool(l.conf.NetworkHistory.Enabled) && bool(l.conf.AutoInitialiseFromNetworkHistory) {
-		l.Log.Info("Auto Initialising Datanode From Network History")
-		initialisedFromNetworkHistory = true
-		apiPorts := []int{l.conf.API.Port}
-		apiPorts = append(apiPorts, l.conf.NetworkHistory.Initialise.GrpcAPIPorts...)
-		blockSpan, err := sqlstore.GetDatanodeBlockSpan(l.ctx, l.conf.SQLStore.ConnectionConfig)
+	if l.conf.NetworkHistory.Enabled {
+		l.Log.Info("Initializing Network History")
+
+		if l.conf.AutoInitialiseFromNetworkHistory {
+			if err := networkhistory.KillAllConnectionsToDatabase(context.Background(), l.conf.SQLStore.ConnectionConfig); err != nil {
+				return fmt.Errorf("failed to kill all connections to database: %w", err)
+			}
+		}
+
+		err = l.initialiseNetworkHistory(l.conf.SQLStore.ConnectionConfig)
 		if err != nil {
-			return fmt.Errorf("failed to get datanode block span: %w", err)
+			return fmt.Errorf("failed to initialise network history:%w", err)
 		}
 
-		if blockSpan.HasData {
-			l.Log.Infof("Datanode has data from block height %d to %d", blockSpan.FromHeight, blockSpan.ToHeight)
-		} else {
-			l.Log.Info("Datanode is empty")
-		}
+		if l.conf.AutoInitialiseFromNetworkHistory {
+			l.Log.Info("Auto Initialising Datanode From Network History")
+			apiPorts := []int{l.conf.API.Port}
+			apiPorts = append(apiPorts, l.conf.NetworkHistory.Initialise.GrpcAPIPorts...)
 
-		if err = networkhistory.InitialiseDatanodeFromNetworkHistory(l.ctx, l.conf.NetworkHistory.Initialise,
-			l.Log, l.networkHistoryService, blockSpan, apiPorts); err != nil {
-			return fmt.Errorf("failed to initialize datanode from network history: %w", err)
+			if err = networkhistory.InitialiseDatanodeFromNetworkHistory(l.ctx, l.conf.NetworkHistory.Initialise,
+				l.Log, l.conf.SQLStore.ConnectionConfig, l.networkHistoryService, apiPorts); err != nil {
+				return fmt.Errorf("failed to initialize datanode from network history: %w", err)
+			}
+
+			initialisedFromNetworkHistory = true
+			l.Log.Info("Initialized from network history")
 		}
 	}
 
-	if initialisedFromNetworkHistory {
-		l.Log.Info("Initialized from network history")
-	} else {
+	if !initialisedFromNetworkHistory {
 		operation := func() (opErr error) {
 			l.Log.Info("Attempting to initialise database...")
 			opErr = l.initialiseDatabase()
@@ -164,14 +161,12 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 
 	l.Log.Info("Enabling SQL stores")
 
-	transactionalConnectionSource, err := sqlstore.NewTransactionalConnectionSource(l.Log, l.conf.SQLStore.ConnectionConfig)
+	l.transactionalConnectionSource, err = sqlstore.NewTransactionalConnectionSource(l.Log, l.conf.SQLStore.ConnectionConfig)
 	if err != nil {
-		return fmt.Errorf("failed to create connection source:%w", err)
+		return fmt.Errorf("failed to create transactional connection source: %w", err)
 	}
 
-	l.transactionalConnectionSource = transactionalConnectionSource
-
-	l.CreateAllStores(l.ctx, l.Log, transactionalConnectionSource, l.conf.CandlesV2.CandleStore)
+	l.CreateAllStores(l.ctx, l.Log, l.transactionalConnectionSource, l.conf.CandlesV2.CandleStore)
 
 	log := l.Log.Named("service")
 	log.SetLevel(l.conf.Service.Level.Get())
@@ -191,8 +186,15 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 
 func (l *NodeCommand) initialiseDatabase() error {
 	var err error
+	conf := l.conf.SQLStore.ConnectionConfig
+	conf.MaxConnPoolSize = 1
+	pool, err := sqlstore.CreateConnectionPool(conf)
+	if err != nil {
+		return fmt.Errorf("failed to create connection pool: %w", err)
+	}
+	defer pool.Close()
 
-	hasVegaSchema, err := sqlstore.HasVegaSchema(l.ctx, l.conf.SQLStore.ConnectionConfig)
+	hasVegaSchema, err := sqlstore.HasVegaSchema(l.ctx, pool)
 	if err != nil {
 		return fmt.Errorf("failed to check if database has schema: %w", err)
 	}
@@ -287,16 +289,25 @@ func (l *NodeCommand) preRun([]string) (err error) {
 	return nil
 }
 
-func (l *NodeCommand) initialiseNetworkHistory() error {
+func (l *NodeCommand) initialiseNetworkHistory(connConfig sqlstore.ConnectionConfig) error {
+	// Want to pre-allocate some connections to ensure a connection is always available,
+	// 3 is chosen to allow for the fact that pool size can temporarily drop below the min pool size.
+	connConfig.MaxConnPoolSize = 3
+	connConfig.MinConnPoolSize = 3
+
+	networkHistoryPool, err := sqlstore.CreateConnectionPool(connConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create network history connection pool: %w", err)
+	}
+
 	networkHistoryLog := l.Log.Named("networkHistory")
 	networkHistoryLog.SetLevel(l.conf.NetworkHistory.Level.Get())
 
 	snapshotServiceLog := networkHistoryLog.Named("snapshot")
 	networkHistoryServiceLog := networkHistoryLog.Named("service")
 
-	var err error
 	l.snapshotService, err = snapshot.NewSnapshotService(snapshotServiceLog, l.conf.NetworkHistory.Snapshot,
-		l.conf.SQLStore.ConnectionConfig, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
+		networkHistoryPool, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
 		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
 			if err = sqlstore.MigrateToSchemaVersion(networkHistoryLog, l.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
 				return fmt.Errorf("failed to migrate to schema version %d: %w", version, err)
@@ -308,6 +319,7 @@ func (l *NodeCommand) initialiseNetworkHistory() error {
 	}
 
 	l.networkHistoryService, err = networkhistory.New(l.ctx, networkHistoryServiceLog, l.conf.NetworkHistory, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome),
+		networkHistoryPool,
 		l.conf.SQLStore.ConnectionConfig, l.conf.ChainID, l.snapshotService, l.conf.API.Port, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
 		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo))
 

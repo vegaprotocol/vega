@@ -43,6 +43,7 @@ type ConnectionConfig struct {
 	MaxConnLifetime       encoding.Duration `long:"max-conn-lifetime"`
 	MaxConnLifetimeJitter encoding.Duration `long:"max-conn-lifetime-jitter"`
 	MaxConnPoolSize       int               `long:"max-conn-pool-size"`
+	MinConnPoolSize       int32             `long:"min-conn-pool-size"`
 }
 
 type RetentionPolicy struct {

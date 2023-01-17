@@ -33,18 +33,9 @@ type LoadResult struct {
 }
 
 func (b *Service) LoadAllSnapshotData(ctx context.Context, currentStateSnapshot CurrentState,
-	contiguousHistory []History, sourceDir string,
+	contiguousHistory []History, sourceDir string, connConfig sqlstore.ConnectionConfig,
 ) (LoadResult, error) {
-	if err := killAllConnectionsToDatabase(ctx, b.connConfig); err != nil {
-		return LoadResult{}, fmt.Errorf("failed to kill all connections to database: %w", err)
-	}
-
-	vegaDbConn, err := pgxpool.Connect(context.Background(), b.connConfig.GetConnectionString())
-	if err != nil {
-		return LoadResult{}, fmt.Errorf("unable to connect to vega database: %w", err)
-	}
-
-	datanodeBlockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, b.connConfig)
+	datanodeBlockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, b.connPool)
 	if err != nil {
 		return LoadResult{}, fmt.Errorf("failed to check if datanode has data: %w", err)
 	}
@@ -60,16 +51,16 @@ func (b *Service) LoadAllSnapshotData(ctx context.Context, currentStateSnapshot 
 	if datanodeBlockSpan.HasData {
 		heightToLoadFrom = datanodeBlockSpan.ToHeight + 1
 	} else {
-		sqlstore.RevertToSchemaVersionZero(b.log, b.connConfig, sqlstore.EmbedMigrations)
+		sqlstore.RevertToSchemaVersionZero(b.log, connConfig, sqlstore.EmbedMigrations)
 		heightToLoadFrom = historyFromHeight
 	}
 
-	_, err = vegaDbConn.Exec(ctx, "SET TIME ZONE 0")
+	_, err = b.connPool.Exec(ctx, "SET TIME ZONE 0")
 	if err != nil {
 		return LoadResult{}, fmt.Errorf("failed to set timezone to UTC: %w", err)
 	}
 
-	dbVersion, err := getDatabaseVersion(b.connConfig)
+	dbVersion, err := getDBVersion(ctx, b.connPool)
 	if err != nil {
 		return LoadResult{}, fmt.Errorf("failed to get database version: %w", err)
 	}
@@ -82,7 +73,7 @@ func (b *Service) LoadAllSnapshotData(ctx context.Context, currentStateSnapshot 
 	var constraints *Constraints
 	for _, history := range contiguousHistory {
 		if constraints == nil {
-			constraints, err = b.removeConstraints(ctx, vegaDbConn)
+			constraints, err = b.removeConstraints(ctx, b.connPool)
 			if err != nil {
 				return LoadResult{}, fmt.Errorf("failed to remove constraints: %w", err)
 			}
@@ -96,7 +87,7 @@ func (b *Service) LoadAllSnapshotData(ctx context.Context, currentStateSnapshot 
 		if dbVersion != snapshotDatabaseVersion {
 			b.log.Info("migrating database", logging.Int64("current database version", dbVersion), logging.Int64("target database version", dbVersion))
 
-			err = b.applyConstraints(ctx, vegaDbConn, constraints)
+			err = b.applyConstraints(ctx, b.connPool, constraints)
 			if err != nil {
 				return LoadResult{}, fmt.Errorf("failed to apply constraints prior to database migration from verion %d to %d: %w", dbVersion, snapshotDatabaseVersion, err)
 			}
@@ -107,13 +98,13 @@ func (b *Service) LoadAllSnapshotData(ctx context.Context, currentStateSnapshot 
 			}
 			dbVersion = snapshotDatabaseVersion
 
-			constraints, err = b.removeConstraints(ctx, vegaDbConn)
+			constraints, err = b.removeConstraints(ctx, b.connPool)
 			if err != nil {
 				return LoadResult{}, fmt.Errorf("failed to remove constraints after database migration from version %d to %d: %w", dbVersion, snapshotDatabaseVersion, err)
 			}
 		}
 
-		rowsCopied, err = b.loadSnapshot(ctx, history, sourceDir, vegaDbConn)
+		rowsCopied, err = b.loadSnapshot(ctx, history, sourceDir, b.connPool)
 		if err != nil {
 			return LoadResult{}, fmt.Errorf("failed to load history snapshot %s: %w", history, err)
 		}
@@ -122,30 +113,30 @@ func (b *Service) LoadAllSnapshotData(ctx context.Context, currentStateSnapshot 
 
 	// Then current state
 
-	if err = b.truncateCurrentStateTables(ctx, vegaDbConn); err != nil {
+	if err = b.truncateCurrentStateTables(ctx); err != nil {
 		return LoadResult{}, fmt.Errorf("failed to truncate current state tables: %w", err)
 	}
 
-	rowsCopied, err = b.loadSnapshot(ctx, currentStateSnapshot, sourceDir, vegaDbConn)
+	rowsCopied, err = b.loadSnapshot(ctx, currentStateSnapshot, sourceDir, b.connPool)
 	totalRowsCopied += rowsCopied
 	if err != nil {
 		return LoadResult{}, fmt.Errorf("failed to load current state snapshot %s: %w", currentStateSnapshot, err)
 	}
 
 	b.log.Infof("reapplying constraints")
-	err = b.applyConstraints(ctx, vegaDbConn, constraints)
+	err = b.applyConstraints(ctx, b.connPool, constraints)
 	if err != nil {
 		return LoadResult{}, fmt.Errorf("failed to end bulk load: %w", err)
 	}
 
 	b.log.Infof("recreating continuous aggregate data")
-	err = b.recreateAllContinuousAggregateData(ctx, vegaDbConn)
+	err = b.recreateAllContinuousAggregateData(ctx, b.connPool)
 	if err != nil {
 		return LoadResult{}, fmt.Errorf("failed to recreate continuous aggregate data: %w", err)
 	}
 
 	b.log.Infof("restoring current order state")
-	err = orders.UpdateCurrentOrdersState(ctx, vegaDbConn)
+	err = orders.UpdateCurrentOrdersState(ctx, b.connPool)
 	if err != nil {
 		return LoadResult{}, fmt.Errorf("failed to update current order state: %w", err)
 	}
@@ -180,8 +171,8 @@ func validateSpanOfHistoryToLoad(existingDatanodeSpan sqlstore.DatanodeBlockSpan
 	return nil
 }
 
-func (b *Service) truncateCurrentStateTables(ctx context.Context, vegaDbConn Conn) error {
-	dbMetaData, err := NewDatabaseMetaData(ctx, b.connConfig)
+func (b *Service) truncateCurrentStateTables(ctx context.Context) error {
+	dbMetaData, err := NewDatabaseMetaData(ctx, b.connPool)
 	if err != nil {
 		return fmt.Errorf("failed to get database metadata: %w", err)
 	}
@@ -189,7 +180,7 @@ func (b *Service) truncateCurrentStateTables(ctx context.Context, vegaDbConn Con
 	for tableName := range dbMetaData.TableNameToMetaData {
 		if !dbMetaData.TableNameToMetaData[tableName].Hypertable {
 			tableTruncateSQL := fmt.Sprintf("truncate table %s", tableName)
-			_, err = vegaDbConn.Exec(ctx, tableTruncateSQL)
+			_, err = b.connPool.Exec(ctx, tableTruncateSQL)
 			if err != nil {
 				return fmt.Errorf("failed to truncate table %s: %w", tableName, err)
 			}
@@ -219,7 +210,7 @@ func (b *Service) loadSnapshot(ctx context.Context, snapshotData compressedFileM
 		return 0, fmt.Errorf("failed to decompress and untar data: %w", err)
 	}
 
-	dbMetaData, err := NewDatabaseMetaData(ctx, b.connConfig)
+	dbMetaData, err := NewDatabaseMetaData(ctx, b.connPool)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get database meta data: %w", err)
 	}
@@ -285,30 +276,6 @@ func getLastPartitionEntryForTable(ctx context.Context, vegaDbConn *pgxpool.Pool
 	}
 
 	return time.Time{}, nil
-}
-
-func killAllConnectionsToDatabase(ctx context.Context, connConfig sqlstore.ConnectionConfig) error {
-	conn, err := pgxpool.Connect(ctx, connConfig.GetConnectionString())
-	if err != nil {
-		return fmt.Errorf("unable to connect to database: %w", err)
-	}
-	defer conn.Close()
-
-	killAllConnectionsQuery := fmt.Sprintf(
-		`SELECT
-	pg_terminate_backend(pg_stat_activity.pid)
-		FROM
-	pg_stat_activity
-		WHERE
-	pg_stat_activity.datname = '%s'
-	AND pid <> pg_backend_pid();`, connConfig.Database)
-
-	_, err = conn.Exec(ctx, killAllConnectionsQuery)
-	if err != nil {
-		return fmt.Errorf("failed to kill all database connection: %w", err)
-	}
-
-	return nil
 }
 
 type Constraints struct {

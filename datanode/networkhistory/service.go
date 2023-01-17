@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v4/pgxpool"
+
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"code.vegaprotocol.io/vega/datanode/networkhistory/aggregation"
@@ -23,12 +25,11 @@ import (
 )
 
 type Service struct {
-	log *logging.Logger
-	cfg Config
+	log      *logging.Logger
+	connPool *pgxpool.Pool
 
 	snapshotService *snapshot.Service
 	store           *store.Store
-	connConfig      sqlstore.ConnectionConfig
 
 	chainID string
 
@@ -40,7 +41,7 @@ type Service struct {
 	publishLock sync.Mutex
 }
 
-func New(ctx context.Context, log *logging.Logger, cfg Config, networkHistoryHome string, connConfig sqlstore.ConnectionConfig,
+func New(ctx context.Context, log *logging.Logger, cfg Config, networkHistoryHome string, connPool *pgxpool.Pool, connConfig sqlstore.ConnectionConfig,
 	chainID string,
 	snapshotService *snapshot.Service, datanodeGrpcAPIPort int,
 	snapshotsCopyFromDir, snapshotsCopyToDir string,
@@ -53,20 +54,19 @@ func New(ctx context.Context, log *logging.Logger, cfg Config, networkHistoryHom
 		return nil, fmt.Errorf("failed to create network history store:%w", err)
 	}
 
-	return NewWithStore(ctx, log, chainID, cfg, connConfig, snapshotService, networkHistoryStore, datanodeGrpcAPIPort, snapshotsCopyFromDir, snapshotsCopyToDir)
+	return NewWithStore(ctx, log, chainID, cfg, connPool, snapshotService, networkHistoryStore, datanodeGrpcAPIPort, snapshotsCopyFromDir, snapshotsCopyToDir)
 }
 
-func NewWithStore(ctx context.Context, log *logging.Logger, chainID string, cfg Config, connConfig sqlstore.ConnectionConfig,
+func NewWithStore(ctx context.Context, log *logging.Logger, chainID string, cfg Config, connPool *pgxpool.Pool,
 	snapshotService *snapshot.Service,
 	networkHistoryStore *store.Store, datanodeGrpcAPIPort int,
 	snapshotsCopyFromDir, snapshotsCopyToDir string,
 ) (*Service, error) {
 	s := &Service{
 		log:                  log,
-		cfg:                  cfg,
+		connPool:             connPool,
 		snapshotService:      snapshotService,
 		store:                networkHistoryStore,
-		connConfig:           connConfig,
 		chainID:              chainID,
 		snapshotsCopyFromDir: snapshotsCopyFromDir,
 		snapshotsCopyToDir:   snapshotsCopyToDir,
@@ -164,7 +164,7 @@ func (d *Service) GetSwarmKey() string {
 	return d.store.GetSwarmKey()
 }
 
-func (d *Service) LoadNetworkHistoryIntoDatanode(ctx context.Context) (snapshot.LoadResult, error) {
+func (d *Service) LoadNetworkHistoryIntoDatanode(ctx context.Context, connConfig sqlstore.ConnectionConfig) (snapshot.LoadResult, error) {
 	defer func() { _ = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromDir) }()
 
 	err := os.MkdirAll(d.snapshotsCopyFromDir, fs.ModePerm)
@@ -179,7 +179,7 @@ func (d *Service) LoadNetworkHistoryIntoDatanode(ctx context.Context) (snapshot.
 
 	start := time.Now()
 
-	datanodeBlockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, d.connConfig)
+	datanodeBlockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, d.connPool)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to get data node block span: %w", err)
 	}
@@ -193,7 +193,8 @@ func (d *Service) LoadNetworkHistoryIntoDatanode(ctx context.Context) (snapshot.
 		return snapshot.LoadResult{}, fmt.Errorf("no data available to load: %w", err)
 	}
 
-	loadResult, err := d.snapshotService.LoadAllSnapshotData(ctx, currentStateSnapshot, contiguousHistory, d.snapshotsCopyFromDir)
+	loadResult, err := d.snapshotService.LoadAllSnapshotData(ctx, currentStateSnapshot, contiguousHistory, d.snapshotsCopyFromDir,
+		connConfig)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to load snapshot data:%w", err)
 	}
@@ -221,6 +222,10 @@ func (d *Service) GetMostRecentHistorySegmentFromPeers(ctx context.Context,
 	}
 
 	return GetMostRecentHistorySegmentFromPeersAddresses(ctx, activePeerAddresses, d.GetSwarmKey(), grpcAPIPorts)
+}
+
+func (d *Service) GetDatanodeBlockSpan(ctx context.Context) (sqlstore.DatanodeBlockSpan, error) {
+	return sqlstore.GetDatanodeBlockSpan(ctx, d.connPool)
 }
 
 func (d *Service) publishSnapshots(ctx context.Context) error {
@@ -325,6 +330,31 @@ func (d *Service) extractSnapshotDataFromHistory(ctx context.Context, history ag
 }
 
 func (d *Service) Stop() {
-	d.log.Info("stopping datanode service")
+	d.log.Info("stopping network history service")
 	d.store.Stop()
+	d.connPool.Close()
+}
+
+func KillAllConnectionsToDatabase(ctx context.Context, connConfig sqlstore.ConnectionConfig) error {
+	conn, err := pgxpool.Connect(ctx, connConfig.GetConnectionString())
+	if err != nil {
+		return fmt.Errorf("unable to connect to database: %w", err)
+	}
+	defer conn.Close()
+
+	killAllConnectionsQuery := fmt.Sprintf(
+		`SELECT
+	pg_terminate_backend(pg_stat_activity.pid)
+		FROM
+	pg_stat_activity
+		WHERE
+	pg_stat_activity.datname = '%s'
+	AND pid <> pg_backend_pid();`, connConfig.Database)
+
+	_, err = conn.Exec(ctx, killAllConnectionsQuery)
+	if err != nil {
+		return fmt.Errorf("failed to kill all database connection: %w", err)
+	}
+
+	return nil
 }
