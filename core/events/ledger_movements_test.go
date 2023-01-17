@@ -31,11 +31,13 @@ func TestTransferResponseDeepClone(t *testing.T) {
 		{
 			Entries: []*types.LedgerEntry{
 				{
-					FromAccount: &types.AccountDetails{Owner: "FromAccount"},
-					ToAccount:   &types.AccountDetails{Owner: "ToAccount"},
-					Amount:      num.NewUint(1000),
-					Type:        types.TransferTypeBondLow,
-					Timestamp:   2000,
+					FromAccount:        &types.AccountDetails{Owner: "FromAccount"},
+					ToAccount:          &types.AccountDetails{Owner: "ToAccount"},
+					Amount:             num.NewUint(1000),
+					Type:               types.TransferTypeBondLow,
+					Timestamp:          2000,
+					FromAccountBalance: num.NewUint(3000),
+					ToAccountBalance:   num.NewUint(4000),
 				},
 			},
 			Balances: []*types.PostTransferBalance{
@@ -63,6 +65,9 @@ func TestTransferResponseDeepClone(t *testing.T) {
 	tr[0].Entries[0].Timestamp = 999
 	tr[0].Entries[0].ToAccount = &types.AccountDetails{Owner: "Changed"}
 	tr[0].Entries[0].Type = types.TransferTypeBondHigh
+	tr[0].Entries[0].FromAccountBalance = num.NewUint(1000)
+	tr[0].Entries[0].ToAccountBalance = num.NewUint(1700)
+
 	tr[0].Balances[0].Account.Asset = "Changed"
 	tr[0].Balances[0].Account.Balance = num.NewUint(999)
 	tr[0].Balances[0].Account.ID = "Changed"
@@ -77,6 +82,9 @@ func TestTransferResponseDeepClone(t *testing.T) {
 	assert.NotEqual(t, tr[0].Entries[0].Timestamp, tr2[0].Entries[0].Timestamp)
 	assert.NotEqual(t, tr[0].Entries[0].ToAccount, tr2[0].Entries[0].ToAccount)
 	assert.NotEqual(t, tr[0].Entries[0].Type, tr2[0].Entries[0].Type)
+	assert.NotEqual(t, tr[0].Entries[0].FromAccountBalance, tr2[0].Entries[0].FromAccountBalance)
+	assert.NotEqual(t, tr[0].Entries[0].ToAccountBalance, tr2[0].Entries[0].ToAccountBalance)
+
 	assert.NotEqual(t, tr[0].Balances[0].Account.Asset, tr2[0].Balances[0].Account.AssetId)
 	assert.NotEqual(t, tr[0].Balances[0].Balance, tr2[0].Balances[0].Balance)
 	assert.NotEqual(t, tr[0].Balances[0].Account.MarketID, tr2[0].Balances[0].Account.MarketId)
@@ -92,11 +100,13 @@ func TestNilOwner(t *testing.T) {
 		{
 			Entries: []*types.LedgerEntry{
 				{
-					FromAccount: &types.AccountDetails{Owner: "FromZohar"},
-					ToAccount:   &types.AccountDetails{Owner: "ToZohar"},
-					Amount:      num.NewUint(1000),
-					Type:        types.TransferTypeBondLow,
-					Timestamp:   2000,
+					FromAccount:        &types.AccountDetails{Owner: "FromZohar"},
+					ToAccount:          &types.AccountDetails{Owner: "ToZohar"},
+					Amount:             num.NewUint(1000),
+					Type:               types.TransferTypeBondLow,
+					Timestamp:          2000,
+					FromAccountBalance: num.NewUint(2000),
+					ToAccountBalance:   num.NewUint(1400),
 				},
 			},
 		},
@@ -105,11 +115,13 @@ func TestNilOwner(t *testing.T) {
 		{
 			Entries: []*types.LedgerEntry{
 				{
-					FromAccount: &types.AccountDetails{Owner: systemOwner},
-					ToAccount:   &types.AccountDetails{Owner: "ToZohar"},
-					Amount:      num.NewUint(1000),
-					Type:        types.TransferTypeBondLow,
-					Timestamp:   2000,
+					FromAccount:        &types.AccountDetails{Owner: systemOwner},
+					ToAccount:          &types.AccountDetails{Owner: "ToZohar"},
+					Amount:             num.NewUint(1000),
+					Type:               types.TransferTypeBondLow,
+					Timestamp:          2000,
+					FromAccountBalance: num.NewUint(100),
+					ToAccountBalance:   num.NewUint(3800),
 				},
 			},
 		},
@@ -118,11 +130,13 @@ func TestNilOwner(t *testing.T) {
 		{
 			Entries: []*types.LedgerEntry{
 				{
-					FromAccount: &types.AccountDetails{Owner: "FromZohar"},
-					ToAccount:   &types.AccountDetails{Owner: systemOwner},
-					Amount:      num.NewUint(1000),
-					Type:        types.TransferTypeBondLow,
-					Timestamp:   2000,
+					FromAccount:        &types.AccountDetails{Owner: "FromZohar"},
+					ToAccount:          &types.AccountDetails{Owner: systemOwner},
+					Amount:             num.NewUint(1000),
+					Type:               types.TransferTypeBondLow,
+					Timestamp:          2000,
+					FromAccountBalance: num.NewUint(500),
+					ToAccountBalance:   num.NewUint(2300),
 				},
 			},
 		},
@@ -132,11 +146,13 @@ func TestNilOwner(t *testing.T) {
 		{
 			Entries: []*types.LedgerEntry{
 				{
-					FromAccount: &types.AccountDetails{Owner: systemOwner},
-					ToAccount:   &types.AccountDetails{Owner: systemOwner},
-					Amount:      num.NewUint(1000),
-					Type:        types.TransferTypeBondLow,
-					Timestamp:   2000,
+					FromAccount:        &types.AccountDetails{Owner: systemOwner},
+					ToAccount:          &types.AccountDetails{Owner: systemOwner},
+					Amount:             num.NewUint(1000),
+					Type:               types.TransferTypeBondLow,
+					Timestamp:          2000,
+					FromAccountBalance: num.NewUint(1000),
+					ToAccountBalance:   num.NewUint(2900),
 				},
 			},
 		},

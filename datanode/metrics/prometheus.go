@@ -74,7 +74,7 @@ var (
 	eventBufferWrittenCount prometheus.Counter
 	eventBufferReadCount    prometheus.Counter
 
-	deHistoryIpfsStoreBytes prometheus.Gauge
+	networkHistoryIpfsStoreBytes prometheus.Gauge
 )
 
 // abstract prometheus types.
@@ -626,10 +626,10 @@ func setupMetrics() error {
 
 	h, err = addInstrument(
 		Gauge,
-		"dehistory_ipfs_store_bytes",
+		"networkhistory_ipfs_store_bytes",
 		Namespace("datanode"),
 		Vectors(),
-		Help("The size in bytes of the dehistory ipfs store"),
+		Help("The size in bytes of the network history ipfs store"),
 	)
 	if err != nil {
 		return err
@@ -638,7 +638,7 @@ func setupMetrics() error {
 	if err != nil {
 		return err
 	}
-	deHistoryIpfsStoreBytes = dsb
+	networkHistoryIpfsStoreBytes = dsb
 
 	//
 	// API usage metrics start here
@@ -808,11 +808,11 @@ func SetLastSnapshotSeconds(seconds float64) {
 	lastSnapshotSeconds.Set(seconds)
 }
 
-func SetDeHistoryIpfsStoreBytes(bytes float64) {
-	if deHistoryIpfsStoreBytes == nil {
+func SetNetworkHistoryIpfsStoreBytes(bytes float64) {
+	if networkHistoryIpfsStoreBytes == nil {
 		return
 	}
-	deHistoryIpfsStoreBytes.Set(bytes)
+	networkHistoryIpfsStoreBytes.Set(bytes)
 }
 
 // APIRequestAndTimeREST updates the metrics for REST API calls.

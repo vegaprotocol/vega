@@ -27,20 +27,23 @@ import (
 )
 
 func addTestLedgerEntry(t *testing.T, ledger *sqlstore.Ledger,
-	accountFrom entities.Account,
-	accountTo entities.Account,
+	fromAccount entities.Account,
+	toAccount entities.Account,
 	block entities.Block,
 	quantity int64,
 	transferType entities.LedgerMovementType,
+	fromAccountBalance, toAccountBalance int64,
 ) entities.LedgerEntry {
 	t.Helper()
 	ledgerEntry := entities.LedgerEntry{
-		AccountFromID: accountFrom.ID,
-		AccountToID:   accountTo.ID,
-		Quantity:      decimal.NewFromInt(quantity),
-		VegaTime:      block.VegaTime,
-		TransferTime:  block.VegaTime.Add(-time.Second),
-		Type:          transferType,
+		FromAccountID:      fromAccount.ID,
+		ToAccountID:        toAccount.ID,
+		Quantity:           decimal.NewFromInt(quantity),
+		VegaTime:           block.VegaTime,
+		TransferTime:       block.VegaTime.Add(-time.Second),
+		Type:               transferType,
+		FromAccountBalance: decimal.NewFromInt(fromAccountBalance),
+		ToAccountBalance:   decimal.NewFromInt(toAccountBalance),
 	}
 
 	err := ledger.Add(ledgerEntry)
@@ -119,27 +122,27 @@ func TestLedger(t *testing.T) {
 
 		if i < 2 {
 			// accounts 0, 1, 2, 3
-			accountFrom := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset1, blocks[i], markets[i].ID, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-			accountTo := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset1, blocks[i], markets[mt].ID, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-			accounts = append(accounts, accountFrom)
-			accounts = append(accounts, accountTo)
+			fromAccount := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset1, blocks[i], markets[i].ID, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+			toAccount := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset1, blocks[i], markets[mt].ID, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+			accounts = append(accounts, fromAccount)
+			accounts = append(accounts, toAccount)
 			continue
 		}
 
 		// accounts 4, 5, 6, 7, 8, 9, 10, 11
 		if i >= 2 && i < 6 {
-			accountFrom := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset2, blocks[i], markets[i].ID, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-			accountTo := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset2, blocks[i], markets[mt].ID, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-			accounts = append(accounts, accountFrom)
-			accounts = append(accounts, accountTo)
+			fromAccount := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset2, blocks[i], markets[i].ID, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+			toAccount := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset2, blocks[i], markets[mt].ID, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+			accounts = append(accounts, fromAccount)
+			accounts = append(accounts, toAccount)
 			continue
 		}
 
 		// accounts 12, 13, 14, 15, 16, 17, 18, 19, 20, 21
-		accountFrom := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset3, blocks[i], markets[i].ID, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
-		accountTo := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset3, blocks[i], markets[mt].ID, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
-		accounts = append(accounts, accountFrom)
-		accounts = append(accounts, accountTo)
+		fromAccount := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset3, blocks[i], markets[i].ID, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+		toAccount := helpers.AddTestAccountWithMarketAndType(t, ctx, accountStore, parties[i], asset3, blocks[i], markets[mt].ID, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+		accounts = append(accounts, fromAccount)
+		accounts = append(accounts, toAccount)
 	}
 
 	/*
@@ -168,19 +171,19 @@ func TestLedger(t *testing.T) {
 		accounts[21]->accounts[15] => asset3, parties[10-7], markets[9-8], vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY
 	*/
 	var ledgerEntries []entities.LedgerEntry
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[0], accounts[1], blocks[1], int64(15), entities.LedgerMovementTypeBondSlashing))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[2], accounts[3], blocks[2], int64(10), entities.LedgerMovementTypeBondSlashing))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[4], accounts[5], blocks[3], int64(25), entities.LedgerMovementTypeBondSlashing))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[6], accounts[7], blocks[4], int64(80), entities.LedgerMovementTypeBondSlashing))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[8], accounts[9], blocks[5], int64(1), entities.LedgerMovementTypeDeposit))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[10], accounts[11], blocks[6], int64(40), entities.LedgerMovementTypeDeposit))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[14], accounts[16], blocks[7], int64(12), entities.LedgerMovementTypeDeposit))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[17], accounts[15], blocks[8], int64(14), entities.LedgerMovementTypeDeposit))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[21], accounts[15], blocks[9], int64(28), entities.LedgerMovementTypeDeposit))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[5], accounts[11], blocks[10], int64(3), entities.LedgerMovementTypeRewardPayout))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[5], accounts[10], blocks[11], int64(5), entities.LedgerMovementTypeRewardPayout))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[6], accounts[7], blocks[12], int64(9), entities.LedgerMovementTypeRewardPayout))
-	_ = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[6], accounts[7], blocks[13], int64(41), entities.LedgerMovementTypeRewardPayout))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[0], accounts[1], blocks[1], int64(15), entities.LedgerMovementTypeBondSlashing, int64(500), int64(115)))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[2], accounts[3], blocks[2], int64(10), entities.LedgerMovementTypeBondSlashing, int64(170), int64(17890)))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[4], accounts[5], blocks[3], int64(25), entities.LedgerMovementTypeBondSlashing, int64(1700), int64(2590)))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[6], accounts[7], blocks[4], int64(80), entities.LedgerMovementTypeBondSlashing, int64(2310), int64(17000)))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[8], accounts[9], blocks[5], int64(1), entities.LedgerMovementTypeDeposit, int64(120), int64(900)))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[10], accounts[11], blocks[6], int64(40), entities.LedgerMovementTypeDeposit, int64(1500), int64(5680)))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[14], accounts[16], blocks[7], int64(12), entities.LedgerMovementTypeDeposit, int64(5000), int64(9100)))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[17], accounts[15], blocks[8], int64(14), entities.LedgerMovementTypeDeposit, int64(180), int64(1410)))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[21], accounts[15], blocks[9], int64(28), entities.LedgerMovementTypeDeposit, int64(2180), int64(1438)))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[5], accounts[11], blocks[10], int64(3), entities.LedgerMovementTypeRewardPayout, int64(2587), int64(5683)))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[5], accounts[10], blocks[11], int64(5), entities.LedgerMovementTypeRewardPayout, int64(2582), int64(1510)))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[6], accounts[7], blocks[12], int64(9), entities.LedgerMovementTypeRewardPayout, int64(2301), int64(17009)))
+	_ = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[6], accounts[7], blocks[13], int64(41), entities.LedgerMovementTypeRewardPayout, int64(2260), int64(17050)))
 
 	tStart, _ := time.Parse("2006 Jan 02 15:04:05", "2012 Dec 07 00:00:00")
 	tEnd := time.Now()
@@ -195,11 +198,11 @@ func TestLedger(t *testing.T) {
 	_, err := ledgerStore.Flush(ctx)
 	assert.NoError(t, err)
 
-	t.Run("ledger entries with no filters", func(t *testing.T) {
+	t.Run("query ledger entries with no filters", func(t *testing.T) {
 		// Set filters for AccountFrom and AcountTo IDs
 		filter := &entities.LedgerEntryFilter{
-			SenderAccountFilter:   entities.AccountFilter{},
-			ReceiverAccountFilter: entities.AccountFilter{},
+			FromAccountFilter: entities.AccountFilter{},
+			ToAccountFilter:   entities.AccountFilter{},
 		}
 
 		entries, _, err := ledgerStore.Query(ctx,
@@ -215,13 +218,13 @@ func TestLedger(t *testing.T) {
 	})
 
 	t.Run("query ledger entries with filters", func(t *testing.T) {
-		t.Run("by accountFrom filter", func(t *testing.T) {
-			// Set filters for AccountFrom and AcountTo IDs
+		t.Run("by fromAccount filter", func(t *testing.T) {
+			// Set filters for FromAccount and AcountTo IDs
 			filter := &entities.LedgerEntryFilter{
-				SenderAccountFilter: entities.AccountFilter{
+				FromAccountFilter: entities.AccountFilter{
 					AssetID: asset1.ID,
 				},
-				ReceiverAccountFilter: entities.AccountFilter{},
+				ToAccountFilter: entities.AccountFilter{},
 			}
 
 			entries, _, err := ledgerStore.Query(ctx,
@@ -235,7 +238,7 @@ func TestLedger(t *testing.T) {
 			// None
 			assert.Nil(t, entries)
 
-			filter.SenderAccountFilter.PartyIDs = []entities.PartyID{parties[3].ID}
+			filter.FromAccountFilter.PartyIDs = []entities.PartyID{parties[3].ID}
 			entries, _, err = ledgerStore.Query(ctx,
 				filter,
 				entities.DateRange{Start: &tStart, End: &tEnd},
@@ -247,7 +250,7 @@ func TestLedger(t *testing.T) {
 			// 0
 			assert.Equal(t, 0, len(*entries))
 
-			filter.SenderAccountFilter.AssetID = asset2.ID
+			filter.FromAccountFilter.AssetID = asset2.ID
 			entries, _, err = ledgerStore.Query(ctx,
 				filter,
 				entities.DateRange{Start: &tStart, End: &tEnd},
@@ -260,21 +263,31 @@ func TestLedger(t *testing.T) {
 			assert.Equal(t, 3, len(*entries))
 
 			for _, e := range *entries {
-				assert.Equal(t, *e.SenderAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-				assert.Equal(t, *e.ReceiverAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+				assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+				assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
 				if e.Quantity.Abs().String() == strconv.Itoa(80) {
 					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeBondSlashing)
+					assert.Equal(t, strconv.Itoa(2310), e.FromAccountBalance.Abs().String())
+					assert.Equal(t, strconv.Itoa(17000), e.ToAccountBalance.Abs().String())
 				}
 
-				if e.Quantity.Abs().String() == strconv.Itoa(9) || e.Quantity.Abs().String() == strconv.Itoa(41) {
+				if e.Quantity.Abs().String() == strconv.Itoa(9) {
 					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, strconv.Itoa(2301), e.FromAccountBalance.Abs().String())
+					assert.Equal(t, strconv.Itoa(17009), e.ToAccountBalance.Abs().String())
 				}
 
-				assert.Equal(t, *e.SenderMarketID, markets[3].ID)
-				assert.Equal(t, *e.ReceiverMarketID, markets[4].ID)
+				if e.Quantity.Abs().String() == strconv.Itoa(41) {
+					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, strconv.Itoa(2260), e.FromAccountBalance.Abs().String())
+					assert.Equal(t, strconv.Itoa(17050), e.ToAccountBalance.Abs().String())
+				}
+
+				assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
+				assert.Equal(t, *e.ToAccountMarketID, markets[4].ID)
 			}
 
-			filter.SenderAccountFilter.PartyIDs = append(filter.SenderAccountFilter.PartyIDs, parties[4].ID)
+			filter.FromAccountFilter.PartyIDs = append(filter.FromAccountFilter.PartyIDs, parties[4].ID)
 
 			entries, _, err = ledgerStore.Query(ctx,
 				filter,
@@ -287,8 +300,8 @@ func TestLedger(t *testing.T) {
 			// None
 			assert.Nil(t, entries)
 
-			filter.SenderAccountFilter.PartyIDs = []entities.PartyID{}
-			filter.SenderAccountFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL}
+			filter.FromAccountFilter.PartyIDs = []entities.PartyID{}
+			filter.FromAccountFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL}
 
 			entries, _, err = ledgerStore.Query(ctx,
 				filter,
@@ -302,11 +315,11 @@ func TestLedger(t *testing.T) {
 			assert.Nil(t, entries)
 		})
 
-		t.Run("by accountTo filter", func(t *testing.T) {
-			// Set filters for AccountFrom and AcountTo IDs
+		t.Run("by toAccount filter", func(t *testing.T) {
+			// Set filters for FromAccount and AcountTo IDs
 			filter := &entities.LedgerEntryFilter{
-				SenderAccountFilter: entities.AccountFilter{},
-				ReceiverAccountFilter: entities.AccountFilter{
+				FromAccountFilter: entities.AccountFilter{},
+				ToAccountFilter: entities.AccountFilter{
 					AssetID:  asset2.ID,
 					PartyIDs: []entities.PartyID{parties[3].ID},
 				},
@@ -323,21 +336,31 @@ func TestLedger(t *testing.T) {
 			// 6->7, 6->7, 6->7
 			assert.Equal(t, 3, len(*entries))
 			for _, e := range *entries {
-				assert.Equal(t, *e.SenderAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-				assert.Equal(t, *e.ReceiverAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+				assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+				assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
 				if e.Quantity.Abs().String() == strconv.Itoa(80) {
 					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeBondSlashing)
+					assert.Equal(t, strconv.Itoa(2310), e.FromAccountBalance.Abs().String())
+					assert.Equal(t, strconv.Itoa(17000), e.ToAccountBalance.Abs().String())
 				}
 
-				if e.Quantity.Abs().String() == strconv.Itoa(9) || e.Quantity.Abs().String() == strconv.Itoa(41) {
+				if e.Quantity.Abs().String() == strconv.Itoa(9) {
 					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, strconv.Itoa(2301), e.FromAccountBalance.Abs().String())
+					assert.Equal(t, strconv.Itoa(17009), e.ToAccountBalance.Abs().String())
 				}
 
-				assert.Equal(t, *e.SenderMarketID, markets[3].ID)
-				assert.Equal(t, *e.ReceiverMarketID, markets[4].ID)
+				if e.Quantity.Abs().String() == strconv.Itoa(41) {
+					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, strconv.Itoa(2260), e.FromAccountBalance.Abs().String())
+					assert.Equal(t, strconv.Itoa(17050), e.ToAccountBalance.Abs().String())
+				}
+
+				assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
+				assert.Equal(t, *e.ToAccountMarketID, markets[4].ID)
 			}
 
-			filter.ReceiverAccountFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
+			filter.ToAccountFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
 
 			entries, _, err = ledgerStore.Query(ctx,
 				filter,
@@ -351,14 +374,14 @@ func TestLedger(t *testing.T) {
 			assert.Equal(t, 0, len(*entries))
 		})
 
-		t.Run("by accountFrom+accountTo filters", func(t *testing.T) {
+		t.Run("by fromAccount+toAccount filters", func(t *testing.T) {
 			t.Run("open", func(t *testing.T) {
-				// Set filters for AccountFrom and AcountTo IDs
+				// Set filters for FromAccount and AcountTo IDs
 				filter := &entities.LedgerEntryFilter{
-					SenderAccountFilter: entities.AccountFilter{
+					FromAccountFilter: entities.AccountFilter{
 						AssetID: asset1.ID,
 					},
-					ReceiverAccountFilter: entities.AccountFilter{
+					ToAccountFilter: entities.AccountFilter{
 						AssetID: asset3.ID,
 					},
 				}
@@ -374,7 +397,7 @@ func TestLedger(t *testing.T) {
 				// None
 				assert.Nil(t, entries)
 
-				filter.ReceiverAccountFilter.PartyIDs = append(filter.ReceiverAccountFilter.PartyIDs, []entities.PartyID{parties[4].ID}...)
+				filter.ToAccountFilter.PartyIDs = append(filter.ToAccountFilter.PartyIDs, []entities.PartyID{parties[4].ID}...)
 				entries, _, err = ledgerStore.Query(ctx,
 					filter,
 					entities.DateRange{Start: &tStart, End: &tEnd},
@@ -386,26 +409,30 @@ func TestLedger(t *testing.T) {
 				// 0->1, 2->3
 				assert.Equal(t, 2, len(*entries))
 				for _, e := range *entries {
-					assert.Equal(t, *e.SenderAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.ReceiverAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
 					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeBondSlashing)
 
 					if e.Quantity.Abs().String() == strconv.Itoa(15) {
-						assert.Equal(t, *e.SenderPartyID, parties[0].ID)
-						assert.Equal(t, *e.ReceiverPartyID, parties[0].ID)
-						assert.Equal(t, *e.SenderMarketID, markets[0].ID)
-						assert.Equal(t, *e.ReceiverMarketID, markets[1].ID)
+						assert.Equal(t, *e.FromAccountPartyID, parties[0].ID)
+						assert.Equal(t, *e.ToAccountPartyID, parties[0].ID)
+						assert.Equal(t, *e.FromAccountMarketID, markets[0].ID)
+						assert.Equal(t, *e.ToAccountMarketID, markets[1].ID)
+						assert.Equal(t, strconv.Itoa(500), e.FromAccountBalance.Abs().String())
+						assert.Equal(t, strconv.Itoa(115), e.ToAccountBalance.Abs().String())
 					}
 
 					if e.Quantity.Abs().String() == strconv.Itoa(10) {
-						assert.Equal(t, *e.SenderPartyID, parties[1].ID)
-						assert.Equal(t, *e.ReceiverPartyID, parties[1].ID)
-						assert.Equal(t, *e.SenderMarketID, markets[1].ID)
-						assert.Equal(t, *e.ReceiverMarketID, markets[2].ID)
+						assert.Equal(t, *e.FromAccountPartyID, parties[1].ID)
+						assert.Equal(t, *e.ToAccountPartyID, parties[1].ID)
+						assert.Equal(t, *e.FromAccountMarketID, markets[1].ID)
+						assert.Equal(t, *e.ToAccountMarketID, markets[2].ID)
+						assert.Equal(t, strconv.Itoa(170), e.FromAccountBalance.Abs().String())
+						assert.Equal(t, strconv.Itoa(17890), e.ToAccountBalance.Abs().String())
 					}
 				}
 
-				filter.ReceiverAccountFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
+				filter.ToAccountFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
 				entries, _, err = ledgerStore.Query(ctx,
 					filter,
 					entities.DateRange{Start: &tStart, End: &tEnd},
@@ -417,33 +444,37 @@ func TestLedger(t *testing.T) {
 				// 0->1, 2->3
 				assert.Equal(t, 2, len(*entries))
 				for _, e := range *entries {
-					assert.Equal(t, *e.SenderAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.ReceiverAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
 					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeBondSlashing)
 
 					if e.Quantity.Abs().String() == strconv.Itoa(15) {
-						assert.Equal(t, *e.SenderPartyID, parties[0].ID)
-						assert.Equal(t, *e.ReceiverPartyID, parties[0].ID)
-						assert.Equal(t, *e.SenderMarketID, markets[0].ID)
-						assert.Equal(t, *e.ReceiverMarketID, markets[1].ID)
+						assert.Equal(t, *e.FromAccountPartyID, parties[0].ID)
+						assert.Equal(t, *e.ToAccountPartyID, parties[0].ID)
+						assert.Equal(t, *e.FromAccountMarketID, markets[0].ID)
+						assert.Equal(t, *e.ToAccountMarketID, markets[1].ID)
+						assert.Equal(t, strconv.Itoa(500), e.FromAccountBalance.Abs().String())
+						assert.Equal(t, strconv.Itoa(115), e.ToAccountBalance.Abs().String())
 					}
 
 					if e.Quantity.Abs().String() == strconv.Itoa(10) {
-						assert.Equal(t, *e.SenderPartyID, parties[1].ID)
-						assert.Equal(t, *e.ReceiverPartyID, parties[1].ID)
-						assert.Equal(t, *e.SenderMarketID, markets[1].ID)
-						assert.Equal(t, *e.ReceiverMarketID, markets[2].ID)
+						assert.Equal(t, *e.FromAccountPartyID, parties[1].ID)
+						assert.Equal(t, *e.ToAccountPartyID, parties[1].ID)
+						assert.Equal(t, *e.FromAccountMarketID, markets[1].ID)
+						assert.Equal(t, *e.ToAccountMarketID, markets[2].ID)
+						assert.Equal(t, strconv.Itoa(170), e.FromAccountBalance.Abs().String())
+						assert.Equal(t, strconv.Itoa(17890), e.ToAccountBalance.Abs().String())
 					}
 				}
 			})
 
 			t.Run("closed", func(t *testing.T) {
-				// Set filters for AccountFrom and AcountTo IDs
+				// Set filters for FromAccount and AcountTo IDs
 				filter := &entities.LedgerEntryFilter{
-					SenderAccountFilter: entities.AccountFilter{
+					FromAccountFilter: entities.AccountFilter{
 						AssetID: asset2.ID,
 					},
-					ReceiverAccountFilter: entities.AccountFilter{},
+					ToAccountFilter: entities.AccountFilter{},
 				}
 
 				filter.CloseOnAccountFilters = true
@@ -458,7 +489,7 @@ func TestLedger(t *testing.T) {
 				// None
 				assert.Nil(t, entries)
 
-				filter.SenderAccountFilter.PartyIDs = []entities.PartyID{parties[5].ID}
+				filter.FromAccountFilter.PartyIDs = []entities.PartyID{parties[5].ID}
 				entries, _, err = ledgerStore.Query(ctx,
 					filter,
 					entities.DateRange{Start: &tStart, End: &tEnd},
@@ -471,18 +502,20 @@ func TestLedger(t *testing.T) {
 				assert.Equal(t, 1, len(*entries))
 				for _, e := range *entries {
 					assert.Equal(t, e.Quantity.Abs().String(), strconv.Itoa(40))
-					assert.Equal(t, *e.SenderAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ReceiverAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
 					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeDeposit)
 
-					assert.Equal(t, *e.SenderPartyID, parties[5].ID)
-					assert.Equal(t, *e.ReceiverPartyID, parties[5].ID)
-					assert.Equal(t, *e.SenderMarketID, markets[5].ID)
-					assert.Equal(t, *e.ReceiverMarketID, markets[6].ID)
+					assert.Equal(t, *e.FromAccountPartyID, parties[5].ID)
+					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, *e.FromAccountMarketID, markets[5].ID)
+					assert.Equal(t, *e.ToAccountMarketID, markets[6].ID)
+					assert.Equal(t, strconv.Itoa(1500), e.FromAccountBalance.Abs().String())
+					assert.Equal(t, strconv.Itoa(5680), e.ToAccountBalance.Abs().String())
 				}
 
 				// Add some grouping options
-				filter.ReceiverAccountFilter = entities.AccountFilter{AssetID: asset3.ID}
+				filter.ToAccountFilter = entities.AccountFilter{AssetID: asset3.ID}
 				entries, _, err = ledgerStore.Query(ctx,
 					filter,
 					entities.DateRange{Start: &tStart, End: &tEnd},
@@ -494,9 +527,9 @@ func TestLedger(t *testing.T) {
 				// None
 				assert.Equal(t, 0, len(*entries))
 
-				filter.SenderAccountFilter = entities.AccountFilter{AssetID: asset3.ID}
-				filter.SenderAccountFilter.PartyIDs = []entities.PartyID{parties[7].ID}
-				filter.ReceiverAccountFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
+				filter.FromAccountFilter = entities.AccountFilter{AssetID: asset3.ID}
+				filter.FromAccountFilter.PartyIDs = []entities.PartyID{parties[7].ID}
+				filter.ToAccountFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
 				entries, _, err = ledgerStore.Query(ctx,
 					filter,
 					entities.DateRange{Start: &tStart, End: &tEnd},
@@ -509,27 +542,29 @@ func TestLedger(t *testing.T) {
 				assert.Equal(t, 1, len(*entries))
 				for _, e := range *entries {
 					assert.Equal(t, e.Quantity.Abs().String(), strconv.Itoa(12))
-					assert.Equal(t, *e.SenderAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
-					assert.Equal(t, *e.ReceiverAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
 					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeDeposit)
 
-					assert.Equal(t, *e.SenderPartyID, parties[7].ID)
-					assert.Equal(t, *e.ReceiverPartyID, parties[8].ID)
-					assert.Equal(t, *e.SenderMarketID, markets[7].ID)
-					assert.Equal(t, *e.ReceiverMarketID, markets[8].ID)
+					assert.Equal(t, *e.FromAccountPartyID, parties[7].ID)
+					assert.Equal(t, *e.ToAccountPartyID, parties[8].ID)
+					assert.Equal(t, *e.FromAccountMarketID, markets[7].ID)
+					assert.Equal(t, *e.ToAccountMarketID, markets[8].ID)
+					assert.Equal(t, strconv.Itoa(5000), e.FromAccountBalance.Abs().String())
+					assert.Equal(t, strconv.Itoa(9100), e.ToAccountBalance.Abs().String())
 				}
 			})
 		})
 
 		t.Run("by account filters+transferType", func(t *testing.T) {
 			// open on account filters
-			// Set filters for AccountFrom and AcountTo IDs
+			// Set filters for FromAccount and AcountTo IDs
 			filter := &entities.LedgerEntryFilter{
-				SenderAccountFilter: entities.AccountFilter{
+				FromAccountFilter: entities.AccountFilter{
 					AssetID:  asset2.ID,
 					PartyIDs: []entities.PartyID{parties[8].ID},
 				},
-				ReceiverAccountFilter: entities.AccountFilter{
+				ToAccountFilter: entities.AccountFilter{
 					AssetID: asset3.ID,
 				},
 				TransferTypes: []entities.LedgerMovementType{
@@ -549,29 +584,35 @@ func TestLedger(t *testing.T) {
 			assert.Equal(t, 3, len(*entries))
 			for _, e := range *entries {
 				if e.Quantity.Abs().String() == strconv.Itoa(12) {
-					assert.Equal(t, *e.SenderPartyID, parties[7].ID)
-					assert.Equal(t, *e.ReceiverPartyID, parties[8].ID)
-					assert.Equal(t, *e.SenderMarketID, markets[7].ID)
-					assert.Equal(t, *e.ReceiverMarketID, markets[8].ID)
+					assert.Equal(t, *e.FromAccountPartyID, parties[7].ID)
+					assert.Equal(t, *e.ToAccountPartyID, parties[8].ID)
+					assert.Equal(t, *e.FromAccountMarketID, markets[7].ID)
+					assert.Equal(t, *e.ToAccountMarketID, markets[8].ID)
+					assert.Equal(t, strconv.Itoa(5000), e.FromAccountBalance.Abs().String())
+					assert.Equal(t, strconv.Itoa(9100), e.ToAccountBalance.Abs().String())
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(14) {
-					assert.Equal(t, *e.SenderPartyID, parties[8].ID)
-					assert.Equal(t, *e.ReceiverPartyID, parties[7].ID)
-					assert.Equal(t, *e.SenderMarketID, markets[9].ID)
-					assert.Equal(t, *e.ReceiverMarketID, markets[8].ID)
+					assert.Equal(t, *e.FromAccountPartyID, parties[8].ID)
+					assert.Equal(t, *e.ToAccountPartyID, parties[7].ID)
+					assert.Equal(t, *e.FromAccountMarketID, markets[9].ID)
+					assert.Equal(t, *e.ToAccountMarketID, markets[8].ID)
+					assert.Equal(t, strconv.Itoa(180), e.FromAccountBalance.Abs().String())
+					assert.Equal(t, strconv.Itoa(1410), e.ToAccountBalance.Abs().String())
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(28) {
-					assert.Equal(t, *e.SenderPartyID, parties[10].ID)
-					assert.Equal(t, *e.ReceiverPartyID, parties[7].ID)
+					assert.Equal(t, *e.FromAccountPartyID, parties[10].ID)
+					assert.Equal(t, *e.ToAccountPartyID, parties[7].ID)
 
-					assert.Equal(t, *e.SenderMarketID, markets[9].ID)
-					assert.Equal(t, *e.ReceiverMarketID, markets[8].ID)
+					assert.Equal(t, *e.FromAccountMarketID, markets[9].ID)
+					assert.Equal(t, *e.ToAccountMarketID, markets[8].ID)
+					assert.Equal(t, strconv.Itoa(2180), e.FromAccountBalance.Abs().String())
+					assert.Equal(t, strconv.Itoa(1438), e.ToAccountBalance.Abs().String())
 				}
 
-				assert.Equal(t, *e.SenderAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
-				assert.Equal(t, *e.ReceiverAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+				assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+				assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
 				assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeDeposit)
 			}
 
@@ -588,7 +629,7 @@ func TestLedger(t *testing.T) {
 			// None
 			assert.Equal(t, 0, len(*entries))
 
-			filter.ReceiverAccountFilter = entities.AccountFilter{
+			filter.ToAccountFilter = entities.AccountFilter{
 				AssetID:      asset3.ID,
 				AccountTypes: []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY},
 			}

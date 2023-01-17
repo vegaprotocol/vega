@@ -21,7 +21,7 @@ import (
 
 var (
 	ErrEmptyNetParamKey   = errors.New("empty network parameter key")
-	ErrEmptyNetParamValue = errors.New("empty network parmater value")
+	ErrEmptyNetParamValue = errors.New("empty network parameter value")
 )
 
 func (e *Engine) getNewMarketProposalParameters() *ProposalParameters {

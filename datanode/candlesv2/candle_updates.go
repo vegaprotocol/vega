@@ -46,7 +46,7 @@ type CandleUpdates struct {
 	candleSource        candleSource
 	candleID            string
 	subscriptionMsgChan chan subscriptionMsg
-	nextSubscriptionID  uint64
+	nextSubscriptionID  atomic.Uint64
 	config              CandleUpdatesConfig
 }
 
@@ -147,7 +147,7 @@ func closeAllSubscriptions(subscribers map[string]chan entities.Candle) {
 func (s *CandleUpdates) Subscribe() (string, <-chan entities.Candle, error) {
 	out := make(chan entities.Candle, s.config.CandleUpdatesStreamBufferSize)
 
-	nextID := atomic.AddUint64(&s.nextSubscriptionID, 1)
+	nextID := s.nextSubscriptionID.Add(1)
 	subscriptionID := fmt.Sprintf("%s-%d", s.candleID, nextID)
 
 	msg := subscriptionMsg{

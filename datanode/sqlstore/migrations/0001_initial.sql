@@ -163,14 +163,16 @@ WHERE conflated_balances.vega_time < (SELECT coalesce(min(balances.vega_time), '
 
 create table ledger
 (
-    ledger_entry_time       TIMESTAMP WITH TIME ZONE NOT NULL,
-    account_from_id bytea                      NOT NULL,
-    account_to_id   bytea                      NOT NULL,
-    quantity        HUGEINT                  NOT NULL,
-    tx_hash         BYTEA                    NOT NULL,
-    vega_time       TIMESTAMP WITH TIME ZONE NOT NULL,
-    transfer_time   TIMESTAMP WITH TIME ZONE NOT NULL,
-    type            TEXT,
+    ledger_entry_time              TIMESTAMP WITH TIME ZONE NOT NULL,
+    account_from_id                bytea                    NOT NULL,
+    account_to_id                  bytea                    NOT NULL,
+    quantity                       HUGEINT                  NOT NULL,
+    tx_hash                        BYTEA                    NOT NULL,
+    vega_time                      TIMESTAMP WITH TIME ZONE NOT NULL,
+    transfer_time                  TIMESTAMP WITH TIME ZONE NOT NULL,
+    account_from_balance  HUGEINT                  NOT NULL,
+    account_to_balance    HUGEINT                  NOT NULL,
+    type                           TEXT,
     PRIMARY KEY(ledger_entry_time)
 );
 SELECT create_hypertable('ledger', 'ledger_entry_time', chunk_time_interval => INTERVAL '1 day');
@@ -442,10 +444,8 @@ CREATE TABLE network_limits (
   tx_hash                     BYTEA                    NOT NULL,
   can_propose_market          BOOLEAN NOT NULL,
   can_propose_asset           BOOLEAN NOT NULL,
-  bootstrap_finished          BOOLEAN NOT NULL,
   propose_market_enabled      BOOLEAN NOT NULL,
   propose_asset_enabled       BOOLEAN NOT NULL,
-  bootstrap_block_count       INTEGER,
   genesis_loaded              BOOLEAN NOT NULL,
   propose_market_enabled_from TIMESTAMP WITH TIME ZONE NOT NULL,
   propose_asset_enabled_from  TIMESTAMP WITH TIME ZONE NOT NULL
@@ -622,6 +622,10 @@ CREATE TABLE rewards(
   primary key (vega_time, seq_num)
 );
 
+create index on rewards (party_id, asset_id);
+create index on rewards (asset_id);
+create index on rewards (epoch_id);
+
 CREATE TABLE delegations(
   party_id         BYTEA NOT NULL,
   node_id          BYTEA NOT NULL,
@@ -648,6 +652,9 @@ create table delegations_current
     seq_num  BIGINT NOT NULL,
     primary key (party_id, node_id, epoch_id)
 );
+
+create index on delegations_current(node_id, epoch_id);
+create index on delegations_current(epoch_id);
 
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_current_delegations()
@@ -769,11 +776,13 @@ create table if not exists deposits (
     vega_time timestamp with time zone not null,
     primary key (id, party_id, vega_time)
 );
+CREATE INDEX ON deposits(party_id);
 
 select create_hypertable('deposits', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
 CREATE VIEW deposits_current AS (
-    SELECT DISTINCT ON (id) * FROM deposits ORDER BY id, vega_time DESC
+    -- Assume that party_id is always the same for a given deposit ID to allow filter to be pushed down
+    SELECT DISTINCT ON (id, party_id) * FROM deposits ORDER BY id, party_id, vega_time DESC
 );
 
 create type withdrawal_status as enum('STATUS_UNSPECIFIED', 'STATUS_OPEN', 'STATUS_REJECTED', 'STATUS_FINALIZED');
@@ -794,10 +803,13 @@ create table if not exists withdrawals (
     primary key (id, party_id, vega_time)
 );
 
+CREATE INDEX ON withdrawals(party_id);
+
 select create_hypertable('withdrawals', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
 CREATE VIEW withdrawals_current AS (
-    SELECT DISTINCT ON (id) * FROM withdrawals ORDER BY id, vega_time DESC
+    -- Assume that party_id is always the same for a given withdrawal ID to allow filter to be pushed down
+    SELECT DISTINCT ON (id, party_id) * FROM withdrawals ORDER BY id, party_id, vega_time DESC
 );
 
 CREATE TYPE proposal_state AS enum('STATE_UNSPECIFIED', 'STATE_FAILED', 'STATE_OPEN', 'STATE_PASSED', 'STATE_REJECTED', 'STATE_DECLINED', 'STATE_ENACTED', 'STATE_WAITING_FOR_NODE_VOTE');
@@ -840,6 +852,8 @@ CREATE TABLE votes(
   initial_time                   TIMESTAMP WITH TIME ZONE,
   PRIMARY KEY (proposal_id, party_id, vega_time)
 );
+
+CREATE INDEX ON votes(party_id);
 
 CREATE VIEW votes_current AS (
   SELECT DISTINCT ON (proposal_id, party_id) * FROM votes ORDER BY proposal_id, party_id, vega_time DESC
@@ -1100,6 +1114,8 @@ create table positions_current
 
 );
 
+CREATE INDEX ON positions_current(market_id);
+
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_current_positions()
     RETURNS TRIGGER
@@ -1230,6 +1246,10 @@ create table current_liquidity_provisions
     primary key (id)
 );
 
+create index on current_liquidity_provisions (party_id);
+create index on current_liquidity_provisions (market_id, party_id);
+create index on current_liquidity_provisions (reference);
+
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_current_liquidity_provisions()
    RETURNS TRIGGER
@@ -1315,7 +1335,8 @@ create table if not exists transfers (
 create index on transfers (from_account_id);
 create index on transfers (to_account_id);
 
-CREATE VIEW transfers_current AS ( SELECT DISTINCT ON (id) * FROM transfers ORDER BY id DESC, vega_time DESC);
+-- Assume that from/to account is never changed for a given xfer id
+CREATE VIEW transfers_current AS ( SELECT DISTINCT ON (id, from_account_id, to_account_id) * FROM transfers ORDER BY id, from_account_id, to_account_id, vega_time DESC);
 
 create table if not exists key_rotations (
   node_id bytea not null references nodes(id),
@@ -1394,6 +1415,8 @@ create table if not exists stake_linking_current(
     vega_time timestamp with time zone not null,
     primary key (id)
 );
+
+create index on stake_linking_current(party_id);
 
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_current_stake_linking()

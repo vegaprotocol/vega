@@ -26,11 +26,10 @@ func testDeleteAPITokenFlagsValidFlagsSucceeds(t *testing.T) {
 	}
 
 	// when
-	req, err := f.Validate()
+	err := f.Validate()
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, f.Token, req.Token)
 }
 
 func testDeleteAPITokenFlagsMissingFlagsFails(t *testing.T) {
@@ -54,11 +53,10 @@ func testDeleteAPITokenFlagsMissingFlagsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// when
-			req, err := tc.flags.Validate()
+			err := tc.flags.Validate()
 
 			// then
 			assert.ErrorIs(t, err, flags.MustBeSpecifiedError(tc.missingFlag))
-			require.Empty(t, req)
 		})
 	}
 }

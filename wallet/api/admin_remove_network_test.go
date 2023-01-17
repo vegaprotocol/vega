@@ -131,10 +131,10 @@ type removeNetworkHandler struct {
 	networkStore *mocks.MockNetworkStore
 }
 
-func (h *removeNetworkHandler) handle(t *testing.T, ctx context.Context, params interface{}) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *removeNetworkHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	return h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	return h.Handle(ctx, params)
 }
 
 func newRemoveNetworkHandler(t *testing.T) *removeNetworkHandler {

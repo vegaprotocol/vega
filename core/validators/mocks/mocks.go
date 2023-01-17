@@ -683,6 +683,34 @@ func (mr *MockMultiSigTopologyMockRecorder) ExcessSigners(arg0 interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExcessSigners", reflect.TypeOf((*MockMultiSigTopology)(nil).ExcessSigners), arg0)
 }
 
+// GetSigners mocks base method.
+func (m *MockMultiSigTopology) GetSigners() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSigners")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetSigners indicates an expected call of GetSigners.
+func (mr *MockMultiSigTopologyMockRecorder) GetSigners() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSigners", reflect.TypeOf((*MockMultiSigTopology)(nil).GetSigners))
+}
+
+// GetThreshold mocks base method.
+func (m *MockMultiSigTopology) GetThreshold() uint32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetThreshold")
+	ret0, _ := ret[0].(uint32)
+	return ret0
+}
+
+// GetThreshold indicates an expected call of GetThreshold.
+func (mr *MockMultiSigTopologyMockRecorder) GetThreshold() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetThreshold", reflect.TypeOf((*MockMultiSigTopology)(nil).GetThreshold))
+}
+
 // IsSigner mocks base method.
 func (m *MockMultiSigTopology) IsSigner(arg0 string) bool {
 	m.ctrl.T.Helper()

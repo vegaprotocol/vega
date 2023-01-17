@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.67.0
+## Unreleased 0.68.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -13,6 +13,44 @@
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.67.0
+
+### 🚨 Breaking changes
+- [6895](https://github.com/vegaprotocol/vega/issues/6895) - Move the authentication of wallet API version 2 to the transport layer (HTTP). This brings several breaking changes:
+  - A unified HTTP response payload has been introduced for structured response and error handling for data coming from the HTTP layer.
+  - the `/api/v2/methods` endpoints now uses the new HTTP response payload.
+  - the `/api/v2/requests` endpoint can either return the HTTP or the JSON-RPC response payload depending on the situation.
+  - the token has been moved out of the JSON-RPC requests, to HTTP `Authorization` header.
+- [7293](https://github.com/vegaprotocol/vega/issues/7293) - Rename restricted keys to allowed keys
+- [7211](https://github.com/vegaprotocol/vega/issues/7211) - Add sender and receiver balances in ledger entries
+- [7255](https://github.com/vegaprotocol/vega/issues/7255) - Rename `dehistory` to network history
+
+### 🛠 Improvements
+- [7317](https://github.com/vegaprotocol/vega/issues/7317) - Add database schema docs
+- [7279](https://github.com/vegaprotocol/vega/issues/7279) - Add `--archive` and `--lite` to `datanode init`
+- [7302](https://github.com/vegaprotocol/vega/issues/7302) - Add withdrawal minimal amount
+- [5487](https://github.com/vegaprotocol/vega/issues/5487) - Add `UPGRADING.md`
+- [7114](https://github.com/vegaprotocol/vega/issues/7114) - Expose user spam statistics via `API`
+- [7316](https://github.com/vegaprotocol/vega/issues/7316) - Add a bunch of database indexes following audit of queries
+- [7331](https://github.com/vegaprotocol/vega/issues/7331) - Control the decrease of the number of validators when network parameter is decreased
+- [6754](https://github.com/vegaprotocol/vega/issues/6754) - Add `csv` export for ledger entries
+- [7093](https://github.com/vegaprotocol/vega/issues/7093) - Pick up the long-living tokens after the wallet service is started
+- [7328](https://github.com/vegaprotocol/vega/issues/7328) - Add missing documentation of JSON-RPC methods `admin.update_passphrase`
+
+### 🐛 Fixes
+- [7260](https://github.com/vegaprotocol/vega/issues/7260) - Fix bug where pagination `before` or `after` cursors were ignored if `first` or `last` not set
+- [7281](https://github.com/vegaprotocol/vega/issues/7281) - Fix formatting of status enum for `dataSourceSpec` in `GraphQL`
+- [7283](https://github.com/vegaprotocol/vega/issues/7283) - Fix validation of future product oracles signers
+- [7306](https://github.com/vegaprotocol/vega/issues/7306) - Improve speed of querying deposits and withdrawals by party
+- [7337](https://github.com/vegaprotocol/vega/issues/7337) - Add `UpdateAsset` change types to proposal terms `GraphQL` resolver
+- [7278](https://github.com/vegaprotocol/vega/issues/7278) - Use `Informal systems` fork of Tendermint
+- [7294](https://github.com/vegaprotocol/vega/issues/7294) - Submission of `OpenOracle` data is broken
+- [7286](https://github.com/vegaprotocol/vega/issues/7286) - Fix serialisation of `oracle specs`
+- [7327](https://github.com/vegaprotocol/vega/issues/7327) - Improve and add API info, remove unused `AccountField` enum in `GraphQL`
+- [7345](https://github.com/vegaprotocol/vega/issues/7345) - Cache account lookup by id
+
 
 ## 0.66.1
 - [7269](https://github.com/vegaprotocol/vega/pull/7269) - Fix wallet release pipeline
@@ -170,6 +208,7 @@
 - [6924](https://github.com/vegaprotocol/vega/issues/6924) - Fix deterministic sorting when nodes have equal scores and we have to choose who is in the signer set
 - [6812](https://github.com/vegaprotocol/vega/issues/6812) - Network name is derived solely from the filename to cause less confusion if the network `config` is renamed
 - [6831](https://github.com/vegaprotocol/vega/issues/6831) - Fix settlement state in snapshots and market settlement.
+- [6856](https://github.com/vegaprotocol/vega/issues/6856) - When creating liquidity provision, seed dummy orders in order to prevent broken references when querying the market later
 - [6801](https://github.com/vegaprotocol/vega/issues/6801) - Fix internal data source validations
 - [6766](https://github.com/vegaprotocol/vega/issues/6766) - Handle relative vega home path being passed in `postgres` snapshots
 - [6885](https://github.com/vegaprotocol/vega/issues/6885) - Don't ignore 'bootstrap peers' `IPFS` configuration setting in `datanode`

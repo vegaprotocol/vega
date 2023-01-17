@@ -11,7 +11,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 
 	"github.com/spf13/cobra"
@@ -35,7 +34,7 @@ type VerifyMessageHandler func(api.AdminVerifyMessageParams) (api.AdminVerifyMes
 func NewCmdVerifyMessage(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminVerifyMessageParams) (api.AdminVerifyMessageResult, error) {
 		verifyMessage := api.NewAdminVerifyMessage()
-		rawResult, errorDetails := verifyMessage.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		rawResult, errorDetails := verifyMessage.Handle(context.Background(), params)
 		if errorDetails != nil {
 			return api.AdminVerifyMessageResult{}, errors.New(errorDetails.Data)
 		}

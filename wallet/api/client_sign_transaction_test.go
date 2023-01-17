@@ -4,15 +4,14 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
 	nodemock "code.vegaprotocol.io/vega/wallet/api/node/mocks"
 	"code.vegaprotocol.io/vega/wallet/api/node/types"
-	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -22,10 +21,6 @@ import (
 func TestSignTransaction(t *testing.T) {
 	t.Run("Signing a transaction with invalid params fails", testSigningTransactionWithInvalidParamsFails)
 	t.Run("Signing a transaction with valid params succeeds", testSigningTransactionWithValidParamsSucceeds)
-	t.Run("Signing a transaction with invalid token fails", testSigningTransactionWithInvalidTokenFails)
-	t.Run("Signing a transaction with a long-living token succeeds", testSigningTransactionWithLongLivingTokenSucceeds)
-	t.Run("Signing a transaction with a long-living token expired fails", testSigningTransactionWithLongLivingExpiredTokenFails)
-	t.Run("Signing a transaction with a long-living valid token succeeds", testSigningTransactionWithLongLivingValidTokenSucceeds)
 	t.Run("Signing a transaction without the needed permissions sign the transaction", testSigningTransactionWithoutNeededPermissionsDoesNotSignTransaction)
 	t.Run("Refusing the signing of a transaction does not sign the transaction", testRefusingSigningOfTransactionDoesNotSignTransaction)
 	t.Run("Cancelling the review does not sign the transaction", testCancellingTheReviewDoesNotSignTransaction)
@@ -50,17 +45,8 @@ func testSigningTransactionWithInvalidParamsFails(t *testing.T) {
 			params:        "test",
 			expectedError: api.ErrParamsDoNotMatch,
 		}, {
-			name: "with empty token",
-			params: api.ClientSignTransactionParams{
-				Token:       "",
-				PublicKey:   vgrand.RandomStr(10),
-				Transaction: testTransaction(t),
-			},
-			expectedError: api.ErrConnectionTokenIsRequired,
-		}, {
 			name: "with empty public key permissions",
 			params: api.ClientSignTransactionParams{
-				Token:       vgrand.RandomStr(10),
 				PublicKey:   "",
 				Transaction: testTransaction(t),
 			},
@@ -68,7 +54,6 @@ func testSigningTransactionWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with no transaction",
 			params: api.ClientSignTransactionParams{
-				Token:       vgrand.RandomStr(10),
 				PublicKey:   vgrand.RandomStr(10),
 				Transaction: nil,
 			},
@@ -76,7 +61,6 @@ func testSigningTransactionWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with transaction as invalid Vega command",
 			params: api.ClientSignTransactionParams{
-				Token:     vgrand.RandomStr(10),
 				PublicKey: vgrand.RandomStr(10),
 				Transaction: map[string]interface{}{
 					"type": "not vega command",
@@ -89,14 +73,19 @@ func testSigningTransactionWithInvalidParamsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			ctx := context.Background()
-			metadata := requestMetadataForTest()
+			ctx, _ := clientContextForTest()
+			hostname := vgrand.RandomStr(5)
+			w, _ := walletWithKeys(t, 2)
+			connectedWallet, err := api.NewConnectedWallet(hostname, w)
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
 
 			// setup
 			handler := newSignTransactionHandler(tt)
 
 			// when
-			result, errorDetails := handler.handle(t, ctx, tc.params, metadata)
+			result, errorDetails := handler.handle(t, ctx, tc.params, connectedWallet)
 
 			// then
 			require.Empty(tt, result)
@@ -107,182 +96,54 @@ func testSigningTransactionWithInvalidParamsFails(t *testing.T) {
 
 func testSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 	// given
-	ctx := context.Background()
-	metadata := requestMetadataForTest()
-	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5)
+	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
-	_, _ = wallet1.GenerateKeyPair(nil)
-	pubKey := wallet1.ListPublicKeys()[0].Key()
-
-	// setup
-	handler := newSignTransactionHandler(t)
-	handler.time.EXPECT().Now().Times(1)
-	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
-	// -- expected calls
-	handler.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
-	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
-	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
-		BlockHeight:             100,
-		BlockHash:               vgrand.RandomStr(64),
-		ProofOfWorkHashFunction: "sha3_24_rounds",
-		ProofOfWorkDifficulty:   1,
-		ChainID:                 vgrand.RandomStr(5),
-	}, nil)
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, metadata.TraceID, api.TransactionSuccessfullySigned).Times(1)
-	handler.interactor.EXPECT().Log(ctx, metadata.TraceID, gomock.Any(), gomock.Any()).AnyTimes()
-
-	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
-		Token:       token,
-		PublicKey:   pubKey,
-		Transaction: testTransaction(t),
-	}, metadata)
-
-	// then
-	assert.Nil(t, errorDetails)
-	require.NotEmpty(t, result)
-	assert.NotEmpty(t, result.Tx)
-}
-
-func testSigningTransactionWithInvalidTokenFails(t *testing.T) {
-	// given
-	ctx := context.Background()
-	metadata := requestMetadataForTest()
-	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{})
-	_, _ = wallet1.GenerateKeyPair(nil)
-	pubKey := wallet1.ListPublicKeys()[0].Key()
-
-	// setup
-	handler := newSignTransactionHandler(t)
-	handler.time.EXPECT().Now().Times(1)
-
-	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
-		Token:       vgrand.RandomStr(5),
-		PublicKey:   pubKey,
-		Transaction: testTransaction(t),
-	}, metadata)
-
-	// then
-	assertInvalidParams(t, errorDetails, session.ErrNoWalletConnected)
-	assert.Empty(t, result)
-}
-
-func testSigningTransactionWithLongLivingTokenSucceeds(t *testing.T) {
-	// given
-	ctx := context.Background()
-	metadata := requestMetadataForTest()
-	wallet1, kp := walletWithKey(t)
-	token := vgrand.RandomStr(10)
-
-	// setup
-	handler := newSignTransactionHandler(t)
-	handler.time.EXPECT().Now().Times(1)
-	if err := handler.sessions.ConnectWalletForLongLivingConnection(token, wallet1, time.Now(), nil); err != nil {
-		t.Fatalf("could not connect test wallet to a long-living sessions: %v", err)
+	kp, err := wallet1.GenerateKeyPair(nil)
+	if err != nil {
+		t.Fatalf(err.Error())
 	}
-	// -- expected calls
-	handler.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
-	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
-		BlockHeight:             100,
-		BlockHash:               vgrand.RandomStr(64),
-		ProofOfWorkHashFunction: "sha3_24_rounds",
-		ProofOfWorkDifficulty:   1,
-		ChainID:                 vgrand.RandomStr(5),
-	}, nil)
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, metadata.TraceID, api.TransactionSuccessfullySigned).Times(1)
-	handler.interactor.EXPECT().Log(ctx, metadata.TraceID, gomock.Any(), gomock.Any()).AnyTimes()
-
-	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
-		Token:       token,
-		PublicKey:   kp.PublicKey(),
-		Transaction: testTransaction(t),
-	}, metadata)
-
-	// then
-	assert.Nil(t, errorDetails)
-	require.NotEmpty(t, result)
-	assert.NotEmpty(t, result.Tx)
-}
-
-func testSigningTransactionWithLongLivingExpiredTokenFails(t *testing.T) {
-	// given
-	ctx := context.Background()
-	metadata := requestMetadataForTest()
-	wallet1, kp := walletWithKey(t)
-	token := vgrand.RandomStr(10)
-
-	now := time.Now()
-	expiresAt := now.Add(1 * time.Hour)
-	nextNow := now.Add(2 * time.Hour)
-
-	// setup
-	handler := newSignTransactionHandler(t)
-	handler.time.EXPECT().Now().Times(1).Return(nextNow)
-	if err := handler.sessions.ConnectWalletForLongLivingConnection(token, wallet1, now, &expiresAt); err != nil {
-		t.Fatalf("could not connect test wallet to a long-living sessions: %v", err)
+	connectedWallet, err := api.NewConnectedWallet(hostname, wallet1)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	latestBlock := types.LastBlock{
+		ChainID:                         vgrand.RandomStr(5),
+		BlockHeight:                     100,
+		BlockHash:                       vgrand.RandomStr(64),
+		ProofOfWorkHashFunction:         "sha3_24_rounds",
+		ProofOfWorkDifficulty:           2,
+		ProofOfWorkPastBlocks:           2,
+		ProofOfWorkTxPerBlock:           2,
+		ProofOfWorkIncreasingDifficulty: false,
 	}
 
-	// when
-	_, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
-		Token:       token,
-		PublicKey:   kp.PublicKey(),
-		Transaction: testTransaction(t),
-	}, metadata)
-
-	// then
-	assert.EqualError(t, errorDetails, "the token has expired (Invalid params -32602)")
-}
-
-func testSigningTransactionWithLongLivingValidTokenSucceeds(t *testing.T) {
-	// given
-	ctx := context.Background()
-	metadata := requestMetadataForTest()
-	wallet1, kp := walletWithKey(t)
-	token := vgrand.RandomStr(10)
-
-	now := time.Now()
-	expiresAt := now.Add(2 * time.Hour)
-	nextNow := now.Add(1 * time.Hour)
-
 	// setup
 	handler := newSignTransactionHandler(t)
-	handler.time.EXPECT().Now().Times(1).Return(nextNow)
-	if err := handler.sessions.ConnectWalletForLongLivingConnection(token, wallet1, now, &expiresAt); err != nil {
-		t.Fatalf("could not connect test wallet to a long-living sessions: %v", err)
-	}
 	// -- expected calls
-	handler.pow.EXPECT().Generate(gomock.Any(), gomock.Any()).Times(1)
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
-	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{
-		BlockHeight:             100,
-		BlockHash:               vgrand.RandomStr(64),
-		ProofOfWorkHashFunction: "sha3_24_rounds",
-		ProofOfWorkDifficulty:   1,
-		ChainID:                 vgrand.RandomStr(5),
+	handler.proofOfWork.EXPECT().Generate(kp.PublicKey(), &latestBlock).Times(1).Return(&commandspb.ProofOfWork{
+		Tid:   vgrand.RandomStr(5),
+		Nonce: 12345678,
 	}, nil)
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, metadata.TraceID, api.TransactionSuccessfullySigned).Times(1)
-	handler.interactor.EXPECT().Log(ctx, metadata.TraceID, gomock.Any(), gomock.Any()).AnyTimes()
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
+	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(latestBlock, nil)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.TransactionSuccessfullySigned).Times(1)
+	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
-		Token:       token,
 		PublicKey:   kp.PublicKey(),
 		Transaction: testTransaction(t),
-	}, metadata)
+	}, connectedWallet)
 
 	// then
 	assert.Nil(t, errorDetails)
@@ -292,23 +153,26 @@ func testSigningTransactionWithLongLivingValidTokenSucceeds(t *testing.T) {
 
 func testSigningTransactionWithoutNeededPermissionsDoesNotSignTransaction(t *testing.T) {
 	// given
-	ctx := context.Background()
-	metadata := requestMetadataForTest()
-	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{})
-	_, _ = wallet1.GenerateKeyPair(nil)
-	pubKey := wallet1.ListPublicKeys()[0].Key()
+	ctx, _ := clientContextForTest()
+	hostname := vgrand.RandomStr(5)
+	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{})
+	kp, err := wallet1.GenerateKeyPair(nil)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	connectedWallet, err := api.NewConnectedWallet(hostname, wallet1)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
 
 	// setup
 	handler := newSignTransactionHandler(t)
-	handler.time.EXPECT().Now().Times(1)
-	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
-		Token:       token,
-		PublicKey:   pubKey,
+		PublicKey:   kp.PublicKey(),
 		Transaction: testTransaction(t),
-	}, metadata)
+	}, connectedWallet)
 
 	// then
 	assertRequestNotPermittedError(t, errorDetails, api.ErrPublicKeyIsNotAllowedToBeUsed)
@@ -317,32 +181,36 @@ func testSigningTransactionWithoutNeededPermissionsDoesNotSignTransaction(t *tes
 
 func testRefusingSigningOfTransactionDoesNotSignTransaction(t *testing.T) {
 	// given
-	ctx := context.Background()
-	metadata := requestMetadataForTest()
-	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5)
+	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
-	_, _ = wallet1.GenerateKeyPair(nil)
-	pubKey := wallet1.ListPublicKeys()[0].Key()
+	kp, err := wallet1.GenerateKeyPair(nil)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	connectedWallet, err := api.NewConnectedWallet(hostname, wallet1)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
 
 	// setup
 	handler := newSignTransactionHandler(t)
-	handler.time.EXPECT().Now().Times(1)
-	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, fakeTransaction, gomock.Any()).Times(1).Return(false, nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
+	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(false, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
-		Token:       token,
-		PublicKey:   pubKey,
+		PublicKey:   kp.PublicKey(),
 		Transaction: testTransaction(t),
-	}, metadata)
+	}, connectedWallet)
 
 	// then
 	assertUserRejectionError(t, errorDetails)
@@ -351,32 +219,36 @@ func testRefusingSigningOfTransactionDoesNotSignTransaction(t *testing.T) {
 
 func testCancellingTheReviewDoesNotSignTransaction(t *testing.T) {
 	// given
-	ctx := context.Background()
-	metadata := requestMetadataForTest()
-	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5)
+	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
-	_, _ = wallet1.GenerateKeyPair(nil)
-	pubKey := wallet1.ListPublicKeys()[0].Key()
+	kp, err := wallet1.GenerateKeyPair(nil)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	connectedWallet, err := api.NewConnectedWallet(hostname, wallet1)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
 
 	// setup
 	handler := newSignTransactionHandler(t)
-	handler.time.EXPECT().Now().Times(1)
-	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, fakeTransaction, gomock.Any()).Times(1).Return(false, api.ErrUserCloseTheConnection)
+	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(false, api.ErrUserCloseTheConnection)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
-		Token:       token,
-		PublicKey:   pubKey,
+		PublicKey:   kp.PublicKey(),
 		Transaction: testTransaction(t),
-	}, metadata)
+	}, connectedWallet)
 
 	// then
 	assertConnectionClosedError(t, errorDetails)
@@ -385,33 +257,37 @@ func testCancellingTheReviewDoesNotSignTransaction(t *testing.T) {
 
 func testInterruptingTheRequestDoesNotSignTransaction(t *testing.T) {
 	// given
-	ctx := context.Background()
-	metadata := requestMetadataForTest()
-	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5)
+	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
-	_, _ = wallet1.GenerateKeyPair(nil)
-	pubKey := wallet1.ListPublicKeys()[0].Key()
+	kp, err := wallet1.GenerateKeyPair(nil)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	connectedWallet, err := api.NewConnectedWallet(hostname, wallet1)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
 
 	// setup
 	handler := newSignTransactionHandler(t)
-	handler.time.EXPECT().Now().Times(1)
-	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, fakeTransaction, gomock.Any()).Times(1).Return(false, api.ErrRequestInterrupted)
-	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
+	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(false, api.ErrRequestInterrupted)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
-		Token:       token,
-		PublicKey:   pubKey,
+		PublicKey:   kp.PublicKey(),
 		Transaction: testTransaction(t),
-	}, metadata)
+	}, connectedWallet)
 
 	// then
 	assertRequestInterruptionError(t, errorDetails)
@@ -420,33 +296,37 @@ func testInterruptingTheRequestDoesNotSignTransaction(t *testing.T) {
 
 func testGettingInternalErrorDuringReviewDoesNotSignTransaction(t *testing.T) {
 	// given
-	ctx := context.Background()
-	metadata := requestMetadataForTest()
-	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5)
+	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
-	_, _ = wallet1.GenerateKeyPair(nil)
-	pubKey := wallet1.ListPublicKeys()[0].Key()
+	kp, err := wallet1.GenerateKeyPair(nil)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	connectedWallet, err := api.NewConnectedWallet(hostname, wallet1)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
 
 	// setup
 	handler := newSignTransactionHandler(t)
-	handler.time.EXPECT().Now().Times(1)
-	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, fakeTransaction, gomock.Any()).Times(1).Return(false, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.InternalError, fmt.Errorf("requesting the transaction review failed: %w", assert.AnError)).Times(1)
+	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(false, assert.AnError)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("requesting the transaction review failed: %w", assert.AnError)).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
-		Token:       token,
-		PublicKey:   pubKey,
+		PublicKey:   kp.PublicKey(),
 		Transaction: testTransaction(t),
-	}, metadata)
+	}, connectedWallet)
 
 	// then
 	assertInternalError(t, errorDetails, api.ErrCouldNotSignTransaction)
@@ -455,35 +335,39 @@ func testGettingInternalErrorDuringReviewDoesNotSignTransaction(t *testing.T) {
 
 func testNoHealthyNodeAvailableDoesNotSignTransaction(t *testing.T) {
 	// given
-	ctx := context.Background()
-	metadata := requestMetadataForTest()
-	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5)
+	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
-	_, _ = wallet1.GenerateKeyPair(nil)
-	pubKey := wallet1.ListPublicKeys()[0].Key()
+	kp, err := wallet1.GenerateKeyPair(nil)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	connectedWallet, err := api.NewConnectedWallet(hostname, wallet1)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
 
 	// setup
 	handler := newSignTransactionHandler(t)
-	handler.time.EXPECT().Now().Times(1)
-	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(nil, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.NetworkError, fmt.Errorf("could not find a healthy node: %w", assert.AnError)).Times(1)
-	handler.interactor.EXPECT().Log(ctx, metadata.TraceID, gomock.Any(), gomock.Any()).AnyTimes()
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not find a healthy node: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
-		Token:       token,
-		PublicKey:   pubKey,
+		PublicKey:   kp.PublicKey(),
 		Transaction: testTransaction(t),
-	}, metadata)
+	}, connectedWallet)
 
 	// then
 	require.NotNil(t, errorDetails)
@@ -495,36 +379,40 @@ func testNoHealthyNodeAvailableDoesNotSignTransaction(t *testing.T) {
 
 func testFailingToGetLastBlockDoesNotSignTransaction(t *testing.T) {
 	// given
-	ctx := context.Background()
-	metadata := requestMetadataForTest()
-	wallet1, _ := walletWithPerms(t, metadata.Hostname, wallet.Permissions{
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5)
+	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
-			Access:         wallet.ReadAccess,
-			RestrictedKeys: nil,
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
 		},
 	})
-	_, _ = wallet1.GenerateKeyPair(nil)
-	pubKey := wallet1.ListPublicKeys()[0].Key()
+	kp, err := wallet1.GenerateKeyPair(nil)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	connectedWallet, err := api.NewConnectedWallet(hostname, wallet1)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
 
 	// setup
 	handler := newSignTransactionHandler(t)
-	handler.time.EXPECT().Now().Times(1)
-	token := connectWallet(t, handler.sessions, metadata.Hostname, wallet1)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, metadata.TraceID, metadata.Hostname, wallet1.Name(), pubKey, fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{}, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, metadata.TraceID, api.NetworkError, fmt.Errorf("could not get the latest block from the node: %w", assert.AnError)).Times(1)
-	handler.interactor.EXPECT().Log(ctx, metadata.TraceID, gomock.Any(), gomock.Any()).AnyTimes()
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get the latest block from the node: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
-		Token:       token,
-		PublicKey:   pubKey,
+		PublicKey:   kp.PublicKey(),
 		Transaction: testTransaction(t),
-	}, metadata)
+	}, connectedWallet)
 
 	// then
 	require.NotNil(t, errorDetails)
@@ -538,17 +426,16 @@ type signTransactionHandler struct {
 	*api.ClientSignTransaction
 	ctrl         *gomock.Controller
 	interactor   *mocks.MockInteractor
-	sessions     *session.Sessions
 	nodeSelector *nodemock.MockSelector
 	node         *nodemock.MockNode
-	time         *mocks.MockTimeProvider
-	pow          *mocks.MockProofOfWork
+	walletStore  *mocks.MockWalletStore
+	proofOfWork  *mocks.MockProofOfWork
 }
 
-func (h *signTransactionHandler) handle(t *testing.T, ctx context.Context, params interface{}, metadata jsonrpc.RequestMetadata) (api.ClientSignTransactionResult, *jsonrpc.ErrorDetails) {
+func (h *signTransactionHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params, connectedWallet api.ConnectedWallet) (api.ClientSignTransactionResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, metadata)
+	rawResult, err := h.Handle(ctx, params, connectedWallet)
 	if rawResult != nil {
 		result, ok := rawResult.(api.ClientSignTransactionResult)
 		if !ok {
@@ -563,22 +450,19 @@ func newSignTransactionHandler(t *testing.T) *signTransactionHandler {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
-	nodeSelector := nodemock.NewMockSelector(ctrl)
+	walletStore := mocks.NewMockWalletStore(ctrl)
 	interactor := mocks.NewMockInteractor(ctrl)
-
-	sessions := session.NewSessions()
+	nodeSelector := nodemock.NewMockSelector(ctrl)
 	node := nodemock.NewMockNode(ctrl)
-	tp := mocks.NewMockTimeProvider(ctrl)
-	pow := mocks.NewMockProofOfWork(ctrl)
+	proofOfWork := mocks.NewMockProofOfWork(ctrl)
 
 	return &signTransactionHandler{
-		ClientSignTransaction: api.NewSignTransaction(interactor, nodeSelector, pow, sessions, tp),
+		ClientSignTransaction: api.NewClientSignTransaction(walletStore, interactor, nodeSelector, proofOfWork),
 		ctrl:                  ctrl,
 		nodeSelector:          nodeSelector,
 		interactor:            interactor,
-		sessions:              sessions,
 		node:                  node,
-		time:                  tp,
-		pow:                   pow,
+		walletStore:           walletStore,
+		proofOfWork:           proofOfWork,
 	}
 }

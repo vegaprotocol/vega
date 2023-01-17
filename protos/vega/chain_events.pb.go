@@ -356,7 +356,7 @@ type ERC20AssetLimitsUpdated struct {
 	SourceEthereumAddress string `protobuf:"bytes,2,opt,name=source_ethereum_address,json=sourceEthereumAddress,proto3" json:"source_ethereum_address,omitempty"`
 	// The updated lifetime limits
 	LifetimeLimits string `protobuf:"bytes,3,opt,name=lifetime_limits,json=lifetimeLimits,proto3" json:"lifetime_limits,omitempty"`
-	// The updated withdraw threshold
+	// The updated withdrawal threshold
 	WithdrawThreshold string `protobuf:"bytes,4,opt,name=withdraw_threshold,json=withdrawThreshold,proto3" json:"withdraw_threshold,omitempty"`
 }
 

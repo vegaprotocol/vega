@@ -212,7 +212,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party1 | 51     | 500            | 0            |
       | party2 | -51    | -500           | 0            |
 
-  Scenario: 004, market.liquidity.stakeToCcyVolume=0, 3 LPs make commitment, 0044-LIME-008
+  Scenario: 004, market.liquidity.stakeToCcyVolume=0, 3 LPs make commitment, 0044-LIME-012
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount    |
       | party00 | USD   | 500000000 |

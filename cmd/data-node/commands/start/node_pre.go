@@ -24,8 +24,8 @@ import (
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/config"
-	"code.vegaprotocol.io/vega/datanode/dehistory"
-	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
+	"code.vegaprotocol.io/vega/datanode/networkhistory"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/libs/pprof"
@@ -91,14 +91,6 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		}()
 	}
 
-	if l.conf.DeHistory.Enabled {
-		l.Log.Info("Initializing Decentralized History")
-		err = l.initialiseDecentralizedHistory()
-		if err != nil {
-			return fmt.Errorf("failed to initialise decentralized history:%w", err)
-		}
-	}
-
 	if l.conf.SQLStore.WipeOnStartup {
 		if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(l.Log, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations); err != nil {
 			return fmt.Errorf("failed to wiped database:%w", err)
@@ -106,32 +98,37 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		l.Log.Info("Wiped all existing data from the datanode")
 	}
 
-	initialisedFromDeHistory := false
-	if bool(l.conf.DeHistory.Enabled) && bool(l.conf.AutoInitialiseFromDeHistory) {
-		l.Log.Info("Auto Initialising Datanode From Decentralized History")
-		initialisedFromDeHistory = true
-		apiPorts := []int{l.conf.API.Port}
-		apiPorts = append(apiPorts, l.conf.DeHistory.Initialise.GrpcAPIPorts...)
-		blockSpan, err := sqlstore.GetDatanodeBlockSpan(l.ctx, l.conf.SQLStore.ConnectionConfig)
+	initialisedFromNetworkHistory := false
+	if l.conf.NetworkHistory.Enabled {
+		l.Log.Info("Initializing Network History")
+
+		if l.conf.AutoInitialiseFromNetworkHistory {
+			if err := networkhistory.KillAllConnectionsToDatabase(context.Background(), l.conf.SQLStore.ConnectionConfig); err != nil {
+				return fmt.Errorf("failed to kill all connections to database: %w", err)
+			}
+		}
+
+		err = l.initialiseNetworkHistory(l.conf.SQLStore.ConnectionConfig)
 		if err != nil {
-			return fmt.Errorf("failed to get datanode block span: %w", err)
+			return fmt.Errorf("failed to initialise network history:%w", err)
 		}
 
-		if blockSpan.HasData {
-			l.Log.Infof("Datanode has data from block height %d to %d", blockSpan.FromHeight, blockSpan.ToHeight)
-		} else {
-			l.Log.Info("Datanode is empty")
-		}
+		if l.conf.AutoInitialiseFromNetworkHistory {
+			l.Log.Info("Auto Initialising Datanode From Network History")
+			apiPorts := []int{l.conf.API.Port}
+			apiPorts = append(apiPorts, l.conf.NetworkHistory.Initialise.GrpcAPIPorts...)
 
-		if err = dehistory.InitialiseDatanodeFromDeHistory(l.ctx, l.conf.DeHistory.Initialise,
-			l.Log, l.deHistoryService, blockSpan, apiPorts); err != nil {
-			return fmt.Errorf("failed to initialize datanode from decentralized history: %w", err)
+			if err = networkhistory.InitialiseDatanodeFromNetworkHistory(l.ctx, l.conf.NetworkHistory.Initialise,
+				l.Log, l.conf.SQLStore.ConnectionConfig, l.networkHistoryService, apiPorts); err != nil {
+				return fmt.Errorf("failed to initialize datanode from network history: %w", err)
+			}
+
+			initialisedFromNetworkHistory = true
+			l.Log.Info("Initialized from network history")
 		}
 	}
 
-	if initialisedFromDeHistory {
-		l.Log.Info("Initialized from decentralized history")
-	} else {
+	if !initialisedFromNetworkHistory {
 		operation := func() (opErr error) {
 			l.Log.Info("Attempting to initialise database...")
 			opErr = l.initialiseDatabase()
@@ -164,14 +161,12 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 
 	l.Log.Info("Enabling SQL stores")
 
-	transactionalConnectionSource, err := sqlstore.NewTransactionalConnectionSource(l.Log, l.conf.SQLStore.ConnectionConfig)
+	l.transactionalConnectionSource, err = sqlstore.NewTransactionalConnectionSource(l.Log, l.conf.SQLStore.ConnectionConfig)
 	if err != nil {
-		return fmt.Errorf("failed to create connection source:%w", err)
+		return fmt.Errorf("failed to create transactional connection source: %w", err)
 	}
 
-	l.transactionalConnectionSource = transactionalConnectionSource
-
-	l.CreateAllStores(l.ctx, l.Log, transactionalConnectionSource, l.conf.CandlesV2.CandleStore)
+	l.CreateAllStores(l.ctx, l.Log, l.transactionalConnectionSource, l.conf.CandlesV2.CandleStore)
 
 	log := l.Log.Named("service")
 	log.SetLevel(l.conf.Service.Level.Get())
@@ -179,7 +174,7 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		return err
 	}
 
-	err = dehistory.VerifyChainID(l.conf.ChainID, l.chainService)
+	err = networkhistory.VerifyChainID(l.conf.ChainID, l.chainService)
 	if err != nil {
 		return fmt.Errorf("failed to verify chain id:%w", err)
 	}
@@ -191,8 +186,15 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 
 func (l *NodeCommand) initialiseDatabase() error {
 	var err error
+	conf := l.conf.SQLStore.ConnectionConfig
+	conf.MaxConnPoolSize = 1
+	pool, err := sqlstore.CreateConnectionPool(conf)
+	if err != nil {
+		return fmt.Errorf("failed to create connection pool: %w", err)
+	}
+	defer pool.Close()
 
-	hasVegaSchema, err := sqlstore.HasVegaSchema(l.ctx, l.conf.SQLStore.ConnectionConfig)
+	hasVegaSchema, err := sqlstore.HasVegaSchema(l.ctx, pool)
 	if err != nil {
 		return fmt.Errorf("failed to check if database has schema: %w", err)
 	}
@@ -247,15 +249,15 @@ func (l *NodeCommand) preRun([]string) (err error) {
 	var onBlockCommittedHandler func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool)
 	var protocolUpgradeHandler broker.ProtocolUpgradeHandler
 
-	if l.conf.DeHistory.Enabled {
-		blockCommitHandler := dehistory.NewBlockCommitHandler(l.Log, l.conf.DeHistory, l.snapshotService.SnapshotData,
+	if l.conf.NetworkHistory.Enabled {
+		blockCommitHandler := networkhistory.NewBlockCommitHandler(l.Log, l.conf.NetworkHistory, l.snapshotService.SnapshotData,
 			bool(l.conf.Broker.UseEventFile), l.conf.Broker.FileEventSourceConfig.TimeBetweenBlocks.Duration)
 		onBlockCommittedHandler = blockCommitHandler.OnBlockCommitted
-		protocolUpgradeHandler = dehistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService, eventReceiverSender,
-			l.deHistoryService.CreateAndPublishSegment)
+		protocolUpgradeHandler = networkhistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService, eventReceiverSender,
+			l.networkHistoryService.CreateAndPublishSegment)
 	} else {
 		onBlockCommittedHandler = func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {}
-		protocolUpgradeHandler = dehistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService, eventReceiverSender,
+		protocolUpgradeHandler = networkhistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService, eventReceiverSender,
 			func(ctx context.Context, chainID string, toHeight int64) error { return nil })
 	}
 
@@ -287,18 +289,27 @@ func (l *NodeCommand) preRun([]string) (err error) {
 	return nil
 }
 
-func (l *NodeCommand) initialiseDecentralizedHistory() error {
-	deHistoryLog := l.Log.Named("deHistory")
-	deHistoryLog.SetLevel(l.conf.DeHistory.Level.Get())
+func (l *NodeCommand) initialiseNetworkHistory(connConfig sqlstore.ConnectionConfig) error {
+	// Want to pre-allocate some connections to ensure a connection is always available,
+	// 3 is chosen to allow for the fact that pool size can temporarily drop below the min pool size.
+	connConfig.MaxConnPoolSize = 3
+	connConfig.MinConnPoolSize = 3
 
-	snapshotServiceLog := deHistoryLog.Named("snapshot")
-	deHistoryServiceLog := deHistoryLog.Named("service")
+	networkHistoryPool, err := sqlstore.CreateConnectionPool(connConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create network history connection pool: %w", err)
+	}
 
-	var err error
-	l.snapshotService, err = snapshot.NewSnapshotService(snapshotServiceLog, l.conf.DeHistory.Snapshot,
-		l.conf.SQLStore.ConnectionConfig, l.vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyFrom),
-		l.vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyTo), func(version int64) error {
-			if err = sqlstore.MigrateToSchemaVersion(deHistoryLog, l.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
+	networkHistoryLog := l.Log.Named("networkHistory")
+	networkHistoryLog.SetLevel(l.conf.NetworkHistory.Level.Get())
+
+	snapshotServiceLog := networkHistoryLog.Named("snapshot")
+	networkHistoryServiceLog := networkHistoryLog.Named("service")
+
+	l.snapshotService, err = snapshot.NewSnapshotService(snapshotServiceLog, l.conf.NetworkHistory.Snapshot,
+		networkHistoryPool, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
+		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
+			if err = sqlstore.MigrateToSchemaVersion(networkHistoryLog, l.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
 				return fmt.Errorf("failed to migrate to schema version %d: %w", version, err)
 			}
 			return nil
@@ -307,12 +318,13 @@ func (l *NodeCommand) initialiseDecentralizedHistory() error {
 		return fmt.Errorf("failed to create snapshot service:%w", err)
 	}
 
-	l.deHistoryService, err = dehistory.New(l.ctx, deHistoryServiceLog, l.conf.DeHistory, l.vegaPaths.StatePathFor(paths.DataNodeDeHistoryHome),
-		l.conf.SQLStore.ConnectionConfig, l.conf.ChainID, l.snapshotService, l.conf.API.Port, l.vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyFrom),
-		l.vegaPaths.StatePathFor(paths.DataNodeDeHistorySnapshotCopyTo))
+	l.networkHistoryService, err = networkhistory.New(l.ctx, networkHistoryServiceLog, l.conf.NetworkHistory, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome),
+		networkHistoryPool,
+		l.conf.SQLStore.ConnectionConfig, l.conf.ChainID, l.snapshotService, l.conf.API.Port, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
+		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo))
 
 	if err != nil {
-		return fmt.Errorf("failed to create deHistory service:%w", err)
+		return fmt.Errorf("failed to create networkHistory service:%w", err)
 	}
 
 	return nil

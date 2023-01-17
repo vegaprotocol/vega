@@ -84,7 +84,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 
 	mockCoreServiceClient.EXPECT().GetState().Return(connectivity.Ready).AnyTimes()
 
-	mockDeHistoryService := mocks.NewMockDeHistoryService(mockCtrl)
+	mockNetworkHistoryService := mocks.NewMockNetworkHistoryService(mockCtrl)
 
 	eventSource, err := broker.NewEventReceiverSender(conf.Broker, logging.NewTestLogger(), "")
 	if err != nil {
@@ -182,7 +182,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 		sqlMarketDepthService,
 		sqlLedgerService,
 		sqlProtocolUpgradeService,
-		mockDeHistoryService,
+		mockNetworkHistoryService,
 		sqlCoreSnapshotService,
 	)
 	if g == nil {
@@ -458,6 +458,84 @@ func TestLastBlockHeight(t *testing.T) {
 		actualResp, err := proxyClient.LastBlockHeight(ctx, req)
 		assert.Error(t, err)
 		assert.Nil(t, actualResp)
+		assert.Contains(t, err.Error(), "Critical error")
+	})
+}
+
+func TestGetSpamStatistics(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	t.Run("proxy call is successful", func(t *testing.T) {
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx)
+		if err != nil {
+			t.Fatalf("failed to get test gRPC server: %v", err)
+		}
+		defer tidy()
+
+		req := &vegaprotoapi.GetSpamStatisticsRequest{
+			PartyId: "DEADBEEF",
+		}
+
+		wantReq := &vegaprotoapi.GetSpamStatisticsRequest{
+			PartyId: "DEADBEEF",
+		}
+
+		wantResp := &vegaprotoapi.GetSpamStatisticsResponse{
+			Statistics: &vegaprotoapi.SpamStatistics{
+				Proposals:         nil,
+				Delegations:       nil,
+				Transfers:         nil,
+				NodeAnnouncements: nil,
+				Votes:             nil,
+			},
+		}
+
+		mockTradingServiceClient.EXPECT().
+			GetSpamStatistics(gomock.Any(), vgtesting.ProtosEq(wantReq)).
+			Return(&vegaprotoapi.GetSpamStatisticsResponse{
+				Statistics: &vegaprotoapi.SpamStatistics{
+					Proposals:         nil,
+					Delegations:       nil,
+					Transfers:         nil,
+					NodeAnnouncements: nil,
+					Votes:             nil,
+				},
+			}, nil).Times(1)
+
+		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
+		assert.NotNil(t, proxyClient)
+
+		resp, err := proxyClient.GetSpamStatistics(ctx, req)
+		assert.NoError(t, err)
+		vgtesting.AssertProtoEqual(t, wantResp, resp)
+	})
+
+	t.Run("proxy propagates an error", func(t *testing.T) {
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx)
+		if err != nil {
+			t.Fatalf("failed to get test gRPC server: %v", err)
+		}
+		defer tidy()
+
+		req := &vegaprotoapi.GetSpamStatisticsRequest{
+			PartyId: "DEADBEEF",
+		}
+
+		wantReq := &vegaprotoapi.GetSpamStatisticsRequest{
+			PartyId: "DEADBEEF",
+		}
+
+		mockTradingServiceClient.EXPECT().
+			GetSpamStatistics(gomock.Any(), vgtesting.ProtosEq(wantReq)).
+			Return(nil, fmt.Errorf("Critical error")).Times(1)
+
+		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
+		assert.NotNil(t, proxyClient)
+
+		resp, err := proxyClient.GetSpamStatistics(ctx, req)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
 		assert.Contains(t, err.Error(), "Critical error")
 	})
 }

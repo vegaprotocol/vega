@@ -160,12 +160,11 @@ func (n *NullBlockchain) StartChain() error {
 	if n.cfg.Replay.Replay {
 		n.log.Info("nullchain is replaying chain", logging.String("replay-file", n.cfg.Replay.ReplayFile))
 		n.replaying.Store(true)
-		defer n.replaying.Store(false)
-
 		blockHeight, blockTime, err := r.replayChain(n.blockHeight, n.genesis.ChainID)
 		if err != nil {
 			return err
 		}
+		n.replaying.Store(false)
 
 		n.log.Info("nullchain finished replaying chain", logging.Int64("block-height", blockHeight))
 		if blockHeight != 0 {

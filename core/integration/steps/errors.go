@@ -146,5 +146,5 @@ func errOrderEventsNotFound(party, marketID string, side types.Side, size, price
 }
 
 func errNoWatchersSpecified(netparam string) error {
-	return fmt.Errorf("no watchers specified for network parmameter `%v`", netparam)
+	return fmt.Errorf("no watchers specified for network parameter `%v`", netparam)
 }

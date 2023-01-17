@@ -1898,14 +1898,15 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 				return nil, err
 			}
 			for _, to = range ret.Balances {
-				lm = &types.LedgerEntry{
-					FromAccount: acc.ToDetails(),
-					ToAccount:   to.Account.ToDetails(),
-					Amount:      parts,
-					Type:        req.Type,
-					Timestamp:   now,
-				}
-				ret.Entries = append(ret.Entries, lm)
+				ret.Entries = append(ret.Entries, &types.LedgerEntry{
+					FromAccount:        acc.ToDetails(),
+					ToAccount:          to.Account.ToDetails(),
+					Amount:             parts,
+					Type:               req.Type,
+					Timestamp:          now,
+					FromAccountBalance: acc.Balance.Clone(),
+					ToAccountBalance:   num.Sum(to.Account.Balance, parts),
+				})
 				to.Balance.AddSum(parts)
 				to.Account.Balance.AddSum(parts)
 			}
@@ -1931,14 +1932,15 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 				return nil, err
 			}
 			for _, to = range ret.Balances {
-				lm = &types.LedgerEntry{
-					FromAccount: acc.ToDetails(),
-					ToAccount:   to.Account.ToDetails(),
-					Amount:      parts,
-					Type:        req.Type,
-					Timestamp:   now,
-				}
-				ret.Entries = append(ret.Entries, lm)
+				ret.Entries = append(ret.Entries, &types.LedgerEntry{
+					FromAccount:        acc.ToDetails(),
+					ToAccount:          to.Account.ToDetails(),
+					Amount:             parts,
+					Type:               req.Type,
+					Timestamp:          now,
+					FromAccountBalance: acc.Balance.Clone(),
+					ToAccountBalance:   num.Sum(to.Account.Balance, parts),
+				})
 				to.Account.Balance.AddSum(parts)
 				to.Balance.AddSum(parts)
 			}
@@ -2316,7 +2318,9 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 				Amount:      bondAcc.Balance.Clone(),
 				Type:        types.TransferTypeMarginLow,
 				// Reference:   "position-resolution",
-				Timestamp: now,
+				Timestamp:          now,
+				FromAccountBalance: num.UintZero(),
+				ToAccountBalance:   num.Sum(bondAcc.Balance, marginAcc.Balance),
 			})
 			if err := e.IncrementBalance(ctx, marginAcc.ID, bondAcc.Balance); err != nil {
 				return nil, err
@@ -2334,7 +2338,9 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 				Amount:      genAcc.Balance.Clone(),
 				Type:        types.TransferTypeMarginLow,
 				// Reference:   "position-resolution",
-				Timestamp: now,
+				Timestamp:          now,
+				FromAccountBalance: num.UintZero(),
+				ToAccountBalance:   num.Sum(marginAcc.Balance, genAcc.Balance),
 			})
 			if err := e.IncrementBalance(ctx, marginAcc.ID, genAcc.Balance); err != nil {
 				return nil, err
@@ -2351,7 +2357,9 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 				Amount:      marginAcc.Balance.Clone(),
 				Type:        types.TransferTypeMarginConfiscated,
 				// Reference:   "position-resolution",
-				Timestamp: now,
+				Timestamp:          now,
+				FromAccountBalance: num.UintZero(),
+				ToAccountBalance:   num.Sum(ins.Balance, marginAcc.Balance),
 			})
 			if err := e.IncrementBalance(ctx, ins.ID, marginAcc.Balance); err != nil {
 				return nil, err
@@ -2391,11 +2399,13 @@ func (e *Engine) ClearPartyMarginAccount(ctx context.Context, party, market, ass
 	}
 
 	resp.Entries = append(resp.Entries, &types.LedgerEntry{
-		FromAccount: acc.ToDetails(),
-		ToAccount:   genAcc.ToDetails(),
-		Amount:      acc.Balance.Clone(),
-		Type:        types.TransferTypeMarginHigh,
-		Timestamp:   now,
+		FromAccount:        acc.ToDetails(),
+		ToAccount:          genAcc.ToDetails(),
+		Amount:             acc.Balance.Clone(),
+		Type:               types.TransferTypeMarginHigh,
+		Timestamp:          now,
+		FromAccountBalance: num.UintZero(),
+		ToAccountBalance:   num.Sum(genAcc.Balance, acc.Balance),
 	})
 	if err := e.IncrementBalance(ctx, genAcc.ID, acc.Balance); err != nil {
 		return nil, err

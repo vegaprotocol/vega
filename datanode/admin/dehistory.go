@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"net/http"
 
-	"code.vegaprotocol.io/vega/datanode/dehistory/store"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 )
 
-type DeHistoryService interface {
+type NetworkHistoryService interface {
 	CopyHistorySegmentToFile(ctx context.Context, historySegmentID string, outFile string) error
 	FetchHistorySegment(ctx context.Context, historySegmentID string) (store.SegmentIndexEntry, error)
 }
 
-type DeHistoryAdminService struct {
-	deHistoryService DeHistoryService
+type NetworkHistoryAdminService struct {
+	networkHistoryService NetworkHistoryService
 }
 
 type CopyHistorySegmentToFileArg struct {
@@ -27,14 +27,14 @@ type CopyHistorySegmentToFileReply struct {
 	Err   error
 }
 
-func NewDeHistoryAdminService(deHistoryService DeHistoryService) *DeHistoryAdminService {
-	return &DeHistoryAdminService{
-		deHistoryService: deHistoryService,
+func NewNetworkHistoryAdminService(networkHistoryService NetworkHistoryService) *NetworkHistoryAdminService {
+	return &NetworkHistoryAdminService{
+		networkHistoryService: networkHistoryService,
 	}
 }
 
-func (d *DeHistoryAdminService) CopyHistorySegmentToFile(req *http.Request, args *CopyHistorySegmentToFileArg, reply *CopyHistorySegmentToFileReply) error {
-	err := d.deHistoryService.CopyHistorySegmentToFile(req.Context(), args.HistorySegmentID, args.OutFile)
+func (d *NetworkHistoryAdminService) CopyHistorySegmentToFile(req *http.Request, args *CopyHistorySegmentToFileArg, reply *CopyHistorySegmentToFileReply) error {
+	err := d.networkHistoryService.CopyHistorySegmentToFile(req.Context(), args.HistorySegmentID, args.OutFile)
 	if err != nil {
 		reply.Err = fmt.Errorf("copy history segment %s to file %s failed - %w", args.HistorySegmentID, args.OutFile, err)
 		return err
@@ -44,7 +44,7 @@ func (d *DeHistoryAdminService) CopyHistorySegmentToFile(req *http.Request, args
 	return err
 }
 
-func (d *DeHistoryAdminService) FetchHistorySegment(req *http.Request, historySegmentID *string, reply *store.SegmentIndexEntry) (err error) {
-	*reply, err = d.deHistoryService.FetchHistorySegment(req.Context(), *historySegmentID)
+func (d *NetworkHistoryAdminService) FetchHistorySegment(req *http.Request, historySegmentID *string, reply *store.SegmentIndexEntry) (err error) {
+	*reply, err = d.networkHistoryService.FetchHistorySegment(req.Context(), *historySegmentID)
 	return
 }

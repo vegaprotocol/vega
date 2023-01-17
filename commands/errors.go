@@ -35,6 +35,8 @@ var (
 	ErrInvalidSignature             = errors.New("invalid signature")
 	ErrUnsupportedAlgorithm         = errors.New("unsupported algorithm")
 	ErrEmptyBatchMarketInstructions = errors.New("empty batch market instructions")
+	ErrIsNotValidVegaPubkey         = errors.New("is not a valid vega public key")
+	ErrIsNotValidEthereumAddress    = errors.New("is not a valid ethereum address")
 )
 
 type Errors map[string][]error

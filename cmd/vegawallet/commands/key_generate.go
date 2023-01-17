@@ -10,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -44,7 +43,7 @@ func NewCmdGenerateKey(w io.Writer, rf *RootFlags) *cobra.Command {
 		}
 
 		generateKey := api.NewAdminGenerateKey(s)
-		rawResult, errDetails := generateKey.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		rawResult, errDetails := generateKey.Handle(context.Background(), params)
 		if errDetails != nil {
 			return api.AdminGenerateKeyResult{}, errors.New(errDetails.Data)
 		}

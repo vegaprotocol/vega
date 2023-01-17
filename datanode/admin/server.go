@@ -16,22 +16,22 @@ import (
 )
 
 type Server struct {
-	log                   *logging.Logger
-	cfg                   Config
-	srv                   *http.Server
-	deHistoryAdminService *DeHistoryAdminService
+	log                        *logging.Logger
+	cfg                        Config
+	srv                        *http.Server
+	networkHistoryAdminService *NetworkHistoryAdminService
 }
 
-func NewServer(log *logging.Logger, config Config, vegaPaths paths.Paths, service *DeHistoryAdminService) *Server {
+func NewServer(log *logging.Logger, config Config, vegaPaths paths.Paths, service *NetworkHistoryAdminService) *Server {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
 	return &Server{
-		log:                   log,
-		cfg:                   config,
-		srv:                   nil,
-		deHistoryAdminService: service,
+		log:                        log,
+		cfg:                        config,
+		srv:                        nil,
+		networkHistoryAdminService: service,
 	}
 }
 
@@ -46,8 +46,8 @@ func (s *Server) Start(ctx context.Context) error {
 	rs.RegisterCodec(json.NewCodec(), "application/json")
 	rs.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
 
-	if err := rs.RegisterService(s.deHistoryAdminService, "dehistory"); err != nil {
-		s.log.Panic("failed to register dehistory service", logging.Error(err))
+	if err := rs.RegisterService(s.networkHistoryAdminService, "networkhistory"); err != nil {
+		s.log.Panic("failed to register network history service", logging.Error(err))
 	}
 
 	r := mux.NewRouter()

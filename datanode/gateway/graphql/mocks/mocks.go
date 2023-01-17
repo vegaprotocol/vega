@@ -77,6 +77,26 @@ func (mr *MockCoreProxyServiceClientMockRecorder) CheckTransaction(arg0, arg1 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckTransaction", reflect.TypeOf((*MockCoreProxyServiceClient)(nil).CheckTransaction), varargs...)
 }
 
+// GetSpamStatistics mocks base method.
+func (m *MockCoreProxyServiceClient) GetSpamStatistics(arg0 context.Context, arg1 *v1.GetSpamStatisticsRequest, arg2 ...grpc.CallOption) (*v1.GetSpamStatisticsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetSpamStatistics", varargs...)
+	ret0, _ := ret[0].(*v1.GetSpamStatisticsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSpamStatistics indicates an expected call of GetSpamStatistics.
+func (mr *MockCoreProxyServiceClientMockRecorder) GetSpamStatistics(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSpamStatistics", reflect.TypeOf((*MockCoreProxyServiceClient)(nil).GetSpamStatistics), varargs...)
+}
+
 // GetVegaTime mocks base method.
 func (m *MockCoreProxyServiceClient) GetVegaTime(arg0 context.Context, arg1 *v1.GetVegaTimeRequest, arg2 ...grpc.CallOption) (*v1.GetVegaTimeResponse, error) {
 	m.ctrl.T.Helper()
@@ -280,24 +300,44 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) EstimateMargin(arg0, arg1 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EstimateMargin", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).EstimateMargin), varargs...)
 }
 
-// GetActiveDeHistoryPeerAddresses mocks base method.
-func (m *MockTradingDataServiceClientV2) GetActiveDeHistoryPeerAddresses(arg0 context.Context, arg1 *v2.GetActiveDeHistoryPeerAddressesRequest, arg2 ...grpc.CallOption) (*v2.GetActiveDeHistoryPeerAddressesResponse, error) {
+// ExportLedgerEntries mocks base method.
+func (m *MockTradingDataServiceClientV2) ExportLedgerEntries(arg0 context.Context, arg1 *v2.ExportLedgerEntriesRequest, arg2 ...grpc.CallOption) (*v2.ExportLedgerEntriesResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetActiveDeHistoryPeerAddresses", varargs...)
-	ret0, _ := ret[0].(*v2.GetActiveDeHistoryPeerAddressesResponse)
+	ret := m.ctrl.Call(m, "ExportLedgerEntries", varargs...)
+	ret0, _ := ret[0].(*v2.ExportLedgerEntriesResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetActiveDeHistoryPeerAddresses indicates an expected call of GetActiveDeHistoryPeerAddresses.
-func (mr *MockTradingDataServiceClientV2MockRecorder) GetActiveDeHistoryPeerAddresses(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// ExportLedgerEntries indicates an expected call of ExportLedgerEntries.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ExportLedgerEntries(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveDeHistoryPeerAddresses", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetActiveDeHistoryPeerAddresses), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportLedgerEntries", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ExportLedgerEntries), varargs...)
+}
+
+// GetActiveNetworkHistoryPeerAddresses mocks base method.
+func (m *MockTradingDataServiceClientV2) GetActiveNetworkHistoryPeerAddresses(arg0 context.Context, arg1 *v2.GetActiveNetworkHistoryPeerAddressesRequest, arg2 ...grpc.CallOption) (*v2.GetActiveNetworkHistoryPeerAddressesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetActiveNetworkHistoryPeerAddresses", varargs...)
+	ret0, _ := ret[0].(*v2.GetActiveNetworkHistoryPeerAddressesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetActiveNetworkHistoryPeerAddresses indicates an expected call of GetActiveNetworkHistoryPeerAddresses.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetActiveNetworkHistoryPeerAddresses(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveNetworkHistoryPeerAddresses", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetActiveNetworkHistoryPeerAddresses), varargs...)
 }
 
 // GetAsset mocks base method.
@@ -540,24 +580,24 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetMarketDataHistoryByID(a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketDataHistoryByID", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetMarketDataHistoryByID), varargs...)
 }
 
-// GetMostRecentDeHistorySegment mocks base method.
-func (m *MockTradingDataServiceClientV2) GetMostRecentDeHistorySegment(arg0 context.Context, arg1 *v2.GetMostRecentDeHistorySegmentRequest, arg2 ...grpc.CallOption) (*v2.GetMostRecentDeHistorySegmentResponse, error) {
+// GetMostRecentNetworkHistorySegment mocks base method.
+func (m *MockTradingDataServiceClientV2) GetMostRecentNetworkHistorySegment(arg0 context.Context, arg1 *v2.GetMostRecentNetworkHistorySegmentRequest, arg2 ...grpc.CallOption) (*v2.GetMostRecentNetworkHistorySegmentResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetMostRecentDeHistorySegment", varargs...)
-	ret0, _ := ret[0].(*v2.GetMostRecentDeHistorySegmentResponse)
+	ret := m.ctrl.Call(m, "GetMostRecentNetworkHistorySegment", varargs...)
+	ret0, _ := ret[0].(*v2.GetMostRecentNetworkHistorySegmentResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetMostRecentDeHistorySegment indicates an expected call of GetMostRecentDeHistorySegment.
-func (mr *MockTradingDataServiceClientV2MockRecorder) GetMostRecentDeHistorySegment(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// GetMostRecentNetworkHistorySegment indicates an expected call of GetMostRecentNetworkHistorySegment.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetMostRecentNetworkHistorySegment(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMostRecentDeHistorySegment", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetMostRecentDeHistorySegment), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMostRecentNetworkHistorySegment", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetMostRecentNetworkHistorySegment), varargs...)
 }
 
 // GetNetworkData mocks base method.
@@ -840,24 +880,24 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ListAccounts(arg0, arg1 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAccounts", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListAccounts), varargs...)
 }
 
-// ListAllDeHistorySegments mocks base method.
-func (m *MockTradingDataServiceClientV2) ListAllDeHistorySegments(arg0 context.Context, arg1 *v2.ListAllDeHistorySegmentsRequest, arg2 ...grpc.CallOption) (*v2.ListAllDeHistorySegmentsResponse, error) {
+// ListAllNetworkHistorySegments mocks base method.
+func (m *MockTradingDataServiceClientV2) ListAllNetworkHistorySegments(arg0 context.Context, arg1 *v2.ListAllNetworkHistorySegmentsRequest, arg2 ...grpc.CallOption) (*v2.ListAllNetworkHistorySegmentsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "ListAllDeHistorySegments", varargs...)
-	ret0, _ := ret[0].(*v2.ListAllDeHistorySegmentsResponse)
+	ret := m.ctrl.Call(m, "ListAllNetworkHistorySegments", varargs...)
+	ret0, _ := ret[0].(*v2.ListAllNetworkHistorySegmentsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ListAllDeHistorySegments indicates an expected call of ListAllDeHistorySegments.
-func (mr *MockTradingDataServiceClientV2MockRecorder) ListAllDeHistorySegments(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// ListAllNetworkHistorySegments indicates an expected call of ListAllNetworkHistorySegments.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListAllNetworkHistorySegments(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllDeHistorySegments", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListAllDeHistorySegments), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllNetworkHistorySegments", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListAllNetworkHistorySegments), varargs...)
 }
 
 // ListAssets mocks base method.

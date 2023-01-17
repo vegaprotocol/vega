@@ -127,6 +127,7 @@ func (e *Engine) OnLimitsProposeMarketEnabledFromUpdate(ctx context.Context, dat
 			e.proposeMarketEnabledFrom = t
 		}
 	}
+	e.onUpdate(e.timeService.GetTimeNow())
 	e.sendEvent(ctx)
 
 	return nil

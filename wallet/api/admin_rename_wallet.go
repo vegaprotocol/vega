@@ -17,8 +17,8 @@ type AdminRenameWallet struct {
 	walletStore WalletStore
 }
 
-// Handle renames the wallet.
-func (h *AdminRenameWallet) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+// Handle renames a wallet.
+func (h *AdminRenameWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateRenameWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

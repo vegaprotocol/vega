@@ -215,10 +215,10 @@ type renameWalletHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *renameWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
+func (h *renameWalletHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) *jsonrpc.ErrorDetails {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	require.Nil(t, rawResult)
 	return err
 }

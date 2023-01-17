@@ -304,10 +304,10 @@ type adminSendRawTransactionHandler struct {
 	networkStore *mocks.MockNetworkStore
 }
 
-func (h *adminSendRawTransactionHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminSendRawTransactionResult, *jsonrpc.ErrorDetails) {
+func (h *adminSendRawTransactionHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminSendRawTransactionResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminSendRawTransactionResult)
 		if !ok {

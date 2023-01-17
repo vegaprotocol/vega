@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/dehistory/store"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/entities"
@@ -36,7 +36,9 @@ import (
 	"code.vegaprotocol.io/vega/version"
 
 	"github.com/pkg/errors"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -89,7 +91,7 @@ type tradingDataServiceV2 struct {
 	ethereumKeyRotationService *service.EthereumKeyRotation
 	blockService               BlockService
 	protocolUpgradeService     *service.ProtocolUpgrade
-	deHistoryService           DeHistoryService
+	networkHistoryService      NetworkHistoryService
 	coreSnapshotService        *service.SnapshotData
 }
 
@@ -240,6 +242,38 @@ func (t *tradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.Li
 			Edges:    edges,
 			PageInfo: pageInfo.ToProto(),
 		},
+	}, nil
+}
+
+func (t *tradingDataServiceV2) ExportLedgerEntries(ctx context.Context, req *v2.ExportLedgerEntriesRequest) (*v2.ExportLedgerEntriesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ExportLedgerEntriesV2")()
+	if t.accountService == nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceSQLStoreNotAvailable, nil)
+	}
+
+	dateRange := entities.DateRangeFromProto(req.DateRange)
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid cursor: %w", err))
+	}
+
+	raw, pageInfo, err := t.ledgerService.Export(ctx, req.PartyId, req.AssetId, dateRange, pagination)
+	if err != nil {
+		apiError(codes.Aborted, err)
+	}
+
+	header := metadata.New(map[string]string{
+		"Content-Type":       "text/csv",
+		"Content-diposition": fmt.Sprintf("attachment;filename=%s", "ledger_entries_export.csv"),
+	})
+
+	if err := grpc.SendHeader(ctx, header); err != nil {
+		return nil, apiError(codes.Internal, fmt.Errorf("unable to send 'x-response-id' header"))
+	}
+
+	return &v2.ExportLedgerEntriesResponse{
+		Data:     raw,
+		PageInfo: pageInfo.ToProto(),
 	}, nil
 }
 
@@ -3040,15 +3074,15 @@ func (t *tradingDataServiceV2) GetVegaTime(ctx context.Context, req *v2.GetVegaT
 	}, nil
 }
 
-// -- DeHistory --.
+// -- NetworkHistory --.
 
-func (t *tradingDataServiceV2) GetMostRecentDeHistorySegment(context.Context, *v2.GetMostRecentDeHistorySegmentRequest) (*v2.GetMostRecentDeHistorySegmentResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentDeHistorySegment")()
+func (t *tradingDataServiceV2) GetMostRecentNetworkHistorySegment(context.Context, *v2.GetMostRecentNetworkHistorySegmentRequest) (*v2.GetMostRecentNetworkHistorySegmentResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentNetworkHistorySegment")()
 
-	segment, err := t.deHistoryService.GetHighestBlockHeightHistorySegment()
+	segment, err := t.networkHistoryService.GetHighestBlockHeightHistorySegment()
 	if err != nil {
 		if errors.Is(err, store.ErrSegmentNotFound) {
-			return &v2.GetMostRecentDeHistorySegmentResponse{
+			return &v2.GetMostRecentNetworkHistorySegmentResponse{
 				Segment: nil,
 			}, nil
 		}
@@ -3056,20 +3090,20 @@ func (t *tradingDataServiceV2) GetMostRecentDeHistorySegment(context.Context, *v
 		return nil, apiError(codes.Internal, ErrGetMostRecentHistorySegment, err)
 	}
 
-	return &v2.GetMostRecentDeHistorySegmentResponse{
+	return &v2.GetMostRecentNetworkHistorySegmentResponse{
 		Segment:  toHistorySegment(segment),
-		SwarmKey: t.deHistoryService.GetSwarmKey(),
+		SwarmKey: t.networkHistoryService.GetSwarmKey(),
 	}, nil
 }
 
-func (t *tradingDataServiceV2) ListAllDeHistorySegments(context.Context, *v2.ListAllDeHistorySegmentsRequest) (*v2.ListAllDeHistorySegmentsResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("ListAllDeHistorySegments")()
-	if t.deHistoryService == nil {
-		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
+func (t *tradingDataServiceV2) ListAllNetworkHistorySegments(context.Context, *v2.ListAllNetworkHistorySegmentsRequest) (*v2.ListAllNetworkHistorySegmentsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListAllNetworkHistorySegments")()
+	if t.networkHistoryService == nil {
+		return nil, apiError(codes.Internal, ErrNetworkHistoryNotEnabled, fmt.Errorf("network history is not enabled"))
 	}
-	segments, err := t.deHistoryService.ListAllHistorySegments()
+	segments, err := t.networkHistoryService.ListAllHistorySegments()
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrListAllDeHistorySegment, err)
+		return nil, apiError(codes.Internal, ErrListAllNetworkHistorySegment, err)
 	}
 
 	historySegments := make([]*v2.HistorySegment, 0, len(segments))
@@ -3077,7 +3111,7 @@ func (t *tradingDataServiceV2) ListAllDeHistorySegments(context.Context, *v2.Lis
 		historySegments = append(historySegments, toHistorySegment(segment))
 	}
 
-	return &v2.ListAllDeHistorySegmentsResponse{
+	return &v2.ListAllNetworkHistorySegmentsResponse{
 		Segments: historySegments,
 	}, nil
 }
@@ -3097,14 +3131,14 @@ func toHistorySegment(segment store.SegmentIndexEntry) *v2.HistorySegment {
 	}
 }
 
-func (t *tradingDataServiceV2) GetActiveDeHistoryPeerAddresses(_ context.Context, _ *v2.GetActiveDeHistoryPeerAddressesRequest) (*v2.GetActiveDeHistoryPeerAddressesResponse, error) {
+func (t *tradingDataServiceV2) GetActiveNetworkHistoryPeerAddresses(_ context.Context, _ *v2.GetActiveNetworkHistoryPeerAddressesRequest) (*v2.GetActiveNetworkHistoryPeerAddressesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentHistorySegmentFromPeers")()
-	if t.deHistoryService == nil {
-		return nil, apiError(codes.Internal, ErrDeHistoryNotEnabled, fmt.Errorf("dehistory is not enabled"))
+	if t.networkHistoryService == nil {
+		return nil, apiError(codes.Internal, ErrNetworkHistoryNotEnabled, fmt.Errorf("network history is not enabled"))
 	}
-	addresses := t.deHistoryService.GetActivePeerAddresses()
+	addresses := t.networkHistoryService.GetActivePeerAddresses()
 
-	return &v2.GetActiveDeHistoryPeerAddressesResponse{
+	return &v2.GetActiveNetworkHistoryPeerAddressesResponse{
 		IpAddresses: addresses,
 	}, nil
 }

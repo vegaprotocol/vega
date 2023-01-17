@@ -45,7 +45,6 @@ type Connection interface {
 }
 
 type ConnectionSource struct {
-	conf            ConnectionConfig
 	Connection      Connection
 	pool            *pgxpool.Pool
 	log             *logging.Logger
@@ -58,22 +57,13 @@ type (
 	connectionContextKey  struct{}
 )
 
-func NewTransactionalConnectionSource(log *logging.Logger, conf ConnectionConfig) (*ConnectionSource, error) {
-	poolConfig, err := conf.GetPoolConfig()
+func NewTransactionalConnectionSource(log *logging.Logger, connConfig ConnectionConfig) (*ConnectionSource, error) {
+	pool, err := CreateConnectionPool(connConfig)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating connection source")
-	}
-
-	setMaxPoolSize(context.Background(), poolConfig, conf)
-	registerNumericType(poolConfig)
-
-	pool, err := pgxpool.ConnectConfig(context.Background(), poolConfig)
-	if err != nil {
-		return nil, fmt.Errorf("error connecting to database: %w", err)
+		return nil, fmt.Errorf("failed to create connection pool: %w", err)
 	}
 
 	connectionSource := &ConnectionSource{
-		conf:       conf,
 		log:        log.Named("connection_source"),
 		pool:       pool,
 		Connection: &delegatingConnection{pool: pool},
@@ -270,4 +260,23 @@ func (t *delegatingConnection) QueryFunc(ctx context.Context, sql string, args [
 		return conn.QueryFunc(ctx, sql, args, scans, f)
 	}
 	return t.pool.QueryFunc(ctx, sql, args, scans, f)
+}
+
+func CreateConnectionPool(conf ConnectionConfig) (*pgxpool.Pool, error) {
+	poolConfig, err := conf.GetPoolConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get pool config: %w", err)
+	}
+
+	setMaxPoolSize(context.Background(), poolConfig, conf)
+	registerNumericType(poolConfig)
+
+	poolConfig.MinConns = conf.MinConnPoolSize
+
+	pool, err := pgxpool.ConnectConfig(context.Background(), poolConfig)
+	if err != nil {
+		return nil, fmt.Errorf("error connecting to database: %w", err)
+	}
+
+	return pool, nil
 }

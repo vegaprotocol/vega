@@ -28,7 +28,7 @@ type subscriber[T any] struct {
 }
 
 type Observer[T any] struct {
-	subCount    int32
+	subCount    atomic.Int32
 	lastSubID   uint64
 	name        string
 	log         *logging.Logger
@@ -82,7 +82,7 @@ func (o *Observer[T]) Unsubscribe(ctx context.Context, ref uint64) error {
 }
 
 func (o *Observer[T]) GetSubscribersCount() int32 {
-	return atomic.LoadInt32(&o.subCount)
+	return o.subCount.Load()
 }
 
 func (o *Observer[T]) Notify(values []T) {
@@ -115,8 +115,8 @@ func (o *Observer[T]) Observe(ctx context.Context, retries int, filter func(T) b
 	ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 
 	go func() {
-		atomic.AddInt32(&o.subCount, 1)
-		defer atomic.AddInt32(&o.subCount, -1)
+		o.subCount.Add(1)
+		defer o.subCount.Add(-1)
 
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()

@@ -350,15 +350,19 @@ type ExternalDataSourceSpec struct {
 
 type LedgerEntry struct {
 	// Account from which the asset was taken
-	AccountFromID *vega.AccountDetails `json:"accountFromId"`
+	FromAccountID *vega.AccountDetails `json:"fromAccountId"`
 	// Account to which the balance was transferred
-	AccountToID *vega.AccountDetails `json:"accountToId"`
+	ToAccountID *vega.AccountDetails `json:"toAccountId"`
 	// The amount transferred
 	Amount string `json:"amount"`
 	// Type of ledger entry
 	Type vega.TransferType `json:"type"`
 	// RFC3339Nano time at which the transfer was made
 	Timestamp int64 `json:"timestamp"`
+	// Sender account balance after the transfer
+	FromAccountBalance string `json:"fromAccountBalance"`
+	// Receiver account balance after the transfer
+	ToAccountBalance string `json:"toAccountBalance"`
 }
 
 // Configuration of a market liquidity monitoring parameters
@@ -708,6 +712,7 @@ type UpdateInstrumentConfiguration struct {
 	Product *vega.UpdateFutureProduct `json:"product"`
 }
 
+// Event types
 type BusEventType string
 
 const (
@@ -826,14 +831,14 @@ func (e BusEventType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Status describe the status of the data spec
+// Describes the status of the data spec
 type DataSourceSpecStatus string
 
 const (
-	// describes an active data spec.
+	// Describes an active data spec
 	DataSourceSpecStatusStatusActive DataSourceSpecStatus = "STATUS_ACTIVE"
-	// describes a data spec that is not listening to data
-	// anymore.
+	// Describes a data spec that is not listening to data
+	// anymore
 	DataSourceSpecStatusStatusDeactivated DataSourceSpecStatus = "STATUS_DEACTIVATED"
 )
 

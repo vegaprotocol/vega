@@ -337,7 +337,7 @@ type LiquidityProviderFeeShare {
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
   "The average liquidity score"
-  averageScore: String! 
+  averageScore: String!
 }
 
 "The equity like share of liquidity fee for each liquidity provider"
@@ -349,7 +349,7 @@ type ObservableLiquidityProviderFeeShare {
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
   "The average liquidity score"
-  averageScore: String! 
+  averageScore: String!
 }
 
 "The liquidity commitments for this market"
@@ -375,8 +375,8 @@ input AccountFilter {
 "Filter for historical entry ledger queries"
 input LedgerEntryFilter {
   CloseOnAccountFilters: Boolean
-  SenderAccountFilter: AccountFilter
-  ReceiverAccountFilter: AccountFilter
+  FromAccountFilter: AccountFilter
+  ToAccountFilter: AccountFilter
 
   TransferTypes: [TransferType]
 }
@@ -653,7 +653,7 @@ type Query {
 
   "List reward summary per epoch by asset, market, reward type"
   epochRewardSummaries(
-    fromEpoch: Int, 
+    fromEpoch: Int,
     toEpoch: Int,
     pagination: Pagination
     ): EpochRewardSummaryConnection
@@ -1028,12 +1028,13 @@ type RankingScore {
   votingPower: String!
 }
 
+"Status of a validator node"
 enum ValidatorStatus {
   "The node is taking part in Tendermint consensus"
   VALIDATOR_NODE_STATUS_TENDERMINT
   "The node is a candidate to become a Tendermint validator if a slot is made available"
   VALIDATOR_NODE_STATUS_ERSATZ
-  "The node is pending to be promoted to Ersatz"
+  "The node is pending promotion to ersatz (standby), if a slot is available and if the node fulfils the requirements"
   VALIDATOR_NODE_STATUS_PENDING
 }
 
@@ -1051,6 +1052,7 @@ type Delegation {
   epoch: Int!
 }
 
+"Status of an asset that has been proposed to be added to the network"
 enum AssetStatus {
   "Asset is proposed to be added to the network"
   STATUS_PROPOSED
@@ -1157,7 +1159,7 @@ type NodeSignature {
   kind: NodeSignatureKind
 }
 
-"Represents the type signature provided by a node"
+"Represents the type of signature provided by a node"
 enum NodeSignatureKind {
   "A signature for proposing a new asset into the network"
   NODE_SIGNATURE_KIND_ASSET_NEW
@@ -1375,17 +1377,17 @@ type ExternalDataSourceSpec {
 
 type OracleSpec {
   dataSourceSpec: ExternalDataSourceSpec!
-  "Data list all the oracle data broadcast to this spec"
+  "Data lists all the oracle data broadcast to this spec"
   dataConnection(pagination: Pagination): OracleDataConnection!
 }
 
-"Status describe the status of the data spec"
+"Describes the status of the data spec"
 enum DataSourceSpecStatus {
-  "describes an active data spec."
+  "Describes an active data spec"
   STATUS_ACTIVE
   """
-  describes a data spec that is not listening to data
-  anymore.
+  Describes a data spec that is not listening to data
+  anymore
   """
   STATUS_DEACTIVATED
 }
@@ -1524,7 +1526,7 @@ union Product = Future
 
 "Describes something that can be traded on Vega"
 type Instrument {
-  "Uniquely identify an instrument across all instruments available on Vega (string)"
+  "Uniquely identifies an instrument across all instruments available on Vega (string)"
   id: ID!
 
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)"
@@ -2932,6 +2934,7 @@ enum OrderRejectionReason {
   ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
 }
 
+"Types of orders"
 enum OrderType {
   "An order to buy or sell at the market's current best available price"
   TYPE_MARKET
@@ -2941,7 +2944,7 @@ enum OrderType {
 
   """
   Used for distressed parties, an order placed by the network to close out distressed parties
-  similar to Market order, only no party is attached to the order.
+  similar to market order, only no party is attached to the order.
   """
   TYPE_NETWORK
 }
@@ -3065,6 +3068,7 @@ enum AccountType {
   ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS
 }
 
+"Types that describe why a transfer has been made"
 enum TransferType {
   "Default value, always invalid"
   TRANSFER_TYPE_UNSPECIFIED
@@ -3407,10 +3411,11 @@ type ProposalVoteSide {
   totalEquityLikeShareWeight: String!
 }
 
+"Whether a governance vote is yes or no"
 enum VoteValue {
-  "No reject a proposal"
+  "No votes against a proposal"
   VALUE_NO
-  "Yes accept a proposal"
+  "Yes votes for a proposal"
   VALUE_YES
 }
 
@@ -3465,15 +3470,19 @@ type TransferBalance {
 
 type LedgerEntry {
   "Account from which the asset was taken"
-  accountFromId: AccountDetails!
+  fromAccountId: AccountDetails!
   "Account to which the balance was transferred"
-  accountToId: AccountDetails!
+  toAccountId: AccountDetails!
   "The amount transferred"
   amount: String!
   "Type of ledger entry"
   type: TransferType!
   "RFC3339Nano time at which the transfer was made"
   timestamp: Timestamp!
+  "Sender account balance after the transfer"
+  fromAccountBalance: String!
+  "Receiver account balance after the transfer"
+  toAccountBalance: String!
 }
 
 type TransferResponse {
@@ -3561,6 +3570,7 @@ type AuctionEvent {
   extensionTrigger: AuctionTrigger
 }
 
+"Describes the trigger for an auction"
 enum AuctionTrigger {
   "Invalid trigger (or no auction)"
   AUCTION_TRIGGER_UNSPECIFIED
@@ -3574,6 +3584,7 @@ enum AuctionTrigger {
   AUCTION_TRIGGER_LIQUIDITY
 }
 
+"Event types"
 enum BusEventType {
   "Vega Time has changed"
   TimeUpdate
@@ -3822,17 +3833,21 @@ type AggregatedLedgerEntry {
   "Type of the transfer for this ledger entry"
   transferType: TransferType
   "Party identifier, if query was grouped by sender party - else null"
-  senderPartyId: ID
+  fromAccountPartyId: ID
   "Party identifier, if query was grouped by receiver party - else null"
-  receiverPartyId: ID
+  toAccountPartyId: ID
   "Market identifier, if query was grouped by sender market - else null"
-  senderMarketId: ID
+  fromAccountMarketId: ID
   "Market identifier, if query was grouped by receiver market - else null"
-  receiverMarketId: ID
+  toAccountMarketId: ID
   "Account type, if query was grouped by sender account type - else null"
-  senderAccountType: AccountType
+  fromAccountType: AccountType
   "Account type, if query was grouped by receiver account type - else null"
-  receiverAccountType: AccountType
+  toAccountType: AccountType
+  "Sender account balance after the transfer"
+  fromAccountBalance: String!
+  "Receiver account balance after the transfer"
+  toAccountBalance: String!
 }
 
 type AggregatedLedgerEntriesEdge {
@@ -3845,6 +3860,7 @@ type AggregatedLedgerEntriesConnection {
   pageInfo: PageInfo!
 }
 
+"Type of transfer between accounts"
 enum LedgerEntryField {
   TransferType
 }
@@ -3875,27 +3891,16 @@ type AggregatedBalanceConnection {
   pageInfo: PageInfo!
 }
 
-enum AccountField {
-  PartyId
-  AssetId
-  MarketId
-  AccountType
-}
-
-"Information about whether proposals are enabled, if the markets are still bootstrapping etc.."
+"Information about whether proposals are enabled, if the markets are still bootstrapping, etc.."
 type NetworkLimits {
   "Are market proposals allowed at this point in time"
   canProposeMarket: Boolean!
   "Are asset proposals allowed at this point in time"
   canProposeAsset: Boolean!
-  "True once block count > bootstrapBlockCount"
-  bootstrapFinished: Boolean!
   "Are market proposals enabled on this chain"
   proposeMarketEnabled: Boolean!
   "Are asset proposals enabled on this chain"
   proposeAssetEnabled: Boolean!
-  "How many blocks before the chain comes out of bootstrap mode"
-  bootstrapBlockCount: Int!
   "True once the genesis file is loaded"
   genesisLoaded: Boolean!
   "The date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set)"
@@ -3904,7 +3909,7 @@ type NetworkLimits {
   proposeAssetEnabledFrom: Timestamp!
 }
 
-"A segment of datanode history"
+"A segment of data node history"
 type HistorySegment {
     "From block height of the history segment"
     fromHeight:       Int!
@@ -4451,7 +4456,7 @@ type EpochRewardSummaryEdge {
 "an aggregated reward summary for a combination of epoch/asset/market/reward type"
 type EpochRewardSummary {
   "The epoch for which summary is generated"
-  epoch: Int! 
+  epoch: Int!
   "ID of the market"
   marketId: ID
   "ID of the Asset"
@@ -4483,7 +4488,7 @@ type CoreSnapshotData {
   "At which block the snapshot was taken"
   blockHeight: String!
   "The block hash at the snapshot block height"
-  blockHash: String!  
+  blockHash: String!
   "The current version of vega core"
   vegaCoreVersion: String!
 }

@@ -35,8 +35,7 @@ type AdminImportWallet struct {
 	walletStore WalletStore
 }
 
-// Handle creates a wallet and generates its first key.
-func (h *AdminImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateImportWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -58,7 +57,7 @@ func (h *AdminImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params
 		return nil, internalError(fmt.Errorf("could not generate first key: %w", err))
 	}
 
-	if err := h.walletStore.SaveWallet(ctx, w, params.Passphrase); err != nil {
+	if err := h.walletStore.CreateWallet(ctx, w, params.Passphrase); err != nil {
 		return nil, internalError(fmt.Errorf("could not save the wallet: %w", err))
 	}
 

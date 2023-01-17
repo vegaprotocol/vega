@@ -61,10 +61,12 @@ type coreService struct {
 	eventService EventService
 	subCancels   []func()
 	powParams    ProofOfWorkParams
+	spamEngine   SpamEngine
+	powEngine    PowEngine
 
 	chainID                  string
 	genesisTime              time.Time
-	hasGenesisTimeAndChainID uint32
+	hasGenesisTimeAndChainID atomic.Bool
 	mu                       sync.Mutex
 
 	netInfo   *tmctypes.ResultNetInfo
@@ -100,7 +102,7 @@ func (s *coreService) LastBlockHeight(
 ) (*protoapi.LastBlockHeightResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("LastBlockHeight")()
 
-	if atomic.LoadUint32(&s.hasGenesisTimeAndChainID) == 0 {
+	if !s.hasGenesisTimeAndChainID.Load() {
 		if err := s.getGenesisTimeAndChainID(ctx); err != nil {
 			return nil, fmt.Errorf("failed to intialise chainID: %w", err)
 		}
@@ -367,7 +369,7 @@ func (s *coreService) getTendermintStats(
 		return 0, 0, nil, "", apiError(codes.Internal, ErrBlockchainBacklogLength, err)
 	}
 
-	if atomic.LoadUint32(&s.hasGenesisTimeAndChainID) == 0 {
+	if !s.hasGenesisTimeAndChainID.Load() {
 		if err = s.getGenesisTimeAndChainID(ctx); err != nil {
 			return 0, 0, nil, "", err
 		}
@@ -435,7 +437,7 @@ func (s *coreService) getGenesisTimeAndChainID(ctx context.Context) error {
 		return apiError(codes.Internal, ErrBlockchainChainID, err)
 	}
 
-	atomic.StoreUint32(&s.hasGenesisTimeAndChainID, 1)
+	s.hasGenesisTimeAndChainID.Store(true)
 	return nil
 }
 
@@ -665,4 +667,26 @@ func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.Su
 	}
 
 	return successResponse, nil
+}
+
+func (s *coreService) GetSpamStatistics(_ context.Context, req *protoapi.GetSpamStatisticsRequest) (*protoapi.GetSpamStatisticsResponse, error) {
+	if req.PartyId == "" {
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
+	}
+
+	spamStats := &protoapi.SpamStatistics{}
+	// Spam engine is not set when NullBlockChain is used
+	if s.spamEngine != nil {
+		spamStats = s.spamEngine.GetSpamStatistics(req.PartyId)
+	}
+
+	// Noop PoW Engine is used for NullBlockChain so this should be safe
+	spamStats.Pow = s.powEngine.GetSpamStatistics(req.PartyId)
+
+	resp := &protoapi.GetSpamStatisticsResponse{
+		ChainId:    s.chainID,
+		Statistics: spamStats,
+	}
+
+	return resp, nil
 }

@@ -145,8 +145,9 @@ type Engine struct {
 	recurringTransfersMap map[string]*types.RecurringTransfer
 
 	bridgeState *bridgeState
+	bridgeView  ERC20BridgeView
 
-	bridgeView ERC20BridgeView
+	minWithdrawQuantumMultiple num.Decimal
 }
 
 type withdrawalRef struct {
@@ -195,12 +196,18 @@ func New(
 		recurringTransfersMap:      map[string]*types.RecurringTransfer{},
 		transferFeeFactor:          num.DecimalZero(),
 		minTransferQuantumMultiple: num.DecimalZero(),
+		minWithdrawQuantumMultiple: num.DecimalZero(),
 		marketActivityTracker:      marketActivityTracker,
 		bridgeState: &bridgeState{
 			active: true,
 		},
 		bridgeView: bridgeView,
 	}
+}
+
+func (e *Engine) OnMinWithdrawQuantumMultiple(ctx context.Context, f num.Decimal) error {
+	e.minWithdrawQuantumMultiple = f
+	return nil
 }
 
 // ReloadConf updates the internal configuration.
@@ -238,7 +245,7 @@ func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 	// iterate over asset actions deterministically
 	for _, k := range assetActionKeys {
 		v := e.assetActs[k]
-		state := atomic.LoadUint32(&v.state)
+		state := v.state.Load()
 		if state == pendingState {
 			continue
 		}
@@ -312,7 +319,7 @@ func (e *Engine) onCheckDone(i interface{}, valid bool) {
 	if valid {
 		newState = okState
 	}
-	atomic.StoreUint32(&aa.state, newState)
+	aa.state.Store(newState)
 }
 
 func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
@@ -478,4 +485,10 @@ func getRefKey(ref snapshot.TxRef) (string, error) {
 	}
 
 	return hex.EncodeToString(crypto.Hash(buf)), nil
+}
+
+func newPendingState() *atomic.Uint32 {
+	state := &atomic.Uint32{}
+	state.Store(pendingState)
+	return state
 }

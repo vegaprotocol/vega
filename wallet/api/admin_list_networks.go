@@ -16,7 +16,7 @@ type AdminListNetworks struct {
 }
 
 // Handle List all registered networks.
-func (h *AdminListNetworks) Handle(_ context.Context, _ jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminListNetworks) Handle(_ context.Context, _ jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	networks, err := h.networkStore.ListNetworks()
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not list the networks: %w", err))

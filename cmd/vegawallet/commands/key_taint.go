@@ -10,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -24,9 +23,9 @@ var (
 
 		This mechanism is useful when the key pair has been compromised.
 
-		When a key is tainted, it is automatically removed from the restricted
+		When a key is tainted, it is automatically removed from the allowed
 		keys if specified. If the key is the only one to be set, the permission
-		to access the public keys is revoked. If no restricted key is specified,
+		to access the public keys is revoked. If no allowed key is specified,
 		but all keys in the wallet are tainted, the permission of the public
 		keys is revoked as well.
 	`)
@@ -47,7 +46,7 @@ func NewCmdTaintKey(w io.Writer, rf *RootFlags) *cobra.Command {
 		}
 
 		taintKey := api.NewAdminTaintKey(s)
-		_, errDetails := taintKey.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		_, errDetails := taintKey.Handle(context.Background(), params)
 		if errDetails != nil {
 			return errors.New(errDetails.Data)
 		}
