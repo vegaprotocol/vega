@@ -195,6 +195,9 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 
 	p.Print(p.String().CheckMark().Text("CLI logs located at: ").SuccessText(cliLogPath).NextLine())
 
+	closer := vgclose.NewCloser()
+	defer closer.CloseAll()
+
 	walletStore, err := wallets.InitialiseStoreFromPaths(vegaPaths)
 	if err != nil {
 		cliLog.Error("Could not initialise wallets store", zap.Error(err))
@@ -217,7 +220,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 	if f.LoadTokens {
 		cliLog.Warn("Long-living tokens enabled")
 		p.Print(p.String().WarningBangMark().WarningText("Long-living tokens enabled").NextLine())
-		s, err := tokenStoreV1.LoadStore(vegaPaths, f.tokensPassphrase)
+		s, err := tokenStoreV1.InitialiseStore(vegaPaths, f.tokensPassphrase)
 		if err != nil {
 			if errors.Is(err, walletapi.ErrWrongPassphrase) {
 				return err
@@ -229,9 +232,10 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		s := tokenStoreV1.NewEmptyStore()
 		tokenStore = s
 	}
+	closer.Add(tokenStore.Close)
 
-	loggerBuilderFunc := func(path paths.StatePath, levelName string) (*zap.Logger, zap.AtomicLevel, error) {
-		svcLog, svcLogPath, level, err := buildJSONFileLogger(vegaPaths, path, levelName)
+	loggerBuilderFunc := func(levelName string) (*zap.Logger, zap.AtomicLevel, error) {
+		svcLog, svcLogPath, level, err := buildJSONFileLogger(vegaPaths, paths.WalletServiceLogsHome, levelName)
 		if err != nil {
 			return nil, zap.AtomicLevel{}, err
 		}
@@ -240,9 +244,6 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 
 		return svcLog, level, nil
 	}
-
-	closer := vgclose.NewCloser()
-	defer closer.CloseAll()
 
 	consentRequests := make(chan serviceV1.ConsentRequest, MaxConsentRequests)
 	sentTransactions := make(chan serviceV1.SentTransaction)

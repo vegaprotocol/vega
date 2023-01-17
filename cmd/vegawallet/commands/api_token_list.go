@@ -33,15 +33,16 @@ func NewCmdListAPITokens(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(f ListAPITokensFlags) (connections.ListAPITokensResult, error) {
 		vegaPaths := paths.New(rf.Home)
 
-		store, err := tokenStoreV1.LoadStore(vegaPaths, f.passphrase)
+		tokenStore, err := tokenStoreV1.InitialiseStore(vegaPaths, f.passphrase)
 		if err != nil {
 			if errors.Is(err, api.ErrWrongPassphrase) {
 				return connections.ListAPITokensResult{}, err
 			}
 			return connections.ListAPITokensResult{}, fmt.Errorf("couldn't load the token store: %w", err)
 		}
+		defer tokenStore.Close()
 
-		return connections.ListAPITokens(store)
+		return connections.ListAPITokens(tokenStore)
 	}
 
 	return BuildCmdListAPITokens(w, ensureAPITokenStoreIsInit, h, rf)

@@ -52,11 +52,11 @@ func (h *GenerateAPITokenHandler) Handle(ctx context.Context, params GenerateAPI
 		return "", fmt.Errorf("could not retrieve the wallet: %w", err)
 	}
 
-	now := h.timeService.Now()
+	now := h.timeService.Now().Truncate(time.Second)
 
 	var expirationDate *time.Time
 	if params.ExpiresIn != nil {
-		ed := now.Add(*params.ExpiresIn)
+		ed := now.Add(*params.ExpiresIn).Truncate(time.Second)
 		expirationDate = &ed
 	}
 

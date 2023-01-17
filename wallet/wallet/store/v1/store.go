@@ -41,7 +41,7 @@ type Store struct {
 	unlockedWallets map[fingerprint]*unlockedWallet
 
 	// listeners are callback functions to be called when a wallet update.
-	listeners []func(w wallet.Wallet)
+	listeners []func(context.Context, wallet.Wallet)
 }
 
 type fingerprint string
@@ -59,6 +59,7 @@ func InitialiseStore(walletsHome string) (*Store, error) {
 	return &Store{
 		walletsHome:     walletsHome,
 		unlockedWallets: map[fingerprint]*unlockedWallet{},
+		listeners:       []func(context.Context, wallet.Wallet){},
 	}, nil
 }
 
@@ -360,13 +361,13 @@ func (s *Store) UpdateWallet(ctx context.Context, w wallet.Wallet) error {
 	uw.wallet = w.Clone()
 
 	for _, listener := range s.listeners {
-		listener(w.Clone())
+		listener(ctx, w.Clone())
 	}
 
 	return nil
 }
 
-func (s *Store) OnUpdate(callbackFn func(w wallet.Wallet)) {
+func (s *Store) OnUpdate(callbackFn func(context.Context, wallet.Wallet)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
