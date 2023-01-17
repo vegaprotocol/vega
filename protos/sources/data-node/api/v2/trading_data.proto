@@ -16,7 +16,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.67.0-dev";
+    version: "v0.67.0";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz/datanode/rest"
@@ -160,7 +160,7 @@ service TradingDataService {
     //
     // Get candle data for a given candle ID
     rpc ListCandleData(ListCandleDataRequest) returns (ListCandleDataResponse);
-    
+
     // Candle updates
     //
     // Subscribe to a stream of candle updates
@@ -175,7 +175,7 @@ service TradingDataService {
     //
     // Get Votes for a Party ID using a cursor based pagination model
     rpc ListVotes(ListVotesRequest) returns (ListVotesResponse);
-    
+
     // Votes subscription
     //
     // Subscribe to a stream of votes
@@ -335,7 +335,7 @@ service TradingDataService {
     //
     // List proposals using a cursor based pagination model
     rpc ListGovernanceData(ListGovernanceDataRequest) returns (ListGovernanceDataResponse);
-    
+
     // Governance proposals subscription
     //
     // Subscribe to a stream of governance proposals
@@ -345,7 +345,7 @@ service TradingDataService {
     //
     // List delegations
     rpc ListDelegations(ListDelegationsRequest) returns (ListDelegationsResponse);
-    
+
     // Delegation events subscription
     //
     // Subscribe to delegation events
