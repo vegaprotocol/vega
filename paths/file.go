@@ -82,6 +82,10 @@ func ReadEncryptedFile(path string, passphrase string, v interface{}) error {
 		return fmt.Errorf("couldn't read secure file: %w", err)
 	}
 
+	if len(encryptedBuf) == 0 {
+		return ErrEmptyFile
+	}
+
 	buf, err := vgcrypto.Decrypt(encryptedBuf, passphrase)
 	if err != nil {
 		return fmt.Errorf("couldn't decrypt content: %w", err)

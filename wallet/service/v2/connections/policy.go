@@ -5,8 +5,7 @@ import "time"
 type connectionPolicy interface {
 	HasConnectionExpired(now time.Time) bool
 	UpdateActivityDate(time.Time)
-	CanBeEnded() bool
-	HasNoRestrictions() bool
+	IsLongLivingConnection() bool
 }
 
 // sessionPolicy is the policy to apply between a third-party application and a wallet.
@@ -28,11 +27,7 @@ func (p *sessionPolicy) HasConnectionExpired(_ time.Time) bool {
 	return false
 }
 
-func (p *sessionPolicy) CanBeEnded() bool {
-	return true
-}
-
-func (p *sessionPolicy) HasNoRestrictions() bool {
+func (p *sessionPolicy) IsLongLivingConnection() bool {
 	return false
 }
 
@@ -47,10 +42,6 @@ func (p *longLivingConnectionPolicy) HasConnectionExpired(now time.Time) bool {
 	return p.expirationDate != nil && !p.expirationDate.After(now)
 }
 
-func (p *longLivingConnectionPolicy) CanBeEnded() bool {
-	return false
-}
-
-func (p *longLivingConnectionPolicy) HasNoRestrictions() bool {
+func (p *longLivingConnectionPolicy) IsLongLivingConnection() bool {
 	return true
 }

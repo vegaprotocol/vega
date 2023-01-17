@@ -24,6 +24,7 @@
 - [7316](https://github.com/vegaprotocol/vega/issues/7316) - Add a bunch of database indexes following audit of queries
 - [7331](https://github.com/vegaprotocol/vega/issues/7331) - Control the decrease of the number of validators when network parameter is decreased
 - [6754](https://github.com/vegaprotocol/vega/issues/6754) - Add `csv` export for ledger entries
+- [7093](https://github.com/vegaprotocol/vega/issues/7093) - Pick up the long-living tokens after the wallet service is started
 
 ### 🐛 Fixes
 - [7260](https://github.com/vegaprotocol/vega/issues/7260) - Fix bug where pagination `before` or `after` cursors were ignored if `first` or `last` not set

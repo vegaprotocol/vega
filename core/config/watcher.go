@@ -189,8 +189,8 @@ func (w *Watcher) watch(ctx context.Context, watcher *fsnotify.Watcher) {
 	for {
 		select {
 		case event := <-watcher.Events:
-			if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Rename == fsnotify.Rename {
-				if event.Op&fsnotify.Rename == fsnotify.Rename {
+			if event.Has(fsnotify.Write) || event.Has(fsnotify.Rename) {
+				if event.Has(fsnotify.Rename) {
 					// add a small sleep here in order to handle vi
 					// vi do not send a write event / edit the file in place,
 					// it always create a temporary file, then delete the original one,
