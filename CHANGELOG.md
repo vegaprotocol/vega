@@ -34,6 +34,7 @@
 - [7294](https://github.com/vegaprotocol/vega/issues/7294) - Submission of `OpenOracle` data is broken
 - [7286](https://github.com/vegaprotocol/vega/issues/7286) - Fix serialisation of `oracle specs`
 - [7327](https://github.com/vegaprotocol/vega/issues/7327) - Improve and add API info, remove unused `AccountField` enum in `GraphQL`
+- [7345](https://github.com/vegaprotocol/vega/issues/7345) - Cache account lookup by id 
 
 
 ## 0.66.1
