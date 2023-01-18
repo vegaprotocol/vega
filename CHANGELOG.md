@@ -32,6 +32,7 @@
 - [7279](https://github.com/vegaprotocol/vega/issues/7279) - Add `--archive` and `--lite` to `datanode init`
 - [7302](https://github.com/vegaprotocol/vega/issues/7302) - Add withdrawal minimal amount
 - [5487](https://github.com/vegaprotocol/vega/issues/5487) - Add `UPGRADING.md`
+- [7358](https://github.com/vegaprotocol/vega/issues/7358) - Improve `datanode init` and `vega init` help text
 - [7114](https://github.com/vegaprotocol/vega/issues/7114) - Expose user spam statistics via `API`
 - [7316](https://github.com/vegaprotocol/vega/issues/7316) - Add a bunch of database indexes following audit of queries
 - [7331](https://github.com/vegaprotocol/vega/issues/7331) - Control the decrease of the number of validators when network parameter is decreased

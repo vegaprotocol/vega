@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/cenkalti/backoff"
 	"google.golang.org/grpc"
@@ -251,7 +252,8 @@ func (l *NodeCommand) preRun([]string) (err error) {
 
 	if l.conf.NetworkHistory.Enabled {
 		blockCommitHandler := networkhistory.NewBlockCommitHandler(l.Log, l.conf.NetworkHistory, l.snapshotService.SnapshotData,
-			bool(l.conf.Broker.UseEventFile), l.conf.Broker.FileEventSourceConfig.TimeBetweenBlocks.Duration)
+			bool(l.conf.Broker.UseEventFile), l.conf.Broker.FileEventSourceConfig.TimeBetweenBlocks.Duration,
+			5*time.Second, 6)
 		onBlockCommittedHandler = blockCommitHandler.OnBlockCommitted
 		protocolUpgradeHandler = networkhistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService, eventReceiverSender,
 			l.networkHistoryService.CreateAndPublishSegment)

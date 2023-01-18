@@ -40,7 +40,7 @@ type InitCmd struct {
 	config.OutputFlag
 	config.Passphrase `long:"nodewallet-passphrase-file"`
 
-	Force bool `short:"f" long:"force" description:"Erase exiting vega configuration at the specified path"`
+	Force bool `short:"f" long:"force" description:"Erase existing vega configuration at the specified path"`
 
 	NoTendermint   bool   `long:"no-tendermint" description:"Disable tendermint configuration generation"`
 	TendermintHome string `long:"tendermint-home" required:"true" description:"Directory for tendermint config and data" default:"$HOME/.tendermint"`
@@ -48,6 +48,10 @@ type InitCmd struct {
 }
 
 var initCmd InitCmd
+
+func (opts *InitCmd) Usage() string {
+	return "<full | validator>"
+}
 
 func (opts *InitCmd) Execute(args []string) error {
 	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
@@ -222,7 +226,7 @@ func Init(ctx context.Context, parser *flags.Parser) error {
 
 	var (
 		short = "Initializes a vega node"
-		long  = "Generate the minimal configuration required for a vega node to start"
+		long  = "Generate the minimal configuration required for a vega node to start. You must specify 'full' or 'validator'"
 	)
 	_, err := parser.AddCommand("init", short, long, &initCmd)
 	return err
