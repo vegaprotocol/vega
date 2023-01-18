@@ -27,7 +27,7 @@ import (
 type InitCmd struct {
 	config.VegaHomeFlag
 
-	Force   bool `short:"f" long:"force" description:"Erase exiting vega configuration at the specified path"`
+	Force   bool `short:"f" long:"force" description:"Erase existing vega configuration at the specified path"`
 	Archive bool `short:"a" long:"archive" description:"Disable database retention policies. Keep data indefinitely"`
 	Lite    bool `short:"l" long:"lite" description:"Set all database retention policies to one day only"`
 }

@@ -40,7 +40,7 @@ type InitCmd struct {
 	config.OutputFlag
 	config.Passphrase `long:"nodewallet-passphrase-file"`
 
-	Force bool `short:"f" long:"force" description:"Erase exiting vega configuration at the specified path"`
+	Force bool `short:"f" long:"force" description:"Erase existing vega configuration at the specified path"`
 
 	NoTendermint   bool   `long:"no-tendermint" description:"Disable tendermint configuration generation"`
 	TendermintHome string `long:"tendermint-home" required:"true" description:"Directory for tendermint config and data" default:"$HOME/.tendermint"`
