@@ -150,6 +150,7 @@ func getTestServiceV2(t *testing.T, tokenSetups ...longLivingTokenSetupForTest) 
 	}
 
 	walletStore.EXPECT().OnUpdate(gomock.Any()).Times(1)
+	tokenStore.EXPECT().OnUpdate(gomock.Any()).Times(1)
 
 	connectionsManager, err := connections.NewManager(timeService, walletStore, tokenStore)
 	if err != nil {

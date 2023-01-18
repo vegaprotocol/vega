@@ -1,6 +1,21 @@
 # Changelog
 
-## Unreleased 0.67.0
+## Unreleased 0.68.0
+
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.67.0
 
 ### 🚨 Breaking changes
 - [6895](https://github.com/vegaprotocol/vega/issues/6895) - Move the authentication of wallet API version 2 to the transport layer (HTTP). This brings several breaking changes:
@@ -10,10 +25,7 @@
   - the token has been moved out of the JSON-RPC requests, to HTTP `Authorization` header.
 - [7293](https://github.com/vegaprotocol/vega/issues/7293) - Rename restricted keys to allowed keys
 - [7211](https://github.com/vegaprotocol/vega/issues/7211) - Add sender and receiver balances in ledger entries
-- [7255](https://github.com/vegaprotocol/vega/issues/7255) - Rename `dehistory` to network history 
-
-### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7255](https://github.com/vegaprotocol/vega/issues/7255) - Rename `dehistory` to network history
 
 ### 🛠 Improvements
 - [7317](https://github.com/vegaprotocol/vega/issues/7317) - Add database schema docs
@@ -23,6 +35,9 @@
 - [7114](https://github.com/vegaprotocol/vega/issues/7114) - Expose user spam statistics via `API`
 - [7316](https://github.com/vegaprotocol/vega/issues/7316) - Add a bunch of database indexes following audit of queries
 - [7331](https://github.com/vegaprotocol/vega/issues/7331) - Control the decrease of the number of validators when network parameter is decreased
+- [6754](https://github.com/vegaprotocol/vega/issues/6754) - Add `csv` export for ledger entries
+- [7093](https://github.com/vegaprotocol/vega/issues/7093) - Pick up the long-living tokens after the wallet service is started
+- [7328](https://github.com/vegaprotocol/vega/issues/7328) - Add missing documentation of JSON-RPC methods `admin.update_passphrase`
 
 ### 🐛 Fixes
 - [7260](https://github.com/vegaprotocol/vega/issues/7260) - Fix bug where pagination `before` or `after` cursors were ignored if `first` or `last` not set
@@ -34,6 +49,7 @@
 - [7294](https://github.com/vegaprotocol/vega/issues/7294) - Submission of `OpenOracle` data is broken
 - [7286](https://github.com/vegaprotocol/vega/issues/7286) - Fix serialisation of `oracle specs`
 - [7327](https://github.com/vegaprotocol/vega/issues/7327) - Improve and add API info, remove unused `AccountField` enum in `GraphQL`
+- [7345](https://github.com/vegaprotocol/vega/issues/7345) - Cache account lookup by id
 
 
 ## 0.66.1

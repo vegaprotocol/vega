@@ -300,6 +300,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) EstimateMargin(arg0, arg1 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EstimateMargin", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).EstimateMargin), varargs...)
 }
 
+// ExportLedgerEntries mocks base method.
+func (m *MockTradingDataServiceClientV2) ExportLedgerEntries(arg0 context.Context, arg1 *v2.ExportLedgerEntriesRequest, arg2 ...grpc.CallOption) (*v2.ExportLedgerEntriesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ExportLedgerEntries", varargs...)
+	ret0, _ := ret[0].(*v2.ExportLedgerEntriesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ExportLedgerEntries indicates an expected call of ExportLedgerEntries.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ExportLedgerEntries(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportLedgerEntries", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ExportLedgerEntries), varargs...)
+}
+
 // GetActiveNetworkHistoryPeerAddresses mocks base method.
 func (m *MockTradingDataServiceClientV2) GetActiveNetworkHistoryPeerAddresses(arg0 context.Context, arg1 *v2.GetActiveNetworkHistoryPeerAddressesRequest, arg2 ...grpc.CallOption) (*v2.GetActiveNetworkHistoryPeerAddressesResponse, error) {
 	m.ctrl.T.Helper()

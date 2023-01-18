@@ -198,8 +198,8 @@ func TestLedger(t *testing.T) {
 	_, err := ledgerStore.Flush(ctx)
 	assert.NoError(t, err)
 
-	t.Run("ledger entries with no filters", func(t *testing.T) {
-		// Set filters for FromAccount and AcountTo IDs
+	t.Run("query ledger entries with no filters", func(t *testing.T) {
+		// Set filters for AccountFrom and AcountTo IDs
 		filter := &entities.LedgerEntryFilter{
 			FromAccountFilter: entities.AccountFilter{},
 			ToAccountFilter:   entities.AccountFilter{},

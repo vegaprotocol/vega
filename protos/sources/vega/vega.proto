@@ -976,18 +976,16 @@ message NetworkParameter {
 
 // Network limits, defined in the genesis file
 message NetworkLimits {
+  reserved 3, 6;
+
   // Are market proposals allowed at this point in time
   bool can_propose_market = 1;
   // Are asset proposals allowed at this point in time
   bool can_propose_asset = 2;
-  // True once block count > bootstrapBlockCount
-  bool bootstrap_finished = 3;
   // Are market proposals enabled on this chain
   bool propose_market_enabled = 4;
   // Are asset proposals enabled on this chain
   bool propose_asset_enabled = 5;
-  // How many blocks before the chain comes out of bootstrap mode
-  uint32 bootstrap_block_count = 6;
   // True once the genesis file is loaded
   bool genesis_loaded = 7;
   // The date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set)

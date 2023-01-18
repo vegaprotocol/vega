@@ -8,15 +8,14 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
+	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
+	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/api"
 	v2 "code.vegaprotocol.io/vega/wallet/service/v2"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
 	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/v1"
 	"code.vegaprotocol.io/vega/wallet/wallets"
-
-	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
-	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	"github.com/spf13/cobra"
 )
 
@@ -42,13 +41,14 @@ func NewCmdGenerateAPIToken(w io.Writer, rf *RootFlags) *cobra.Command {
 			return "", fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		tokenStore, err := tokenStoreV1.LoadStore(vegaPaths, f.passphrase)
+		tokenStore, err := tokenStoreV1.InitialiseStore(vegaPaths, f.passphrase)
 		if err != nil {
 			if errors.Is(err, api.ErrWrongPassphrase) {
 				return "", err
 			}
 			return "", fmt.Errorf("couldn't load the token store: %w", err)
 		}
+		defer tokenStore.Close()
 
 		handler := connections.NewGenerateAPITokenHandler(walletStore, tokenStore, v2.NewStdTime())
 		return handler.Handle(context.Background(), params)

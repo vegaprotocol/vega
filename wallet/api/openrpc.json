@@ -697,6 +697,76 @@
       ]
     },
     {
+      "name": "admin.update_passphrase",
+      "summary": "Change the passphrase of the specified wallet.",
+      "description": "This method changes the passphrase used to lock the wallet.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "wallet"
+        },
+        {
+          "name": "passphrase"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "newPassphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Update the passphrase",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-the-old-passphrase"
+            },
+            {
+              "name": "newPassphrase",
+              "value": "this-is-the-new-passphrase"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
+          }
+        }
+      ]
+    },
+    {
       "name": "admin.describe_wallet",
       "summary": "Returns the wallet base information.",
       "description": "This method returns the wallet base information such as its name, ID, type and key derivation version. It doesn't return the keys nor the permissions.",

@@ -118,14 +118,14 @@ func NewConnectedWallet(hostname string, w wallet.Wallet) (ConnectedWallet, erro
 	}, nil
 }
 
-func NewLongLivingConnectedWallet(w wallet.Wallet) (ConnectedWallet, error) {
+func NewLongLivingConnectedWallet(w wallet.Wallet) ConnectedWallet {
 	return ConnectedWallet{
 		noRestrictions: true,
 		canListKeys:    true,
 		allowedKeys:    allUsableKeys(w),
 		hostname:       "",
 		name:           w.Name(),
-	}, nil
+	}
 }
 
 func allowedKeys(w wallet.Wallet, hostname string) ([]AllowedKey, error) {
