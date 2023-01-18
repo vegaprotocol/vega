@@ -1142,8 +1142,8 @@ type OneOffTransfer struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A unix timestamp in second. Time at which the
-	// transfer should be delivered in the to account
+	// A unix timestamp in seconds. Time at which the
+	// transfer should be delivered into the To account
 	DeliverOn int64 `protobuf:"varint,1,opt,name=deliver_on,json=deliverOn,proto3" json:"deliver_on,omitempty"`
 }
 

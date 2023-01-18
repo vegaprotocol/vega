@@ -13,7 +13,7 @@ message Filter {
   repeated Condition conditions = 2;
 }
 
-// PropertyKey describes the property key contained in an data source data.
+// PropertyKey describes the property key contained in data source data.
 message PropertyKey {
   // name is the name of the property.
   string name = 1;

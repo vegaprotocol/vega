@@ -326,7 +326,7 @@ type SubmitTransactionResponse struct {
 	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	// Hash of the transaction, if accepted
 	TxHash string `protobuf:"bytes,2,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
-	// Result code success if unsucessful
+	// Result code for success if unsuccessful
 	Code uint32 `protobuf:"varint,3,opt,name=code,proto3" json:"code,omitempty"`
 	// Data for details
 	Data string `protobuf:"bytes,4,opt,name=data,proto3" json:"data,omitempty"`

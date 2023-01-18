@@ -202,8 +202,8 @@ message Transfer {
 
 // Specific details for a one off transfer
 message OneOffTransfer {
-  // A unix timestamp in second. Time at which the
-  // transfer should be delivered in the to account
+  // A unix timestamp in seconds. Time at which the
+  // transfer should be delivered into the To account
   int64 deliver_on = 1;
 }
 

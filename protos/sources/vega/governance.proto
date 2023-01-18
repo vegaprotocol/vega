@@ -41,7 +41,7 @@ message NewMarketConfiguration {
   InstrumentConfiguration instrument = 1;
   // Decimal places used for the new market, sets the smallest price increment on the book
   uint64 decimal_places = 2;
-  // Optional new market meta data, tags
+  // Optional new market metadata, tags
   repeated string metadata = 3;
   // Price monitoring parameters
   PriceMonitoringParameters price_monitoring_parameters = 4;
@@ -372,10 +372,10 @@ message Vote {
   string proposal_id = 3;
   // Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network
   int64 timestamp = 4;
-  // Total number of governance token for the party that casted the vote
+  // Total number of governance token for the party that cast the vote
   string total_governance_token_balance = 5;
-  // The weight of this vote based on the total of governance token
+  // The weight of this vote based on the total number of governance tokens
   string total_governance_token_weight = 6;
-  // The weight of the vote compared to the total number of equity-like share on the market.
+  // The weight of the vote compared to the total amount of equity-like share on the market
   string total_equity_like_share_weight = 7;
 }

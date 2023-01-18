@@ -474,7 +474,7 @@ type ERC20Update struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The lifetime limits deposit per address.
-	// This is will be interpreted against the asset decimals.
+	// This will be interpreted against the asset decimals.
 	// note: this is a temporary measure that can be changed by governance
 	LifetimeLimit string `protobuf:"bytes,1,opt,name=lifetime_limit,json=lifetimeLimit,proto3" json:"lifetime_limit,omitempty"`
 	// The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.

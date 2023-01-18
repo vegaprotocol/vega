@@ -150,7 +150,7 @@ message KeyRotateSubmission {
 message EthereumKeyRotateSubmission {
   // Target block at which the key rotation will take effect on
   uint64 target_block = 1;
-  // The new adress to rotate to
+  // The new address to rotate to
   string new_address = 2;
   // Currently used public address
   string current_address = 3;

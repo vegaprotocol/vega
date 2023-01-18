@@ -80,7 +80,7 @@ func datanodeLive(cfg config.Config) bool {
 // This is working around a bit of awkwardness in that the config supplied by go-flags is a blank
 // config updated with command line flags. There is not enough information in it to apply an
 // 'overlay' to a config read from a file, because it is not possible for us to tell if someone
-// is trying to override a value back to it's 'zero' value. (e.g. --something.enabled=false gives
+// is trying to override a value back to its 'zero' value. (e.g. --something.enabled=false gives
 // the same go-flags structure as no argument at all).
 func fixConfig(config *config.Config, vegaPaths paths.Paths) error {
 	configFilePath, err := vegaPaths.CreateConfigPathFor(paths.DataNodeDefaultConfigFile)

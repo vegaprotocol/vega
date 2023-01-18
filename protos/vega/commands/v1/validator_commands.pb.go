@@ -748,7 +748,7 @@ type EthereumKeyRotateSubmission struct {
 
 	// Target block at which the key rotation will take effect on
 	TargetBlock uint64 `protobuf:"varint,1,opt,name=target_block,json=targetBlock,proto3" json:"target_block,omitempty"`
-	// The new adress to rotate to
+	// The new address to rotate to
 	NewAddress string `protobuf:"bytes,2,opt,name=new_address,json=newAddress,proto3" json:"new_address,omitempty"`
 	// Currently used public address
 	CurrentAddress string `protobuf:"bytes,3,opt,name=current_address,json=currentAddress,proto3" json:"current_address,omitempty"`

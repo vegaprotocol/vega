@@ -63,8 +63,8 @@ type TradingDataServiceClient interface {
 	// Ledger entries
 	//
 	// Get ledger entries by asset, market, party, account type, transfer type within the given date range.
-	// This query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
-	// It returns a timeseries (implemented as a list of AggregateLedgerEntry structs), with a row for every time
+	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
+	// It returns a time series (implemented as a list of AggregateLedgerEntry structs), with a row for every time
 	// the summed ledger entries of the set of specified accounts changes.
 	// Listed queries should be limited to a single party from each side only. If no or more than one parties are provided
 	// for sending and receiving accounts - the query returns error.
@@ -78,20 +78,21 @@ type TradingDataServiceClient interface {
 	// Export ledger entries records ledger entries to a csv file.
 	// May or may not contain a date range - if no date range is provided, list all records for all times.
 	//
+	//
 	// Ledger entries can be exported by:
 	//   - export ledger entries for a single party for a given asset within a given time range
 	//   - export ledger entries for a single party for a given asset for all times
 	ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (*ExportLedgerEntriesResponse, error)
-	//	Balances
+	//  Balances
 	//
 	// `ListBalanceChanges` is for querying the change in account balances over a period of time.
 	//
 	// An account is defined as a set of (asset_id, type, party_id, market_id).
-	//   - Every account has an associated asset and type.
-	//   - Certain account types (for example, the global reward pool) do not have an associated party.
-	//     These are denoted by the special party identifier 'network'
-	//   - Certain account types do not have an associated market (for example general party accounts).
-	//     These are denoted by the special market identifier ” (the empty string)
+	// - Every account has an associated asset and type.
+	// - Certain account types (for example, the global reward pool) do not have an associated party.
+	//   These are denoted by the special party identifier 'network'
+	// - Certain account types do not have an associated market (for example general party accounts).
+	//   These are denoted by the special market identifier '' (the empty string)
 	//
 	// `ListBalanceChangesRequest` will return a list of
 	// `(vega_time, asset_id, account_type, party_id, market_id, balance)`
@@ -259,7 +260,7 @@ type TradingDataServiceClient interface {
 	GetAsset(ctx context.Context, in *GetAssetRequest, opts ...grpc.CallOption) (*GetAssetResponse, error)
 	// Assets list
 	//
-	// Get a list of assets using cusor based pagination
+	// Get a list of assets using cursor based pagination
 	ListAssets(ctx context.Context, in *ListAssetsRequest, opts ...grpc.CallOption) (*ListAssetsResponse, error)
 	// Liquidity Provisions list
 	//
@@ -1563,8 +1564,8 @@ type TradingDataServiceServer interface {
 	// Ledger entries
 	//
 	// Get ledger entries by asset, market, party, account type, transfer type within the given date range.
-	// This query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
-	// It returns a timeseries (implemented as a list of AggregateLedgerEntry structs), with a row for every time
+	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
+	// It returns a time series (implemented as a list of AggregateLedgerEntry structs), with a row for every time
 	// the summed ledger entries of the set of specified accounts changes.
 	// Listed queries should be limited to a single party from each side only. If no or more than one parties are provided
 	// for sending and receiving accounts - the query returns error.
@@ -1578,20 +1579,21 @@ type TradingDataServiceServer interface {
 	// Export ledger entries records ledger entries to a csv file.
 	// May or may not contain a date range - if no date range is provided, list all records for all times.
 	//
+	//
 	// Ledger entries can be exported by:
 	//   - export ledger entries for a single party for a given asset within a given time range
 	//   - export ledger entries for a single party for a given asset for all times
 	ExportLedgerEntries(context.Context, *ExportLedgerEntriesRequest) (*ExportLedgerEntriesResponse, error)
-	//	Balances
+	//  Balances
 	//
 	// `ListBalanceChanges` is for querying the change in account balances over a period of time.
 	//
 	// An account is defined as a set of (asset_id, type, party_id, market_id).
-	//   - Every account has an associated asset and type.
-	//   - Certain account types (for example, the global reward pool) do not have an associated party.
-	//     These are denoted by the special party identifier 'network'
-	//   - Certain account types do not have an associated market (for example general party accounts).
-	//     These are denoted by the special market identifier ” (the empty string)
+	// - Every account has an associated asset and type.
+	// - Certain account types (for example, the global reward pool) do not have an associated party.
+	//   These are denoted by the special party identifier 'network'
+	// - Certain account types do not have an associated market (for example general party accounts).
+	//   These are denoted by the special market identifier '' (the empty string)
 	//
 	// `ListBalanceChangesRequest` will return a list of
 	// `(vega_time, asset_id, account_type, party_id, market_id, balance)`
@@ -1759,7 +1761,7 @@ type TradingDataServiceServer interface {
 	GetAsset(context.Context, *GetAssetRequest) (*GetAssetResponse, error)
 	// Assets list
 	//
-	// Get a list of assets using cusor based pagination
+	// Get a list of assets using cursor based pagination
 	ListAssets(context.Context, *ListAssetsRequest) (*ListAssetsResponse, error)
 	// Liquidity Provisions list
 	//
