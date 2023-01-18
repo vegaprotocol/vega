@@ -2,6 +2,7 @@ package networkhistory_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -11,6 +12,26 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestRetries(t *testing.T) {
+	log := logging.NewTestLogger()
+
+	callCount := 0
+	snapshotData := func(ctx context.Context, chainID string, toHeight int64) error {
+		callCount++
+		if callCount < 3 {
+			return errors.New("not yet ready")
+		}
+
+		return nil
+	}
+
+	commitHandler := networkhistory.NewBlockCommitHandler(log, networkhistory.NewDefaultConfig(), snapshotData, true, time.Duration(0), 1*time.Millisecond, 6)
+
+	commitHandler.OnBlockCommitted(context.Background(), "", 1000, true)
+
+	assert.Equal(t, 3, callCount)
+}
 
 func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
 	log := logging.NewTestLogger()
@@ -22,7 +43,7 @@ func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
 		return nil
 	}
 
-	commitHandler := networkhistory.NewBlockCommitHandler(log, networkhistory.NewDefaultConfig(), snapshotData, true, time.Duration(0))
+	commitHandler := networkhistory.NewBlockCommitHandler(log, networkhistory.NewDefaultConfig(), snapshotData, true, time.Duration(0), 1, 1)
 
 	ctx := context.Background()
 	for blockHeight := int64(0); blockHeight < 6100; blockHeight++ {
@@ -51,7 +72,8 @@ func TestAlteringBlockCommitHandlerSnapshotInterval(t *testing.T) {
 		snapshots = append(snapshots, toHeight)
 		return nil
 	}
-	commitHandler := networkhistory.NewBlockCommitHandler(log, networkhistory.NewDefaultConfig(), snapshotData, false, time.Duration(0))
+	commitHandler := networkhistory.NewBlockCommitHandler(log, networkhistory.NewDefaultConfig(), snapshotData, false, time.Duration(0),
+		1, 1)
 	ctx := context.Background()
 
 	for blockHeight := int64(0); blockHeight < 6100; blockHeight++ {
@@ -95,7 +117,7 @@ func TestPublishingOff(t *testing.T) {
 
 	cfg := networkhistory.NewDefaultConfig()
 	cfg.Publish = false
-	commitHandler := networkhistory.NewBlockCommitHandler(log, cfg, snapshotData, false, 0)
+	commitHandler := networkhistory.NewBlockCommitHandler(log, cfg, snapshotData, false, 0, 1, 1)
 
 	ctx := context.Background()
 	for blockHeight := int64(0); blockHeight < 6100; blockHeight++ {

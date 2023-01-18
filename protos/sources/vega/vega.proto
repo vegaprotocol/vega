@@ -473,9 +473,9 @@ message MarketDepthUpdate {
   repeated PriceLevel buy = 2;
   // Collection of updated price levels for the sell side of the book
   repeated PriceLevel sell = 3;
-  // Sequence number for the market depth update data returned. It is increasing but not monotonic.
+  // Sequence number for the market depth update data returned. It is increasing but not monotonic
   uint64 sequence_number = 4;
-  // Sequence number of of the previous market depth update, for checking there are no gaps.
+  // Sequence number of the previous market depth update, for checking there are no gaps
   uint64 previous_sequence_number = 5;
 }
 
@@ -1048,7 +1048,7 @@ message LiquidityProvision {
   string market_id = 5;
   // Specified as a unitless number that represents the amount of settlement asset of the market
   string commitment_amount = 6;
-  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers
+  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers
   string fee = 7;
   // A set of liquidity sell orders to meet the liquidity provision obligation
   repeated LiquidityOrderReference sells = 8;
@@ -1080,7 +1080,7 @@ message EthereumConfig {
   EthereumContractConfig staking_bridge_contract = 5;
   // Contract configuration of the token vesting contract for this Ethereum network.
   EthereumContractConfig token_vesting_contract = 6;
-  // Contract configuration of the multisig controld contract for this Ethereum network.
+  // Contract configuration of the multisig control contract for this Ethereum network.
   EthereumContractConfig  multisig_control_contract = 7;
 }
 

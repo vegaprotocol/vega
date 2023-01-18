@@ -1333,7 +1333,7 @@ type Future {
   "The data source specification that describes the data of interest for settlement."
   dataSourceSpecForSettlementData: DataSourceSpec!
 
-  "The data source specification describing the data source data of interest for trading termination."
+  "The data source specification that describes the data-source data of interest for trading termination."
   dataSourceSpecForTradingTermination: DataSourceSpec!
 
   "The binding between the data source specification and the settlement data"
@@ -2795,7 +2795,7 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE
   "Freeform proposal is invalid"
   PROPOSAL_ERROR_INVALID_FREEFORM
-  "The erc20 address specified by this proposal is alread in use by another asset"
+  "The ERC-20 address specified by this proposal is already in use by another asset"
   PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE
 }
 
@@ -3147,14 +3147,14 @@ sourcing engine.
 """
 type DataSourceSpecConfiguration {
   """
-  signers is the list of authorized signatures that signed the data for this
+  Signers is the list of authorized signatures that signed the data for this
   data source. All the public keys in the data should be contained in this
   list.
   """
   signers: [Signer!]
 
   """
-  filters describes which source data are considered of interest or not for
+  Filters describes which source data are considered of interest or not for
   the product (or the risk model).
   """
   filters: [Filter!]
@@ -4479,7 +4479,7 @@ type CoreSnapshotConnection {
 type CoreSnapshotEdge {
   "The core snapshot data"
   node: CoreSnapshotData!
-  "Cursor identifying the core snapashot data"
+  "Cursor identifying the core snapshot data"
   cursor: String!
 }
 

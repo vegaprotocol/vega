@@ -19,6 +19,7 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/core/api"
+	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
@@ -54,7 +55,7 @@ func NewProxyServer(log *logging.Logger, config api.Config) *ProxyServer {
 
 // ReloadConf update the internal configuration of the server.
 func (s *ProxyServer) ReloadConf(cfg api.Config) {
-	s.log.Info("reloading confioguration")
+	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
 		s.log.Info("updating log level",
 			logging.String("old", s.log.GetLevel().String()),
@@ -63,12 +64,12 @@ func (s *ProxyServer) ReloadConf(cfg api.Config) {
 		s.log.SetLevel(cfg.Level.Get())
 	}
 
-	// TODO(): not updating the the actual server for now, may need to look at this later
+	// TODO(): not updating the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
 	s.cfg = cfg
 }
 
-// Start start the server.
+// Start starts the server.
 func (s *ProxyServer) Start() {
 	logger := s.log
 
@@ -101,7 +102,8 @@ func (s *ProxyServer) Start() {
 	}
 
 	// CORS support
-	handler := cors.Default().Handler(mux)
+	corsOptions := libhttp.CORSOptions(s.cfg.REST.CORS)
+	handler := cors.New(corsOptions).Handler(mux)
 	handler = healthCheckMiddleware(handler)
 	handler = RemoteAddrMiddleware(logger, handler)
 	// Gzip encoding support

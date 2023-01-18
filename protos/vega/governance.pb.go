@@ -531,7 +531,7 @@ type NewMarketConfiguration struct {
 	Instrument *InstrumentConfiguration `protobuf:"bytes,1,opt,name=instrument,proto3" json:"instrument,omitempty"`
 	// Decimal places used for the new market, sets the smallest price increment on the book
 	DecimalPlaces uint64 `protobuf:"varint,2,opt,name=decimal_places,json=decimalPlaces,proto3" json:"decimal_places,omitempty"`
-	// Optional new market meta data, tags
+	// Optional new market metadata, tags
 	Metadata []string `protobuf:"bytes,3,rep,name=metadata,proto3" json:"metadata,omitempty"`
 	// Price monitoring parameters
 	PriceMonitoringParameters *PriceMonitoringParameters `protobuf:"bytes,4,opt,name=price_monitoring_parameters,json=priceMonitoringParameters,proto3" json:"price_monitoring_parameters,omitempty"`
@@ -1761,11 +1761,11 @@ type Vote struct {
 	ProposalId string `protobuf:"bytes,3,opt,name=proposal_id,json=proposalId,proto3" json:"proposal_id,omitempty"`
 	// Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network
 	Timestamp int64 `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// Total number of governance token for the party that casted the vote
+	// Total number of governance token for the party that cast the vote
 	TotalGovernanceTokenBalance string `protobuf:"bytes,5,opt,name=total_governance_token_balance,json=totalGovernanceTokenBalance,proto3" json:"total_governance_token_balance,omitempty"`
-	// The weight of this vote based on the total of governance token
+	// The weight of this vote based on the total number of governance tokens
 	TotalGovernanceTokenWeight string `protobuf:"bytes,6,opt,name=total_governance_token_weight,json=totalGovernanceTokenWeight,proto3" json:"total_governance_token_weight,omitempty"`
-	// The weight of the vote compared to the total number of equity-like share on the market.
+	// The weight of the vote compared to the total amount of equity-like share on the market
 	TotalEquityLikeShareWeight string `protobuf:"bytes,7,opt,name=total_equity_like_share_weight,json=totalEquityLikeShareWeight,proto3" json:"total_equity_like_share_weight,omitempty"`
 }
 

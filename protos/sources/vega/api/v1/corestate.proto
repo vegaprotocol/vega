@@ -33,7 +33,7 @@ service CoreStateService {
 
   // Network parameters list
   //
-  // Return a list of network paramters
+  // Return a list of network parameters
   rpc ListNetworkParameters(ListNetworkParametersRequest) returns (ListNetworkParametersResponse);
 
   // Network limits list

@@ -31,8 +31,8 @@ message Snapshot {
   bytes metadata = 5;
 }
 
-// NodeHash represents an exported node from the AVL tree and contains all the data necessary to recontruct and identical copy of the
-// AVL tree after we've serialised it
+// NodeHash represents an exported node from the AVL tree and contains all the data necessary to reconstruct an identical copy of the
+// AVL tree after it's been serialised
 message NodeHash {
   // The node's full key, for example epoch.all
   string key = 3;
@@ -40,7 +40,7 @@ message NodeHash {
   string hash = 4;
   // The height of the node in the tree
   int32 height = 5;
-  // The version of that node i.e how many times its value has changed during tree updates
+  // The version of that node i.e., how many times its value has changed during tree updates
   int64 version = 6;
   // Whether or not the node contains a snapshot payload, only leaf nodes in the AVL contain payloads
   bool is_leaf = 7;
@@ -523,7 +523,7 @@ message RewardsPartyAmount {
 
 // LimitState details
 message LimitState {
-  // Number of blocks into the boostrapping phase
+  // Number of blocks into the bootstrapping phase
   uint32 block_count = 1;
   // whether the limit on market proposals has been lifted
   bool can_propose_market = 2;

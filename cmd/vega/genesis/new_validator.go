@@ -40,7 +40,7 @@ type newValidatorCmd struct {
 	Name          string `long:"name" description:"The name of the validator node" required:"true"`
 	AvatarURL     string `long:"avatar-url" description:"An URL to an avatar for the validator"`
 	ShouldAppend  bool   `long:"append" description:"Append the generated validator to the existing validators in the genesis file"`
-	ShouldReplace bool   `long:"replace" description:"Replace the existing validators by the the generated validator in the genesis file"`
+	ShouldReplace bool   `long:"replace" description:"Replace the existing validators by the generated validator in the genesis file"`
 }
 
 func (opts *newValidatorCmd) Execute(_ []string) error {

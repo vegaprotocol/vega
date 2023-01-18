@@ -20,6 +20,7 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/datanode/gateway"
+	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 	protoapiv2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
@@ -93,6 +94,7 @@ func (s *ProxyServer) Start() error {
 
 	mux := runtime.NewServeMux(
 		runtime.WithMarshalerOption(runtime.MIMEWildcard, jsonPB),
+		runtime.WithOutgoingHeaderMatcher(func(s string) (string, bool) { return s, true }),
 	)
 
 	opts := []grpc.DialOption{grpc.WithInsecure()}
@@ -104,7 +106,8 @@ func (s *ProxyServer) Start() error {
 	}
 
 	// CORS support
-	handler := cors.Default().Handler(mux)
+	corsOptions := libhttp.CORSOptions(s.CORS)
+	handler := cors.New(corsOptions).Handler(mux)
 	handler = healthCheckMiddleware(handler)
 	handler = gateway.RemoteAddrMiddleware(logger, handler)
 	// Gzip encoding support

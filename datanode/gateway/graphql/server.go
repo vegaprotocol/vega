@@ -26,10 +26,11 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	vega "code.vegaprotocol.io/vega/protos/vega"
+	"code.vegaprotocol.io/vega/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -108,7 +109,7 @@ func (g *GraphServer) ReloadConf(cfg gateway.Config) {
 		g.log.SetLevel(cfg.Level.Get())
 	}
 
-	// TODO(): not updating the the actual server for now, may need to look at this later
+	// TODO(): not updating the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
 	g.Config = cfg
 }
@@ -128,10 +129,11 @@ func (c *clientConn) Invoke(ctx context.Context, method string, args, reply inte
 	return c.ClientConn.Invoke(ctx, method, args, reply, opts...)
 }
 
-// Start start the server in order receive http request.
+// Start starts the server in order receive http request.
 func (g *GraphServer) Start() error {
 	// <--- cors support - configure for production
-	corz := cors.AllowAll()
+	corsOptions := libhttp.CORSOptions(g.CORS)
+	corz := cors.New(corsOptions)
 	up := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,

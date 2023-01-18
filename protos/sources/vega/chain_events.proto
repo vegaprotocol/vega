@@ -129,11 +129,11 @@ message ERC20SignerRemoved {
   int64 block_time = 3;
 }
 
-// The threshold have been updated on the multisigcontrol
+// The threshold has been updated on the multisig control
 message ERC20ThresholdSet {
   // The new threshold
   uint32 new_threshold = 1;
-  // The nonce create by the vega network
+  // The nonce created by the Vega network
   string nonce = 2;
   // The time at which the block was produced
   // will be used to inform the core at what time

@@ -63,8 +63,8 @@ type TradingDataServiceClient interface {
 	// Ledger entries
 	//
 	// Get ledger entries by asset, market, party, account type, transfer type within the given date range.
-	// This query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
-	// It returns a timeseries (implemented as a list of AggregateLedgerEntry structs), with a row for every time
+	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
+	// It returns a time series (implemented as a list of AggregateLedgerEntry structs), with a row for every time
 	// the summed ledger entries of the set of specified accounts changes.
 	// Listed queries should be limited to a single party from each side only. If no or more than one parties are provided
 	// for sending and receiving accounts - the query returns error.
@@ -259,7 +259,7 @@ type TradingDataServiceClient interface {
 	GetAsset(ctx context.Context, in *GetAssetRequest, opts ...grpc.CallOption) (*GetAssetResponse, error)
 	// Assets list
 	//
-	// Get a list of assets using cusor based pagination
+	// Get a list of assets using cursor based pagination
 	ListAssets(ctx context.Context, in *ListAssetsRequest, opts ...grpc.CallOption) (*ListAssetsResponse, error)
 	// Liquidity Provisions list
 	//
@@ -1563,8 +1563,8 @@ type TradingDataServiceServer interface {
 	// Ledger entries
 	//
 	// Get ledger entries by asset, market, party, account type, transfer type within the given date range.
-	// This query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
-	// It returns a timeseries (implemented as a list of AggregateLedgerEntry structs), with a row for every time
+	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
+	// It returns a time series (implemented as a list of AggregateLedgerEntry structs), with a row for every time
 	// the summed ledger entries of the set of specified accounts changes.
 	// Listed queries should be limited to a single party from each side only. If no or more than one parties are provided
 	// for sending and receiving accounts - the query returns error.
@@ -1759,7 +1759,7 @@ type TradingDataServiceServer interface {
 	GetAsset(context.Context, *GetAssetRequest) (*GetAssetResponse, error)
 	// Assets list
 	//
-	// Get a list of assets using cusor based pagination
+	// Get a list of assets using cursor based pagination
 	ListAssets(context.Context, *ListAssetsRequest) (*ListAssetsResponse, error)
 	// Liquidity Provisions list
 	//

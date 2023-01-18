@@ -130,7 +130,7 @@ func (cmd *loadCmd) Execute(_ []string) error {
 	if from < span.FromHeight && to <= span.ToHeight {
 		fmt.Printf("Available Network History data spans height %d to %d.  The from height is before the datanodes' block span, %d to %d."+
 			" To load history from before the datanodes oldest block you must specify the "+
-			" \"wipe-existing-data\" flag to wipe existing data from the datanode before loading.\n\n", from, to, span.FromHeight, span.ToHeight)
+			" \"--wipe-existing-data\" flag to wipe existing data from the datanode before loading.\n\n", from, to, span.FromHeight, span.ToHeight)
 
 		return nil
 	}

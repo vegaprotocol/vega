@@ -2997,7 +2997,7 @@ type GetBalanceHistoryRequest struct {
 	// Limit the accounts considered according to the filter supplied
 	Filter *AccountFilter `protobuf:"bytes,1,opt,name=filter,proto3" json:"filter,omitempty"`
 	// By default the net balances of all the accounts specified by the filter are returned.
-	// If a list if fields is given in group_by, split out those balances by the supplied crietera.
+	// If a list of fields is given in group_by, split out those balances by the supplied criteria.
 	GroupBy    []AccountField `protobuf:"varint,2,rep,packed,name=group_by,json=groupBy,proto3,enum=datanode.api.v2.AccountField" json:"group_by,omitempty"`
 	Pagination *Pagination    `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
 	DateRange  *DateRange     `protobuf:"bytes,4,opt,name=date_range,json=dateRange,proto3,oneof" json:"date_range,omitempty"`
@@ -3229,7 +3229,7 @@ type AccountFilter struct {
 	AssetId string `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
 	// Restrict accounts to those owned by the parties in this list (pass an empty list for no filter)
 	PartyIds []string `protobuf:"bytes,2,rep,name=party_ids,json=partyIds,proto3" json:"party_ids,omitempty"`
-	// Restrict accounts to those connected to the marketsin this list (pass an empty list for no filter)
+	// Restrict accounts to those connected to the markets in this list (pass an empty list for no filter)
 	MarketIds []string `protobuf:"bytes,3,rep,name=market_ids,json=marketIds,proto3" json:"market_ids,omitempty"`
 	// Restrict accounts to those connected to any of the types in this list (pass an empty list for no filter)
 	AccountTypes []vega.AccountType `protobuf:"varint,4,rep,packed,name=account_types,json=accountTypes,proto3,enum=vega.AccountType" json:"account_types,omitempty"`
@@ -4349,7 +4349,7 @@ type ListTransfersRequest struct {
 	Pubkey *string `protobuf:"bytes,1,opt,name=pubkey,proto3,oneof" json:"pubkey,omitempty"`
 	// Directions to include in the response data
 	Direction TransferDirection `protobuf:"varint,2,opt,name=direction,proto3,enum=datanode.api.v2.TransferDirection" json:"direction,omitempty"`
-	// Optional pagination cntrol
+	// Optional pagination control
 	Pagination *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
 }
 
@@ -12569,7 +12569,7 @@ func (x *GetNetworkParameterRequest) GetKey() string {
 	return ""
 }
 
-// A reponse containing a network parameter
+// A response containing a network parameter
 type GetNetworkParameterResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -14255,7 +14255,7 @@ func (x *ListProtocolUpgradeProposalsRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// Reponse type from a ListProtocolUpgradeProposals RPC call; a paginated list of protocol upgrade proposals
+// Response type from a ListProtocolUpgradeProposals RPC call; a paginated list of protocol upgrade proposals
 type ListProtocolUpgradeProposalsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -14303,7 +14303,7 @@ func (x *ListProtocolUpgradeProposalsResponse) GetProtocolUpgradeProposals() *Pr
 	return nil
 }
 
-// A page of protocol upgrade proposals, with page information.
+// A page of protocol upgrade proposals, with page information
 type ProtocolUpgradeProposalConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -14972,7 +14972,7 @@ func (x *GetActiveNetworkHistoryPeerAddressesResponse) GetIpAddresses() []string
 	return nil
 }
 
-// Request to ping the datanode
+// Request to ping the data node
 type PingRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -15011,7 +15011,7 @@ func (*PingRequest) Descriptor() ([]byte, []int) {
 	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{262}
 }
 
-// Ping response from the datanode
+// Ping response from the data node
 type PingResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

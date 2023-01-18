@@ -2640,9 +2640,9 @@ type MarketDepthUpdate struct {
 	Buy []*PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
 	// Collection of updated price levels for the sell side of the book
 	Sell []*PriceLevel `protobuf:"bytes,3,rep,name=sell,proto3" json:"sell,omitempty"`
-	// Sequence number for the market depth update data returned. It is increasing but not monotonic.
+	// Sequence number for the market depth update data returned. It is increasing but not monotonic
 	SequenceNumber uint64 `protobuf:"varint,4,opt,name=sequence_number,json=sequenceNumber,proto3" json:"sequence_number,omitempty"`
-	// Sequence number of of the previous market depth update, for checking there are no gaps.
+	// Sequence number of the previous market depth update, for checking there are no gaps
 	PreviousSequenceNumber uint64 `protobuf:"varint,5,opt,name=previous_sequence_number,json=previousSequenceNumber,proto3" json:"previous_sequence_number,omitempty"`
 }
 
@@ -4872,7 +4872,7 @@ type LiquidityProvision struct {
 	MarketId string `protobuf:"bytes,5,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Specified as a unitless number that represents the amount of settlement asset of the market
 	CommitmentAmount string `protobuf:"bytes,6,opt,name=commitment_amount,json=commitmentAmount,proto3" json:"commitment_amount,omitempty"`
-	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers
+	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers
 	Fee string `protobuf:"bytes,7,opt,name=fee,proto3" json:"fee,omitempty"`
 	// A set of liquidity sell orders to meet the liquidity provision obligation
 	Sells []*LiquidityOrderReference `protobuf:"bytes,8,rep,name=sells,proto3" json:"sells,omitempty"`
@@ -5024,7 +5024,7 @@ type EthereumConfig struct {
 	StakingBridgeContract *EthereumContractConfig `protobuf:"bytes,5,opt,name=staking_bridge_contract,json=stakingBridgeContract,proto3" json:"staking_bridge_contract,omitempty"`
 	// Contract configuration of the token vesting contract for this Ethereum network.
 	TokenVestingContract *EthereumContractConfig `protobuf:"bytes,6,opt,name=token_vesting_contract,json=tokenVestingContract,proto3" json:"token_vesting_contract,omitempty"`
-	// Contract configuration of the multisig controld contract for this Ethereum network.
+	// Contract configuration of the multisig control contract for this Ethereum network.
 	MultisigControlContract *EthereumContractConfig `protobuf:"bytes,7,opt,name=multisig_control_contract,json=multisigControlContract,proto3" json:"multisig_control_contract,omitempty"`
 }
 

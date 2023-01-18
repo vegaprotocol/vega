@@ -144,7 +144,7 @@ message StakeLinking {
   int64 block_time = 10;
   // The log index
   uint64 log_index = 11;
-  // the ethereum address from which the stake link was iniated
+  // the ethereum address from which the stake link was initiated
   string ethereum_address = 12;
 }
 
@@ -377,7 +377,7 @@ message SettlePosition {
   string position_factor = 5;
 }
 
-// A settle market event tp notify data-node that a market has been settled
+// A settle market event to notify data node that a market has been settled
 // so positions and PL can be updated accordingly
 message SettleMarket {
   // Market identifier for the event
@@ -672,19 +672,19 @@ enum BusEventType {
   BUS_EVENT_TYPE_STATE_VAR = 38;
   // Event indicating network limits set or updated
   BUS_EVENT_TYPE_NETWORK_LIMITS = 39;
-  // Event indicating a update for a transfert
+  // Event indicating a update for a transfer
   BUS_EVENT_TYPE_TRANSFER = 40;
-  // Event indicating the ranking of validator and their status in vega
+  // Event indicating the ranking of validator and their status in Vega
   BUS_EVENT_TYPE_VALIDATOR_RANKING = 41;
   // Event indicating a new multi sig signer event have been processed
   BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_EVENT = 42;
   // Event indicating the erc20 multi sig threshold have been updated
   BUS_EVENT_TYPE_ERC20_MULTI_SIG_SET_THRESHOLD = 43;
-  // Event indicating a new signer has been added to the erc20 multisig
+  // Event indicating a new signer has been added to the ERC-20 multisig
   BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_ADDED = 44;
-  // Event indicating a signer has been removed from the erc20 multisig
+  // Event indicating a signer has been removed from the ERC-20 multisig
   BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_REMOVED = 45;
-  // Event indicting that a party's position has changed
+  // Event indicating that a party's position has changed
   BUS_EVENT_TYPE_POSITION_STATE = 46;
   // Event indicating Ethereum key rotation took place
   BUS_EVENT_TYPE_ETHEREUM_KEY_ROTATION = 47;
@@ -721,11 +721,11 @@ message BusEvent {
   // The type of bus event (one of the list below)
   BusEventType type = 3;
   oneof event {
-    // Time update events - See [TimeUpdate](#vega.TimeUpdate)
+    // Time update events
     TimeUpdate time_update = 101;
-    // Transfer responses update events - See [TransferResponses](#vega.TransferResponses)
+    // Transfer responses update events
     LedgerMovements ledger_movements = 102;
-    // Position resolution events - See [PositionResolution](#vega.PositionResolution)
+    // Position resolution events
     PositionResolution position_resolution = 103;
     // Order events
     Order order = 104;
@@ -745,23 +745,23 @@ message BusEvent {
     MarketData market_data = 111;
     // Node signature events
     vega.commands.v1.NodeSignature node_signature = 112;
-    // Loss socialization events - See [LossSocialization](#vega.LossSocialization)
+    // Loss socialization events
     LossSocialization loss_socialization = 113;
-    // Position settlement events - See [SettlePosition](#vega.SettlePosition)
+    // Position settlement events
     SettlePosition settle_position = 114;
-    // Position distressed events - See [SettleDistressed](#vega.SettleDistressed)
+    // Position distressed events
     SettleDistressed settle_distressed = 115;
     // Market created events
     Market market_created = 116;
     // Asset events
     Asset asset = 117;
-    // Market tick events - See [MarketTick](#vega.MarketTick)
+    // Market tick events
     MarketTick market_tick = 118;
     // Withdrawal events
     Withdrawal withdrawal = 119;
     // Deposit events
     Deposit deposit = 120;
-    // Auction events - See [AuctionEvent](#vega.AuctionEvent)
+    // Auction events
     AuctionEvent auction = 121;
     // Risk factor events
     RiskFactor risk_factor = 122;
