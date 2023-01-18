@@ -9,10 +9,10 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7349](https://github.com/vegaprotocol/vega/issues/7349) - Add `Access-Control-Max-Age` header with configurable value for the in `core`, `datanode` and `blockexplorer` HTTP `APIs`
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7335](https://github.com/vegaprotocol/vega/issues/7335) - Fix custom http headers not being returned - add configurable `CORS` headers to `core`, `datanode` and `blockexplorer` HTTP `APIs`
 
 
 ## 0.67.0

@@ -16,6 +16,9 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/rs/cors"
+
+	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -48,5 +51,7 @@ func (s *Gateway) Serve(lis net.Listener) error {
 	logAddr := logging.String("address", lis.Addr().String())
 	s.log.Info("gateway starting", logAddr)
 	defer s.log.Info("gateway stopping", logAddr)
-	return http.Serve(lis, s.httpServerMux)
+	corsOptions := libhttp.CORSOptions(s.CORS)
+	handler := cors.New(corsOptions).Handler(s.httpServerMux)
+	return http.Serve(lis, handler)
 }
