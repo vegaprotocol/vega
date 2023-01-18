@@ -13,10 +13,12 @@
 package api
 
 import (
+	"github.com/inhies/go-bytesize"
+
 	"code.vegaprotocol.io/vega/blockexplorer/api/grpc"
 	"code.vegaprotocol.io/vega/libs/config/encoding"
+	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
-	"github.com/inhies/go-bytesize"
 )
 
 var (
@@ -62,10 +64,17 @@ func NewDefaultGRPCUIConfig() GRPCUIConfig {
 	}
 }
 
-type GatewayConfig struct{}
+type GatewayConfig struct {
+	CORS libhttp.CORSConfig `long:"cors" description:"CORS allowed origins"`
+}
 
 func NewDefaultGatewayConfig() GatewayConfig {
-	return GatewayConfig{}
+	return GatewayConfig{
+		CORS: libhttp.CORSConfig{
+			AllowedOrigins: "*",
+			MaxAge:         7200,
+		},
+	}
 }
 
 type RESTConfig struct {
