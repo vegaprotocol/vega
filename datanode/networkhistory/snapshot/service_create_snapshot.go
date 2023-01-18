@@ -108,6 +108,7 @@ func (b *Service) createNewSnapshot(ctx context.Context, chainID string, toHeigh
 	// To ensure reads are isolated from this point forward execute a read on last block
 	_, err = sqlstore.GetLastBlockUsingConnection(ctx, copyDataTx)
 	if err != nil {
+		runAllInReverseOrder(cleanUp)
 		return MetaData{}, fmt.Errorf("failed to get last block using connection: %w", err)
 	}
 
