@@ -91,7 +91,7 @@ func NewDefaultConfig() Config {
 		GraphQLPlaygroundEnabled: true,
 		MaxSubscriptionPerClient: 250,
 		CORS: libhttp.CORSConfig{
-			AllowedOrigins: "*",
+			AllowedOrigins: []string{"*"},
 			MaxAge:         7200,
 		},
 	}

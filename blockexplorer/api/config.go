@@ -71,7 +71,7 @@ type GatewayConfig struct {
 func NewDefaultGatewayConfig() GatewayConfig {
 	return GatewayConfig{
 		CORS: libhttp.CORSConfig{
-			AllowedOrigins: "*",
+			AllowedOrigins: []string{"*"},
 			MaxAge:         7200,
 		},
 	}

@@ -9,8 +9,8 @@ import (
 
 // CORSConfig represents the configuration for CORS.
 type CORSConfig struct {
-	AllowedOrigins string `long:"allowed-origins" description:"Allowed origins for CORS"`
-	MaxAge         int    `long:"max-age" description:"Max age (in seconds) for preflight cache"`
+	AllowedOrigins []string `long:"allowed-origins" description:"Allowed origins for CORS"`
+	MaxAge         int      `long:"max-age" description:"Max age (in seconds) for preflight cache"`
 }
 
 func CORSOptions(config CORSConfig) cors.Options {
@@ -31,9 +31,19 @@ func CORSOptions(config CORSConfig) cors.Options {
 	}
 }
 
-func AllowedOrigin(allowedOrigins string) func(origin string) bool {
+func AllowedOrigin(allowedOrigins []string) func(origin string) bool {
+	trimScheme := func(origin string) string {
+		return strings.TrimPrefix(strings.TrimPrefix(origin, "https://"), "http://")
+	}
 	return func(origin string) bool {
-		origin = strings.TrimPrefix(strings.TrimPrefix(origin, "https://"), "http://")
-		return allowedOrigins == "" || allowedOrigins == "*" || strings.Contains(allowedOrigins, origin)
+		if len(allowedOrigins) == 0 || allowedOrigins[0] == "*" {
+			return true
+		}
+		for _, allowedOrigin := range allowedOrigins {
+			if allowedOrigin == origin || trimScheme(allowedOrigin) == trimScheme(origin) {
+				return true
+			}
+		}
+		return false
 	}
 }

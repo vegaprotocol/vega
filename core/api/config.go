@@ -62,7 +62,7 @@ func NewDefaultConfig() Config {
 			Enabled:    true,
 			APMEnabled: true,
 			CORS: libhttp.CORSConfig{
-				AllowedOrigins: "*",
+				AllowedOrigins: []string{"*"},
 				MaxAge:         7200,
 			},
 		},
