@@ -92,9 +92,8 @@ func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
 	}
 }
 
-func (p *Position) UpdateWithTrade(e vega.Trade, seller bool) {
+func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool) {
 	// we have to ensure that we know the price/position factor
-	trade := e.Trade()
 	size := int64(trade.Size)
 	if seller {
 		size *= -1
@@ -111,7 +110,7 @@ func (p *Position) UpdateWithTrade(e vega.Trade, seller bool) {
 	p.PendingAverageEntryPrice = updateVWAP(p.PendingAverageEntryPrice, p.PendingOpenVolume, opened, priceUint.Clone())
 	p.PendingAverageEntryMarketPrice = updateVWAP(p.PendingAverageEntryMarketPrice, p.PendingOpenVolume, opened, priceUint)
 	p.PendingOpenVolume += opened
-	p.pendingMTM()
+	p.pendingMTM(price)
 }
 
 func (p *Position) UpdateWithPositionSettlement(e positionSettlement) {
