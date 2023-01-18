@@ -42,7 +42,7 @@ func main() {
 	config := broker.NewDefaultConfig()
 
 	fileEventSource, err := broker.NewFileEventSource(sourceFile, 0, config.FileEventSourceConfig.SendChannelBufferSize,
-		"testnet")
+		"testnet-001")
 	if err != nil {
 		panic(err)
 	}
@@ -66,6 +66,7 @@ func main() {
 		case event := <-eventsCh:
 			if event.Type() == events.TimeUpdate {
 				timeUpdate := event.(entities.TimeUpdateEvent)
+				fmt.Printf("Block: %d\n", timeUpdate.BlockNr())
 				if timeUpdate.BlockNr() > toHeight+1 {
 					fileClient.Close()
 					compressEventFile(EventFile, EventFile+".gz")
@@ -108,17 +109,4 @@ func compressEventFile(source string, target string) {
 	if _, err := io.Copy(zw, sourceFile); err != nil {
 		panic(err)
 	}
-}
-
-type chainInfo struct {
-	chainID string
-}
-
-func (t *chainInfo) SetChainID(s string) error {
-	t.chainID = s
-	return nil
-}
-
-func (t *chainInfo) GetChainID() (string, error) {
-	return t.chainID, nil
 }
