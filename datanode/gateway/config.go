@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
+	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -56,11 +57,7 @@ type Config struct {
 	SubscriptionRetries      int                      `long:"subscription-retries" description:" "`
 	GraphQLPlaygroundEnabled encoding.Bool            `long:"graphql-playground" description:"Enables the GraphQL playground"`
 	MaxSubscriptionPerClient uint32                   `long:"max-subscription-per-client" description:"Maximum of graphql subscribption allowed per client"`
-
-	HTTPSEnabled    encoding.Bool `long:"https-enabled" description:"If true, gateway will require an HTTPS connection"`
-	AutoCertDomain  string        `long:"auto-cert-domain" description:"Automatically generate and sign https certificate via LetsEncrypt"`
-	CertificateFile string        `long:"certificate-file" description:"Path to SSL certificate, if using HTTPS but not autocert"`
-	KeyFile         string        `long:"key-file" description:"Path to private key, if using HTTPS but not autocert"`
+	CORS                     libhttp.CORSConfig       `group:"CORS" namespace:"cors"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -93,5 +90,9 @@ func NewDefaultConfig() Config {
 		SubscriptionRetries:      3,
 		GraphQLPlaygroundEnabled: true,
 		MaxSubscriptionPerClient: 250,
+		CORS: libhttp.CORSConfig{
+			AllowedOrigins: []string{"*"},
+			MaxAge:         7200,
+		},
 	}
 }
