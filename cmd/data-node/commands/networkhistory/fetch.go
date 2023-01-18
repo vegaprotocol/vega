@@ -32,7 +32,7 @@ func (cmd *fetchCmd) Execute(args []string) error {
 	defer log.AtExit()
 
 	if len(args) != 2 {
-		return errors.New("expected <start-history-segment-id> <num-blocks-to-fetch>")
+		return errors.New("expected <history-segment-id> <num-blocks-to-fetch>")
 	}
 
 	rootSegmentID := args[0]
