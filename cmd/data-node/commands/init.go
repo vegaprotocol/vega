@@ -34,6 +34,10 @@ type InitCmd struct {
 
 var initCmd InitCmd
 
+func (opts *InitCmd) Usage() string {
+	return "<ChainID> [options]"
+}
+
 func (opts *InitCmd) Execute(args []string) error {
 	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer logger.AtExit()
@@ -99,7 +103,7 @@ func Init(ctx context.Context, parser *flags.Parser) error {
 	initCmd = InitCmd{}
 
 	short := "init <chain ID>"
-	long := "Generate the minimal configuration required for a vega data-node to start"
+	long := "Generate the minimal configuration required for a vega data-node to start. The Chain ID is required."
 
 	_, err := parser.AddCommand("init", short, long, &initCmd)
 	return err
