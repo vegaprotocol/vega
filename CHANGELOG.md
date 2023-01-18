@@ -9,10 +9,10 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7349](https://github.com/vegaprotocol/vega/issues/7349) - Add `Access-Control-Max-Age` header with configurable value for the in `core`, `datanode` and `blockexplorer` HTTP `APIs`
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7335](https://github.com/vegaprotocol/vega/issues/7335) - Fix custom http headers not being returned - add configurable `CORS` headers to `core`, `datanode` and `blockexplorer` HTTP `APIs`
 
 
 ## 0.67.0
@@ -32,6 +32,7 @@
 - [7279](https://github.com/vegaprotocol/vega/issues/7279) - Add `--archive` and `--lite` to `datanode init`
 - [7302](https://github.com/vegaprotocol/vega/issues/7302) - Add withdrawal minimal amount
 - [5487](https://github.com/vegaprotocol/vega/issues/5487) - Add `UPGRADING.md`
+- [7358](https://github.com/vegaprotocol/vega/issues/7358) - Improve `datanode init` and `vega init` help text
 - [7114](https://github.com/vegaprotocol/vega/issues/7114) - Expose user spam statistics via `API`
 - [7316](https://github.com/vegaprotocol/vega/issues/7316) - Add a bunch of database indexes following audit of queries
 - [7331](https://github.com/vegaprotocol/vega/issues/7331) - Control the decrease of the number of validators when network parameter is decreased
