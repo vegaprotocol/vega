@@ -64,7 +64,7 @@ func (s *ProxyServer) ReloadConf(cfg api.Config) {
 		s.log.SetLevel(cfg.Level.Get())
 	}
 
-	// TODO(): not updating the the actual server for now, may need to look at this later
+	// TODO(): not updating the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
 	s.cfg = cfg
 }

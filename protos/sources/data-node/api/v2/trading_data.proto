@@ -73,8 +73,8 @@ service TradingDataService {
     // Ledger entries
     //
     // Get ledger entries by asset, market, party, account type, transfer type within the given date range.
-    // This query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
-    // It returns a timeseries (implemented as a list of AggregateLedgerEntry structs), with a row for every time
+    // This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
+    // It returns a time series (implemented as a list of AggregateLedgerEntry structs), with a row for every time
     // the summed ledger entries of the set of specified accounts changes.
     // Listed queries should be limited to a single party from each side only. If no or more than one parties are provided
     // for sending and receiving accounts - the query returns error.
@@ -313,7 +313,7 @@ service TradingDataService {
 
     // Assets list
     //
-    // Get a list of assets using cusor based pagination
+    // Get a list of assets using cursor based pagination
     rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse);
 
     // Liquidity Provisions list
@@ -855,7 +855,7 @@ message GetBalanceHistoryRequest {
     // Limit the accounts considered according to the filter supplied
     AccountFilter filter = 1;
     // By default the net balances of all the accounts specified by the filter are returned.
-    // If a list if fields is given in group_by, split out those balances by the supplied crietera.
+    // If a list of fields is given in group_by, split out those balances by the supplied criteria.
     repeated AccountField group_by = 2;
     optional Pagination pagination = 3;
     optional DateRange date_range = 4;
@@ -880,7 +880,7 @@ message AccountFilter{
     string asset_id = 1;
     // Restrict accounts to those owned by the parties in this list (pass an empty list for no filter)
     repeated string party_ids = 2;
-    // Restrict accounts to those connected to the marketsin this list (pass an empty list for no filter)
+    // Restrict accounts to those connected to the markets in this list (pass an empty list for no filter)
     repeated string market_ids = 3;
     // Restrict accounts to those connected to any of the types in this list (pass an empty list for no filter)
     repeated vega.AccountType account_types = 4;
@@ -1037,7 +1037,7 @@ message ListTransfersRequest {
     optional string pubkey = 1;
     // Directions to include in the response data
     TransferDirection direction = 2;
-    // Optional pagination cntrol
+    // Optional pagination control
     optional Pagination pagination = 3;
 }
 
@@ -2007,7 +2007,7 @@ message GetNetworkParameterRequest {
   string key = 1;
 }
 
-// A reponse containing a network parameter
+// A response containing a network parameter
 message GetNetworkParameterResponse {
   // The network parameter key and value
   vega.NetworkParameter network_parameter = 1;
@@ -2196,12 +2196,12 @@ message ListProtocolUpgradeProposalsRequest {
     optional Pagination pagination = 3;
 }
 
-// Reponse type from a ListProtocolUpgradeProposals RPC call; a paginated list of protocol upgrade proposals
+// Response type from a ListProtocolUpgradeProposals RPC call; a paginated list of protocol upgrade proposals
 message ListProtocolUpgradeProposalsResponse {
     ProtocolUpgradeProposalConnection protocol_upgrade_proposals = 1;
 }
 
-// A page of protocol upgrade proposals, with page information.
+// A page of protocol upgrade proposals, with page information
 message ProtocolUpgradeProposalConnection {
     repeated ProtocolUpgradeProposalEdge edges = 1;
     PageInfo page_info = 2;
@@ -2279,10 +2279,10 @@ message GetActiveNetworkHistoryPeerAddressesResponse {
     repeated string ip_addresses = 1;
 }
 
-// Request to ping the datanode
+// Request to ping the data node
 message PingRequest {
 }
 
-// Ping response from the datanode
+// Ping response from the data node
 message PingResponse {
 }

@@ -92,7 +92,7 @@ func NewFromConfig(config config.Config) *BlockExplorer {
 	a.gateway.Register(a.restAPI, config.API.REST.Endpoint)
 
 	// However GRPC is special, because it uses HTTP2 and really wants to be in control
-	// of it's own connection. Fortunately there's a tool called cMux which creates dummy listeners
+	// of its own connection. Fortunately there's a tool called cMux which creates dummy listeners
 	// and peeks at the stream to decide where to send it. If it's http/2 - send to grpc server
 	// otherwise dispatch to the gateway, which then sends it to which ever handler has registered
 	a.portal = api.NewPortal(config.API, a.log)

@@ -29,7 +29,7 @@ func (r *VegaResolverRoot) MyType() MyTypeResolver {
 ```
 
 ### Add a new query?
-1. Add a new query in `schema.graphql` in the the `Query` type
+1. Add a new query in `schema.graphql` in the `Query` type
 2. Generate the GraphQL model and resolver with `make gqlgen`
 3. Add a method `MyType()` on struct `myQueryResolver` in `resolvers.go`,
    as follows :

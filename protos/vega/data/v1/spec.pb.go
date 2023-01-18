@@ -217,7 +217,7 @@ func (x *Filter) GetConditions() []*Condition {
 	return nil
 }
 
-// PropertyKey describes the property key contained in an data source data.
+// PropertyKey describes the property key contained in data source data.
 type PropertyKey struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

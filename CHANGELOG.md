@@ -15,6 +15,20 @@
 - [7335](https://github.com/vegaprotocol/vega/issues/7335) - Fix custom http headers not being returned - add configurable `CORS` headers to `core`, `datanode` and `blockexplorer` HTTP `APIs`
 
 
+## Unreleased 0.67.1
+
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [7366](https://github.com/vegaprotocol/vega/issues/7366) - Fix typos in the API descriptions
+
 ## 0.67.0
 
 ### 🚨 Breaking changes

@@ -31,7 +31,7 @@ message Checkpoint {
   bytes market_tracker = 13;
 }
 
-// AssetEntrty is a single (enabled) asset
+// AssetEntry is a single (enabled) asset
 message AssetEntry {
   string id = 1;
   vega.AssetDetails asset_details = 2;

@@ -198,7 +198,7 @@
     "schemas": {
       "JsonResponse": {
         "type": "object",
-        "description": "This payload is returned by HTTP handlers. It's the generic envelop for all HTTP response that are not coming from the JSON-RPC API.",
+        "description": "This payload is returned by HTTP handlers. It's the generic envelope for all HTTP responses that do not come from the JSON-RPC API.",
         "properties": {
           "result": {
             "type": "object"

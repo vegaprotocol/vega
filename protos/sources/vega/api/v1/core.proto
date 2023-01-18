@@ -117,7 +117,7 @@ message SubmitTransactionResponse {
   bool success = 1;
   // Hash of the transaction, if accepted
   string tx_hash = 2;
-  // Result code success if unsucessful
+  // Result code for success if unsuccessful
   uint32 code = 3;
   // Data for details
   string data = 4;

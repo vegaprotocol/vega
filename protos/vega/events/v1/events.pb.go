@@ -164,19 +164,19 @@ const (
 	BusEventType_BUS_EVENT_TYPE_STATE_VAR BusEventType = 38
 	// Event indicating network limits set or updated
 	BusEventType_BUS_EVENT_TYPE_NETWORK_LIMITS BusEventType = 39
-	// Event indicating a update for a transfert
+	// Event indicating a update for a transfer
 	BusEventType_BUS_EVENT_TYPE_TRANSFER BusEventType = 40
-	// Event indicating the ranking of validator and their status in vega
+	// Event indicating the ranking of validator and their status in Vega
 	BusEventType_BUS_EVENT_TYPE_VALIDATOR_RANKING BusEventType = 41
 	// Event indicating a new multi sig signer event have been processed
 	BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_EVENT BusEventType = 42
 	// Event indicating the erc20 multi sig threshold have been updated
 	BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SET_THRESHOLD BusEventType = 43
-	// Event indicating a new signer has been added to the erc20 multisig
+	// Event indicating a new signer has been added to the ERC-20 multisig
 	BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_ADDED BusEventType = 44
-	// Event indicating a signer has been removed from the erc20 multisig
+	// Event indicating a signer has been removed from the ERC-20 multisig
 	BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_REMOVED BusEventType = 45
-	// Event indicting that a party's position has changed
+	// Event indicating that a party's position has changed
 	BusEventType_BUS_EVENT_TYPE_POSITION_STATE BusEventType = 46
 	// Event indicating Ethereum key rotation took place
 	BusEventType_BUS_EVENT_TYPE_ETHEREUM_KEY_ROTATION BusEventType = 47
@@ -1145,7 +1145,7 @@ type StakeLinking struct {
 	BlockTime int64 `protobuf:"varint,10,opt,name=block_time,json=blockTime,proto3" json:"block_time,omitempty"`
 	// The log index
 	LogIndex uint64 `protobuf:"varint,11,opt,name=log_index,json=logIndex,proto3" json:"log_index,omitempty"`
-	// the ethereum address from which the stake link was iniated
+	// the ethereum address from which the stake link was initiated
 	EthereumAddress string `protobuf:"bytes,12,opt,name=ethereum_address,json=ethereumAddress,proto3" json:"ethereum_address,omitempty"`
 }
 
@@ -3118,7 +3118,7 @@ func (x *SettlePosition) GetPositionFactor() string {
 	return ""
 }
 
-// A settle market event tp notify data-node that a market has been settled
+// A settle market event to notify data node that a market has been settled
 // so positions and PL can be updated accordingly
 type SettleMarket struct {
 	state         protoimpl.MessageState
@@ -4917,17 +4917,17 @@ type isBusEvent_Event interface {
 }
 
 type BusEvent_TimeUpdate struct {
-	// Time update events - See [TimeUpdate](#vega.TimeUpdate)
+	// Time update events
 	TimeUpdate *TimeUpdate `protobuf:"bytes,101,opt,name=time_update,json=timeUpdate,proto3,oneof"`
 }
 
 type BusEvent_LedgerMovements struct {
-	// Transfer responses update events - See [TransferResponses](#vega.TransferResponses)
+	// Transfer responses update events
 	LedgerMovements *LedgerMovements `protobuf:"bytes,102,opt,name=ledger_movements,json=ledgerMovements,proto3,oneof"`
 }
 
 type BusEvent_PositionResolution struct {
-	// Position resolution events - See [PositionResolution](#vega.PositionResolution)
+	// Position resolution events
 	PositionResolution *PositionResolution `protobuf:"bytes,103,opt,name=position_resolution,json=positionResolution,proto3,oneof"`
 }
 
@@ -4977,17 +4977,17 @@ type BusEvent_NodeSignature struct {
 }
 
 type BusEvent_LossSocialization struct {
-	// Loss socialization events - See [LossSocialization](#vega.LossSocialization)
+	// Loss socialization events
 	LossSocialization *LossSocialization `protobuf:"bytes,113,opt,name=loss_socialization,json=lossSocialization,proto3,oneof"`
 }
 
 type BusEvent_SettlePosition struct {
-	// Position settlement events - See [SettlePosition](#vega.SettlePosition)
+	// Position settlement events
 	SettlePosition *SettlePosition `protobuf:"bytes,114,opt,name=settle_position,json=settlePosition,proto3,oneof"`
 }
 
 type BusEvent_SettleDistressed struct {
-	// Position distressed events - See [SettleDistressed](#vega.SettleDistressed)
+	// Position distressed events
 	SettleDistressed *SettleDistressed `protobuf:"bytes,115,opt,name=settle_distressed,json=settleDistressed,proto3,oneof"`
 }
 
@@ -5002,7 +5002,7 @@ type BusEvent_Asset struct {
 }
 
 type BusEvent_MarketTick struct {
-	// Market tick events - See [MarketTick](#vega.MarketTick)
+	// Market tick events
 	MarketTick *MarketTick `protobuf:"bytes,118,opt,name=market_tick,json=marketTick,proto3,oneof"`
 }
 
@@ -5017,7 +5017,7 @@ type BusEvent_Deposit struct {
 }
 
 type BusEvent_Auction struct {
-	// Auction events - See [AuctionEvent](#vega.AuctionEvent)
+	// Auction events
 	Auction *AuctionEvent `protobuf:"bytes,121,opt,name=auction,proto3,oneof"`
 }
 
