@@ -337,7 +337,7 @@ type LiquidityProviderFeeShare {
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
   "The average liquidity score"
-  averageScore: String! 
+  averageScore: String!
 }
 
 "The equity like share of liquidity fee for each liquidity provider"
@@ -349,7 +349,7 @@ type ObservableLiquidityProviderFeeShare {
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
   "The average liquidity score"
-  averageScore: String! 
+  averageScore: String!
 }
 
 "The liquidity commitments for this market"
@@ -653,7 +653,7 @@ type Query {
 
   "List reward summary per epoch by asset, market, reward type"
   epochRewardSummaries(
-    fromEpoch: Int, 
+    fromEpoch: Int,
     toEpoch: Int,
     pagination: Pagination
     ): EpochRewardSummaryConnection
@@ -3897,14 +3897,10 @@ type NetworkLimits {
   canProposeMarket: Boolean!
   "Are asset proposals allowed at this point in time"
   canProposeAsset: Boolean!
-  "True once block count > bootstrapBlockCount"
-  bootstrapFinished: Boolean!
   "Are market proposals enabled on this chain"
   proposeMarketEnabled: Boolean!
   "Are asset proposals enabled on this chain"
   proposeAssetEnabled: Boolean!
-  "How many blocks before the chain comes out of bootstrap mode"
-  bootstrapBlockCount: Int!
   "True once the genesis file is loaded"
   genesisLoaded: Boolean!
   "The date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set)"
@@ -4460,7 +4456,7 @@ type EpochRewardSummaryEdge {
 "an aggregated reward summary for a combination of epoch/asset/market/reward type"
 type EpochRewardSummary {
   "The epoch for which summary is generated"
-  epoch: Int! 
+  epoch: Int!
   "ID of the market"
   marketId: ID
   "ID of the Asset"
@@ -4492,7 +4488,7 @@ type CoreSnapshotData {
   "At which block the snapshot was taken"
   blockHeight: String!
   "The block hash at the snapshot block height"
-  blockHash: String!  
+  blockHash: String!
   "The current version of vega core"
   vegaCoreVersion: String!
 }

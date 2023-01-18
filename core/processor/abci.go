@@ -57,17 +57,14 @@ import (
 const AppVersion = 1
 
 var (
-	ErrPublicKeyCannotSubmitTransactionWithNoBalance  = errors.New("public key cannot submit transaction without balance")
-	ErrUnexpectedTxPubKey                             = errors.New("no one listens to the public keys that signed this oracle data")
-	ErrTradingDisabled                                = errors.New("trading disabled")
-	ErrNoTransactionAllowedDuringBootstrap            = errors.New("no transaction allowed during the bootstraping period")
-	ErrMarketProposalDisabled                         = errors.New("market proposal disabled")
-	ErrAssetProposalDisabled                          = errors.New("asset proposal disabled")
-	ErrNonValidatorTransactionDisabledDuringBootstrap = errors.New("non validator transaction disabled during bootstrap")
-	ErrCheckpointRestoreDisabledDuringBootstrap       = errors.New("checkpoint restore disabled during bootstrap")
-	ErrAwaitingCheckpointRestore                      = errors.New("transactions not allowed while waiting for checkpoint restore")
-	ErrOracleNoSubscribers                            = errors.New("there are no subscribes to the oracle data")
-	ErrOracleDataNormalization                        = func(err error) error {
+	ErrPublicKeyCannotSubmitTransactionWithNoBalance = errors.New("public key cannot submit transaction without balance")
+	ErrUnexpectedTxPubKey                            = errors.New("no one listens to the public keys that signed this oracle data")
+	ErrTradingDisabled                               = errors.New("trading disabled")
+	ErrMarketProposalDisabled                        = errors.New("market proposal disabled")
+	ErrAssetProposalDisabled                         = errors.New("asset proposal disabled")
+	ErrAwaitingCheckpointRestore                     = errors.New("transactions not allowed while waiting for checkpoint restore")
+	ErrOracleNoSubscribers                           = errors.New("there are no subscribes to the oracle data")
+	ErrOracleDataNormalization                       = func(err error) error {
 		return fmt.Errorf("error normalizing incoming oracle data: %w", err)
 	}
 )

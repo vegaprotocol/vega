@@ -1,6 +1,21 @@
 # Changelog
 
-## Unreleased 0.67.0
+## Unreleased 0.68.0
+
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.67.0
 
 ### 🚨 Breaking changes
 - [6895](https://github.com/vegaprotocol/vega/issues/6895) - Move the authentication of wallet API version 2 to the transport layer (HTTP). This brings several breaking changes:
@@ -10,10 +25,7 @@
   - the token has been moved out of the JSON-RPC requests, to HTTP `Authorization` header.
 - [7293](https://github.com/vegaprotocol/vega/issues/7293) - Rename restricted keys to allowed keys
 - [7211](https://github.com/vegaprotocol/vega/issues/7211) - Add sender and receiver balances in ledger entries
-- [7255](https://github.com/vegaprotocol/vega/issues/7255) - Rename `dehistory` to network history 
-
-### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7255](https://github.com/vegaprotocol/vega/issues/7255) - Rename `dehistory` to network history
 
 ### 🛠 Improvements
 - [7349](https://github.com/vegaprotocol/vega/issues/7349) - Add `Access-Control-Max-Age` header with configurable value for the in `core`, `datanode` and `blockexplorer` HTTP `APIs`
@@ -39,7 +51,7 @@
 - [7294](https://github.com/vegaprotocol/vega/issues/7294) - Submission of `OpenOracle` data is broken
 - [7286](https://github.com/vegaprotocol/vega/issues/7286) - Fix serialisation of `oracle specs`
 - [7327](https://github.com/vegaprotocol/vega/issues/7327) - Improve and add API info, remove unused `AccountField` enum in `GraphQL`
-- [7345](https://github.com/vegaprotocol/vega/issues/7345) - Cache account lookup by id 
+- [7345](https://github.com/vegaprotocol/vega/issues/7345) - Cache account lookup by id
 
 
 ## 0.66.1

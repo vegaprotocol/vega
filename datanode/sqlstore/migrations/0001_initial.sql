@@ -444,10 +444,8 @@ CREATE TABLE network_limits (
   tx_hash                     BYTEA                    NOT NULL,
   can_propose_market          BOOLEAN NOT NULL,
   can_propose_asset           BOOLEAN NOT NULL,
-  bootstrap_finished          BOOLEAN NOT NULL,
   propose_market_enabled      BOOLEAN NOT NULL,
   propose_asset_enabled       BOOLEAN NOT NULL,
-  bootstrap_block_count       INTEGER,
   genesis_loaded              BOOLEAN NOT NULL,
   propose_market_enabled_from TIMESTAMP WITH TIME ZONE NOT NULL,
   propose_asset_enabled_from  TIMESTAMP WITH TIME ZONE NOT NULL
