@@ -56,6 +56,11 @@ type Config struct {
 	SubscriptionRetries      int                      `long:"subscription-retries" description:" "`
 	GraphQLPlaygroundEnabled encoding.Bool            `long:"graphql-playground" description:"Enables the GraphQL playground"`
 	MaxSubscriptionPerClient uint32                   `long:"max-subscription-per-client" description:"Maximum of graphql subscribption allowed per client"`
+
+	HTTPSEnabled    encoding.Bool `long:"https-enabled" description:"If true, gateway will require an HTTPS connection"`
+	AutoCertDomain  string        `long:"auto-cert-domain" description:"Automatically generate and sign https certificate via LetsEncrypt"`
+	CertificateFile string        `long:"certificate-file" description:"Path to SSL certificate, if using HTTPS but not autocert"`
+	KeyFile         string        `long:"key-file" description:"Path to private key, if using HTTPS but not autocert"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
