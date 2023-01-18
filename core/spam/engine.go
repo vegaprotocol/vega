@@ -111,8 +111,20 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	transferPolicy := NewSimpleSpamPolicy("transfer", "", netparams.TransferMaxCommandsPerEpoch, log, accounting)
 
 	voteKey := (&types.PayloadVoteSpamPolicy{}).Key()
-	e.policyNameToPolicy = map[string]Policy{voteKey: votePolicy, proposalPolicy.policyName: proposalPolicy, delegationPolicy.policyName: delegationPolicy}
-	e.hashKeys = []string{voteKey, proposalPolicy.policyName, delegationPolicy.policyName}
+	e.policyNameToPolicy = map[string]Policy{
+		voteKey:                     votePolicy,
+		proposalPolicy.policyName:   proposalPolicy,
+		delegationPolicy.policyName: delegationPolicy,
+		transferPolicy.policyName:   transferPolicy,
+		valJoinPolicy.policyName:    valJoinPolicy,
+	}
+	e.hashKeys = []string{
+		voteKey,
+		proposalPolicy.policyName,
+		delegationPolicy.policyName,
+		transferPolicy.policyName,
+		valJoinPolicy.policyName,
+	}
 
 	e.transactionTypeToPolicy[txn.ProposeCommand] = proposalPolicy
 	e.transactionTypeToPolicy[txn.VoteCommand] = votePolicy
