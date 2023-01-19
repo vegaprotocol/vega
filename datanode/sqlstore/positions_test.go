@@ -38,11 +38,16 @@ func addTestPosition(t *testing.T,
 	t.Helper()
 	pos := entities.NewEmptyPosition(market.ID, party.ID)
 	pos.OpenVolume = volume
+	pos.PendingOpenVolume = volume
 	pos.VegaTime = block.VegaTime
 	pos.RealisedPnl = decimal.New(0, 0)
+	pos.PendingRealisedPnl = decimal.New(0, 0)
 	pos.UnrealisedPnl = decimal.New(0, 0)
+	pos.PendingUnrealisedPnl = decimal.New(0, 0)
 	pos.AverageEntryPrice = decimal.New(0, 0)
+	pos.PendingAverageEntryPrice = decimal.New(0, 0)
 	pos.AverageEntryMarketPrice = decimal.New(0, 0)
+	pos.PendingAverageEntryMarketPrice = decimal.New(0, 0)
 	pos.Adjustment = decimal.New(0, 0)
 	pos.Loss = decimal.New(0, 0)
 	err := ps.Add(ctx, pos)

@@ -91,7 +91,7 @@ func (p *Position) Types() []events.Type {
 		events.SettleDistressedEvent,
 		events.LossSocializationEvent,
 		events.SettleMarketEvent,
-		events.PositionStateEvent,
+		events.TradeEvent,
 	}
 }
 
