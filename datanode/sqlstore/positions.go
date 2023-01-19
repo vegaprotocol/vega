@@ -49,14 +49,6 @@ func (ps *Positions) Flush(ctx context.Context) ([]entities.Position, error) {
 	return ps.batcher.Flush(ctx, ps.Connection)
 }
 
-// AddBatch just allows you to add several entities in a single call
-func (ps *Positions) AddBatch(ctx context.Context, pos ...entities.Position) error {
-	for _, p := range pos {
-		ps.batcher.Add(p)
-	}
-	return nil
-}
-
 func (ps *Positions) Add(ctx context.Context, p entities.Position) error {
 	ps.batcher.Add(p)
 	return nil

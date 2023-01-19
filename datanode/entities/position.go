@@ -32,10 +32,6 @@ type positionSettlement interface {
 	TxHash() string
 }
 
-type positionState interface {
-	Size() int64
-}
-
 type lossSocialization interface {
 	Amount() *num.Int
 	TxHash() string
