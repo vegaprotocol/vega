@@ -308,14 +308,16 @@ func ApplyDataRetentionPolicies(config Config) error {
 	defer db.Close()
 
 	for _, policy := range config.RetentionPolicies {
-		// We have this check to avoid the datanode removing data that is required for creating data snapshots
-		aboveMinimum, err := checkPolicyPeriodIsAtOrAboveMinimum(oneDayAsSeconds, policy, db)
-		if err != nil {
-			return fmt.Errorf("checking retention policy period is above minimum:%w", err)
-		}
+		if !config.DisableMinRetentionPolicyCheckForUseInSysTestsOnly {
+			// We have this check to avoid the datanode removing data that is required for creating data snapshots
+			aboveMinimum, err := checkPolicyPeriodIsAtOrAboveMinimum(oneDayAsSeconds, policy, db)
+			if err != nil {
+				return fmt.Errorf("checking retention policy period is above minimum:%w", err)
+			}
 
-		if !aboveMinimum {
-			return fmt.Errorf("policy for %s has a retention time less than one day, one day is the minimum permitted", policy.HypertableOrCaggName)
+			if !aboveMinimum {
+				return fmt.Errorf("policy for %s has a retention time less than one day, one day is the minimum permitted", policy.HypertableOrCaggName)
+			}
 		}
 
 		if _, err := db.Exec(fmt.Sprintf("SELECT remove_retention_policy('%s', true);", policy.HypertableOrCaggName)); err != nil {

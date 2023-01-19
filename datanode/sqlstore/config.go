@@ -23,14 +23,15 @@ import (
 )
 
 type Config struct {
-	ConnectionConfig      ConnectionConfig      `group:"ConnectionConfig" namespace:"ConnectionConfig"`
-	WipeOnStartup         encoding.Bool         `long:"wipe-on-startup"`
-	Level                 encoding.LogLevel     `long:"log-level"`
-	UseEmbedded           encoding.Bool         `long:"use-embedded" description:"Use an embedded version of Postgresql for the SQL data store"`
-	FanOutBufferSize      int                   `long:"fan-out-buffer-size" description:"buffer size used by the fan out event source"`
-	RetentionPolicies     []RetentionPolicy     `group:"RetentionPolicies" namespace:"RetentionPolicies"`
-	ConnectionRetryConfig ConnectionRetryConfig `group:"ConnectionRetryConfig" namespace:"ConnectionRetryConfig"`
-	LogRotationConfig     LogRotationConfig     `group:"LogRotationConfig" namespace:"LogRotationConfig"`
+	ConnectionConfig                                   ConnectionConfig      `group:"ConnectionConfig" namespace:"ConnectionConfig"`
+	WipeOnStartup                                      encoding.Bool         `long:"wipe-on-startup"`
+	Level                                              encoding.LogLevel     `long:"log-level"`
+	UseEmbedded                                        encoding.Bool         `long:"use-embedded" description:"Use an embedded version of Postgresql for the SQL data store"`
+	FanOutBufferSize                                   int                   `long:"fan-out-buffer-size" description:"buffer size used by the fan out event source"`
+	RetentionPolicies                                  []RetentionPolicy     `group:"RetentionPolicies" namespace:"RetentionPolicies"`
+	ConnectionRetryConfig                              ConnectionRetryConfig `group:"ConnectionRetryConfig" namespace:"ConnectionRetryConfig"`
+	LogRotationConfig                                  LogRotationConfig     `group:"LogRotationConfig" namespace:"LogRotationConfig"`
+	DisableMinRetentionPolicyCheckForUseInSysTestsOnly encoding.Bool         `long:"disable-min-retention-policy-use-in-sys-test-only" description:"Disables the minimum retention policy interval check - only for use in system tests"`
 }
 
 type ConnectionConfig struct {
@@ -118,6 +119,7 @@ func NewDefaultConfig() Config {
 		Level:            encoding.LogLevel{Level: logging.InfoLevel},
 		UseEmbedded:      false,
 		FanOutBufferSize: 1000,
+		DisableMinRetentionPolicyCheckForUseInSysTestsOnly: false,
 		RetentionPolicies: []RetentionPolicy{
 			{HypertableOrCaggName: "balances", DataRetentionPeriod: "7 days"},
 			{HypertableOrCaggName: "checkpoints", DataRetentionPeriod: "7 days"},
