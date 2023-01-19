@@ -222,7 +222,7 @@ func (x *Checkpoint) GetMarketTracker() []byte {
 	return nil
 }
 
-// AssetEntrty is a single (enabled) asset
+// AssetEntry is a single (enabled) asset
 type AssetEntry struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

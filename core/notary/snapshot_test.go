@@ -139,7 +139,7 @@ func TestNotarySnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(s1, s2))
 
-	// Check the the loaded in (and original) node signatures exist and are perceived to be ok
+	// Check the loaded in (and original) node signatures exist and are perceived to be ok
 	_, ok1 := snapNotr.IsSigned(context.Background(), "resid1", types.NodeSignatureKindAssetNew)
 	_, ok2 := notr.IsSigned(context.Background(), "resid1", types.NodeSignatureKindAssetNew)
 	require.True(t, ok1)

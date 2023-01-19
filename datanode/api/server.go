@@ -232,7 +232,7 @@ func (g *GRPCServer) ReloadConf(cfg Config) {
 		g.log.SetLevel(cfg.Level.Get())
 	}
 
-	// TODO(): not updating the the actual server for now, may need to look at this later
+	// TODO(): not updating the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
 	g.Config = cfg
 }
@@ -319,6 +319,14 @@ func headersInterceptor(
 			metadata.Pairs("X-Vega-Connection", connState),
 			metadata.Pairs("X-Block-Height", strconv.FormatInt(height, 10)),
 			metadata.Pairs("X-Block-Timestamp", strconv.FormatInt(timestamp, 10)),
+			// Deprecated: use X-Block-Timestamp instead.
+			metadata.Pairs("Grpc-Metadata-X-Vega-Connection", connState),
+			// Deprecated: use X-Block-Height instead.
+			metadata.Pairs("Grpc-Metadata-X-Block-Height", strconv.FormatInt(height, 10)),
+			// Deprecated: use X-Block-Timestamp instead.
+			metadata.Pairs("Grpc-Metadata-X-Block-Timestamp", strconv.FormatInt(timestamp, 10)),
+			// TODO: remove warning once deprecated headers are gone.
+			metadata.Pairs("Warning", "199 - \"The headers ['Grpc-Metadata-X-Vega-Connection', 'Grpc-Metadata-X-Block-Height, 'Grpc-Metadata-X-Block-Timestamp'] are deprecated and will be removed in a future version. Use their non-grpc-metadata prefixed counterparts instead.\""),
 		} {
 			if errH := grpc.SetHeader(ctx, h); errH != nil {
 				log.Error("failed to set header", logging.Error(errH))

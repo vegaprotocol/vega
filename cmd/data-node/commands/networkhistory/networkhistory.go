@@ -23,7 +23,7 @@ type Cmd struct {
 	// Subcommands
 	Show                          showCmd              `command:"show" description:"shows network history segments currently stored by the node"`
 	Load                          loadCmd              `command:"load" description:"loads the most recent contiguous network history stored by the node into the datanode"`
-	Fetch                         fetchCmd             `command:"fetch" description:"fetch <start from history segment id> <blocks to fetch>, fetches the given number of blocks from network history"`
+	Fetch                         fetchCmd             `command:"fetch" description:"fetch <history segment id> <blocks to fetch>, fetches the given segment and all previous segments until <blocks to fetch> blocks have been retrieved"`
 	LatestHistorySegmentFromPeers latestHistorySegment `command:"latest-history-segment-from-peers" description:"latest-history-segment returns the id of the networks latest history segment"`
 	ListActivePeers               listActivePeers      `command:"list-active-peers" description:"list the active datanode peers"`
 	Copy                          copyCmd              `command:"copy" description:"copy a history segment from network history to a file"`
@@ -80,7 +80,7 @@ func datanodeLive(cfg config.Config) bool {
 // This is working around a bit of awkwardness in that the config supplied by go-flags is a blank
 // config updated with command line flags. There is not enough information in it to apply an
 // 'overlay' to a config read from a file, because it is not possible for us to tell if someone
-// is trying to override a value back to it's 'zero' value. (e.g. --something.enabled=false gives
+// is trying to override a value back to its 'zero' value. (e.g. --something.enabled=false gives
 // the same go-flags structure as no argument at all).
 func fixConfig(config *config.Config, vegaPaths paths.Paths) error {
 	configFilePath, err := vegaPaths.CreateConfigPathFor(paths.DataNodeDefaultConfigFile)

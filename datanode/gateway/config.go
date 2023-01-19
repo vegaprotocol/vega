@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
+	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -32,10 +33,6 @@ type GraphqlServiceConfig struct {
 	ServerConfig
 	Enabled         encoding.Bool `long:"enabled" description:"Start the GraphQl gateway"`
 	ComplexityLimit int           `long:"complexity-limit"`
-	HTTPSEnabled    encoding.Bool `long:"https-enabled" description:"If true, GraphQL gateway will require an HTTPS connection"`
-	AutoCertDomain  string        `long:"auto-cert-domain" description:"Automatically generate and sign https certificate via LetsEncrypt"`
-	CertificateFile string        `long:"certificate-file" description:"Path to SSL certificate, if using HTTPS but not autocert"`
-	KeyFile         string        `long:"key-file" description:"Path to private key, if using HTTPS but not autocert"`
 	Endpoint        string        `long:"endpoint" description:"Endpoint to expose the graphql API at"`
 }
 
@@ -56,22 +53,27 @@ type Config struct {
 	SubscriptionRetries      int                      `long:"subscription-retries" description:" "`
 	GraphQLPlaygroundEnabled encoding.Bool            `long:"graphql-playground" description:"Enables the GraphQL playground"`
 	MaxSubscriptionPerClient uint32                   `long:"max-subscription-per-client" description:"Maximum of graphql subscribption allowed per client"`
+	CORS                     libhttp.CORSConfig       `group:"CORS" namespace:"cors"`
+	HTTPSEnabled             encoding.Bool            `long:"https-enabled" description:"If true, GraphQL gateway will require an HTTPS connection"`
+	AutoCertDomain           string                   `long:"auto-cert-domain" description:"Automatically generate and sign https certificate via LetsEncrypt"`
+	CertificateFile          string                   `long:"certificate-file" description:"Path to SSL certificate, if using HTTPS but not autocert"`
+	KeyFile                  string                   `long:"key-file" description:"Path to private key, if using HTTPS but not autocert"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
 // pointer to a logger instance to be used for logging within the package.
 func NewDefaultConfig() Config {
 	return Config{
-		Level:   encoding.LogLevel{Level: logging.InfoLevel},
-		Timeout: encoding.Duration{Duration: 5 * time.Second},
+		Level:        encoding.LogLevel{Level: logging.InfoLevel},
+		Timeout:      encoding.Duration{Duration: 5 * time.Second},
+		HTTPSEnabled: false,
 		GraphQL: GraphqlServiceConfig{
 			ServerConfig: ServerConfig{
 				IP:   "0.0.0.0",
 				Port: 3008,
 			},
-			Enabled:      true,
-			HTTPSEnabled: false,
-			Endpoint:     "/graphql",
+			Enabled:  true,
+			Endpoint: "/graphql",
 		},
 		REST: RESTGatewayServiceConfig{
 			ServerConfig: ServerConfig{
@@ -88,5 +90,9 @@ func NewDefaultConfig() Config {
 		SubscriptionRetries:      3,
 		GraphQLPlaygroundEnabled: true,
 		MaxSubscriptionPerClient: 250,
+		CORS: libhttp.CORSConfig{
+			AllowedOrigins: []string{"*"},
+			MaxAge:         7200,
+		},
 	}
 }

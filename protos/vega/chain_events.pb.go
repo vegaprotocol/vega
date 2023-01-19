@@ -880,7 +880,7 @@ func (x *ERC20SignerRemoved) GetBlockTime() int64 {
 	return 0
 }
 
-// The threshold have been updated on the multisigcontrol
+// The threshold has been updated on the multisig control
 type ERC20ThresholdSet struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -888,7 +888,7 @@ type ERC20ThresholdSet struct {
 
 	// The new threshold
 	NewThreshold uint32 `protobuf:"varint,1,opt,name=new_threshold,json=newThreshold,proto3" json:"new_threshold,omitempty"`
-	// The nonce create by the vega network
+	// The nonce created by the Vega network
 	Nonce string `protobuf:"bytes,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
 	// The time at which the block was produced
 	// will be used to inform the core at what time

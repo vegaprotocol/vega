@@ -159,8 +159,8 @@ func (x *Snapshot) GetMetadata() []byte {
 	return nil
 }
 
-// NodeHash represents an exported node from the AVL tree and contains all the data necessary to recontruct and identical copy of the
-// AVL tree after we've serialised it
+// NodeHash represents an exported node from the AVL tree and contains all the data necessary to reconstruct an identical copy of the
+// AVL tree after it's been serialised
 type NodeHash struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -172,7 +172,7 @@ type NodeHash struct {
 	Hash string `protobuf:"bytes,4,opt,name=hash,proto3" json:"hash,omitempty"`
 	// The height of the node in the tree
 	Height int32 `protobuf:"varint,5,opt,name=height,proto3" json:"height,omitempty"`
-	// The version of that node i.e how many times its value has changed during tree updates
+	// The version of that node i.e., how many times its value has changed during tree updates
 	Version int64 `protobuf:"varint,6,opt,name=version,proto3" json:"version,omitempty"`
 	// Whether or not the node contains a snapshot payload, only leaf nodes in the AVL contain payloads
 	IsLeaf bool `protobuf:"varint,7,opt,name=is_leaf,json=isLeaf,proto3" json:"is_leaf,omitempty"`
@@ -5338,7 +5338,7 @@ type LimitState struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Number of blocks into the boostrapping phase
+	// Number of blocks into the bootstrapping phase
 	BlockCount uint32 `protobuf:"varint,1,opt,name=block_count,json=blockCount,proto3" json:"block_count,omitempty"`
 	// whether the limit on market proposals has been lifted
 	CanProposeMarket bool `protobuf:"varint,2,opt,name=can_propose_market,json=canProposeMarket,proto3" json:"can_propose_market,omitempty"`

@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/logging"
@@ -28,11 +29,15 @@ type InitCmd struct {
 	config.VegaHomeFlag
 
 	Force   bool `short:"f" long:"force" description:"Erase exiting vega configuration at the specified path"`
-	Archive bool `short:"a" long:"archive" description:"Disable database retention policies. Keep data indefinitely"`
+	Archive bool `short:"a" long:"archive" description:"Disable database retention policies. Keeps data and network history indefinitely"`
 	Lite    bool `short:"l" long:"lite" description:"Set all database retention policies to one day only"`
 }
 
 var initCmd InitCmd
+
+func (opts *InitCmd) Usage() string {
+	return "<ChainID> [options]"
+}
 
 func (opts *InitCmd) Execute(args []string) error {
 	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
@@ -75,6 +80,8 @@ func (opts *InitCmd) Execute(args []string) error {
 			policy.DataRetentionPeriod = "forever"
 			cfg.SQLStore.RetentionPolicies[i] = policy
 		}
+
+		cfg.NetworkHistory.Store.HistoryRetentionBlockSpan = math.MaxInt64
 	}
 
 	if opts.Lite {
@@ -99,7 +106,7 @@ func Init(ctx context.Context, parser *flags.Parser) error {
 	initCmd = InitCmd{}
 
 	short := "init <chain ID>"
-	long := "Generate the minimal configuration required for a vega data-node to start"
+	long := "Generate the minimal configuration required for a vega data-node to start. The Chain ID is required."
 
 	_, err := parser.AddCommand("init", short, long, &initCmd)
 	return err
