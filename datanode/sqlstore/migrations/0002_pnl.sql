@@ -69,15 +69,15 @@ $$;
 -- +goose StatementEnd
 
 ALTER TABLE positions
-  DROP COLUMN IF EXISTS pending_open_volume         BIGINT NOT NULL,
-  DROP COLUMN IF EXISTS pending_realised_pnl        NUMERIC NOT NULL,
-  DROP COLUMN IF EXISTS pending_unrealised_pnl      NUMERIC NOT NULL,
-  DROP COLUMN IF EXISTS pending_average_entry_price NUMERIC NOT NULL,
-  DROP COLUMN IF EXISTS pending_average_entry_market_price NUMERIC NOT NULL;
+  DROP COLUMN IF EXISTS pending_open_volume,
+  DROP COLUMN IF EXISTS pending_realised_pnl,
+  DROP COLUMN IF EXISTS pending_unrealised_pnl,
+  DROP COLUMN IF EXISTS pending_average_entry_price,
+  DROP COLUMN IF EXISTS pending_average_entry_market_price;
 
 ALTER TABLE positions_current
-  DROP COLUMN IF EXISTS pending_open_volume         BIGINT NOT NULL,
-  DROP COLUMN IF EXISTS pending_realised_pnl        NUMERIC NOT NULL,
-  DROP COLUMN IF EXISTS pending_unrealised_pnl      NUMERIC NOT NULL,
-  DROP COLUMN IF EXISTS pending_average_entry_price NUMERIC NOT NULL,
-  DROP COLUMN IF EXISTS pending_average_entry_market_price NUMERIC NOT NULL;
+  DROP COLUMN IF EXISTS pending_open_volume,
+  DROP COLUMN IF EXISTS pending_realised_pnl,
+  DROP COLUMN IF EXISTS pending_unrealised_pnl,
+  DROP COLUMN IF EXISTS pending_average_entry_price,
+  DROP COLUMN IF EXISTS pending_average_entry_market_price;
