@@ -127,7 +127,6 @@ func (p *Position) handleTradeEvent(ctx context.Context, event tradeEvent) error
 	_ = p.updatePosition(ctx, buyer)
 	seller.UpdateWithTrade(trade, true)
 	return p.updatePosition(ctx, seller)
-
 }
 
 func (p *Position) handlePositionSettlement(ctx context.Context, event positionSettlement) error {
