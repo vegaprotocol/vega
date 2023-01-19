@@ -311,14 +311,11 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	var oi uint64 = 23
 	markPrice := num.NewUint(123)
 
-	// float64(markPrice.Uint64()*oi) * math.Max(rfLong, rfShort) * scalingFactor
-	expectedTargetStake := num.DecimalFromUint(markPrice)
-	expectedTargetStake = expectedTargetStake.Mul(num.DecimalFromUint(num.NewUint(oi)))
 	factor := rfLong
 	if factor.LessThan(rfShort) {
 		factor = rfShort
 	}
-	expectedTargetStake = expectedTargetStake.Mul(factor.Mul(scalingFactor))
+	expectedTargetStake, _ := num.UintFromDecimal(num.DecimalFromUint(markPrice).Mul(num.DecimalFromUint(num.NewUint(oi))).Mul(factor.Mul(scalingFactor)))
 
 	ctrl := gomock.NewController(t)
 	oiCalc := mocks.NewMockOpenInterestCalculator(ctrl)
@@ -330,16 +327,15 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	err := engine.RecordOpenInterest(oi, now)
 	require.NoError(t, err)
 
-	expectedUint, _ := num.UintFromDecimal(expectedTargetStake)
 	targetStakeNow, _ := engine.GetTargetStake(rf, now, markPrice.Clone())
-	require.Equal(t, expectedUint, targetStakeNow)
+	require.Equal(t, expectedTargetStake, targetStakeNow)
 
 	var trades []*types.Trade
 
 	// No change in OI
 	theoreticalOI := oi
 	oiCalc.EXPECT().GetOpenInterestGivenTrades(trades).Return(theoreticalOI).MaxTimes(1)
-	expectedTheoreticalTargetStake, _ := num.UintFromDecimal(expectedTargetStake)
+	expectedTheoreticalTargetStake := expectedTargetStake.Clone()
 	theoreticalTargetStake, _ := engine.GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades)
 
 	require.Equal(t, expectedTheoreticalTargetStake, theoreticalTargetStake)
@@ -355,13 +351,26 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	theoreticalOI = oi + 2
 	oiCalc.EXPECT().GetOpenInterestGivenTrades(trades).Return(theoreticalOI).MaxTimes(1)
 
-	// float64(markPrice.Uint64()*theoreticalOI) * math.Max(rfLong, rfShort) * scalingFactor
-	expectedTargetStake = num.DecimalFromUint(markPrice)
-	expectedTargetStake = expectedTargetStake.Mul(num.DecimalFromUint(num.NewUint(theoreticalOI)))
-	expectedTargetStake = expectedTargetStake.Mul(factor.Mul(scalingFactor))
-	expectedTheoreticalTargetStake, _ = num.UintFromDecimal(expectedTargetStake)
+	expectedTheoreticalTargetStake, _ = num.UintFromDecimal(num.DecimalFromUint(markPrice).Mul(num.DecimalFromUint(num.NewUint(theoreticalOI))).Mul(factor.Mul(scalingFactor)))
 
 	theoreticalTargetStake, _ = engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
 
+	require.Equal(t, expectedTheoreticalTargetStake, theoreticalTargetStake)
+
+	// OI decreases
+	theoreticalOI = oi - 5
+	oiCalc.EXPECT().GetOpenInterestGivenTrades(trades).Return(theoreticalOI).MaxTimes(2)
+
+	now = now.Add(30 * time.Minute)
+	// last observation still within the time window so expecting theoretical target stake stay unchanged
+	theoreticalTargetStake, _ = engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
+	require.Equal(t, expectedTargetStake, theoreticalTargetStake)
+
+	// last observation out of the time window now so expecting theoretical target stake to drop
+	expectedTheoreticalTargetStake, _ = num.UintFromDecimal(num.DecimalFromUint(markPrice).Mul(num.DecimalFromUint(num.NewUint(theoreticalOI))).Mul(factor.Mul(scalingFactor)))
+	now = now.Add(31 * time.Minute)
+	theoreticalTargetStake, _ = engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
+	require.NotEqual(t, expectedTargetStake, theoreticalTargetStake)
+	require.True(t, expectedTheoreticalTargetStake.LT(expectedTargetStake))
 	require.Equal(t, expectedTheoreticalTargetStake, theoreticalTargetStake)
 }

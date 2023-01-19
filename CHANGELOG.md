@@ -9,25 +9,21 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [7349](https://github.com/vegaprotocol/vega/issues/7349) - Add `Access-Control-Max-Age` header with configurable value for the in `core`, `datanode` and `blockexplorer` HTTP `APIs`
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
-- [7335](https://github.com/vegaprotocol/vega/issues/7335) - Fix custom http headers not being returned - add configurable `CORS` headers to `core`, `datanode` and `blockexplorer` HTTP `APIs`
-
-
-## Unreleased 0.67.1
-
-### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
-### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+## 0.67.1
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7374](https://github.com/vegaprotocol/vega/issues/7374) - Add `TLS` support to the `REST` `api`
+- [7349](https://github.com/vegaprotocol/vega/issues/7349) - Add `Access-Control-Max-Age` header with configurable value for the in `core`, `datanode` and `blockexplorer` HTTP `APIs`
+- [7381](https://github.com/vegaprotocol/vega/pull/7381) - Allow target stake to drop within auction once the time window elapses
 
 ### 🐛 Fixes
 - [7366](https://github.com/vegaprotocol/vega/issues/7366) - Fix typos in the API descriptions
+- [7335](https://github.com/vegaprotocol/vega/issues/7335) - Fix custom http headers not being returned - add configurable `CORS` headers to `core`, `datanode` and `blockexplorer` HTTP `APIs`
 
 ## 0.67.0
 

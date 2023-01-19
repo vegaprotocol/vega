@@ -139,12 +139,16 @@ func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *n
 func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) (*num.Uint, bool) {
 	var changed bool
 	theoreticalOI := e.oiCalc.GetOpenInterestGivenTrades(trades)
-	if minTime := e.minTime(now); minTime.After(e.max.Time) {
-		e.computeMaxOI(minTime)
+
+	timeWindowStart := e.minTime(now)
+	maxExpired := timeWindowStart.After(e.max.Time)
+	if maxExpired {
+		e.computeMaxOI(timeWindowStart)
 		changed = true
 	}
+
 	maxOI := e.max.OI
-	if theoreticalOI > maxOI {
+	if theoreticalOI > maxOI || maxExpired {
 		maxOI = theoreticalOI
 	}
 

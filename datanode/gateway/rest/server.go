@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 	protoapiv2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
@@ -38,21 +39,23 @@ const (
 
 // ProxyServer implement a rest server acting as a proxy to the grpc api.
 type ProxyServer struct {
-	log *logging.Logger
 	gateway.Config
-	srv *http.Server
+	log       *logging.Logger
+	vegaPaths paths.Paths
+	srv       *http.Server
 }
 
 // NewProxyServer returns a new instance of the rest proxy server.
-func NewProxyServer(log *logging.Logger, config gateway.Config) *ProxyServer {
+func NewProxyServer(log *logging.Logger, config gateway.Config, vegaPaths paths.Paths) *ProxyServer {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
 	return &ProxyServer{
-		log:    log,
-		Config: config,
-		srv:    nil,
+		log:       log,
+		Config:    config,
+		srv:       nil,
+		vegaPaths: vegaPaths,
 	}
 }
 
@@ -121,13 +124,24 @@ func (s *ProxyServer) Start() error {
 		handler = apmhttp.Wrap(handler)
 	}
 
+	tlsConfig, err := gateway.GenerateTlsConfig(&s.Config, s.vegaPaths)
+	if err != nil {
+		return fmt.Errorf("problem with HTTPS configuration: %w", err)
+	}
+
 	s.srv = &http.Server{
-		Addr:    restAddr,
-		Handler: handler,
+		Addr:      restAddr,
+		Handler:   handler,
+		TLSConfig: tlsConfig,
 	}
 
 	// Start http server on port specified
-	err := s.srv.ListenAndServe()
+	if s.srv.TLSConfig != nil {
+		err = s.srv.ListenAndServeTLS("", "")
+	} else {
+		err = s.srv.ListenAndServe()
+	}
+
 	if err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("failure serving REST proxy API %w", err)
 	}
