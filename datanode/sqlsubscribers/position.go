@@ -175,22 +175,20 @@ func (p *Position) handleSettleMarket(ctx context.Context, event settleMarket) e
 func (p *Position) getPositionsByTrade(ctx context.Context, trade vega.Trade) (buyer entities.Position, seller entities.Position) {
 	mID := entities.MarketID(trade.MarketId)
 	bID := entities.PartyID(trade.Buyer)
-	sID := entities.PartyID(trade.Buyer)
+	sID := entities.PartyID(trade.Seller)
 
 	var err error
 	buyer, err = p.store.GetByMarketAndParty(ctx, mID.String(), bID.String())
 	if errors.Is(err, entities.ErrNotFound) {
 		buyer = entities.NewEmptyPosition(mID, bID)
-	}
-	if err != nil {
+	} else if err != nil {
 		// this is a really bad thing to happen :)
 		panic("unable to query for existing position")
 	}
 	seller, err = p.store.GetByMarketAndParty(ctx, mID.String(), sID.String())
 	if errors.Is(err, entities.ErrNotFound) {
 		seller = entities.NewEmptyPosition(mID, sID)
-	}
-	if err != nil {
+	} else if err != nil {
 		// this is a really bad thing to happen :)
 		panic("unable to query for existing position")
 	}
