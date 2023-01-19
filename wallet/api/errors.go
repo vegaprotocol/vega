@@ -91,7 +91,6 @@ const (
 )
 
 var (
-	ErrAPITokenExpirationCannotBeInThePast                = errors.New("the token expiration date cannot be set to a past date")
 	ErrApplicationCanceledTheRequest                      = errors.New("the application canceled the request")
 	ErrBlockHashIsRequired                                = errors.New("the block hash is required")
 	ErrBlockHeightIsRequired                              = errors.New("the block-height is required")
@@ -117,7 +116,6 @@ var (
 	ErrIsolatedWalletPassphraseIsRequired                 = errors.New("the isolated wallet passphrase is required")
 	ErrLastBlockDataOrNetworkIsRequired                   = errors.New("a network or the last block data is required")
 	ErrMessageIsRequired                                  = errors.New("the message is required")
-	ErrMethodWithoutParameters                            = errors.New("this method does not take any parameters")
 	ErrMultipleNetworkSources                             = errors.New("network sources are mutually exclusive")
 	ErrNetworkAlreadyExists                               = errors.New("a network with the same name already exists")
 	ErrNetworkConfigurationDoesNotHaveGRPCNodes           = errors.New("the network does not have gRPC hosts configured")

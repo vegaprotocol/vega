@@ -77,16 +77,14 @@ func (m *Manager) StartSession(hostname string, w wallet.Wallet) (Token, error) 
 	return newToken, nil
 }
 
-func (m *Manager) EndSessionConnectionWithToken(token Token) error {
+func (m *Manager) EndSessionConnectionWithToken(token Token) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	m.destroySessionToken(token)
-
-	return nil
 }
 
-func (m *Manager) EndSessionConnection(hostname, walletName string) error {
+func (m *Manager) EndSessionConnection(hostname, walletName string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -94,12 +92,10 @@ func (m *Manager) EndSessionConnection(hostname, walletName string) error {
 
 	token, exists := m.sessionFingerprintToToken[fingerprint]
 	if !exists {
-		return nil
+		return
 	}
 
 	m.destroySessionToken(token)
-
-	return nil
 }
 
 func (m *Manager) EndAllSessionConnections() {
