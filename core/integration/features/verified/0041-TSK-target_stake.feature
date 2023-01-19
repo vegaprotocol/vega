@@ -330,3 +330,66 @@ Feature: Target stake
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 110        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 550          | 2000           | 50            |
+
+  Scenario: Target stake can drop during auction
+
+    Given the liquidity monitoring parameters:
+      | name                | triggering ratio | time window | scaling factor |
+      | updated-lqm-params  | 1.0              | 10s         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring |
+      | ETH/DEC21 | updated-lqm-params   |
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | lp_1  | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT | TIF_GTC | lp_1_0    |
+      | lp_1  | ETH/DEC21 | sell | 1000   | 200   | 0                | TYPE_LIMIT | TIF_GTC | lp_1_1    |
+    Then the mark price should be "0" for the market "ETH/DEC21"
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | tt_1  | ETH/DEC21 | sell | 50     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_1_0    |
+      | tt_2  | ETH/DEC21 | buy  | 20     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
+      | tt_3  | ETH/DEC21 | buy  | 30     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
+    And the market data for the market "ETH/DEC21" should be:
+      | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
+      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 550          | 0              | 0             |
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lp_1  | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 10     | submission |
+      | lp1 | lp_1  | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+    And the opening auction period ends for market "ETH/DEC21"
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 110        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 550          | 1000           | 50            |
+
+    When the network moves ahead "5" blocks
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | tt_1  | ETH/DEC21 | sell | 50     | 110   | 0                | TYPE_LIMIT | TIF_GTC |
+      | tt_2  | ETH/DEC21 | buy  | 50     | 110   | 1                | TYPE_LIMIT | TIF_GTC |
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 110        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1100         | 1000           | 100           |
+
+    When the network moves ahead "1" blocks
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
+      | 110        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1100         | 1000           | 100           |
+
+    When the network moves ahead "11" blocks
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
+      | 110        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1100         | 1000           | 100           |
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | tt_1  | ETH/DEC21 | buy  | 50     | 110   | 0                | TYPE_LIMIT | TIF_GTC |
+      | tt_2  | ETH/DEC21 | sell | 50     | 110   | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
+      | 110        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 550          | 1000           | 100           |
+
+    When the network moves ahead "1" blocks
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 110        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 550          | 1000           | 50            |
