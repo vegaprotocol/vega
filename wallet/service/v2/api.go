@@ -70,9 +70,7 @@ func NewAPI(log *zap.Logger, clientAPI ClientAPI, connectionsManager *connection
 			return nil, jsonrpc.NewServerError(api.ErrorCodeAuthenticationFailure, err)
 		}
 
-		if err := connectionsManager.EndSessionConnectionWithToken(vwt.Token()); err != nil {
-			return nil, jsonrpc.NewServerError(api.ErrorCodeAuthenticationFailure, err)
-		}
+		connectionsManager.EndSessionConnectionWithToken(vwt.Token())
 
 		return nil, nil
 	}
