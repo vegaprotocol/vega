@@ -143,6 +143,7 @@ func (m *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck 
 	// set as done.
 	// This is required because we can't bind the service to a context.
 	jobRunner.Go(func(jobCtx context.Context) {
+		defer m.isStarted.Store(false)
 		defer vgzap.Sync(logger)
 
 		// We wait for the job context to be cancelled to stop the service.
