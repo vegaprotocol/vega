@@ -24,7 +24,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7374](https://github.com/vegaprotocol/vega/issues/7374) - Add `TLS` support to the `REST` `api`
 
 ### 🐛 Fixes
 - [7366](https://github.com/vegaprotocol/vega/issues/7366) - Fix typos in the API descriptions

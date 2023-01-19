@@ -53,7 +53,7 @@ func (srv *Server) Start(ctx context.Context) error {
 	}
 
 	if srv.cfg.REST.Enabled {
-		srv.rest = rest.NewProxyServer(srv.log, *srv.cfg)
+		srv.rest = rest.NewProxyServer(srv.log, *srv.cfg, srv.vegaPaths)
 		eg.Go(func() error { return srv.rest.Start() })
 	}
 

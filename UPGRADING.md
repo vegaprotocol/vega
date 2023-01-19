@@ -1,7 +1,7 @@
-Upgrading from v0.53.0 to v0.67
+Upgrading from v0.53.0 to v0.67.1
 =================================
 
-Read through for a list of the major changes between versions 0.53.0 and 0.67, covering: 
+Read through for a list of the major changes between versions 0.53.0 and 0.67.1, covering:
 * [Repository changes](#repository-changes)
 * [Configuration changes](#configuration-changes)
 * [Command line changes](#command-line-changes)
@@ -197,6 +197,40 @@ Usage example:
 **_UlimitNOFile_** - Previously used to increase the number of FD created by the node. It was required for the internal use of Badger, which has been removed.
 
 **_API.ExposeLegacyAPI_**, **_API.LegacyAPIPortOffset_** - The legacy API has been fully removed in the new version, so these fields are unnecessary.
+
+### Settings moved in v0.67
+
+Previously it was only possible to enable HTTPS support on the GraphQL API gateway. In 0.67.1 we also added support for enabling HTTPS on the REST gateway. As a result, the HTTPS settings have moved from the `[Gateway.GraphQL]` to the  `[Gateway]` section.
+
+For example, if your previous settings were
+
+```toml
+[Gateway]
+  ...
+  [Gateway.GraphQL]
+    HTTPSEnabled = true
+    AutoCertDomain = "my.domain.com"
+    CertificateFile = ""
+    KeyFile = ""
+    ...
+```
+They must now become
+```toml
+[Gateway]
+  ...
+  HTTPSEnabled = true
+  AutoCertDomain = "my.domain.com"
+  CertificateFile = ""
+  KeyFile = ""
+  [Gateway.GraphQL]
+    ...
+```
+Please note, that for `autocert` to work then either the GraphQL or REST endpoints *must* be reachable on the internet at `my.domain.com:443` (this is a hard requirement from LetsEncrypt). You could forward the port with a firewall rule or proxy, or simply specify 443 as the port for one of them in the `[Gateway.GraphQL]` or `[Gateway.Rest]` config sections.
+
+If that is not possible, you will need to use [other means](https://letsencrypt.org/getting-started/) to generate and provide a signed certificate to datanode. Specify the path to your certificate & private key in the `CertificateFile` and `KeyFile` options.
+
+Please note, you may either use `autocert` to manage your certificates *or* provide certificate files. Datanode will refuse to start if you both enable `autocert` by specifying an `AutoCertDomain` and also specify a certificate via `CertificateFile`
+
 
 # Command line changes
 
