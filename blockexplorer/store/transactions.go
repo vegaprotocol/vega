@@ -81,6 +81,8 @@ func (s *Store) ListTransactions(ctx context.Context,
 		if key == "tx.submitter" {
 			// tx.submitter is lifted out of attributes and into tx_results by a trigger for faster access
 			predicate = fmt.Sprintf("tx_results.submitter=%s", nextBindVar(&args, value))
+		} else if key == "cmd.type" {
+			predicate = fmt.Sprintf("tx_results.cmd_type=%s", nextBindVar(&args, value))
 		} else if key == "block.height" {
 			// much quicker to filter block height by joining to the block table than looking in attributes
 			predicate = fmt.Sprintf("block_id = (select b.rowid from blocks b where b.height = %s)", nextBindVar(&args, value))
