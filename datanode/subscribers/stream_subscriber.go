@@ -35,7 +35,7 @@ type MarketStreamEvent interface {
 }
 
 type StreamSub struct {
-	ID string
+	StreamID string
 
 	*Base
 	mu                   *sync.Mutex // pointer because types is a value receiver, linter complains
@@ -118,7 +118,7 @@ func NewStreamSub(ctx context.Context, types []events.Type, batchSize int, filte
 	}
 
 	s := &StreamSub{
-		ID:             strId.String(),
+		StreamID:       strId.String(),
 		Base:           NewBase(ctx, cbuf, false),
 		mu:             &sync.Mutex{},
 		types:          expandedTypes,

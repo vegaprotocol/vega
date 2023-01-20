@@ -53,7 +53,7 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 	go func() {
 		data := []*eventspb.BusEvent{}
 		defer func() {
-			fmt.Printf("RELEASE SUBSCRIPTION: %s", sub.ID)
+			fmt.Printf("RELEASE SUBSCRIPTION: %s", sub.StreamID)
 			s.broker.Unsubscribe(id)
 			close(out)
 			cfunc()
@@ -90,7 +90,7 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 
 				if datalength1 > lastLoggedDataLength+100000 {
 					lastLoggedDataLength = datalength1
-					fmt.Printf("SUBSCRIBER %s, DATALENGTH 1: %d\n", sub.ID, lastLoggedDataLength)
+					fmt.Printf("SUBSCRIBER %s, DATALENGTH 1: %d\n", sub.StreamID, lastLoggedDataLength)
 				}
 
 				if datalength1 > 0 {
@@ -103,7 +103,7 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 				datalength2 := len(data)
 				if datalength2 > lastLoggedDataLength+100000 {
 					lastLoggedDataLength = datalength2
-					fmt.Printf("SUBSCRIBER %s, DATALENGTH 2: %d\n", sub.ID, lastLoggedDataLength)
+					fmt.Printf("SUBSCRIBER %s, DATALENGTH 2: %d\n", sub.StreamID, lastLoggedDataLength)
 				}
 
 				// this is a very rare thing, but it can happen
