@@ -14,6 +14,13 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
+
+## Unreleased 0.67.2
+
+### 🐛 Fixes
+- [7387](https://github.com/vegaprotocol/vega/issues/7387) - Allow authorization headers in wallet service
+
+
 ## 0.67.1
 
 ### 🛠 Improvements
