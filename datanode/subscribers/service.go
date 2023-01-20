@@ -53,6 +53,7 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 	go func() {
 		data := []*eventspb.BusEvent{}
 		defer func() {
+			fmt.Printf("RELEASE SUBSCRIPTION: %s", sub.ID)
 			s.broker.Unsubscribe(id)
 			close(out)
 			cfunc()
