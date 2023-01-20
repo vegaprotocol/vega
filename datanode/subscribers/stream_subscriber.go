@@ -15,6 +15,7 @@ package subscribers
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"sync"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -34,6 +35,8 @@ type MarketStreamEvent interface {
 }
 
 type StreamSub struct {
+	ID string
+
 	*Base
 	mu                   *sync.Mutex // pointer because types is a value receiver, linter complains
 	types                []events.Type
@@ -108,7 +111,14 @@ func NewStreamSub(ctx context.Context, types []events.Type, batchSize int, filte
 		// basically  buffer length squared
 		cbuf += cbuf * len(filters) // double or tripple the buffer (len(filters) currently can be 0, 1, or 2)
 	}
+
+	strId, err := uuid.NewUUID()
+	if err != nil {
+		panic(err)
+	}
+
 	s := &StreamSub{
+		ID:             strId.String(),
 		Base:           NewBase(ctx, cbuf, false),
 		mu:             &sync.Mutex{},
 		types:          expandedTypes,
@@ -119,7 +129,7 @@ func NewStreamSub(ctx context.Context, types []events.Type, batchSize int, filte
 		marketEvtsOnly: meo,
 	}
 
-	fmt.Printf("BUF SIZE:%d\n", s.bufSize)
+	fmt.Printf("SUBSCRIBER: %s, BUF SIZE:%d\n", s.ID, s.bufSize)
 
 	// running or not, we're using the channel
 	go s.loop(s.ctx)
@@ -261,7 +271,7 @@ func (s *StreamSub) GetData(ctx context.Context) []*eventspb.BusEvent {
 
 	if dl > s.lastLoggedDataLength+100000 {
 		s.lastLoggedDataLength = dl
-		fmt.Printf("DATALENGTH 3: %d\n", s.lastLoggedDataLength)
+		fmt.Printf("SUBSCRIBER: %s DATALENGTH 3: %d\n", s.ID, s.lastLoggedDataLength)
 	}
 
 	// this seems to happen with a buffer of 1 sometimes

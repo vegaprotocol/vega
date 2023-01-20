@@ -89,7 +89,7 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 
 				if datalength1 > lastLoggedDataLength+100000 {
 					lastLoggedDataLength = datalength1
-					fmt.Printf("DATALENGTH 1: %d\n", lastLoggedDataLength)
+					fmt.Printf("SUBSCRIBER %s, DATALENGTH 1: %d\n", sub.ID, lastLoggedDataLength)
 				}
 
 				if datalength1 > 0 {
@@ -102,7 +102,7 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 				datalength2 := len(data)
 				if datalength2 > lastLoggedDataLength+100000 {
 					lastLoggedDataLength = datalength2
-					fmt.Printf("DATALENGTH 2: %d\n", lastLoggedDataLength)
+					fmt.Printf("SUBSCRIBER %s, DATALENGTH 2: %d\n", sub.ID, lastLoggedDataLength)
 				}
 
 				// this is a very rare thing, but it can happen
