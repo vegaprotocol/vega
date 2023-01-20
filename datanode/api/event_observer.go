@@ -14,6 +14,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -82,6 +83,8 @@ func observeEventBus(log *logging.Logger, config Config, eventBusServer eventBus
 		// client exited, nothing to do
 		return nil //nolint:nilerr
 	}
+
+	fmt.Printf("OBSERVE EVENT BUS REQUEST:  Market %s  Party %s  Type %s\n", req.MarketId, req.PartyId, req.Type)
 
 	// now we will aggregate filter out of the initial request
 	types, err := events.ProtoToInternal(req.Type...)
