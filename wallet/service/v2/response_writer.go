@@ -41,6 +41,7 @@ func (lw *responseWriter) SetStatusCode(statusCode int) {
 func (lw *responseWriter) SetAuthorization(vwt VWT) {
 	lw.writer.Header().Set("Authorization", vwt.String())
 	lw.writer.Header().Set("Access-Control-Allow-Headers", "Authorization")
+	lw.writer.Header().Set("Access-Control-Expose-Headers", "Authorization")
 }
 
 func (lw *responseWriter) WriteHTTPResponse(response *Response) {
