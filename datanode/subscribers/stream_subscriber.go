@@ -129,7 +129,7 @@ func NewStreamSub(ctx context.Context, types []events.Type, batchSize int, filte
 		marketEvtsOnly: meo,
 	}
 
-	fmt.Printf("SUBSCRIBER: %s, BUF SIZE:%d\n", s.ID, s.bufSize)
+	fmt.Printf("SUBSCRIBER: %s, BUF SIZE:%d\n", s.StreamID, s.bufSize)
 
 	// running or not, we're using the channel
 	go s.loop(s.ctx)
@@ -269,9 +269,9 @@ func (s *StreamSub) GetData(ctx context.Context) []*eventspb.BusEvent {
 	}
 	dl := len(s.data)
 
-	if dl > s.lastLoggedDataLength+100000 {
+	if dl > s.lastLoggedDataLength+10000 {
 		s.lastLoggedDataLength = dl
-		fmt.Printf("SUBSCRIBER: %s DATALENGTH 3: %d\n", s.ID, s.lastLoggedDataLength)
+		fmt.Printf("SUBSCRIBER: %s DATALENGTH 3: %d\n", s.StreamID, s.lastLoggedDataLength)
 	}
 
 	// this seems to happen with a buffer of 1 sometimes

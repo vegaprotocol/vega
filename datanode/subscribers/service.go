@@ -88,7 +88,7 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 				data = append(data, sub.UpdateBatchSize(ctx, bs)...)
 				datalength1 := len(data)
 
-				if datalength1 > lastLoggedDataLength+100000 {
+				if datalength1 > lastLoggedDataLength+10000 {
 					lastLoggedDataLength = datalength1
 					fmt.Printf("SUBSCRIBER %s, DATALENGTH 1: %d\n", sub.StreamID, lastLoggedDataLength)
 				}
@@ -101,7 +101,7 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 				data = append(data, sub.GetData(ctx)...)
 
 				datalength2 := len(data)
-				if datalength2 > lastLoggedDataLength+100000 {
+				if datalength2 > lastLoggedDataLength+10000 {
 					lastLoggedDataLength = datalength2
 					fmt.Printf("SUBSCRIBER %s, DATALENGTH 2: %d\n", sub.StreamID, lastLoggedDataLength)
 				}
