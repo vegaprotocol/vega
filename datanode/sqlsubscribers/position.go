@@ -20,8 +20,15 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/pkg/errors"
 )
+
+type tradeEvent interface {
+	MarketID() string
+	IsParty(id string) bool // we don't use this one, but it's to make sure we identify the event correctly
+	Trade() vega.Trade
+}
 
 type positionEventBase interface {
 	events.Event
@@ -84,6 +91,7 @@ func (p *Position) Types() []events.Type {
 		events.SettleDistressedEvent,
 		events.LossSocializationEvent,
 		events.SettleMarketEvent,
+		events.TradeEvent,
 	}
 }
 
@@ -102,9 +110,23 @@ func (p *Position) Push(ctx context.Context, evt events.Event) error {
 		return p.handleSettleDistressed(ctx, event)
 	case settleMarket:
 		return p.handleSettleMarket(ctx, event)
+	case tradeEvent:
+		return p.handleTradeEvent(ctx, event)
 	default:
 		return errors.Errorf("unknown event type %s", evt.Type().String())
 	}
+}
+
+func (p *Position) handleTradeEvent(ctx context.Context, event tradeEvent) error {
+	trade := event.Trade()
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	buyer, seller := p.getPositionsByTrade(ctx, trade)
+	buyer.UpdateWithTrade(trade, false)
+	// this can't really result in an error...
+	_ = p.updatePosition(ctx, buyer)
+	seller.UpdateWithTrade(trade, true)
+	return p.updatePosition(ctx, seller)
 }
 
 func (p *Position) handlePositionSettlement(ctx context.Context, event positionSettlement) error {
@@ -147,6 +169,29 @@ func (p *Position) handleSettleMarket(ctx context.Context, event settleMarket) e
 	}
 
 	return nil
+}
+
+func (p *Position) getPositionsByTrade(ctx context.Context, trade vega.Trade) (buyer entities.Position, seller entities.Position) {
+	mID := entities.MarketID(trade.MarketId)
+	bID := entities.PartyID(trade.Buyer)
+	sID := entities.PartyID(trade.Seller)
+
+	var err error
+	buyer, err = p.store.GetByMarketAndParty(ctx, mID.String(), bID.String())
+	if errors.Is(err, entities.ErrNotFound) {
+		buyer = entities.NewEmptyPosition(mID, bID)
+	} else if err != nil {
+		// this is a really bad thing to happen :)
+		panic("unable to query for existing position")
+	}
+	seller, err = p.store.GetByMarketAndParty(ctx, mID.String(), sID.String())
+	if errors.Is(err, entities.ErrNotFound) {
+		seller = entities.NewEmptyPosition(mID, sID)
+	} else if err != nil {
+		// this is a really bad thing to happen :)
+		panic("unable to query for existing position")
+	}
+	return buyer, seller
 }
 
 func (p *Position) getPosition(ctx context.Context, e positionEventBase) entities.Position {
