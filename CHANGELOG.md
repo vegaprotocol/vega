@@ -14,6 +14,13 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
+
+## 0.67.2
+
+### 🐛 Fixes
+- [7387](https://github.com/vegaprotocol/vega/issues/7387) - Allow authorization headers in wallet service
+
+
 ## 0.67.1
 
 ### 🛠 Improvements
@@ -24,6 +31,7 @@
 ### 🐛 Fixes
 - [7366](https://github.com/vegaprotocol/vega/issues/7366) - Fix typos in the API descriptions
 - [7335](https://github.com/vegaprotocol/vega/issues/7335) - Fix custom http headers not being returned - add configurable `CORS` headers to `core`, `datanode` and `blockexplorer` HTTP `APIs`
+
 
 ## 0.67.0
 
