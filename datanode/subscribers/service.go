@@ -14,6 +14,7 @@ package subscribers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -58,6 +59,8 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 		}()
 		ret := retries
 
+		lastLoggedDataLength := 0
+
 		trySend := func() {
 			t := time.NewTicker(tickDuration)
 			defer t.Stop()
@@ -82,12 +85,26 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 			case bs := <-in:
 				// batch size changed: drain buffer and send data
 				data = append(data, sub.UpdateBatchSize(ctx, bs)...)
-				if len(data) > 0 {
+				datalength1 := len(data)
+
+				if datalength1 > lastLoggedDataLength+100000 {
+					lastLoggedDataLength = datalength1
+					fmt.Printf("DATALENGTH 1: %d\n", lastLoggedDataLength)
+				}
+
+				if datalength1 > 0 {
 					trySend()
 				}
 			default:
 				// wait for actual changes
 				data = append(data, sub.GetData(ctx)...)
+
+				datalength2 := len(data)
+				if datalength2 > lastLoggedDataLength+100000 {
+					lastLoggedDataLength = datalength2
+					fmt.Printf("DATALENGTH 2: %d\n", lastLoggedDataLength)
+				}
+
 				// this is a very rare thing, but it can happen
 				if len(data) > 0 {
 					trySend()

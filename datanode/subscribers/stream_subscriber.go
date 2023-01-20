@@ -14,6 +14,7 @@ package subscribers
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -34,14 +35,15 @@ type MarketStreamEvent interface {
 
 type StreamSub struct {
 	*Base
-	mu             *sync.Mutex // pointer because types is a value receiver, linter complains
-	types          []events.Type
-	data           []StreamEvent
-	filters        []EventFilter
-	bufSize        int
-	changeCount    int
-	updated        chan struct{}
-	marketEvtsOnly bool
+	mu                   *sync.Mutex // pointer because types is a value receiver, linter complains
+	types                []events.Type
+	data                 []StreamEvent
+	filters              []EventFilter
+	bufSize              int
+	changeCount          int
+	updated              chan struct{}
+	marketEvtsOnly       bool
+	lastLoggedDataLength int
 }
 
 // pass in requested batch size + expanded event types.
@@ -100,6 +102,7 @@ func NewStreamSub(ctx context.Context, types []events.Type, batchSize int, filte
 		}
 	}
 	bufLen := getBufSize(batchSize, expandedTypes)
+
 	cbuf := bufLen
 	if len(filters) > 0 {
 		// basically  buffer length squared
@@ -115,6 +118,9 @@ func NewStreamSub(ctx context.Context, types []events.Type, batchSize int, filte
 		updated:        make(chan struct{}), // create a blocking channel for these
 		marketEvtsOnly: meo,
 	}
+
+	fmt.Printf("BUF SIZE:%d\n", s.bufSize)
+
 	// running or not, we're using the channel
 	go s.loop(s.ctx)
 	return s
@@ -252,6 +258,12 @@ func (s *StreamSub) GetData(ctx context.Context) []*eventspb.BusEvent {
 		s.updated = make(chan struct{})
 	}
 	dl := len(s.data)
+
+	if dl > s.lastLoggedDataLength+100000 {
+		s.lastLoggedDataLength = dl
+		fmt.Printf("DATALENGTH 3: %d\n", s.lastLoggedDataLength)
+	}
+
 	// this seems to happen with a buffer of 1 sometimes
 	// or could be an issue if s.updated was closed, but the UpdateBatchSize call acquired a lock first
 	if dl < s.bufSize || dl == 0 {
