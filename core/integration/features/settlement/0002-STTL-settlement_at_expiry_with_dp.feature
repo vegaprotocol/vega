@@ -287,7 +287,9 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | aux2  | ETH/DEC21 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | aux1  | ETH/DEC21 | sell | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
+      | 100000     | TRADING_MODE_CONTINUOUS | 1       | 90001     | 110000    | 200000000    | 3000000000000  | 0             | 99900                 | 100000           | 100100                  |
 
     Then the network moves ahead "2" blocks
 
@@ -309,6 +311,8 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | name             | value |
       | prices.ETH.value | 70000 |
 
+    # settlement price is 70000 which is outside price monitoring bounds, and this will not trigger auction
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the network moves ahead "1" blocks
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "1500000000" for the market "ETH/DEC19"
