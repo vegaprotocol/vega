@@ -313,12 +313,14 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
 
     # settlement price is 70000 which is outside price monitoring bounds, and this will not trigger auction
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    Then the market state should be "STATE_SETTLED" for the market "ETH/DEC21"
     And the network moves ahead "1" blocks
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "1500000000" for the market "ETH/DEC19"
     And the network treasury balance should be "500000000" for the asset "ETH"
 
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
+
 
     When the parties place the following orders:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
