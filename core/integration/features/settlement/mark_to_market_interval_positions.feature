@@ -4,7 +4,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     Given the log normal risk model named "lognormal-risk-model-fish":
       | risk aversion | tau  | mu | r   | sigma |
       | 0.001         | 0.01 | 0  | 0.0 | 1.2   |
-    #calculated risk factor long: 0.336895684; risk factor short: 0.4878731
+    #calculated ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS long: 0.336895684; risk factor short: 0.4878731
 
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
