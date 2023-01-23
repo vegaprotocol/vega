@@ -6,7 +6,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7385](https://github.com/vegaprotocol/vega/issues/7385) - Deprecating the `X-Vega-Connection` HTTP header in `datanode` `API` and `REST` and `GraphQL` gateways.
 
 ### 🛠 Improvements
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
