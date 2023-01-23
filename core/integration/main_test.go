@@ -17,8 +17,10 @@ import (
 	"os"
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/integration/helpers"
 	"code.vegaprotocol.io/vega/core/integration/steps"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
@@ -60,10 +62,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		execsetup = newExecutionTestSetup()
 	})
 	s.BeforeStep(func(step *godog.Step) {
-		// no need to do anything here, the framework will take care of error reporting
+		// record accounts before step
+		execsetup.accountsBefore = execsetup.broker.GetAccounts()
+		execsetup.ledgerMovementsBefore = len(execsetup.broker.GetTransfers(false))
 	})
 	s.AfterStep(func(step *godog.Step, err error) {
-		// no need to do anything here, the framework will take care of error reporting
+		if err := reconcileAccounts(); err != nil {
+			reporter.Fatalf("failed to reconcile account balance changes over the last step from emitted events: %v", err)
+		}
 	})
 	s.AfterScenario(func(s *godog.Scenario, err error) {
 		if err != nil {
@@ -436,4 +442,20 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		execsetup.assetsEngine.SetPermissive()
 		return nil
 	})
+}
+
+func reconcileAccounts() error {
+	return helpers.ReconcileAccountChangesFromTransfers(execsetup.accountsBefore, execsetup.broker.GetAccounts(), extractTransferEventsOverStep())
+}
+
+func extractTransferEventsOverStep() []*vega.LedgerEntry {
+	transfers := execsetup.broker.GetTransfers(false)
+	n := len(transfers) - execsetup.ledgerMovementsBefore
+	eventsInBetween := make([]*vega.LedgerEntry, 0, n)
+	if n > 0 {
+		for i := execsetup.ledgerMovementsBefore; i < len(transfers); i++ {
+			eventsInBetween = append(eventsInBetween, transfers[i])
+		}
+	}
+	return eventsInBetween
 }
