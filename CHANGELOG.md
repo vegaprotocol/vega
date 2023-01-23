@@ -12,7 +12,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7399](https://github.com/vegaprotocol/vega/issues/7399) - Fix issue where market cache not working after restoring from network history
 
 
 ## 0.67.2
