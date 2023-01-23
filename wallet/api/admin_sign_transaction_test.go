@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -397,7 +398,7 @@ func testAdminSigningTransactionWithMalformedTransactionFails(t *testing.T) {
 	})
 
 	// then
-	assertInvalidParams(t, errorDetails, api.ErrTransactionIsNotValidVegaCommand)
+	assertInvalidParams(t, errorDetails, errors.New("the transaction is not a valid Vega command: unknown field \"bob\" in vega.wallet.v1.SubmitTransactionRequest"))
 	assert.Empty(t, result)
 }
 

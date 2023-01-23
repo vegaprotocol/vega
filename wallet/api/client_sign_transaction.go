@@ -51,7 +51,7 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 
 	request := &walletpb.SubmitTransactionRequest{}
 	if err := jsonpb.Unmarshal(strings.NewReader(params.RawTransaction), request); err != nil {
-		return nil, invalidParams(ErrTransactionIsNotValidVegaCommand)
+		return nil, invalidParams(fmt.Errorf("the transaction is not a valid Vega command: %w", err))
 	}
 
 	if !connectedWallet.CanUseKey(params.PublicKey) {
