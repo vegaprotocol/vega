@@ -84,10 +84,6 @@ func testDescribingNetworkWithValidParamsSucceeds(t *testing.T) {
 	// then
 	require.Nil(t, errorDetails)
 	assert.Equal(t, network.Name, result.Name)
-	assert.Equal(t, network.Host, result.Host)
-	assert.Equal(t, network.Port, result.Port)
-	assert.Equal(t, network.LogLevel, result.LogLevel)
-	assert.Equal(t, network.TokenExpiry, result.TokenExpiry)
 	assert.Equal(t, network.API.GRPC.Hosts, result.API.GRPCConfig.Hosts)
 	assert.Equal(t, network.API.GRPC.Retries, result.API.GRPCConfig.Retries)
 	assert.Equal(t, network.API.REST.Hosts, result.API.RESTConfig.Hosts)
@@ -155,7 +151,7 @@ func testGettingInternalErrorDuringNetworkRetrievalFails(t *testing.T) {
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not retrieve the network: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not retrieve the network configuration: %w", assert.AnError))
 }
 
 type describeNetworkHandler struct {

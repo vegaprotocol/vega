@@ -93,12 +93,12 @@ func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 		return nil, invalidParams(errs)
 	}
 
-	node, errDetails := h.getNode(ctx, params)
+	currentNode, errDetails := h.getNode(ctx, params)
 	if errDetails != nil {
 		return nil, errDetails
 	}
 
-	lastBlockData, errDetails := h.getLastBlockDataFromNetwork(ctx, node)
+	lastBlockData, errDetails := h.getLastBlockDataFromNetwork(ctx, currentNode)
 	if errDetails != nil {
 		return nil, errDetails
 	}
@@ -133,7 +133,7 @@ func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 	}
 
 	sentAt := time.Now()
-	txHash, err := node.SendTransaction(ctx, tx, params.SendingMode)
+	txHash, err := currentNode.SendTransaction(ctx, tx, params.SendingMode)
 	if err != nil {
 		return nil, networkErrorFromTransactionError(err)
 	}
@@ -177,11 +177,12 @@ func (h *AdminSendTransaction) getNode(ctx context.Context, params ParsedAdminSe
 		return nil, internalError(fmt.Errorf("could not initializing the node selector: %w", err))
 	}
 
-	node, err := nodeSelector.Node(ctx, noNodeSelectionReporting)
+	currentNode, err := nodeSelector.Node(ctx, noNodeSelectionReporting)
 	if err != nil {
 		return nil, nodeCommunicationError(ErrNoHealthyNodeAvailable)
 	}
-	return node, nil
+
+	return currentNode, nil
 }
 
 func (h *AdminSendTransaction) getLastBlockDataFromNetwork(ctx context.Context, node node.Node) (*AdminLastBlockData, *jsonrpc.ErrorDetails) {

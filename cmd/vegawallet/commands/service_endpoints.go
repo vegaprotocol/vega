@@ -7,12 +7,11 @@ import (
 	"text/template"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
+	svcStoreV1 "code.vegaprotocol.io/vega/wallet/service/store/v1"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	"code.vegaprotocol.io/vega/paths"
-	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
-
 	"github.com/spf13/cobra"
 )
 
@@ -110,23 +109,21 @@ func ListEndpoints(w io.Writer, rf *RootFlags, f *ListEndpointsFlags) error {
 	p := printer.NewInteractivePrinter(w)
 
 	vegaPaths := paths.New(rf.Home)
-	netStore, err := netstore.InitialiseStore(vegaPaths)
+	svcStore, err := svcStoreV1.InitialiseStore(vegaPaths)
 	if err != nil {
-		return fmt.Errorf("couldn't initialise network store: %w", err)
+		return fmt.Errorf("couldn't initialise the service store: %w", err)
 	}
 
-	cfg, err := netStore.GetNetwork(f.Network)
+	cfg, err := svcStore.GetConfig()
 	if err != nil {
-		return fmt.Errorf("couldn't initialise network store: %w", err)
+		return fmt.Errorf("couldn't retrieve the service configuration: %w", err)
 	}
-
-	serviceHost := fmt.Sprintf("http://%v:%v", cfg.Host, cfg.Port)
 
 	str := p.String()
 	defer p.Print(str)
 
 	str.BlueArrow().InfoText("Available endpoints").NextLine()
-	printServiceEndpoints(serviceHost)
+	printServiceEndpoints(cfg.Server.String())
 	str.NextLine()
 
 	return nil

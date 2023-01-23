@@ -111,8 +111,6 @@ var (
 	ErrEncodedTransactionIsNotValidBase64String           = errors.New("the encoded transaction is not a valid base-64 string")
 	ErrEncodedTransactionIsRequired                       = errors.New("the encoded transaction is required")
 	ErrHostnameIsRequired                                 = errors.New("the hostname is required")
-	ErrInvalidLogLevelValue                               = errors.New("invalid log level value")
-	ErrInvalidTokenExpiryValue                            = errors.New("invalid token expiry value")
 	ErrIsolatedWalletPassphraseIsRequired                 = errors.New("the isolated wallet passphrase is required")
 	ErrLastBlockDataOrNetworkIsRequired                   = errors.New("a network or the last block data is required")
 	ErrMessageIsRequired                                  = errors.New("the message is required")

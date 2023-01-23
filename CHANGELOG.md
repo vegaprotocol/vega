@@ -3,13 +3,13 @@
 ## Unreleased 0.68.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6963](https://github.com/vegaprotocol/vega/issues/6963) - Remove the legacy fields from network API
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6962](https://github.com/vegaprotocol/vega/issues/6962) - Add a dedicated configuration for the wallet service
 
 ### 🐛 Fixes
 - [7407](https://github.com/vegaprotocol/vega/issues/7407) - fix `ethereum` timestamp in stake linking in `graphql`
