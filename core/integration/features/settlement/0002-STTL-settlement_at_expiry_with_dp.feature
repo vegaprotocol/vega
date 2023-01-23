@@ -7,17 +7,17 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the following assets are registered:
       | id  | decimal places |
       | ETH | 5              |
-      
+
     And the oracle spec for settlement data filtering data from "0xCAFECAFE" named "ethDec20Oracle":
-      | property         | type         | binding          |
+      | property         | type         | binding         |
       | prices.ETH.value | TYPE_INTEGER | settlement data |
 
     And the oracle spec for trading termination filtering data from "0xCAFECAFE" named "ethDec20Oracle":
       | property           | type         | binding             |
       | trading.terminated | TYPE_BOOLEAN | trading termination |
 
-    And the oracle spec for settlement data filtering data from "0xCAFECAFE1" named "ethDec21Oracle": 
-      | property         | type         | binding          |
+    And the oracle spec for settlement data filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
+      | property         | type         | binding         |
       | prices.ETH.value | TYPE_INTEGER | settlement data |
 
     And the oracle spec for trading termination filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
@@ -31,7 +31,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
 
     And the settlement data decimals for the oracle named "ethDec20Oracle" is given in "2" decimal places
     And the settlement data decimals for the oracle named "ethDec21Oracle" is given in "1" decimal places
-  
+
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.02               |
@@ -43,13 +43,13 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | 0.2  | 0.1   | 10000000    | -10000000     | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | data source config  | decimal places |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle |       3        |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle |       2        |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | data source config | decimal places |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle     | 3              |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 2              |
 
   Scenario: Order cannot be placed once the market is expired (0002-STTL-001)
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset |    amount   |
+      | party  | asset | amount      |
       | party1 | ETH   | 10000000000 |
       | aux1   | ETH   | 10000000000 |
       | aux2   | ETH   | 10000000000 |
@@ -61,11 +61,11 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | lp1 | lpprov | ETH/DEC19 | 900000000         | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     When the parties place the following orders:
-      | party | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC19 | buy  | 1      | 999000   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2  | ETH/DEC19 | sell | 1      | 1001000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | aux1  | ETH/DEC19 | buy  | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
-      | aux2  | ETH/DEC19 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | party | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC19 | buy  | 1      | 999000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC19 | sell | 1      | 1001000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC19 | buy  | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux2  | ETH/DEC19 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
 
     Then the market data for the market "ETH/DEC19" should be:
       | target stake | supplied stake |
@@ -80,17 +80,17 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
     Then the oracles broadcast data signed with "0xCAFECAFE":
       | name             | value |
-      | prices.ETH.value | 4200 |
+      | prices.ETH.value | 4200  |
     Then time is updated to "2020-01-01T01:01:02Z"
 
     When the parties place the following orders:
-      | party  | market id | side | volume |   price  | resulting trades | type       | tif     | reference | error                         |
-      | party1 | ETH/DEC19 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
+      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference | error                         |
+      | party1 | ETH/DEC19 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
 
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - no insurance taken (0002-STTL-002, 0002-STTL-007, 0005-COLL-002, 0015-INSR-002)
     Given the initial insurance pool balance is "1000000000" for the markets:
     Given the parties deposit on asset's general account the following amount:
-      | party    | asset |     amount     |
+      | party    | asset | amount         |
       | party1   | ETH   | 1000000000     |
       | party2   | ETH   | 100000000      |
       | party3   | ETH   | 500000000      |
@@ -101,26 +101,26 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the cumulated balance for all accounts should be worth "10023600000000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount      | fee | side | pegged reference | proportion | offset    | lp type    |
-      | lp1 | party-lp | ETH/DEC19 | 3000000000000          | 0   | buy  | BID              | 50         | 10000     | submission |
-      | lp1 | party-lp | ETH/DEC19 | 3000000000000          | 0   | sell | ASK              | 50         | 10000     | amendment  |
-      | lp2 | party-lp | ETH/DEC21 | 3000000000000          | 0   | buy  | BID              | 50         | 10000     | submission |
-      | lp2 | party-lp | ETH/DEC21 | 3000000000000          | 0   | sell | ASK              | 50         | 10000     | amendment  |
+      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | buy  | BID              | 50         | 10000  | submission |
+      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
+      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | buy  | BID              | 50         | 10000  | submission |
+      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
 
     When the parties place the following orders:
-      | party | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC19 | buy  | 2      | 999000   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2  | ETH/DEC19 | sell | 2      | 1001000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | aux1  | ETH/DEC19 | buy  | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
-      | aux2  | ETH/DEC19 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | party | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC19 | buy  | 2      | 999000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC19 | sell | 2      | 1001000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC19 | buy  | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux2  | ETH/DEC19 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
 
     # Other market
     And the parties place the following orders:
-      | party | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC21 | buy  | 2      | 999000   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2  | ETH/DEC21 | sell | 2      | 1001000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | aux1  | ETH/DEC21 | buy  | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
-      | aux2  | ETH/DEC21 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | party | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC21 | buy  | 2      | 999000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC21 | sell | 2      | 1001000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC21 | buy  | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux2  | ETH/DEC21 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
 
     Then the market data for the market "ETH/DEC19" should be:
       | target stake | supplied stake |
@@ -161,29 +161,29 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
 
     When the parties place the following orders with ticks:
-      | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | sell | 2      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | party2 | ETH/DEC19 | buy  | 1      | 1000000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | party3 | ETH/DEC19 | buy  | 1      | 1000000  | 1                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC19 | sell | 2      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC19 | buy  | 1      | 1000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party3 | ETH/DEC19 | buy  | 1      | 1000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
     And the following trades should be executed:
-      | buyer  | price    | size | seller |
-      | party2 | 1000000  | 1    | party1 |
-      | party3 | 1000000  | 1    | party1 |
+      | buyer  | price   | size | seller |
+      | party2 | 1000000 | 1    | party1 |
+      | party3 | 1000000 | 1    | party1 |
 
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin    | general    |
-      | party1 | ETH   | ETH/DEC19 | 24000000  | 976000000  |
-      | party2 | ETH   | ETH/DEC19 | 13200000  | 86800000   |
-      | party3 | ETH   | ETH/DEC19 | 13200000  | 486800000  |
+      | party  | asset | market id | margin   | general   |
+      | party1 | ETH   | ETH/DEC19 | 24000000 | 976000000 |
+      | party2 | ETH   | ETH/DEC19 | 13200000 | 86800000  |
+      | party3 | ETH   | ETH/DEC19 | 13200000 | 486800000 |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     And the cumulated balance for all accounts should be worth "10023600000000"
 
     # Close positions by aux parties
     When the parties place the following orders:
-      | party | market id | side | volume | price    | resulting trades | type       | tif     |
-      | aux1  | ETH/DEC19 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | buy  | 1      | 1000000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | party | market id | side | volume | price   | resulting trades | type       | tif     |
+      | aux1  | ETH/DEC19 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 1000000 | 1                | TYPE_LIMIT | TIF_GTC |
 
 
     Then the parties should have the following profit and loss:
@@ -198,8 +198,8 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
 
     # Order can't be placed after oracle data is received (expecting party positions to remain unchanged)
     When the parties place the following orders:
-      | party  | market id | side | volume | price    | resulting trades | type       | tif     | error               |
-      | party3 | ETH/DEC19 | buy  | 1      | 2000000  | 0                | TYPE_LIMIT | TIF_GTC | trading not allowed |
+      | party  | market id | side | volume | price   | resulting trades | type       | tif     | error               |
+      | party3 | ETH/DEC19 | buy  | 1      | 2000000 | 0                | TYPE_LIMIT | TIF_GTC | trading not allowed |
 
     And time is updated to "2020-01-01T01:01:01Z"
 
@@ -212,16 +212,16 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
     Then the oracles broadcast data signed with "0xCAFECAFE":
       | name             | value |
-      | prices.ETH.value | 4200 |
+      | prices.ETH.value | 4200  |
 
     Then time is updated to "2020-01-01T01:01:02Z"
 
     Then the parties place the following orders:
-      | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference | error                         |
-      | party1 | ETH/DEC19 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
+      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference | error                         |
+      | party1 | ETH/DEC19 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
 
     And the parties should have the following account balances:
-      | party  | asset | market id | margin |    general |
+      | party  | asset | market id | margin | general    |
       | party1 | ETH   | ETH/DEC19 | 0      | 1191600000 |
       | party2 | ETH   | ETH/DEC19 | 0      | 4200000    |
       | party3 | ETH   | ETH/DEC19 | 0      | 404200000  |
@@ -231,7 +231,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the network treasury balance should be "2000000000" for the asset "ETH"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
-  Scenario: Same as above, but the other market already terminated before the end of scenario, expecting 0 balances in per market insurance pools - all should go to per asset insurance pool (0002-STTL-additional-tests, 0005-COLL-002, 0015-INSR-002)
+  Scenario: Same as above, but the other market already terminated before the end of scenario, expecting 0 balances in per market insurance pools - all should go to per asset insurance pool (0002-STTL-additional-tests, 0005-COLL-002, 0015-INSR-002, 0032-PRIM-018)
 
     Given the initial insurance pool balance is "1000000000" for the markets:
     Given the parties deposit on asset's general account the following amount:
@@ -254,19 +254,19 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | lp2 | lpprov   | ETH/DEC21 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
 
     When the parties place the following orders:
-      | party | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC19 | buy  | 1      | 999000   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2  | ETH/DEC19 | sell | 1      | 1001000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | aux1  | ETH/DEC19 | buy  | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
-      | aux2  | ETH/DEC19 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | party | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC19 | buy  | 1      | 999000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC19 | sell | 1      | 1001000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC19 | buy  | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux2  | ETH/DEC19 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
 
     # Other market
     And the parties place the following orders:
-      | party | market id | side | volume | price   | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC21 | buy  | 1      | 99900   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2  | ETH/DEC21 | sell | 1      | 100100  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | aux1  | ETH/DEC21 | buy  | 1      | 100000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
-      | aux2  | ETH/DEC21 | sell | 1      | 100000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | party | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC21 | buy  | 1      | 99900  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC21 | sell | 1      | 100100 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC21 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux2  | ETH/DEC21 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
 
     Then the market data for the market "ETH/DEC19" should be:
       | target stake | supplied stake |
@@ -283,9 +283,9 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the market state should be "STATE_ACTIVE" for the market "ETH/DEC21"
 
     Then the parties place the following orders:
-      | party | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | aux2  | ETH/DEC21 | buy  | 1      | 100000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | aux1  | ETH/DEC21 | sell | 1      | 100000  | 1                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | party | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | aux2  | ETH/DEC21 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC21 | sell | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
@@ -306,8 +306,8 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the network treasury balance should be "0" for the asset "ETH"
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
-      | name             | value  |
-      | prices.ETH.value | 70000  |
+      | name             | value |
+      | prices.ETH.value | 70000 |
 
     And the network moves ahead "1" blocks
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
@@ -317,18 +317,18 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
 
     When the parties place the following orders:
-      | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | sell | 2      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | party2 | ETH/DEC19 | buy  | 1      | 1000000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | party3 | ETH/DEC19 | buy  | 1      | 1000000  | 1                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC19 | sell | 2      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC19 | buy  | 1      | 1000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party3 | ETH/DEC19 | buy  | 1      | 1000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
     And the cumulated balance for all accounts should be worth "20023600000000"
 
     # Close positions by aux parties
     When the parties place the following orders with ticks:
-      | party | market id | side | volume | price    | resulting trades | type       | tif     |
-      | aux1  | ETH/DEC19 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | buy  | 1      | 1000000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | party | market id | side | volume | price   | resulting trades | type       | tif     |
+      | aux1  | ETH/DEC19 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 1000000 | 1                | TYPE_LIMIT | TIF_GTC |
 
     When the oracles broadcast data signed with "0xCAFECAFE":
       | name               | value |
@@ -344,8 +344,8 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     Then time is updated to "2020-01-01T01:01:02Z"
 
     Then the parties place the following orders:
-      | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference | error                         |
-      | party1 | ETH/DEC19 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
+      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference | error                         |
+      | party1 | ETH/DEC19 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general    |
@@ -361,7 +361,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - insurance covers losses (0002-STTL-008)
     Given the initial insurance pool balance is "100000000" for the markets:
     Given the parties deposit on asset's general account the following amount:
-      | party    | asset |      amount    |
+      | party    | asset | amount         |
       | party1   | ETH   | 1000000000     |
       | party2   | ETH   | 100000000      |
       | aux1     | ETH   | 10000000000    |
@@ -375,19 +375,19 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
 
     When the parties place the following orders:
-      | party | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC19 | buy  | 1      | 999000   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2  | ETH/DEC19 | sell | 1      | 1001000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | aux1  | ETH/DEC19 | buy  | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
-      | aux2  | ETH/DEC19 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | party | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC19 | buy  | 1      | 999000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC19 | sell | 1      | 1001000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC19 | buy  | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux2  | ETH/DEC19 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
 
     # Other market
     And the parties place the following orders:
-      | party | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC21 | buy  | 1      | 999000   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2  | ETH/DEC21 | sell | 1      | 1001000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | aux1  | ETH/DEC21 | buy  | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
-      | aux2  | ETH/DEC21 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | party | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC21 | buy  | 1      | 999000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC21 | sell | 1      | 1001000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC21 | buy  | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux2  | ETH/DEC21 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
 
     Then the opening auction period ends for market "ETH/DEC19"
     Then the opening auction period ends for market "ETH/DEC21"
@@ -398,9 +398,9 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     When the parties place the following orders:
-      | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | sell | 2      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | party2 | ETH/DEC19 | buy  | 2      | 1000000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC19 | sell | 2      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC19 | buy  | 2      | 1000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
@@ -412,9 +412,9 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
 
     # Close positions by aux parties
     When the parties place the following orders with ticks:
-      | party | market id | side | volume |    price | resulting trades | type       | tif     |
-      | aux1  | ETH/DEC19 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | buy  | 1      | 1000000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | party | market id | side | volume | price   | resulting trades | type       | tif     |
+      | aux1  | ETH/DEC19 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 1000000 | 1                | TYPE_LIMIT | TIF_GTC |
 
     When the oracles broadcast data signed with "0xCAFECAFE":
       | name               | value |
@@ -423,13 +423,13 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
     Then the oracles broadcast data signed with "0xCAFECAFE":
       | name             | value |
-      | prices.ETH.value | 4200 |
+      | prices.ETH.value | 4200  |
     Then time is updated to "2020-01-01T01:01:02Z"
 
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general     |
-      | party1 | ETH   | ETH/DEC19 | 0      | 1191600000  |
-      | party2 | ETH   | ETH/DEC19 | 0      | 0           |
+      | party  | asset | market id | margin | general    |
+      | party1 | ETH   | ETH/DEC19 | 0      | 1191600000 |
+      | party2 | ETH   | ETH/DEC19 | 0      | 0          |
 
     And the cumulated balance for all accounts should be worth "10021300000000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
@@ -456,19 +456,19 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
 
     When the parties place the following orders:
-      | party | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC19 | buy  | 1      | 999000   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2  | ETH/DEC19 | sell | 1      | 1001000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | aux1  | ETH/DEC19 | buy  | 2      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
-      | aux2  | ETH/DEC19 | sell | 2      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | party | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC19 | buy  | 1      | 999000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC19 | sell | 1      | 1001000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC19 | buy  | 2      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux2  | ETH/DEC19 | sell | 2      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
 
     # Other market
     And the parties place the following orders:
-      | party | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC21 | buy  | 1      | 999000   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2  | ETH/DEC21 | sell | 1      | 1001000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | aux1  | ETH/DEC21 | buy  | 2      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
-      | aux2  | ETH/DEC21 | sell | 2      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | party | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC21 | buy  | 1      | 999000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC21 | sell | 1      | 1001000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC21 | buy  | 2      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux2  | ETH/DEC21 | sell | 2      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
 
     Then the opening auction period ends for market "ETH/DEC19"
     Then the opening auction period ends for market "ETH/DEC21"
@@ -479,13 +479,13 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     When the parties place the following orders with ticks:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | sell | 2      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | party2 | ETH/DEC19 | buy  | 2      | 1000000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC19 | sell | 2      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC19 | buy  | 2      | 1000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin      | general      |
-      | party1 | ETH   | ETH/DEC19 | 24000000    | 976000000    |
-      | party2 | ETH   | ETH/DEC19 | 26400000    | 73600000     |
+      | party  | asset | market id | margin   | general   |
+      | party1 | ETH   | ETH/DEC19 | 24000000 | 976000000 |
+      | party2 | ETH   | ETH/DEC19 | 26400000 | 73600000  |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     And the cumulated balance for all accounts should be worth "10201200000000"
 
@@ -530,20 +530,20 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | lp1 | party-lp | ETH/DEC21 | 3000000000000     | 0   | sell | ASK              | 50         | 1000   | amendment  |
 
     When the parties place the following orders:
-      | party | market id | side | volume | price   | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC21 | buy  | 1      | 89000   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2  | ETH/DEC21 | sell | 1      | 111000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | aux1  | ETH/DEC21 | buy  | 2      | 100000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
-      | aux2  | ETH/DEC21 | sell | 2      | 100000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | party | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC21 | buy  | 1      | 89000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC21 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC21 | buy  | 2      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux2  | ETH/DEC21 | sell | 2      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
     Then the opening auction period ends for market "ETH/DEC21"
     And the mark price should be "100000" for the market "ETH/DEC21"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     When the parties place the following orders with ticks:
-      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC21 | sell | 1      | 100000  | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
-      | party2 | ETH/DEC21 | buy  | 1      | 100000  | 1                | TYPE_LIMIT | TIF_GTC | ref-6     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC21 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
+      | party2 | ETH/DEC21 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-6     |
 
     And the mark price should be "100000" for the market "ETH/DEC21"
 
@@ -561,9 +561,9 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And then the network moves ahead "10" blocks
 
     When the parties place the following orders with ticks:
-      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC21 | sell | 1      | 110100  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
-      | party2 | ETH/DEC21 | buy  | 1      | 110100  | 0                | TYPE_LIMIT | TIF_GTC | ref-8     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC21 | sell | 1      | 110100 | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
+      | party2 | ETH/DEC21 | buy  | 1      | 110100 | 0                | TYPE_LIMIT | TIF_GTC | ref-8     |
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC21"
     And the market state should be "STATE_SUSPENDED" for the market "ETH/DEC21"
@@ -600,12 +600,13 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | party2 | 1      | 0              | 0            |
 
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC21 | 0      | 1020500000   |
-      | party2 | ETH   | ETH/DEC21 | 0      | 77500000     |
+      | party  | asset | market id | margin | general    |
+      | party1 | ETH   | ETH/DEC21 | 0      | 1020500000 |
+      | party2 | ETH   | ETH/DEC21 | 0      | 77500000   |
 
     And the cumulated balance for all accounts should be worth "10201200000000"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the network treasury balance should be "25000000" for the asset "ETH"
     And the insurance pool balance should be "75000000" for the market "ETH/DEC19"
+
 
