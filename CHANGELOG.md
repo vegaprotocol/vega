@@ -12,6 +12,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
+- [7407](https://github.com/vegaprotocol/vega/issues/7407) - fix `ethereum` timestamp in stake linking in `graphql`
 - [7399](https://github.com/vegaprotocol/vega/issues/7399) - Fix issue where market cache not working after restoring from network history
 
 
