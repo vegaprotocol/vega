@@ -1528,6 +1528,8 @@ type ComplexityRoot struct {
 		ChainId               func(childComplexity int) int
 		ChainVersion          func(childComplexity int) int
 		CurrentTime           func(childComplexity int) int
+		EventCount            func(childComplexity int) int
+		EventsPerSecond       func(childComplexity int) int
 		GenesisTime           func(childComplexity int) int
 		OrdersPerSecond       func(childComplexity int) int
 		Status                func(childComplexity int) int
@@ -2206,6 +2208,8 @@ type StatisticsResolver interface {
 	TotalCreateOrder(ctx context.Context, obj *v13.Statistics) (string, error)
 	TotalOrders(ctx context.Context, obj *v13.Statistics) (string, error)
 	TotalTrades(ctx context.Context, obj *v13.Statistics) (string, error)
+	EventCount(ctx context.Context, obj *v13.Statistics) (string, error)
+	EventsPerSecond(ctx context.Context, obj *v13.Statistics) (string, error)
 
 	BlockDuration(ctx context.Context, obj *v13.Statistics) (string, error)
 }
@@ -8406,6 +8410,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Statistics.CurrentTime(childComplexity), true
+
+	case "Statistics.eventCount":
+		if e.complexity.Statistics.EventCount == nil {
+			break
+		}
+
+		return e.complexity.Statistics.EventCount(childComplexity), true
+
+	case "Statistics.eventsPerSecond":
+		if e.complexity.Statistics.EventsPerSecond == nil {
+			break
+		}
+
+		return e.complexity.Statistics.EventsPerSecond(childComplexity), true
 
 	case "Statistics.genesisTime":
 		if e.complexity.Statistics.GenesisTime == nil {
@@ -47831,6 +47849,10 @@ func (ec *executionContext) fieldContext_Query_statistics(ctx context.Context, f
 				return ec.fieldContext_Statistics_totalOrders(ctx, field)
 			case "totalTrades":
 				return ec.fieldContext_Statistics_totalTrades(ctx, field)
+			case "eventCount":
+				return ec.fieldContext_Statistics_eventCount(ctx, field)
+			case "eventsPerSecond":
+				return ec.fieldContext_Statistics_eventsPerSecond(ctx, field)
 			case "appVersionHash":
 				return ec.fieldContext_Statistics_appVersionHash(ctx, field)
 			case "appVersion":
@@ -52294,6 +52316,94 @@ func (ec *executionContext) _Statistics_totalTrades(ctx context.Context, field g
 }
 
 func (ec *executionContext) fieldContext_Statistics_totalTrades(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Statistics",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Statistics_eventCount(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Statistics_eventCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Statistics().EventCount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Statistics_eventCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Statistics",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Statistics_eventsPerSecond(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Statistics_eventsPerSecond(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Statistics().EventsPerSecond(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Statistics_eventsPerSecond(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Statistics",
 		Field:      field,
@@ -74911,6 +75021,46 @@ func (ec *executionContext) _Statistics(ctx context.Context, sel ast.SelectionSe
 					}
 				}()
 				res = ec._Statistics_totalTrades(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "eventCount":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Statistics_eventCount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "eventsPerSecond":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Statistics_eventsPerSecond(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
