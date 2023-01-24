@@ -15,7 +15,7 @@
 - [7407](https://github.com/vegaprotocol/vega/issues/7407) - fix `ethereum` timestamp in stake linking in `graphql`
 - [7420](https://github.com/vegaprotocol/vega/issues/7420) - `clearFeeActivity` now clears fee activity
 - [7399](https://github.com/vegaprotocol/vega/issues/7399) - Fix issue where market cache not working after restoring from network history
-- [7169](https://github.com/vegaprotocol/vega/issues/7169) - Fix migration, account for exisitng position data
+- [7169](https://github.com/vegaprotocol/vega/issues/7169) - Fix migration, account for existing position data
 
 
 ## 0.67.2
