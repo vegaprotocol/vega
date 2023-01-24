@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7289](https://github.com/vegaprotocol/vega/issues/7289) - `positionsConnection` query added to `GraphQL`root query with filter for multiple parties and markets
 
 ### 🐛 Fixes
 - [7407](https://github.com/vegaprotocol/vega/issues/7407) - fix `ethereum` timestamp in stake linking in `graphql`

@@ -52,10 +52,16 @@ type TradingDataServiceClient interface {
 	//
 	// Subscribe to a stream of orders
 	ObserveOrders(ctx context.Context, in *ObserveOrdersRequest, opts ...grpc.CallOption) (TradingDataService_ObserveOrdersClient, error)
+	// Deprecated: Do not use.
 	// Positions
 	//
 	// Get a list of positions by party (public key) using cursor based pagination
+	// Deprecated: use ListAllPositions instead
 	ListPositions(ctx context.Context, in *ListPositionsRequest, opts ...grpc.CallOption) (*ListPositionsResponse, error)
+	// Positions
+	//
+	// Get a list of positions by party (public key) using cursor based pagination
+	ListAllPositions(ctx context.Context, in *ListAllPositionsRequest, opts ...grpc.CallOption) (*ListAllPositionsResponse, error)
 	// Positions subscription
 	//
 	// Subscribe to a stream of positions
@@ -504,9 +510,19 @@ func (x *tradingDataServiceObserveOrdersClient) Recv() (*ObserveOrdersResponse, 
 	return m, nil
 }
 
+// Deprecated: Do not use.
 func (c *tradingDataServiceClient) ListPositions(ctx context.Context, in *ListPositionsRequest, opts ...grpc.CallOption) (*ListPositionsResponse, error) {
 	out := new(ListPositionsResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListPositions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListAllPositions(ctx context.Context, in *ListAllPositionsRequest, opts ...grpc.CallOption) (*ListAllPositionsResponse, error) {
+	out := new(ListAllPositionsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListAllPositions", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1552,10 +1568,16 @@ type TradingDataServiceServer interface {
 	//
 	// Subscribe to a stream of orders
 	ObserveOrders(*ObserveOrdersRequest, TradingDataService_ObserveOrdersServer) error
+	// Deprecated: Do not use.
 	// Positions
 	//
 	// Get a list of positions by party (public key) using cursor based pagination
+	// Deprecated: use ListAllPositions instead
 	ListPositions(context.Context, *ListPositionsRequest) (*ListPositionsResponse, error)
+	// Positions
+	//
+	// Get a list of positions by party (public key) using cursor based pagination
+	ListAllPositions(context.Context, *ListAllPositionsRequest) (*ListAllPositionsResponse, error)
 	// Positions subscription
 	//
 	// Subscribe to a stream of positions
@@ -1915,6 +1937,9 @@ func (UnimplementedTradingDataServiceServer) ObserveOrders(*ObserveOrdersRequest
 }
 func (UnimplementedTradingDataServiceServer) ListPositions(context.Context, *ListPositionsRequest) (*ListPositionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPositions not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListAllPositions(context.Context, *ListAllPositionsRequest) (*ListAllPositionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAllPositions not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ObservePositions(*ObservePositionsRequest, TradingDataService_ObservePositionsServer) error {
 	return status.Errorf(codes.Unimplemented, "method ObservePositions not implemented")
@@ -2303,6 +2328,24 @@ func _TradingDataService_ListPositions_Handler(srv interface{}, ctx context.Cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).ListPositions(ctx, req.(*ListPositionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListAllPositions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAllPositionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListAllPositions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListAllPositions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListAllPositions(ctx, req.(*ListAllPositionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3752,6 +3795,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListPositions",
 			Handler:    _TradingDataService_ListPositions_Handler,
+		},
+		{
+			MethodName: "ListAllPositions",
+			Handler:    _TradingDataService_ListAllPositions_Handler,
 		},
 		{
 			MethodName: "ListLedgerEntries",
