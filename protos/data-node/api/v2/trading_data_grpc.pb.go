@@ -53,7 +53,7 @@ type TradingDataServiceClient interface {
 	// Subscribe to a stream of orders
 	ObserveOrders(ctx context.Context, in *ObserveOrdersRequest, opts ...grpc.CallOption) (TradingDataService_ObserveOrdersClient, error)
 	// Deprecated: Do not use.
-	// Positions
+	// Positions (deprecated)
 	//
 	// Get a list of positions by party (public key) using cursor based pagination
 	// Deprecated: use ListAllPositions instead
@@ -1569,7 +1569,7 @@ type TradingDataServiceServer interface {
 	// Subscribe to a stream of orders
 	ObserveOrders(*ObserveOrdersRequest, TradingDataService_ObserveOrdersServer) error
 	// Deprecated: Do not use.
-	// Positions
+	// Positions (deprecated)
 	//
 	// Get a list of positions by party (public key) using cursor based pagination
 	// Deprecated: use ListAllPositions instead
