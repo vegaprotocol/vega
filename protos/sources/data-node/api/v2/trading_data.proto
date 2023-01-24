@@ -60,7 +60,7 @@ service TradingDataService {
     // Subscribe to a stream of orders
     rpc ObserveOrders(ObserveOrdersRequest) returns (stream ObserveOrdersResponse);
 
-    // Positions
+    // Positions (deprecated)
     //
     // Get a list of positions by party (public key) using cursor based pagination
     // Deprecated: use ListAllPositions instead

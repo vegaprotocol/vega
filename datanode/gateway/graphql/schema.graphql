@@ -4043,6 +4043,7 @@ type PositionEdge {
   cursor: String
 }
 
+"Filter to apply to the positions connection query"
 input PositionsFilter {
   partyIds: [ID!]
   marketIds: [ID!]
