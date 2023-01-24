@@ -326,7 +326,7 @@ message Statistics {
   string epoch_expiry_time = 38;
   // Number of events in the last block
   uint64 event_count = 39;
-  // Rate of events per second in total
+  // Rate of events per second in the last block
   uint64 events_per_second = 40;
 }
 

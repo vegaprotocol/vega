@@ -1248,7 +1248,7 @@ type Statistics struct {
 	EpochExpiryTime string `protobuf:"bytes,38,opt,name=epoch_expiry_time,json=epochExpiryTime,proto3" json:"epoch_expiry_time,omitempty"`
 	// Number of events in the last block
 	EventCount uint64 `protobuf:"varint,39,opt,name=event_count,json=eventCount,proto3" json:"event_count,omitempty"`
-	// Rate of events per second in total
+	// Rate of events per second in the last block
 	EventsPerSecond uint64 `protobuf:"varint,40,opt,name=events_per_second,json=eventsPerSecond,proto3" json:"events_per_second,omitempty"`
 }
 
