@@ -541,6 +541,8 @@ type Query {
     id: ID
     "Optional pagination information"
     pagination: Pagination
+    "Whether to include markets that have settled (defaults to true)"
+    includeSettled: Boolean
   ): MarketConnection
 
   "The most recent history segment"

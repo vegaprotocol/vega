@@ -124,7 +124,7 @@ order by id, vega_time desc
 	return markets, err
 }
 
-func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination) ([]entities.Market, entities.PageInfo, error) {
+func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, includeSettled bool) ([]entities.Market, entities.PageInfo, error) {
 	if marketID != "" {
 		market, err := m.GetByID(ctx, marketID)
 		if err != nil {
@@ -142,9 +142,14 @@ func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination e
 	markets := make([]entities.Market, 0)
 	args := make([]interface{}, 0)
 
+	settledClause := ""
+	if !includeSettled {
+		settledClause = " AND state != 'STATE_SETTLED'"
+	}
+
 	query := fmt.Sprintf(`select %s
 		from markets_current
-		where state != 'STATE_REJECTED'`, sqlMarketsColumns)
+		where state != 'STATE_REJECTED' %s`, sqlMarketsColumns, settledClause)
 
 	var (
 		pageInfo entities.PageInfo

@@ -187,13 +187,13 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 	})
 
 	name := "BTC/DEC19"
-	vMarkets, err := root.Query().MarketsConnection(ctx, &name, nil)
+	vMarkets, err := root.Query().MarketsConnection(ctx, &name, nil, nil)
 	assert.Nil(t, err)
 	assert.NotNil(t, vMarkets)
 	assert.Len(t, vMarkets.Edges, 1)
 
 	name = "ETH/USD18"
-	vMarkets, err = root.Query().MarketsConnection(ctx, &name, nil)
+	vMarkets, err = root.Query().MarketsConnection(ctx, &name, nil, nil)
 	assert.Error(t, err)
 	assert.Nil(t, vMarkets)
 
