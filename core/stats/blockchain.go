@@ -64,6 +64,7 @@ func (b *Blockchain) NewBatch() {
 	b.currentOrdersInBatch = 0
 	b.currentTradesInBatch = 0
 	b.lastBlockEventCount = b.currentBlockEventCount
+	b.currentBlockEventCount = 0
 }
 
 func (b *Blockchain) ResetBatchTotals() {
