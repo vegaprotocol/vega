@@ -297,20 +297,21 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 // and ensuring any pre-existing snapshot database is removed first. It is to be called
 // by a chain that is starting from block 0.
 func (e *Engine) ClearAndInitialise() error {
-	p := filepath.Join(e.dbPath, SnapshotDBName+".db")
+	for _, name := range []string{SnapshotDBName, SnapshotMetaDBName} {
+		p := filepath.Join(e.dbPath, name+".db")
 
-	exists, err := vgfs.PathExists(p)
-	if err != nil {
-		return err
-	}
-
-	if exists {
-		e.log.Warn("removing old snapshot data", logging.String("dbpath", p))
-		if err := os.RemoveAll(p); err != nil {
+		exists, err := vgfs.PathExists(p)
+		if err != nil {
 			return err
 		}
-	}
 
+		if exists {
+			e.log.Warn("removing old snapshot data", logging.String("dbpath", p))
+			if err := os.RemoveAll(p); err != nil {
+				return err
+			}
+		}
+	}
 	if err := e.initialiseTree(); err != nil {
 		return err
 	}
@@ -376,6 +377,7 @@ func (e *Engine) CheckLoaded() (bool, error) {
 		// forced chain replay, we need to remove all old snapshots and start again
 		e.initialised = false
 		e.db.Close()
+		e.metadb.Close()
 		return false, e.ClearAndInitialise()
 	}
 
@@ -458,7 +460,7 @@ func (e *Engine) initialiseTree() error {
 				OpenFilesCacher: opt.NoCacher,
 			})
 		if err != nil {
-			return fmt.Errorf("could not open goleveldb: %w", err)
+			return fmt.Errorf("could not open meta goleveldb: %w", err)
 		}
 		e.metadb = NewMetaDB(NewMetaGoLevelDB(metaConn))
 	default:
