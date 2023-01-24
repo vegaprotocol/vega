@@ -1151,7 +1151,7 @@ func (app *App) DeliverBatchMarketInstructions(
 	}
 
 	return NewBMIProcessor(app.log, app.exec).
-		ProcessBatch(ctx, batch, tx.Party(), deterministicID)
+		ProcessBatch(ctx, batch, tx.Party(), deterministicID, app.stats)
 }
 
 func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) error {
