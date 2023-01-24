@@ -146,7 +146,7 @@ func newServices(
 		vegaPaths:        vegaPaths,
 	}
 
-	svcs.broker, err = broker.New(svcs.ctx, svcs.log, svcs.conf.Broker)
+	svcs.broker, err = broker.New(svcs.ctx, svcs.log, svcs.conf.Broker, stats.Blockchain)
 	if err != nil {
 		svcs.log.Error("unable to initialise broker", logging.Error(err))
 		return nil, err

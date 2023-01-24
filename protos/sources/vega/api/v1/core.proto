@@ -324,6 +324,10 @@ message Statistics {
   string epoch_start_time = 37;
   // Epoch expected end time
   string epoch_expiry_time = 38;
+  // Number of events in the last block
+  uint64 event_count = 39;
+  // Rate of events per second in total
+  uint64 events_per_second = 40;
 }
 
 // A request to get the height of the very last block processed

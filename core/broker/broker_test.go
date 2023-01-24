@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/stats"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/protos/vega"
@@ -43,6 +44,7 @@ type brokerTst struct {
 	cfunc context.CancelFunc
 	ctx   context.Context
 	ctrl  *gomock.Controller
+	stats *stats.Blockchain
 }
 
 type evt struct {
@@ -59,12 +61,14 @@ func getBroker(t *testing.T) *brokerTst {
 	t.Helper()
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
-	broker, _ := broker.New(ctx, logging.NewTestLogger(), broker.NewDefaultConfig())
+	statistics := stats.NewBlockchain()
+	broker, _ := broker.New(ctx, logging.NewTestLogger(), broker.NewDefaultConfig(), statistics)
 	return &brokerTst{
 		Broker: broker,
 		cfunc:  cfunc,
 		ctx:    ctx,
 		ctrl:   ctrl,
+		stats:  statistics,
 	}
 }
 
@@ -364,6 +368,9 @@ func testSendBatch(t *testing.T) {
 	// send events
 	tstBroker.SendBatch(data)
 	wg.Wait()
+	require.Equal(t, uint64(3), tstBroker.stats.CurrentEventsInBatch())
+	tstBroker.stats.NewBatch()
+	require.Equal(t, uint64(3), tstBroker.stats.TotalEventsLastBatch())
 }
 
 func testSendBatchChannel(t *testing.T) {
@@ -496,6 +503,9 @@ func testSkipOptional(t *testing.T) {
 	tstBroker.Unsubscribe(k1)
 	// ensure unsubscribe has returned
 	twg.Wait()
+	require.Equal(t, uint64(len(evts)), tstBroker.stats.CurrentEventsInBatch())
+	tstBroker.stats.NewBatch()
+	require.Equal(t, uint64(len(evts)), tstBroker.stats.TotalEventsLastBatch())
 
 	// make a map to check all sequences
 	seq := map[uint64]struct{}{}
@@ -719,7 +729,7 @@ func testStreamsOverSocket(t *testing.T) {
 	err = sock.Listen(addr)
 	assert.NoError(t, err)
 
-	broker, _ := broker.New(ctx, logging.NewTestLogger(), config)
+	broker, _ := broker.New(ctx, logging.NewTestLogger(), config, stats.NewBlockchain())
 
 	defer func() {
 		cfunc()
@@ -763,7 +773,7 @@ func testStopsProcessOnStreamError(t *testing.T) {
 		err = sock.Listen(addr)
 		assert.NoError(t, err)
 
-		broker, _ := broker.New(ctx, logging.NewTestLogger(), config)
+		broker, _ := broker.New(ctx, logging.NewTestLogger(), config, stats.NewBlockchain())
 
 		defer func() {
 			cfunc()
