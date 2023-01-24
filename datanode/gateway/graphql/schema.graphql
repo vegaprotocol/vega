@@ -1239,6 +1239,12 @@ type Statistics {
   "Total number of trades"
   totalTrades: String!
 
+  "Total number of events on the last block"
+  eventCount: String!
+
+  "The number of events per second on the last block"
+  eventsPerSecond: String!
+
   "Version commit hash of the Vega node"
   appVersionHash: String!
 
