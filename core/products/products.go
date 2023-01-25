@@ -50,6 +50,7 @@ type Product interface {
 	NotifyOnSettlementData(listener func(context.Context, *num.Numeric))
 	UnsubscribeTradingTerminated(ctx context.Context)
 	UnsubscribeSettlementData(ctx context.Context)
+	RestoreSettlementData(*num.Numeric)
 }
 
 // New instance a new product from a Market framework product configuration.
