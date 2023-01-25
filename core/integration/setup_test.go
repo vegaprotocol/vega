@@ -92,6 +92,7 @@ type executionTestSetup struct {
 	// record accounts before steps
 	accountsBefore        []protos.Account
 	ledgerMovementsBefore int
+	depositsBefore        int
 
 	ntry           *notary.SnapshotNotary
 	stateVarEngine *stubs.StateVarStub

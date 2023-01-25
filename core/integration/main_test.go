@@ -65,6 +65,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		// record accounts before step
 		execsetup.accountsBefore = execsetup.broker.GetAccounts()
 		execsetup.ledgerMovementsBefore = len(execsetup.broker.GetTransfers(false))
+		execsetup.depositsBefore = len(execsetup.broker.GetDeposits())
 	})
 	s.AfterStep(func(step *godog.Step, err error) {
 		if err := reconcileAccounts(); err != nil {
@@ -145,7 +146,6 @@ func InitializeScenario(s *godog.ScenarioContext) {
 
 	// Other steps
 	s.Step(`^the initial insurance pool balance is "([^"]*)" for the markets:$`, func(amountstr string) error {
-		//		amount, _ := strconv.ParseUint(amountstr, 10, 0)
 		amount, _ := num.UintFromString(amountstr, 10)
 		for _, mkt := range execsetup.markets {
 			asset, _ := mkt.GetAsset()
@@ -445,17 +445,29 @@ func InitializeScenario(s *godog.ScenarioContext) {
 }
 
 func reconcileAccounts() error {
-	return helpers.ReconcileAccountChangesFromTransfers(execsetup.accountsBefore, execsetup.broker.GetAccounts(), extractTransferEventsOverStep())
+	return helpers.ReconcileAccountChanges(execsetup.accountsBefore, execsetup.broker.GetAccounts(), extractDepositsOverStep(), extractLedgerEntriesOverStep())
 }
 
-func extractTransferEventsOverStep() []*vega.LedgerEntry {
+func extractLedgerEntriesOverStep() []*vega.LedgerEntry {
 	transfers := execsetup.broker.GetTransfers(false)
 	n := len(transfers) - execsetup.ledgerMovementsBefore
-	eventsInBetween := make([]*vega.LedgerEntry, 0, n)
+	ret := make([]*vega.LedgerEntry, 0, n)
 	if n > 0 {
 		for i := execsetup.ledgerMovementsBefore; i < len(transfers); i++ {
-			eventsInBetween = append(eventsInBetween, transfers[i])
+			ret = append(ret, transfers[i])
 		}
 	}
-	return eventsInBetween
+	return ret
+}
+
+func extractDepositsOverStep() []vega.Deposit {
+	deposits := execsetup.broker.GetDeposits()
+	n := len(deposits) - execsetup.depositsBefore
+	ret := make([]vega.Deposit, 0, n)
+	if n > 0 {
+		for i := execsetup.depositsBefore; i < len(deposits); i++ {
+			ret = append(ret, deposits[i])
+		}
+	}
+	return ret
 }
