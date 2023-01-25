@@ -120,6 +120,66 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	require.True(t, bytes.Equal(state, state2))
 }
 
+// TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot tests that market loaded from snapshot can be terminated with its oracle.
+// the settlement data will be sent before the snapshot is taken, to ensure settlement data is restored correctly.
+func TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot(t *testing.T) {
+	now := time.Now()
+	exec := getEngine(t, now)
+	pubKey := &types.SignerPubKey{
+		PubKey: &types.PubKey{
+			Key: "0xDEADBEEF",
+		},
+	}
+	mkt := newMarket("MarketID", pubKey)
+	err := exec.engine.SubmitMarket(context.Background(), mkt, "")
+	require.NoError(t, err)
+
+	err = exec.engine.StartOpeningAuction(context.Background(), mkt.ID)
+	require.NoError(t, err)
+	mktState, err := exec.engine.GetMarketState("MarketID")
+	require.NoError(t, err)
+	require.Equal(t, types.MarketStateActive, mktState)
+
+	pubKeys := []*types.Signer{
+		types.CreateSignerFromString(pubKey.PubKey.Key, types.DataSignerTypePubKey),
+	}
+
+	// provide settlement data for first market
+	exec.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		Signers: pubKeys,
+		Data:    map[string]string{"prices.ETH.value": "100"},
+	})
+	// then create snapshot of market
+	state, _, _ := exec.engine.GetState("")
+
+	exec2 := getEngine(t, now)
+	snap := &snapshot.Payload{}
+	proto.Unmarshal(state, snap)
+	_, _ = exec2.engine.LoadState(context.Background(), types.PayloadFromProto(snap))
+
+	state2, _, _ := exec2.engine.GetState("")
+	// the states should match
+	require.True(t, bytes.Equal(state, state2))
+
+	exec.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		Signers: pubKeys,
+		Data:    map[string]string{"trading.terminated": "true"},
+	})
+
+	exec2.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		Signers: pubKeys,
+		Data:    map[string]string{"trading.terminated": "true"},
+	})
+
+	marketState1, _ := exec.engine.GetMarketState("MarketID")
+	marketState2, _ := exec2.engine.GetMarketState("MarketID")
+
+	// markets should both be settled
+	require.Equal(t, marketState1, marketState2)
+	require.Equal(t, types.MarketStateSettled, marketState1)
+	require.Equal(t, types.MarketStateSettled, marketState2)
+}
+
 // TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementData sets up a market that gets the settlement data first.
 // Then a snapshot is taken and another node is restored from this snapshot. Finally trading termination data is received and both markets
 // are expected to get settled.
