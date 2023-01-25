@@ -37,6 +37,10 @@ type Subscriber interface {
 	Ack() bool
 }
 
+type Stats interface {
+	IncrementEventCount(count uint64)
+}
+
 // Interface interface (horribly named) is declared here to provide a drop-in replacement for broker mocks used throughout
 // in addition to providing the classical mockgen functionality, this mock can be used to check the actual events that will be generated
 // so we don't have to rely on test-only helper functions
@@ -90,10 +94,11 @@ type Broker struct {
 	socketClient SocketClient
 	fileClient   FileClientSend
 	canStream    bool // whether not we should send events to the socketClient
+	stats        Stats
 }
 
 // New creates a new base broker.
-func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, error) {
+func New(ctx context.Context, log *logging.Logger, config Config, stats Stats) (*Broker, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
@@ -107,6 +112,7 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 		seqGen:    newGen(),
 		config:    config,
 		canStream: bool(config.Socket.Enabled),
+		stats:     stats,
 	}
 
 	if config.Socket.Enabled {
@@ -251,12 +257,14 @@ func (b *Broker) SendBatch(events []events.Event) {
 	if len(events) == 0 {
 		return
 	}
+	b.stats.IncrementEventCount(uint64(len(events)))
 	evts := b.seqGen.setSequence(events...)
 	b.startSending(events[0].Type(), evts)
 }
 
 // Send sends an event to all subscribers.
 func (b *Broker) Send(event events.Event) {
+	b.stats.IncrementEventCount(1)
 	b.startSending(event.Type(), b.seqGen.setSequence(event))
 }
 
