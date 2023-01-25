@@ -117,6 +117,8 @@ type Stats interface {
 	CurrentTradesInBatch() uint64
 	SetOrdersPerSecond(i uint64)
 	SetTradesPerSecond(i uint64)
+	CurrentEventsInBatch() uint64
+	SetEventsPerSecond(uint64)
 	// blockchain stats
 	IncTotalTxCurrentBatch()
 	IncHeight()

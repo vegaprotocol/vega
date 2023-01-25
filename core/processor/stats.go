@@ -49,14 +49,15 @@ func (app *App) updateStats() {
 	avg := app.stats.TotalOrders() / app.stats.TotalBatches()
 	app.stats.SetAverageOrdersPerBatch(avg)
 	duration := time.Duration(app.currentTimestamp.UnixNano() - app.previousTimestamp.UnixNano()).Seconds()
-	var currentOrders, currentTrades uint64
+	var currentOrders, currentTrades, eps uint64
 	app.stats.SetBlockDuration(uint64(duration * float64(time.Second.Nanoseconds())))
 	if duration > 0 {
-		currentOrders, currentTrades = uint64(float64(app.stats.CurrentOrdersInBatch())/duration),
-			uint64(float64(app.stats.CurrentTradesInBatch())/duration)
+		currentOrders, currentTrades, eps = uint64(float64(app.stats.CurrentOrdersInBatch())/duration),
+			uint64(float64(app.stats.CurrentTradesInBatch())/duration), uint64(float64(app.stats.CurrentEventsInBatch())/duration)
 	}
 	app.stats.SetOrdersPerSecond(currentOrders)
 	app.stats.SetTradesPerSecond(currentTrades)
+	app.stats.SetEventsPerSecond(eps)
 	// log stats
 	app.log.Debug("Processor batch stats",
 		logging.Int64("previousTimestamp", app.previousTimestamp.UnixNano()),
@@ -68,6 +69,7 @@ func (app *App) updateStats() {
 		logging.Uint64("avg-orders-batch", avg),
 		logging.Uint64("orders-per-sec", currentOrders),
 		logging.Uint64("trades-per-sec", currentTrades),
+		logging.Uint64("events-per-sec", eps),
 	)
 	app.stats.NewBatch() // sets previous batch orders/trades to current, zeroes current tally
 }

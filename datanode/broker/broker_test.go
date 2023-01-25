@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/stats"
 	vgtesting "code.vegaprotocol.io/vega/datanode/libs/testing"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
@@ -58,7 +59,8 @@ func getBroker(t *testing.T) *brokerTst {
 	t.Helper()
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
-	broker, _ := broker.New(ctx, logging.NewTestLogger(), broker.NewDefaultConfig())
+	logger := logging.NewTestLogger()
+	broker, _ := broker.New(ctx, logger, broker.NewDefaultConfig(), stats.NewBlockchain())
 	return &brokerTst{
 		Broker: broker,
 		cfunc:  cfunc,
@@ -647,7 +649,7 @@ func testStreamsOverSocket(t *testing.T) {
 	err = sock.Listen(addr)
 	assert.NoError(t, err)
 
-	broker, _ := broker.New(ctx, logging.NewTestLogger(), config)
+	broker, _ := broker.New(ctx, logging.NewTestLogger(), config, stats.NewBlockchain())
 
 	defer func() {
 		cfunc()
@@ -691,7 +693,7 @@ func testStopsProcessOnStreamError(t *testing.T) {
 		err = sock.Listen(addr)
 		assert.NoError(t, err)
 
-		broker, _ := broker.New(ctx, logging.NewTestLogger(), config)
+		broker, _ := broker.New(ctx, logging.NewTestLogger(), config, stats.NewBlockchain())
 
 		defer func() {
 			cfunc()

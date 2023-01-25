@@ -261,7 +261,7 @@ func (mat *MarketActivityTracker) clearFeeActivity() {
 		mt.makerFeesReceived = map[string]*num.Uint{}
 		mt.totalMakerFeesReceived = num.UintZero()
 		mt.makerFeesPaid = map[string]*num.Uint{}
-		mt.totalMakerFeesReceived = num.UintZero()
+		mt.totalMakerFeesPaid = num.UintZero()
 	}
 }
 
