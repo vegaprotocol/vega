@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/mocks"
@@ -57,6 +58,7 @@ func testRotateEthereumKeySuccess(t *testing.T) {
 
 	toRemove := []validators.NodeIDAddress{{NodeID: nr.Id, EthAddress: nr.EthereumAddress}}
 
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 	top.signatures.EXPECT().PrepareValidatorSignatures(
 		gomock.Any(),
 		toRemove,
@@ -85,6 +87,8 @@ func testRotateEthereumKeyFailsIfPendingRotationExists(t *testing.T) {
 	ekr := newEthereumKeyRotationSubmission(nr.EthereumAddress, "new-eth-address", 15, "")
 
 	toRemove := []validators.NodeIDAddress{{NodeID: nr.Id, EthAddress: nr.EthereumAddress}}
+
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 	top.signatures.EXPECT().PrepareValidatorSignatures(
 		gomock.Any(),
 		toRemove,
@@ -114,6 +118,7 @@ func testRotateEthereumKeyFailsRotatingToSameKey(t *testing.T) {
 	err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 	require.NoError(t, err)
 
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 	ekr := newEthereumKeyRotationSubmission(nr.EthereumAddress, nr.EthereumAddress, 15, "")
 	err = top.ProcessEthereumKeyRotation(ctx, nr.VegaPubKey, ekr, MockVerify)
 	require.Error(t, err, validators.ErrCannotRotateToSameKey)
@@ -123,6 +128,7 @@ func testRotateEthereumKeyFailsOnNonExistingNode(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
 
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 	err := top.ProcessEthereumKeyRotation(
 		context.Background(),
 		"vega-nonexisting-pubkey",
@@ -148,6 +154,7 @@ func testRotateEthereumKeyFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeight
 	err := top.AddNewNode(context.Background(), &nr, validators.ValidatorStatusTendermint)
 	require.NoError(t, err)
 
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 	err = top.ProcessEthereumKeyRotation(
 		context.Background(),
 		nr.VegaPubKey,
@@ -171,6 +178,7 @@ func testRotateEthereumKeyFailsWhenCurrentAddressDoesNotMatch(t *testing.T) {
 	err := top.AddNewNode(context.Background(), &nr, validators.ValidatorStatusTendermint)
 	require.NoError(t, err)
 
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 	err = top.ProcessEthereumKeyRotation(
 		context.Background(),
 		nr.VegaPubKey,
@@ -212,9 +220,10 @@ func testEthereumKeyRotationBeginBlock(t *testing.T) {
 		err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 		require.NoErrorf(t, err, "failed to add node registation %s", id)
 	}
-
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 	top.multisigTop.EXPECT().IsSigner(gomock.Any()).AnyTimes().Return(false)
 	top.signatures.EXPECT().ClearStaleSignatures().AnyTimes()
+	top.signatures.EXPECT().SetNonce(gomock.Any()).Times(2)
 	top.signatures.EXPECT().PrepareValidatorSignatures(
 		gomock.Any(),
 		gomock.Any(),
@@ -286,13 +295,18 @@ func TestEthereumKeyRotationBeginBlockWithSubmitter(t *testing.T) {
 	top.signatures.EXPECT().EmitValidatorRemovedSignatures(gomock.Any(), submitter, gomock.Any(), gomock.Any()).Times(2)
 	top.signatures.EXPECT().EmitValidatorAddedSignatures(gomock.Any(), submitter, gomock.Any(), gomock.Any()).Times(1)
 	top.signatures.EXPECT().ClearStaleSignatures().AnyTimes()
+	top.timeService.EXPECT().GetTimeNow().Times(1)
 
 	// add ethereum key rotations
 	err := top.ProcessEthereumKeyRotation(ctx, "vega-key-1", newEthereumKeyRotationSubmission("eth-address-1", "new-eth-address-1", 11, submitter), MockVerify)
 	require.NoError(t, err)
 
 	// when
+	now := time.Unix(666, 666)
+	top.signatures.EXPECT().SetNonce(now).Times(1)
+	top.timeService.EXPECT().GetTimeNow().Times(5).Return(now)
 	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 11}})
+
 	// then
 	data1 := top.Get("vega-master-pubkey-1")
 	require.NotNil(t, data1)
@@ -305,6 +319,10 @@ func TestEthereumKeyRotationBeginBlockWithSubmitter(t *testing.T) {
 	// Now make it look like the old key is removed from the multisig contract
 	top.multisigTop.EXPECT().IsSigner(gomock.Any()).Return(false).Times(1)
 	top.multisigTop.EXPECT().IsSigner(gomock.Any()).Return(true).Times(1)
+
+	now = now.Add(time.Second)
+	top.signatures.EXPECT().SetNonce(now).Times(1)
+	top.timeService.EXPECT().GetTimeNow().Times(5).Return(now)
 	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 140}})
 
 	// try to submit again
@@ -365,8 +383,9 @@ func getTestTopWithMockedSignatures(t *testing.T) *testTopWithSignatures {
 	top.SetSignatures(signatures)
 
 	// set a reasonable block height
-	top.timeService.EXPECT().GetTimeNow().AnyTimes()
+	top.timeService.EXPECT().GetTimeNow().Times(3)
 	signatures.EXPECT().ClearStaleSignatures().Times(1)
+	signatures.EXPECT().SetNonce(gomock.Any()).Times(1)
 	top.BeginBlock(context.Background(), abcitypes.RequestBeginBlock{Header: types1.Header{Height: 10}})
 
 	return &testTopWithSignatures{

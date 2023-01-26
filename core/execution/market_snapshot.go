@@ -162,6 +162,10 @@ func NewMarketFromSnapshot(
 	market.assetDP = uint32(assetDetails.DecimalPlaces())
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
+	if em.SettlementData != nil {
+		// ensure oracle has the settlement data
+		market.tradableInstrument.Instrument.Product.RestoreSettlementData(em.SettlementData.Clone())
+	}
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 
 	if mkt.State == types.MarketStateTradingTerminated {
