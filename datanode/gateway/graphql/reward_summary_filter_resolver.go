@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
 
@@ -20,9 +21,9 @@ func (r *rewardSummaryFilterResolver) ToEpoch(_ context.Context, obj *v2.RewardS
 }
 
 func intPtrToUint64Ptr(i *int) (*uint64, error) {
-	iVal := fromPtr(i)
+	iVal := ptr.UnBox(i)
 	if iVal < 0 {
 		return nil, fmt.Errorf("cannot convert to uint - must be positive")
 	}
-	return toPtr(uint64(iVal)), nil
+	return ptr.From(uint64(iVal)), nil
 }

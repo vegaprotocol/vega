@@ -27,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -644,8 +645,8 @@ func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, n
 	res, err := r.tradingDataClientV2.ListERC20MultiSigSignerAddedBundles(
 		ctx, &v2.ListERC20MultiSigSignerAddedBundlesRequest{
 			NodeId:     nodeID,
-			Submitter:  fromPtr(submitter),
-			EpochSeq:   fromPtr(epochSeq),
+			Submitter:  ptr.UnBox(submitter),
+			EpochSeq:   ptr.UnBox(epochSeq),
 			Pagination: pagination,
 		})
 	if err != nil {
@@ -678,8 +679,8 @@ func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context,
 	res, err := r.tradingDataClientV2.ListERC20MultiSigSignerRemovedBundles(
 		ctx, &v2.ListERC20MultiSigSignerRemovedBundlesRequest{
 			NodeId:     nodeID,
-			Submitter:  fromPtr(submitter),
-			EpochSeq:   fromPtr(epochSeq),
+			Submitter:  ptr.UnBox(submitter),
+			EpochSeq:   ptr.UnBox(epochSeq),
 			Pagination: pagination,
 		})
 	if err != nil {
@@ -706,17 +707,6 @@ func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context,
 		Edges:    edges,
 		PageInfo: res.Bundles.PageInfo,
 	}, nil
-}
-
-func fromPtr[T any](ptr *T) (ret T) {
-	if ptr != nil {
-		ret = *ptr
-	}
-	return
-}
-
-func toPtr[T any](val T) *T {
-	return &val
 }
 
 func (r *myQueryResolver) Withdrawal(ctx context.Context, wid string) (*types.Withdrawal, error) {
