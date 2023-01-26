@@ -3,6 +3,7 @@ package version
 import (
 	"errors"
 	"sort"
+	"strings"
 
 	vgversion "code.vegaprotocol.io/vega/libs/version"
 	coreversion "code.vegaprotocol.io/vega/version"
@@ -61,6 +62,9 @@ func CheckSoftwareCompatibility(netStore NetworkStore, requestVersionFn RequestV
 
 	networksCompatibility := make([]NetworkCompatibility, 0, len(networks))
 
+	coreVersion := coreversion.Get()
+	coreVersionForComparison := onlyMajorAndMinor(coreVersion)
+
 	for _, net := range networks {
 		networkCompatibility := NetworkCompatibility{
 			Network: net,
@@ -90,8 +94,9 @@ func CheckSoftwareCompatibility(netStore NetworkStore, requestVersionFn RequestV
 		}
 
 		networkCompatibility.RetrievedVersion = networkVersion
+		networkVersionForComparison := onlyMajorAndMinor(networkVersion)
 
-		if networkVersion != coreversion.Get() {
+		if networkVersionForComparison != coreVersionForComparison {
 			networkCompatibility.IsCompatible = false
 			networksCompatibility = append(networksCompatibility, networkCompatibility)
 			continue
@@ -109,4 +114,14 @@ func CheckSoftwareCompatibility(netStore NetworkStore, requestVersionFn RequestV
 	return &CheckSoftwareCompatibilityResponse{
 		NetworksCompatibility: networksCompatibility,
 	}, nil
+}
+
+func onlyMajorAndMinor(version string) string {
+	segments := strings.Split(version, ".")
+	if len(segments) < 2 {
+		// It doesn't seem to be a valid semantic version.
+		return version
+	}
+
+	return segments[0] + "." + segments[1]
 }
