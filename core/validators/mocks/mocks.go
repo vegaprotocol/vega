@@ -646,6 +646,18 @@ func (mr *MockSignaturesMockRecorder) SerialisePendingSignatures() *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SerialisePendingSignatures", reflect.TypeOf((*MockSignatures)(nil).SerialisePendingSignatures))
 }
 
+// SetNonce mocks base method.
+func (m *MockSignatures) SetNonce(arg0 time.Time) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetNonce", arg0)
+}
+
+// SetNonce indicates an expected call of SetNonce.
+func (mr *MockSignaturesMockRecorder) SetNonce(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNonce", reflect.TypeOf((*MockSignatures)(nil).SetNonce), arg0)
+}
+
 // MockMultiSigTopology is a mock of MultiSigTopology interface.
 type MockMultiSigTopology struct {
 	ctrl     *gomock.Controller

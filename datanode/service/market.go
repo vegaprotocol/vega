@@ -16,12 +16,16 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/logging"
 )
 
-var nilPagination = entities.OffsetPagination{}
+var (
+	nilPagination     = entities.OffsetPagination{}
+	refreshCacheEvery = 30 * time.Second
+)
 
 type MarketStore interface {
 	Upsert(ctx context.Context, market *entities.Market) error
@@ -46,6 +50,22 @@ func NewMarkets(store MarketStore, log *logging.Logger) *Markets {
 }
 
 func (m *Markets) Initialise(ctx context.Context) error {
+	// This hacky timer is needed to ensure that the cache is re-populated when restoring
+	// from network history segments. It would be better to explicitly refresh the cache when
+	// loading in a segment, but this quick fix will work for now.
+	go func() {
+		for range time.NewTicker(refreshCacheEvery).C {
+			err := m.refreshCache(ctx)
+			if err != nil {
+				m.log.Warn("error refreshing market cache", logging.Error(err))
+			}
+		}
+	}()
+
+	return m.refreshCache(ctx)
+}
+
+func (m *Markets) refreshCache(ctx context.Context) error {
 	m.cacheLock.Lock()
 	defer m.cacheLock.Unlock()
 

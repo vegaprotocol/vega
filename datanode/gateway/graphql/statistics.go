@@ -95,6 +95,14 @@ func (s *statisticsResolver) TotalCreateOrder(ctx context.Context, obj *vega.Sta
 	return strconv.FormatUint(obj.TotalCreateOrder, 10), nil
 }
 
+func (s *statisticsResolver) EventCount(ctx context.Context, obj *vega.Statistics) (string, error) {
+	return strconv.FormatUint(obj.EventCount, 10), nil
+}
+
+func (s *statisticsResolver) EventsPerSecond(ctx context.Context, obj *vega.Statistics) (string, error) {
+	return strconv.FormatUint(obj.EventsPerSecond, 10), nil
+}
+
 func (s *statisticsResolver) TotalOrders(ctx context.Context, obj *vega.Statistics) (string, error) {
 	return strconv.FormatUint(obj.TotalOrders, 10), nil
 }
