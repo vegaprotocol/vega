@@ -17,7 +17,7 @@
 - [7420](https://github.com/vegaprotocol/vega/issues/7420) - set seed nonce for joining and leaving signatures during begin block
 - [7399](https://github.com/vegaprotocol/vega/issues/7399) - Fix issue where market cache not working after restoring from network history
 - [7169](https://github.com/vegaprotocol/vega/issues/7169) - Fix migration, account for existing position data
-
+- [7427](https://github.com/vegaprotocol/vega/issues/7427) - Fix nil pointer panic on settlement of restored markets.
 
 ## 0.67.2
 
