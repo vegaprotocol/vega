@@ -1378,7 +1378,7 @@ type ComplexityRoot struct {
 		OrderVersionsConnection            func(childComplexity int, orderID *string, pagination *v2.Pagination) int
 		PartiesConnection                  func(childComplexity int, id *string, pagination *v2.Pagination) int
 		Party                              func(childComplexity int, id string) int
-		PositionsConnection                func(childComplexity int, filter *v2.PositionsFilter, pagination *v2.Pagination) int
+		Positions                          func(childComplexity int, filter *v2.PositionsFilter, pagination *v2.Pagination) int
 		Proposal                           func(childComplexity int, id *string, reference *string) int
 		ProposalsConnection                func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		ProtocolUpgradeProposals           func(childComplexity int, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) int
@@ -2160,7 +2160,7 @@ type QueryResolver interface {
 	TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
 	Withdrawal(ctx context.Context, id string) (*vega.Withdrawal, error)
 	Withdrawals(ctx context.Context, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.WithdrawalsConnection, error)
-	PositionsConnection(ctx context.Context, filter *v2.PositionsFilter, pagination *v2.Pagination) (*v2.PositionConnection, error)
+	Positions(ctx context.Context, filter *v2.PositionsFilter, pagination *v2.Pagination) (*v2.PositionConnection, error)
 }
 type RankingScoreResolver interface {
 	VotingPower(ctx context.Context, obj *vega.RankingScore) (string, error)
@@ -7757,17 +7757,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Party(childComplexity, args["id"].(string)), true
 
-	case "Query.positionsConnection":
-		if e.complexity.Query.PositionsConnection == nil {
+	case "Query.positions":
+		if e.complexity.Query.Positions == nil {
 			break
 		}
 
-		args, err := ec.field_Query_positionsConnection_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_positions_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.PositionsConnection(childComplexity, args["filter"].(*v2.PositionsFilter), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.Positions(childComplexity, args["filter"].(*v2.PositionsFilter), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.proposal":
 		if e.complexity.Query.Proposal == nil {
@@ -11166,7 +11166,7 @@ func (ec *executionContext) field_Query_party_args(ctx context.Context, rawArgs 
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_positionsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_positions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *v2.PositionsFilter
@@ -48060,8 +48060,8 @@ func (ec *executionContext) fieldContext_Query_withdrawals(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_positionsConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_positionsConnection(ctx, field)
+func (ec *executionContext) _Query_positions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_positions(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -48074,7 +48074,7 @@ func (ec *executionContext) _Query_positionsConnection(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().PositionsConnection(rctx, fc.Args["filter"].(*v2.PositionsFilter), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().Positions(rctx, fc.Args["filter"].(*v2.PositionsFilter), fc.Args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -48088,7 +48088,7 @@ func (ec *executionContext) _Query_positionsConnection(ctx context.Context, fiel
 	return ec.marshalOPositionConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionConnection(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_positionsConnection(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_positions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -48111,7 +48111,7 @@ func (ec *executionContext) fieldContext_Query_positionsConnection(ctx context.C
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_positionsConnection_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_positions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -73586,7 +73586,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "positionsConnection":
+		case "positions":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -73595,7 +73595,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_positionsConnection(ctx, field)
+				res = ec._Query_positions(ctx, field)
 				return res
 			}
 

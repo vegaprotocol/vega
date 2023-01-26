@@ -682,7 +682,8 @@ type Query {
     pagination: Pagination,
   ): WithdrawalsConnection
 
-  positionsConnection(
+  "Fetch all positions"
+  positions(
     filter: PositionsFilter,
     pagination: Pagination
   ): PositionConnection
@@ -1965,7 +1966,7 @@ type Party {
   ): AccountsConnection
 
   "Trading positions relating to a party"
-  positionsConnection(market: ID, pagination: Pagination): PositionConnection @deprecated (reason: "Use root positionsConnection instead of sub-query")
+  positionsConnection(market: ID, pagination: Pagination): PositionConnection @deprecated (reason: "Use root positions query instead of sub-query")
 
   "Margin levels for a market"
   marginsConnection(
