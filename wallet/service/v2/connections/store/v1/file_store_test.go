@@ -288,7 +288,7 @@ func testFileStoreChangesToTokenFileArePropagatedToListeners(t *testing.T) {
 	// Wait for the go routine to do its job.
 	wg.Wait()
 
-	assert.Len(t, lastTokenDescriptions, 1)
+	require.Len(t, lastTokenDescriptions, 1)
 	assert.Equal(t, description3.Description, lastTokenDescriptions[0].Description)
 	assert.Equal(t, description3.Token, lastTokenDescriptions[0].Token)
 	assert.WithinDuration(t, description3.CreationDate, lastTokenDescriptions[0].CreationDate, 0)
