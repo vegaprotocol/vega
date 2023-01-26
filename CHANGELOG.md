@@ -3,6 +3,7 @@
 ## Unreleased 0.68.0
 
 ### 🚨 Breaking changes
+- [7304](https://github.com/vegaprotocol/vega/issues/7304) - In the `datanode` `GraphQL` schema, move `fromEpoch` and `toEpoch` into a new `filter` for `epochRewardSummaries` query. Also add `assetIds` and `marketIds` to the same filter. 
 - [7419](https://github.com/vegaprotocol/vega/issues/7419) - Remove the deprecated headers with the `Grpc-Metadata-` prefix in `datanode` `API` and `REST` and `GraphQL` gateways.
 - [6963](https://github.com/vegaprotocol/vega/issues/6963) - Remove the legacy fields from network API
 - [7361](https://github.com/vegaprotocol/vega/issues/7361) - Network history loading and current order set tracking - database requires database to be dropped

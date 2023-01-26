@@ -381,6 +381,14 @@ input LedgerEntryFilter {
   TransferTypes: [TransferType]
 }
 
+"Filter for historical reward summary queries"
+input RewardSummaryFilter {
+  assetIds: [ID!]
+  marketIds: [ID!]
+  fromEpoch: Int,
+  toEpoch: Int,
+}
+
 "Queries allow a caller to read data and filter data via GraphQL."
 type Query {
   "An asset which is used in the vega network"
@@ -655,10 +663,9 @@ type Query {
 
   "List reward summary per epoch by asset, market, reward type"
   epochRewardSummaries(
-    fromEpoch: Int,
-    toEpoch: Int,
+    filter: RewardSummaryFilter,
     pagination: Pagination
-    ): EpochRewardSummaryConnection
+  ): EpochRewardSummaryConnection
 
   "Get statistics about the Vega node"
   statistics: Statistics!

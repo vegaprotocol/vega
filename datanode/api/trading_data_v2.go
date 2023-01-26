@@ -1493,7 +1493,7 @@ func (t *tradingDataServiceV2) ListRewardSummaries(ctx context.Context, in *v2.L
 	return &resp, nil
 }
 
-// Get reward summaries for epoch range.
+// ListEpochRewardSummaries gets reward summaries for epoch range.
 func (t *tradingDataServiceV2) ListEpochRewardSummaries(ctx context.Context, in *v2.ListEpochRewardSummariesRequest) (*v2.ListEpochRewardSummariesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListEpochRewardSummaries")()
 
@@ -1506,7 +1506,8 @@ func (t *tradingDataServiceV2) ListEpochRewardSummaries(ctx context.Context, in 
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	summaries, pageInfo, err := t.rewardService.GetEpochRewardSummaries(ctx, in.FromEpoch, in.ToEpoch, pagination)
+	filter := entities.RewardSummaryFilterFromProto(in.Filter)
+	summaries, pageInfo, err := t.rewardService.GetEpochRewardSummaries(ctx, filter, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}

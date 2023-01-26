@@ -374,6 +374,11 @@ func (r *VegaResolverRoot) OrderFilter() OrderFilterResolver {
 	return (*orderFilterResolver)(r)
 }
 
+// RewardSummaryFilter returns RewardSummaryFilterResolver implementation.
+func (r *VegaResolverRoot) RewardSummaryFilter() RewardSummaryFilterResolver {
+	return (*rewardSummaryFilterResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(ctx context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -710,6 +715,10 @@ func fromPtr[T any](ptr *T) (ret T) {
 	return
 }
 
+func toPtr[T any](val T) *T {
+	return &val
+}
+
 func (r *myQueryResolver) Withdrawal(ctx context.Context, wid string) (*types.Withdrawal, error) {
 	res, err := r.tradingDataClientV2.GetWithdrawal(
 		ctx, &v2.GetWithdrawalRequest{Id: wid},
@@ -982,24 +991,15 @@ func (r *myQueryResolver) CoreSnapshots(ctx context.Context, pagination *v2.Pagi
 	return resp.CoreSnapshots, nil
 }
 
-func (r *myQueryResolver) EpochRewardSummaries(ctx context.Context, fromEpoch *int, toEpoch *int, pagination *v2.Pagination) (*v2.EpochRewardSummaryConnection, error) {
-	var from, to *uint64
-	if fromEpoch != nil {
-		from = new(uint64)
-		if *fromEpoch < 0 {
-			return nil, errors.New("invalid fromEpoch for reward summary - must be positive")
-		}
-		*from = uint64(*fromEpoch)
+func (r *myQueryResolver) EpochRewardSummaries(
+	ctx context.Context,
+	filter *v2.RewardSummaryFilter,
+	pagination *v2.Pagination,
+) (*v2.EpochRewardSummaryConnection, error) {
+	req := v2.ListEpochRewardSummariesRequest{
+		Filter:     filter,
+		Pagination: pagination,
 	}
-	if toEpoch != nil {
-		to = new(uint64)
-		if *toEpoch < 0 {
-			return nil, errors.New("invalid toEpoch for reward summary - must be positive")
-		}
-		*to = uint64(*toEpoch)
-	}
-
-	req := v2.ListEpochRewardSummariesRequest{FromEpoch: to, ToEpoch: from, Pagination: pagination}
 	resp, err := r.tradingDataClientV2.ListEpochRewardSummaries(ctx, &req)
 	if err != nil {
 		return nil, err

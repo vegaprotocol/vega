@@ -1660,11 +1660,22 @@ message ListRewardSummariesResponse {
     repeated vega.RewardSummary summaries = 1;
 }
 
+// A filter to restrict the results returned by the ListEpochRewardSummaries
+message RewardSummaryFilter {
+    // Restrict the results to those connected to the assets in this list (pass an empty list for no filter)
+    repeated string asset_ids = 1;
+    // Restrict the results to those connected to the markets in this list (pass an empty list for no filter)
+    repeated string market_ids = 2;
+    // Optional range of epochs to filter on
+    optional uint64 from_epoch = 3;
+    optional uint64 to_epoch = 4;
+}
+
 // A request to get summary of reward per epoch for a given range of epochs
 message ListEpochRewardSummariesRequest {
-    optional uint64 from_epoch = 1;
-    optional uint64 to_epoch = 2;
-    optional Pagination pagination = 3;
+    // Limit the results considered according to the filter supplied
+    RewardSummaryFilter filter = 1;
+    optional Pagination pagination = 4;
 }
 
 // The return message with reward details in for a single party
