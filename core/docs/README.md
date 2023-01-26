@@ -4,4 +4,4 @@ Our core protocol implementation aims to be a reflection on the protocol design 
 
 ## Component relationships
 
-![Design Architecture](./controllers_brief.svg)
+<img src="./diagrams/design-architecture-2023-01-26.svg">
