@@ -29,7 +29,8 @@ type FileStore struct {
 	// listeners are callback functions to be called when a change occurs on
 	// the tokens.
 	listeners []func(context.Context, ...connections.TokenDescription)
-	mu        sync.Mutex
+
+	mu sync.Mutex
 }
 
 func (s *FileStore) TokenExists(token connections.Token) (bool, error) {
@@ -232,8 +233,14 @@ func (s *FileStore) startFileWatcher() error {
 
 	s.jobRunner = vgjob.NewRunner(context.Background())
 
+	toBroadcastCh := make(chan []connections.TokenDescription, 10)
+
 	s.jobRunner.Go(func(ctx context.Context) {
-		s.watchFile(ctx, watcher)
+		s.broadcastToListeners(ctx, toBroadcastCh)
+	})
+
+	s.jobRunner.Go(func(ctx context.Context) {
+		s.watchFile(ctx, watcher, toBroadcastCh)
 	})
 
 	if err := watcher.Add(s.tokensFilePath); err != nil {
@@ -243,9 +250,26 @@ func (s *FileStore) startFileWatcher() error {
 	return nil
 }
 
-func (s *FileStore) watchFile(ctx context.Context, watcher *fsnotify.Watcher) {
+func (s *FileStore) broadcastToListeners(ctx context.Context, toBroadcastCh chan []connections.TokenDescription) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case tokenDescriptions, ok := <-toBroadcastCh:
+			if !ok {
+				return
+			}
+			for _, listener := range s.listeners {
+				listener(ctx, tokenDescriptions...)
+			}
+		}
+	}
+}
+
+func (s *FileStore) watchFile(ctx context.Context, watcher *fsnotify.Watcher, toBroadcastCh chan []connections.TokenDescription) {
 	defer func() {
 		_ = watcher.Close()
+		close(toBroadcastCh)
 	}()
 
 	for {
@@ -256,7 +280,7 @@ func (s *FileStore) watchFile(ctx context.Context, watcher *fsnotify.Watcher) {
 			if !ok {
 				return
 			}
-			s.broadcastFileChanges(ctx, watcher, event)
+			s.convertFileChangesToEvents(watcher, event, toBroadcastCh)
 		case _, ok := <-watcher.Errors:
 			if !ok {
 				return
@@ -267,14 +291,14 @@ func (s *FileStore) watchFile(ctx context.Context, watcher *fsnotify.Watcher) {
 	}
 }
 
-func (s *FileStore) broadcastFileChanges(ctx context.Context, watcher *fsnotify.Watcher, event fsnotify.Event) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
+func (s *FileStore) convertFileChangesToEvents(watcher *fsnotify.Watcher, event fsnotify.Event, toBroadcastCh chan<- []connections.TokenDescription) {
 	if event.Op == fsnotify.Chmod {
 		// If this is solely a CHMOD, we do not trigger an update.
 		return
 	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	if event.Has(fsnotify.Remove) {
 		_ = watcher.Remove(s.tokensFilePath)
@@ -290,10 +314,6 @@ func (s *FileStore) broadcastFileChanges(ctx context.Context, watcher *fsnotify.
 		_ = watcher.Add(s.tokensFilePath)
 	}
 
-	// Let's wait a bit so any write actions in progress have a chance to finish.
-	// This is far from being resilient, but it can help.
-	time.Sleep(100 * time.Millisecond)
-
 	tokenDescriptions, err := s.readFileAsTokenDescriptions()
 	if err != nil {
 		// This can be the result of concurrent modification on the token file.
@@ -301,9 +321,10 @@ func (s *FileStore) broadcastFileChanges(ctx context.Context, watcher *fsnotify.
 		return
 	}
 
-	for _, listener := range s.listeners {
-		listener(ctx, tokenDescriptions...)
-	}
+	// The changes are queued, and processed in a separate go routine, so we can
+	// release the mutex on the store, while the update is broadcast to the
+	// listeners.
+	toBroadcastCh <- tokenDescriptions
 }
 
 func (s *FileStore) readFileAsTokenDescriptions() ([]connections.TokenDescription, error) {
