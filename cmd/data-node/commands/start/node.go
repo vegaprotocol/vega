@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -120,7 +121,12 @@ func (l *NodeCommand) runNode([]string) error {
 	eg.Go(func() error { return grpcServer.Start(ctx, nil) })
 
 	// start the admin server
-	eg.Go(func() error { return adminServer.Start(ctx) })
+	eg.Go(func() error {
+		if err := adminServer.Start(ctx); err != nil && err != http.ErrServerClosed {
+			return err
+		}
+		return nil
+	})
 
 	// start gateway
 	if l.conf.GatewayEnabled {
