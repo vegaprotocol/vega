@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,9 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/jackc/pgtype"
 	"github.com/shopspring/decimal"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -55,23 +54,49 @@ func TestMain(t *testing.M) {
 	}, postgresRuntimePath, sqlstore.EmbedMigrations)
 }
 
-func TestUpdateCurrentOrdersState(t *testing.T) {
+func TestRestoreCurrentOrdersSet(t *testing.T) {
 	ctx := context.Background()
 
 	batcher := sqlstore.NewMapBatcher[entities.OrderKey, entities.Order](
 		"orders",
 		entities.OrderColumns)
 
-	vegaTime := time.Now()
+	vegaTime := time.Now().Truncate(1 * time.Millisecond)
 
 	orders := []entities.Order{
 		createTestOrder("aa", vegaTime.Add(1*time.Second), 0, 0),
-		createTestOrder("aa", vegaTime.Add(2*time.Second), 1, 2),
-		createTestOrder("aa", vegaTime.Add(3*time.Second), 2, 3),
+		createTestOrder("bb", vegaTime.Add(1*time.Second), 0, 1),
 
-		createTestOrder("bb", vegaTime.Add(4*time.Second), 0, 0),
-		createTestOrder("bb", vegaTime.Add(5*time.Second), 1, 1),
-		createTestOrder("bb", vegaTime.Add(6*time.Second), 2, 2),
+		createTestOrder("aa", vegaTime.Add(2*time.Second), 1, 0),
+		createTestOrder("bb", vegaTime.Add(2*time.Second), 1, 1),
+
+		// Add two versions for the same vega-time to ensure the update query picks the correct one to set as current
+		createTestOrder("aa", vegaTime.Add(3*time.Second), 2, 0),
+
+		createTestOrder("bb", vegaTime.Add(3*time.Second), 2, 1),
+		createTestOrder("bb", vegaTime.Add(3*time.Second), 3, 2),
+
+		createTestOrder("aa", vegaTime.Add(3*time.Second), 3, 3),
+	}
+
+	type queryResult struct {
+		Id       entities.OrderID
+		VegaTime time.Time
+		Version  int
+		SeqNum   int
+		Current  bool
+	}
+
+	expectedResult := []queryResult{
+		{"aa", vegaTime.Add(1 * time.Second), 0, 0, false},
+		{"aa", vegaTime.Add(2 * time.Second), 1, 0, false},
+		{"aa", vegaTime.Add(3 * time.Second), 2, 0, false},
+		{"aa", vegaTime.Add(3 * time.Second), 3, 3, true},
+
+		{"bb", vegaTime.Add(1 * time.Second), 0, 1, false},
+		{"bb", vegaTime.Add(2 * time.Second), 1, 1, false},
+		{"bb", vegaTime.Add(3 * time.Second), 2, 1, false},
+		{"bb", vegaTime.Add(3 * time.Second), 3, 2, true},
 	}
 
 	for _, order := range orders {
@@ -81,44 +106,24 @@ func TestUpdateCurrentOrdersState(t *testing.T) {
 	_, err := batcher.Flush(context.Background(), connectionSource.Connection)
 	require.NoError(t, err)
 
-	err = UpdateCurrentOrdersState(ctx, connectionSource.Connection)
+	err = RestoreCurrentOrdersSet(ctx, connectionSource.Connection)
 	require.NoError(t, err)
 
-	connectionSource.Connection.QueryRow(ctx, "select vega_time_to")
+	connectionSource.Connection.QueryRow(ctx, "select current")
 
 	rows, err := connectionSource.Connection.Query(context.Background(),
-		"select vega_time, vega_time_to from orders")
+		"select id, vega_time, version, seq_num, current from orders order by id, vega_time, seq_num")
 
 	require.NoError(t, err)
-
-	type queryResult struct {
-		VegaTime   time.Time
-		VegaTimeTo interface{}
-	}
 
 	results := []queryResult{}
-	expectedResult := map[int64]interface{}{
-		vegaTime.Add(1 * time.Second).UnixMicro(): vegaTime.Add(2 * time.Second),
-		vegaTime.Add(2 * time.Second).UnixMicro(): vegaTime.Add(3 * time.Second),
-		vegaTime.Add(3 * time.Second).UnixMicro(): pgtype.InfinityModifier(1),
-
-		vegaTime.Add(4 * time.Second).UnixMicro(): vegaTime.Add(5 * time.Second),
-		vegaTime.Add(5 * time.Second).UnixMicro(): vegaTime.Add(6 * time.Second),
-		vegaTime.Add(6 * time.Second).UnixMicro(): pgtype.InfinityModifier(1),
-	}
-
 	err = pgxscan.ScanAll(&results, rows)
 	rows.Close()
+
 	require.NoError(t, err)
-	for _, result := range results {
-		expected := expectedResult[result.VegaTime.UnixMicro()]
-		switch v := expected.(type) {
-		case time.Time:
-			timeTo := result.VegaTimeTo.(time.Time)
-			assert.Equal(t, v.UnixMicro(), timeTo.UnixMicro())
-		default:
-			assert.Equal(t, v, result.VegaTimeTo)
-		}
+
+	for i := 0; i < len(results); i++ {
+		assert.Equal(t, expectedResult[i], results[i])
 	}
 }
 

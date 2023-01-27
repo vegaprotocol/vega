@@ -34,6 +34,8 @@ const (
                        tx_hash, vega_time, seq_num`
 
 	ordersFilterDateColumn = "vega_time"
+
+	OrdersTableName = "orders"
 )
 
 type Orders struct {
@@ -50,7 +52,7 @@ func NewOrders(connectionSource *ConnectionSource, _ *logging.Logger) *Orders {
 	a := &Orders{
 		ConnectionSource: connectionSource,
 		batcher: NewMapBatcher[entities.OrderKey, entities.Order](
-			"orders",
+			OrdersTableName,
 			entities.OrderColumns),
 	}
 	return a

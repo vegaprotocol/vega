@@ -164,8 +164,17 @@ func (d *Service) GetSwarmKey() string {
 	return d.store.GetSwarmKey()
 }
 
-func (d *Service) LoadNetworkHistoryIntoDatanode(ctx context.Context, connConfig sqlstore.ConnectionConfig) (snapshot.LoadResult, error) {
+func (d *Service) LoadNetworkHistoryIntoDatanode(ctx context.Context,
+	connConfig sqlstore.ConnectionConfig, withIndexesAndOrderTriggers bool,
+) (snapshot.LoadResult, error) {
+	return d.LoadNetworkHistoryIntoDatanodeWithLog(ctx, d.log, connConfig, withIndexesAndOrderTriggers)
+}
+
+func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, loadLog snapshot.LoadLog,
+	connConfig sqlstore.ConnectionConfig, withIndexesAndOrderTriggers bool,
+) (snapshot.LoadResult, error) {
 	defer func() { _ = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromDir) }()
+	loadLog.Info("loading network history into datanode", logging.Bool("withIndexesAndOrderTriggers", withIndexesAndOrderTriggers))
 
 	err := os.MkdirAll(d.snapshotsCopyFromDir, fs.ModePerm)
 	if err != nil {
@@ -193,13 +202,13 @@ func (d *Service) LoadNetworkHistoryIntoDatanode(ctx context.Context, connConfig
 		return snapshot.LoadResult{}, fmt.Errorf("no data available to load: %w", err)
 	}
 
-	loadResult, err := d.snapshotService.LoadAllSnapshotData(ctx, currentStateSnapshot, contiguousHistory, d.snapshotsCopyFromDir,
-		connConfig)
+	loadResult, err := d.snapshotService.LoadSnapshotData(ctx, loadLog, currentStateSnapshot, contiguousHistory, d.snapshotsCopyFromDir,
+		connConfig, withIndexesAndOrderTriggers)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to load snapshot data:%w", err)
 	}
 
-	d.log.Info("loaded all available data into datanode", logging.String("result", fmt.Sprintf("%+v", loadResult)),
+	loadLog.Info("loaded all available data into datanode", logging.String("result", fmt.Sprintf("%+v", loadResult)),
 		logging.Duration("time taken", time.Since(start)))
 	return loadResult, err
 }

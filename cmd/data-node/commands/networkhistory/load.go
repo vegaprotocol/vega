@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.uber.org/zap"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
@@ -21,8 +23,9 @@ type loadCmd struct {
 	config.VegaHomeFlag
 	config.Config
 
-	Force            bool `short:"f" long:"force" description:"do not prompt for confirmation"`
-	WipeExistingData bool `short:"w" long:"wipe-existing-data" description:"Erase all data from the node before loading from networkhistory"`
+	Force                       bool   `short:"f" long:"force" description:"do not prompt for confirmation"`
+	WipeExistingData            bool   `short:"w" long:"wipe-existing-data" description:"Erase all data from the node before loading from network history"`
+	WithIndexesAndOrderTriggers string `short:"i" long:"with-indexes-and-order-triggers" required:"false" description:"if true the load will not drop indexes and order triggers when loading data, this is usually the best option when appending new segments onto existing datanode data" choice:"default" choice:"true" choice:"false" default:"default"`
 }
 
 func (cmd *loadCmd) Execute(_ []string) error {
@@ -45,7 +48,7 @@ func (cmd *loadCmd) Execute(_ []string) error {
 	}
 
 	if !cmd.Force {
-		if !flags.YesOrNo("Running this command will kill all existing database connections, do you with to continue?") {
+		if !flags.YesOrNo("Running this command will kill all existing database connections, do you want to continue?") {
 			return nil
 		}
 	}
@@ -157,9 +160,24 @@ func (cmd *loadCmd) Execute(_ []string) error {
 		}
 	}
 
-	fmt.Println("Loading history...")
+	withIndexesAndOrderTriggers := false
+	switch cmd.WithIndexesAndOrderTriggers {
+	case "true":
+		withIndexesAndOrderTriggers = true
+	case "default":
+		withIndexesAndOrderTriggers = span.HasData
+	}
 
-	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanode(context.Background(), cmd.Config.SQLStore.ConnectionConfig)
+	if withIndexesAndOrderTriggers {
+		fmt.Println("Loading history with indexes and order triggers...")
+	} else {
+		fmt.Println("Loading history...")
+	}
+
+	loadLog := newLoadLog()
+	defer loadLog.AtExit()
+	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanodeWithLog(context.Background(), loadLog,
+		cmd.Config.SQLStore.ConnectionConfig, withIndexesAndOrderTriggers)
 	if err != nil {
 		return fmt.Errorf("failed to load all available history:%w", err)
 	}
@@ -180,4 +198,33 @@ func getSpanOfAllAvailableHistory(networkhistoryService *networkhistory.Service)
 	}
 
 	return contiguousHistory[0].HeightFrom, contiguousHistory[len(contiguousHistory)-1].HeightTo, nil
+}
+
+type loadLog struct {
+	log *logging.Logger
+}
+
+func newLoadLog() *loadLog {
+	cfg := logging.NewDefaultConfig()
+	cfg.Custom.Zap.Level = logging.InfoLevel
+	cfg.Environment = "custom"
+
+	return &loadLog{
+		log: logging.NewLoggerFromConfig(cfg),
+	}
+}
+
+func (l *loadLog) AtExit() {
+	l.log.AtExit()
+}
+
+func (l *loadLog) Infof(s string, args ...interface{}) {
+	currentTime := time.Now()
+	argsWithTime := []any{currentTime.Format("2006-01-02 15:04:05")}
+	argsWithTime = append(argsWithTime, args...)
+	fmt.Printf("%s "+s+"\n", argsWithTime...)
+}
+
+func (l *loadLog) Info(msg string, fields ...zap.Field) {
+	l.log.Info(msg, fields...)
 }

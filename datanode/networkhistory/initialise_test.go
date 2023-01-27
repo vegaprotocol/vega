@@ -67,7 +67,7 @@ func TestInitialiseEmptyDataNode(t *testing.T) {
 
 	gomock.InOrder(first, second)
 
-	service.EXPECT().LoadNetworkHistoryIntoDatanode(gomock.Any(), gomock.Any()).Times(1)
+	service.EXPECT().LoadNetworkHistoryIntoDatanode(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{}, nil)
 
 	networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig, service, []int{})
@@ -123,7 +123,7 @@ func TestInitialiseNonEmptyDataNode(t *testing.T) {
 
 	gomock.InOrder(first, second)
 
-	service.EXPECT().LoadNetworkHistoryIntoDatanode(gomock.Any(), gomock.Any()).Times(1)
+	service.EXPECT().LoadNetworkHistoryIntoDatanode(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 
 	service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{
 		FromHeight: 0,
@@ -220,7 +220,7 @@ func TestWhenMinimumBlockCountExceedsAvailableHistory(t *testing.T) {
 
 	gomock.InOrder(first, second)
 
-	service.EXPECT().LoadNetworkHistoryIntoDatanode(gomock.Any(), gomock.Any()).Times(1)
+	service.EXPECT().LoadNetworkHistoryIntoDatanode(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{}, nil)
 
 	networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig,
@@ -248,7 +248,8 @@ func TestInitialiseToASpecifiedSegment(t *testing.T) {
 		HistorySegmentID: "segment1",
 	}, nil)
 
-	service.EXPECT().LoadNetworkHistoryIntoDatanode(gomock.Any(), gomock.Any()).Times(1)
+	service.EXPECT().LoadNetworkHistoryIntoDatanode(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{}, nil)
 
 	networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig,
 		service, []int{})
@@ -267,6 +268,7 @@ func TestAutoInitialiseWhenNoActivePeers(t *testing.T) {
 	cfg.MinimumBlockCount = 1500
 	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
 		Return(nil, nil, errors.New("no peers found"))
+	service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{}, nil)
 
 	assert.NotNil(t, networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig,
 		service, []int{}))
@@ -285,6 +287,7 @@ func TestAutoInitialiseWhenNoHistoryAvailableFromPeers(t *testing.T) {
 	cfg.MinimumBlockCount = 1500
 	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
 		Return(nil, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse{}, nil)
+	service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{}, nil)
 
 	assert.NotNil(t, networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig,
 		service, []int{}))
