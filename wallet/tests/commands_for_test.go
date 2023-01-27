@@ -521,17 +521,6 @@ func (d *DescribeNetworkAssertion) WithName(expected string) *DescribeNetworkAss
 	return d
 }
 
-func (d *DescribeNetworkAssertion) WithHostAndPort(host string, port int) *DescribeNetworkAssertion {
-	assert.Equal(d.t, host, d.resp.Host)
-	assert.Equal(d.t, port, d.resp.Port)
-	return d
-}
-
-func (d *DescribeNetworkAssertion) WithTokenExpiry(expected string) *DescribeNetworkAssertion {
-	assert.Equal(d.t, expected, d.resp.TokenExpiry)
-	return d
-}
-
 func (d *DescribeNetworkAssertion) WithGRPCConfig(hosts []string, retires uint64) *DescribeNetworkAssertion {
 	assert.Equal(d.t, hosts, d.resp.API.GRPCConfig.Hosts)
 	assert.Equal(d.t, retires, d.resp.API.GRPCConfig.Retries)
