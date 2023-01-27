@@ -46,7 +46,7 @@ import (
 const (
 	lastEpoch       = 346
 	playbackTimeout = 5 * time.Minute
-	chainID         = "testnet"
+	chainID         = "testnet-001"
 	testdataPath    = "testdata/system_tests.evt"
 )
 
@@ -210,6 +210,7 @@ func newTestConfig(postgresRuntimePath string) (*config.Config, error) {
 	cfg.API.Reflection = true
 	cfg.ChainID = chainID
 	cfg.SQLStore = databasetest.NewTestConfig(5432, postgresRuntimePath)
+	cfg.NetworkHistory.Enabled = false
 
 	return &cfg, nil
 }

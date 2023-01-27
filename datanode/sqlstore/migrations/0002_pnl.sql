@@ -1,18 +1,48 @@
 -- +goose Up
 
 ALTER TABLE positions
-  ADD COLUMN pending_open_volume         BIGINT NOT NULL,
-  ADD COLUMN pending_realised_pnl        NUMERIC NOT NULL,
-  ADD COLUMN pending_unrealised_pnl      NUMERIC NOT NULL,
-  ADD COLUMN pending_average_entry_price NUMERIC NOT NULL,
-  ADD COLUMN pending_average_entry_market_price NUMERIC NOT NULL;
+  ADD COLUMN pending_open_volume         BIGINT,
+  ADD COLUMN pending_realised_pnl        NUMERIC,
+  ADD COLUMN pending_unrealised_pnl      NUMERIC,
+  ADD COLUMN pending_average_entry_price NUMERIC,
+  ADD COLUMN pending_average_entry_market_price NUMERIC;
+
+
+UPDATE positions SET
+  pending_open_volume = open_volume,
+  pending_realised_pnl = realised_pnl,
+  pending_unrealised_pnl = unrealised_pnl,
+  pending_average_entry_price = average_entry_price,
+  pending_average_entry_market_price = average_entry_market_price;
+  
+
+ALTER TABLE positions
+  ALTER COLUMN pending_open_volume         SET NOT NULL,
+  ALTER COLUMN pending_realised_pnl        SET NOT NULL,
+  ALTER COLUMN pending_unrealised_pnl      SET NOT NULL,
+  ALTER COLUMN pending_average_entry_price SET NOT NULL,
+  ALTER COLUMN pending_average_entry_market_price SET NOT NULL;
 
 ALTER TABLE positions_current
-  ADD COLUMN pending_open_volume         BIGINT NOT NULL,
-  ADD COLUMN pending_realised_pnl        NUMERIC NOT NULL,
-  ADD COLUMN pending_unrealised_pnl      NUMERIC NOT NULL,
-  ADD COLUMN pending_average_entry_price NUMERIC NOT NULL,
-  ADD COLUMN pending_average_entry_market_price NUMERIC NOT NULL;
+  ADD COLUMN pending_open_volume         BIGINT,
+  ADD COLUMN pending_realised_pnl        NUMERIC,
+  ADD COLUMN pending_unrealised_pnl      NUMERIC,
+  ADD COLUMN pending_average_entry_price NUMERIC,
+  ADD COLUMN pending_average_entry_market_price NUMERIC;
+
+UPDATE positions_current SET
+  pending_open_volume = open_volume,
+  pending_realised_pnl = realised_pnl,
+  pending_unrealised_pnl = unrealised_pnl,
+  pending_average_entry_price = average_entry_price,
+  pending_average_entry_market_price = average_entry_market_price;
+
+ALTER TABLE positions_current
+  ALTER COLUMN pending_open_volume         SET NOT NULL,
+  ALTER COLUMN pending_realised_pnl        SET NOT NULL,
+  ALTER COLUMN pending_unrealised_pnl      SET NOT NULL,
+  ALTER COLUMN pending_average_entry_price SET NOT NULL,
+  ALTER COLUMN pending_average_entry_market_price SET NOT NULL;
 
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_current_positions()

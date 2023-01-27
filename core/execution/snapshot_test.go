@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"fmt"
 	"testing"
 	"time"
 
@@ -44,6 +45,10 @@ type snapshotTestData struct {
 	oracleEngine   *oracles.Engine
 	snapshotEngine *snp.Engine
 	timeService    *stubs.TimeStub
+}
+
+type stubIDGen struct {
+	calls int
 }
 
 // TestSnapshotOraclesTerminatingMarketFromSnapshot tests that market loaded from snapshot can be terminated with its oracle.
@@ -120,6 +125,134 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	require.True(t, bytes.Equal(state, state2))
 }
 
+// TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot tests that market loaded from snapshot can be terminated with its oracle.
+// the settlement data will be sent before the snapshot is taken, to ensure settlement data is restored correctly.
+func TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot(t *testing.T) {
+	now := time.Now()
+	exec := getEngineWithParties(t, now, num.NewUint(1000000000), "lp", "p1", "p2", "p3", "p4")
+	pubKey := &types.SignerPubKey{
+		PubKey: &types.PubKey{
+			Key: "0xDEADBEEF",
+		},
+	}
+	mkt := newMarket("MarketID", pubKey)
+	err := exec.engine.SubmitMarket(context.Background(), mkt, "")
+	require.NoError(t, err)
+
+	err = exec.engine.StartOpeningAuction(context.Background(), mkt.ID)
+	require.NoError(t, err)
+	mktState, err := exec.engine.GetMarketState("MarketID")
+	require.NoError(t, err)
+	require.Equal(t, types.MarketStateActive, mktState)
+
+	idgen := &stubIDGen{}
+	// now let's submit some orders and get market to trade continuously
+	lpSubmission := &types.LiquidityProvisionSubmission{
+		MarketID:         mkt.ID,
+		CommitmentAmount: num.NewUint(1000000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Reference:        "lp1",
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 10, 5),
+		},
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 10, 5),
+		},
+	}
+	// submit LP
+	vgctx := vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("0deadbeef")))
+	_ = exec.engine.SubmitLiquidityProvision(vgctx, lpSubmission, "lp", idgen.NextID())
+	// uncrossing orders
+	os1 := &types.OrderSubmission{
+		MarketID:    mkt.ID,
+		Price:       num.NewUint(99),
+		Size:        1,
+		Side:        types.SideBuy,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
+		Reference:   "o1",
+	}
+	os2 := &types.OrderSubmission{
+		MarketID:    mkt.ID,
+		Price:       num.NewUint(99),
+		Size:        1,
+		Side:        types.SideSell,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
+		Reference:   "o2",
+	}
+	_, _ = exec.engine.SubmitOrder(vgctx, os1, "p1", idgen, "o1p1")
+	_, _ = exec.engine.SubmitOrder(vgctx, os2, "p2", idgen, "o2p2")
+	// have some volume on the book
+	os1 = &types.OrderSubmission{
+		MarketID:    mkt.ID,
+		Price:       num.NewUint(85),
+		Size:        1,
+		Side:        types.SideBuy,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
+		Reference:   "o3",
+	}
+	os2 = &types.OrderSubmission{
+		MarketID:    mkt.ID,
+		Price:       num.NewUint(110),
+		Size:        1,
+		Side:        types.SideSell,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
+		Reference:   "o4",
+	}
+	_, _ = exec.engine.SubmitOrder(vgctx, os1, "p3", idgen, "o3p3")
+	_, _ = exec.engine.SubmitOrder(vgctx, os2, "p4", idgen, "o4p4")
+
+	// OK, we now have stuff on the book, so we should be able to leave opening auction
+	now = now.Add(60 * time.Second) // move ahead 1 minute
+	// We probably need to add a hash to this context
+	vgctx = vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("1deadbeef")))
+	exec.engine.OnTick(vgctx, now)
+	pubKeys := []*types.Signer{
+		types.CreateSignerFromString(pubKey.PubKey.Key, types.DataSignerTypePubKey),
+	}
+
+	// provide settlement data for first market
+	vgctx = vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("2deadbeef")))
+	exec.oracleEngine.BroadcastData(vgctx, oracles.OracleData{
+		Signers: pubKeys,
+		Data:    map[string]string{"prices.ETH.value": "100"},
+	})
+	// then create snapshot of market
+	state, _, _ := exec.engine.GetState("")
+
+	exec2 := getEngine(t, now)
+	snap := &snapshot.Payload{}
+	proto.Unmarshal(state, snap)
+	vgctx = vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("3deadbeef")))
+	_, _ = exec2.engine.LoadState(vgctx, types.PayloadFromProto(snap))
+
+	state2, _, _ := exec2.engine.GetState("")
+	// the states should match
+	require.True(t, bytes.Equal(state, state2))
+
+	vgctx = vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("3deadbeef")))
+	exec.oracleEngine.BroadcastData(vgctx, oracles.OracleData{
+		Signers: pubKeys,
+		Data:    map[string]string{"trading.terminated": "true"},
+	})
+
+	exec2.oracleEngine.BroadcastData(vgctx, oracles.OracleData{
+		Signers: pubKeys,
+		Data:    map[string]string{"trading.terminated": "true"},
+	})
+
+	marketState1, _ := exec.engine.GetMarketState("MarketID")
+	marketState2, _ := exec2.engine.GetMarketState("MarketID")
+
+	// markets should both be settled
+	require.Equal(t, marketState1, marketState2)
+	require.Equal(t, types.MarketStateSettled, marketState1)
+	require.Equal(t, types.MarketStateSettled, marketState2)
+}
+
 // TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementData sets up a market that gets the settlement data first.
 // Then a snapshot is taken and another node is restored from this snapshot. Finally trading termination data is received and both markets
 // are expected to get settled.
@@ -133,6 +266,14 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementData(t *test
 	mkt := newMarket("MarketID", pubKeys[0].Signer.(*types.SignerPubKey))
 	err := exec.engine.SubmitMarket(context.Background(), mkt, "")
 	require.NoError(t, err)
+
+	err = exec.engine.StartOpeningAuction(context.Background(), mkt.ID)
+	require.NoError(t, err)
+	mktState, err := exec.engine.GetMarketState("MarketID")
+	require.NoError(t, err)
+	require.Equal(t, types.MarketStateActive, mktState)
+
+	// set up market to get to continuous trading
 
 	// settlement data arrives first
 	exec.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
@@ -152,18 +293,6 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementData(t *test
 	// take a snapshot on the loaded engine
 	state2, _, _ := exec2.engine.GetState("")
 	require.True(t, bytes.Equal(state, state2))
-
-	err = exec.engine.StartOpeningAuction(context.Background(), mkt.ID)
-	require.NoError(t, err)
-	mktState, err := exec.engine.GetMarketState("MarketID")
-	require.NoError(t, err)
-	require.Equal(t, types.MarketStateActive, mktState)
-
-	err = exec2.engine.StartOpeningAuction(context.Background(), mkt.ID)
-	require.NoError(t, err)
-	mktState, err = exec2.engine.GetMarketState("MarketID")
-	require.NoError(t, err)
-	require.Equal(t, types.MarketStateActive, mktState)
 
 	// terminate the market to lead to settlement
 	exec.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
@@ -439,4 +568,62 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 		snapshotEngine: snapshotEngine,
 		timeService:    timeService,
 	}
+}
+
+func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, parties ...string) *snapshotTestData {
+	t.Helper()
+	// ctrl := gomock.NewController(t)
+	cfg := execution.NewDefaultConfig()
+	log := logging.NewTestLogger()
+	broker := stubs.NewBrokerStub()
+	timeService := stubs.NewTimeStub()
+	timeService.SetTime(now)
+	collateralEngine := collateral.New(log, collateral.NewDefaultConfig(), timeService, broker)
+	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), timeService, broker)
+
+	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), broker)
+	marketActivityTracker := execution.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
+
+	ethAsset := types.Asset{
+		ID: "Ethereum/Ether",
+		Details: &types.AssetDetails{
+			Name:   "Ethereum/Ether",
+			Symbol: "Ethereum/Ether",
+		},
+	}
+	collateralEngine.EnableAsset(context.Background(), ethAsset)
+	for _, p := range parties {
+		_, _ = collateralEngine.Deposit(context.Background(), p, ethAsset.ID, balance.Clone())
+	}
+
+	eng := execution.NewEngine(
+		log,
+		cfg,
+		timeService,
+		collateralEngine,
+		oracleEngine,
+		broker,
+		stubs.NewStateVar(),
+		marketActivityTracker,
+		stubs.NewAssetStub(),
+	)
+
+	statsData := stats.New(log, stats.NewDefaultConfig())
+	config := snp.NewDefaultConfig()
+	config.Storage = "memory"
+	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+	snapshotEngine.AddProviders(eng)
+	snapshotEngine.ClearAndInitialise()
+
+	return &snapshotTestData{
+		engine:         eng,
+		oracleEngine:   oracleEngine,
+		snapshotEngine: snapshotEngine,
+		timeService:    timeService,
+	}
+}
+
+func (s *stubIDGen) NextID() string {
+	s.calls++
+	return hex.EncodeToString([]byte(fmt.Sprintf("deadb33f%d", s.calls)))
 }

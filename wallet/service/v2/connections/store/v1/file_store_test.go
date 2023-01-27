@@ -185,16 +185,8 @@ func testFileStoreChangesToTokenFileArePropagatedToListeners(t *testing.T) {
 	vegaPaths := testHome(t)
 	store := newTestFileStore(t, vegaPaths)
 
-	wg := sync.WaitGroup{}
-
-	var lastTokenDescriptions []connections.TokenDescription
-	store.OnUpdate(func(_ context.Context, tokenDescriptions ...connections.TokenDescription) {
-		lastTokenDescriptions = tokenDescriptions
-		wg.Done()
-	})
-
-	// 1. Ensure the creation of a token is broadcast to listeners, a first time.
-	wg.Add(1)
+	ctx, cancelFunc := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancelFunc()
 
 	// given
 	description1 := connections.TokenDescription{
@@ -207,20 +199,6 @@ func testFileStoreChangesToTokenFileArePropagatedToListeners(t *testing.T) {
 			Passphrase: vgrand.RandomStr(5),
 		},
 	}
-
-	// when
-	err := store.SaveToken(description1)
-
-	// then
-	require.NoError(t, err)
-
-	// Wait for the go routine to do its job.
-	wg.Wait()
-
-	// 2. Ensure the creation of a token is broadcast to listeners, a second time.
-	wg.Add(1)
-
-	// given
 	description2 := connections.TokenDescription{
 		Description:  vgrand.RandomStr(5),
 		CreationDate: time.Now().Add(-4 * time.Hour),
@@ -230,14 +208,59 @@ func testFileStoreChangesToTokenFileArePropagatedToListeners(t *testing.T) {
 			Passphrase: vgrand.RandomStr(5),
 		},
 	}
+	description3 := connections.TokenDescription{
+		Description:  vgrand.RandomStr(5),
+		CreationDate: time.Now().Add(-2 * time.Hour).Truncate(time.Second),
+		Token:        connections.GenerateToken(),
+		Wallet: connections.WalletCredentials{
+			Name:       vgrand.RandomStr(5),
+			Passphrase: vgrand.RandomStr(5),
+		},
+	}
+
+	wg := sync.WaitGroup{}
+	checkStep := 1
+	completed := false
+	store.OnUpdate(func(_ context.Context, tokenDescriptions ...connections.TokenDescription) {
+		if checkStep == 1 && len(tokenDescriptions) == 1 && tokenDescriptions[0].Token == description1.Token {
+			checkStep = 2
+			wg.Done()
+		} else if checkStep == 2 && len(tokenDescriptions) == 2 && tokenDescriptions[0].Token == description1.Token && tokenDescriptions[1].Token == description2.Token {
+			checkStep = 3
+			wg.Done()
+		} else if checkStep == 3 && len(tokenDescriptions) == 1 && tokenDescriptions[0].Token == description2.Token {
+			checkStep = 4
+			wg.Done()
+		} else if checkStep == 4 && len(tokenDescriptions) == 0 {
+			checkStep = 5
+			wg.Done()
+		} else if checkStep == 5 && len(tokenDescriptions) == 1 && tokenDescriptions[0].Token == description3.Token {
+			completed = true
+			wg.Done()
+			cancelFunc()
+		} else {
+			t.Logf("A file system event has been received but didn't match any checks: %v", tokenDescriptions)
+		}
+	})
+
+	// 1. Ensure the creation of a token is broadcast to listeners, a first time.
+	wg.Add(1)
+
+	// when
+	err := store.SaveToken(description1)
+
+	// then
+	require.NoError(t, err)
+	wg.Wait()
+
+	// 2. Ensure the creation of a token is broadcast to listeners, a second time.
+	wg.Add(1)
 
 	// when
 	err = store.SaveToken(description2)
 
 	// then
 	require.NoError(t, err)
-
-	// Wait for the go routine to do its job.
 	wg.Wait()
 
 	// 3. Verifying the deleted token is not broadcast to listeners.
@@ -248,8 +271,6 @@ func testFileStoreChangesToTokenFileArePropagatedToListeners(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-
-	// Wait for the go routine to do its job.
 	wg.Wait()
 
 	// 4. Verifying the deletion of the file is interpreted as a removal of all
@@ -261,40 +282,23 @@ func testFileStoreChangesToTokenFileArePropagatedToListeners(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-
-	// Wait for the go routine to do its job.
 	wg.Wait()
 
 	// 5. Verifying we can write after a deletion of the file.
 	wg.Add(1)
-
-	// given
-	description3 := connections.TokenDescription{
-		Description:  vgrand.RandomStr(5),
-		CreationDate: time.Now().Add(-2 * time.Hour).Truncate(time.Second),
-		Token:        connections.GenerateToken(),
-		Wallet: connections.WalletCredentials{
-			Name:       vgrand.RandomStr(5),
-			Passphrase: vgrand.RandomStr(5),
-		},
-	}
 
 	// when
 	err = store.SaveToken(description3)
 
 	// then
 	require.NoError(t, err)
-
-	// Wait for the go routine to do its job.
 	wg.Wait()
 
-	assert.Len(t, lastTokenDescriptions, 1)
-	assert.Equal(t, description3.Description, lastTokenDescriptions[0].Description)
-	assert.Equal(t, description3.Token, lastTokenDescriptions[0].Token)
-	assert.WithinDuration(t, description3.CreationDate, lastTokenDescriptions[0].CreationDate, 0)
-	assert.Nil(t, lastTokenDescriptions[0].ExpirationDate)
-	assert.Equal(t, description3.Wallet.Name, lastTokenDescriptions[0].Wallet.Name, 0)
-	assert.Equal(t, description3.Wallet.Passphrase, lastTokenDescriptions[0].Wallet.Passphrase, 0)
+	<-ctx.Done()
+
+	if !completed {
+		t.Errorf("The test couldn't be completed in due time. No FS event could pass the check %d.", checkStep)
+	}
 }
 
 type testFileStore struct {

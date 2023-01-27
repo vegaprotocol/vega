@@ -152,7 +152,6 @@ var (
 	ErrSpecifyingNetworkAndNodeAddressIsNotSupported      = errors.New("specifying a network and a node address is not supported")
 	ErrSubmissionBlockHeightIsRequired                    = errors.New("the submission block height is required")
 	ErrTransactionFailed                                  = errors.New("the transaction failed")
-	ErrTransactionIsNotValidVegaCommand                   = errors.New("the transaction is not a valid Vega command")
 	ErrTransactionIsNotValidJSON                          = errors.New("the transaction is not valid JSON")
 	ErrTransactionIsRequired                              = errors.New("the transaction is required")
 	ErrUserCanceledTheRequest                             = errors.New("the user canceled the request")

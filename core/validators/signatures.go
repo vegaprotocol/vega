@@ -39,6 +39,7 @@ type Signatures interface {
 		previousState map[string]StatusAddress,
 		newState map[string]StatusAddress,
 	)
+	SetNonce(currentTime time.Time)
 	PrepareValidatorSignatures(ctx context.Context, validators []NodeIDAddress, epochSeq uint64, added bool)
 	EmitValidatorAddedSignatures(ctx context.Context, submitter, nodeID string, currentTime time.Time) error
 	EmitValidatorRemovedSignatures(ctx context.Context, submitter, nodeID string, currentTime time.Time) error
@@ -158,7 +159,6 @@ func (s *ERC20Signatures) PreparePromotionsSignatures(
 		}
 	}
 
-	s.SetNonce(currentTime)
 	s.PrepareValidatorSignatures(ctx, toAdd, epochSeq, true)
 	s.PrepareValidatorSignatures(ctx, toRemove, epochSeq, false)
 
