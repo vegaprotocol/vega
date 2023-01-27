@@ -84,7 +84,7 @@ func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 	}
 	request := &walletpb.SubmitTransactionRequest{}
 	if err := jsonpb.Unmarshal(strings.NewReader(params.RawTransaction), request); err != nil {
-		return nil, invalidParams(ErrTransactionIsNotValidVegaCommand)
+		return nil, invalidParams(fmt.Errorf("the transaction is not a valid Vega command: %w", err))
 	}
 
 	request.PubKey = params.PublicKey
