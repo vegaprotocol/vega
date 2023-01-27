@@ -51,15 +51,11 @@ func (h *AdminDescribeNetwork) Handle(_ context.Context, rawParams jsonrpc.Param
 
 	n, err := h.networkStore.GetNetwork(params.Name)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not retrieve the network: %w", err))
+		return nil, internalError(fmt.Errorf("could not retrieve the network configuration: %w", err))
 	}
 
 	resp := AdminDescribeNetworkResult{
-		Name:        n.Name,
-		LogLevel:    n.LogLevel,
-		TokenExpiry: n.TokenExpiry,
-		Port:        n.Port,
-		Host:        n.Host,
+		Name: n.Name,
 	}
 
 	resp.API.GRPCConfig.Hosts = n.API.GRPC.Hosts
