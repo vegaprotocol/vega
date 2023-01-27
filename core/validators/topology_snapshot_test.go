@@ -19,6 +19,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/validators"
 
+	"github.com/golang/mock/gomock"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
 
@@ -64,11 +65,15 @@ func TestChangeOnValidatorPerfUpdate(t *testing.T) {
 }
 
 func TestTopologySnapshot(t *testing.T) {
-	top := getTestTopWithDefaultValidator(t)
+	top := getTestTopWithMockedSignatures(t)
 	defer top.ctrl.Finish()
 	top.timeService.EXPECT().GetTimeNow().AnyTimes()
-	updateValidatorPerformanceToNonDefaultState(t, top.Topology)
 
+	top.signatures.EXPECT().PrepareValidatorSignatures(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	top.signatures.EXPECT().SetNonce(gomock.Any()).Times(2)
+	top.signatures.EXPECT().ClearStaleSignatures().Times(2)
+	top.signatures.EXPECT().SerialisePendingSignatures().Times(1)
+	updateValidatorPerformanceToNonDefaultState(t, top.Topology)
 	s1, _, err := top.GetState(topKey)
 	require.Nil(t, err)
 
@@ -84,7 +89,6 @@ func TestTopologySnapshot(t *testing.T) {
 	}
 	err = top.AddNewNode(ctx, &nr1, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
-
 	nr2 := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey-2",
 		ChainPubKey:     tmPubKeys[1],
@@ -100,6 +104,7 @@ func TestTopologySnapshot(t *testing.T) {
 		NewPubKey:         "new-vega-key",
 		CurrentPubKeyHash: hashKey("vega-key"),
 	}
+
 	err = top.AddKeyRotate(ctx, nr1.Id, 5, kr1)
 	assert.NoError(t, err)
 
@@ -120,25 +125,30 @@ func TestTopologySnapshot(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check the hashes have changed after each state change
+	top.signatures.EXPECT().SerialisePendingSignatures().Times(1)
 	s3, _, err := top.GetState(topKey)
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(s1, s3))
 
 	// Get the state ready to load into a new instance of the engine
+	top.signatures.EXPECT().SerialisePendingSignatures().Times(1)
 	state, _, _ := top.GetState(topKey)
 	snap := &snapshot.Payload{}
 	err = proto.Unmarshal(state, snap)
 	require.Nil(t, err)
 
-	snapTop := getTestTopWithDefaultValidator(t)
+	snapTop := getTestTopWithMockedSignatures(t)
 	defer snapTop.ctrl.Finish()
 	snapTop.timeService.EXPECT().GetTimeNow().AnyTimes()
+	snapTop.signatures.EXPECT().SetNonce(gomock.Any()).Times(1)
+	snapTop.signatures.EXPECT().RestorePendingSignatures(gomock.Any()).Times(1)
 
 	ctx = vegactx.WithBlockHeight(ctx, 100)
 	_, err = snapTop.LoadState(ctx, types.PayloadFromProto(snap))
 	require.Nil(t, err)
 
 	// Check the new reloaded engine is the same as the original
+	snapTop.signatures.EXPECT().SerialisePendingSignatures().Times(1)
 	s4, _, err := snapTop.GetState(topKey)
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(s3, s4))
