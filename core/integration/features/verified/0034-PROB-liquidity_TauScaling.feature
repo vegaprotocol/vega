@@ -10,7 +10,7 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
-      | market.liquidity.probabilityOfTrading.tau.scaling   | 10    |
+      | market.liquidity.probabilityOfTrading.tau.scaling   | 1     |
 
     And the following assets are registered:
       | id  | decimal places |
@@ -28,10 +28,9 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | horizon | probability | auction extension |
       | 100000  | 0.99        | 3                 |
 
-
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 100            |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -62,6 +61,22 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | party2 | ETH/MAR22 | sell | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/MAR22"
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 100000  | 864       | 1154      | 1012920      | 1000000000     | 60            |
+
+    And the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 700   | 3572   |
+      | buy  | 864   | 0      |
+      | buy  | 898   | 2784   |
+      | buy  | 900   | 2778   |
+      | buy  | 999   | 2502   |
+      | sell | 1001  | 2498   |
+      | sell | 1100  | 2274   |
+      | sell | 1102  | 2269   |
+      | sell | 1154  | 0      |
+      | sell | 1300  | 1924   |
 
     And the following trades should be executed:
       | buyer  | price | size | seller |
@@ -98,8 +113,8 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
 
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 291    | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1611   | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 295    | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1607   | USD   |
 
   Scenario: 002: set tau.scaling to 10
   Background:
@@ -602,3 +617,4 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 946    | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 956    | USD   |
+
