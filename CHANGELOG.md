@@ -20,6 +20,7 @@
 - [7410](https://github.com/vegaprotocol/vega/issues/7410) - Return underlying error when parsing a command failed in the wallet API version 2
 - [7169](https://github.com/vegaprotocol/vega/issues/7169) - Fix migration, account for existing position data
 - [7427](https://github.com/vegaprotocol/vega/issues/7427) - Fix nil pointer panic on settlement of restored markets.
+- [7451](https://github.com/vegaprotocol/vega/issues/7451) - Fix floating point consensus to use voting power rather than node count
 
 ## 0.67.2
 
