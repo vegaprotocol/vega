@@ -14,7 +14,6 @@ import (
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
-	"code.vegaprotocol.io/vega/datanode/networkhistory/aggregation"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/fsutil"
 	"github.com/multiformats/go-multiaddr"
 
@@ -23,6 +22,13 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
 )
+
+type Segment interface {
+	GetFromHeight() int64
+	GetToHeight() int64
+	GetHistorySegmentId() string
+	GetPreviousHistorySegmentId() string
+}
 
 type Service struct {
 	log      *logging.Logger
@@ -110,15 +116,25 @@ func (d *Service) CopyHistorySegmentToFile(ctx context.Context, historySegmentID
 	return d.store.CopyHistorySegmentToFile(ctx, historySegmentID, outFile)
 }
 
-func (d *Service) GetHighestBlockHeightHistorySegment() (store.SegmentIndexEntry, error) {
+func (d *Service) GetHighestBlockHeightHistorySegment() (Segment, error) {
 	return d.store.GetHighestBlockHeightEntry()
 }
 
-func (d *Service) ListAllHistorySegments() ([]store.SegmentIndexEntry, error) {
-	return d.store.ListAllHistorySegmentsOldestFirst()
+func (d *Service) ListAllHistorySegments() ([]Segment, error) {
+	indexEntries, err := d.store.ListAllIndexEntriesOldestFirst()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list all index entries")
+	}
+
+	result := make([]Segment, 0, len(indexEntries))
+	for _, indexEntry := range indexEntries {
+		result = append(result, indexEntry)
+	}
+
+	return result, nil
 }
 
-func (d *Service) FetchHistorySegment(ctx context.Context, historySegmentID string) (store.SegmentIndexEntry, error) {
+func (d *Service) FetchHistorySegment(ctx context.Context, historySegmentID string) (Segment, error) {
 	return d.store.FetchHistorySegment(ctx, historySegmentID)
 }
 
@@ -164,19 +180,27 @@ func (d *Service) GetSwarmKey() string {
 	return d.store.GetSwarmKey()
 }
 
-func (d *Service) LoadNetworkHistoryIntoDatanode(ctx context.Context,
+func (d *Service) LoadNetworkHistoryIntoDatanode(ctx context.Context, contiguousHistory ContiguousHistory,
 	connConfig sqlstore.ConnectionConfig, withIndexesAndOrderTriggers bool,
 ) (snapshot.LoadResult, error) {
-	return d.LoadNetworkHistoryIntoDatanodeWithLog(ctx, d.log, connConfig, withIndexesAndOrderTriggers)
+	return d.LoadNetworkHistoryIntoDatanodeWithLog(ctx, d.log, contiguousHistory, connConfig, withIndexesAndOrderTriggers)
 }
 
-func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, loadLog snapshot.LoadLog,
+func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, loadLog snapshot.LoadLog, contiguousHistory ContiguousHistory,
 	connConfig sqlstore.ConnectionConfig, withIndexesAndOrderTriggers bool,
 ) (snapshot.LoadResult, error) {
 	defer func() { _ = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromDir) }()
-	loadLog.Info("loading network history into datanode", logging.Bool("withIndexesAndOrderTriggers", withIndexesAndOrderTriggers))
 
-	err := os.MkdirAll(d.snapshotsCopyFromDir, fs.ModePerm)
+	datanodeBlockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, d.connPool)
+	if err != nil {
+		return snapshot.LoadResult{}, fmt.Errorf("failed to get data node block span: %w", err)
+	}
+
+	loadLog.Info("loading network history into the datanode", logging.Int64("fromHeight", contiguousHistory.HeightFrom),
+		logging.Int64("toHeight", contiguousHistory.HeightTo), logging.Int64("currentDatanodeFromHeight", datanodeBlockSpan.FromHeight),
+		logging.Int64("currentDatanodeToHeight", datanodeBlockSpan.ToHeight), logging.Bool("withIndexesAndOrderTriggers", withIndexesAndOrderTriggers))
+
+	err = os.MkdirAll(d.snapshotsCopyFromDir, fs.ModePerm)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to create staging directory:%w", err)
 	}
@@ -188,21 +212,16 @@ func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, loa
 
 	start := time.Now()
 
-	datanodeBlockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, d.connPool)
-	if err != nil {
-		return snapshot.LoadResult{}, fmt.Errorf("failed to get data node block span: %w", err)
-	}
-
-	currentStateSnapshot, contiguousHistory, err := d.copyMoreRecentHistoryIntoDir(ctx, datanodeBlockSpan, d.snapshotsCopyFromDir)
+	currentStateSnapshot, historySnapshots, err := d.copyMoreRecentHistoryIntoDir(ctx, contiguousHistory, datanodeBlockSpan, d.snapshotsCopyFromDir)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to copy all available data into copy from path: %w", err)
 	}
 
-	if len(contiguousHistory) == 0 {
+	if len(historySnapshots) == 0 {
 		return snapshot.LoadResult{}, fmt.Errorf("no data available to load: %w", err)
 	}
 
-	loadResult, err := d.snapshotService.LoadSnapshotData(ctx, loadLog, currentStateSnapshot, contiguousHistory, d.snapshotsCopyFromDir,
+	loadResult, err := d.snapshotService.LoadSnapshotData(ctx, loadLog, currentStateSnapshot, historySnapshots, d.snapshotsCopyFromDir,
 		connConfig, withIndexesAndOrderTriggers)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to load snapshot data:%w", err)
@@ -281,22 +300,14 @@ func (d *Service) publishSnapshots(ctx context.Context) error {
 }
 
 // copyMoreRecentHistoryIntoDir copies all contiguous history data later than that already in the datanode into the target directory.
-func (d *Service) copyMoreRecentHistoryIntoDir(ctx context.Context, blockSpan sqlstore.DatanodeBlockSpan, targetDir string) (snapshot.CurrentState, []snapshot.History,
+func (d *Service) copyMoreRecentHistoryIntoDir(ctx context.Context, contiguousHistory ContiguousHistory,
+	blockSpan sqlstore.DatanodeBlockSpan, targetDir string) (snapshot.CurrentState, []snapshot.History,
 	error,
 ) {
-	contiguousHistory, err := d.GetContiguousHistoryFromHighestHeight()
-	if err != nil {
-		return snapshot.CurrentState{}, nil, fmt.Errorf("failed to get contiguous history data")
-	}
-
-	if len(contiguousHistory) == 0 {
-		return snapshot.CurrentState{}, nil, fmt.Errorf("no contiguous history data available")
-	}
-
 	var highestCurrentStateSnapshot snapshot.CurrentState
-	contiguousHistorySnapshots := make([]snapshot.History, 0, len(contiguousHistory))
-	for _, history := range contiguousHistory {
-		if history.HeightTo > blockSpan.ToHeight {
+	contiguousHistorySnapshots := make([]snapshot.History, 0, len(contiguousHistory.SegmentsOldestFirst))
+	for _, history := range contiguousHistory.SegmentsOldestFirst {
+		if history.GetToHeight() > blockSpan.ToHeight {
 			currentStateSnaphot, historySnapshot, err := d.extractSnapshotDataFromHistory(ctx, history, targetDir)
 			if err != nil {
 				return snapshot.CurrentState{}, nil, fmt.Errorf("failed to extract data from history:%w", err)
@@ -313,26 +324,14 @@ func (d *Service) copyMoreRecentHistoryIntoDir(ctx context.Context, blockSpan sq
 	return highestCurrentStateSnapshot, contiguousHistorySnapshots, nil
 }
 
-// GetContiguousHistoryFromHighestHeight returns all available contiguous (no gaps) history from the highest height.
-func (d *Service) GetContiguousHistoryFromHighestHeight() ([]aggregation.AggregatedHistorySegment, error) {
-	allHistorySegments, err := d.store.ListAllHistorySegmentsOldestFirst()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get all history segments:%w", err)
-	}
-
-	contiguousHistory := aggregation.GetHighestContiguousHistoryFromSegmentIndexEntry(allHistorySegments)
-
-	return contiguousHistory, nil
-}
-
-func (d *Service) extractSnapshotDataFromHistory(ctx context.Context, history aggregation.AggregatedHistorySegment, targetDir string) (snapshot.CurrentState, snapshot.History, error) {
+func (d *Service) extractSnapshotDataFromHistory(ctx context.Context, history Segment, targetDir string) (snapshot.CurrentState, snapshot.History, error) {
 	var err error
 	var currentStateSnaphot snapshot.CurrentState
 	var historySnapshot snapshot.History
 
-	currentStateSnaphot, historySnapshot, err = d.store.CopySnapshotDataIntoDir(ctx, history.HeightTo, targetDir)
+	currentStateSnaphot, historySnapshot, err = d.store.CopySnapshotDataIntoDir(ctx, history.GetToHeight(), targetDir)
 	if err != nil {
-		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to extract history segment for height: %d: %w", history.HeightTo, err)
+		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to extract history segment for height: %d: %w", history.GetToHeight(), err)
 	}
 
 	return currentStateSnaphot, historySnapshot, nil

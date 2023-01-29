@@ -62,9 +62,25 @@ type SegmentMetaData struct {
 	PreviousHistorySegmentID string
 }
 
+func (m SegmentMetaData) GetFromHeight() int64 {
+	return m.HeightFrom
+}
+
+func (m SegmentMetaData) GetToHeight() int64 {
+	return m.HeightTo
+}
+
+func (i SegmentIndexEntry) GetPreviousHistorySegmentId() string {
+	return i.PreviousHistorySegmentID
+}
+
 type SegmentIndexEntry struct {
 	SegmentMetaData
 	HistorySegmentID string
+}
+
+func (i SegmentIndexEntry) GetHistorySegmentId() string {
+	return i.HistorySegmentID
 }
 
 type Store struct {
@@ -350,7 +366,7 @@ func (p *Store) GetHighestBlockHeightEntry() (SegmentIndexEntry, error) {
 	return entry, nil
 }
 
-func (p *Store) ListAllHistorySegmentsOldestFirst() ([]SegmentIndexEntry, error) {
+func (p *Store) ListAllIndexEntriesOldestFirst() ([]SegmentIndexEntry, error) {
 	return p.index.ListAllEntriesOldestFirst()
 }
 

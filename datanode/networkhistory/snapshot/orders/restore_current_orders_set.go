@@ -1,13 +1,15 @@
 package orders
 
 import (
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"context"
 	"fmt"
+
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 )
 
 // RestoreCurrentOrdersSet updates the current order set. As order history is loaded from history segments, after order
-// history load, the same order could be market multiple times as current
+// history load, the same order could have multiple marked as the current version (as it was the current version in the
+// segment at the time the segment was created), this function ensures only the latest version is marked as current.
 func RestoreCurrentOrdersSet(ctx context.Context, conn sqlstore.Connection) error {
 	// Note, testing shows that dropping the index on the current flag does not net improve performance of the following update queries
 

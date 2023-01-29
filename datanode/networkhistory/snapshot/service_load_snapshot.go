@@ -114,7 +114,6 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 			if err != nil {
 				return LoadResult{}, fmt.Errorf("failed to get database meta data after database migration: %w", err)
 			}
-
 		}
 
 		rowsCopied, err = b.loadSnapshot(ctx, log, history, sourceDir, dbMetaData, b.connPool, withIndexesAndOrderTriggers)
@@ -136,7 +135,7 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 		return LoadResult{}, fmt.Errorf("failed to load current state snapshot %s: %w", currentStateSnapshot, err)
 	}
 
-	log.Infof("creating all indexes")
+	log.Infof("recreating dropped indexes")
 	err = b.createAllIndexes(ctx, log, b.connPool, removedConstraintsAndIndexes.indexes)
 	if err != nil {
 		return LoadResult{}, fmt.Errorf("failed to create indexes: %w", err)

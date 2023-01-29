@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.uber.org/zap"
+	"strconv"
 	"time"
+
+	"go.uber.org/zap"
 
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
@@ -28,7 +30,7 @@ type loadCmd struct {
 	WithIndexesAndOrderTriggers string `short:"i" long:"with-indexes-and-order-triggers" required:"false" description:"if true the load will not drop indexes and order triggers when loading data, this is usually the best option when appending new segments onto existing datanode data" choice:"default" choice:"true" choice:"false" default:"default"`
 }
 
-func (cmd *loadCmd) Execute(_ []string) error {
+func (cmd *loadCmd) Execute(args []string) error {
 	cfg := logging.NewDefaultConfig()
 	cfg.Custom.Zap.Level = logging.WarnLevel
 	cfg.Environment = "custom"
@@ -63,7 +65,7 @@ func (cmd *loadCmd) Execute(_ []string) error {
 	}
 	defer connPool.Close()
 
-	// Wiping data from networkhistory before loading then trying to load the data should never happen in any circumstance
+	// Wiping data from network history before loading then trying to load the data should never happen in any circumstance
 	cmd.Config.NetworkHistory.WipeOnStartup = false
 
 	hasSchema, err := sqlstore.HasVegaSchema(context.Background(), connPool)
@@ -115,9 +117,36 @@ func (cmd *loadCmd) Execute(_ []string) error {
 		return fmt.Errorf("failed new networkhistory service:%w", err)
 	}
 
-	from, to, err := getSpanOfAllAvailableHistory(networkHistoryService)
-	if err != nil {
-		return fmt.Errorf("failed to get span of all available history:%w", err)
+	segments, err := networkHistoryService.ListAllHistorySegments()
+	mostRecentContiguousHistory := networkhistory.GetMostRecentContiguousHistory(segments)
+
+	if mostRecentContiguousHistory == nil {
+		fmt.Println("No history is available to load.  Data can be fetched using the fetch command")
+		return nil
+	}
+
+	from := mostRecentContiguousHistory.HeightFrom
+	if len(args) >= 1 {
+		from, err = strconv.ParseInt(args[0], 10, 64)
+		if err != nil {
+			return fmt.Errorf("failed to parse from height: %w", err)
+		}
+	}
+
+	to := mostRecentContiguousHistory.HeightTo
+	if len(args) == 2 {
+		to, err = strconv.ParseInt(args[1], 10, 64)
+		if err != nil {
+			return fmt.Errorf("failed to parse to height: %w", err)
+		}
+	}
+
+	contiguousHistory := networkhistory.GetContiguousHistoryForSpan(networkhistory.GetContiguousHistories(segments), from, to)
+	if contiguousHistory == nil {
+		fmt.Printf("No contiguous history is available for block span %d to %d. From and To Heights must match "+
+			"from and to heights of the segments in the contiguous history span.\nUse the show command with the '-s' "+
+			"option to see all available segments\n", from, to)
+		return nil
 	}
 
 	span, err := sqlstore.GetDatanodeBlockSpan(ctx, connPool)
@@ -176,7 +205,7 @@ func (cmd *loadCmd) Execute(_ []string) error {
 
 	loadLog := newLoadLog()
 	defer loadLog.AtExit()
-	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanodeWithLog(context.Background(), loadLog,
+	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanodeWithLog(context.Background(), loadLog, *contiguousHistory,
 		cmd.Config.SQLStore.ConnectionConfig, withIndexesAndOrderTriggers)
 	if err != nil {
 		return fmt.Errorf("failed to load all available history:%w", err)
@@ -185,19 +214,6 @@ func (cmd *loadCmd) Execute(_ []string) error {
 	fmt.Printf("Loaded history from height %d to %d into the datanode\n", loaded.LoadedFromHeight, loaded.LoadedToHeight)
 
 	return nil
-}
-
-func getSpanOfAllAvailableHistory(networkhistoryService *networkhistory.Service) (from int64, to int64, err error) {
-	contiguousHistory, err := networkhistoryService.GetContiguousHistoryFromHighestHeight()
-	if err != nil {
-		return 0, 0, fmt.Errorf("failed to get contiguous history data")
-	}
-
-	if len(contiguousHistory) == 0 {
-		return 0, 0, nil
-	}
-
-	return contiguousHistory[0].HeightFrom, contiguousHistory[len(contiguousHistory)-1].HeightTo, nil
 }
 
 type loadLog struct {

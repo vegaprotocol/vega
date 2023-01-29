@@ -344,7 +344,7 @@ func TestMain(t *testing.M) {
 
 			time.Sleep(10 * time.Millisecond)
 
-			storedSegments, err := networkHistoryStore.ListAllHistorySegmentsOldestFirst()
+			storedSegments, err := networkHistoryStore.ListAllIndexEntriesOldestFirst()
 			if err != nil {
 				panic(err)
 			}
@@ -443,8 +443,11 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	inputSnapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
 
 	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	segments, err := networkhistoryService.ListAllHistorySegments()
+	require.NoError(t, err)
 
-	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, sqlConfig.ConnectionConfig, false)
+	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
+		sqlConfig.ConnectionConfig, false)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1801), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(4000), loaded.LoadedToHeight)
@@ -524,8 +527,10 @@ func TestRestoringNodeWithDataOlderAndNewerThanItContainsLoadsTheNewerData(t *te
 
 	assert.Equal(t, int64(1000), blocksFetched)
 	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	segments, err := networkhistoryService.ListAllHistorySegments()
+	require.NoError(t, err)
 
-	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, sqlConfig.ConnectionConfig, false)
+	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments), sqlConfig.ConnectionConfig, false)
 	require.NoError(t, err)
 
 	assert.Equal(t, int64(3001), loaded.LoadedFromHeight)
@@ -544,8 +549,11 @@ func TestRestoringNodeWithDataOlderAndNewerThanItContainsLoadsTheNewerData(t *te
 
 	assert.Equal(t, int64(5000), blocksFetched)
 	networkhistoryService = setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	segments, err = networkhistoryService.ListAllHistorySegments()
+	require.NoError(t, err)
 
-	result, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, sqlConfig.ConnectionConfig, false)
+	result, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
+		sqlConfig.ConnectionConfig, false)
 	require.Nil(t, err)
 
 	assert.Equal(t, int64(4001), result.LoadedFromHeight)
@@ -579,8 +587,11 @@ func TestRestoringNodeWithHistoryOnlyFromBeforeTheNodesOldestBlockFails(t *testi
 
 	assert.Equal(t, int64(1000), blocksFetched)
 	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	segments, err := networkhistoryService.ListAllHistorySegments()
+	require.NoError(t, err)
 
-	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, sqlConfig.ConnectionConfig, false)
+	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx,
+		*networkhistory.GetMostRecentContiguousHistory(segments), sqlConfig.ConnectionConfig, false)
 	require.NoError(t, err)
 
 	assert.Equal(t, int64(3001), loaded.LoadedFromHeight)
@@ -599,8 +610,11 @@ func TestRestoringNodeWithHistoryOnlyFromBeforeTheNodesOldestBlockFails(t *testi
 
 	assert.Equal(t, int64(1000), blocksFetched)
 	networkhistoryService = setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	segments, err = networkhistoryService.ListAllHistorySegments()
+	require.NoError(t, err)
 
-	_, err = networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, sqlConfig.ConnectionConfig, false)
+	_, err = networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
+		sqlConfig.ConnectionConfig, false)
 	require.NotNil(t, err)
 }
 
@@ -656,8 +670,11 @@ func TestRestoringNodeWithExistingDataFailsWhenLoadingWouldResultInNonContiguous
 	inputSnapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
 
 	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	segments, err := networkhistoryService.ListAllHistorySegments()
+	require.NoError(t, err)
 
-	_, err = networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, sqlConfig.ConnectionConfig, false)
+	_, err = networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
+		sqlConfig.ConnectionConfig, false)
 	require.NotNil(t, err)
 }
 
@@ -686,8 +703,11 @@ func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {
 
 		assert.Equal(t, expectedBlocks, blocksFetched)
 		networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+		segments, err := networkhistoryService.ListAllHistorySegments()
+		require.NoError(t, err)
 
-		loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, sqlConfig.ConnectionConfig, false)
+		loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
+			sqlConfig.ConnectionConfig, false)
 		require.NoError(t, err)
 
 		assert.Equal(t, int64(1), loaded.LoadedFromHeight)
@@ -719,8 +739,11 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 	inputSnapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
 
 	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	segments, err := networkhistoryService.ListAllHistorySegments()
+	require.NoError(t, err)
 
-	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, sqlConfig.ConnectionConfig, false)
+	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
+		sqlConfig.ConnectionConfig, false)
 	require.NoError(t, err)
 	assert.Equal(t, int64(2001), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(3000), loaded.LoadedToHeight)
@@ -805,8 +828,11 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 	inputSnapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
 
 	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	segments, err := networkhistoryService.ListAllHistorySegments()
+	require.NoError(t, err)
 
-	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, sqlConfig.ConnectionConfig, false)
+	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
+		sqlConfig.ConnectionConfig, false)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(2000), loaded.LoadedToHeight)
@@ -902,8 +928,11 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 	inputSnapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
 
 	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	segments, err := networkhistoryService.ListAllHistorySegments()
+	require.NoError(t, err)
 
-	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, sqlConfig.ConnectionConfig, true)
+	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
+		sqlConfig.ConnectionConfig, true)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(2000), loaded.LoadedToHeight)

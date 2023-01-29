@@ -4,6 +4,8 @@
 
 ### 🚨 Breaking changes
 - [6963](https://github.com/vegaprotocol/vega/issues/6963) - Remove the legacy fields from network API
+- [7361](https://github.com/vegaprotocol/vega/issues/7361) - Network history loading and current order set tracking - database requires database to be dropped 
+
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
