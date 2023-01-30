@@ -58,6 +58,8 @@ type Topology interface {
 	Get(key string) *validators.ValidatorData
 	IsValidator() bool
 	SelfNodeID() string
+	GetTotalVotingPower() int64
+	GetVotingPower(pubkey string) int64
 }
 
 // EpochEngine for being notified on epochs.

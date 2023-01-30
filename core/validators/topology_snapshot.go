@@ -323,7 +323,10 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology, p *typ
 	t.restorePendingKeyRotations(topology.PendingPubKeyRotations)
 	t.restorePendingEthereumKeyRotations(topology.PendingEthereumKeyRotations)
 	t.restoreUnresolvedEthereumKeyRotations(topology.UnresolvedEthereumKeyRotations)
+
 	t.signatures.RestorePendingSignatures(topology.Signatures)
+	t.signatures.SetNonce(t.timeService.GetTimeNow())
+
 	t.validatorPerformance.Deserialize(topology.ValidatorPerformance)
 	t.tss.serialised, err = proto.Marshal(p.IntoProto())
 	t.rng = rand.New(rand.NewSource(t.timeService.GetTimeNow().Unix()))
