@@ -429,7 +429,7 @@ func (mr *MockPositionStoreMockRecorder) GetByParty(arg0, arg1 interface{}) *gom
 }
 
 // GetByPartyConnection mocks base method.
-func (m *MockPositionStore) GetByPartyConnection(arg0 context.Context, arg1, arg2 string, arg3 entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
+func (m *MockPositionStore) GetByPartyConnection(arg0 context.Context, arg1, arg2 []string, arg3 entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByPartyConnection", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]entities.Position)

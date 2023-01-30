@@ -681,6 +681,12 @@ type Query {
     "Pagination options"
     pagination: Pagination,
   ): WithdrawalsConnection
+
+  "Fetch all positions"
+  positions(
+    filter: PositionsFilter,
+    pagination: Pagination
+  ): PositionConnection
 }
 
 "All the states a transfer can transition between"
@@ -1960,7 +1966,7 @@ type Party {
   ): AccountsConnection
 
   "Trading positions relating to a party"
-  positionsConnection(market: ID, pagination: Pagination): PositionConnection
+  positionsConnection(market: ID, pagination: Pagination): PositionConnection @deprecated (reason: "Use root positions query instead of sub-query")
 
   "Margin levels for a market"
   marginsConnection(
@@ -4042,6 +4048,12 @@ type PositionEdge {
   node: Position!
     "The cursor for this position"
   cursor: String
+}
+
+"Filter to apply to the positions connection query"
+input PositionsFilter {
+  partyIds: [ID!]
+  marketIds: [ID!]
 }
 
 "Connection type for retrieving cursor-based paginated position information"
