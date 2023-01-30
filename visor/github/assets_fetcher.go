@@ -16,11 +16,13 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
+	"time"
 
 	"code.vegaprotocol.io/vega/visor/utils"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v50/github"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -77,7 +79,9 @@ func (af *AssetsFetcher) GetAssets(ctx context.Context, releaseID int64) ([]*git
 }
 
 func (af *AssetsFetcher) DownloadAsset(ctx context.Context, assetID int64, path string) error {
-	ra, _, err := af.Client.Repositories.DownloadReleaseAsset(ctx, af.repositoryOwner, af.repository, assetID)
+	followClient := &http.Client{Timeout: time.Second * 120}
+
+	ra, _, err := af.Client.Repositories.DownloadReleaseAsset(ctx, af.repositoryOwner, af.repository, assetID, followClient)
 	if err != nil {
 		return fmt.Errorf("failed to download release asset: %w", err)
 	}
