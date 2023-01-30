@@ -481,6 +481,18 @@ func (r *myDepositResolver) CreditedTimestamp(ctx context.Context, obj *types.De
 
 type myQueryResolver VegaResolverRoot
 
+func (r *myQueryResolver) Positions(ctx context.Context, filter *v2.PositionsFilter, pagination *v2.Pagination) (*v2.PositionConnection, error) {
+	resp, err := r.tradingDataClientV2.ListAllPositions(ctx, &v2.ListAllPositionsRequest{
+		Filter:     filter,
+		Pagination: pagination,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Positions, nil
+}
+
 func (r *myQueryResolver) TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection,
 	pagination *v2.Pagination,
 ) (*v2.TransferConnection, error) {
