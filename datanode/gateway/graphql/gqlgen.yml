@@ -499,3 +499,5 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EpochRewardSummaryEdge
   EpochRewardSummary:
     model: code.vegaprotocol.io/vega/protos/vega.EpochRewardSummary
+  PositionsFilter:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PositionsFilter

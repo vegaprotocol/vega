@@ -60,10 +60,18 @@ service TradingDataService {
     // Subscribe to a stream of orders
     rpc ObserveOrders(ObserveOrdersRequest) returns (stream ObserveOrdersResponse);
 
+    // Positions (deprecated)
+    //
+    // Get a list of positions by party (public key) using cursor based pagination
+    // Deprecated: use ListAllPositions instead
+    rpc ListPositions(ListPositionsRequest) returns (ListPositionsResponse) {
+        option deprecated = true;
+    };
+
     // Positions
     //
     // Get a list of positions by party (public key) using cursor based pagination
-    rpc ListPositions(ListPositionsRequest) returns (ListPositionsResponse);
+    rpc ListAllPositions(ListAllPositionsRequest) returns (ListAllPositionsResponse);
 
     // Positions subscription
     //
@@ -699,6 +707,7 @@ message OrderUpdates{
 // Request for a list of positions for a party
 // Optionally, if a market identifier is set, the results will be filtered for that market only
 message ListPositionsRequest {
+    option deprecated = true;
     // Party identifier, required field
     string party_id = 1;
     // Market identifier
@@ -709,6 +718,29 @@ message ListPositionsRequest {
 
 // Response for a list of positions for a party
 message ListPositionsResponse {
+    option deprecated = true;
+    // A list of 0 or more positions
+    PositionConnection positions = 1;
+}
+
+// Filter to apply to the ListAllPositionsRequest
+message PositionsFilter {
+    // List of parties to filter on
+    repeated string party_ids = 1;
+    // List of markets to filter on
+    repeated string market_ids = 2;
+}
+
+// Request for a list of positions given the filter supplied.
+message ListAllPositionsRequest {
+    // Filter to apply to the positions
+    PositionsFilter filter = 1;
+    // Optional pagination control
+    optional Pagination pagination = 2;
+}
+
+// Response for a list of positions given the filter supplied.
+message ListAllPositionsResponse {
     // A list of 0 or more positions
     PositionConnection positions = 1;
 }
