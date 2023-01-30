@@ -29,7 +29,7 @@ type PositionStore interface {
 	GetByMarketAndParty(ctx context.Context, marketID string, partyID string) (entities.Position, error)
 	GetByMarket(ctx context.Context, marketID string) ([]entities.Position, error)
 	GetByParty(ctx context.Context, partyID string) ([]entities.Position, error)
-	GetByPartyConnection(ctx context.Context, partyID string, marketID string, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error)
+	GetByPartyConnection(ctx context.Context, partyID []string, marketID []string, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error)
 	GetAll(ctx context.Context) ([]entities.Position, error)
 }
 
@@ -105,8 +105,17 @@ func (p *Position) GetByParty(ctx context.Context, partyID entities.PartyID) ([]
 	return p.store.GetByParty(ctx, partyID.String())
 }
 
-func (p *Position) GetByPartyConnection(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
-	return p.store.GetByPartyConnection(ctx, partyID.String(), marketID.String(), pagination)
+func (p *Position) GetByPartyConnection(ctx context.Context, partyIDs []entities.PartyID, marketIDs []entities.MarketID, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
+	ps := make([]string, len(partyIDs))
+	for i, p := range partyIDs {
+		ps[i] = p.String()
+	}
+
+	ms := make([]string, len(marketIDs))
+	for i, m := range marketIDs {
+		ms[i] = m.String()
+	}
+	return p.store.GetByPartyConnection(ctx, ps, ms, pagination)
 }
 
 func (p *Position) GetAll(ctx context.Context) ([]entities.Position, error) {
