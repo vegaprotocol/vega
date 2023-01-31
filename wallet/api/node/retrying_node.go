@@ -19,6 +19,7 @@ import (
 type GRPCAdapter interface {
 	Host() string
 	Statistics(ctx context.Context) (nodetypes.Statistics, error)
+	SpamStatistics(ctx context.Context, pubKey string) (nodetypes.SpamStatistics, error)
 	SubmitTransaction(ctx context.Context, in *apipb.SubmitTransactionRequest) (*apipb.SubmitTransactionResponse, error)
 	LastBlock(ctx context.Context) (nodetypes.LastBlock, error)
 	Stop() error
@@ -53,6 +54,32 @@ func (n *RetryingNode) Statistics(ctx context.Context) (nodetypes.Statistics, er
 		zap.String("block-hash", resp.BlockHash),
 		zap.String("chain-id", resp.ChainID),
 		zap.String("vega-time", resp.VegaTime),
+		zap.Time("request-time", requestTime),
+	)
+	return resp, nil
+}
+
+func (n *RetryingNode) SpamStatistics(ctx context.Context, pubKey string) (nodetypes.SpamStatistics, error) {
+	n.log.Debug("querying the node statistics through the graphQL API", zap.String("host", n.grpcAdapter.Host()))
+	requestTime := time.Now()
+	resp, err := n.grpcAdapter.SpamStatistics(ctx, pubKey)
+	if err != nil {
+		n.log.Error("could not get the statistics",
+			zap.String("host", n.grpcAdapter.Host()),
+			zap.Error(err),
+		)
+		return nodetypes.SpamStatistics{}, err
+	}
+
+	// TODO log it all....
+	n.log.Debug("response from SpamStatistics",
+		zap.String("host", n.grpcAdapter.Host()),
+		zap.String("chain-id", resp.ChainID),
+		zap.Uint64("epoch", resp.EpochSeq),
+		zap.Uint64("block-height", resp.LastBlockHeight),
+		zap.Uint64("prosposals", resp.Proposals.CountForEpoch),
+		zap.Uint64("transfers", resp.Transfers.CountForEpoch),
+		zap.Uint64("delegations", resp.Delegations.CountForEpoch),
 		zap.Time("request-time", requestTime),
 	)
 	return resp, nil

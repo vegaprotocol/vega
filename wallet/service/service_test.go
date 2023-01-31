@@ -33,7 +33,7 @@ type testService struct {
 
 	clientAPI *v2mocks.MockClientAPI
 
-	pow         *mocks.MockProofOfWork
+	spam        *mocks.MockSpamHandler
 	timeService *v2connectionsmocks.MockTimeService
 	walletStore *v2connectionsmocks.MockWalletStore
 	tokenStore  *v2connectionsmocks.MockTokenStore
@@ -71,7 +71,7 @@ func getTestServiceV1(t *testing.T, consentPolicy string) *testService {
 	handler := v1mocks.NewMockWalletHandler(ctrl)
 	auth := v1mocks.NewMockAuth(ctrl)
 	nodeForward := v1mocks.NewMockNodeForward(ctrl)
-	pow := mocks.NewMockProofOfWork(ctrl)
+	spam := mocks.NewMockSpamHandler(ctrl)
 
 	consentRequestsCh := make(chan v1.ConsentRequest, 1)
 	sentTxs := make(chan v1.SentTransaction, 1)
@@ -88,7 +88,7 @@ func getTestServiceV1(t *testing.T, consentPolicy string) *testService {
 		t.Fatalf("unknown consent policy: %s", consentPolicy)
 	}
 
-	apiV1 := v1.NewAPI(zap.NewNop(), handler, auth, nodeForward, policy, net, pow)
+	apiV1 := v1.NewAPI(zap.NewNop(), handler, auth, nodeForward, policy, net, spam)
 
 	s := service.NewService(zap.NewNop(), serviceCfg, apiV1, nil)
 
@@ -110,7 +110,7 @@ func getTestServiceV1(t *testing.T, consentPolicy string) *testService {
 		auth:              auth,
 		nodeForward:       nodeForward,
 		consentRequestsCh: consentRequestsCh,
-		pow:               pow,
+		spam:              spam,
 	}
 }
 
@@ -127,7 +127,7 @@ func getTestServiceV2(t *testing.T, tokenSetups ...longLivingTokenSetupForTest) 
 	ctrl := gomock.NewController(t)
 
 	clientAPI := v2mocks.NewMockClientAPI(ctrl)
-	pow := mocks.NewMockProofOfWork(ctrl)
+	spam := mocks.NewMockSpamHandler(ctrl)
 	timeService := v2connectionsmocks.NewMockTimeService(ctrl)
 	walletStore := v2connectionsmocks.NewMockWalletStore(ctrl)
 	tokenStore := v2connectionsmocks.NewMockTokenStore(ctrl)
@@ -178,7 +178,7 @@ func getTestServiceV2(t *testing.T, tokenSetups ...longLivingTokenSetupForTest) 
 		walletStore: walletStore,
 		tokenStore:  tokenStore,
 
-		pow: pow,
+		spam: spam,
 	}
 }
 

@@ -28,7 +28,7 @@ func TestSignTransaction(t *testing.T) {
 	t.Run("Interrupting the request does not sign the transaction", testInterruptingTheRequestDoesNotSignTransaction)
 	t.Run("Getting internal error during the review does not sign the transaction", testGettingInternalErrorDuringReviewDoesNotSignTransaction)
 	t.Run("No healthy node available does not sign the transaction", testNoHealthyNodeAvailableDoesNotSignTransaction)
-	t.Run("Failing to get the last block does not sign the transaction", testFailingToGetLastBlockDoesNotSignTransaction)
+	t.Run("Failing to get spam statistics does not sign the transaction", testFailingToGetSpamStatsDoesNotSignTransaction)
 }
 
 func testSigningTransactionWithInvalidParamsFails(t *testing.T) {
@@ -113,30 +113,34 @@ func testSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	latestBlock := types.LastBlock{
-		ChainID:                         vgrand.RandomStr(5),
-		BlockHeight:                     100,
-		BlockHash:                       vgrand.RandomStr(64),
-		ProofOfWorkHashFunction:         "sha3_24_rounds",
-		ProofOfWorkDifficulty:           2,
-		ProofOfWorkPastBlocks:           2,
-		ProofOfWorkTxPerBlock:           2,
-		ProofOfWorkIncreasingDifficulty: false,
+	spamStats := types.SpamStatistics{
+		ChainID:           vgrand.RandomStr(5),
+		LastBlockHeight:   100,
+		Proposals:         &types.SpamStatistic{MaxForEpoch: 1},
+		NodeAnnouncements: &types.SpamStatistic{MaxForEpoch: 1},
+		Delegations:       &types.SpamStatistic{MaxForEpoch: 1},
+		Transfers:         &types.SpamStatistic{MaxForEpoch: 1},
+		Votes:             &types.VoteSpamStatistics{MaxForEpoch: 1},
+		PoW: &types.PoWStatistics{
+			PowBlockStates: []types.PoWBlockState{{}},
+		},
 	}
 
 	// setup
 	handler := newSignTransactionHandler(t)
 	// -- expected calls
-	handler.proofOfWork.EXPECT().Generate(kp.PublicKey(), &latestBlock).Times(1).Return(&commandspb.ProofOfWork{
+	handler.spam.EXPECT().GenerateProofOfWork(kp.PublicKey(), &spamStats).Times(1).Return(&commandspb.ProofOfWork{
 		Tid:   vgrand.RandomStr(5),
 		Nonce: 12345678,
 	}, nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
+
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
-	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(latestBlock, nil)
+	handler.node.EXPECT().SpamStatistics(ctx, kp.PublicKey()).Times(1).Return(spamStats, nil)
+	handler.spam.EXPECT().CheckSubmission(gomock.Any(), &spamStats).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.TransactionSuccessfullySigned).Times(1)
 	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
@@ -378,7 +382,7 @@ func testNoHealthyNodeAvailableDoesNotSignTransaction(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-func testFailingToGetLastBlockDoesNotSignTransaction(t *testing.T) {
+func testFailingToGetSpamStatsDoesNotSignTransaction(t *testing.T) {
 	// given
 	ctx, traceID := clientContextForTest()
 	hostname := vgrand.RandomStr(5)
@@ -405,7 +409,7 @@ func testFailingToGetLastBlockDoesNotSignTransaction(t *testing.T) {
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
 	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
-	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(types.LastBlock{}, assert.AnError)
+	handler.node.EXPECT().SpamStatistics(ctx, kp.PublicKey()).Times(1).Return(types.SpamStatistics{}, assert.AnError)
 	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get the latest block from the node: %w", assert.AnError)).Times(1)
 	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
@@ -423,6 +427,65 @@ func testFailingToGetLastBlockDoesNotSignTransaction(t *testing.T) {
 	assert.Empty(t, result)
 }
 
+func TestFailingSpamChecksAbortsSigningTheTransaction(t *testing.T) {
+	// given
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5)
+	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
+		PublicKeys: wallet.PublicKeysPermission{
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
+		},
+	})
+	kp, err := wallet1.GenerateKeyPair(nil)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	connectedWallet, err := api.NewConnectedWallet(hostname, wallet1)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	spamStats := types.SpamStatistics{
+		ChainID:           vgrand.RandomStr(5),
+		LastBlockHeight:   100,
+		Proposals:         &types.SpamStatistic{MaxForEpoch: 1},
+		NodeAnnouncements: &types.SpamStatistic{MaxForEpoch: 1},
+		Delegations:       &types.SpamStatistic{MaxForEpoch: 1},
+		Transfers:         &types.SpamStatistic{MaxForEpoch: 1},
+		Votes:             &types.VoteSpamStatistics{MaxForEpoch: 1},
+		PoW: &types.PoWStatistics{
+			PowBlockStates: []types.PoWBlockState{{}},
+		},
+	}
+
+	// setup
+	handler := newSignTransactionHandler(t)
+	// -- expected calls
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
+	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
+	handler.node.EXPECT().SpamStatistics(ctx, kp.PublicKey()).Times(1).Return(spamStats, nil)
+	handler.spam.EXPECT().CheckSubmission(gomock.Any(), &spamStats).Times(1).Return(assert.AnError)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ApplicationError, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
+
+	// when
+	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
+		PublicKey:   kp.PublicKey(),
+		Transaction: testTransaction(t),
+	}, connectedWallet)
+
+	// then
+	require.NotNil(t, errorDetails)
+	assert.Equal(t, api.ErrorCodeRequestHasBeenCanceledByApplication, errorDetails.Code)
+	assert.Equal(t, "Application error", errorDetails.Message)
+	assert.Equal(t, api.ErrTransactionBlockedBySpamRules.Error(), errorDetails.Data)
+	assert.Empty(t, result)
+}
+
 type signTransactionHandler struct {
 	*api.ClientSignTransaction
 	ctrl         *gomock.Controller
@@ -430,7 +493,7 @@ type signTransactionHandler struct {
 	nodeSelector *nodemock.MockSelector
 	node         *nodemock.MockNode
 	walletStore  *mocks.MockWalletStore
-	proofOfWork  *mocks.MockProofOfWork
+	spam         *mocks.MockSpamHandler
 }
 
 func (h *signTransactionHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params, connectedWallet api.ConnectedWallet) (api.ClientSignTransactionResult, *jsonrpc.ErrorDetails) {
@@ -455,7 +518,7 @@ func newSignTransactionHandler(t *testing.T) *signTransactionHandler {
 	interactor := mocks.NewMockInteractor(ctrl)
 	nodeSelector := nodemock.NewMockSelector(ctrl)
 	node := nodemock.NewMockNode(ctrl)
-	proofOfWork := mocks.NewMockProofOfWork(ctrl)
+	proofOfWork := mocks.NewMockSpamHandler(ctrl)
 
 	return &signTransactionHandler{
 		ClientSignTransaction: api.NewClientSignTransaction(walletStore, interactor, nodeSelector, proofOfWork),
@@ -464,6 +527,6 @@ func newSignTransactionHandler(t *testing.T) *signTransactionHandler {
 		interactor:            interactor,
 		node:                  node,
 		walletStore:           walletStore,
-		proofOfWork:           proofOfWork,
+		spam:                  proofOfWork,
 	}
 }

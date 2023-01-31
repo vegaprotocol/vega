@@ -369,6 +369,8 @@ message SpamStatistic {
   uint64 max_for_epoch = 2;
   // If blocked the timestamp when the party will be unblocked as RFC3339Nano
   optional string banned_until = 4;
+  // The effective minimum number of tokens required to submit a transaction of this type
+  string min_tokens_required = 5;
 }
 
 // The voting statistics by proposal for a given party for the current epoch
@@ -405,6 +407,14 @@ message PoWBlockState {
   optional uint64 expected_difficulty = 4;
   // The hashing function used to calculate the block hash
   string hash_function = 5;
+  // The base difficulty for this block for when transactions seen < tx_per_block
+  uint64 difficulty = 6;
+  // The number of transactions that can have their proof-of-work calculated with this block hash before
+  // either the difficulty increases, or no more transactions can use this block hash
+  uint64 tx_per_block = 7;
+  // Whether or not this block allows for increasing proof-of-work difficulty if the 
+  // tx-per-block-hash limit has been reached
+  bool increasing_difficulty = 8;
 }
 
 // Proof of work statistics for a party
@@ -413,6 +423,8 @@ message PoWStatistic {
   repeated PoWBlockState block_states = 1;
   // PoW banned until timestamp as RFC3339Nano
   optional string banned_until = 2;
+  // The number of block behind the current block whose hash can be used for prro-of-work calculations
+  uint64 number_of_past_blocks = 3;
 }
 
 // The complete spam statistics captured for a given party
@@ -431,6 +443,8 @@ message SpamStatistics {
   PoWStatistic pow = 6;
   // Statistics for multisig signatures issued for the party
   SpamStatistic issue_signatures = 7;
+  // The epoch in which these statistics apply to
+  uint64 epoch_seq = 8;
 }
 
 // A response containing all the spam statistics of a party for the current epoch

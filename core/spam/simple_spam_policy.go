@@ -284,11 +284,11 @@ func (ssp *SimpleSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 func (ssp *SimpleSpamPolicy) GetSpamStats(party string) *protoapi.SpamStatistic {
 	ssp.lock.RLock()
 	defer ssp.lock.RUnlock()
-
 	return &protoapi.SpamStatistic{
-		CountForEpoch: ssp.partyToCount[party],
-		MaxForEpoch:   ssp.maxAllowedCommands,
-		BannedUntil:   parseBannedUntil(ssp.bannedParties[party]),
+		CountForEpoch:     ssp.partyToCount[party],
+		MaxForEpoch:       ssp.maxAllowedCommands,
+		BannedUntil:       parseBannedUntil(ssp.bannedParties[party]),
+		MinTokensRequired: ssp.minTokensRequired.String(),
 	}
 }
 
