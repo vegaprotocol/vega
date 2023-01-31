@@ -31,6 +31,7 @@ type BuiltinAssetDeposit struct {
 	// A Vega party identifier (pub-key)
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// The amount to be deposited
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 }
 
@@ -98,6 +99,7 @@ type BuiltinAssetWithdrawal struct {
 	// A Vega network party identifier (pub-key)
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// The amount to be withdrawn
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 }
 
@@ -1191,6 +1193,7 @@ type StakeDeposited struct {
 	// The public of the party receiving the stake deposit (hex encode)
 	VegaPublicKey string `protobuf:"bytes,2,opt,name=vega_public_key,json=vegaPublicKey,proto3" json:"vega_public_key,omitempty"`
 	// The amount deposited (base 10)
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	// The time at which the block was produced
 	// will be used to inform the core at what time
@@ -1268,6 +1271,7 @@ type StakeRemoved struct {
 	// The public key of the party from which to remove stake (hex encode)
 	VegaPublicKey string `protobuf:"bytes,2,opt,name=vega_public_key,json=vegaPublicKey,proto3" json:"vega_public_key,omitempty"`
 	// The amount removed (base 10)
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	// The time at which the block was produced
 	// will be used to inform the core at what time
@@ -1343,6 +1347,7 @@ type StakeTotalSupply struct {
 	// The address of the staking asset
 	TokenAddress string `protobuf:"bytes,1,opt,name=token_address,json=tokenAddress,proto3" json:"token_address,omitempty"`
 	// The total supply observed for the token
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	TotalSupply string `protobuf:"bytes,2,opt,name=total_supply,json=totalSupply,proto3" json:"total_supply,omitempty"`
 }
 

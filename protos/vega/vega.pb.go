@@ -1675,10 +1675,13 @@ type Order struct {
 	Side Side `protobuf:"varint,4,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
 	// Price for the order, the price is an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	Price string `protobuf:"bytes,5,opt,name=price,proto3" json:"price,omitempty"`
 	// Size for the order, for example, in a futures market the size equals the number of contracts
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market position decimal places.
 	Size uint64 `protobuf:"varint,6,opt,name=size,proto3" json:"size,omitempty"`
 	// Size remaining, when this reaches 0 then the order is fully filled and status becomes STATUS_FILLED
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market position decimal places.
 	Remaining uint64 `protobuf:"varint,7,opt,name=remaining,proto3" json:"remaining,omitempty"`
 	// Time in force indicates how long an order will remain active before it is executed or expires.
 	// - See OrderTimeInForce
@@ -2090,8 +2093,10 @@ type Trade struct {
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Price for the trade, the price is an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	Price string `protobuf:"bytes,3,opt,name=price,proto3" json:"price,omitempty"`
 	// Size filled for the trade
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market position decimal places.
 	Size uint64 `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
 	// Unique party identifier for the buyer
 	Buyer string `protobuf:"bytes,5,opt,name=buyer,proto3" json:"buyer,omitempty"`
@@ -2262,10 +2267,13 @@ type Fee struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Fee amount paid to the non-aggressive party of the trade
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	MakerFee string `protobuf:"bytes,1,opt,name=maker_fee,json=makerFee,proto3" json:"maker_fee,omitempty"`
 	// Fee amount paid for maintaining the Vega infrastructure
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	InfrastructureFee string `protobuf:"bytes,2,opt,name=infrastructure_fee,json=infrastructureFee,proto3" json:"infrastructure_fee,omitempty"`
 	// Fee amount paid to market makers
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	LiquidityFee string `protobuf:"bytes,3,opt,name=liquidity_fee,json=liquidityFee,proto3" json:"liquidity_fee,omitempty"`
 }
 
@@ -2383,14 +2391,19 @@ type Candle struct {
 	// An ISO-8601 datetime with nanosecond precision for when the candle was last updated
 	Datetime string `protobuf:"bytes,2,opt,name=datetime,proto3" json:"datetime,omitempty"`
 	// Highest price for trading during the candle interval
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	High string `protobuf:"bytes,3,opt,name=high,proto3" json:"high,omitempty"`
 	// Lowest price for trading during the candle interval
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	Low string `protobuf:"bytes,4,opt,name=low,proto3" json:"low,omitempty"`
 	// Open trade price
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	Open string `protobuf:"bytes,5,opt,name=open,proto3" json:"open,omitempty"`
 	// Closing trade price
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	Close string `protobuf:"bytes,6,opt,name=close,proto3" json:"close,omitempty"`
 	// Total trading volume during the candle interval
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market position decimal places.
 	Volume uint64 `protobuf:"varint,7,opt,name=volume,proto3" json:"volume,omitempty"`
 	// Time interval for the candle - See [`Interval`](#vega.Interval)
 	Interval Interval `protobuf:"varint,8,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
@@ -2492,10 +2505,12 @@ type PriceLevel struct {
 
 	// Price for the price level, the price is an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	Price string `protobuf:"bytes,1,opt,name=price,proto3" json:"price,omitempty"`
 	// Number of orders at the price level
 	NumberOfOrders uint64 `protobuf:"varint,2,opt,name=number_of_orders,json=numberOfOrders,proto3" json:"number_of_orders,omitempty"`
 	// Volume at the price level
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market position decimal places.
 	Volume uint64 `protobuf:"varint,3,opt,name=volume,proto3" json:"volume,omitempty"`
 }
 
@@ -2724,13 +2739,17 @@ type Position struct {
 	// Party identifier
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Open volume for the position, value is signed +ve for long and -ve for short
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market position decimal places.
 	OpenVolume int64 `protobuf:"varint,3,opt,name=open_volume,json=openVolume,proto3" json:"open_volume,omitempty"`
 	// Realised profit and loss for the position, value is signed +ve for long and -ve for short
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	RealisedPnl string `protobuf:"bytes,4,opt,name=realised_pnl,json=realisedPnl,proto3" json:"realised_pnl,omitempty"`
 	// Unrealised profit and loss for the position, value is signed +ve for long and -ve for short
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	UnrealisedPnl string `protobuf:"bytes,5,opt,name=unrealised_pnl,json=unrealisedPnl,proto3" json:"unrealised_pnl,omitempty"`
 	// Average entry price for the position, the price is an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	AverageEntryPrice string `protobuf:"bytes,6,opt,name=average_entry_price,json=averageEntryPrice,proto3" json:"average_entry_price,omitempty"`
 	// Timestamp for the latest time the position was updated
 	UpdatedAt int64 `protobuf:"varint,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
@@ -2823,9 +2842,11 @@ type PositionTrade struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Volume for the position trade, value is signed +ve for long and -ve for short
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market position decimal places.
 	Volume int64 `protobuf:"varint,1,opt,name=volume,proto3" json:"volume,omitempty"`
 	// Price for the position trade, the price is an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	Price string `protobuf:"bytes,2,opt,name=price,proto3" json:"price,omitempty"`
 }
 
@@ -2890,6 +2911,7 @@ type Deposit struct {
 	// The Vega asset targeted by this deposit
 	Asset string `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
 	// The amount to be deposited
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount string `protobuf:"bytes,5,opt,name=amount,proto3" json:"amount,omitempty"`
 	// The hash of the transaction from the foreign chain
 	TxHash string `protobuf:"bytes,6,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
@@ -2998,6 +3020,7 @@ type Withdrawal struct {
 	// Unique party identifier of the user initiating the withdrawal
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// The amount to be withdrawn
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	// The asset to withdraw funds from
 	Asset string `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
@@ -3252,6 +3275,7 @@ type Account struct {
 	// Balance of the asset, the balance is an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
 	// and importantly balances cannot be negative
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Balance string `protobuf:"bytes,3,opt,name=balance,proto3" json:"balance,omitempty"`
 	// Asset identifier for the account
 	Asset string `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
@@ -3342,6 +3366,7 @@ type FinancialAmount struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A signed integer amount of asset
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount string `protobuf:"bytes,1,opt,name=amount,proto3" json:"amount,omitempty"`
 	// Asset identifier
 	Asset string `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
@@ -3402,10 +3427,12 @@ type Transfer struct {
 	// Party identifier for the owner of the transfer
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// A financial amount (of an asset) to transfer
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount *FinancialAmount `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
 	// The type of transfer, gives the reason for the transfer
 	Type TransferType `protobuf:"varint,3,opt,name=type,proto3,enum=vega.TransferType" json:"type,omitempty"`
 	// A minimum amount
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	MinAmount string `protobuf:"bytes,4,opt,name=min_amount,json=minAmount,proto3" json:"min_amount,omitempty"`
 	// optional dispatch strategy
 	MarketId string `protobuf:"bytes,5,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
@@ -3555,8 +3582,10 @@ type TransferRequest struct {
 	// One or more accounts to transfer to
 	ToAccount []*Account `protobuf:"bytes,2,rep,name=to_account,json=toAccount,proto3" json:"to_account,omitempty"`
 	// An amount to transfer for the asset
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	// A minimum amount
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	MinAmount string `protobuf:"bytes,4,opt,name=min_amount,json=minAmount,proto3" json:"min_amount,omitempty"`
 	// Asset identifier
 	Asset string `protobuf:"bytes,5,opt,name=asset,proto3" json:"asset,omitempty"`
@@ -3722,6 +3751,7 @@ type LedgerEntry struct {
 	// One or more accounts to transfer to
 	ToAccount *AccountDetails `protobuf:"bytes,2,opt,name=to_account,json=toAccount,proto3" json:"to_account,omitempty"`
 	// An amount to transfer
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	// Transfer type for this entry
 	Type TransferType `protobuf:"varint,4,opt,name=type,proto3,enum=vega.TransferType" json:"type,omitempty"`
@@ -3823,6 +3853,7 @@ type PostTransferBalance struct {
 	// The account relating to the transfer
 	Account *AccountDetails `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
 	// The balance relating to the transfer
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Balance string `protobuf:"bytes,2,opt,name=balance,proto3" json:"balance,omitempty"`
 }
 
@@ -3934,12 +3965,16 @@ type MarginLevels struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Maintenance margin value
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	MaintenanceMargin string `protobuf:"bytes,1,opt,name=maintenance_margin,json=maintenanceMargin,proto3" json:"maintenance_margin,omitempty"`
 	// Search level value
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	SearchLevel string `protobuf:"bytes,2,opt,name=search_level,json=searchLevel,proto3" json:"search_level,omitempty"`
 	// Initial margin value
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	InitialMargin string `protobuf:"bytes,3,opt,name=initial_margin,json=initialMargin,proto3" json:"initial_margin,omitempty"`
 	// Collateral release level value
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	CollateralReleaseLevel string `protobuf:"bytes,4,opt,name=collateral_release_level,json=collateralReleaseLevel,proto3" json:"collateral_release_level,omitempty"`
 	// Party identifier
 	PartyId string `protobuf:"bytes,5,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
@@ -4048,30 +4083,40 @@ type MarketData struct {
 
 	// Mark price, as an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	MarkPrice string `protobuf:"bytes,1,opt,name=mark_price,json=markPrice,proto3" json:"mark_price,omitempty"`
 	// Highest price level on an order book for buy orders, as an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	BestBidPrice string `protobuf:"bytes,2,opt,name=best_bid_price,json=bestBidPrice,proto3" json:"best_bid_price,omitempty"`
 	// Aggregated volume being bid at the best bid price
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market position decimal places.
 	BestBidVolume uint64 `protobuf:"varint,3,opt,name=best_bid_volume,json=bestBidVolume,proto3" json:"best_bid_volume,omitempty"`
 	// Lowest price level on an order book for offer orders
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	BestOfferPrice string `protobuf:"bytes,4,opt,name=best_offer_price,json=bestOfferPrice,proto3" json:"best_offer_price,omitempty"`
 	// Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly
-	//
-	//	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market position decimal places.
 	BestOfferVolume uint64 `protobuf:"varint,5,opt,name=best_offer_volume,json=bestOfferVolume,proto3" json:"best_offer_volume,omitempty"`
 	// Highest price on the order book for buy orders not including pegged orders
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	BestStaticBidPrice string `protobuf:"bytes,6,opt,name=best_static_bid_price,json=bestStaticBidPrice,proto3" json:"best_static_bid_price,omitempty"`
 	// Total volume at the best static bid price excluding pegged orders
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market position decimal places.
 	BestStaticBidVolume uint64 `protobuf:"varint,7,opt,name=best_static_bid_volume,json=bestStaticBidVolume,proto3" json:"best_static_bid_volume,omitempty"`
 	// Lowest price on the order book for sell orders not including pegged orders
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	BestStaticOfferPrice string `protobuf:"bytes,8,opt,name=best_static_offer_price,json=bestStaticOfferPrice,proto3" json:"best_static_offer_price,omitempty"`
 	// Total volume at the best static offer price excluding pegged orders
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market position decimal places.
 	BestStaticOfferVolume uint64 `protobuf:"varint,9,opt,name=best_static_offer_volume,json=bestStaticOfferVolume,proto3" json:"best_static_offer_volume,omitempty"`
 	// Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	MidPrice string `protobuf:"bytes,10,opt,name=mid_price,json=midPrice,proto3" json:"mid_price,omitempty"`
 	// Arithmetic average of the best static bid price and best static offer price
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	StaticMidPrice string `protobuf:"bytes,11,opt,name=static_mid_price,json=staticMidPrice,proto3" json:"static_mid_price,omitempty"`
 	// Market identifier for the data
 	Market string `protobuf:"bytes,12,opt,name=market,proto3" json:"market,omitempty"`
@@ -4079,14 +4124,17 @@ type MarketData struct {
 	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	Timestamp int64 `protobuf:"varint,13,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// The sum of the size of all positions greater than 0 on the market
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market position decimal places.
 	OpenInterest uint64 `protobuf:"varint,14,opt,name=open_interest,json=openInterest,proto3" json:"open_interest,omitempty"`
 	// Time in seconds until the end of the auction (0 if currently not in auction period)
 	AuctionEnd int64 `protobuf:"varint,15,opt,name=auction_end,json=auctionEnd,proto3" json:"auction_end,omitempty"`
 	// Time until next auction, or start time of the current auction if market is in auction period
 	AuctionStart int64 `protobuf:"varint,16,opt,name=auction_start,json=auctionStart,proto3" json:"auction_start,omitempty"`
 	// Indicative price (zero if not in auction)
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	IndicativePrice string `protobuf:"bytes,17,opt,name=indicative_price,json=indicativePrice,proto3" json:"indicative_price,omitempty"`
 	// Indicative volume (zero if not in auction)
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market position decimal places.
 	IndicativeVolume uint64 `protobuf:"varint,18,opt,name=indicative_volume,json=indicativeVolume,proto3" json:"indicative_volume,omitempty"`
 	// The current trading mode for the market
 	MarketTradingMode Market_TradingMode `protobuf:"varint,19,opt,name=market_trading_mode,json=marketTradingMode,proto3,enum=vega.Market_TradingMode" json:"market_trading_mode,omitempty"`
@@ -4095,8 +4143,10 @@ type MarketData struct {
 	// When a market auction is extended, this field indicates what caused the extension
 	ExtensionTrigger AuctionTrigger `protobuf:"varint,21,opt,name=extension_trigger,json=extensionTrigger,proto3,enum=vega.AuctionTrigger" json:"extension_trigger,omitempty"`
 	// Targeted stake for the given market
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	TargetStake string `protobuf:"bytes,22,opt,name=target_stake,json=targetStake,proto3" json:"target_stake,omitempty"`
 	// Available stake for the given market
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	SuppliedStake string `protobuf:"bytes,23,opt,name=supplied_stake,json=suppliedStake,proto3" json:"supplied_stake,omitempty"`
 	// One or more price monitoring bounds for the current timestamp
 	PriceMonitoringBounds []*PriceMonitoringBounds `protobuf:"bytes,24,rep,name=price_monitoring_bounds,json=priceMonitoringBounds,proto3" json:"price_monitoring_bounds,omitempty"`
@@ -4109,6 +4159,7 @@ type MarketData struct {
 	// next MTM timestamp
 	NextMarkToMarket int64 `protobuf:"varint,28,opt,name=next_mark_to_market,json=nextMarkToMarket,proto3" json:"next_mark_to_market,omitempty"`
 	// last traded price of the market
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	LastTradedPrice string `protobuf:"bytes,29,opt,name=last_traded_price,json=lastTradedPrice,proto3" json:"last_traded_price,omitempty"`
 }
 
@@ -4430,12 +4481,15 @@ type PriceMonitoringBounds struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Minimum price that isn't currently breaching the specified price monitoring trigger
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	MinValidPrice string `protobuf:"bytes,1,opt,name=min_valid_price,json=minValidPrice,proto3" json:"min_valid_price,omitempty"`
 	// Maximum price that isn't currently breaching the specified price monitoring trigger
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	MaxValidPrice string `protobuf:"bytes,2,opt,name=max_valid_price,json=maxValidPrice,proto3" json:"max_valid_price,omitempty"`
 	// Price monitoring trigger associated with the bounds
 	Trigger *PriceMonitoringTrigger `protobuf:"bytes,3,opt,name=trigger,proto3" json:"trigger,omitempty"`
 	// Reference price used to calculate the valid price range
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	ReferencePrice string `protobuf:"bytes,4,opt,name=reference_price,json=referencePrice,proto3" json:"reference_price,omitempty"`
 }
 
@@ -4738,6 +4792,7 @@ type LiquidityOrder struct {
 	// The relative proportion of the commitment to be allocated at a price level
 	Proportion uint32 `protobuf:"varint,2,opt,name=proportion,proto3" json:"proportion,omitempty"`
 	// The offset/amount of units away for the order
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	Offset string `protobuf:"bytes,3,opt,name=offset,proto3" json:"offset,omitempty"`
 }
 
@@ -4871,6 +4926,7 @@ type LiquidityProvision struct {
 	// Market identifier for the order, required field
 	MarketId string `protobuf:"bytes,5,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Specified as a unitless number that represents the amount of settlement asset of the market
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	CommitmentAmount string `protobuf:"bytes,6,opt,name=commitment_amount,json=commitmentAmount,proto3" json:"commitment_amount,omitempty"`
 	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers
 	Fee string `protobuf:"bytes,7,opt,name=fee,proto3" json:"fee,omitempty"`
@@ -5670,14 +5726,19 @@ type Node struct {
 	// Country code for the location of the node
 	Location string `protobuf:"bytes,6,opt,name=location,proto3" json:"location,omitempty"`
 	// The amount the node has put up themselves
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	StakedByOperator string `protobuf:"bytes,7,opt,name=staked_by_operator,json=stakedByOperator,proto3" json:"staked_by_operator,omitempty"`
 	// The amount of stake that has been delegated by token holders
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	StakedByDelegates string `protobuf:"bytes,8,opt,name=staked_by_delegates,json=stakedByDelegates,proto3" json:"staked_by_delegates,omitempty"`
 	// Total amount staked on node
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	StakedTotal string `protobuf:"bytes,9,opt,name=staked_total,json=stakedTotal,proto3" json:"staked_total,omitempty"`
 	// Max amount of (wanted) stake, is this a network param or a node param
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	MaxIntendedStake string `protobuf:"bytes,10,opt,name=max_intended_stake,json=maxIntendedStake,proto3" json:"max_intended_stake,omitempty"`
 	// Amount of stake on the next epoch
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	PendingStake string `protobuf:"bytes,11,opt,name=pending_stake,json=pendingStake,proto3" json:"pending_stake,omitempty"`
 	// Information about epoch
 	EpochData *EpochData `protobuf:"bytes,12,opt,name=epoch_data,json=epochData,proto3" json:"epoch_data,omitempty"`
@@ -5944,6 +6005,7 @@ type NodeData struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Total staked amount across all nodes
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	StakedTotal string `protobuf:"bytes,1,opt,name=staked_total,json=stakedTotal,proto3" json:"staked_total,omitempty"`
 	// Total number of nodes across all node sets
 	TotalNodes uint32 `protobuf:"varint,2,opt,name=total_nodes,json=totalNodes,proto3" json:"total_nodes,omitempty"`
@@ -6050,6 +6112,7 @@ type Delegation struct {
 	// Node ID
 	NodeId string `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	// Amount delegated
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	// Epoch of delegation
 	EpochSeq string `protobuf:"bytes,4,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
@@ -6121,9 +6184,10 @@ type Reward struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	AssetId           string `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
-	PartyId           string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	Epoch             uint64 `protobuf:"varint,3,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	AssetId string `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
+	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
+	Epoch   uint64 `protobuf:"varint,3,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount            string `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount,omitempty"`
 	PercentageOfTotal string `protobuf:"bytes,5,opt,name=percentage_of_total,json=percentageOfTotal,proto3" json:"percentage_of_total,omitempty"`
 	ReceivedAt        int64  `protobuf:"varint,6,opt,name=received_at,json=receivedAt,proto3" json:"received_at,omitempty"`
@@ -6228,6 +6292,7 @@ type RewardSummary struct {
 	AssetId string `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Total amount of rewards for the asset
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 }
 
@@ -6294,7 +6359,8 @@ type EpochRewardSummary struct {
 	AssetId    string `protobuf:"bytes,2,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
 	MarketId   string `protobuf:"bytes,3,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	RewardType string `protobuf:"bytes,4,opt,name=reward_type,json=rewardType,proto3" json:"reward_type,omitempty"`
-	Amount     string `protobuf:"bytes,5,opt,name=amount,proto3" json:"amount,omitempty"`
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
+	Amount string `protobuf:"bytes,5,opt,name=amount,proto3" json:"amount,omitempty"`
 }
 
 func (x *EpochRewardSummary) Reset() {

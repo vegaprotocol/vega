@@ -156,8 +156,10 @@ type OrderSubmission struct {
 	// Price for the order, the price is an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places,
 	// , required field for limit orders, however it is not required for market orders
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	Price string `protobuf:"bytes,2,opt,name=price,proto3" json:"price,omitempty"`
 	// Size for the order, for example, in a futures market the size equals the number of units, cannot be negative
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market position decimal places.
 	Size uint64 `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
 	// Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field
 	// - See `Side`
@@ -342,12 +344,14 @@ type OrderAmendment struct {
 	OrderId string `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
 	// Market identifier, this is required to find the order and will not be updated
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Amend the price for the order, if the Price value is set, otherwise price will remain unchanged - See [`Price`](#vega.Price)
+	// Amend the price for the order, if the Price value is set, otherwise price will remain unchanged.
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	Price *string `protobuf:"bytes,3,opt,name=price,proto3,oneof" json:"price,omitempty"`
 	// Amend the size for the order by the delta specified:
 	// - To reduce the size from the current value set a negative integer value
 	// - To increase the size from the current value, set a positive integer value
 	// - To leave the size unchanged set a value of zero
+	// This field needs to be scaled using the market position decimal places.
 	SizeDelta int64 `protobuf:"varint,4,opt,name=size_delta,json=sizeDelta,proto3" json:"size_delta,omitempty"`
 	// Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged
 	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
@@ -356,6 +360,7 @@ type OrderAmendment struct {
 	// - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`
 	TimeInForce vega.Order_TimeInForce `protobuf:"varint,6,opt,name=time_in_force,json=timeInForce,proto3,enum=vega.Order_TimeInForce" json:"time_in_force,omitempty"`
 	// Amend the pegged order offset for the order
+	// This field is an unsigned integer passed as a string and needs to be scaled using the market decimal places.
 	PeggedOffset string `protobuf:"bytes,7,opt,name=pegged_offset,json=peggedOffset,proto3" json:"pegged_offset,omitempty"`
 	// Amend the pegged order reference for the order
 	// - See [`PeggedReference`](#vega.PeggedReference)
@@ -459,6 +464,7 @@ type LiquidityProvisionSubmission struct {
 	// Market identifier for the order, required field
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Specified as a unitless number that represents the amount of settlement asset of the market
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	CommitmentAmount string `protobuf:"bytes,2,opt,name=commitment_amount,json=commitmentAmount,proto3" json:"commitment_amount,omitempty"`
 	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers
 	Fee string `protobuf:"bytes,3,opt,name=fee,proto3" json:"fee,omitempty"`
@@ -688,6 +694,7 @@ type WithdrawSubmission struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The amount to be withdrawn
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount string `protobuf:"bytes,1,opt,name=amount,proto3" json:"amount,omitempty"`
 	// The asset to be withdrawn
 	Asset string `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
@@ -884,6 +891,7 @@ type DelegateSubmission struct {
 	// The ID for the node to delegate to
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	// The amount of stake to delegate
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount string `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
 }
 
@@ -940,6 +948,7 @@ type UndelegateSubmission struct {
 
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	// optional, if not specified = ALL
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount string                      `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
 	Method UndelegateSubmission_Method `protobuf:"varint,3,opt,name=method,proto3,enum=vega.commands.v1.UndelegateSubmission_Method" json:"method,omitempty"`
 }
@@ -1013,6 +1022,7 @@ type Transfer struct {
 	// The asset
 	Asset string `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
 	// The amount to be taken from the source account
+	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	Amount string `protobuf:"bytes,5,opt,name=amount,proto3" json:"amount,omitempty"`
 	// The reference to be attached to the transfer
 	Reference string `protobuf:"bytes,6,opt,name=reference,proto3" json:"reference,omitempty"`
