@@ -103,28 +103,28 @@ We do this on our orders table. It’s set up like this:
 CREATE TABLE orders (
     id                BYTEA                    NOT NULL,
     vega_time         TIMESTAMP WITH TIME ZONE NOT NULL,
-    vega_time_to      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT 'infinity',
+    current           BOOLEAN NOT NULL DEFAULT FALSE,
 );
 ```
 
-The `vega_time_to` is the extra special sauce.
+The `current` field is the extra special sauce.
 
-- For row corresponding to the most recent update to a order, it is always `infinity`.
-- For a row corresponding to a previous state of an order, it is set to the `vega_time` of the update that replaces this one
-- A trigger handles updating of `vega_time_to` on the previous most current previous version when an insert is made to the table
+- For row corresponding to the most recent update to an order, it is always `true`.
+- For a row corresponding to a previous state of an order, it is set to `false`
+- A trigger handles updating of `current` on the previous most current previous version when an insert is made to the table
 
 This allows us to now create our `orders_current` view as follows:
 
 ```sql
 CREATE VIEW orders_current AS (
-  SELECT * FROM orders WHERE vega_time_to = 'infinity'
+  SELECT * FROM orders WHERE current = true
 );
 ```
 
-This view doesn’t suffer from the same issues of not being able to push down filters into the table scan that views created with `DISTINCT ON` has. You can even create indexes that only contain rows where `vega_time_to='infinity'`:
+This view doesn’t suffer from the same issues of not being able to push down filters into the table scan that views created with `DISTINCT ON` has. You can even create indexes that only contain rows where `current=true`:
 
 ```sql
-CREATE INDEX ON orders (market_id) where vega_time_to='infinity';
+CREATE INDEX ON orders (market_id) where current=true;
 ```
 
 Which keeps the size of the index down and makes querying the latest version of orders by `market_id` as fast as if the table didn’t have all the historical versions in there as well.
@@ -132,7 +132,8 @@ Which keeps the size of the index down and makes querying the latest version of 
 **Downsides**
 
 - `INSERT` becomes considerably slower, and `UPDATE` of existing rows generate dead tuples in the database that cause bloat and need to be `VACUUM`-ed later.
-- Does not mesh well with how we do decentralised history snapshots and sharing, and requires special handling there to work.
+- Network history has to take into account this flag and ensure that after restoring from history segments the table is processed such that only the latest 
+- version of the order is market as snapshots and sharing, and requires special handling there to work.
 
 ### Workaround #3 - Separate ‘audit’ tables
 

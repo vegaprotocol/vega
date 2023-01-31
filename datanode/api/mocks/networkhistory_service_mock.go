@@ -8,7 +8,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	store "code.vegaprotocol.io/vega/datanode/networkhistory/store"
+	networkhistory "code.vegaprotocol.io/vega/datanode/networkhistory"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -50,10 +50,10 @@ func (mr *MockNetworkHistoryServiceMockRecorder) CopyHistorySegmentToFile(arg0, 
 }
 
 // FetchHistorySegment mocks base method.
-func (m *MockNetworkHistoryService) FetchHistorySegment(arg0 context.Context, arg1 string) (store.SegmentIndexEntry, error) {
+func (m *MockNetworkHistoryService) FetchHistorySegment(arg0 context.Context, arg1 string) (networkhistory.Segment, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchHistorySegment", arg0, arg1)
-	ret0, _ := ret[0].(store.SegmentIndexEntry)
+	ret0, _ := ret[0].(networkhistory.Segment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -79,10 +79,10 @@ func (mr *MockNetworkHistoryServiceMockRecorder) GetActivePeerAddresses() *gomoc
 }
 
 // GetHighestBlockHeightHistorySegment mocks base method.
-func (m *MockNetworkHistoryService) GetHighestBlockHeightHistorySegment() (store.SegmentIndexEntry, error) {
+func (m *MockNetworkHistoryService) GetHighestBlockHeightHistorySegment() (networkhistory.Segment, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHighestBlockHeightHistorySegment")
-	ret0, _ := ret[0].(store.SegmentIndexEntry)
+	ret0, _ := ret[0].(networkhistory.Segment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -108,10 +108,10 @@ func (mr *MockNetworkHistoryServiceMockRecorder) GetSwarmKey() *gomock.Call {
 }
 
 // ListAllHistorySegments mocks base method.
-func (m *MockNetworkHistoryService) ListAllHistorySegments() ([]store.SegmentIndexEntry, error) {
+func (m *MockNetworkHistoryService) ListAllHistorySegments() ([]networkhistory.Segment, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListAllHistorySegments")
-	ret0, _ := ret[0].([]store.SegmentIndexEntry)
+	ret0, _ := ret[0].([]networkhistory.Segment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

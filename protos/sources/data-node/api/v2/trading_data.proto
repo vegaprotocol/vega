@@ -2278,9 +2278,8 @@ message CoreSnapshotEdge {
 message HistorySegment {
     int64 from_height = 1;
     int64 to_height = 2;
-    string chain_id = 3;
-    string history_segment_id = 4;
-    string previous_history_segment_id = 5;
+    string history_segment_id = 3;
+    string previous_history_segment_id = 4;
 }
 
 // Request to get the most recent history segment

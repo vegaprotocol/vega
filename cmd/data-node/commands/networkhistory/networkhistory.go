@@ -22,7 +22,7 @@ import (
 type Cmd struct {
 	// Subcommands
 	Show                          showCmd              `command:"show" description:"shows network history segments currently stored by the node"`
-	Load                          loadCmd              `command:"load" description:"loads the most recent contiguous network history stored by the node into the datanode"`
+	Load                          loadCmd              `command:"load" description:"load [from height] [to height], loads the given span of network history into the datanode, if no span is specified the latest contiguous network history will be loaded"`
 	Fetch                         fetchCmd             `command:"fetch" description:"fetch <history segment id> <blocks to fetch>, fetches the given segment and all previous segments until <blocks to fetch> blocks have been retrieved"`
 	LatestHistorySegmentFromPeers latestHistorySegment `command:"latest-history-segment-from-peers" description:"latest-history-segment returns the id of the networks latest history segment"`
 	ListActivePeers               listActivePeers      `command:"list-active-peers" description:"list the active datanode peers"`
