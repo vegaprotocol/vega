@@ -1627,6 +1627,8 @@ message ListRewardsRequest {
     string party_id = 1;
     optional string asset_id = 2;
     optional Pagination pagination = 3;
+    optional uint64 from_epoch = 4;
+    optional uint64 to_epoch = 5;
 }
 
 // The return message with reward details in for a single party

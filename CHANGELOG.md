@@ -13,6 +13,7 @@
 ### 🛠 Improvements
 - [6962](https://github.com/vegaprotocol/vega/issues/6962) - Add a dedicated configuration for the wallet service
 - [7429](https://github.com/vegaprotocol/vega/issues/7429) - Do not mark wallet and network as incompatible when the patch version doesn't match
+- [6650](https://github.com/vegaprotocol/vega/issues/6650) - Add ability to filter rewards with `fromEpoch` and `toEpoch`
 - [7289](https://github.com/vegaprotocol/vega/issues/7289) - `positionsConnection` query added to `GraphQL`root query with filter for multiple parties and markets
 
 ### 🐛 Fixes
