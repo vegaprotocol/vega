@@ -205,7 +205,7 @@ func testPositionCursorPaginationPartyNoCursor(t *testing.T) {
 		positions[90],
 	}
 
-	got, pageInfo, err := ps.GetByPartyConnection(ctx, party.ID.String(), emptyMarketID.String(), pagination)
+	got, pageInfo, err := ps.GetByPartyConnection(ctx, []string{party.ID.String()}, []string{emptyMarketID.String()}, pagination)
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
@@ -239,7 +239,7 @@ func testPositionCursorPaginationPartyFirstCursor(t *testing.T) {
 		positions[20],
 	}
 
-	got, pageInfo, err := ps.GetByPartyConnection(ctx, party.ID.String(), emptyMarketID.String(), pagination)
+	got, pageInfo, err := ps.GetByPartyConnection(ctx, []string{party.ID.String()}, []string{emptyMarketID.String()}, pagination)
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
@@ -273,7 +273,7 @@ func testPositionCursorPaginationPartyLastCursor(t *testing.T) {
 		positions[90],
 	}
 
-	got, pageInfo, err := ps.GetByPartyConnection(ctx, party.ID.String(), emptyMarketID.String(), pagination)
+	got, pageInfo, err := ps.GetByPartyConnection(ctx, []string{party.ID.String()}, []string{emptyMarketID.String()}, pagination)
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
@@ -308,7 +308,7 @@ func testPositionCursorPaginationPartyFirstAfterCursor(t *testing.T) {
 		positions[50],
 	}
 
-	got, pageInfo, err := ps.GetByPartyConnection(ctx, party.ID.String(), emptyMarketID.String(), pagination)
+	got, pageInfo, err := ps.GetByPartyConnection(ctx, []string{party.ID.String()}, []string{emptyMarketID.String()}, pagination)
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
@@ -343,7 +343,7 @@ func testPositionCursorPaginationPartyLastBeforeCursor(t *testing.T) {
 		positions[60],
 	}
 
-	got, pageInfo, err := ps.GetByPartyConnection(ctx, party.ID.String(), emptyMarketID.String(), pagination)
+	got, pageInfo, err := ps.GetByPartyConnection(ctx, []string{party.ID.String()}, []string{emptyMarketID.String()}, pagination)
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
@@ -374,7 +374,7 @@ func testPositionCursorPaginationPartyMarketNoCursor(t *testing.T) {
 		positions[0],
 	}
 
-	got, pageInfo, err := ps.GetByPartyConnection(ctx, party.ID.String(), emptyMarketID.String(), pagination)
+	got, pageInfo, err := ps.GetByPartyConnection(ctx, []string{party.ID.String()}, []string{emptyMarketID.String()}, pagination)
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
@@ -416,7 +416,7 @@ func testPositionCursorPaginationPartyNoCursorNewestFirst(t *testing.T) {
 
 	want = entities.ReverseSlice(want)
 
-	got, pageInfo, err := ps.GetByPartyConnection(ctx, party.ID.String(), emptyMarketID.String(), pagination)
+	got, pageInfo, err := ps.GetByPartyConnection(ctx, []string{party.ID.String()}, []string{emptyMarketID.String()}, pagination)
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
@@ -450,7 +450,7 @@ func testPositionCursorPaginationPartyFirstCursorNewestFirst(t *testing.T) {
 		positions[70],
 	}
 
-	got, pageInfo, err := ps.GetByPartyConnection(ctx, party.ID.String(), emptyMarketID.String(), pagination)
+	got, pageInfo, err := ps.GetByPartyConnection(ctx, []string{party.ID.String()}, []string{emptyMarketID.String()}, pagination)
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
@@ -484,7 +484,7 @@ func testPositionCursorPaginationPartyLastCursorNewestFirst(t *testing.T) {
 		positions[0],
 	}
 
-	got, pageInfo, err := ps.GetByPartyConnection(ctx, party.ID.String(), emptyMarketID.String(), pagination)
+	got, pageInfo, err := ps.GetByPartyConnection(ctx, []string{party.ID.String()}, []string{emptyMarketID.String()}, pagination)
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
@@ -519,7 +519,7 @@ func testPositionCursorPaginationPartyFirstAfterCursorNewestFirst(t *testing.T) 
 		positions[40],
 	}
 
-	got, pageInfo, err := ps.GetByPartyConnection(ctx, party.ID.String(), emptyMarketID.String(), pagination)
+	got, pageInfo, err := ps.GetByPartyConnection(ctx, []string{party.ID.String()}, []string{emptyMarketID.String()}, pagination)
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
@@ -554,7 +554,7 @@ func testPositionCursorPaginationPartyLastBeforeCursorNewestFirst(t *testing.T) 
 		positions[30],
 	}
 
-	got, pageInfo, err := ps.GetByPartyConnection(ctx, party.ID.String(), emptyMarketID.String(), pagination)
+	got, pageInfo, err := ps.GetByPartyConnection(ctx, []string{party.ID.String()}, []string{emptyMarketID.String()}, pagination)
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
@@ -585,7 +585,7 @@ func testPositionCursorPaginationPartyMarketNoCursorNewestFirst(t *testing.T) {
 		positions[0],
 	}
 
-	got, pageInfo, err := ps.GetByPartyConnection(ctx, party.ID.String(), emptyMarketID.String(), pagination)
+	got, pageInfo, err := ps.GetByPartyConnection(ctx, []string{party.ID.String()}, []string{emptyMarketID.String()}, pagination)
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{

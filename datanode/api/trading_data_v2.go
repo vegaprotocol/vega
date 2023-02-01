@@ -20,6 +20,8 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/networkhistory"
+
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
@@ -1166,6 +1168,8 @@ func (t *tradingDataServiceV2) ListMarkets(ctx context.Context, in *v2.ListMarke
 }
 
 // List all Positions using a cursor based pagination model.
+//
+// Deprecated: Use ListAllPositions instead.
 func (t *tradingDataServiceV2) ListPositions(ctx context.Context, in *v2.ListPositionsRequest) (*v2.ListPositionsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListPositionsV2")()
 
@@ -1174,7 +1178,10 @@ func (t *tradingDataServiceV2) ListPositions(ctx context.Context, in *v2.ListPos
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	positions, pageInfo, err := t.positionService.GetByPartyConnection(ctx, entities.PartyID(in.PartyId), entities.MarketID(in.MarketId), pagination)
+	parties := []entities.PartyID{entities.PartyID(in.PartyId)}
+	markets := []entities.MarketID{entities.MarketID(in.MarketId)}
+
+	positions, pageInfo, err := t.positionService.GetByPartyConnection(ctx, parties, markets, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1190,6 +1197,52 @@ func (t *tradingDataServiceV2) ListPositions(ctx context.Context, in *v2.ListPos
 	}
 
 	resp := &v2.ListPositionsResponse{
+		Positions: PositionsConnection,
+	}
+
+	return resp, nil
+}
+
+func (t *tradingDataServiceV2) ListAllPositions(ctx context.Context, req *v2.ListAllPositionsRequest) (*v2.ListAllPositionsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListAllPositions")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	var parties []entities.PartyID
+	var markets []entities.MarketID
+
+	if req.Filter != nil {
+		parties = make([]entities.PartyID, len(req.Filter.PartyIds))
+		markets = make([]entities.MarketID, len(req.Filter.MarketIds))
+
+		for i, party := range req.Filter.PartyIds {
+			parties[i] = entities.PartyID(party)
+		}
+
+		for i, market := range req.Filter.MarketIds {
+			markets[i] = entities.MarketID(market)
+		}
+	}
+
+	positions, pageInfo, err := t.positionService.GetByPartyConnection(ctx, parties, markets, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	edges, err := makeEdges[*v2.PositionEdge](positions)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	PositionsConnection := &v2.PositionConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	resp := &v2.ListAllPositionsResponse{
 		Positions: PositionsConnection,
 	}
 
@@ -3121,13 +3174,12 @@ func (t *tradingDataServiceV2) Ping(context.Context, *v2.PingRequest) (*v2.PingR
 	return &v2.PingResponse{}, nil
 }
 
-func toHistorySegment(segment store.SegmentIndexEntry) *v2.HistorySegment {
+func toHistorySegment(segment networkhistory.Segment) *v2.HistorySegment {
 	return &v2.HistorySegment{
-		FromHeight:               segment.HeightFrom,
-		ToHeight:                 segment.HeightTo,
-		ChainId:                  segment.ChainID,
-		HistorySegmentId:         segment.HistorySegmentID,
-		PreviousHistorySegmentId: segment.PreviousHistorySegmentID,
+		FromHeight:               segment.GetFromHeight(),
+		ToHeight:                 segment.GetToHeight(),
+		HistorySegmentId:         segment.GetHistorySegmentId(),
+		PreviousHistorySegmentId: segment.GetPreviousHistorySegmentId(),
 	}
 }
 
