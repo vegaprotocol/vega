@@ -20,6 +20,8 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/networkhistory"
+
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
@@ -3172,13 +3174,12 @@ func (t *tradingDataServiceV2) Ping(context.Context, *v2.PingRequest) (*v2.PingR
 	return &v2.PingResponse{}, nil
 }
 
-func toHistorySegment(segment store.SegmentIndexEntry) *v2.HistorySegment {
+func toHistorySegment(segment networkhistory.Segment) *v2.HistorySegment {
 	return &v2.HistorySegment{
-		FromHeight:               segment.HeightFrom,
-		ToHeight:                 segment.HeightTo,
-		ChainId:                  segment.ChainID,
-		HistorySegmentId:         segment.HistorySegmentID,
-		PreviousHistorySegmentId: segment.PreviousHistorySegmentID,
+		FromHeight:               segment.GetFromHeight(),
+		ToHeight:                 segment.GetToHeight(),
+		HistorySegmentId:         segment.GetHistorySegmentId(),
+		PreviousHistorySegmentId: segment.GetPreviousHistorySegmentId(),
 	}
 }
 

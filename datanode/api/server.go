@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
+	"code.vegaprotocol.io/vega/datanode/networkhistory"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
@@ -59,9 +59,9 @@ type BlockService interface {
 //
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/networkhistory_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api NetworkHistoryService
 type NetworkHistoryService interface {
-	GetHighestBlockHeightHistorySegment() (store.SegmentIndexEntry, error)
-	ListAllHistorySegments() ([]store.SegmentIndexEntry, error)
-	FetchHistorySegment(ctx context.Context, historySegmentID string) (store.SegmentIndexEntry, error)
+	GetHighestBlockHeightHistorySegment() (networkhistory.Segment, error)
+	ListAllHistorySegments() ([]networkhistory.Segment, error)
+	FetchHistorySegment(ctx context.Context, historySegmentID string) (networkhistory.Segment, error)
 	GetActivePeerAddresses() []string
 	CopyHistorySegmentToFile(ctx context.Context, historySegmentID string, outFile string) error
 	GetSwarmKey() string

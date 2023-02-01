@@ -188,8 +188,8 @@ func CreateVegaSchema(log *logging.Logger, connConfig ConnectionConfig) error {
 	return nil
 }
 
-func HasVegaSchema(ctx context.Context, connPool *pgxpool.Pool) (bool, error) {
-	tableNames, err := GetAllTableNames(ctx, connPool)
+func HasVegaSchema(ctx context.Context, conn Connection) (bool, error) {
+	tableNames, err := GetAllTableNames(ctx, conn)
 	if err != nil {
 		return false, fmt.Errorf("failed to get all table names:%w", err)
 	}
@@ -197,7 +197,7 @@ func HasVegaSchema(ctx context.Context, connPool *pgxpool.Pool) (bool, error) {
 	return len(tableNames) != 0, nil
 }
 
-func GetAllTableNames(ctx context.Context, conn *pgxpool.Pool) ([]string, error) {
+func GetAllTableNames(ctx context.Context, conn Connection) ([]string, error) {
 	tableNameRows, err := conn.Query(ctx, "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' and table_type = 'BASE TABLE' and table_name != 'goose_db_version' order by table_name")
 	if err != nil {
 		return nil, fmt.Errorf("failed to query table names:%w", err)

@@ -32,7 +32,7 @@ func TestRemoveWithNoEligibleSegments(t *testing.T) {
 
 	assertRoughlyEqual(t, expectedSizeOnDiskWithNoGc, dirSize)
 
-	postGcSegments, err := s.ListAllHistorySegmentsOldestFirst()
+	postGcSegments, err := s.ListAllIndexEntriesOldestFirst()
 	require.NoError(t, err)
 
 	assert.Equal(t, 10, len(postGcSegments))
@@ -54,7 +54,7 @@ func TestPartialRemoveOfOldSegments(t *testing.T) {
 
 	assertRoughlyEqual(t, 41000, dirSize)
 
-	segments, err := s.ListAllHistorySegmentsOldestFirst()
+	segments, err := s.ListAllIndexEntriesOldestFirst()
 	require.NoError(t, err)
 
 	assert.Equal(t, 6, len(segments))
@@ -76,7 +76,7 @@ func TestRemoveAllOldSegments(t *testing.T) {
 
 	assertRoughlyEqual(t, 22000, dirSize)
 
-	segments, err := s.ListAllHistorySegmentsOldestFirst()
+	segments, err := s.ListAllIndexEntriesOldestFirst()
 	require.NoError(t, err)
 
 	assert.Equal(t, 1, len(segments))

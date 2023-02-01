@@ -10,6 +10,7 @@ message BuiltinAssetDeposit {
   // A Vega party identifier (pub-key)
   string party_id = 2;
   // The amount to be deposited
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string amount = 3;
 }
 
@@ -20,6 +21,7 @@ message BuiltinAssetWithdrawal {
   // A Vega network party identifier (pub-key)
   string party_id = 2;
   // The amount to be withdrawn
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string amount = 3;
 }
 
@@ -177,6 +179,7 @@ message StakeDeposited {
   // The public of the party receiving the stake deposit (hex encode)
   string vega_public_key = 2;
   // The amount deposited (base 10)
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string amount = 3;
   // The time at which the block was produced
   // will be used to inform the core at what time
@@ -190,6 +193,7 @@ message StakeRemoved {
   // The public key of the party from which to remove stake (hex encode)
   string vega_public_key = 2;
   // The amount removed (base 10)
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the staking token.
   string amount = 3;
   // The time at which the block was produced
   // will be used to inform the core at what time
@@ -201,5 +205,6 @@ message StakeTotalSupply {
   // The address of the staking asset
   string token_address = 1;
   // The total supply observed for the token
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the staking token.
   string total_supply = 2;
 }

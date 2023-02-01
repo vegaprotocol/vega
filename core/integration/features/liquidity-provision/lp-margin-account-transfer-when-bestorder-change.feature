@@ -53,7 +53,7 @@ Feature:  test 0038-OLIQ-008
       | id  | party | market    | commitment amount | status        |
       | lp1 | lp    | ETH/DEC19 | 90000             | STATUS_ACTIVE |
 
-    # Observe that given specified pegs we should have an LP buy order placed at a price of 1 and sell order placed at a price of 3160, however, since both of these fall outside of price monitoring bounds the orders gets moved accordingly (0038-OLIQ-009)
+    # LP pegged order should be replaced with respect to LP_price_range rather than price_monitoring_bounds
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 170   | 530    |
