@@ -978,7 +978,7 @@ func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 func (t *tradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, req *v2.GetERC20WithdrawalApprovalRequest) (*v2.GetERC20WithdrawalApprovalResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetERC20WithdrawalApprovalV2")()
 	if len(req.WithdrawalId) <= 0 {
-		return nil, apiError(codes.InvalidArgument, ErrMissingDepositID)
+		return nil, apiError(codes.InvalidArgument, ErrMissingWithdrawalID)
 	}
 
 	// get withdrawal first
@@ -1449,7 +1449,7 @@ func (t *tradingDataServiceV2) ListRewards(ctx context.Context, in *v2.ListRewar
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	rewards, pageInfo, err := t.rewardService.GetByCursor(ctx, &in.PartyId, in.AssetId, pagination)
+	rewards, pageInfo, err := t.rewardService.GetByCursor(ctx, &in.PartyId, in.AssetId, in.FromEpoch, in.ToEpoch, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}

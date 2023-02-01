@@ -21,7 +21,6 @@ import (
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"github.com/pkg/errors"
-	"google.golang.org/grpc/connectivity"
 )
 
 const defaultRequestTimeout = time.Second * 5
@@ -31,7 +30,6 @@ const defaultRequestTimeout = time.Second * 5
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/core_service_client_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api CoreServiceClient
 type CoreServiceClient interface {
 	protoapi.CoreServiceClient
-	GetState() connectivity.State
 }
 
 // core service acts as a proxy to the trading service in core node.

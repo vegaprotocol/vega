@@ -13,16 +13,17 @@
 package entities
 
 import (
-	"bytes"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/ptr"
-	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	tmTypes "github.com/tendermint/tendermint/abci/types"
 	"google.golang.org/protobuf/proto"
+
+	"code.vegaprotocol.io/vega/commands"
+	"code.vegaprotocol.io/vega/libs/ptr"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	pb "code.vegaprotocol.io/vega/protos/blockexplorer"
 )
@@ -40,28 +41,25 @@ type TxResultRow struct {
 
 func (t *TxResultRow) ToProto() (*pb.Transaction, error) {
 	txResult := tmTypes.TxResult{}
-	txResult.Unmarshal(t.TxResult)
+	if err := txResult.Unmarshal(t.TxResult); err != nil {
+		return nil, fmt.Errorf("unmarshalling tendermint tx result: %w", err)
+	}
 
 	cTx := commandspb.Transaction{}
 	if err := proto.Unmarshal(txResult.Tx, &cTx); err != nil {
 		return nil, fmt.Errorf("unmarshalling vega transaction: %w", err)
 	}
 
-	command := commandspb.InputData{}
-	idx := bytes.IndexByte(cTx.InputData, '\000')
-	// if idx == -1 {
-	// 	return nil, fmt.Errorf("the transaction is not bundled with a chain ID")
-	// }
-
-	if err := proto.Unmarshal(cTx.InputData[idx+1:], &command); err != nil {
-		return nil, fmt.Errorf("unmarshalling vega command: %w", err)
+	inputData, err := commands.UnmarshalInputData(cTx.InputData)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshalling vega input data: %w", err)
 	}
 
 	cursor := t.Cursor()
 
-	var error *string
+	var strErr *string
 	if txResult.Result.Code != 0 {
-		error = ptr.From(string(txResult.Result.Data))
+		strErr = ptr.From(string(txResult.Result.Data))
 	}
 
 	return &pb.Transaction{
@@ -70,10 +68,10 @@ func (t *TxResultRow) ToProto() (*pb.Transaction, error) {
 		Type:      extractAttribute(&txResult, "command", "type"),
 		Submitter: extractAttribute(&txResult, "tx", "submitter"),
 		Code:      txResult.Result.Code,
-		Error:     error,
+		Error:     strErr,
 		Hash:      t.TxHash,
 		Cursor:    cursor.String(),
-		Command:   &command,
+		Command:   inputData,
 		Signature: cTx.Signature,
 	}, nil
 }

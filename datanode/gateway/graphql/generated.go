@@ -632,6 +632,7 @@ type ComplexityRoot struct {
 	}
 
 	LiquidityMonitoringParameters struct {
+		AuctionExtensionSecs  func(childComplexity int) int
 		TargetStakeParameters func(childComplexity int) int
 		TriggeringRatio       func(childComplexity int) int
 	}
@@ -906,11 +907,14 @@ type ComplexityRoot struct {
 	}
 
 	NewMarket struct {
-		DecimalPlaces  func(childComplexity int) int
-		Instrument     func(childComplexity int) int
-		LpPriceRange   func(childComplexity int) int
-		Metadata       func(childComplexity int) int
-		RiskParameters func(childComplexity int) int
+		DecimalPlaces                 func(childComplexity int) int
+		Instrument                    func(childComplexity int) int
+		LiquidityMonitoringParameters func(childComplexity int) int
+		LpPriceRange                  func(childComplexity int) int
+		Metadata                      func(childComplexity int) int
+		PositionDecimalPlaces         func(childComplexity int) int
+		PriceMonitoringParameters     func(childComplexity int) int
+		RiskParameters                func(childComplexity int) int
 	}
 
 	Node struct {
@@ -1141,7 +1145,7 @@ type ComplexityRoot struct {
 		PositionsConnection           func(childComplexity int, market *string, pagination *v2.Pagination) int
 		ProposalsConnection           func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		RewardSummaries               func(childComplexity int, assetID *string) int
-		RewardsConnection             func(childComplexity int, assetID *string, pagination *v2.Pagination) int
+		RewardsConnection             func(childComplexity int, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) int
 		StakingSummary                func(childComplexity int, pagination *v2.Pagination) int
 		TradesConnection              func(childComplexity int, marketID *string, dataRange *v2.DateRange, pagination *v2.Pagination) int
 		TransfersConnection           func(childComplexity int, direction *TransferDirection, pagination *v2.Pagination) int
@@ -1978,6 +1982,9 @@ type NewMarketResolver interface {
 	DecimalPlaces(ctx context.Context, obj *vega.NewMarket) (int, error)
 	RiskParameters(ctx context.Context, obj *vega.NewMarket) (RiskModel, error)
 	Metadata(ctx context.Context, obj *vega.NewMarket) ([]string, error)
+	PriceMonitoringParameters(ctx context.Context, obj *vega.NewMarket) (*PriceMonitoringParameters, error)
+	LiquidityMonitoringParameters(ctx context.Context, obj *vega.NewMarket) (*LiquidityMonitoringParameters, error)
+	PositionDecimalPlaces(ctx context.Context, obj *vega.NewMarket) (int, error)
 	LpPriceRange(ctx context.Context, obj *vega.NewMarket) (string, error)
 }
 type NodeResolver interface {
@@ -2062,7 +2069,7 @@ type PartyResolver interface {
 	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Party, marketID *string, reference *string, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
 	DelegationsConnection(ctx context.Context, obj *vega.Party, nodeID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error)
 	StakingSummary(ctx context.Context, obj *vega.Party, pagination *v2.Pagination) (*StakingSummary, error)
-	RewardsConnection(ctx context.Context, obj *vega.Party, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
+	RewardsConnection(ctx context.Context, obj *vega.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) (*v2.RewardsConnection, error)
 	RewardSummaries(ctx context.Context, obj *vega.Party, assetID *string) ([]*vega.RewardSummary, error)
 	TransfersConnection(ctx context.Context, obj *vega.Party, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
 }
@@ -4187,6 +4194,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LedgerEntry.Type(childComplexity), true
 
+	case "LiquidityMonitoringParameters.auctionExtensionSecs":
+		if e.complexity.LiquidityMonitoringParameters.AuctionExtensionSecs == nil {
+			break
+		}
+
+		return e.complexity.LiquidityMonitoringParameters.AuctionExtensionSecs(childComplexity), true
+
 	case "LiquidityMonitoringParameters.targetStakeParameters":
 		if e.complexity.LiquidityMonitoringParameters.TargetStakeParameters == nil {
 			break
@@ -5414,6 +5428,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NewMarket.Instrument(childComplexity), true
 
+	case "NewMarket.liquidityMonitoringParameters":
+		if e.complexity.NewMarket.LiquidityMonitoringParameters == nil {
+			break
+		}
+
+		return e.complexity.NewMarket.LiquidityMonitoringParameters(childComplexity), true
+
 	case "NewMarket.lpPriceRange":
 		if e.complexity.NewMarket.LpPriceRange == nil {
 			break
@@ -5427,6 +5448,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NewMarket.Metadata(childComplexity), true
+
+	case "NewMarket.positionDecimalPlaces":
+		if e.complexity.NewMarket.PositionDecimalPlaces == nil {
+			break
+		}
+
+		return e.complexity.NewMarket.PositionDecimalPlaces(childComplexity), true
+
+	case "NewMarket.priceMonitoringParameters":
+		if e.complexity.NewMarket.PriceMonitoringParameters == nil {
+			break
+		}
+
+		return e.complexity.NewMarket.PriceMonitoringParameters(childComplexity), true
 
 	case "NewMarket.riskParameters":
 		if e.complexity.NewMarket.RiskParameters == nil {
@@ -6569,7 +6604,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.RewardsConnection(childComplexity, args["assetId"].(*string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Party.RewardsConnection(childComplexity, args["assetId"].(*string), args["pagination"].(*v2.Pagination), args["fromEpoch"].(*int), args["toEpoch"].(*int)), true
 
 	case "Party.stakingSummary":
 		if e.complexity.Party.StakingSummary == nil {
@@ -10165,6 +10200,24 @@ func (ec *executionContext) field_Party_rewardsConnection_args(ctx context.Conte
 		}
 	}
 	args["pagination"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["fromEpoch"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fromEpoch"))
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["fromEpoch"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["toEpoch"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toEpoch"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["toEpoch"] = arg3
 	return args, nil
 }
 
@@ -24363,6 +24416,50 @@ func (ec *executionContext) fieldContext_LiquidityMonitoringParameters_triggerin
 	return fc, nil
 }
 
+func (ec *executionContext) _LiquidityMonitoringParameters_auctionExtensionSecs(ctx context.Context, field graphql.CollectedField, obj *LiquidityMonitoringParameters) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityMonitoringParameters_auctionExtensionSecs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AuctionExtensionSecs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityMonitoringParameters_auctionExtensionSecs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityMonitoringParameters",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _LiquidityOrder_reference(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidityOrder) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_LiquidityOrder_reference(ctx, field)
 	if err != nil {
@@ -28033,6 +28130,8 @@ func (ec *executionContext) fieldContext_Market_liquidityMonitoringParameters(ct
 				return ec.fieldContext_LiquidityMonitoringParameters_targetStakeParameters(ctx, field)
 			case "triggeringRatio":
 				return ec.fieldContext_LiquidityMonitoringParameters_triggeringRatio(ctx, field)
+			case "auctionExtensionSecs":
+				return ec.fieldContext_LiquidityMonitoringParameters_auctionExtensionSecs(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LiquidityMonitoringParameters", field.Name)
 		},
@@ -32791,6 +32890,150 @@ func (ec *executionContext) fieldContext_NewMarket_metadata(ctx context.Context,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewMarket_priceMonitoringParameters(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewMarket_priceMonitoringParameters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewMarket().PriceMonitoringParameters(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PriceMonitoringParameters)
+	fc.Result = res
+	return ec.marshalNPriceMonitoringParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐPriceMonitoringParameters(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewMarket_priceMonitoringParameters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "triggers":
+				return ec.fieldContext_PriceMonitoringParameters_triggers(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PriceMonitoringParameters", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewMarket_liquidityMonitoringParameters(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewMarket_liquidityMonitoringParameters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewMarket().LiquidityMonitoringParameters(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*LiquidityMonitoringParameters)
+	fc.Result = res
+	return ec.marshalNLiquidityMonitoringParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLiquidityMonitoringParameters(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewMarket_liquidityMonitoringParameters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "targetStakeParameters":
+				return ec.fieldContext_LiquidityMonitoringParameters_targetStakeParameters(ctx, field)
+			case "triggeringRatio":
+				return ec.fieldContext_LiquidityMonitoringParameters_triggeringRatio(ctx, field)
+			case "auctionExtensionSecs":
+				return ec.fieldContext_LiquidityMonitoringParameters_auctionExtensionSecs(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquidityMonitoringParameters", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewMarket_positionDecimalPlaces(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewMarket_positionDecimalPlaces(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewMarket().PositionDecimalPlaces(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewMarket_positionDecimalPlaces(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -40229,7 +40472,7 @@ func (ec *executionContext) _Party_rewardsConnection(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().RewardsConnection(rctx, obj, fc.Args["assetId"].(*string), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Party().RewardsConnection(rctx, obj, fc.Args["assetId"].(*string), fc.Args["pagination"].(*v2.Pagination), fc.Args["fromEpoch"].(*int), fc.Args["toEpoch"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -58110,6 +58353,8 @@ func (ec *executionContext) fieldContext_UpdateMarketConfiguration_liquidityMoni
 				return ec.fieldContext_LiquidityMonitoringParameters_targetStakeParameters(ctx, field)
 			case "triggeringRatio":
 				return ec.fieldContext_LiquidityMonitoringParameters_triggeringRatio(ctx, field)
+			case "auctionExtensionSecs":
+				return ec.fieldContext_LiquidityMonitoringParameters_auctionExtensionSecs(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LiquidityMonitoringParameters", field.Name)
 		},
@@ -66205,6 +66450,13 @@ func (ec *executionContext) _LiquidityMonitoringParameters(ctx context.Context, 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "auctionExtensionSecs":
+
+			out.Values[i] = ec._LiquidityMonitoringParameters_auctionExtensionSecs(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -68715,6 +68967,66 @@ func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet
 					}
 				}()
 				res = ec._NewMarket_metadata(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "priceMonitoringParameters":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewMarket_priceMonitoringParameters(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "liquidityMonitoringParameters":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewMarket_liquidityMonitoringParameters(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "positionDecimalPlaces":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewMarket_positionDecimalPlaces(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 

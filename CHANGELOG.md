@@ -3,20 +3,24 @@
 ## Unreleased 0.68.0
 
 ### 🚨 Breaking changes
+- [7419](https://github.com/vegaprotocol/vega/issues/7419) - Remove the deprecated headers with the `Grpc-Metadata-` prefix in `datanode` `API` and `REST` and `GraphQL` gateways.
 - [6963](https://github.com/vegaprotocol/vega/issues/6963) - Remove the legacy fields from network API
 - [7361](https://github.com/vegaprotocol/vega/issues/7361) - Network history loading and current order set tracking - database requires database to be dropped 
 
 
 ### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7385](https://github.com/vegaprotocol/vega/issues/7385) - Deprecating the `X-Vega-Connection` HTTP header in `datanode` `API` and `REST` and `GraphQL` gateways.
 
 ### 🛠 Improvements
 - [7386](https://github.com/vegaprotocol/vega/issues/7386) - Add indexed filtering by command type to block explorer
 - [6962](https://github.com/vegaprotocol/vega/issues/6962) - Add a dedicated configuration for the wallet service
 - [7429](https://github.com/vegaprotocol/vega/issues/7429) - Do not mark wallet and network as incompatible when the patch version doesn't match
+- [6650](https://github.com/vegaprotocol/vega/issues/6650) - Add ability to filter rewards with `fromEpoch` and `toEpoch`
 - [7289](https://github.com/vegaprotocol/vega/issues/7289) - `positionsConnection` query added to `GraphQL`root query with filter for multiple parties and markets
 
 ### 🐛 Fixes
+- [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema
+- [7462](https://github.com/vegaprotocol/vega/issues/7462) - Fix `BlockExplorer` `API` not returning details on transactions.
 - [7407](https://github.com/vegaprotocol/vega/issues/7407) - fix `ethereum` timestamp in stake linking in `graphql`
 - [7420](https://github.com/vegaprotocol/vega/issues/7420) - `clearFeeActivity` now clears fee activity
 - [7420](https://github.com/vegaprotocol/vega/issues/7420) - set seed nonce for joining and leaving signatures during begin block

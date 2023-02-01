@@ -24,11 +24,12 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
-	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -55,7 +56,7 @@ func TestMain(m *testing.M) {
 }
 
 func NewTestConfig() sqlstore.Config {
-	return databasetest.NewTestConfig(testDBPort, testDBSocketDir)
+	return databasetest.NewTestConfig(testDBPort, "", testDBSocketDir)
 }
 
 func generateTxHash() entities.TxHash {

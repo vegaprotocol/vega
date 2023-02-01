@@ -1181,11 +1181,30 @@ func (r *myPartyResolver) TransfersConnection(
 	return r.r.transfersConnection(ctx, &party.Id, direction, pagination)
 }
 
-func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *types.Party, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error) {
+func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *types.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) (*v2.RewardsConnection, error) {
+	var from, to *uint64
+
+	if fromEpoch != nil {
+		from = new(uint64)
+		if *fromEpoch < 0 {
+			return nil, errors.New("invalid fromEpoch for reward query - must be positive")
+		}
+		*from = uint64(*fromEpoch)
+	}
+	if toEpoch != nil {
+		to = new(uint64)
+		if *toEpoch < 0 {
+			return nil, errors.New("invalid toEpoch for reward query - must be positive")
+		}
+		*to = uint64(*toEpoch)
+	}
+
 	req := v2.ListRewardsRequest{
 		PartyId:    party.Id,
 		AssetId:    assetID,
 		Pagination: pagination,
+		FromEpoch:  from,
+		ToEpoch:    to,
 	}
 	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req)
 	if err != nil {

@@ -20,9 +20,8 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"google.golang.org/grpc"
-	lumberjack "gopkg.in/natefinch/lumberjack.v2"
+	"gopkg.in/natefinch/lumberjack.v2"
 
-	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
@@ -286,8 +285,7 @@ func (l *NodeCommand) preRun([]string) (err error) {
 		return err
 	}
 
-	coreClient := vegaprotoapi.NewCoreServiceClient(conn)
-	l.vegaCoreServiceClient = api.NewVegaCoreServiceClient(coreClient, conn.GetState)
+	l.vegaCoreServiceClient = vegaprotoapi.NewCoreServiceClient(conn)
 	return nil
 }
 
