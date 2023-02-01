@@ -10,13 +10,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/multiformats/go-multiaddr"
+
 	"github.com/jackc/pgx/v4/pgxpool"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"code.vegaprotocol.io/vega/datanode/networkhistory/fsutil"
-	"github.com/multiformats/go-multiaddr"
-
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
@@ -31,6 +31,8 @@ type Segment interface {
 }
 
 type Service struct {
+	cfg Config
+
 	log      *logging.Logger
 	connPool *pgxpool.Pool
 
@@ -69,6 +71,7 @@ func NewWithStore(ctx context.Context, log *logging.Logger, chainID string, cfg 
 	snapshotsCopyFromDir, snapshotsCopyToDir string,
 ) (*Service, error) {
 	s := &Service{
+		cfg:                  cfg,
 		log:                  log,
 		connPool:             connPool,
 		snapshotService:      snapshotService,
@@ -153,21 +156,58 @@ func (d *Service) CreateAndPublishSegment(ctx context.Context, chainID string, t
 	return nil
 }
 
-func (d *Service) GetActivePeerAddresses() []string {
+func (d *Service) GetBootstrapPeers() []string {
+	return d.cfg.Store.BootstrapPeers
+}
+
+func (d *Service) GetSwarmKey() string {
+	return d.store.GetSwarmKey()
+}
+
+func (d *Service) GetIpfsAddress() (string, error) {
+	node, err := d.store.GetLocalNode()
+	if err != nil {
+		return "", fmt.Errorf("failed to load node: %w", err)
+	}
+
+	ipfsAddress, err := node.IpfsAddress()
+	if err != nil {
+		return "", fmt.Errorf("failed to get ipfs address: %w", err)
+	}
+
+	return ipfsAddress.String(), nil
+}
+
+func (d *Service) GetConnectedPeerAddresses() ([]string, error) {
+	connectedPeers := d.store.GetConnectedPeers()
+
+	addr := make([]string, 0, len(connectedPeers))
+	for _, peer := range connectedPeers {
+		ipfsAddress, err := peer.Remote.IpfsAddress()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get ipfs address of remote peer: %w", err)
+		}
+		addr = append(addr, ipfsAddress.String())
+	}
+
+	return addr, nil
+}
+
+func (d *Service) GetActivePeerIPAddresses() []string {
 	ip4Protocol := multiaddr.ProtocolWithName("ip4")
 	ip6Protocol := multiaddr.ProtocolWithName("ip6")
 	var activePeerIPAddresses []string
 
 	activePeerIPAddresses = nil
-	peerAddresses := d.store.GetPeerAddrs()
+	connectedPeers := d.store.GetConnectedPeers()
 
-	for _, addr := range peerAddresses {
-		ipAddr, err := addr.ValueForProtocol(ip4Protocol.Code)
+	for _, addr := range connectedPeers {
+		ipAddr, err := addr.Remote.Addr.ValueForProtocol(ip4Protocol.Code)
 		if err == nil {
 			activePeerIPAddresses = append(activePeerIPAddresses, ipAddr)
 		}
 
-		ipAddr, err = addr.ValueForProtocol(ip6Protocol.Code)
+		ipAddr, err = addr.Remote.Addr.ValueForProtocol(ip6Protocol.Code)
 		if err == nil {
 			activePeerIPAddresses = append(activePeerIPAddresses, ipAddr)
 		}
@@ -176,8 +216,8 @@ func (d *Service) GetActivePeerAddresses() []string {
 	return activePeerIPAddresses
 }
 
-func (d *Service) GetSwarmKey() string {
-	return d.store.GetSwarmKey()
+func (d *Service) GetSwarmKeySeed() string {
+	return d.store.GetSwarmKeySeed()
 }
 
 func (d *Service) LoadNetworkHistoryIntoDatanode(ctx context.Context, contiguousHistory ContiguousHistory,
@@ -239,7 +279,7 @@ func (d *Service) GetMostRecentHistorySegmentFromPeers(ctx context.Context,
 	// Time for connections to be established
 	time.Sleep(5 * time.Second)
 	for retries := 0; retries < 5; retries++ {
-		activePeerAddresses = d.GetActivePeerAddresses()
+		activePeerAddresses = d.GetActivePeerIPAddresses()
 		if len(activePeerAddresses) == 0 {
 			time.Sleep(5 * time.Second)
 		}
@@ -249,7 +289,7 @@ func (d *Service) GetMostRecentHistorySegmentFromPeers(ctx context.Context,
 		return nil, nil, errors.New("no active peers found")
 	}
 
-	return GetMostRecentHistorySegmentFromPeersAddresses(ctx, activePeerAddresses, d.GetSwarmKey(), grpcAPIPorts)
+	return GetMostRecentHistorySegmentFromPeersAddresses(ctx, activePeerAddresses, d.GetSwarmKeySeed(), grpcAPIPorts)
 }
 
 func (d *Service) GetDatanodeBlockSpan(ctx context.Context) (sqlstore.DatanodeBlockSpan, error) {

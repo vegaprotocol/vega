@@ -22,9 +22,9 @@ type latestHistorySegment struct {
 }
 
 type segmentInfo struct {
-	Peer     string
-	SwarmKey string
-	Segment  *v2.HistorySegment
+	Peer         string
+	SwarmKeySeed string
+	Segment      *v2.HistorySegment
 }
 type latestHistoryOutput struct {
 	Segments              []segmentInfo
@@ -34,7 +34,7 @@ type latestHistoryOutput struct {
 func (o *latestHistoryOutput) printHuman() {
 	segmentsInfo := "Most Recent History Segments:\n\n"
 	for _, segment := range o.Segments {
-		segmentsInfo += fmt.Sprintf("Peer:%-39s,  Swarm Key:%s, Segment{%s}\n\n", segment.Peer, segment.SwarmKey, segment.Segment)
+		segmentsInfo += fmt.Sprintf("Peer:%-39s,  Swarm Key:%s, Segment{%s}\n\n", segment.Peer, segment.SwarmKeySeed, segment.Segment)
 	}
 	fmt.Println(segmentsInfo)
 	fmt.Printf("Suggested segment to use to fetch network history data {%s}\n\n", o.SuggestedFetchSegment)
@@ -78,7 +78,7 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 	grpcAPIPorts := []int{cmd.Config.API.Port}
 	grpcAPIPorts = append(grpcAPIPorts, cmd.Config.NetworkHistory.Initialise.GrpcAPIPorts...)
 	selectedResponse, peerToResponse, err := networkhistory.GetMostRecentHistorySegmentFromPeersAddresses(context.Background(), peerAddresses,
-		cmd.Config.NetworkHistory.Store.GetSwarmKey(log, cmd.Config.ChainID), grpcAPIPorts)
+		cmd.Config.NetworkHistory.Store.GetSwarmKeySeed(log, cmd.Config.ChainID), grpcAPIPorts)
 	if err != nil {
 		handleErr(log, cmd.Output.IsJSON(), "failed to get most recent history segment from peers", err)
 		os.Exit(1)
@@ -89,9 +89,9 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 
 	for peer, segment := range peerToResponse {
 		output.Segments = append(output.Segments, segmentInfo{
-			Peer:     peer,
-			SwarmKey: segment.SwarmKey,
-			Segment:  segment.Segment,
+			Peer:         peer,
+			SwarmKeySeed: segment.SwarmKeySeed,
+			Segment:      segment.Segment,
 		})
 	}
 
