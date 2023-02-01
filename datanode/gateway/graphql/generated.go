@@ -1141,7 +1141,7 @@ type ComplexityRoot struct {
 		PositionsConnection           func(childComplexity int, market *string, pagination *v2.Pagination) int
 		ProposalsConnection           func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		RewardSummaries               func(childComplexity int, assetID *string) int
-		RewardsConnection             func(childComplexity int, assetID *string, pagination *v2.Pagination) int
+		RewardsConnection             func(childComplexity int, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) int
 		StakingSummary                func(childComplexity int, pagination *v2.Pagination) int
 		TradesConnection              func(childComplexity int, marketID *string, dataRange *v2.DateRange, pagination *v2.Pagination) int
 		TransfersConnection           func(childComplexity int, direction *TransferDirection, pagination *v2.Pagination) int
@@ -2062,7 +2062,7 @@ type PartyResolver interface {
 	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Party, marketID *string, reference *string, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
 	DelegationsConnection(ctx context.Context, obj *vega.Party, nodeID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error)
 	StakingSummary(ctx context.Context, obj *vega.Party, pagination *v2.Pagination) (*StakingSummary, error)
-	RewardsConnection(ctx context.Context, obj *vega.Party, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
+	RewardsConnection(ctx context.Context, obj *vega.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) (*v2.RewardsConnection, error)
 	RewardSummaries(ctx context.Context, obj *vega.Party, assetID *string) ([]*vega.RewardSummary, error)
 	TransfersConnection(ctx context.Context, obj *vega.Party, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
 }
@@ -6569,7 +6569,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.RewardsConnection(childComplexity, args["assetId"].(*string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Party.RewardsConnection(childComplexity, args["assetId"].(*string), args["pagination"].(*v2.Pagination), args["fromEpoch"].(*int), args["toEpoch"].(*int)), true
 
 	case "Party.stakingSummary":
 		if e.complexity.Party.StakingSummary == nil {
@@ -10165,6 +10165,24 @@ func (ec *executionContext) field_Party_rewardsConnection_args(ctx context.Conte
 		}
 	}
 	args["pagination"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["fromEpoch"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fromEpoch"))
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["fromEpoch"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["toEpoch"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toEpoch"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["toEpoch"] = arg3
 	return args, nil
 }
 
@@ -40229,7 +40247,7 @@ func (ec *executionContext) _Party_rewardsConnection(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().RewardsConnection(rctx, obj, fc.Args["assetId"].(*string), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Party().RewardsConnection(rctx, obj, fc.Args["assetId"].(*string), fc.Args["pagination"].(*v2.Pagination), fc.Args["fromEpoch"].(*int), fc.Args["toEpoch"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
