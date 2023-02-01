@@ -94,10 +94,18 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
     # no fees in auction
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
+    Then the parties should have the following account balances:
+      | party | asset | market id | margin    | general     |
+      | lp1   | USD   | ETH/MAR22 | 110673535 | 99389326465 |
+    And the parties should have the following margin levels:
+      | party | market id | maintenance | search    | initial   | release   |
+      | lp1   | ETH/MAR22 | 92227946    | 101450740 | 110673535 | 129119124 |
+
     Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | party2 | ETH/MAR22 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party2-buy  |
+
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party1 | 60     | -294000        | 0            |
@@ -110,6 +118,12 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
 
     # check lp fee distribution
     Then time is updated to "2019-11-30T00:10:05Z"
+    Then the parties should have the following account balances:
+      | party | asset | market id | margin    | general     |
+      | lp1   | USD   | ETH/MAR22 | 110673535 | 99389326760 |
+    And the parties should have the following margin levels:
+      | party | market id | maintenance | search   | initial   | release   |
+      | lp1   | ETH/MAR22 | 89960553    | 98956608 | 107952663 | 125944774 |
 
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
