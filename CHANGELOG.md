@@ -16,6 +16,7 @@
 - [7429](https://github.com/vegaprotocol/vega/issues/7429) - Do not mark wallet and network as incompatible when the patch version doesn't match
 - [6650](https://github.com/vegaprotocol/vega/issues/6650) - Add ability to filter rewards with `fromEpoch` and `toEpoch`
 - [7289](https://github.com/vegaprotocol/vega/issues/7289) - `positionsConnection` query added to `GraphQL`root query with filter for multiple parties and markets
+- [7454](https://github.com/vegaprotocol/vega/issues/7454) - Retention policies for new types do not honour the 'lite' or 'archive' when added after `init`
 
 ### 🐛 Fixes
 - [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema
@@ -28,6 +29,7 @@
 - [7169](https://github.com/vegaprotocol/vega/issues/7169) - Fix migration, account for existing position data
 - [7427](https://github.com/vegaprotocol/vega/issues/7427) - Fix nil pointer panic on settlement of restored markets.
 - [7451](https://github.com/vegaprotocol/vega/issues/7451) - Fix floating point consensus to use voting power rather than node count
+- [7417](https://github.com/vegaprotocol/vega/issues/7417) - Missing entries in default data retention configuration for `datanode`
 
 ## 0.67.2
 
