@@ -31,7 +31,7 @@ type MarketStore interface {
 	Upsert(ctx context.Context, market *entities.Market) error
 	GetByID(ctx context.Context, marketID string) (entities.Market, error)
 	GetAll(ctx context.Context, pagination entities.OffsetPagination) ([]entities.Market, error)
-	GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination) ([]entities.Market, entities.PageInfo, error)
+	GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, active bool) ([]entities.Market, entities.PageInfo, error)
 }
 
 type Markets struct {
@@ -115,6 +115,6 @@ func (m *Markets) GetAll(ctx context.Context, pagination entities.OffsetPaginati
 	return data, nil
 }
 
-func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination) ([]entities.Market, entities.PageInfo, error) {
-	return m.store.GetAllPaged(ctx, marketID, pagination)
+func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, active bool) ([]entities.Market, entities.PageInfo, error) {
+	return m.store.GetAllPaged(ctx, marketID, pagination, active)
 }

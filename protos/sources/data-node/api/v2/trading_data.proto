@@ -1534,6 +1534,8 @@ message GetMarketResponse {
 
 message ListMarketsRequest {
     optional Pagination pagination = 2;
+    // Optional filter to only return active markets. If false, all markets regardless of state are returned.
+    optional bool active = 3;
 }
 
 message ListMarketsResponse {

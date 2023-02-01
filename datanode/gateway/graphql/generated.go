@@ -1363,7 +1363,7 @@ type ComplexityRoot struct {
 		LastBlockHeight                    func(childComplexity int) int
 		LedgerEntries                      func(childComplexity int, filter *v2.LedgerEntryFilter, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		Market                             func(childComplexity int, id string) int
-		MarketsConnection                  func(childComplexity int, id *string, pagination *v2.Pagination) int
+		MarketsConnection                  func(childComplexity int, id *string, pagination *v2.Pagination, active *bool) int
 		MostRecentHistorySegment           func(childComplexity int) int
 		NetworkLimits                      func(childComplexity int) int
 		NetworkParameter                   func(childComplexity int, key string) int
@@ -2138,7 +2138,7 @@ type QueryResolver interface {
 	KeyRotationsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.KeyRotationConnection, error)
 	LastBlockHeight(ctx context.Context) (string, error)
 	Market(ctx context.Context, id string) (*vega.Market, error)
-	MarketsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.MarketConnection, error)
+	MarketsConnection(ctx context.Context, id *string, pagination *v2.Pagination, active *bool) (*v2.MarketConnection, error)
 	MostRecentHistorySegment(ctx context.Context) (*v2.HistorySegment, error)
 	NetworkLimits(ctx context.Context) (*vega.NetworkLimits, error)
 	NetworkParameter(ctx context.Context, key string) (*vega.NetworkParameter, error)
@@ -7593,7 +7593,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.MarketsConnection(childComplexity, args["id"].(*string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.MarketsConnection(childComplexity, args["id"].(*string), args["pagination"].(*v2.Pagination), args["active"].(*bool)), true
 
 	case "Query.mostRecentHistorySegment":
 		if e.complexity.Query.MostRecentHistorySegment == nil {
@@ -10953,6 +10953,15 @@ func (ec *executionContext) field_Query_marketsConnection_args(ctx context.Conte
 		}
 	}
 	args["pagination"] = arg1
+	var arg2 *bool
+	if tmp, ok := rawArgs["active"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("active"))
+		arg2, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["active"] = arg2
 	return args, nil
 }
 
@@ -46440,7 +46449,7 @@ func (ec *executionContext) _Query_marketsConnection(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().MarketsConnection(rctx, fc.Args["id"].(*string), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().MarketsConnection(rctx, fc.Args["id"].(*string), fc.Args["pagination"].(*v2.Pagination), fc.Args["active"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

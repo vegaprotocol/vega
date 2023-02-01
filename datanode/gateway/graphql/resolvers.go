@@ -2654,7 +2654,7 @@ func (r *myQueryResolver) GetMarketDataHistoryConnectionByID(ctx context.Context
 	return resp.GetMarketData(), nil
 }
 
-func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.MarketConnection, error) {
+func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pagination *v2.Pagination, active *bool) (*v2.MarketConnection, error) {
 	var marketID string
 
 	if id != nil {
@@ -2685,6 +2685,7 @@ func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pag
 
 	resp, err := r.tradingDataClientV2.ListMarkets(ctx, &v2.ListMarketsRequest{
 		Pagination: pagination,
+		Active:     active,
 	})
 	if err != nil {
 		return nil, err

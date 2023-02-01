@@ -541,6 +541,8 @@ type Query {
     id: ID
     "Optional pagination information"
     pagination: Pagination
+    "Optional filter to restrict the results to active markets only"
+    active: Boolean
   ): MarketConnection
 
   "The most recent history segment"

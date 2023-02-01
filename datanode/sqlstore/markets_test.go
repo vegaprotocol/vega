@@ -35,6 +35,7 @@ func TestMarkets_Get(t *testing.T) {
 	t.Run("GetByID should return error if the market does not exist", getByIDShouldReturnErrorIfTheMarketDoesNotExist)
 	t.Run("GetAll should not include rejected markets", getAllShouldNotIncludeRejectedMarkets)
 	t.Run("GetAllPaged should not include rejected markets", getAllPagedShouldNotIncludeRejectedMarkets)
+	t.Run("GetAllPaged should only include active markets if active flag is true", getAllPagedShouldIncludeActiveOnly)
 }
 
 func getByIDShouldReturnTheRequestedMarketIfItExists(t *testing.T) {
@@ -140,7 +141,7 @@ func getAllPagedShouldNotIncludeRejectedMarkets(t *testing.T) {
 	err = md.Upsert(ctx, &rejected)
 	require.NoError(t, err, "Saving market entity to database")
 
-	markets, pageInfo, err := md.GetAllPaged(ctx, "", entities.CursorPagination{})
+	markets, pageInfo, err := md.GetAllPaged(ctx, "", entities.CursorPagination{}, false)
 	require.NoError(t, err)
 	assert.Len(t, markets, 1)
 	assert.Equal(t, market.ID, markets[0].ID)
@@ -153,6 +154,67 @@ func getAllPagedShouldNotIncludeRejectedMarkets(t *testing.T) {
 		StartCursor:     market.Cursor().Encode(),
 		EndCursor:       market.Cursor().Encode(),
 	}, pageInfo)
+}
+
+func getAllPagedShouldIncludeActiveOnly(t *testing.T) {
+	bs, md := setupMarketsTest(t)
+
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	block := addTestBlock(t, ctx, bs)
+
+	markets := []entities.Market{
+		{
+			ID:       "deadbeef01",
+			TxHash:   generateTxHash(),
+			VegaTime: block.VegaTime,
+			State:    entities.MarketStateActive,
+		},
+		{
+			ID:       "deadbeef02",
+			TxHash:   generateTxHash(),
+			VegaTime: block.VegaTime,
+			State:    entities.MarketStateActive,
+		},
+		{
+			ID:       "deadbeef03",
+			TxHash:   generateTxHash(),
+			VegaTime: block.VegaTime,
+			State:    entities.MarketStateProposed,
+		},
+		{
+			ID:       "deadbeef04",
+			TxHash:   generateTxHash(),
+			VegaTime: block.VegaTime,
+			State:    entities.MarketStatePending,
+		},
+	}
+
+	for _, market := range markets {
+		err := md.Upsert(ctx, &market)
+		require.NoError(t, err, "Saving market entity to database")
+	}
+	got, _, err := md.GetAllPaged(ctx, "", entities.CursorPagination{}, true)
+	require.NoError(t, err)
+	assert.Len(t, got, 2)
+	want := markets[:2]
+	for _, w := range want {
+		found := false
+		for _, g := range got {
+			if w.ID == g.ID {
+				assert.Equal(t, w.TxHash, g.TxHash)
+				assert.Equal(t, w.VegaTime, g.VegaTime)
+				assert.Equal(t, w.State, g.State)
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			t.Errorf("want market %s, but not found", w.ID)
+			return
+		}
+	}
 }
 
 func shouldInsertAValidMarketRecord(t *testing.T) {
@@ -472,7 +534,7 @@ func testCursorPaginationReturnsTheSpecifiedMarket(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "c612300d", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "c612300d", pagination, false)
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(got))
 	assert.Equal(t, "c612300d", got[0].ID.String())
@@ -504,7 +566,7 @@ func testCursorPaginationReturnsAllMarkets(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, false)
 	require.NoError(t, err)
 	assert.Equal(t, 10, len(got))
 	assert.Equal(t, "02a16077", got[0].ID.String())
@@ -542,7 +604,7 @@ func testCursorPaginationReturnsFirstPage(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, false)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(got))
@@ -581,7 +643,7 @@ func testCursorPaginationReturnsLastPage(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, false)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(got))
@@ -626,7 +688,7 @@ func testCursorPaginationReturnsPageTraversingForward(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, false)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(got))
@@ -671,7 +733,7 @@ func testCursorPaginationReturnsPageTraversingBackward(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, false)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(got))
@@ -709,7 +771,7 @@ func testCursorPaginationReturnsTheSpecifiedMarketNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "c612300d", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "c612300d", pagination, false)
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(got))
 	assert.Equal(t, "c612300d", got[0].ID.String())
@@ -746,7 +808,7 @@ func testCursorPaginationReturnsAllMarketsNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, false)
 	require.NoError(t, err)
 	assert.Equal(t, 10, len(got))
 	assert.Equal(t, "fb1528a5", got[0].ID.String())
@@ -784,7 +846,7 @@ func testCursorPaginationReturnsFirstPageNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, false)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(got))
@@ -823,7 +885,7 @@ func testCursorPaginationReturnsLastPageNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, false)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(got))
@@ -868,7 +930,7 @@ func testCursorPaginationReturnsPageTraversingForwardNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, false)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(got))
@@ -913,7 +975,7 @@ func testCursorPaginationReturnsPageTraversingBackwardNewestFirst(t *testing.T) 
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, false)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(got))
