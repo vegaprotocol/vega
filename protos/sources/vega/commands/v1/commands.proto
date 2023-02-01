@@ -5,6 +5,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega/commands/v1";
 
 import "vega/governance.proto";
 import "vega/vega.proto";
+import "vega/commands/v1/validator_commands.proto";
 
 // A batch of order instructions.
 // This command accepts only the following batches of commands
@@ -233,4 +234,15 @@ message RecurringTransfer {
 message CancelTransfer {
   // The ID of the transfer to cancel
   string transfer_id = 1;
+}
+
+
+// A transaction for a validator to submit signatures to a smart contract
+message IssueSignatures {
+  // The ethereum address which will submit the signatures to the smart contract
+  string submitter = 1;
+  // The kind of signatures to generate, namely for whether a signer is being added or removed
+  NodeSignatureKind kind = 2;
+  // The ID of the node that will be signed in or out of the smart contract
+  string validator_node_id = 3; // the node for which to emit the signatures.
 }
