@@ -681,6 +681,12 @@ type Query {
     "Pagination options"
     pagination: Pagination,
   ): WithdrawalsConnection
+
+  "Fetch all positions"
+  positions(
+    filter: PositionsFilter,
+    pagination: Pagination
+  ): PositionConnection
 }
 
 "All the states a transfer can transition between"
@@ -1617,7 +1623,7 @@ type PriceMonitoringParameters {
 }
 
 """
-PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration
 """
 type PriceMonitoringTrigger {
   "Price monitoring projection horizon τ in seconds (> 0)."
@@ -1665,6 +1671,8 @@ type LiquidityMonitoringParameters {
   targetStakeParameters: TargetStakeParameters!
   "Specifies the triggering ratio for entering liquidity auction"
   triggeringRatio: String!
+  "Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction"
+  auctionExtensionSecs: Int!
 }
 
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
@@ -1960,7 +1968,7 @@ type Party {
   ): AccountsConnection
 
   "Trading positions relating to a party"
-  positionsConnection(market: ID, pagination: Pagination): PositionConnection
+  positionsConnection(market: ID, pagination: Pagination): PositionConnection @deprecated (reason: "Use root positions query instead of sub-query")
 
   "Margin levels for a market"
   marginsConnection(
@@ -2029,6 +2037,10 @@ type Party {
     assetId: ID
     "Optional pagination information"
     pagination: Pagination
+    "Optionally only return rewards >= this epoch"
+    fromEpoch: Int
+    "Optionally only return rewards <= this epoch"
+    toEpoch: Int
   ): RewardsConnection
 
   "Return net reward information"
@@ -3184,6 +3196,12 @@ type NewMarket {
   riskParameters: RiskModel!
   "Metadata for this instrument, tags"
   metadata: [String!]
+  "Price monitoring parameters"
+  priceMonitoringParameters: PriceMonitoringParameters!
+  "Liquidity monitoring parameters"
+  liquidityMonitoringParameters: LiquidityMonitoringParameters!
+  "Decimal places for order sizes, sets what size the smallest order / position on the market can be"
+  positionDecimalPlaces: Int!
   "Liquidity Provision order price range"
   lpPriceRange: String!
 }
@@ -3921,8 +3939,6 @@ type HistorySegment {
     fromHeight:       Int!
     "To block height of the history segment"
     toHeight: Int!
-    "Chain ID of the history segment"
-    chainID: String!
     "ID of the history segment"
     historySegmentId: String!
 }
@@ -4042,6 +4058,12 @@ type PositionEdge {
   node: Position!
     "The cursor for this position"
   cursor: String
+}
+
+"Filter to apply to the positions connection query"
+input PositionsFilter {
+  partyIds: [ID!]
+  marketIds: [ID!]
 }
 
 "Connection type for retrieving cursor-based paginated position information"

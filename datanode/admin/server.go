@@ -83,7 +83,7 @@ func (s *Server) Start(ctx context.Context) error {
 func (s *Server) Stop() {
 	if s.srv != nil {
 		s.log.Info("Stopping Data Node Admin Server<>RPC based API")
-		if err := s.srv.Close(); err != nil {
+		if err := s.srv.Shutdown(context.Background()); err != nil {
 			s.log.Error("failed to stop Data Node Admin server<>RPC based API cleanly",
 				logging.Error(err))
 		}

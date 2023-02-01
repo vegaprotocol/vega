@@ -46,7 +46,7 @@ import (
 const (
 	lastEpoch       = 346
 	playbackTimeout = 5 * time.Minute
-	chainID         = "testnet"
+	chainID         = "testnet-001"
 	testdataPath    = "testdata/system_tests.evt"
 )
 
@@ -204,12 +204,14 @@ func newTestConfig(postgresRuntimePath string) (*config.Config, error) {
 
 	cfg := config.NewDefaultConfig()
 	cfg.Broker.UseEventFile = true
+	cfg.Broker.PanicOnError = true
 	cfg.Broker.FileEventSourceConfig.File = filepath.Join(cwd, testdataPath)
 	cfg.Broker.FileEventSourceConfig.TimeBetweenBlocks = encoding.Duration{Duration: 0}
 	cfg.API.WebUIEnabled = true
 	cfg.API.Reflection = true
 	cfg.ChainID = chainID
-	cfg.SQLStore = databasetest.NewTestConfig(5432, postgresRuntimePath)
+	cfg.SQLStore = databasetest.NewTestConfig(5432, "", postgresRuntimePath)
+	cfg.NetworkHistory.Enabled = false
 
 	return &cfg, nil
 }

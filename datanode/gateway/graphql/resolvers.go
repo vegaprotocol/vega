@@ -481,6 +481,18 @@ func (r *myDepositResolver) CreditedTimestamp(ctx context.Context, obj *types.De
 
 type myQueryResolver VegaResolverRoot
 
+func (r *myQueryResolver) Positions(ctx context.Context, filter *v2.PositionsFilter, pagination *v2.Pagination) (*v2.PositionConnection, error) {
+	resp, err := r.tradingDataClientV2.ListAllPositions(ctx, &v2.ListAllPositionsRequest{
+		Filter:     filter,
+		Pagination: pagination,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Positions, nil
+}
+
 func (r *myQueryResolver) TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection,
 	pagination *v2.Pagination,
 ) (*v2.TransferConnection, error) {
@@ -1169,11 +1181,30 @@ func (r *myPartyResolver) TransfersConnection(
 	return r.r.transfersConnection(ctx, &party.Id, direction, pagination)
 }
 
-func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *types.Party, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error) {
+func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *types.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) (*v2.RewardsConnection, error) {
+	var from, to *uint64
+
+	if fromEpoch != nil {
+		from = new(uint64)
+		if *fromEpoch < 0 {
+			return nil, errors.New("invalid fromEpoch for reward query - must be positive")
+		}
+		*from = uint64(*fromEpoch)
+	}
+	if toEpoch != nil {
+		to = new(uint64)
+		if *toEpoch < 0 {
+			return nil, errors.New("invalid toEpoch for reward query - must be positive")
+		}
+		*to = uint64(*toEpoch)
+	}
+
 	req := v2.ListRewardsRequest{
 		PartyId:    party.Id,
 		AssetId:    assetID,
 		Pagination: pagination,
+		FromEpoch:  from,
+		ToEpoch:    to,
 	}
 	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req)
 	if err != nil {

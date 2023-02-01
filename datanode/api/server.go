@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
+	"code.vegaprotocol.io/vega/datanode/networkhistory"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
@@ -36,7 +36,6 @@ import (
 	"github.com/fullstorydev/grpcui/standalone"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/reflection"
@@ -60,9 +59,9 @@ type BlockService interface {
 //
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/networkhistory_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api NetworkHistoryService
 type NetworkHistoryService interface {
-	GetHighestBlockHeightHistorySegment() (store.SegmentIndexEntry, error)
-	ListAllHistorySegments() ([]store.SegmentIndexEntry, error)
-	FetchHistorySegment(ctx context.Context, historySegmentID string) (store.SegmentIndexEntry, error)
+	GetHighestBlockHeightHistorySegment() (networkhistory.Segment, error)
+	ListAllHistorySegments() ([]networkhistory.Segment, error)
+	FetchHistorySegment(ctx context.Context, historySegmentID string) (networkhistory.Segment, error)
 	GetActivePeerAddresses() []string
 	CopyHistorySegmentToFile(ctx context.Context, historySegmentID string, outFile string) error
 	GetSwarmKey() string
@@ -285,8 +284,7 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 }
 
 func headersInterceptor(
-	getState GetStateFunc,
-	getLastBlock GetBlockFunc,
+	getLastBlock func(context.Context) (entities.Block, error),
 	log *logging.Logger,
 ) grpc.UnaryServerInterceptor {
 	return func(
@@ -308,25 +306,13 @@ func headersInterceptor(
 			timestamp = block.VegaTime.UnixNano()
 		}
 
-		state := getState()
-
-		connState := "DISCONNECTED"
-		if state == connectivity.Ready {
-			connState = "CONNECTED"
-		}
-
 		for _, h := range []metadata.MD{
-			metadata.Pairs("X-Vega-Connection", connState),
+			// Deprecated: use 'X-Block-Height' and 'X-Block-Timestamp' instead to determine if data is fresh.
+			metadata.Pairs("X-Vega-Connection", "CONNECTED"),
 			metadata.Pairs("X-Block-Height", strconv.FormatInt(height, 10)),
 			metadata.Pairs("X-Block-Timestamp", strconv.FormatInt(timestamp, 10)),
-			// Deprecated: use X-Block-Timestamp instead.
-			metadata.Pairs("Grpc-Metadata-X-Vega-Connection", connState),
-			// Deprecated: use X-Block-Height instead.
-			metadata.Pairs("Grpc-Metadata-X-Block-Height", strconv.FormatInt(height, 10)),
-			// Deprecated: use X-Block-Timestamp instead.
-			metadata.Pairs("Grpc-Metadata-X-Block-Timestamp", strconv.FormatInt(timestamp, 10)),
-			// TODO: remove warning once deprecated headers are gone.
-			metadata.Pairs("Warning", "199 - \"The headers ['Grpc-Metadata-X-Vega-Connection', 'Grpc-Metadata-X-Block-Height, 'Grpc-Metadata-X-Block-Timestamp'] are deprecated and will be removed in a future version. Use their non-grpc-metadata prefixed counterparts instead.\""),
+			// TODO: remove warning once deprecated header is gone.
+			metadata.Pairs("Warning", "199 - \"The header 'X-Vega-Connection' is deprecated and now defaults to 'CONNECTED'. It will be removed in a future version. See https://github.com/vegaprotocol/vega/issues/7385#issuecomment-1398719810\""),
 		} {
 			if errH := grpc.SetHeader(ctx, h); errH != nil {
 				log.Error("failed to set header", logging.Error(errH))
@@ -351,7 +337,7 @@ func (g *GRPCServer) getTCPListener() (net.Listener, error) {
 	return tpcLis, nil
 }
 
-// Start start the grpc server.
+// Start starts the grpc server.
 // Uses default TCP listener if no provided.
 func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 	if lis == nil {
@@ -365,7 +351,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 
 	intercept := grpc.ChainUnaryInterceptor(
 		remoteAddrInterceptor(g.log),
-		headersInterceptor(g.vegaCoreServiceClient.GetState, g.blockService.GetLastBlock, g.log),
+		headersInterceptor(g.blockService.GetLastBlock, g.log),
 	)
 
 	g.srv = grpc.NewServer(intercept)
@@ -489,21 +475,3 @@ func (g *GRPCServer) startWebUI(ctx context.Context) {
 	g.log.Info("Starting gRPC Web UI", logging.String("addr", g.IP), logging.Int("port", g.WebUIPort))
 	go http.Serve(uiListener, uiHandler)
 }
-
-type VegaCoreServiceClient struct {
-	vegaprotoapi.CoreServiceClient
-	getState GetStateFunc
-}
-
-func NewVegaCoreServiceClient(coreServiceClient vegaprotoapi.CoreServiceClient, getState GetStateFunc) *VegaCoreServiceClient {
-	return &VegaCoreServiceClient{CoreServiceClient: coreServiceClient, getState: getState}
-}
-
-func (c VegaCoreServiceClient) GetState() connectivity.State {
-	return c.getState()
-}
-
-type (
-	GetBlockFunc func(context.Context) (entities.Block, error)
-	GetStateFunc func() connectivity.State
-)

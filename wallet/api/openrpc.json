@@ -230,7 +230,6 @@
             {
               "name": "transaction",
               "value": {
-
               }
             }
           ],
@@ -1083,26 +1082,10 @@
           "type": "object",
           "required": [
             "name",
-            "logLevel",
-            "tokenExpiry",
-            "port",
-            "host",
             "api"
           ],
           "properties": {
             "name": {
-              "type": "string"
-            },
-            "logLevel": {
-              "type": "string"
-            },
-            "tokenExpiry": {
-              "type": "string"
-            },
-            "port": {
-              "type": "integer"
-            },
-            "host": {
               "type": "string"
             },
             "api": {
@@ -1124,10 +1107,6 @@
             "name": "Success",
             "value": {
               "name": "local-network",
-              "logLevel": "info",
-              "tokenExpiry": "168h0m0s",
-              "port": 1789,
-              "host": "localhost",
               "api": {
                 "grpcConfig": {
                   "hosts": [
@@ -1173,34 +1152,6 @@
           }
         },
         {
-          "name": "logLevel",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "tokenExpiry",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "port",
-          "required": true,
-          "schema": {
-            "type": "integer"
-          }
-        },
-        {
-          "name": "host",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
           "name": "api",
           "required": true,
           "schema": {
@@ -1222,22 +1173,6 @@
             {
               "name": "name",
               "value": "local-network"
-            },
-            {
-              "name": "level",
-              "value": "info"
-            },
-            {
-              "name": "tokenExpiry",
-              "value": "168h0m0s"
-            },
-            {
-              "name": "port",
-              "value": "1789"
-            },
-            {
-              "name": "host",
-              "value": "localhost"
             },
             {
               "name": "api",

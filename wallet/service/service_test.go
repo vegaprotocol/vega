@@ -64,6 +64,7 @@ func getTestServiceV1(t *testing.T, consentPolicy string) *testService {
 	t.Helper()
 
 	net := &network.Network{}
+	serviceCfg := service.DefaultConfig()
 
 	ctrl := gomock.NewController(t)
 
@@ -89,7 +90,7 @@ func getTestServiceV1(t *testing.T, consentPolicy string) *testService {
 
 	apiV1 := v1.NewAPI(zap.NewNop(), handler, auth, nodeForward, policy, net, pow)
 
-	s := service.NewService(zap.NewNop(), net, apiV1, nil)
+	s := service.NewService(zap.NewNop(), serviceCfg, apiV1, nil)
 
 	t.Cleanup(func() {
 		if err := s.Stop(context.Background()); err != nil {
@@ -121,7 +122,7 @@ type longLivingTokenSetupForTest struct {
 func getTestServiceV2(t *testing.T, tokenSetups ...longLivingTokenSetupForTest) *testService {
 	t.Helper()
 
-	net := &network.Network{}
+	serviceCfg := service.DefaultConfig()
 
 	ctrl := gomock.NewController(t)
 
@@ -159,7 +160,7 @@ func getTestServiceV2(t *testing.T, tokenSetups ...longLivingTokenSetupForTest) 
 
 	apiV2 := v2.NewAPI(zap.NewNop(), clientAPI, connectionsManager)
 
-	s := service.NewService(zap.NewNop(), net, nil, apiV2)
+	s := service.NewService(zap.NewNop(), serviceCfg, nil, apiV2)
 
 	t.Cleanup(func() {
 		if err := s.Stop(context.Background()); err != nil {

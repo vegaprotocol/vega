@@ -53,12 +53,10 @@ type NetworkStore interface {
 
 type Starter struct {
 	walletStore api.WalletStore
+	netStore    NetworkStore
+	svcStore    Store
 
-	netStore NetworkStore
-
-	connectionsManager *connections.Manager
-
-	svcStore              Store
+	connectionsManager    *connections.Manager
 	policyBuilderFunc     PolicyBuilderFunc
 	interactorBuilderFunc InteractorBuilderFunc
 	loggerBuilderFunc     LoggerBuilderFunc
@@ -66,52 +64,55 @@ type Starter struct {
 	isStarted atomic.Bool
 }
 
-func (m *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck bool) (_ string, _ <-chan error, err error) {
-	if m.isStarted.Load() {
+func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck bool) (_ string, _ <-chan error, err error) {
+	if s.isStarted.Load() {
 		return "", nil, ErrCannotStartMultipleServiceAtTheSameTime
 	}
-	m.isStarted.Store(true)
+	s.isStarted.Store(true)
 	defer func() {
 		if err != nil {
 			// If we exit with an error, we reset the state.
-			m.isStarted.Store(false)
+			s.isStarted.Store(false)
 		}
 	}()
 
-	logger, logLevel, errDetails := m.buildServiceLogger(network)
+	logger, logLevel, errDetails := s.buildServiceLogger(network)
 	if errDetails != nil {
 		return "", nil, errDetails
 	}
 	defer vgzap.Sync(logger)
 
-	networkCfg, err := m.networkConfig(logger, network)
+	serviceCfg, err := s.svcStore.GetConfig()
+	if err != nil {
+		return "", nil, fmt.Errorf("could not retrieve the service configuration: %w", err)
+	}
+
+	// Since we successfully retrieve the service configuration, we can update
+	// the log level to the specified one.
+	if err := updateLogLevel(logLevel, serviceCfg); err != nil {
+		return "", nil, err
+	}
+
+	networkCfg, err := s.networkConfig(logger, network)
 	if err != nil {
 		return "", nil, err
 	}
 
-	// Since we successfully retrieve the network config, we can update the log
-	// level to the specified one.
-	if err := updateLogLevel(logLevel, networkCfg); err != nil {
-		return "", nil, err
-	}
-
 	if !noVersionCheck {
-		if err := m.ensureSoftwareIsCompatibleWithNetwork(logger, networkCfg); err != nil {
+		if err := s.ensureSoftwareIsCompatibleWithNetwork(logger, networkCfg); err != nil {
 			return "", nil, err
 		}
 	} else {
 		logger.Warn("The compatibility check between the software and the network has been skipped")
 	}
 
-	if err := m.ensureServiceIsInitialised(logger); err != nil {
+	if err := s.ensureServiceIsInitialised(logger); err != nil {
 		return "", nil, err
 	}
 
-	svcURL := fmt.Sprintf("%s:%v", networkCfg.Host, networkCfg.Port)
-
 	// Check if the port we want to bind is free. It's not fool-proof, but it
 	// should catch most of the port-binding problems.
-	if err := ensurePortCanBeBound(jobRunner.Ctx(), logger, svcURL); err != nil {
+	if err := ensurePortCanBeBound(jobRunner.Ctx(), logger, serviceCfg.Server.String()); err != nil {
 		return "", nil, err
 	}
 
@@ -124,26 +125,26 @@ func (m *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck 
 	proofOfWork := pow.NewProofOfWork()
 
 	// API v1
-	apiV1, err := m.buildAPIV1(jobRunner.Ctx(), apiLogger, networkCfg, proofOfWork, closer)
+	apiV1, err := s.buildAPIV1(jobRunner.Ctx(), apiLogger, networkCfg, serviceCfg, proofOfWork, closer)
 	if err != nil {
 		logger.Error("Could not build the HTTP API v1", zap.Error(err))
 		return "", nil, err
 	}
 
 	// API v2
-	apiV2, err := m.buildAPIV2(jobRunner.Ctx(), apiLogger, networkCfg, proofOfWork, closer)
+	apiV2, err := s.buildAPIV2(jobRunner.Ctx(), apiLogger, networkCfg, proofOfWork, closer)
 	if err != nil {
 		logger.Error("Could not build the HTTP API v2", zap.Error(err))
 		return "", nil, err
 	}
 
-	svc := NewService(logger.Named("http-server"), networkCfg, apiV1, apiV2)
+	svc := NewService(logger.Named("http-server"), serviceCfg, apiV1, apiV2)
 
 	// This job is responsible for stopping the service when the job context is
 	// set as done.
 	// This is required because we can't bind the service to a context.
 	jobRunner.Go(func(jobCtx context.Context) {
-		defer m.isStarted.Store(false)
+		defer s.isStarted.Store(false)
 		defer vgzap.Sync(logger)
 
 		// We wait for the job context to be cancelled to stop the service.
@@ -182,12 +183,12 @@ func (m *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck 
 		logger.Info("The service exited")
 	})
 
-	return svcURL, internalErrorReporter, nil
+	return serviceCfg.Server.String(), internalErrorReporter, nil
 }
 
 // buildAPIV1
 // This API is deprecated.
-func (m *Starter) buildAPIV1(ctx context.Context, logger *zap.Logger, networkCfg *network.Network, proofOfWork *pow.ProofOfWork, closer *vgclose.Closer) (*servicev1.API, error) {
+func (s *Starter) buildAPIV1(ctx context.Context, logger *zap.Logger, networkCfg *network.Network, serviceCfg *Config, proofOfWork *pow.ProofOfWork, closer *vgclose.Closer) (*servicev1.API, error) {
 	apiV1Logger := logger.Named("v1")
 
 	forwarder, err := node.NewForwarder(apiV1Logger.Named("forwarder"), networkCfg.API.GRPC)
@@ -198,7 +199,7 @@ func (m *Starter) buildAPIV1(ctx context.Context, logger *zap.Logger, networkCfg
 	// Don't forget to stop all connections to the nodes.
 	closer.Add(forwarder.Stop)
 
-	auth, err := servicev1.NewAuth(apiV1Logger.Named("auth"), m.svcStore, networkCfg.TokenExpiry.Get())
+	auth, err := servicev1.NewAuth(apiV1Logger.Named("auth"), s.svcStore, serviceCfg.APIV1.MaximumTokenDuration.Get())
 	if err != nil {
 		logger.Error("Could not initialise the authentication layer", zap.Error(err))
 		return nil, fmt.Errorf("could not initialise the authentication layer: %w", err)
@@ -208,14 +209,14 @@ func (m *Starter) buildAPIV1(ctx context.Context, logger *zap.Logger, networkCfg
 
 	// We don't close/stop the policy ourselves, this should be done by the provider
 	// of the builder function. We don't close what we don't own.
-	policy := m.policyBuilderFunc(ctx)
+	policy := s.policyBuilderFunc(ctx)
 
-	handler := wallets.NewHandler(m.walletStore)
+	handler := wallets.NewHandler(s.walletStore)
 
 	return servicev1.NewAPI(apiV1Logger, handler, auth, forwarder, policy, networkCfg, proofOfWork), nil
 }
 
-func (m *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *network.Network, pow api.ProofOfWork, closer *vgclose.Closer) (*servicev2.API, error) {
+func (s *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *network.Network, pow api.ProofOfWork, closer *vgclose.Closer) (*servicev2.API, error) {
 	apiV2logger := logger.Named("v2")
 	clientAPILogger := apiV2logger.Named("client-api")
 
@@ -228,21 +229,21 @@ func (m *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *netwo
 
 	// We don't close the interactor ourselves, this should be done by
 	// the provider of the builder function. We don't close what we don't own.
-	interactor := m.interactorBuilderFunc(ctx)
+	interactor := s.interactorBuilderFunc(ctx)
 
-	clientAPI, err := api.BuildClientAPI(m.walletStore, interactor, nodeSelector, pow)
+	clientAPI, err := api.BuildClientAPI(s.walletStore, interactor, nodeSelector, pow)
 	if err != nil {
 		logger.Error("Could not instantiate the client part of the JSON-RPC API", zap.Error(err))
 		return nil, fmt.Errorf("could not instantiate the client part of the JSON-RPC API: %w", err)
 	}
 
-	return servicev2.NewAPI(apiV2logger, clientAPI, m.connectionsManager), nil
+	return servicev2.NewAPI(apiV2logger, clientAPI, s.connectionsManager), nil
 }
 
-func (m *Starter) buildServiceLogger(network string) (*zap.Logger, zap.AtomicLevel, error) {
+func (s *Starter) buildServiceLogger(network string) (*zap.Logger, zap.AtomicLevel, error) {
 	// We set the logger with the "INFO" level by default. It will be changed once
 	// we get to retrieve the log level from the network configuration.
-	logger, level, err := m.loggerBuilderFunc("info")
+	logger, level, err := s.loggerBuilderFunc("info")
 	if err != nil {
 		return nil, zap.AtomicLevel{}, err
 	}
@@ -254,7 +255,7 @@ func (m *Starter) buildServiceLogger(network string) (*zap.Logger, zap.AtomicLev
 	return logger, level, nil
 }
 
-func (m *Starter) ensureSoftwareIsCompatibleWithNetwork(logger *zap.Logger, networkCfg *network.Network) error {
+func (s *Starter) ensureSoftwareIsCompatibleWithNetwork(logger *zap.Logger, networkCfg *network.Network) error {
 	networkVersion, err := walletversion.GetNetworkVersionThroughGRPC(networkCfg.API.GRPC.Hosts)
 	if err != nil {
 		logger.Error("Could not verify the compatibility between the network and the software", zap.Error(err))
@@ -276,8 +277,8 @@ func (m *Starter) ensureSoftwareIsCompatibleWithNetwork(logger *zap.Logger, netw
 	return nil
 }
 
-func (m *Starter) networkConfig(logger *zap.Logger, network string) (*network.Network, error) {
-	exists, err := m.netStore.NetworkExists(network)
+func (s *Starter) networkConfig(logger *zap.Logger, network string) (*network.Network, error) {
+	exists, err := s.netStore.NetworkExists(network)
 	if err != nil {
 		logger.Error("Could not verify the network existence", zap.Error(err))
 		return nil, fmt.Errorf("could not verify the network existence: %w", err)
@@ -287,7 +288,7 @@ func (m *Starter) networkConfig(logger *zap.Logger, network string) (*network.Ne
 		return nil, api.ErrNetworkDoesNotExist
 	}
 
-	networkCfg, err := m.netStore.GetNetwork(network)
+	networkCfg, err := s.netStore.GetNetwork(network)
 	if err != nil {
 		logger.Error("Could not retrieve the network configuration", zap.Error(err))
 		return nil, fmt.Errorf("could not retrieve the network configuration: %w", err)
@@ -303,13 +304,13 @@ func (m *Starter) networkConfig(logger *zap.Logger, network string) (*network.Ne
 	return networkCfg, nil
 }
 
-func (m *Starter) ensureServiceIsInitialised(logger *zap.Logger) error {
-	if isInit, err := IsInitialised(m.svcStore); err != nil {
+func (s *Starter) ensureServiceIsInitialised(logger *zap.Logger) error {
+	if isInit, err := IsInitialised(s.svcStore); err != nil {
 		logger.Error("Could not verify if the service is properly running", zap.Error(err))
 		return fmt.Errorf("could not verify if the service is properly initialised: %w", err)
 	} else if !isInit {
 		logger.Info("The service is not initialise")
-		if err = InitialiseService(m.svcStore, false); err != nil {
+		if err = InitialiseService(s.svcStore, false); err != nil {
 			logger.Error("Could not initialise the service", zap.Error(err))
 			return fmt.Errorf("could not initialise the service: %w", err)
 		}
@@ -320,10 +321,10 @@ func (m *Starter) ensureServiceIsInitialised(logger *zap.Logger) error {
 	return nil
 }
 
-func updateLogLevel(logLevel zap.AtomicLevel, networkCfg *network.Network) error {
+func updateLogLevel(logLevel zap.AtomicLevel, networkCfg *Config) error {
 	parsedLevel, err := zap.ParseAtomicLevel(networkCfg.LogLevel.String())
 	if err != nil {
-		return fmt.Errorf("invalid log level specified in the network configuration: %w", err)
+		return fmt.Errorf("invalid log level specified in the service configuration: %w", err)
 	}
 	logLevel.SetLevel(parsedLevel.Level())
 	return nil
