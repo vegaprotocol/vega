@@ -2037,6 +2037,10 @@ type Party {
     assetId: ID
     "Optional pagination information"
     pagination: Pagination
+    "Optionally only return rewards >= this epoch"
+    fromEpoch: Int
+    "Optionally only return rewards <= this epoch"
+    toEpoch: Int
   ): RewardsConnection
 
   "Return net reward information"
