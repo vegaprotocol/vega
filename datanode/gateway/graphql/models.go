@@ -371,6 +371,8 @@ type LiquidityMonitoringParameters struct {
 	TargetStakeParameters *TargetStakeParameters `json:"targetStakeParameters"`
 	// Specifies the triggering ratio for entering liquidity auction
 	TriggeringRatio string `json:"triggeringRatio"`
+	// Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction
+	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
 }
 
 // The equity like share of liquidity fee for each liquidity provider
@@ -514,7 +516,7 @@ type PriceMonitoringSettings struct {
 	Parameters *PriceMonitoringParameters `json:"parameters"`
 }
 
-// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+// PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration
 type PriceMonitoringTrigger struct {
 	// Price monitoring projection horizon τ in seconds (> 0).
 	HorizonSecs int `json:"horizonSecs"`

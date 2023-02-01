@@ -15,29 +15,66 @@ package gql
 import (
 	"context"
 	"errors"
+	"strconv"
 
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type newMarketResolver VegaResolverRoot
 
-func (r *newMarketResolver) Instrument(ctx context.Context, obj *types.NewMarket) (*types.InstrumentConfiguration, error) {
+func (r *newMarketResolver) Instrument(_ context.Context, obj *types.NewMarket) (*types.InstrumentConfiguration, error) {
 	return obj.Changes.Instrument, nil
 }
 
-func (r *newMarketResolver) DecimalPlaces(ctx context.Context, obj *types.NewMarket) (int, error) {
+func (r *newMarketResolver) DecimalPlaces(_ context.Context, obj *types.NewMarket) (int, error) {
 	return int(obj.Changes.DecimalPlaces), nil
 }
 
-func (r *newMarketResolver) PositionDecimalPlaces(ctx context.Context, obj *types.NewMarket) (int, error) {
+func (r *newMarketResolver) PriceMonitoringParameters(_ context.Context, obj *types.NewMarket) (*PriceMonitoringParameters, error) {
+	triggers := make([]*PriceMonitoringTrigger, len(obj.Changes.PriceMonitoringParameters.Triggers))
+	for i, t := range obj.Changes.PriceMonitoringParameters.Triggers {
+		probability, err := strconv.ParseFloat(t.Probability, 64)
+		if err != nil {
+			return nil, err
+		}
+		triggers[i] = &PriceMonitoringTrigger{
+			HorizonSecs:          int(t.Horizon),
+			Probability:          probability,
+			AuctionExtensionSecs: int(t.AuctionExtension),
+		}
+	}
+	return &PriceMonitoringParameters{Triggers: triggers}, nil
+}
+
+func (r *newMarketResolver) LiquidityMonitoringParameters(_ context.Context, obj *types.NewMarket) (*LiquidityMonitoringParameters, error) {
+	params := obj.Changes.LiquidityMonitoringParameters
+	if params == nil {
+		return nil, nil
+	}
+
+	lmp := &LiquidityMonitoringParameters{
+		TriggeringRatio:      params.TriggeringRatio,
+		AuctionExtensionSecs: int(params.AuctionExtension),
+	}
+
+	if params.TargetStakeParameters != nil {
+		lmp.TargetStakeParameters = &TargetStakeParameters{
+			TimeWindow:    int(params.TargetStakeParameters.TimeWindow),
+			ScalingFactor: params.TargetStakeParameters.ScalingFactor,
+		}
+	}
+	return lmp, nil
+}
+
+func (r *newMarketResolver) PositionDecimalPlaces(_ context.Context, obj *types.NewMarket) (int, error) {
 	return int(obj.Changes.PositionDecimalPlaces), nil
 }
 
-func (r *newMarketResolver) LpPriceRange(ctx context.Context, obj *types.NewMarket) (string, error) {
+func (r *newMarketResolver) LpPriceRange(_ context.Context, obj *types.NewMarket) (string, error) {
 	return obj.Changes.LpPriceRange, nil
 }
 
-func (r *newMarketResolver) RiskParameters(ctx context.Context, obj *types.NewMarket) (RiskModel, error) {
+func (r *newMarketResolver) RiskParameters(_ context.Context, obj *types.NewMarket) (RiskModel, error) {
 	switch rm := obj.Changes.RiskParameters.(type) {
 	case *types.NewMarketConfiguration_LogNormal:
 		return rm.LogNormal, nil
@@ -48,6 +85,6 @@ func (r *newMarketResolver) RiskParameters(ctx context.Context, obj *types.NewMa
 	}
 }
 
-func (r *newMarketResolver) Metadata(ctx context.Context, obj *types.NewMarket) ([]string, error) {
+func (r *newMarketResolver) Metadata(_ context.Context, obj *types.NewMarket) ([]string, error) {
 	return obj.Changes.Metadata, nil
 }

@@ -18,11 +18,12 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
-	"github.com/pkg/errors"
 )
 
 type SQLBrokerSubscriber interface {
@@ -133,8 +134,7 @@ func (b *SQLStoreBroker) Receive(ctx context.Context) error {
 		b.onBlockCommitted(ctx, b.chainID, b.lastBlock.Height, b.snapshotTaken)
 
 		if b.receivedProtocolUpgradeEvent {
-			b.protocolUpdateHandler.OnProtocolUpgradeEvent(ctx, b.chainID, b.lastBlock.Height)
-			return nil
+			return b.protocolUpdateHandler.OnProtocolUpgradeEvent(ctx, b.chainID, b.lastBlock.Height)
 		}
 	}
 }

@@ -1,0 +1,14 @@
+{
+	"TestName": "TestERC20WithdrawalApproval_ERC20WithdrawalApproval",
+	"Query": "{ erc20WithdrawalApproval(withdrawalId: \"7EB9B511E4DA3397DFC2A71D05A1A0DD4CC1782AA5080D4FE30C2EC1E31622E6\"){ assetSource amount nonce signatures targetAddress } }",
+	"Result": {
+		"erc20WithdrawalApproval": {
+			"amount": "1000000000000000000",
+			"assetSource": "0xA79BB86c62e14E2C00Cf1aFbfFf8D3C652E14DA1",
+			"nonce": "1674556952",
+			"signatures": "0x63915156840ec8824b80fd120326cb69970bc895fabacca9f39208b0d04527164b2bcbc5e038afe59f016e3cfe9a35396296f0a24371ab4df43009be3df4e03e01def989fa559c878b629b0b09e57ed51407d1c9628f54392783c02785c74ee8504ce0c34b32eaa6ba7d2543a922e9a9b6ff01621356250e4f4d22f79541c30bda01",
+			"targetAddress": "0xEe7D375bcB50C26d52E1A4a472D8822A2A22d94F"
+		}
+	},
+	"Duration": 2454834
+}
