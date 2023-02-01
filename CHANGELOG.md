@@ -17,6 +17,7 @@
 - [7289](https://github.com/vegaprotocol/vega/issues/7289) - `positionsConnection` query added to `GraphQL`root query with filter for multiple parties and markets
 
 ### 🐛 Fixes
+- [7462](https://github.com/vegaprotocol/vega/issues/7462) - Fix `BlockExplorer` `API` not returning details on transactions.
 - [7407](https://github.com/vegaprotocol/vega/issues/7407) - fix `ethereum` timestamp in stake linking in `graphql`
 - [7420](https://github.com/vegaprotocol/vega/issues/7420) - `clearFeeActivity` now clears fee activity
 - [7420](https://github.com/vegaprotocol/vega/issues/7420) - set seed nonce for joining and leaving signatures during begin block
