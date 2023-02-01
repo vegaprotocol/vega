@@ -581,7 +581,6 @@ type ComplexityRoot struct {
 	}
 
 	HistorySegment struct {
-		ChainId          func(childComplexity int) int
 		FromHeight       func(childComplexity int) int
 		HistorySegmentId func(childComplexity int) int
 		ToHeight         func(childComplexity int) int
@@ -4005,13 +4004,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FutureProduct.SettlementAsset(childComplexity), true
-
-	case "HistorySegment.chainID":
-		if e.complexity.HistorySegment.ChainId == nil {
-			break
-		}
-
-		return e.complexity.HistorySegment.ChainId(childComplexity), true
 
 	case "HistorySegment.fromHeight":
 		if e.complexity.HistorySegment.FromHeight == nil {
@@ -23154,50 +23146,6 @@ func (ec *executionContext) fieldContext_HistorySegment_toHeight(ctx context.Con
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _HistorySegment_chainID(ctx context.Context, field graphql.CollectedField, obj *v2.HistorySegment) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HistorySegment_chainID(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ChainId, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_HistorySegment_chainID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "HistorySegment",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -46561,8 +46509,6 @@ func (ec *executionContext) fieldContext_Query_mostRecentHistorySegment(ctx cont
 				return ec.fieldContext_HistorySegment_fromHeight(ctx, field)
 			case "toHeight":
 				return ec.fieldContext_HistorySegment_toHeight(ctx, field)
-			case "chainID":
-				return ec.fieldContext_HistorySegment_chainID(ctx, field)
 			case "historySegmentId":
 				return ec.fieldContext_HistorySegment_historySegmentId(ctx, field)
 			}
@@ -66095,13 +66041,6 @@ func (ec *executionContext) _HistorySegment(ctx context.Context, sel ast.Selecti
 		case "toHeight":
 
 			out.Values[i] = ec._HistorySegment_toHeight(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "chainID":
-
-			out.Values[i] = ec._HistorySegment_chainID(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++

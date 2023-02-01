@@ -24,7 +24,7 @@ import (
 
 var (
 	nilPagination     = entities.OffsetPagination{}
-	refreshCacheEvery = 30 * time.Second
+	refreshCacheEvery = 3000 * time.Second
 )
 
 type MarketStore interface {

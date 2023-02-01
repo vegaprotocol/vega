@@ -3935,8 +3935,6 @@ type HistorySegment {
     fromHeight:       Int!
     "To block height of the history segment"
     toHeight: Int!
-    "Chain ID of the history segment"
-    chainID: String!
     "ID of the history segment"
     historySegmentId: String!
 }
