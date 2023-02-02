@@ -62,9 +62,13 @@ type NetworkHistoryService interface {
 	GetHighestBlockHeightHistorySegment() (networkhistory.Segment, error)
 	ListAllHistorySegments() ([]networkhistory.Segment, error)
 	FetchHistorySegment(ctx context.Context, historySegmentID string) (networkhistory.Segment, error)
-	GetActivePeerAddresses() []string
+	GetActivePeerIPAddresses() []string
 	CopyHistorySegmentToFile(ctx context.Context, historySegmentID string, outFile string) error
+	GetSwarmKeySeed() string
+	GetConnectedPeerAddresses() ([]string, error)
+	GetIpfsAddress() (string, error)
 	GetSwarmKey() string
+	GetBootstrapPeers() []string
 }
 
 // GRPCServer represent the grpc api provided by the vega node.

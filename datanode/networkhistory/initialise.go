@@ -206,7 +206,7 @@ type PeerResponse struct {
 }
 
 func GetMostRecentHistorySegmentFromPeersAddresses(ctx context.Context, peerAddresses []string,
-	swarmKey string,
+	swarmKeySeed string,
 	grpcAPIPorts []int,
 ) (*PeerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, error) {
 	const maxPeersToContact = 10
@@ -235,7 +235,7 @@ func GetMostRecentHistorySegmentFromPeersAddresses(ctx context.Context, peerAddr
 		return nil, nil, fmt.Errorf(strings.Join(errorMsgs, ","))
 	}
 
-	return SelectMostRecentHistorySegmentResponse(peerToResponse, swarmKey), peerToResponse, nil
+	return SelectMostRecentHistorySegmentResponse(peerToResponse, swarmKeySeed), peerToResponse, nil
 }
 
 func GetMostRecentHistorySegmentFromPeer(ctx context.Context, ip string, datanodeGrpcAPIPort int) (*v2.GetMostRecentNetworkHistorySegmentResponse, error) {
@@ -254,12 +254,12 @@ func GetMostRecentHistorySegmentFromPeer(ctx context.Context, ip string, datanod
 }
 
 // TODO this needs some thought as to the best strategy to select the response to avoid spoofing.
-func SelectMostRecentHistorySegmentResponse(peerToResponse map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, swarmKey string) *PeerResponse {
+func SelectMostRecentHistorySegmentResponse(peerToResponse map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, swarmKeySeed string) *PeerResponse {
 	responses := make([]PeerResponse, 0, len(peerToResponse))
 
 	highestResponseHeight := int64(0)
 	for peer, response := range peerToResponse {
-		if response.SwarmKey == swarmKey {
+		if response.SwarmKeySeed == swarmKeySeed {
 			responses = append(responses, PeerResponse{peer, response})
 
 			if response.Segment.ToHeight > highestResponseHeight {

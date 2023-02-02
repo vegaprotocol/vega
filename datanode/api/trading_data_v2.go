@@ -16,6 +16,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
+	"math/rand"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -205,7 +207,7 @@ func (t *tradingDataServiceV2) sendAccountsSnapshot(ctx context.Context, req *v2
 	return nil
 }
 
-func (t *tradingDataServiceV2) Info(ctx context.Context, _ *v2.InfoRequest) (*v2.InfoResponse, error) {
+func (t *tradingDataServiceV2) Info(_ context.Context, _ *v2.InfoRequest) (*v2.InfoResponse, error) {
 	return &v2.InfoResponse{
 		Version:    version.Get(),
 		CommitHash: version.GetCommitHash(),
@@ -3150,8 +3152,8 @@ func (t *tradingDataServiceV2) GetMostRecentNetworkHistorySegment(context.Contex
 	}
 
 	return &v2.GetMostRecentNetworkHistorySegmentResponse{
-		Segment:  toHistorySegment(segment),
-		SwarmKey: t.networkHistoryService.GetSwarmKey(),
+		Segment:      toHistorySegment(segment),
+		SwarmKeySeed: t.networkHistoryService.GetSwarmKeySeed(),
 	}, nil
 }
 
@@ -3170,14 +3172,14 @@ func (t *tradingDataServiceV2) ListAllNetworkHistorySegments(context.Context, *v
 		historySegments = append(historySegments, toHistorySegment(segment))
 	}
 
+	// Newest first
+	sort.Slice(historySegments, func(i, j int) bool {
+		return historySegments[i].ToHeight > historySegments[j].ToHeight
+	})
+
 	return &v2.ListAllNetworkHistorySegmentsResponse{
 		Segments: historySegments,
 	}, nil
-}
-
-func (t *tradingDataServiceV2) Ping(context.Context, *v2.PingRequest) (*v2.PingResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("Ping")()
-	return &v2.PingResponse{}, nil
 }
 
 func toHistorySegment(segment networkhistory.Segment) *v2.HistorySegment {
@@ -3194,11 +3196,44 @@ func (t *tradingDataServiceV2) GetActiveNetworkHistoryPeerAddresses(_ context.Co
 	if t.networkHistoryService == nil {
 		return nil, apiError(codes.Internal, ErrNetworkHistoryNotEnabled, fmt.Errorf("network history is not enabled"))
 	}
-	addresses := t.networkHistoryService.GetActivePeerAddresses()
 
 	return &v2.GetActiveNetworkHistoryPeerAddressesResponse{
-		IpAddresses: addresses,
+		IpAddresses: t.networkHistoryService.GetActivePeerIPAddresses(),
 	}, nil
+}
+
+func (t *tradingDataServiceV2) NetworkHistoryStatus(_ context.Context, _ *v2.NetworkHistoryStatusRequest) (*v2.NetworkHistoryStatusResponse, error) {
+	connectedPeerAddresses, err := t.networkHistoryService.GetConnectedPeerAddresses()
+	if err != nil {
+		return nil, t.formatE(fmt.Errorf("failed to get connected peer addresses: %w", err))
+	}
+
+	// A subset of the connected peer addresses are likely to be copied to form another nodes peer set, randomise the list
+	// to minimise the chance that the same sub set are copied each time.
+	rand.Shuffle(len(connectedPeerAddresses), func(i, j int) {
+		connectedPeerAddresses[i], connectedPeerAddresses[j] = connectedPeerAddresses[j], connectedPeerAddresses[i]
+	})
+
+	ipfsAddress, err := t.networkHistoryService.GetIpfsAddress()
+	if err != nil {
+		return nil, t.formatE(fmt.Errorf("failed to nodes ipfs address: %w", err))
+	}
+
+	return &v2.NetworkHistoryStatusResponse{
+		IpfsAddress:    ipfsAddress,
+		SwarmKey:       t.networkHistoryService.GetSwarmKey(),
+		SwarmKeySeed:   t.networkHistoryService.GetSwarmKeySeed(),
+		ConnectedPeers: connectedPeerAddresses,
+	}, nil
+}
+
+func (t *tradingDataServiceV2) NetworkHistoryBootstrapPeers(_ context.Context, _ *v2.NetworkHistoryBootstrapPeersRequest) (*v2.NetworkHistoryBootstrapPeersResponse, error) {
+	return &v2.NetworkHistoryBootstrapPeersResponse{BootstrapPeers: t.networkHistoryService.GetBootstrapPeers()}, nil
+}
+
+func (t *tradingDataServiceV2) Ping(context.Context, *v2.PingRequest) (*v2.PingResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Ping")()
+	return &v2.PingResponse{}, nil
 }
 
 func batch[T any](in []T, batchSize int) [][]T {
