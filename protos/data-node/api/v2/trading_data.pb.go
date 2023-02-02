@@ -15002,8 +15002,8 @@ type GetMostRecentNetworkHistorySegmentResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Segment  *HistorySegment `protobuf:"bytes,1,opt,name=segment,proto3" json:"segment,omitempty"`
-	SwarmKey string          `protobuf:"bytes,2,opt,name=swarm_key,json=swarmKey,proto3" json:"swarm_key,omitempty"`
+	Segment      *HistorySegment `protobuf:"bytes,1,opt,name=segment,proto3" json:"segment,omitempty"`
+	SwarmKeySeed string          `protobuf:"bytes,2,opt,name=swarm_key_seed,json=swarmKeySeed,proto3" json:"swarm_key_seed,omitempty"`
 }
 
 func (x *GetMostRecentNetworkHistorySegmentResponse) Reset() {
@@ -15045,9 +15045,9 @@ func (x *GetMostRecentNetworkHistorySegmentResponse) GetSegment() *HistorySegmen
 	return nil
 }
 
-func (x *GetMostRecentNetworkHistorySegmentResponse) GetSwarmKey() string {
+func (x *GetMostRecentNetworkHistorySegmentResponse) GetSwarmKeySeed() string {
 	if x != nil {
-		return x.SwarmKey
+		return x.SwarmKeySeed
 	}
 	return ""
 }
@@ -15226,6 +15226,209 @@ func (x *GetActiveNetworkHistoryPeerAddressesResponse) GetIpAddresses() []string
 	return nil
 }
 
+// Request to get the status of network history
+type NetworkHistoryStatusRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *NetworkHistoryStatusRequest) Reset() {
+	*x = NetworkHistoryStatusRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[266]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NetworkHistoryStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NetworkHistoryStatusRequest) ProtoMessage() {}
+
+func (x *NetworkHistoryStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[266]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NetworkHistoryStatusRequest.ProtoReflect.Descriptor instead.
+func (*NetworkHistoryStatusRequest) Descriptor() ([]byte, []int) {
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{266}
+}
+
+// Response containing the status of network history
+type NetworkHistoryStatusResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The ipfs address of this node
+	IpfsAddress string `protobuf:"bytes,1,opt,name=ipfs_address,json=ipfsAddress,proto3" json:"ipfs_address,omitempty"`
+	// The swarm key
+	SwarmKey string `protobuf:"bytes,2,opt,name=swarm_key,json=swarmKey,proto3" json:"swarm_key,omitempty"`
+	// The swarm key seed
+	SwarmKeySeed string `protobuf:"bytes,3,opt,name=swarm_key_seed,json=swarmKeySeed,proto3" json:"swarm_key_seed,omitempty"`
+	// The connected peers
+	ConnectedPeers []string `protobuf:"bytes,5,rep,name=connected_peers,json=connectedPeers,proto3" json:"connected_peers,omitempty"`
+}
+
+func (x *NetworkHistoryStatusResponse) Reset() {
+	*x = NetworkHistoryStatusResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[267]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NetworkHistoryStatusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NetworkHistoryStatusResponse) ProtoMessage() {}
+
+func (x *NetworkHistoryStatusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[267]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NetworkHistoryStatusResponse.ProtoReflect.Descriptor instead.
+func (*NetworkHistoryStatusResponse) Descriptor() ([]byte, []int) {
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{267}
+}
+
+func (x *NetworkHistoryStatusResponse) GetIpfsAddress() string {
+	if x != nil {
+		return x.IpfsAddress
+	}
+	return ""
+}
+
+func (x *NetworkHistoryStatusResponse) GetSwarmKey() string {
+	if x != nil {
+		return x.SwarmKey
+	}
+	return ""
+}
+
+func (x *NetworkHistoryStatusResponse) GetSwarmKeySeed() string {
+	if x != nil {
+		return x.SwarmKeySeed
+	}
+	return ""
+}
+
+func (x *NetworkHistoryStatusResponse) GetConnectedPeers() []string {
+	if x != nil {
+		return x.ConnectedPeers
+	}
+	return nil
+}
+
+// Request to get the nodes network history bootstrap peers
+type NetworkHistoryBootstrapPeersRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *NetworkHistoryBootstrapPeersRequest) Reset() {
+	*x = NetworkHistoryBootstrapPeersRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[268]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NetworkHistoryBootstrapPeersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NetworkHistoryBootstrapPeersRequest) ProtoMessage() {}
+
+func (x *NetworkHistoryBootstrapPeersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[268]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NetworkHistoryBootstrapPeersRequest.ProtoReflect.Descriptor instead.
+func (*NetworkHistoryBootstrapPeersRequest) Descriptor() ([]byte, []int) {
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{268}
+}
+
+// Response containing the nodes network history bootstrap peers
+type NetworkHistoryBootstrapPeersResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The bootstrap peers
+	BootstrapPeers []string `protobuf:"bytes,1,rep,name=bootstrap_peers,json=bootstrapPeers,proto3" json:"bootstrap_peers,omitempty"`
+}
+
+func (x *NetworkHistoryBootstrapPeersResponse) Reset() {
+	*x = NetworkHistoryBootstrapPeersResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[269]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NetworkHistoryBootstrapPeersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NetworkHistoryBootstrapPeersResponse) ProtoMessage() {}
+
+func (x *NetworkHistoryBootstrapPeersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[269]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NetworkHistoryBootstrapPeersResponse.ProtoReflect.Descriptor instead.
+func (*NetworkHistoryBootstrapPeersResponse) Descriptor() ([]byte, []int) {
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{269}
+}
+
+func (x *NetworkHistoryBootstrapPeersResponse) GetBootstrapPeers() []string {
+	if x != nil {
+		return x.BootstrapPeers
+	}
+	return nil
+}
+
 // Request to ping the data node
 type PingRequest struct {
 	state         protoimpl.MessageState
@@ -15236,7 +15439,7 @@ type PingRequest struct {
 func (x *PingRequest) Reset() {
 	*x = PingRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[266]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[270]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15249,7 +15452,7 @@ func (x *PingRequest) String() string {
 func (*PingRequest) ProtoMessage() {}
 
 func (x *PingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[266]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[270]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15262,7 +15465,7 @@ func (x *PingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PingRequest.ProtoReflect.Descriptor instead.
 func (*PingRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{266}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{270}
 }
 
 // Ping response from the data node
@@ -15275,7 +15478,7 @@ type PingResponse struct {
 func (x *PingResponse) Reset() {
 	*x = PingResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[267]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[271]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15288,7 +15491,7 @@ func (x *PingResponse) String() string {
 func (*PingResponse) ProtoMessage() {}
 
 func (x *PingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[267]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[271]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15301,7 +15504,7 @@ func (x *PingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PingResponse.ProtoReflect.Descriptor instead.
 func (*PingResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{267}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{271}
 }
 
 var File_data_node_api_v2_trading_data_proto protoreflect.FileDescriptor
@@ -17313,32 +17516,53 @@ var file_data_node_api_v2_trading_data_proto_rawDesc = []byte{
 	0x74, 0x6f, 0x72, 0x79, 0x53, 0x65, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x49, 0x64, 0x22, 0x2b, 0x0a,
 	0x29, 0x47, 0x65, 0x74, 0x4d, 0x6f, 0x73, 0x74, 0x52, 0x65, 0x63, 0x65, 0x6e, 0x74, 0x4e, 0x65,
 	0x74, 0x77, 0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x53, 0x65, 0x67, 0x6d,
-	0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x84, 0x01, 0x0a, 0x2a, 0x47,
+	0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x8d, 0x01, 0x0a, 0x2a, 0x47,
 	0x65, 0x74, 0x4d, 0x6f, 0x73, 0x74, 0x52, 0x65, 0x63, 0x65, 0x6e, 0x74, 0x4e, 0x65, 0x74, 0x77,
 	0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x53, 0x65, 0x67, 0x6d, 0x65, 0x6e,
 	0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x39, 0x0a, 0x07, 0x73, 0x65, 0x67,
 	0x6d, 0x65, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x64, 0x61, 0x74,
 	0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x48, 0x69, 0x73,
 	0x74, 0x6f, 0x72, 0x79, 0x53, 0x65, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x07, 0x73, 0x65, 0x67,
-	0x6d, 0x65, 0x6e, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x73, 0x77, 0x61, 0x72, 0x6d, 0x5f, 0x6b, 0x65,
-	0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x73, 0x77, 0x61, 0x72, 0x6d, 0x4b, 0x65,
-	0x79, 0x22, 0x26, 0x0a, 0x24, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x6c, 0x6c, 0x4e, 0x65, 0x74, 0x77,
-	0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x53, 0x65, 0x67, 0x6d, 0x65, 0x6e,
-	0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x64, 0x0a, 0x25, 0x4c, 0x69, 0x73,
-	0x74, 0x41, 0x6c, 0x6c, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f,
-	0x72, 0x79, 0x53, 0x65, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x12, 0x3b, 0x0a, 0x08, 0x73, 0x65, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x18, 0x01,
-	0x20, 0x03, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x53, 0x65,
-	0x67, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x08, 0x73, 0x65, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x22,
-	0x2d, 0x0a, 0x2b, 0x47, 0x65, 0x74, 0x41, 0x63, 0x74, 0x69, 0x76, 0x65, 0x4e, 0x65, 0x74, 0x77,
-	0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x65, 0x65, 0x72, 0x41, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x51,
-	0x0a, 0x2c, 0x47, 0x65, 0x74, 0x41, 0x63, 0x74, 0x69, 0x76, 0x65, 0x4e, 0x65, 0x74, 0x77, 0x6f,
-	0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x65, 0x65, 0x72, 0x41, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x21,
-	0x0a, 0x0c, 0x69, 0x70, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x01,
-	0x20, 0x03, 0x28, 0x09, 0x52, 0x0b, 0x69, 0x70, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65,
+	0x6d, 0x65, 0x6e, 0x74, 0x12, 0x24, 0x0a, 0x0e, 0x73, 0x77, 0x61, 0x72, 0x6d, 0x5f, 0x6b, 0x65,
+	0x79, 0x5f, 0x73, 0x65, 0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x73, 0x77,
+	0x61, 0x72, 0x6d, 0x4b, 0x65, 0x79, 0x53, 0x65, 0x65, 0x64, 0x22, 0x26, 0x0a, 0x24, 0x4c, 0x69,
+	0x73, 0x74, 0x41, 0x6c, 0x6c, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74,
+	0x6f, 0x72, 0x79, 0x53, 0x65, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x22, 0x64, 0x0a, 0x25, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x6c, 0x6c, 0x4e, 0x65, 0x74,
+	0x77, 0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x53, 0x65, 0x67, 0x6d, 0x65,
+	0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3b, 0x0a, 0x08, 0x73,
+	0x65, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1f, 0x2e,
+	0x64, 0x61, 0x74, 0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e,
+	0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x53, 0x65, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x08,
+	0x73, 0x65, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x22, 0x2d, 0x0a, 0x2b, 0x47, 0x65, 0x74, 0x41,
+	0x63, 0x74, 0x69, 0x76, 0x65, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74,
+	0x6f, 0x72, 0x79, 0x50, 0x65, 0x65, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x51, 0x0a, 0x2c, 0x47, 0x65, 0x74, 0x41, 0x63,
+	0x74, 0x69, 0x76, 0x65, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f,
+	0x72, 0x79, 0x50, 0x65, 0x65, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x21, 0x0a, 0x0c, 0x69, 0x70, 0x5f, 0x61, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0b, 0x69,
+	0x70, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x22, 0x1d, 0x0a, 0x1b, 0x4e, 0x65,
+	0x74, 0x77, 0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x53, 0x74, 0x61, 0x74,
+	0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0xad, 0x01, 0x0a, 0x1c, 0x4e, 0x65,
+	0x74, 0x77, 0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x53, 0x74, 0x61, 0x74,
+	0x75, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x21, 0x0a, 0x0c, 0x69, 0x70,
+	0x66, 0x73, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0b, 0x69, 0x70, 0x66, 0x73, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x1b, 0x0a,
+	0x09, 0x73, 0x77, 0x61, 0x72, 0x6d, 0x5f, 0x6b, 0x65, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x08, 0x73, 0x77, 0x61, 0x72, 0x6d, 0x4b, 0x65, 0x79, 0x12, 0x24, 0x0a, 0x0e, 0x73, 0x77,
+	0x61, 0x72, 0x6d, 0x5f, 0x6b, 0x65, 0x79, 0x5f, 0x73, 0x65, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x0c, 0x73, 0x77, 0x61, 0x72, 0x6d, 0x4b, 0x65, 0x79, 0x53, 0x65, 0x65, 0x64,
+	0x12, 0x27, 0x0a, 0x0f, 0x63, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x70, 0x65,
+	0x65, 0x72, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0e, 0x63, 0x6f, 0x6e, 0x6e, 0x65,
+	0x63, 0x74, 0x65, 0x64, 0x50, 0x65, 0x65, 0x72, 0x73, 0x22, 0x25, 0x0a, 0x23, 0x4e, 0x65, 0x74,
+	0x77, 0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x42, 0x6f, 0x6f, 0x74, 0x73,
+	0x74, 0x72, 0x61, 0x70, 0x50, 0x65, 0x65, 0x72, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x22, 0x4f, 0x0a, 0x24, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f,
+	0x72, 0x79, 0x42, 0x6f, 0x6f, 0x74, 0x73, 0x74, 0x72, 0x61, 0x70, 0x50, 0x65, 0x65, 0x72, 0x73,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x27, 0x0a, 0x0f, 0x62, 0x6f, 0x6f, 0x74,
+	0x73, 0x74, 0x72, 0x61, 0x70, 0x5f, 0x70, 0x65, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x09, 0x52, 0x0e, 0x62, 0x6f, 0x6f, 0x74, 0x73, 0x74, 0x72, 0x61, 0x70, 0x50, 0x65, 0x65, 0x72,
 	0x73, 0x22, 0x0d, 0x0a, 0x0b, 0x50, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
 	0x22, 0x0e, 0x0a, 0x0c, 0x50, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
 	0x2a, 0xaa, 0x01, 0x0a, 0x10, 0x4c, 0x65, 0x64, 0x67, 0x65, 0x72, 0x45, 0x6e, 0x74, 0x72, 0x79,
@@ -17374,7 +17598,7 @@ var file_data_node_api_v2_trading_data_proto_rawDesc = []byte{
 	0x54, 0x4f, 0x10, 0x02, 0x12, 0x2a, 0x0a, 0x26, 0x54, 0x52, 0x41, 0x4e, 0x53, 0x46, 0x45, 0x52,
 	0x5f, 0x44, 0x49, 0x52, 0x45, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x54, 0x52, 0x41, 0x4e, 0x53,
 	0x46, 0x45, 0x52, 0x5f, 0x54, 0x4f, 0x5f, 0x4f, 0x52, 0x5f, 0x46, 0x52, 0x4f, 0x4d, 0x10, 0x03,
-	0x32, 0xc4, 0x47, 0x0a, 0x12, 0x54, 0x72, 0x61, 0x64, 0x69, 0x6e, 0x67, 0x44, 0x61, 0x74, 0x61,
+	0x32, 0xc7, 0x49, 0x0a, 0x12, 0x54, 0x72, 0x61, 0x64, 0x69, 0x6e, 0x67, 0x44, 0x61, 0x74, 0x61,
 	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x5b, 0x0a, 0x0c, 0x4c, 0x69, 0x73, 0x74, 0x41,
 	0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x12, 0x24, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6e, 0x6f,
 	0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x63,
@@ -17942,20 +18166,36 @@ var file_data_node_api_v2_trading_data_proto_rawDesc = []byte{
 	0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x47, 0x65, 0x74, 0x41, 0x63, 0x74, 0x69, 0x76, 0x65, 0x4e,
 	0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x65, 0x65,
 	0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x12, 0x43, 0x0a, 0x04, 0x50, 0x69, 0x6e, 0x67, 0x12, 0x1c, 0x2e, 0x64, 0x61, 0x74,
-	0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x50, 0x69, 0x6e,
-	0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6e,
-	0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x50, 0x69, 0x6e, 0x67, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x81, 0x01, 0x5a, 0x31, 0x63, 0x6f, 0x64, 0x65,
-	0x2e, 0x76, 0x65, 0x67, 0x61, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x2e, 0x69, 0x6f,
-	0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x73, 0x2f, 0x64, 0x61, 0x74,
-	0x61, 0x2d, 0x6e, 0x6f, 0x64, 0x65, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x76, 0x32, 0x92, 0x41, 0x4b,
-	0x12, 0x22, 0x0a, 0x13, 0x56, 0x65, 0x67, 0x61, 0x20, 0x64, 0x61, 0x74, 0x61, 0x20, 0x6e, 0x6f,
-	0x64, 0x65, 0x20, 0x41, 0x50, 0x49, 0x73, 0x32, 0x0b, 0x76, 0x30, 0x2e, 0x36, 0x38, 0x2e, 0x30,
-	0x2d, 0x64, 0x65, 0x76, 0x1a, 0x21, 0x6c, 0x62, 0x2e, 0x74, 0x65, 0x73, 0x74, 0x6e, 0x65, 0x74,
-	0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x78, 0x79, 0x7a, 0x2f, 0x64, 0x61, 0x74, 0x61, 0x6e, 0x6f,
-	0x64, 0x65, 0x2f, 0x72, 0x65, 0x73, 0x74, 0x2a, 0x02, 0x01, 0x02, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x73, 0x65, 0x12, 0x73, 0x0a, 0x14, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73,
+	0x74, 0x6f, 0x72, 0x79, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x2c, 0x2e, 0x64, 0x61, 0x74,
+	0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x4e, 0x65, 0x74,
+	0x77, 0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x53, 0x74, 0x61, 0x74, 0x75,
+	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2d, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6e,
+	0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x4e, 0x65, 0x74, 0x77, 0x6f,
+	0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x8b, 0x01, 0x0a, 0x1c, 0x4e, 0x65, 0x74, 0x77,
+	0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x42, 0x6f, 0x6f, 0x74, 0x73, 0x74,
+	0x72, 0x61, 0x70, 0x50, 0x65, 0x65, 0x72, 0x73, 0x12, 0x34, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6e,
+	0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x4e, 0x65, 0x74, 0x77, 0x6f,
+	0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x42, 0x6f, 0x6f, 0x74, 0x73, 0x74, 0x72,
+	0x61, 0x70, 0x50, 0x65, 0x65, 0x72, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x35,
+	0x2e, 0x64, 0x61, 0x74, 0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32,
+	0x2e, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x42,
+	0x6f, 0x6f, 0x74, 0x73, 0x74, 0x72, 0x61, 0x70, 0x50, 0x65, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x43, 0x0a, 0x04, 0x50, 0x69, 0x6e, 0x67, 0x12, 0x1c, 0x2e,
+	0x64, 0x61, 0x74, 0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e,
+	0x50, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x64, 0x61,
+	0x74, 0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x50, 0x69,
+	0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x81, 0x01, 0x5a, 0x31, 0x63,
+	0x6f, 0x64, 0x65, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c,
+	0x2e, 0x69, 0x6f, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x73, 0x2f,
+	0x64, 0x61, 0x74, 0x61, 0x2d, 0x6e, 0x6f, 0x64, 0x65, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x76, 0x32,
+	0x92, 0x41, 0x4b, 0x12, 0x22, 0x0a, 0x13, 0x56, 0x65, 0x67, 0x61, 0x20, 0x64, 0x61, 0x74, 0x61,
+	0x20, 0x6e, 0x6f, 0x64, 0x65, 0x20, 0x41, 0x50, 0x49, 0x73, 0x32, 0x0b, 0x76, 0x30, 0x2e, 0x36,
+	0x38, 0x2e, 0x30, 0x2d, 0x64, 0x65, 0x76, 0x1a, 0x21, 0x6c, 0x62, 0x2e, 0x74, 0x65, 0x73, 0x74,
+	0x6e, 0x65, 0x74, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x78, 0x79, 0x7a, 0x2f, 0x64, 0x61, 0x74,
+	0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2f, 0x72, 0x65, 0x73, 0x74, 0x2a, 0x02, 0x01, 0x02, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -17971,7 +18211,7 @@ func file_data_node_api_v2_trading_data_proto_rawDescGZIP() []byte {
 }
 
 var file_data_node_api_v2_trading_data_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_data_node_api_v2_trading_data_proto_msgTypes = make([]protoimpl.MessageInfo, 268)
+var file_data_node_api_v2_trading_data_proto_msgTypes = make([]protoimpl.MessageInfo, 272)
 var file_data_node_api_v2_trading_data_proto_goTypes = []interface{}{
 	(LedgerEntryField)(0),                                 // 0: datanode.api.v2.LedgerEntryField
 	(AccountField)(0),                                     // 1: datanode.api.v2.AccountField
@@ -18243,76 +18483,80 @@ var file_data_node_api_v2_trading_data_proto_goTypes = []interface{}{
 	(*ListAllNetworkHistorySegmentsResponse)(nil),         // 267: datanode.api.v2.ListAllNetworkHistorySegmentsResponse
 	(*GetActiveNetworkHistoryPeerAddressesRequest)(nil),   // 268: datanode.api.v2.GetActiveNetworkHistoryPeerAddressesRequest
 	(*GetActiveNetworkHistoryPeerAddressesResponse)(nil),  // 269: datanode.api.v2.GetActiveNetworkHistoryPeerAddressesResponse
-	(*PingRequest)(nil),                                   // 270: datanode.api.v2.PingRequest
-	(*PingResponse)(nil),                                  // 271: datanode.api.v2.PingResponse
-	(vega.AccountType)(0),                                 // 272: vega.AccountType
-	(*vega.Order)(nil),                                    // 273: vega.Order
-	(vega.Order_Status)(0),                                // 274: vega.Order.Status
-	(vega.Order_Type)(0),                                  // 275: vega.Order.Type
-	(vega.Order_TimeInForce)(0),                           // 276: vega.Order.TimeInForce
-	(*vega.Position)(nil),                                 // 277: vega.Position
-	(vega.TransferType)(0),                                // 278: vega.TransferType
-	(*vega.MarketDepth)(nil),                              // 279: vega.MarketDepth
-	(*vega.MarketDepthUpdate)(nil),                        // 280: vega.MarketDepthUpdate
-	(*vega.MarketData)(nil),                               // 281: vega.MarketData
-	(*vega.PriceLevel)(nil),                               // 282: vega.PriceLevel
-	(*vega.Trade)(nil),                                    // 283: vega.Trade
-	(*v1.Transfer)(nil),                                   // 284: vega.events.v1.Transfer
-	(*vega.NetworkLimits)(nil),                            // 285: vega.NetworkLimits
-	(vega.Interval)(0),                                    // 286: vega.Interval
-	(*vega.Vote)(nil),                                     // 287: vega.Vote
-	(*v1.ERC20MultiSigSignerAdded)(nil),                   // 288: vega.events.v1.ERC20MultiSigSignerAdded
-	(*v1.ERC20MultiSigSignerRemoved)(nil),                 // 289: vega.events.v1.ERC20MultiSigSignerRemoved
-	(*vega.OracleSpec)(nil),                               // 290: vega.OracleSpec
-	(*vega.OracleData)(nil),                               // 291: vega.OracleData
-	(*vega.Market)(nil),                                   // 292: vega.Market
-	(*vega.Party)(nil),                                    // 293: vega.Party
-	(*vega.MarginLevels)(nil),                             // 294: vega.MarginLevels
-	(*vega.Reward)(nil),                                   // 295: vega.Reward
-	(*vega.RewardSummary)(nil),                            // 296: vega.RewardSummary
-	(*vega.EpochRewardSummary)(nil),                       // 297: vega.EpochRewardSummary
-	(*vega.Deposit)(nil),                                  // 298: vega.Deposit
-	(*vega.Withdrawal)(nil),                               // 299: vega.Withdrawal
-	(*vega.Asset)(nil),                                    // 300: vega.Asset
-	(*vega.LiquidityProvision)(nil),                       // 301: vega.LiquidityProvision
-	(*vega.GovernanceData)(nil),                           // 302: vega.GovernanceData
-	(vega.Proposal_State)(0),                              // 303: vega.Proposal.State
-	(*vega.Delegation)(nil),                               // 304: vega.Delegation
-	(*vega.NodeData)(nil),                                 // 305: vega.NodeData
-	(*vega.Node)(nil),                                     // 306: vega.Node
-	(*v11.NodeSignature)(nil),                             // 307: vega.commands.v1.NodeSignature
-	(*vega.Epoch)(nil),                                    // 308: vega.Epoch
-	(*vega.Fee)(nil),                                      // 309: vega.Fee
-	(vega.Side)(0),                                        // 310: vega.Side
-	(*vega.NetworkParameter)(nil),                         // 311: vega.NetworkParameter
-	(*v1.StakeLinking)(nil),                               // 312: vega.events.v1.StakeLinking
-	(*vega.RiskFactor)(nil),                               // 313: vega.RiskFactor
-	(v1.BusEventType)(0),                                  // 314: vega.events.v1.BusEventType
-	(*v1.BusEvent)(nil),                                   // 315: vega.events.v1.BusEvent
-	(*vega.LedgerMovement)(nil),                           // 316: vega.LedgerMovement
-	(*v1.KeyRotation)(nil),                                // 317: vega.events.v1.KeyRotation
-	(*v1.EthereumKeyRotation)(nil),                        // 318: vega.events.v1.EthereumKeyRotation
-	(v1.ProtocolUpgradeProposalStatus)(0),                 // 319: vega.events.v1.ProtocolUpgradeProposalStatus
-	(*v1.ProtocolUpgradeEvent)(nil),                       // 320: vega.events.v1.ProtocolUpgradeEvent
-	(*v1.CoreSnapshotData)(nil),                           // 321: vega.events.v1.CoreSnapshotData
+	(*NetworkHistoryStatusRequest)(nil),                   // 270: datanode.api.v2.NetworkHistoryStatusRequest
+	(*NetworkHistoryStatusResponse)(nil),                  // 271: datanode.api.v2.NetworkHistoryStatusResponse
+	(*NetworkHistoryBootstrapPeersRequest)(nil),           // 272: datanode.api.v2.NetworkHistoryBootstrapPeersRequest
+	(*NetworkHistoryBootstrapPeersResponse)(nil),          // 273: datanode.api.v2.NetworkHistoryBootstrapPeersResponse
+	(*PingRequest)(nil),                                   // 274: datanode.api.v2.PingRequest
+	(*PingResponse)(nil),                                  // 275: datanode.api.v2.PingResponse
+	(vega.AccountType)(0),                                 // 276: vega.AccountType
+	(*vega.Order)(nil),                                    // 277: vega.Order
+	(vega.Order_Status)(0),                                // 278: vega.Order.Status
+	(vega.Order_Type)(0),                                  // 279: vega.Order.Type
+	(vega.Order_TimeInForce)(0),                           // 280: vega.Order.TimeInForce
+	(*vega.Position)(nil),                                 // 281: vega.Position
+	(vega.TransferType)(0),                                // 282: vega.TransferType
+	(*vega.MarketDepth)(nil),                              // 283: vega.MarketDepth
+	(*vega.MarketDepthUpdate)(nil),                        // 284: vega.MarketDepthUpdate
+	(*vega.MarketData)(nil),                               // 285: vega.MarketData
+	(*vega.PriceLevel)(nil),                               // 286: vega.PriceLevel
+	(*vega.Trade)(nil),                                    // 287: vega.Trade
+	(*v1.Transfer)(nil),                                   // 288: vega.events.v1.Transfer
+	(*vega.NetworkLimits)(nil),                            // 289: vega.NetworkLimits
+	(vega.Interval)(0),                                    // 290: vega.Interval
+	(*vega.Vote)(nil),                                     // 291: vega.Vote
+	(*v1.ERC20MultiSigSignerAdded)(nil),                   // 292: vega.events.v1.ERC20MultiSigSignerAdded
+	(*v1.ERC20MultiSigSignerRemoved)(nil),                 // 293: vega.events.v1.ERC20MultiSigSignerRemoved
+	(*vega.OracleSpec)(nil),                               // 294: vega.OracleSpec
+	(*vega.OracleData)(nil),                               // 295: vega.OracleData
+	(*vega.Market)(nil),                                   // 296: vega.Market
+	(*vega.Party)(nil),                                    // 297: vega.Party
+	(*vega.MarginLevels)(nil),                             // 298: vega.MarginLevels
+	(*vega.Reward)(nil),                                   // 299: vega.Reward
+	(*vega.RewardSummary)(nil),                            // 300: vega.RewardSummary
+	(*vega.EpochRewardSummary)(nil),                       // 301: vega.EpochRewardSummary
+	(*vega.Deposit)(nil),                                  // 302: vega.Deposit
+	(*vega.Withdrawal)(nil),                               // 303: vega.Withdrawal
+	(*vega.Asset)(nil),                                    // 304: vega.Asset
+	(*vega.LiquidityProvision)(nil),                       // 305: vega.LiquidityProvision
+	(*vega.GovernanceData)(nil),                           // 306: vega.GovernanceData
+	(vega.Proposal_State)(0),                              // 307: vega.Proposal.State
+	(*vega.Delegation)(nil),                               // 308: vega.Delegation
+	(*vega.NodeData)(nil),                                 // 309: vega.NodeData
+	(*vega.Node)(nil),                                     // 310: vega.Node
+	(*v11.NodeSignature)(nil),                             // 311: vega.commands.v1.NodeSignature
+	(*vega.Epoch)(nil),                                    // 312: vega.Epoch
+	(*vega.Fee)(nil),                                      // 313: vega.Fee
+	(vega.Side)(0),                                        // 314: vega.Side
+	(*vega.NetworkParameter)(nil),                         // 315: vega.NetworkParameter
+	(*v1.StakeLinking)(nil),                               // 316: vega.events.v1.StakeLinking
+	(*vega.RiskFactor)(nil),                               // 317: vega.RiskFactor
+	(v1.BusEventType)(0),                                  // 318: vega.events.v1.BusEventType
+	(*v1.BusEvent)(nil),                                   // 319: vega.events.v1.BusEvent
+	(*vega.LedgerMovement)(nil),                           // 320: vega.LedgerMovement
+	(*v1.KeyRotation)(nil),                                // 321: vega.events.v1.KeyRotation
+	(*v1.EthereumKeyRotation)(nil),                        // 322: vega.events.v1.EthereumKeyRotation
+	(v1.ProtocolUpgradeProposalStatus)(0),                 // 323: vega.events.v1.ProtocolUpgradeProposalStatus
+	(*v1.ProtocolUpgradeEvent)(nil),                       // 324: vega.events.v1.ProtocolUpgradeEvent
+	(*v1.CoreSnapshotData)(nil),                           // 325: vega.events.v1.CoreSnapshotData
 }
 var file_data_node_api_v2_trading_data_proto_depIdxs = []int32{
-	272, // 0: datanode.api.v2.AccountBalance.type:type_name -> vega.AccountType
+	276, // 0: datanode.api.v2.AccountBalance.type:type_name -> vega.AccountType
 	54,  // 1: datanode.api.v2.ListAccountsRequest.filter:type_name -> datanode.api.v2.AccountFilter
 	5,   // 2: datanode.api.v2.ListAccountsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	10,  // 3: datanode.api.v2.ListAccountsResponse.accounts:type_name -> datanode.api.v2.AccountsConnection
 	11,  // 4: datanode.api.v2.AccountsConnection.edges:type_name -> datanode.api.v2.AccountEdge
 	6,   // 5: datanode.api.v2.AccountsConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	7,   // 6: datanode.api.v2.AccountEdge.node:type_name -> datanode.api.v2.AccountBalance
-	272, // 7: datanode.api.v2.ObserveAccountsRequest.type:type_name -> vega.AccountType
+	276, // 7: datanode.api.v2.ObserveAccountsRequest.type:type_name -> vega.AccountType
 	14,  // 8: datanode.api.v2.ObserveAccountsResponse.snapshot:type_name -> datanode.api.v2.AccountSnapshotPage
 	15,  // 9: datanode.api.v2.ObserveAccountsResponse.updates:type_name -> datanode.api.v2.AccountUpdates
 	7,   // 10: datanode.api.v2.AccountSnapshotPage.accounts:type_name -> datanode.api.v2.AccountBalance
 	7,   // 11: datanode.api.v2.AccountUpdates.accounts:type_name -> datanode.api.v2.AccountBalance
-	273, // 12: datanode.api.v2.GetOrderResponse.order:type_name -> vega.Order
-	274, // 13: datanode.api.v2.OrderFilter.statuses:type_name -> vega.Order.Status
-	275, // 14: datanode.api.v2.OrderFilter.types:type_name -> vega.Order.Type
-	276, // 15: datanode.api.v2.OrderFilter.time_in_forces:type_name -> vega.Order.TimeInForce
+	277, // 12: datanode.api.v2.GetOrderResponse.order:type_name -> vega.Order
+	278, // 13: datanode.api.v2.OrderFilter.statuses:type_name -> vega.Order.Status
+	279, // 14: datanode.api.v2.OrderFilter.types:type_name -> vega.Order.Type
+	280, // 15: datanode.api.v2.OrderFilter.time_in_forces:type_name -> vega.Order.TimeInForce
 	5,   // 16: datanode.api.v2.ListOrdersRequest.pagination:type_name -> datanode.api.v2.Pagination
 	252, // 17: datanode.api.v2.ListOrdersRequest.date_range:type_name -> datanode.api.v2.DateRange
 	20,  // 18: datanode.api.v2.ListOrdersRequest.filter:type_name -> datanode.api.v2.OrderFilter
@@ -18321,26 +18565,26 @@ var file_data_node_api_v2_trading_data_proto_depIdxs = []int32{
 	149, // 21: datanode.api.v2.ListOrderVersionsResponse.orders:type_name -> datanode.api.v2.OrderConnection
 	27,  // 22: datanode.api.v2.ObserveOrdersResponse.snapshot:type_name -> datanode.api.v2.OrderSnapshotPage
 	28,  // 23: datanode.api.v2.ObserveOrdersResponse.updates:type_name -> datanode.api.v2.OrderUpdates
-	273, // 24: datanode.api.v2.OrderSnapshotPage.orders:type_name -> vega.Order
-	273, // 25: datanode.api.v2.OrderUpdates.orders:type_name -> vega.Order
+	277, // 24: datanode.api.v2.OrderSnapshotPage.orders:type_name -> vega.Order
+	277, // 25: datanode.api.v2.OrderUpdates.orders:type_name -> vega.Order
 	5,   // 26: datanode.api.v2.ListPositionsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	35,  // 27: datanode.api.v2.ListPositionsResponse.positions:type_name -> datanode.api.v2.PositionConnection
 	31,  // 28: datanode.api.v2.ListAllPositionsRequest.filter:type_name -> datanode.api.v2.PositionsFilter
 	5,   // 29: datanode.api.v2.ListAllPositionsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	35,  // 30: datanode.api.v2.ListAllPositionsResponse.positions:type_name -> datanode.api.v2.PositionConnection
-	277, // 31: datanode.api.v2.PositionEdge.node:type_name -> vega.Position
+	281, // 31: datanode.api.v2.PositionEdge.node:type_name -> vega.Position
 	34,  // 32: datanode.api.v2.PositionConnection.edges:type_name -> datanode.api.v2.PositionEdge
 	6,   // 33: datanode.api.v2.PositionConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	38,  // 34: datanode.api.v2.ObservePositionsResponse.snapshot:type_name -> datanode.api.v2.PositionSnapshotPage
 	39,  // 35: datanode.api.v2.ObservePositionsResponse.updates:type_name -> datanode.api.v2.PositionUpdates
-	277, // 36: datanode.api.v2.PositionSnapshotPage.positions:type_name -> vega.Position
-	277, // 37: datanode.api.v2.PositionUpdates.positions:type_name -> vega.Position
+	281, // 36: datanode.api.v2.PositionSnapshotPage.positions:type_name -> vega.Position
+	281, // 37: datanode.api.v2.PositionUpdates.positions:type_name -> vega.Position
 	54,  // 38: datanode.api.v2.LedgerEntryFilter.from_account_filter:type_name -> datanode.api.v2.AccountFilter
 	54,  // 39: datanode.api.v2.LedgerEntryFilter.to_account_filter:type_name -> datanode.api.v2.AccountFilter
-	278, // 40: datanode.api.v2.LedgerEntryFilter.transfer_types:type_name -> vega.TransferType
-	278, // 41: datanode.api.v2.AggregatedLedgerEntry.transfer_type:type_name -> vega.TransferType
-	272, // 42: datanode.api.v2.AggregatedLedgerEntry.from_account_type:type_name -> vega.AccountType
-	272, // 43: datanode.api.v2.AggregatedLedgerEntry.to_account_type:type_name -> vega.AccountType
+	282, // 40: datanode.api.v2.LedgerEntryFilter.transfer_types:type_name -> vega.TransferType
+	282, // 41: datanode.api.v2.AggregatedLedgerEntry.transfer_type:type_name -> vega.TransferType
+	276, // 42: datanode.api.v2.AggregatedLedgerEntry.from_account_type:type_name -> vega.AccountType
+	276, // 43: datanode.api.v2.AggregatedLedgerEntry.to_account_type:type_name -> vega.AccountType
 	40,  // 44: datanode.api.v2.ListLedgerEntriesRequest.filter:type_name -> datanode.api.v2.LedgerEntryFilter
 	5,   // 45: datanode.api.v2.ListLedgerEntriesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	252, // 46: datanode.api.v2.ListLedgerEntriesRequest.date_range:type_name -> datanode.api.v2.DateRange
@@ -18363,33 +18607,33 @@ var file_data_node_api_v2_trading_data_proto_depIdxs = []int32{
 	55,  // 63: datanode.api.v2.AggregatedBalanceEdge.node:type_name -> datanode.api.v2.AggregatedBalance
 	52,  // 64: datanode.api.v2.AggregatedBalanceConnection.edges:type_name -> datanode.api.v2.AggregatedBalanceEdge
 	6,   // 65: datanode.api.v2.AggregatedBalanceConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	272, // 66: datanode.api.v2.AccountFilter.account_types:type_name -> vega.AccountType
-	272, // 67: datanode.api.v2.AggregatedBalance.account_type:type_name -> vega.AccountType
-	279, // 68: datanode.api.v2.ObserveMarketsDepthResponse.market_depth:type_name -> vega.MarketDepth
-	280, // 69: datanode.api.v2.ObserveMarketsDepthUpdatesResponse.update:type_name -> vega.MarketDepthUpdate
-	281, // 70: datanode.api.v2.ObserveMarketsDataResponse.market_data:type_name -> vega.MarketData
-	282, // 71: datanode.api.v2.GetLatestMarketDepthResponse.buy:type_name -> vega.PriceLevel
-	282, // 72: datanode.api.v2.GetLatestMarketDepthResponse.sell:type_name -> vega.PriceLevel
-	283, // 73: datanode.api.v2.GetLatestMarketDepthResponse.last_trade:type_name -> vega.Trade
-	281, // 74: datanode.api.v2.ListLatestMarketDataResponse.markets_data:type_name -> vega.MarketData
-	281, // 75: datanode.api.v2.GetLatestMarketDataResponse.market_data:type_name -> vega.MarketData
+	276, // 66: datanode.api.v2.AccountFilter.account_types:type_name -> vega.AccountType
+	276, // 67: datanode.api.v2.AggregatedBalance.account_type:type_name -> vega.AccountType
+	283, // 68: datanode.api.v2.ObserveMarketsDepthResponse.market_depth:type_name -> vega.MarketDepth
+	284, // 69: datanode.api.v2.ObserveMarketsDepthUpdatesResponse.update:type_name -> vega.MarketDepthUpdate
+	285, // 70: datanode.api.v2.ObserveMarketsDataResponse.market_data:type_name -> vega.MarketData
+	286, // 71: datanode.api.v2.GetLatestMarketDepthResponse.buy:type_name -> vega.PriceLevel
+	286, // 72: datanode.api.v2.GetLatestMarketDepthResponse.sell:type_name -> vega.PriceLevel
+	287, // 73: datanode.api.v2.GetLatestMarketDepthResponse.last_trade:type_name -> vega.Trade
+	285, // 74: datanode.api.v2.ListLatestMarketDataResponse.markets_data:type_name -> vega.MarketData
+	285, // 75: datanode.api.v2.GetLatestMarketDataResponse.market_data:type_name -> vega.MarketData
 	5,   // 76: datanode.api.v2.GetMarketDataHistoryByIDRequest.pagination:type_name -> datanode.api.v2.Pagination
 	4,   // 77: datanode.api.v2.GetMarketDataHistoryByIDRequest.offset_pagination:type_name -> datanode.api.v2.OffsetPagination
 	71,  // 78: datanode.api.v2.GetMarketDataHistoryByIDResponse.market_data:type_name -> datanode.api.v2.MarketDataConnection
-	281, // 79: datanode.api.v2.MarketDataEdge.node:type_name -> vega.MarketData
+	285, // 79: datanode.api.v2.MarketDataEdge.node:type_name -> vega.MarketData
 	70,  // 80: datanode.api.v2.MarketDataConnection.edges:type_name -> datanode.api.v2.MarketDataEdge
 	6,   // 81: datanode.api.v2.MarketDataConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	281, // 82: datanode.api.v2.MarketsDataSubscribeResponse.market_data:type_name -> vega.MarketData
+	285, // 82: datanode.api.v2.MarketsDataSubscribeResponse.market_data:type_name -> vega.MarketData
 	2,   // 83: datanode.api.v2.ListTransfersRequest.direction:type_name -> datanode.api.v2.TransferDirection
 	5,   // 84: datanode.api.v2.ListTransfersRequest.pagination:type_name -> datanode.api.v2.Pagination
 	77,  // 85: datanode.api.v2.ListTransfersResponse.transfers:type_name -> datanode.api.v2.TransferConnection
-	284, // 86: datanode.api.v2.TransferEdge.node:type_name -> vega.events.v1.Transfer
+	288, // 86: datanode.api.v2.TransferEdge.node:type_name -> vega.events.v1.Transfer
 	76,  // 87: datanode.api.v2.TransferConnection.edges:type_name -> datanode.api.v2.TransferEdge
 	6,   // 88: datanode.api.v2.TransferConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	285, // 89: datanode.api.v2.GetNetworkLimitsResponse.limits:type_name -> vega.NetworkLimits
+	289, // 89: datanode.api.v2.GetNetworkLimitsResponse.limits:type_name -> vega.NetworkLimits
 	81,  // 90: datanode.api.v2.ListCandleIntervalsResponse.interval_to_candle_id:type_name -> datanode.api.v2.IntervalToCandleId
 	83,  // 91: datanode.api.v2.ObserveCandleDataResponse.candle:type_name -> datanode.api.v2.Candle
-	286, // 92: datanode.api.v2.ListCandleDataRequest.interval:type_name -> vega.Interval
+	290, // 92: datanode.api.v2.ListCandleDataRequest.interval:type_name -> vega.Interval
 	5,   // 93: datanode.api.v2.ListCandleDataRequest.pagination:type_name -> datanode.api.v2.Pagination
 	89,  // 94: datanode.api.v2.ListCandleDataResponse.candles:type_name -> datanode.api.v2.CandleDataConnection
 	83,  // 95: datanode.api.v2.CandleEdge.node:type_name -> datanode.api.v2.Candle
@@ -18397,138 +18641,138 @@ var file_data_node_api_v2_trading_data_proto_depIdxs = []int32{
 	6,   // 97: datanode.api.v2.CandleDataConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	5,   // 98: datanode.api.v2.ListVotesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	93,  // 99: datanode.api.v2.ListVotesResponse.votes:type_name -> datanode.api.v2.VoteConnection
-	287, // 100: datanode.api.v2.VoteEdge.node:type_name -> vega.Vote
+	291, // 100: datanode.api.v2.VoteEdge.node:type_name -> vega.Vote
 	92,  // 101: datanode.api.v2.VoteConnection.edges:type_name -> datanode.api.v2.VoteEdge
 	6,   // 102: datanode.api.v2.VoteConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	287, // 103: datanode.api.v2.ObserveVotesResponse.vote:type_name -> vega.Vote
+	291, // 103: datanode.api.v2.ObserveVotesResponse.vote:type_name -> vega.Vote
 	5,   // 104: datanode.api.v2.ListERC20MultiSigSignerAddedBundlesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	100, // 105: datanode.api.v2.ListERC20MultiSigSignerAddedBundlesResponse.bundles:type_name -> datanode.api.v2.ERC20MultiSigSignerAddedConnection
-	288, // 106: datanode.api.v2.ERC20MultiSigSignerAddedEdge.node:type_name -> vega.events.v1.ERC20MultiSigSignerAdded
+	292, // 106: datanode.api.v2.ERC20MultiSigSignerAddedEdge.node:type_name -> vega.events.v1.ERC20MultiSigSignerAdded
 	101, // 107: datanode.api.v2.ERC20MultiSigSignerAddedBundleEdge.node:type_name -> datanode.api.v2.ERC20MultiSigSignerAddedBundle
 	99,  // 108: datanode.api.v2.ERC20MultiSigSignerAddedConnection.edges:type_name -> datanode.api.v2.ERC20MultiSigSignerAddedBundleEdge
 	6,   // 109: datanode.api.v2.ERC20MultiSigSignerAddedConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	5,   // 110: datanode.api.v2.ListERC20MultiSigSignerRemovedBundlesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	106, // 111: datanode.api.v2.ListERC20MultiSigSignerRemovedBundlesResponse.bundles:type_name -> datanode.api.v2.ERC20MultiSigSignerRemovedConnection
-	289, // 112: datanode.api.v2.ERC20MultiSigSignerRemovedEdge.node:type_name -> vega.events.v1.ERC20MultiSigSignerRemoved
+	293, // 112: datanode.api.v2.ERC20MultiSigSignerRemovedEdge.node:type_name -> vega.events.v1.ERC20MultiSigSignerRemoved
 	107, // 113: datanode.api.v2.ERC20MultiSigSignerRemovedBundleEdge.node:type_name -> datanode.api.v2.ERC20MultiSigSignerRemovedBundle
 	105, // 114: datanode.api.v2.ERC20MultiSigSignerRemovedConnection.edges:type_name -> datanode.api.v2.ERC20MultiSigSignerRemovedBundleEdge
 	6,   // 115: datanode.api.v2.ERC20MultiSigSignerRemovedConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	283, // 116: datanode.api.v2.GetLastTradeResponse.trade:type_name -> vega.Trade
+	287, // 116: datanode.api.v2.GetLastTradeResponse.trade:type_name -> vega.Trade
 	5,   // 117: datanode.api.v2.ListTradesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	252, // 118: datanode.api.v2.ListTradesRequest.date_range:type_name -> datanode.api.v2.DateRange
 	118, // 119: datanode.api.v2.ListTradesResponse.trades:type_name -> datanode.api.v2.TradeConnection
 	119, // 120: datanode.api.v2.TradeConnection.edges:type_name -> datanode.api.v2.TradeEdge
 	6,   // 121: datanode.api.v2.TradeConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	283, // 122: datanode.api.v2.TradeEdge.node:type_name -> vega.Trade
-	283, // 123: datanode.api.v2.ObserveTradesResponse.trades:type_name -> vega.Trade
-	290, // 124: datanode.api.v2.GetOracleSpecResponse.oracle_spec:type_name -> vega.OracleSpec
+	287, // 122: datanode.api.v2.TradeEdge.node:type_name -> vega.Trade
+	287, // 123: datanode.api.v2.ObserveTradesResponse.trades:type_name -> vega.Trade
+	294, // 124: datanode.api.v2.GetOracleSpecResponse.oracle_spec:type_name -> vega.OracleSpec
 	5,   // 125: datanode.api.v2.ListOracleSpecsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	129, // 126: datanode.api.v2.ListOracleSpecsResponse.oracle_specs:type_name -> datanode.api.v2.OracleSpecsConnection
 	5,   // 127: datanode.api.v2.ListOracleDataRequest.pagination:type_name -> datanode.api.v2.Pagination
 	131, // 128: datanode.api.v2.ListOracleDataResponse.oracle_data:type_name -> datanode.api.v2.OracleDataConnection
-	290, // 129: datanode.api.v2.OracleSpecEdge.node:type_name -> vega.OracleSpec
+	294, // 129: datanode.api.v2.OracleSpecEdge.node:type_name -> vega.OracleSpec
 	128, // 130: datanode.api.v2.OracleSpecsConnection.edges:type_name -> datanode.api.v2.OracleSpecEdge
 	6,   // 131: datanode.api.v2.OracleSpecsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	291, // 132: datanode.api.v2.OracleDataEdge.node:type_name -> vega.OracleData
+	295, // 132: datanode.api.v2.OracleDataEdge.node:type_name -> vega.OracleData
 	130, // 133: datanode.api.v2.OracleDataConnection.edges:type_name -> datanode.api.v2.OracleDataEdge
 	6,   // 134: datanode.api.v2.OracleDataConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	292, // 135: datanode.api.v2.GetMarketResponse.market:type_name -> vega.Market
+	296, // 135: datanode.api.v2.GetMarketResponse.market:type_name -> vega.Market
 	5,   // 136: datanode.api.v2.ListMarketsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	137, // 137: datanode.api.v2.ListMarketsResponse.markets:type_name -> datanode.api.v2.MarketConnection
-	292, // 138: datanode.api.v2.MarketEdge.node:type_name -> vega.Market
+	296, // 138: datanode.api.v2.MarketEdge.node:type_name -> vega.Market
 	136, // 139: datanode.api.v2.MarketConnection.edges:type_name -> datanode.api.v2.MarketEdge
 	6,   // 140: datanode.api.v2.MarketConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	293, // 141: datanode.api.v2.GetPartyResponse.party:type_name -> vega.Party
+	297, // 141: datanode.api.v2.GetPartyResponse.party:type_name -> vega.Party
 	5,   // 142: datanode.api.v2.ListPartiesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	143, // 143: datanode.api.v2.ListPartiesResponse.parties:type_name -> datanode.api.v2.PartyConnection
-	293, // 144: datanode.api.v2.PartyEdge.node:type_name -> vega.Party
+	297, // 144: datanode.api.v2.PartyEdge.node:type_name -> vega.Party
 	142, // 145: datanode.api.v2.PartyConnection.edges:type_name -> datanode.api.v2.PartyEdge
 	6,   // 146: datanode.api.v2.PartyConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	273, // 147: datanode.api.v2.OrderEdge.node:type_name -> vega.Order
+	277, // 147: datanode.api.v2.OrderEdge.node:type_name -> vega.Order
 	5,   // 148: datanode.api.v2.ListMarginLevelsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	151, // 149: datanode.api.v2.ListMarginLevelsResponse.margin_levels:type_name -> datanode.api.v2.MarginConnection
-	294, // 150: datanode.api.v2.ObserveMarginLevelsResponse.margin_levels:type_name -> vega.MarginLevels
+	298, // 150: datanode.api.v2.ObserveMarginLevelsResponse.margin_levels:type_name -> vega.MarginLevels
 	144, // 151: datanode.api.v2.OrderConnection.edges:type_name -> datanode.api.v2.OrderEdge
 	6,   // 152: datanode.api.v2.OrderConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	294, // 153: datanode.api.v2.MarginEdge.node:type_name -> vega.MarginLevels
+	298, // 153: datanode.api.v2.MarginEdge.node:type_name -> vega.MarginLevels
 	150, // 154: datanode.api.v2.MarginConnection.edges:type_name -> datanode.api.v2.MarginEdge
 	6,   // 155: datanode.api.v2.MarginConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	5,   // 156: datanode.api.v2.ListRewardsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	155, // 157: datanode.api.v2.ListRewardsResponse.rewards:type_name -> datanode.api.v2.RewardsConnection
-	295, // 158: datanode.api.v2.RewardEdge.node:type_name -> vega.Reward
+	299, // 158: datanode.api.v2.RewardEdge.node:type_name -> vega.Reward
 	154, // 159: datanode.api.v2.RewardsConnection.edges:type_name -> datanode.api.v2.RewardEdge
 	6,   // 160: datanode.api.v2.RewardsConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	5,   // 161: datanode.api.v2.ListRewardSummariesRequest.pagination:type_name -> datanode.api.v2.Pagination
-	296, // 162: datanode.api.v2.ListRewardSummariesResponse.summaries:type_name -> vega.RewardSummary
+	300, // 162: datanode.api.v2.ListRewardSummariesResponse.summaries:type_name -> vega.RewardSummary
 	158, // 163: datanode.api.v2.ListEpochRewardSummariesRequest.filter:type_name -> datanode.api.v2.RewardSummaryFilter
 	5,   // 164: datanode.api.v2.ListEpochRewardSummariesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	161, // 165: datanode.api.v2.ListEpochRewardSummariesResponse.summaries:type_name -> datanode.api.v2.EpochRewardSummaryConnection
 	162, // 166: datanode.api.v2.EpochRewardSummaryConnection.edges:type_name -> datanode.api.v2.EpochRewardSummaryEdge
 	6,   // 167: datanode.api.v2.EpochRewardSummaryConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	297, // 168: datanode.api.v2.EpochRewardSummaryEdge.node:type_name -> vega.EpochRewardSummary
-	295, // 169: datanode.api.v2.ObserveRewardsResponse.reward:type_name -> vega.Reward
-	298, // 170: datanode.api.v2.GetDepositResponse.deposit:type_name -> vega.Deposit
+	301, // 168: datanode.api.v2.EpochRewardSummaryEdge.node:type_name -> vega.EpochRewardSummary
+	299, // 169: datanode.api.v2.ObserveRewardsResponse.reward:type_name -> vega.Reward
+	302, // 170: datanode.api.v2.GetDepositResponse.deposit:type_name -> vega.Deposit
 	5,   // 171: datanode.api.v2.ListDepositsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	252, // 172: datanode.api.v2.ListDepositsRequest.date_range:type_name -> datanode.api.v2.DateRange
 	170, // 173: datanode.api.v2.ListDepositsResponse.deposits:type_name -> datanode.api.v2.DepositsConnection
-	298, // 174: datanode.api.v2.DepositEdge.node:type_name -> vega.Deposit
+	302, // 174: datanode.api.v2.DepositEdge.node:type_name -> vega.Deposit
 	169, // 175: datanode.api.v2.DepositsConnection.edges:type_name -> datanode.api.v2.DepositEdge
 	6,   // 176: datanode.api.v2.DepositsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	299, // 177: datanode.api.v2.GetWithdrawalResponse.withdrawal:type_name -> vega.Withdrawal
+	303, // 177: datanode.api.v2.GetWithdrawalResponse.withdrawal:type_name -> vega.Withdrawal
 	5,   // 178: datanode.api.v2.ListWithdrawalsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	252, // 179: datanode.api.v2.ListWithdrawalsRequest.date_range:type_name -> datanode.api.v2.DateRange
 	176, // 180: datanode.api.v2.ListWithdrawalsResponse.withdrawals:type_name -> datanode.api.v2.WithdrawalsConnection
-	299, // 181: datanode.api.v2.WithdrawalEdge.node:type_name -> vega.Withdrawal
+	303, // 181: datanode.api.v2.WithdrawalEdge.node:type_name -> vega.Withdrawal
 	175, // 182: datanode.api.v2.WithdrawalsConnection.edges:type_name -> datanode.api.v2.WithdrawalEdge
 	6,   // 183: datanode.api.v2.WithdrawalsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	300, // 184: datanode.api.v2.GetAssetResponse.asset:type_name -> vega.Asset
+	304, // 184: datanode.api.v2.GetAssetResponse.asset:type_name -> vega.Asset
 	5,   // 185: datanode.api.v2.ListAssetsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	182, // 186: datanode.api.v2.ListAssetsResponse.assets:type_name -> datanode.api.v2.AssetsConnection
-	300, // 187: datanode.api.v2.AssetEdge.node:type_name -> vega.Asset
+	304, // 187: datanode.api.v2.AssetEdge.node:type_name -> vega.Asset
 	181, // 188: datanode.api.v2.AssetsConnection.edges:type_name -> datanode.api.v2.AssetEdge
 	6,   // 189: datanode.api.v2.AssetsConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	5,   // 190: datanode.api.v2.ListLiquidityProvisionsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	186, // 191: datanode.api.v2.ListLiquidityProvisionsResponse.liquidity_provisions:type_name -> datanode.api.v2.LiquidityProvisionsConnection
-	301, // 192: datanode.api.v2.LiquidityProvisionsEdge.node:type_name -> vega.LiquidityProvision
+	305, // 192: datanode.api.v2.LiquidityProvisionsEdge.node:type_name -> vega.LiquidityProvision
 	185, // 193: datanode.api.v2.LiquidityProvisionsConnection.edges:type_name -> datanode.api.v2.LiquidityProvisionsEdge
 	6,   // 194: datanode.api.v2.LiquidityProvisionsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	301, // 195: datanode.api.v2.ObserveLiquidityProvisionsResponse.liquidity_provisions:type_name -> vega.LiquidityProvision
-	302, // 196: datanode.api.v2.GetGovernanceDataResponse.data:type_name -> vega.GovernanceData
-	303, // 197: datanode.api.v2.ListGovernanceDataRequest.proposal_state:type_name -> vega.Proposal.State
+	305, // 195: datanode.api.v2.ObserveLiquidityProvisionsResponse.liquidity_provisions:type_name -> vega.LiquidityProvision
+	306, // 196: datanode.api.v2.GetGovernanceDataResponse.data:type_name -> vega.GovernanceData
+	307, // 197: datanode.api.v2.ListGovernanceDataRequest.proposal_state:type_name -> vega.Proposal.State
 	3,   // 198: datanode.api.v2.ListGovernanceDataRequest.proposal_type:type_name -> datanode.api.v2.ListGovernanceDataRequest.Type
 	5,   // 199: datanode.api.v2.ListGovernanceDataRequest.pagination:type_name -> datanode.api.v2.Pagination
 	194, // 200: datanode.api.v2.ListGovernanceDataResponse.connection:type_name -> datanode.api.v2.GovernanceDataConnection
-	302, // 201: datanode.api.v2.GovernanceDataEdge.node:type_name -> vega.GovernanceData
+	306, // 201: datanode.api.v2.GovernanceDataEdge.node:type_name -> vega.GovernanceData
 	193, // 202: datanode.api.v2.GovernanceDataConnection.edges:type_name -> datanode.api.v2.GovernanceDataEdge
 	6,   // 203: datanode.api.v2.GovernanceDataConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	302, // 204: datanode.api.v2.ObserveGovernanceResponse.data:type_name -> vega.GovernanceData
+	306, // 204: datanode.api.v2.ObserveGovernanceResponse.data:type_name -> vega.GovernanceData
 	5,   // 205: datanode.api.v2.ListDelegationsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	200, // 206: datanode.api.v2.ListDelegationsResponse.delegations:type_name -> datanode.api.v2.DelegationsConnection
-	304, // 207: datanode.api.v2.DelegationEdge.node:type_name -> vega.Delegation
+	308, // 207: datanode.api.v2.DelegationEdge.node:type_name -> vega.Delegation
 	199, // 208: datanode.api.v2.DelegationsConnection.edges:type_name -> datanode.api.v2.DelegationEdge
 	6,   // 209: datanode.api.v2.DelegationsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	304, // 210: datanode.api.v2.ObserveDelegationsResponse.delegation:type_name -> vega.Delegation
-	305, // 211: datanode.api.v2.GetNetworkDataResponse.node_data:type_name -> vega.NodeData
-	306, // 212: datanode.api.v2.GetNodeResponse.node:type_name -> vega.Node
+	308, // 210: datanode.api.v2.ObserveDelegationsResponse.delegation:type_name -> vega.Delegation
+	309, // 211: datanode.api.v2.GetNetworkDataResponse.node_data:type_name -> vega.NodeData
+	310, // 212: datanode.api.v2.GetNodeResponse.node:type_name -> vega.Node
 	5,   // 213: datanode.api.v2.ListNodesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	210, // 214: datanode.api.v2.ListNodesResponse.nodes:type_name -> datanode.api.v2.NodesConnection
-	306, // 215: datanode.api.v2.NodeEdge.node:type_name -> vega.Node
+	310, // 215: datanode.api.v2.NodeEdge.node:type_name -> vega.Node
 	209, // 216: datanode.api.v2.NodesConnection.edges:type_name -> datanode.api.v2.NodeEdge
 	6,   // 217: datanode.api.v2.NodesConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	5,   // 218: datanode.api.v2.ListNodeSignaturesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	214, // 219: datanode.api.v2.ListNodeSignaturesResponse.signatures:type_name -> datanode.api.v2.NodeSignaturesConnection
-	307, // 220: datanode.api.v2.NodeSignatureEdge.node:type_name -> vega.commands.v1.NodeSignature
+	311, // 220: datanode.api.v2.NodeSignatureEdge.node:type_name -> vega.commands.v1.NodeSignature
 	213, // 221: datanode.api.v2.NodeSignaturesConnection.edges:type_name -> datanode.api.v2.NodeSignatureEdge
 	6,   // 222: datanode.api.v2.NodeSignaturesConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	308, // 223: datanode.api.v2.GetEpochResponse.epoch:type_name -> vega.Epoch
-	309, // 224: datanode.api.v2.EstimateFeeResponse.fee:type_name -> vega.Fee
-	310, // 225: datanode.api.v2.EstimateMarginRequest.side:type_name -> vega.Side
-	275, // 226: datanode.api.v2.EstimateMarginRequest.type:type_name -> vega.Order.Type
-	294, // 227: datanode.api.v2.EstimateMarginResponse.margin_levels:type_name -> vega.MarginLevels
+	312, // 223: datanode.api.v2.GetEpochResponse.epoch:type_name -> vega.Epoch
+	313, // 224: datanode.api.v2.EstimateFeeResponse.fee:type_name -> vega.Fee
+	314, // 225: datanode.api.v2.EstimateMarginRequest.side:type_name -> vega.Side
+	279, // 226: datanode.api.v2.EstimateMarginRequest.type:type_name -> vega.Order.Type
+	298, // 227: datanode.api.v2.EstimateMarginResponse.margin_levels:type_name -> vega.MarginLevels
 	5,   // 228: datanode.api.v2.ListNetworkParametersRequest.pagination:type_name -> datanode.api.v2.Pagination
 	226, // 229: datanode.api.v2.ListNetworkParametersResponse.network_parameters:type_name -> datanode.api.v2.NetworkParameterConnection
-	311, // 230: datanode.api.v2.GetNetworkParameterResponse.network_parameter:type_name -> vega.NetworkParameter
-	311, // 231: datanode.api.v2.NetworkParameterEdge.node:type_name -> vega.NetworkParameter
+	315, // 230: datanode.api.v2.GetNetworkParameterResponse.network_parameter:type_name -> vega.NetworkParameter
+	315, // 231: datanode.api.v2.NetworkParameterEdge.node:type_name -> vega.NetworkParameter
 	225, // 232: datanode.api.v2.NetworkParameterConnection.edges:type_name -> datanode.api.v2.NetworkParameterEdge
 	6,   // 233: datanode.api.v2.NetworkParameterConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	5,   // 234: datanode.api.v2.ListCheckpointsRequest.pagination:type_name -> datanode.api.v2.Pagination
@@ -18538,34 +18782,34 @@ var file_data_node_api_v2_trading_data_proto_depIdxs = []int32{
 	6,   // 238: datanode.api.v2.CheckpointsConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	5,   // 239: datanode.api.v2.GetStakeRequest.pagination:type_name -> datanode.api.v2.Pagination
 	235, // 240: datanode.api.v2.GetStakeResponse.stake_linkings:type_name -> datanode.api.v2.StakesConnection
-	312, // 241: datanode.api.v2.StakeLinkingEdge.node:type_name -> vega.events.v1.StakeLinking
+	316, // 241: datanode.api.v2.StakeLinkingEdge.node:type_name -> vega.events.v1.StakeLinking
 	234, // 242: datanode.api.v2.StakesConnection.edges:type_name -> datanode.api.v2.StakeLinkingEdge
 	6,   // 243: datanode.api.v2.StakesConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	313, // 244: datanode.api.v2.GetRiskFactorsResponse.risk_factor:type_name -> vega.RiskFactor
-	314, // 245: datanode.api.v2.ObserveEventBusRequest.type:type_name -> vega.events.v1.BusEventType
-	315, // 246: datanode.api.v2.ObserveEventBusResponse.events:type_name -> vega.events.v1.BusEvent
-	316, // 247: datanode.api.v2.ObserveLedgerMovementsResponse.ledger_movement:type_name -> vega.LedgerMovement
+	317, // 244: datanode.api.v2.GetRiskFactorsResponse.risk_factor:type_name -> vega.RiskFactor
+	318, // 245: datanode.api.v2.ObserveEventBusRequest.type:type_name -> vega.events.v1.BusEventType
+	319, // 246: datanode.api.v2.ObserveEventBusResponse.events:type_name -> vega.events.v1.BusEvent
+	320, // 247: datanode.api.v2.ObserveLedgerMovementsResponse.ledger_movement:type_name -> vega.LedgerMovement
 	5,   // 248: datanode.api.v2.ListKeyRotationsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	245, // 249: datanode.api.v2.ListKeyRotationsResponse.rotations:type_name -> datanode.api.v2.KeyRotationConnection
-	317, // 250: datanode.api.v2.KeyRotationEdge.node:type_name -> vega.events.v1.KeyRotation
+	321, // 250: datanode.api.v2.KeyRotationEdge.node:type_name -> vega.events.v1.KeyRotation
 	244, // 251: datanode.api.v2.KeyRotationConnection.edges:type_name -> datanode.api.v2.KeyRotationEdge
 	6,   // 252: datanode.api.v2.KeyRotationConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	5,   // 253: datanode.api.v2.ListEthereumKeyRotationsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	248, // 254: datanode.api.v2.ListEthereumKeyRotationsResponse.key_rotations:type_name -> datanode.api.v2.EthereumKeyRotationsConnection
 	249, // 255: datanode.api.v2.EthereumKeyRotationsConnection.edges:type_name -> datanode.api.v2.EthereumKeyRotationEdge
 	6,   // 256: datanode.api.v2.EthereumKeyRotationsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	318, // 257: datanode.api.v2.EthereumKeyRotationEdge.node:type_name -> vega.events.v1.EthereumKeyRotation
-	319, // 258: datanode.api.v2.ListProtocolUpgradeProposalsRequest.status:type_name -> vega.events.v1.ProtocolUpgradeProposalStatus
+	322, // 257: datanode.api.v2.EthereumKeyRotationEdge.node:type_name -> vega.events.v1.EthereumKeyRotation
+	323, // 258: datanode.api.v2.ListProtocolUpgradeProposalsRequest.status:type_name -> vega.events.v1.ProtocolUpgradeProposalStatus
 	5,   // 259: datanode.api.v2.ListProtocolUpgradeProposalsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	257, // 260: datanode.api.v2.ListProtocolUpgradeProposalsResponse.protocol_upgrade_proposals:type_name -> datanode.api.v2.ProtocolUpgradeProposalConnection
 	258, // 261: datanode.api.v2.ProtocolUpgradeProposalConnection.edges:type_name -> datanode.api.v2.ProtocolUpgradeProposalEdge
 	6,   // 262: datanode.api.v2.ProtocolUpgradeProposalConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	320, // 263: datanode.api.v2.ProtocolUpgradeProposalEdge.node:type_name -> vega.events.v1.ProtocolUpgradeEvent
+	324, // 263: datanode.api.v2.ProtocolUpgradeProposalEdge.node:type_name -> vega.events.v1.ProtocolUpgradeEvent
 	5,   // 264: datanode.api.v2.ListCoreSnapshotsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	261, // 265: datanode.api.v2.ListCoreSnapshotsResponse.core_snapshots:type_name -> datanode.api.v2.CoreSnapshotConnection
 	262, // 266: datanode.api.v2.CoreSnapshotConnection.edges:type_name -> datanode.api.v2.CoreSnapshotEdge
 	6,   // 267: datanode.api.v2.CoreSnapshotConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	321, // 268: datanode.api.v2.CoreSnapshotEdge.node:type_name -> vega.events.v1.CoreSnapshotData
+	325, // 268: datanode.api.v2.CoreSnapshotEdge.node:type_name -> vega.events.v1.CoreSnapshotData
 	263, // 269: datanode.api.v2.GetMostRecentNetworkHistorySegmentResponse.segment:type_name -> datanode.api.v2.HistorySegment
 	263, // 270: datanode.api.v2.ListAllNetworkHistorySegmentsResponse.segments:type_name -> datanode.api.v2.HistorySegment
 	8,   // 271: datanode.api.v2.TradingDataService.ListAccounts:input_type -> datanode.api.v2.ListAccountsRequest
@@ -18652,94 +18896,98 @@ var file_data_node_api_v2_trading_data_proto_depIdxs = []int32{
 	264, // 352: datanode.api.v2.TradingDataService.GetMostRecentNetworkHistorySegment:input_type -> datanode.api.v2.GetMostRecentNetworkHistorySegmentRequest
 	266, // 353: datanode.api.v2.TradingDataService.ListAllNetworkHistorySegments:input_type -> datanode.api.v2.ListAllNetworkHistorySegmentsRequest
 	268, // 354: datanode.api.v2.TradingDataService.GetActiveNetworkHistoryPeerAddresses:input_type -> datanode.api.v2.GetActiveNetworkHistoryPeerAddressesRequest
-	270, // 355: datanode.api.v2.TradingDataService.Ping:input_type -> datanode.api.v2.PingRequest
-	9,   // 356: datanode.api.v2.TradingDataService.ListAccounts:output_type -> datanode.api.v2.ListAccountsResponse
-	13,  // 357: datanode.api.v2.TradingDataService.ObserveAccounts:output_type -> datanode.api.v2.ObserveAccountsResponse
-	17,  // 358: datanode.api.v2.TradingDataService.Info:output_type -> datanode.api.v2.InfoResponse
-	19,  // 359: datanode.api.v2.TradingDataService.GetOrder:output_type -> datanode.api.v2.GetOrderResponse
-	22,  // 360: datanode.api.v2.TradingDataService.ListOrders:output_type -> datanode.api.v2.ListOrdersResponse
-	24,  // 361: datanode.api.v2.TradingDataService.ListOrderVersions:output_type -> datanode.api.v2.ListOrderVersionsResponse
-	26,  // 362: datanode.api.v2.TradingDataService.ObserveOrders:output_type -> datanode.api.v2.ObserveOrdersResponse
-	30,  // 363: datanode.api.v2.TradingDataService.ListPositions:output_type -> datanode.api.v2.ListPositionsResponse
-	33,  // 364: datanode.api.v2.TradingDataService.ListAllPositions:output_type -> datanode.api.v2.ListAllPositionsResponse
-	37,  // 365: datanode.api.v2.TradingDataService.ObservePositions:output_type -> datanode.api.v2.ObservePositionsResponse
-	44,  // 366: datanode.api.v2.TradingDataService.ListLedgerEntries:output_type -> datanode.api.v2.ListLedgerEntriesResponse
-	45,  // 367: datanode.api.v2.TradingDataService.ExportLedgerEntries:output_type -> datanode.api.v2.ExportLedgerEntriesResponse
-	49,  // 368: datanode.api.v2.TradingDataService.ListBalanceChanges:output_type -> datanode.api.v2.ListBalanceChangesResponse
-	67,  // 369: datanode.api.v2.TradingDataService.GetLatestMarketData:output_type -> datanode.api.v2.GetLatestMarketDataResponse
-	65,  // 370: datanode.api.v2.TradingDataService.ListLatestMarketData:output_type -> datanode.api.v2.ListLatestMarketDataResponse
-	63,  // 371: datanode.api.v2.TradingDataService.GetLatestMarketDepth:output_type -> datanode.api.v2.GetLatestMarketDepthResponse
-	57,  // 372: datanode.api.v2.TradingDataService.ObserveMarketsDepth:output_type -> datanode.api.v2.ObserveMarketsDepthResponse
-	59,  // 373: datanode.api.v2.TradingDataService.ObserveMarketsDepthUpdates:output_type -> datanode.api.v2.ObserveMarketsDepthUpdatesResponse
-	61,  // 374: datanode.api.v2.TradingDataService.ObserveMarketsData:output_type -> datanode.api.v2.ObserveMarketsDataResponse
-	69,  // 375: datanode.api.v2.TradingDataService.GetMarketDataHistoryByID:output_type -> datanode.api.v2.GetMarketDataHistoryByIDResponse
-	75,  // 376: datanode.api.v2.TradingDataService.ListTransfers:output_type -> datanode.api.v2.ListTransfersResponse
-	79,  // 377: datanode.api.v2.TradingDataService.GetNetworkLimits:output_type -> datanode.api.v2.GetNetworkLimitsResponse
-	87,  // 378: datanode.api.v2.TradingDataService.ListCandleData:output_type -> datanode.api.v2.ListCandleDataResponse
-	85,  // 379: datanode.api.v2.TradingDataService.ObserveCandleData:output_type -> datanode.api.v2.ObserveCandleDataResponse
-	82,  // 380: datanode.api.v2.TradingDataService.ListCandleIntervals:output_type -> datanode.api.v2.ListCandleIntervalsResponse
-	91,  // 381: datanode.api.v2.TradingDataService.ListVotes:output_type -> datanode.api.v2.ListVotesResponse
-	95,  // 382: datanode.api.v2.TradingDataService.ObserveVotes:output_type -> datanode.api.v2.ObserveVotesResponse
-	97,  // 383: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerAddedBundles:output_type -> datanode.api.v2.ListERC20MultiSigSignerAddedBundlesResponse
-	103, // 384: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerRemovedBundles:output_type -> datanode.api.v2.ListERC20MultiSigSignerRemovedBundlesResponse
-	109, // 385: datanode.api.v2.TradingDataService.GetERC20ListAssetBundle:output_type -> datanode.api.v2.GetERC20ListAssetBundleResponse
-	111, // 386: datanode.api.v2.TradingDataService.GetERC20SetAssetLimitsBundle:output_type -> datanode.api.v2.GetERC20SetAssetLimitsBundleResponse
-	113, // 387: datanode.api.v2.TradingDataService.GetERC20WithdrawalApproval:output_type -> datanode.api.v2.GetERC20WithdrawalApprovalResponse
-	115, // 388: datanode.api.v2.TradingDataService.GetLastTrade:output_type -> datanode.api.v2.GetLastTradeResponse
-	117, // 389: datanode.api.v2.TradingDataService.ListTrades:output_type -> datanode.api.v2.ListTradesResponse
-	121, // 390: datanode.api.v2.TradingDataService.ObserveTrades:output_type -> datanode.api.v2.ObserveTradesResponse
-	123, // 391: datanode.api.v2.TradingDataService.GetOracleSpec:output_type -> datanode.api.v2.GetOracleSpecResponse
-	125, // 392: datanode.api.v2.TradingDataService.ListOracleSpecs:output_type -> datanode.api.v2.ListOracleSpecsResponse
-	127, // 393: datanode.api.v2.TradingDataService.ListOracleData:output_type -> datanode.api.v2.ListOracleDataResponse
-	133, // 394: datanode.api.v2.TradingDataService.GetMarket:output_type -> datanode.api.v2.GetMarketResponse
-	135, // 395: datanode.api.v2.TradingDataService.ListMarkets:output_type -> datanode.api.v2.ListMarketsResponse
-	139, // 396: datanode.api.v2.TradingDataService.GetParty:output_type -> datanode.api.v2.GetPartyResponse
-	141, // 397: datanode.api.v2.TradingDataService.ListParties:output_type -> datanode.api.v2.ListPartiesResponse
-	146, // 398: datanode.api.v2.TradingDataService.ListMarginLevels:output_type -> datanode.api.v2.ListMarginLevelsResponse
-	148, // 399: datanode.api.v2.TradingDataService.ObserveMarginLevels:output_type -> datanode.api.v2.ObserveMarginLevelsResponse
-	153, // 400: datanode.api.v2.TradingDataService.ListRewards:output_type -> datanode.api.v2.ListRewardsResponse
-	157, // 401: datanode.api.v2.TradingDataService.ListRewardSummaries:output_type -> datanode.api.v2.ListRewardSummariesResponse
-	160, // 402: datanode.api.v2.TradingDataService.ListEpochRewardSummaries:output_type -> datanode.api.v2.ListEpochRewardSummariesResponse
-	164, // 403: datanode.api.v2.TradingDataService.ObserveRewards:output_type -> datanode.api.v2.ObserveRewardsResponse
-	166, // 404: datanode.api.v2.TradingDataService.GetDeposit:output_type -> datanode.api.v2.GetDepositResponse
-	168, // 405: datanode.api.v2.TradingDataService.ListDeposits:output_type -> datanode.api.v2.ListDepositsResponse
-	172, // 406: datanode.api.v2.TradingDataService.GetWithdrawal:output_type -> datanode.api.v2.GetWithdrawalResponse
-	174, // 407: datanode.api.v2.TradingDataService.ListWithdrawals:output_type -> datanode.api.v2.ListWithdrawalsResponse
-	178, // 408: datanode.api.v2.TradingDataService.GetAsset:output_type -> datanode.api.v2.GetAssetResponse
-	180, // 409: datanode.api.v2.TradingDataService.ListAssets:output_type -> datanode.api.v2.ListAssetsResponse
-	184, // 410: datanode.api.v2.TradingDataService.ListLiquidityProvisions:output_type -> datanode.api.v2.ListLiquidityProvisionsResponse
-	188, // 411: datanode.api.v2.TradingDataService.ObserveLiquidityProvisions:output_type -> datanode.api.v2.ObserveLiquidityProvisionsResponse
-	190, // 412: datanode.api.v2.TradingDataService.GetGovernanceData:output_type -> datanode.api.v2.GetGovernanceDataResponse
-	192, // 413: datanode.api.v2.TradingDataService.ListGovernanceData:output_type -> datanode.api.v2.ListGovernanceDataResponse
-	196, // 414: datanode.api.v2.TradingDataService.ObserveGovernance:output_type -> datanode.api.v2.ObserveGovernanceResponse
-	198, // 415: datanode.api.v2.TradingDataService.ListDelegations:output_type -> datanode.api.v2.ListDelegationsResponse
-	202, // 416: datanode.api.v2.TradingDataService.ObserveDelegations:output_type -> datanode.api.v2.ObserveDelegationsResponse
-	204, // 417: datanode.api.v2.TradingDataService.GetNetworkData:output_type -> datanode.api.v2.GetNetworkDataResponse
-	206, // 418: datanode.api.v2.TradingDataService.GetNode:output_type -> datanode.api.v2.GetNodeResponse
-	208, // 419: datanode.api.v2.TradingDataService.ListNodes:output_type -> datanode.api.v2.ListNodesResponse
-	212, // 420: datanode.api.v2.TradingDataService.ListNodeSignatures:output_type -> datanode.api.v2.ListNodeSignaturesResponse
-	216, // 421: datanode.api.v2.TradingDataService.GetEpoch:output_type -> datanode.api.v2.GetEpochResponse
-	218, // 422: datanode.api.v2.TradingDataService.EstimateFee:output_type -> datanode.api.v2.EstimateFeeResponse
-	220, // 423: datanode.api.v2.TradingDataService.EstimateMargin:output_type -> datanode.api.v2.EstimateMarginResponse
-	222, // 424: datanode.api.v2.TradingDataService.ListNetworkParameters:output_type -> datanode.api.v2.ListNetworkParametersResponse
-	224, // 425: datanode.api.v2.TradingDataService.GetNetworkParameter:output_type -> datanode.api.v2.GetNetworkParameterResponse
-	229, // 426: datanode.api.v2.TradingDataService.ListCheckpoints:output_type -> datanode.api.v2.ListCheckpointsResponse
-	233, // 427: datanode.api.v2.TradingDataService.GetStake:output_type -> datanode.api.v2.GetStakeResponse
-	237, // 428: datanode.api.v2.TradingDataService.GetRiskFactors:output_type -> datanode.api.v2.GetRiskFactorsResponse
-	239, // 429: datanode.api.v2.TradingDataService.ObserveEventBus:output_type -> datanode.api.v2.ObserveEventBusResponse
-	241, // 430: datanode.api.v2.TradingDataService.ObserveLedgerMovements:output_type -> datanode.api.v2.ObserveLedgerMovementsResponse
-	243, // 431: datanode.api.v2.TradingDataService.ListKeyRotations:output_type -> datanode.api.v2.ListKeyRotationsResponse
-	247, // 432: datanode.api.v2.TradingDataService.ListEthereumKeyRotations:output_type -> datanode.api.v2.ListEthereumKeyRotationsResponse
-	251, // 433: datanode.api.v2.TradingDataService.GetVegaTime:output_type -> datanode.api.v2.GetVegaTimeResponse
-	254, // 434: datanode.api.v2.TradingDataService.GetProtocolUpgradeStatus:output_type -> datanode.api.v2.GetProtocolUpgradeStatusResponse
-	256, // 435: datanode.api.v2.TradingDataService.ListProtocolUpgradeProposals:output_type -> datanode.api.v2.ListProtocolUpgradeProposalsResponse
-	260, // 436: datanode.api.v2.TradingDataService.ListCoreSnapshots:output_type -> datanode.api.v2.ListCoreSnapshotsResponse
-	265, // 437: datanode.api.v2.TradingDataService.GetMostRecentNetworkHistorySegment:output_type -> datanode.api.v2.GetMostRecentNetworkHistorySegmentResponse
-	267, // 438: datanode.api.v2.TradingDataService.ListAllNetworkHistorySegments:output_type -> datanode.api.v2.ListAllNetworkHistorySegmentsResponse
-	269, // 439: datanode.api.v2.TradingDataService.GetActiveNetworkHistoryPeerAddresses:output_type -> datanode.api.v2.GetActiveNetworkHistoryPeerAddressesResponse
-	271, // 440: datanode.api.v2.TradingDataService.Ping:output_type -> datanode.api.v2.PingResponse
-	356, // [356:441] is the sub-list for method output_type
-	271, // [271:356] is the sub-list for method input_type
+	270, // 355: datanode.api.v2.TradingDataService.NetworkHistoryStatus:input_type -> datanode.api.v2.NetworkHistoryStatusRequest
+	272, // 356: datanode.api.v2.TradingDataService.NetworkHistoryBootstrapPeers:input_type -> datanode.api.v2.NetworkHistoryBootstrapPeersRequest
+	274, // 357: datanode.api.v2.TradingDataService.Ping:input_type -> datanode.api.v2.PingRequest
+	9,   // 358: datanode.api.v2.TradingDataService.ListAccounts:output_type -> datanode.api.v2.ListAccountsResponse
+	13,  // 359: datanode.api.v2.TradingDataService.ObserveAccounts:output_type -> datanode.api.v2.ObserveAccountsResponse
+	17,  // 360: datanode.api.v2.TradingDataService.Info:output_type -> datanode.api.v2.InfoResponse
+	19,  // 361: datanode.api.v2.TradingDataService.GetOrder:output_type -> datanode.api.v2.GetOrderResponse
+	22,  // 362: datanode.api.v2.TradingDataService.ListOrders:output_type -> datanode.api.v2.ListOrdersResponse
+	24,  // 363: datanode.api.v2.TradingDataService.ListOrderVersions:output_type -> datanode.api.v2.ListOrderVersionsResponse
+	26,  // 364: datanode.api.v2.TradingDataService.ObserveOrders:output_type -> datanode.api.v2.ObserveOrdersResponse
+	30,  // 365: datanode.api.v2.TradingDataService.ListPositions:output_type -> datanode.api.v2.ListPositionsResponse
+	33,  // 366: datanode.api.v2.TradingDataService.ListAllPositions:output_type -> datanode.api.v2.ListAllPositionsResponse
+	37,  // 367: datanode.api.v2.TradingDataService.ObservePositions:output_type -> datanode.api.v2.ObservePositionsResponse
+	44,  // 368: datanode.api.v2.TradingDataService.ListLedgerEntries:output_type -> datanode.api.v2.ListLedgerEntriesResponse
+	45,  // 369: datanode.api.v2.TradingDataService.ExportLedgerEntries:output_type -> datanode.api.v2.ExportLedgerEntriesResponse
+	49,  // 370: datanode.api.v2.TradingDataService.ListBalanceChanges:output_type -> datanode.api.v2.ListBalanceChangesResponse
+	67,  // 371: datanode.api.v2.TradingDataService.GetLatestMarketData:output_type -> datanode.api.v2.GetLatestMarketDataResponse
+	65,  // 372: datanode.api.v2.TradingDataService.ListLatestMarketData:output_type -> datanode.api.v2.ListLatestMarketDataResponse
+	63,  // 373: datanode.api.v2.TradingDataService.GetLatestMarketDepth:output_type -> datanode.api.v2.GetLatestMarketDepthResponse
+	57,  // 374: datanode.api.v2.TradingDataService.ObserveMarketsDepth:output_type -> datanode.api.v2.ObserveMarketsDepthResponse
+	59,  // 375: datanode.api.v2.TradingDataService.ObserveMarketsDepthUpdates:output_type -> datanode.api.v2.ObserveMarketsDepthUpdatesResponse
+	61,  // 376: datanode.api.v2.TradingDataService.ObserveMarketsData:output_type -> datanode.api.v2.ObserveMarketsDataResponse
+	69,  // 377: datanode.api.v2.TradingDataService.GetMarketDataHistoryByID:output_type -> datanode.api.v2.GetMarketDataHistoryByIDResponse
+	75,  // 378: datanode.api.v2.TradingDataService.ListTransfers:output_type -> datanode.api.v2.ListTransfersResponse
+	79,  // 379: datanode.api.v2.TradingDataService.GetNetworkLimits:output_type -> datanode.api.v2.GetNetworkLimitsResponse
+	87,  // 380: datanode.api.v2.TradingDataService.ListCandleData:output_type -> datanode.api.v2.ListCandleDataResponse
+	85,  // 381: datanode.api.v2.TradingDataService.ObserveCandleData:output_type -> datanode.api.v2.ObserveCandleDataResponse
+	82,  // 382: datanode.api.v2.TradingDataService.ListCandleIntervals:output_type -> datanode.api.v2.ListCandleIntervalsResponse
+	91,  // 383: datanode.api.v2.TradingDataService.ListVotes:output_type -> datanode.api.v2.ListVotesResponse
+	95,  // 384: datanode.api.v2.TradingDataService.ObserveVotes:output_type -> datanode.api.v2.ObserveVotesResponse
+	97,  // 385: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerAddedBundles:output_type -> datanode.api.v2.ListERC20MultiSigSignerAddedBundlesResponse
+	103, // 386: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerRemovedBundles:output_type -> datanode.api.v2.ListERC20MultiSigSignerRemovedBundlesResponse
+	109, // 387: datanode.api.v2.TradingDataService.GetERC20ListAssetBundle:output_type -> datanode.api.v2.GetERC20ListAssetBundleResponse
+	111, // 388: datanode.api.v2.TradingDataService.GetERC20SetAssetLimitsBundle:output_type -> datanode.api.v2.GetERC20SetAssetLimitsBundleResponse
+	113, // 389: datanode.api.v2.TradingDataService.GetERC20WithdrawalApproval:output_type -> datanode.api.v2.GetERC20WithdrawalApprovalResponse
+	115, // 390: datanode.api.v2.TradingDataService.GetLastTrade:output_type -> datanode.api.v2.GetLastTradeResponse
+	117, // 391: datanode.api.v2.TradingDataService.ListTrades:output_type -> datanode.api.v2.ListTradesResponse
+	121, // 392: datanode.api.v2.TradingDataService.ObserveTrades:output_type -> datanode.api.v2.ObserveTradesResponse
+	123, // 393: datanode.api.v2.TradingDataService.GetOracleSpec:output_type -> datanode.api.v2.GetOracleSpecResponse
+	125, // 394: datanode.api.v2.TradingDataService.ListOracleSpecs:output_type -> datanode.api.v2.ListOracleSpecsResponse
+	127, // 395: datanode.api.v2.TradingDataService.ListOracleData:output_type -> datanode.api.v2.ListOracleDataResponse
+	133, // 396: datanode.api.v2.TradingDataService.GetMarket:output_type -> datanode.api.v2.GetMarketResponse
+	135, // 397: datanode.api.v2.TradingDataService.ListMarkets:output_type -> datanode.api.v2.ListMarketsResponse
+	139, // 398: datanode.api.v2.TradingDataService.GetParty:output_type -> datanode.api.v2.GetPartyResponse
+	141, // 399: datanode.api.v2.TradingDataService.ListParties:output_type -> datanode.api.v2.ListPartiesResponse
+	146, // 400: datanode.api.v2.TradingDataService.ListMarginLevels:output_type -> datanode.api.v2.ListMarginLevelsResponse
+	148, // 401: datanode.api.v2.TradingDataService.ObserveMarginLevels:output_type -> datanode.api.v2.ObserveMarginLevelsResponse
+	153, // 402: datanode.api.v2.TradingDataService.ListRewards:output_type -> datanode.api.v2.ListRewardsResponse
+	157, // 403: datanode.api.v2.TradingDataService.ListRewardSummaries:output_type -> datanode.api.v2.ListRewardSummariesResponse
+	160, // 404: datanode.api.v2.TradingDataService.ListEpochRewardSummaries:output_type -> datanode.api.v2.ListEpochRewardSummariesResponse
+	164, // 405: datanode.api.v2.TradingDataService.ObserveRewards:output_type -> datanode.api.v2.ObserveRewardsResponse
+	166, // 406: datanode.api.v2.TradingDataService.GetDeposit:output_type -> datanode.api.v2.GetDepositResponse
+	168, // 407: datanode.api.v2.TradingDataService.ListDeposits:output_type -> datanode.api.v2.ListDepositsResponse
+	172, // 408: datanode.api.v2.TradingDataService.GetWithdrawal:output_type -> datanode.api.v2.GetWithdrawalResponse
+	174, // 409: datanode.api.v2.TradingDataService.ListWithdrawals:output_type -> datanode.api.v2.ListWithdrawalsResponse
+	178, // 410: datanode.api.v2.TradingDataService.GetAsset:output_type -> datanode.api.v2.GetAssetResponse
+	180, // 411: datanode.api.v2.TradingDataService.ListAssets:output_type -> datanode.api.v2.ListAssetsResponse
+	184, // 412: datanode.api.v2.TradingDataService.ListLiquidityProvisions:output_type -> datanode.api.v2.ListLiquidityProvisionsResponse
+	188, // 413: datanode.api.v2.TradingDataService.ObserveLiquidityProvisions:output_type -> datanode.api.v2.ObserveLiquidityProvisionsResponse
+	190, // 414: datanode.api.v2.TradingDataService.GetGovernanceData:output_type -> datanode.api.v2.GetGovernanceDataResponse
+	192, // 415: datanode.api.v2.TradingDataService.ListGovernanceData:output_type -> datanode.api.v2.ListGovernanceDataResponse
+	196, // 416: datanode.api.v2.TradingDataService.ObserveGovernance:output_type -> datanode.api.v2.ObserveGovernanceResponse
+	198, // 417: datanode.api.v2.TradingDataService.ListDelegations:output_type -> datanode.api.v2.ListDelegationsResponse
+	202, // 418: datanode.api.v2.TradingDataService.ObserveDelegations:output_type -> datanode.api.v2.ObserveDelegationsResponse
+	204, // 419: datanode.api.v2.TradingDataService.GetNetworkData:output_type -> datanode.api.v2.GetNetworkDataResponse
+	206, // 420: datanode.api.v2.TradingDataService.GetNode:output_type -> datanode.api.v2.GetNodeResponse
+	208, // 421: datanode.api.v2.TradingDataService.ListNodes:output_type -> datanode.api.v2.ListNodesResponse
+	212, // 422: datanode.api.v2.TradingDataService.ListNodeSignatures:output_type -> datanode.api.v2.ListNodeSignaturesResponse
+	216, // 423: datanode.api.v2.TradingDataService.GetEpoch:output_type -> datanode.api.v2.GetEpochResponse
+	218, // 424: datanode.api.v2.TradingDataService.EstimateFee:output_type -> datanode.api.v2.EstimateFeeResponse
+	220, // 425: datanode.api.v2.TradingDataService.EstimateMargin:output_type -> datanode.api.v2.EstimateMarginResponse
+	222, // 426: datanode.api.v2.TradingDataService.ListNetworkParameters:output_type -> datanode.api.v2.ListNetworkParametersResponse
+	224, // 427: datanode.api.v2.TradingDataService.GetNetworkParameter:output_type -> datanode.api.v2.GetNetworkParameterResponse
+	229, // 428: datanode.api.v2.TradingDataService.ListCheckpoints:output_type -> datanode.api.v2.ListCheckpointsResponse
+	233, // 429: datanode.api.v2.TradingDataService.GetStake:output_type -> datanode.api.v2.GetStakeResponse
+	237, // 430: datanode.api.v2.TradingDataService.GetRiskFactors:output_type -> datanode.api.v2.GetRiskFactorsResponse
+	239, // 431: datanode.api.v2.TradingDataService.ObserveEventBus:output_type -> datanode.api.v2.ObserveEventBusResponse
+	241, // 432: datanode.api.v2.TradingDataService.ObserveLedgerMovements:output_type -> datanode.api.v2.ObserveLedgerMovementsResponse
+	243, // 433: datanode.api.v2.TradingDataService.ListKeyRotations:output_type -> datanode.api.v2.ListKeyRotationsResponse
+	247, // 434: datanode.api.v2.TradingDataService.ListEthereumKeyRotations:output_type -> datanode.api.v2.ListEthereumKeyRotationsResponse
+	251, // 435: datanode.api.v2.TradingDataService.GetVegaTime:output_type -> datanode.api.v2.GetVegaTimeResponse
+	254, // 436: datanode.api.v2.TradingDataService.GetProtocolUpgradeStatus:output_type -> datanode.api.v2.GetProtocolUpgradeStatusResponse
+	256, // 437: datanode.api.v2.TradingDataService.ListProtocolUpgradeProposals:output_type -> datanode.api.v2.ListProtocolUpgradeProposalsResponse
+	260, // 438: datanode.api.v2.TradingDataService.ListCoreSnapshots:output_type -> datanode.api.v2.ListCoreSnapshotsResponse
+	265, // 439: datanode.api.v2.TradingDataService.GetMostRecentNetworkHistorySegment:output_type -> datanode.api.v2.GetMostRecentNetworkHistorySegmentResponse
+	267, // 440: datanode.api.v2.TradingDataService.ListAllNetworkHistorySegments:output_type -> datanode.api.v2.ListAllNetworkHistorySegmentsResponse
+	269, // 441: datanode.api.v2.TradingDataService.GetActiveNetworkHistoryPeerAddresses:output_type -> datanode.api.v2.GetActiveNetworkHistoryPeerAddressesResponse
+	271, // 442: datanode.api.v2.TradingDataService.NetworkHistoryStatus:output_type -> datanode.api.v2.NetworkHistoryStatusResponse
+	273, // 443: datanode.api.v2.TradingDataService.NetworkHistoryBootstrapPeers:output_type -> datanode.api.v2.NetworkHistoryBootstrapPeersResponse
+	275, // 444: datanode.api.v2.TradingDataService.Ping:output_type -> datanode.api.v2.PingResponse
+	358, // [358:445] is the sub-list for method output_type
+	271, // [271:358] is the sub-list for method input_type
 	271, // [271:271] is the sub-list for extension type_name
 	271, // [271:271] is the sub-list for extension extendee
 	0,   // [0:271] is the sub-list for field type_name
@@ -21944,7 +22192,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[266].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PingRequest); i {
+			switch v := v.(*NetworkHistoryStatusRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -21956,6 +22204,54 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[267].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NetworkHistoryStatusResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_data_node_api_v2_trading_data_proto_msgTypes[268].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NetworkHistoryBootstrapPeersRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_data_node_api_v2_trading_data_proto_msgTypes[269].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NetworkHistoryBootstrapPeersResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_data_node_api_v2_trading_data_proto_msgTypes[270].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PingRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_data_node_api_v2_trading_data_proto_msgTypes[271].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*PingResponse); i {
 			case 0:
 				return &v.state
@@ -22039,7 +22335,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_data_node_api_v2_trading_data_proto_rawDesc,
 			NumEnums:      4,
-			NumMessages:   268,
+			NumMessages:   272,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
