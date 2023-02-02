@@ -5,7 +5,7 @@
 ### 🚨 Breaking changes
 - [7419](https://github.com/vegaprotocol/vega/issues/7419) - Remove the deprecated headers with the `Grpc-Metadata-` prefix in `datanode` `API` and `REST` and `GraphQL` gateways.
 - [6963](https://github.com/vegaprotocol/vega/issues/6963) - Remove the legacy fields from network API
-- [7361](https://github.com/vegaprotocol/vega/issues/7361) - Network history loading and current order set tracking - database requires database to be dropped 
+- [7361](https://github.com/vegaprotocol/vega/issues/7361) - Network history loading and current order set tracking - database requires database to be dropped
 
 
 ### 🗑️ Deprecation
@@ -18,6 +18,7 @@
 - [7429](https://github.com/vegaprotocol/vega/issues/7429) - Do not mark wallet and network as incompatible when the patch version doesn't match
 - [6650](https://github.com/vegaprotocol/vega/issues/6650) - Add ability to filter rewards with `fromEpoch` and `toEpoch`
 - [7289](https://github.com/vegaprotocol/vega/issues/7289) - `positionsConnection` query added to `GraphQL`root query with filter for multiple parties and markets
+- [7454](https://github.com/vegaprotocol/vega/issues/7454) - Retention policies for new types do not honour the `lite` or `archive` when added after `init`
 
 ### 🐛 Fixes
 - [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema
@@ -32,6 +33,7 @@
 - [7451](https://github.com/vegaprotocol/vega/issues/7451) - Fix floating point consensus to use voting power rather than node count
 - [7399](https://github.com/vegaprotocol/vega/issues/7399) - Revert previous fix
 - [7399](https://github.com/vegaprotocol/vega/issues/7399) - Add option to filter out settled markets when listing markets in `API` requests
+- [7417](https://github.com/vegaprotocol/vega/issues/7417) - Missing entries in default data retention configuration for `datanode`
 
 ## 0.67.2
 
