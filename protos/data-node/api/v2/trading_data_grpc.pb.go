@@ -84,21 +84,20 @@ type TradingDataServiceClient interface {
 	// Export ledger entries records ledger entries to a csv file.
 	// May or may not contain a date range - if no date range is provided, list all records for all times.
 	//
-	//
 	// Ledger entries can be exported by:
 	//   - export ledger entries for a single party for a given asset within a given time range
 	//   - export ledger entries for a single party for a given asset for all times
 	ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (*ExportLedgerEntriesResponse, error)
-	//  Balances
+	//	Balances
 	//
 	// `ListBalanceChanges` is for querying the change in account balances over a period of time.
 	//
 	// An account is defined as a set of (asset_id, type, party_id, market_id).
-	// - Every account has an associated asset and type.
-	// - Certain account types (for example, the global reward pool) do not have an associated party.
-	//   These are denoted by the special party identifier 'network'
-	// - Certain account types do not have an associated market (for example general party accounts).
-	//   These are denoted by the special market identifier '' (the empty string)
+	//   - Every account has an associated asset and type.
+	//   - Certain account types (for example, the global reward pool) do not have an associated party.
+	//     These are denoted by the special party identifier 'network'
+	//   - Certain account types do not have an associated market (for example general party accounts).
+	//     These are denoted by the special market identifier ” (the empty string)
 	//
 	// `ListBalanceChangesRequest` will return a list of
 	// `(vega_time, asset_id, account_type, party_id, market_id, balance)`
@@ -1629,21 +1628,20 @@ type TradingDataServiceServer interface {
 	// Export ledger entries records ledger entries to a csv file.
 	// May or may not contain a date range - if no date range is provided, list all records for all times.
 	//
-	//
 	// Ledger entries can be exported by:
 	//   - export ledger entries for a single party for a given asset within a given time range
 	//   - export ledger entries for a single party for a given asset for all times
 	ExportLedgerEntries(context.Context, *ExportLedgerEntriesRequest) (*ExportLedgerEntriesResponse, error)
-	//  Balances
+	//	Balances
 	//
 	// `ListBalanceChanges` is for querying the change in account balances over a period of time.
 	//
 	// An account is defined as a set of (asset_id, type, party_id, market_id).
-	// - Every account has an associated asset and type.
-	// - Certain account types (for example, the global reward pool) do not have an associated party.
-	//   These are denoted by the special party identifier 'network'
-	// - Certain account types do not have an associated market (for example general party accounts).
-	//   These are denoted by the special market identifier '' (the empty string)
+	//   - Every account has an associated asset and type.
+	//   - Certain account types (for example, the global reward pool) do not have an associated party.
+	//     These are denoted by the special party identifier 'network'
+	//   - Certain account types do not have an associated market (for example general party accounts).
+	//     These are denoted by the special market identifier ” (the empty string)
 	//
 	// `ListBalanceChangesRequest` will return a list of
 	// `(vega_time, asset_id, account_type, party_id, market_id, balance)`
