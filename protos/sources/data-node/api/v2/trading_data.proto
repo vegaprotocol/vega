@@ -481,6 +481,18 @@ service TradingDataService {
     // List the addresses of all active network history peers
     rpc GetActiveNetworkHistoryPeerAddresses(GetActiveNetworkHistoryPeerAddressesRequest) returns (GetActiveNetworkHistoryPeerAddressesResponse);
 
+    // Network history status
+    //
+    // Retrieves information about the current state of network history
+    // Response contains the network history status
+    rpc NetworkHistoryStatus(NetworkHistoryStatusRequest) returns (NetworkHistoryStatusResponse);
+
+    // Network history bootstrap peers
+    //
+    // Retrieves the nodes bootstrap peers
+    // Response contains the bootstrap peers
+    rpc NetworkHistoryBootstrapPeers(NetworkHistoryBootstrapPeersRequest) returns (NetworkHistoryBootstrapPeersResponse);
+
     // Ping
     //
     // Ping the data node
@@ -609,6 +621,7 @@ message InfoResponse {
     // The commit hash from which the data node was built
     string commit_hash = 2;
 }
+
 
 // -- Orders --
 
@@ -2293,7 +2306,7 @@ message GetMostRecentNetworkHistorySegmentRequest {
 // Get most recent history segment response
 message GetMostRecentNetworkHistorySegmentResponse {
     HistorySegment segment = 1;
-    string swarm_key  = 2;
+    string swarm_key_seed  = 2;
 }
 
 // Request to list all the nodes history segments
@@ -2313,6 +2326,31 @@ message GetActiveNetworkHistoryPeerAddressesRequest {
 message GetActiveNetworkHistoryPeerAddressesResponse {
     repeated string ip_addresses = 1;
 }
+
+// Request to get the status of network history
+message NetworkHistoryStatusRequest {}
+
+// Response containing the status of network history
+message NetworkHistoryStatusResponse {
+    // The ipfs address of this node
+    string ipfs_address = 1;
+    // The swarm key
+    string swarm_key = 2;
+    // The swarm key seed
+    string swarm_key_seed = 3;
+    // The connected peers
+    repeated string connected_peers = 5;
+}
+
+// Request to get the nodes network history bootstrap peers
+message NetworkHistoryBootstrapPeersRequest {}
+
+// Response containing the nodes network history bootstrap peers
+message NetworkHistoryBootstrapPeersResponse {
+    // The bootstrap peers
+    repeated string bootstrap_peers = 1;
+}
+
 
 // Request to ping the data node
 message PingRequest {

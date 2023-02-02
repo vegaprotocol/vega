@@ -58,7 +58,7 @@ func TestInitialiseEmptyDataNode(t *testing.T) {
 				HistorySegmentId:         "segment2",
 				PreviousHistorySegmentId: "segment1",
 			},
-			SwarmKey: "",
+			SwarmKeySeed: "",
 		},
 	}
 
@@ -111,7 +111,7 @@ func TestInitialiseNonEmptyDataNode(t *testing.T) {
 				HistorySegmentId:         "segment4",
 				PreviousHistorySegmentId: "segment3",
 			},
-			SwarmKey: "",
+			SwarmKeySeed: "",
 		},
 	}
 
@@ -170,7 +170,7 @@ func TestLoadingHistoryWithinDatanodeCurrentSpanDoesNothing(t *testing.T) {
 				HistorySegmentId:         "segment4",
 				PreviousHistorySegmentId: "segment3",
 			},
-			SwarmKey: "",
+			SwarmKeySeed: "",
 		},
 	}
 
@@ -206,7 +206,7 @@ func TestWhenMinimumBlockCountExceedsAvailableHistory(t *testing.T) {
 				HistorySegmentId:         "segment2",
 				PreviousHistorySegmentId: "segment1",
 			},
-			SwarmKey: "",
+			SwarmKeySeed: "",
 		},
 	}
 
@@ -330,7 +330,7 @@ func TestInitialiseEmptyDataNodeWhenMultipleContiguousHistories(t *testing.T) {
 				HistorySegmentId:         "segment2",
 				PreviousHistorySegmentId: "segment1",
 			},
-			SwarmKey: "",
+			SwarmKeySeed: "",
 		},
 	}
 
@@ -371,12 +371,12 @@ func TestInitialiseEmptyDataNodeWhenMultipleContiguousHistories(t *testing.T) {
 
 func TestSelectRootSegment(t *testing.T) {
 	responses := map[string]*v2.GetMostRecentNetworkHistorySegmentResponse{
-		"1": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 2000}, SwarmKey: ""},
-		"2": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 3000}, SwarmKey: ""},
-		"3": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 4000}, SwarmKey: ""},
-		"4": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 4000}, SwarmKey: ""},
-		"5": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 3000}, SwarmKey: ""},
-		"6": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 2000}, SwarmKey: ""},
+		"1": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 2000}, SwarmKeySeed: ""},
+		"2": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 3000}, SwarmKeySeed: ""},
+		"3": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 4000}, SwarmKeySeed: ""},
+		"4": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 4000}, SwarmKeySeed: ""},
+		"5": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 3000}, SwarmKeySeed: ""},
+		"6": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 2000}, SwarmKeySeed: ""},
 	}
 
 	selectedResponse := networkhistory.SelectMostRecentHistorySegmentResponse(responses, "")
@@ -385,12 +385,12 @@ func TestSelectRootSegment(t *testing.T) {
 
 func TestSelectRootSegmentWithSwarmKey(t *testing.T) {
 	responses := map[string]*v2.GetMostRecentNetworkHistorySegmentResponse{
-		"1": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 2000}, SwarmKey: "A"},
-		"2": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 3000}, SwarmKey: "A"},
-		"3": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 4000}, SwarmKey: "B"},
-		"4": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 4000}, SwarmKey: "D"},
-		"5": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 3000}, SwarmKey: "A"},
-		"6": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 2000}, SwarmKey: "B"},
+		"1": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 2000}, SwarmKeySeed: "A"},
+		"2": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 3000}, SwarmKeySeed: "A"},
+		"3": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 4000}, SwarmKeySeed: "B"},
+		"4": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 4000}, SwarmKeySeed: "D"},
+		"5": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 3000}, SwarmKeySeed: "A"},
+		"6": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 2000}, SwarmKeySeed: "B"},
 	}
 
 	selectedResponse := networkhistory.SelectMostRecentHistorySegmentResponse(responses, "A")
@@ -399,7 +399,7 @@ func TestSelectRootSegmentWithSwarmKey(t *testing.T) {
 
 func TestSelectRootSegmentWithOneSegment(t *testing.T) {
 	responses := map[string]*v2.GetMostRecentNetworkHistorySegmentResponse{
-		"1": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 2000}, SwarmKey: ""},
+		"1": {Segment: &v2.HistorySegment{FromHeight: 1001, ToHeight: 2000}, SwarmKeySeed: ""},
 	}
 
 	selectedResponse := networkhistory.SelectMostRecentHistorySegmentResponse(responses, "")
