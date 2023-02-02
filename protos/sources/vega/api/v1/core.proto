@@ -429,6 +429,8 @@ message SpamStatistics {
   VoteSpamStatistics votes = 5;
   // Statistics for proof of work difficulty observed per block for the party
   PoWStatistic pow = 6;
+  // Statistics for multisig signatures issued for the party
+  SpamStatistic issue_signatures = 7;
 }
 
 // A response containing all the spam statistics of a party for the current epoch

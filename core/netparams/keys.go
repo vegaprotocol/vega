@@ -118,6 +118,7 @@ const (
 	SpamProtectionMinTokensForDelegation           = "spam.protection.delegation.min.tokens"
 	SpamProtectionMaxBatchSize                     = "spam.protection.max.batchSize"
 	SpamProtectionMinimumWithdrawalQuantumMultiple = "spam.protection.minimumWithdrawalQuantumMultiple"
+	SpamProtectionMinMultisigUpdates               = "spam.protection.minMultisigUpdates"
 
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
@@ -289,4 +290,5 @@ var AllKeys = map[string]struct{}{
 	MarkPriceUpdateMaximumFrequency:                          {},
 	ValidatorPerformanceScalingFactor:                        {},
 	SpamProtectionMinimumWithdrawalQuantumMultiple:           {},
+	SpamProtectionMinMultisigUpdates:                         {},
 }

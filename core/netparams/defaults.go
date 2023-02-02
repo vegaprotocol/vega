@@ -169,6 +169,7 @@ func defaultNetParams() map[string]value {
 		SpamProtectionMaxDelegations:                   NewInt(gteI1).Mutable(true).MustUpdate("390"),
 		SpamProtectionMinTokensForDelegation:           NewDecimal(gteD1).Mutable(true).MustUpdate("1000000000000000000"),
 		SpamProtectionMinimumWithdrawalQuantumMultiple: NewDecimal(gtD0, DecimalLT(num.MustDecimalFromString("1e6"))).Mutable(true).MustUpdate("10"),
+		SpamProtectionMinMultisigUpdates:               NewDecimal(gteD1).Mutable(true).MustUpdate("100000000000000000000"),
 		// no validation for this initially as we configure the
 		// the bootstrapping asset.
 		// validation will be added at node startup, so we can use dynamic stuff
