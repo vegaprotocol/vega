@@ -64,7 +64,9 @@ func (d DistressedOrders) Proto() eventspb.DistressedOrders {
 func (d DistressedOrders) StreamMessage() *eventspb.BusEvent {
 	busEvent := newBusEventFromBase(m.Base)
 	cpy := d.pb
-	busEvent.Event = &cpy
+	busEvent.Event = &eventspb.BusEvent_DistressedOrders{
+		DistressedOrders: &cpy,
+	}
 
 	return busEvent
 }
