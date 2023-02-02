@@ -16,7 +16,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
+
+	"code.vegaprotocol.io/vega/protos"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"github.com/pkg/errors"
@@ -75,6 +78,8 @@ var (
 	eventBufferReadCount    prometheus.Counter
 
 	networkHistoryIpfsStoreBytes prometheus.Gauge
+	// Data Node HTTP bindings that we will check against when updating HTTP metrics.
+	httpBindings *protos.Bindings
 )
 
 // abstract prometheus types.
@@ -686,6 +691,10 @@ func setupMetrics() error {
 	}
 	eventBusConnectionGauge = ac
 
+	httpBindings, err = protos.DataNodeBindings()
+	if err != nil {
+		return err
+	}
 	// Number of calls to each request type
 	h, err = addInstrument(
 		Counter,
@@ -816,12 +825,35 @@ func SetNetworkHistoryIpfsStoreBytes(bytes float64) {
 }
 
 // APIRequestAndTimeREST updates the metrics for REST API calls.
-func APIRequestAndTimeREST(request string, time float64) {
-	if apiRequestCallCounter == nil || apiRequestTimeCounter == nil {
+func APIRequestAndTimeREST(method, request string, time float64) {
+	if apiRequestCallCounter == nil || apiRequestTimeCounter == nil || httpBindings == nil {
 		return
 	}
-	apiRequestCallCounter.WithLabelValues("REST", request).Inc()
-	apiRequestTimeCounter.WithLabelValues("REST", request).Add(time)
+
+	const (
+		invalid = "invalid route"
+		prefix  = "/api/v2/"
+	)
+
+	if !httpBindings.HasRoute(method, request) {
+		apiRequestCallCounter.WithLabelValues("REST", invalid).Inc()
+		apiRequestTimeCounter.WithLabelValues("REST", invalid).Add(time)
+		return
+	}
+
+	uri := request
+
+	// Remove the first slash if it has one
+	if strings.Index(uri, prefix) == 0 {
+		uri = uri[len(prefix):]
+	}
+	// Trim the URI down to something useful
+	if strings.Count(uri, "/") >= 1 {
+		uri = uri[:strings.Index(uri, "/")]
+	}
+
+	apiRequestCallCounter.WithLabelValues("REST", uri).Inc()
+	apiRequestTimeCounter.WithLabelValues("REST", uri).Add(time)
 }
 
 // APIRequestAndTimeGraphQL updates the metrics for GraphQL API calls.
