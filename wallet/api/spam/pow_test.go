@@ -193,6 +193,7 @@ func defaultSpamStats(t *testing.T) *nodetypes.SpamStatistics {
 		Proposals:         &nodetypes.SpamStatistic{},
 		Transfers:         &nodetypes.SpamStatistic{},
 		NodeAnnouncements: &nodetypes.SpamStatistic{},
+		IssuesSignatures:  &nodetypes.SpamStatistic{},
 		Votes: &nodetypes.VoteSpamStatistics{
 			Proposals: map[string]uint64{},
 		},

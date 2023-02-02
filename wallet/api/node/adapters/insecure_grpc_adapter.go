@@ -72,6 +72,7 @@ func (c *InsecureGRPCAdapter) SpamStatistics(ctx context.Context, party string) 
 		Delegations:       toSpamStatistic(r.Statistics.Delegations),
 		Transfers:         toSpamStatistic(r.Statistics.Transfers),
 		NodeAnnouncements: toSpamStatistic(r.Statistics.NodeAnnouncements),
+		IssuesSignatures:  toSpamStatistic(r.Statistics.IssueSignatures),
 		Votes: &nodetypes.VoteSpamStatistics{
 			Proposals:   proposals,
 			MaxForEpoch: r.Statistics.Votes.MaxForEpoch,

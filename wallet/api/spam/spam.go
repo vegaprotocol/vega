@@ -128,6 +128,9 @@ func (s *Handler) CheckSubmission(req *walletpb.SubmitTransactionRequest, newSta
 	case *walletpb.SubmitTransactionRequest_Transfer:
 		s.merge(stats.Transfers, newStats.Transfers)
 		return s.checkTxn(stats.Transfers)
+	case *walletpb.SubmitTransactionRequest_IssueSignatures:
+		s.merge(stats.IssuesSignatures, newStats.IssuesSignatures)
+		return s.checkTxn(stats.IssuesSignatures)
 	case *walletpb.SubmitTransactionRequest_VoteSubmission:
 		s.mergeVotes(stats.Votes, newStats.Votes)
 		return s.checkVote(cmd.VoteSubmission.ProposalId, stats.Votes)

@@ -19,6 +19,7 @@ var (
 		"announcements",
 		"transfers",
 		"votes",
+		"issueSignatures",
 	}
 	proposalID = "default-proposal-id"
 )
@@ -181,6 +182,7 @@ func testOtherTransactionTypesNotBlock(t *testing.T) {
 		Delegations:       &stat,
 		Transfers:         &stat,
 		NodeAnnouncements: &stat,
+		IssuesSignatures:  &stat,
 		Votes: &nodetypes.VoteSpamStatistics{
 			BannedUntil: until,
 		},
@@ -220,6 +222,9 @@ func getSimplePolicyStats(t *testing.T, pubKey, policy string, st nodetypes.Spam
 	case "announcements":
 		spam.NodeAnnouncements = &st
 		req.Command = &walletpb.SubmitTransactionRequest_AnnounceNode{}
+	case "issueSignatures":
+		spam.IssuesSignatures = &st
+		req.Command = &walletpb.SubmitTransactionRequest_IssueSignatures{}
 	case "votes":
 		spam.Votes.MaxForEpoch = st.MaxForEpoch
 		spam.Votes.BannedUntil = st.BannedUntil

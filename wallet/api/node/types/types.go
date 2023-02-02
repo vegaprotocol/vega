@@ -31,6 +31,7 @@ type SpamStatistics struct {
 	Delegations       *SpamStatistic
 	Transfers         *SpamStatistic
 	NodeAnnouncements *SpamStatistic
+	IssuesSignatures  *SpamStatistic
 	Votes             *VoteSpamStatistics
 	PoW               *PoWStatistics
 }
