@@ -398,6 +398,21 @@ func (mr *MockPositionStoreMockRecorder) GetByMarket(arg0, arg1 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByMarket", reflect.TypeOf((*MockPositionStore)(nil).GetByMarket), arg0, arg1)
 }
 
+// GetByMarketAndParties mocks base method.
+func (m *MockPositionStore) GetByMarketAndParties(arg0 context.Context, arg1 string, arg2 []string) ([]entities.Position, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByMarketAndParties", arg0, arg1, arg2)
+	ret0, _ := ret[0].([]entities.Position)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByMarketAndParties indicates an expected call of GetByMarketAndParties.
+func (mr *MockPositionStoreMockRecorder) GetByMarketAndParties(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByMarketAndParties", reflect.TypeOf((*MockPositionStore)(nil).GetByMarketAndParties), arg0, arg1, arg2)
+}
+
 // GetByMarketAndParty mocks base method.
 func (m *MockPositionStore) GetByMarketAndParty(arg0 context.Context, arg1, arg2 string) (entities.Position, error) {
 	m.ctrl.T.Helper()
