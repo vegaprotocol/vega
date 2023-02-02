@@ -140,7 +140,7 @@ func getAllPagedShouldNotIncludeRejectedMarkets(t *testing.T) {
 	err = md.Upsert(ctx, &rejected)
 	require.NoError(t, err, "Saving market entity to database")
 
-	markets, pageInfo, err := md.GetAllPaged(ctx, "", entities.CursorPagination{})
+	markets, pageInfo, err := md.GetAllPaged(ctx, "", entities.CursorPagination{}, true)
 	require.NoError(t, err)
 	assert.Len(t, markets, 1)
 	assert.Equal(t, market.ID, markets[0].ID)
@@ -472,7 +472,7 @@ func testCursorPaginationReturnsTheSpecifiedMarket(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "c612300d", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "c612300d", pagination, true)
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(got))
 	assert.Equal(t, "c612300d", got[0].ID.String())
@@ -504,7 +504,7 @@ func testCursorPaginationReturnsAllMarkets(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, true)
 	require.NoError(t, err)
 	assert.Equal(t, 10, len(got))
 	assert.Equal(t, "02a16077", got[0].ID.String())
@@ -542,7 +542,7 @@ func testCursorPaginationReturnsFirstPage(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, true)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(got))
@@ -581,7 +581,7 @@ func testCursorPaginationReturnsLastPage(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, true)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(got))
@@ -626,7 +626,7 @@ func testCursorPaginationReturnsPageTraversingForward(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, true)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(got))
@@ -671,7 +671,7 @@ func testCursorPaginationReturnsPageTraversingBackward(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, true)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(got))
@@ -709,7 +709,7 @@ func testCursorPaginationReturnsTheSpecifiedMarketNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "c612300d", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "c612300d", pagination, true)
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(got))
 	assert.Equal(t, "c612300d", got[0].ID.String())
@@ -746,7 +746,7 @@ func testCursorPaginationReturnsAllMarketsNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, true)
 	require.NoError(t, err)
 	assert.Equal(t, 10, len(got))
 	assert.Equal(t, "fb1528a5", got[0].ID.String())
@@ -784,7 +784,7 @@ func testCursorPaginationReturnsFirstPageNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, true)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(got))
@@ -823,7 +823,7 @@ func testCursorPaginationReturnsLastPageNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, true)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(got))
@@ -868,7 +868,7 @@ func testCursorPaginationReturnsPageTraversingForwardNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, true)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(got))
@@ -913,7 +913,7 @@ func testCursorPaginationReturnsPageTraversingBackwardNewestFirst(t *testing.T) 
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
 
-	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination, true)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(got))

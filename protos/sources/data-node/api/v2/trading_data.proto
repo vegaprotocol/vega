@@ -16,7 +16,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.67.2";
+    version: "v0.68.0-dev";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz/datanode/rest"
@@ -1534,6 +1534,8 @@ message GetMarketResponse {
 
 message ListMarketsRequest {
     optional Pagination pagination = 2;
+    // Whether or not to include settled markets in response; default to true if not specified.
+    optional bool include_settled = 3;
 }
 
 message ListMarketsResponse {
