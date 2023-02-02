@@ -142,9 +142,9 @@ func (mr *MockMarketStoreMockRecorder) GetAll(arg0, arg1 interface{}) *gomock.Ca
 }
 
 // GetAllPaged mocks base method.
-func (m *MockMarketStore) GetAllPaged(arg0 context.Context, arg1 string, arg2 entities.CursorPagination) ([]entities.Market, entities.PageInfo, error) {
+func (m *MockMarketStore) GetAllPaged(arg0 context.Context, arg1 string, arg2 entities.CursorPagination, arg3 bool) ([]entities.Market, entities.PageInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllPaged", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GetAllPaged", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]entities.Market)
 	ret1, _ := ret[1].(entities.PageInfo)
 	ret2, _ := ret[2].(error)
@@ -152,9 +152,9 @@ func (m *MockMarketStore) GetAllPaged(arg0 context.Context, arg1 string, arg2 en
 }
 
 // GetAllPaged indicates an expected call of GetAllPaged.
-func (mr *MockMarketStoreMockRecorder) GetAllPaged(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockMarketStoreMockRecorder) GetAllPaged(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPaged", reflect.TypeOf((*MockMarketStore)(nil).GetAllPaged), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPaged", reflect.TypeOf((*MockMarketStore)(nil).GetAllPaged), arg0, arg1, arg2, arg3)
 }
 
 // GetByID mocks base method.

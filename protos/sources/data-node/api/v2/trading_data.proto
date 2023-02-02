@@ -1534,6 +1534,8 @@ message GetMarketResponse {
 
 message ListMarketsRequest {
     optional Pagination pagination = 2;
+    // Whether or not to include settled markets in response; default to true if not specified.
+    optional bool include_settled = 3;
 }
 
 message ListMarketsResponse {
