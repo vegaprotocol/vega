@@ -73,8 +73,8 @@ func (ps *Positions) GetByMarketAndParty(ctx context.Context,
 
 func (ps *Positions) GetByMarketAndParties(ctx context.Context, marketIDRaw string, partyIDsRaw []string) ([]entities.Position, error) {
 	marketID := entities.MarketID(marketIDRaw)
-	partyIDs := make([]entities.PartyID, 0, len(partyIDsRaw))
-	in := make([]stirng, 0, len(partyIDsRaw))
+	partyIDs := make([]interface{}, 0, len(partyIDsRaw))
+	in := make([]string, 0, len(partyIDsRaw))
 	bindNum := 2
 	for _, p := range partyIDsRaw {
 		partyIDs = append(partyIDs, entities.PartyID(p))

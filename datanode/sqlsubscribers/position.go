@@ -131,7 +131,7 @@ func (p *Position) handleOrdersClosedEvent(ctx context.Context, event ordersClos
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	// @TODO implement this
-	positions, err := p.store.GetByMarketAndParties(ctx, event.MarketID, event.Parties())
+	positions, err := p.store.GetByMarketAndParties(ctx, event.MarketID(), event.Parties())
 	if err != nil {
 		return fmt.Errorf("failed to get positions: %w", err)
 	}

@@ -200,7 +200,7 @@ func (p *Position) ToProto() *vega.Position {
 		UnrealisedPnl:           p.PendingUnrealisedPnl.Round(0).String(),
 		AverageEntryPrice:       p.PendingAverageEntryMarketPrice.Round(0).String(),
 		UpdatedAt:               timestamp,
-		LossSocialisationAmount: p.LossSocialisationAmount,
+		LossSocialisationAmount: p.LossSocialisationAmount.Round(0).String(),
 		PositionStatus:          p.DistressedStatus,
 	}
 }
