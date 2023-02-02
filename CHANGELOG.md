@@ -13,6 +13,7 @@
 
 ### 🛠 Improvements
 - [6962](https://github.com/vegaprotocol/vega/issues/6962) - Add a dedicated configuration for the wallet service
+- [7434](https://github.com/vegaprotocol/vega/issues/7434) - Update design architecture diagram
 - [7429](https://github.com/vegaprotocol/vega/issues/7429) - Do not mark wallet and network as incompatible when the patch version doesn't match
 - [6650](https://github.com/vegaprotocol/vega/issues/6650) - Add ability to filter rewards with `fromEpoch` and `toEpoch`
 - [7289](https://github.com/vegaprotocol/vega/issues/7289) - `positionsConnection` query added to `GraphQL`root query with filter for multiple parties and markets
@@ -116,7 +117,7 @@
 - [7253](https://github.com/vegaprotocol/vega/issues/7253) - improve the adjustment of delegator weight to avoid overflow
 - [7075](https://github.com/vegaprotocol/vega/issues/7075) - Remove unused expiry field in withdrawal
 
-##  0.65.1
+## 0.65.1
 
 ### 🛠 Improvements
 - [6574](https://github.com/vegaprotocol/vega/issues/6574) - Use same default for the probability of trading for floating point consensus as we do for the value between best bid and ask.
