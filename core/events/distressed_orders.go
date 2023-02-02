@@ -45,7 +45,7 @@ func (d DistressedOrders) Parties() []string {
 }
 
 func (d DistressedOrders) IsMarket(marketID string) bool {
-	return p.pb.MarketId == marketID
+	return d.pb.MarketId == marketID
 }
 
 func (d DistressedOrders) IsParty(partyID string) bool {
@@ -62,7 +62,7 @@ func (d DistressedOrders) Proto() eventspb.DistressedOrders {
 }
 
 func (d DistressedOrders) StreamMessage() *eventspb.BusEvent {
-	busEvent := newBusEventFromBase(m.Base)
+	busEvent := newBusEventFromBase(d.Base)
 	cpy := d.pb
 	busEvent.Event = &eventspb.BusEvent_DistressedOrders{
 		DistressedOrders: &cpy,
@@ -72,7 +72,7 @@ func (d DistressedOrders) StreamMessage() *eventspb.BusEvent {
 }
 
 func (d DistressedOrders) StreamMarketMessage() *eventspb.BusEvent {
-	return m.StreamMessage()
+	return d.StreamMessage()
 }
 
 func DistressedOrdersEventFromStream(ctx context.Context, be *eventspb.BusEvent) *DistressedOrders {

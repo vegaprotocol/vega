@@ -14,6 +14,7 @@ package sqlsubscribers
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -132,12 +133,15 @@ func (p *Position) handleOrdersClosedEvent(ctx context.Context, event ordersClos
 	// @TODO implement this
 	positions, err := p.store.GetByMarketAndParties(ctx, event.MarketID, event.Parties())
 	if err != nil {
-		return errors.Wrap(err, "error getting positions")
+		return fmt.Errorf("failed to get positions: %w", err)
 	}
 	for _, pos := range positions {
 		pos.UpdateOrdersClosed()
-		// an update of an existing position here can't really fail
-		_ = p.updatePosition(ctx, pos)
+		// this update can't really fail, the entity is just added to the batch, but add the check
+		// just in case this changes later on
+		if err := p.updatePosition(ctx, pos); err != nil {
+			return fmt.Errorf("failed to update position: %w", err)
+		}
 	}
 	return nil
 }
