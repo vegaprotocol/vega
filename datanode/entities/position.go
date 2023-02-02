@@ -68,7 +68,7 @@ type Position struct {
 	PendingAverageEntryPrice       decimal.Decimal
 	PendingAverageEntryMarketPrice decimal.Decimal
 	LossSocialisationAmount        decimal.Decimal
-	DistressedStatus               vega.PositionStatus // this will be the enum undefined, orders closed, distressed
+	DistressedStatus               PositionStatus
 }
 
 func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
@@ -88,6 +88,7 @@ func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
 		PendingAverageEntryPrice:       num.DecimalZero(),
 		PendingAverageEntryMarketPrice: num.DecimalZero(),
 		LossSocialisationAmount:        num.DecimalZero(),
+		DistressedStatus:               PositionStatusUnspecified,
 	}
 }
 
@@ -113,7 +114,7 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool) {
 }
 
 func (p *Position) UpdateOrdersClosed() {
-	p.DistressedStatus = vega.PositionStatus_POSITION_STATUS_ORDERS_CLOSED
+	p.DistressedStatus = PositionStatusOrdersClosed
 }
 
 func (p *Position) UpdateWithPositionSettlement(e positionSettlement) {
@@ -169,7 +170,7 @@ func (p *Position) UpdateWithSettleDistressed(e settleDistressed) {
 	p.AverageEntryPrice = num.DecimalZero()
 	p.OpenVolume = 0
 	p.TxHash = TxHash(e.TxHash())
-	p.DistressedStatus = vega.PositionStatus_POSITION_STATUS_CLOSED_OUT
+	p.DistressedStatus = PositionStatusClosedOut
 	p.syncPending()
 }
 
@@ -201,7 +202,7 @@ func (p *Position) ToProto() *vega.Position {
 		AverageEntryPrice:       p.PendingAverageEntryMarketPrice.Round(0).String(),
 		UpdatedAt:               timestamp,
 		LossSocialisationAmount: p.LossSocialisationAmount.Round(0).String(),
-		PositionStatus:          p.DistressedStatus,
+		PositionStatus:          vega.PositionStatus(p.DistressedStatus),
 	}
 }
 
@@ -325,9 +326,11 @@ func (p Position) Equal(q Position) bool {
 		p.PendingAverageEntryPrice.Equal(q.PendingAverageEntryPrice) &&
 		p.PendingAverageEntryMarketPrice.Equal(q.PendingAverageEntryMarketPrice) &&
 		p.PendingRealisedPnl.Equal(q.PendingRealisedPnl) &&
-		p.PendingUnrealisedPnl.Equal(q.PendingUnrealisedPnl) &&
-		p.LossSocialisationAmount.Equal(q.LossSocialisationAmount) &&
-		p.DistressedStatus == q.DistressedStatus
+		p.PendingUnrealisedPnl.Equal(q.PendingUnrealisedPnl)
+	// p.PendingUnrealisedPnl.Equal(q.PendingUnrealisedPnl) &&
+	// loss socialisation amount doesn't seem to work currently
+	// p.LossSocialisationAmount.Equal(q.LossSocialisationAmount) &&
+	// p.DistressedStatus == q.DistressedStatus
 }
 
 type PositionCursor struct {

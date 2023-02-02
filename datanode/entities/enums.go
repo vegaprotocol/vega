@@ -216,6 +216,14 @@ const (
 	OrderErrorNonPersistentOrderOutOfPriceBounds OrderError = vega.OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
 )
 
+type PositionStatus int32
+
+const (
+	PositionStatusUnspecified  = PositionStatus(vega.PositionStatus_POSITION_STATUS_UNSPECIFIED)
+	PositionStatusOrdersClosed = PositionStatus(vega.PositionStatus_POSITION_STATUS_ORDERS_CLOSED)
+	PositionStatusClosedOut    = PositionStatus(vega.PositionStatus_POSITION_STATUS_CLOSED_OUT)
+)
+
 type TransferType int
 
 const (
@@ -754,6 +762,25 @@ func (ns *ValidatorNodeStatus) UnmarshalJSON(src []byte) error {
 		return fmt.Errorf("unknown validator node status: %s", src)
 	}
 	*ns = ValidatorNodeStatus(val)
+	return nil
+}
+
+/************************* Position status  *****************************/
+
+func (p PositionStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := vega.PositionStatus_name[int32(p)]
+	if !ok {
+		return buf, fmt.Errorf("unknown position status: %v", p)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (p *PositionStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.PositionStatus_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown position status: %s", string(src))
+	}
+	*p = PositionStatus(val)
 	return nil
 }
 

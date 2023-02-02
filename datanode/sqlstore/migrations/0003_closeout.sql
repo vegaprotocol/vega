@@ -52,7 +52,7 @@ BEGIN
                                                    pending_average_entry_price=EXCLUDED.pending_average_entry_price,
                                                    pending_average_entry_market_price=EXCLUDED.pending_average_entry_market_price,
                                                    loss_socialisation_amount=EXCLUDED.loss_socialisation_amount,
-                                                   distressed_status=EXCLUDED.distressed_status,
+                                                   distressed_status=EXCLUDED.distressed_status;
     RETURN NULL;
 END;
 $$;
