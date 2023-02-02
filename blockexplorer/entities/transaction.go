@@ -36,6 +36,7 @@ type TxResultRow struct {
 	TxHash    string    `db:"tx_hash"`
 	TxResult  []byte    `db:"tx_result"`
 	Submitter string    `db:"submitter"`
+	CmdType   string    `db:"cmd_type"`
 }
 
 func (t *TxResultRow) ToProto() (*pb.Transaction, error) {
