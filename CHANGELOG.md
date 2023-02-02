@@ -6,16 +6,21 @@
 - [7419](https://github.com/vegaprotocol/vega/issues/7419) - Remove the deprecated headers with the `Grpc-Metadata-` prefix in `datanode` `API` and `REST` and `GraphQL` gateways.
 - [6963](https://github.com/vegaprotocol/vega/issues/6963) - Remove the legacy fields from network API
 - [7361](https://github.com/vegaprotocol/vega/issues/7361) - Network history loading and current order set tracking - database requires database to be dropped
+- [6963](https://github.com/vegaprotocol/vega/issues/7382) - `IssueSignatures` is no longer a validator command and is now protected by the spam engine
+- [7361](https://github.com/vegaprotocol/vega/issues/7361) - Network history loading and current order set tracking - database requires database to be dropped
 
 
 ### 🗑️ Deprecation
 - [7385](https://github.com/vegaprotocol/vega/issues/7385) - Deprecating the `X-Vega-Connection` HTTP header in `datanode` `API` and `REST` and `GraphQL` gateways.
 
 ### 🛠 Improvements
+- [7386](https://github.com/vegaprotocol/vega/issues/7386) - Add indexed filtering by command type to block explorer
 - [6962](https://github.com/vegaprotocol/vega/issues/6962) - Add a dedicated configuration for the wallet service
+- [7434](https://github.com/vegaprotocol/vega/issues/7434) - Update design architecture diagram
 - [7429](https://github.com/vegaprotocol/vega/issues/7429) - Do not mark wallet and network as incompatible when the patch version doesn't match
 - [6650](https://github.com/vegaprotocol/vega/issues/6650) - Add ability to filter rewards with `fromEpoch` and `toEpoch`
 - [7289](https://github.com/vegaprotocol/vega/issues/7289) - `positionsConnection` query added to `GraphQL`root query with filter for multiple parties and markets
+- [7454](https://github.com/vegaprotocol/vega/issues/7454) - Retention policies for new types do not honour the `lite` or `archive` when added after `init`
 - [7469](https://github.com/vegaprotocol/vega/issues/7469) - Sanitize `Prometheus` labels for `HTTP API` requests
 
 ### 🐛 Fixes
@@ -29,6 +34,9 @@
 - [7169](https://github.com/vegaprotocol/vega/issues/7169) - Fix migration, account for existing position data
 - [7427](https://github.com/vegaprotocol/vega/issues/7427) - Fix nil pointer panic on settlement of restored markets.
 - [7451](https://github.com/vegaprotocol/vega/issues/7451) - Fix floating point consensus to use voting power rather than node count
+- [7399](https://github.com/vegaprotocol/vega/issues/7399) - Revert previous fix
+- [7399](https://github.com/vegaprotocol/vega/issues/7399) - Add option to filter out settled markets when listing markets in `API` requests
+- [7417](https://github.com/vegaprotocol/vega/issues/7417) - Missing entries in default data retention configuration for `datanode`
 
 ## 0.67.2
 
@@ -115,7 +123,7 @@
 - [7253](https://github.com/vegaprotocol/vega/issues/7253) - improve the adjustment of delegator weight to avoid overflow
 - [7075](https://github.com/vegaprotocol/vega/issues/7075) - Remove unused expiry field in withdrawal
 
-##  0.65.1
+## 0.65.1
 
 ### 🛠 Improvements
 - [6574](https://github.com/vegaprotocol/vega/issues/6574) - Use same default for the probability of trading for floating point consensus as we do for the value between best bid and ask.

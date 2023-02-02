@@ -1145,7 +1145,13 @@ func (t *tradingDataServiceV2) ListMarkets(ctx context.Context, in *v2.ListMarke
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
-	markets, pageInfo, err := t.marketsService.GetAllPaged(ctx, "", pagination)
+
+	includeSettled := true
+	if in.IncludeSettled != nil {
+		includeSettled = *in.IncludeSettled
+	}
+
+	markets, pageInfo, err := t.marketsService.GetAllPaged(ctx, "", pagination, includeSettled)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}

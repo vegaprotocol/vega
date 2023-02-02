@@ -294,7 +294,6 @@ func NewApp(
 		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.RotateEthereumKeySubmissionCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ProtocolUpgradeCommand, app.CheckProtocolUpgradeProposal).
-		HandleCheckTx(txn.IssueSignatures, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.BatchMarketInstructions, app.CheckBatchMarketInstructions).
 		HandleCheckTx(txn.ProposeCommand, app.CheckPropose)
 

@@ -154,7 +154,7 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 
 	l.Log.Info("Applying Data Retention Policies")
 
-	err = sqlstore.ApplyDataRetentionPolicies(l.conf.SQLStore)
+	err = sqlstore.ApplyDataRetentionPolicies(l.conf.SQLStore, l.Log)
 	if err != nil {
 		return fmt.Errorf("failed to apply data retention policies:%w", err)
 	}
