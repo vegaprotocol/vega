@@ -7,9 +7,8 @@ ALTER TABLE positions
   ADD COLUMN distressed_status position_status_type;
 
 
-  -- we could probably get the current loss socialisation amount by taking loss (abs) + adjustment
 UPDATE positions SET
-  loss_socialisation_amount = 0,
+  loss_socialisation_amount = ABS(loss) - adjustment,
   distressed_status = 'POSITION_STATUS_UNSPECIFIED';
   
 
@@ -22,7 +21,7 @@ ALTER TABLE positions_current
   ADD COLUMN distressed_status position_status_type;
 
 UPDATE positions_current SET
-  loss_socialisation_amount = 0,
+  loss_socialisation_amount = ABS(loss) - adjustment,
   distressed_status = 'POSITION_STATUS_UNSPECIFIED';
 
 ALTER TABLE positions_current
