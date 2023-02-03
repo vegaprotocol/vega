@@ -44,8 +44,9 @@ func Test_DataNodeBindings(t *testing.T) {
 	t.Run("CoreBindings should return the core http bindings", func(t *testing.T) {
 		bindings, err := protos.DataNodeBindings()
 		require.NoError(t, err)
+		wantCount := 82
 
-		assert.Len(t, bindings.HTTP.Rules, 79)
+		assert.Len(t, bindings.HTTP.Rules, wantCount)
 
 		postCount := 0
 		getCount := 0
@@ -65,7 +66,7 @@ func Test_DataNodeBindings(t *testing.T) {
 		}
 
 		assert.Equal(t, 0, postCount)
-		assert.Equal(t, 79, getCount)
+		assert.Equal(t, wantCount, getCount)
 
 		assert.True(t, bindings.HasRoute("GET", "/api/v2/oracle/data"))
 		assert.True(t, bindings.HasRoute("GET", "/api/v2/stream/markets/data"))
