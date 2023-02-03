@@ -66,7 +66,7 @@ func EnsureBinary(path string) error {
 	return nil
 }
 
-// UnzipSource iterates over zip files inside the archive and unzip each of them to destination
+// UnzipSource iterates over zip files inside the archive and unzip each of them to destination.
 func UnzipSource(source, destination string) error {
 	reader, err := zip.OpenReader(source)
 	if err != nil {
