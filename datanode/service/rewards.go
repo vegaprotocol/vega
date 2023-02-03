@@ -25,7 +25,7 @@ type rewardStore interface {
 	GetAll(ctx context.Context) ([]entities.Reward, error)
 	GetByCursor(ctx context.Context, partyID *string, assetID *string, fromEpoch, toEpoch *uint64, p entities.CursorPagination) ([]entities.Reward, entities.PageInfo, error)
 	GetSummaries(ctx context.Context, partyID *string, assetID *string) ([]entities.RewardSummary, error)
-	GetEpochSummaries(ctx context.Context, fromEpoch *uint64, toEpoch *uint64, p entities.CursorPagination) ([]entities.EpochRewardSummary, entities.PageInfo, error)
+	GetEpochSummaries(ctx context.Context, filter entities.RewardSummaryFilter, p entities.CursorPagination) ([]entities.EpochRewardSummary, entities.PageInfo, error)
 }
 
 type Reward struct {
@@ -63,8 +63,8 @@ func (r *Reward) GetSummaries(ctx context.Context, partyID *string, assetID *str
 	return r.store.GetSummaries(ctx, partyID, assetID)
 }
 
-func (r *Reward) GetEpochRewardSummaries(ctx context.Context, fromEpoch *uint64, toEpoch *uint64, p entities.CursorPagination) ([]entities.EpochRewardSummary, entities.PageInfo, error) {
-	return r.store.GetEpochSummaries(ctx, fromEpoch, toEpoch, p)
+func (r *Reward) GetEpochRewardSummaries(ctx context.Context, filter entities.RewardSummaryFilter, p entities.CursorPagination) ([]entities.EpochRewardSummary, entities.PageInfo, error) {
+	return r.store.GetEpochSummaries(ctx, filter, p)
 }
 
 func (r *Reward) Observe(ctx context.Context, retries int, assetID, partyID string) (rewardCh <-chan []entities.Reward, ref uint64) {

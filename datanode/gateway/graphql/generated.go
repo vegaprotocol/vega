@@ -118,6 +118,7 @@ type ResolverRoot interface {
 	Withdrawal() WithdrawalResolver
 	DateRange() DateRangeResolver
 	OrderFilter() OrderFilterResolver
+	RewardSummaryFilter() RewardSummaryFilterResolver
 }
 
 type DirectiveRoot struct {
@@ -1349,7 +1350,7 @@ type ComplexityRoot struct {
 		Deposit                            func(childComplexity int, id string) int
 		Deposits                           func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		Epoch                              func(childComplexity int, id *string) int
-		EpochRewardSummaries               func(childComplexity int, fromEpoch *int, toEpoch *int, pagination *v2.Pagination) int
+		EpochRewardSummaries               func(childComplexity int, filter *v2.RewardSummaryFilter, pagination *v2.Pagination) int
 		Erc20ListAssetBundle               func(childComplexity int, assetID string) int
 		Erc20MultiSigSignerAddedBundles    func(childComplexity int, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) int
 		Erc20MultiSigSignerRemovedBundles  func(childComplexity int, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) int
@@ -2161,7 +2162,7 @@ type QueryResolver interface {
 	ProtocolUpgradeStatus(ctx context.Context) (*ProtocolUpgradeStatus, error)
 	ProtocolUpgradeProposals(ctx context.Context, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) (*v2.ProtocolUpgradeProposalConnection, error)
 	CoreSnapshots(ctx context.Context, pagination *v2.Pagination) (*v2.CoreSnapshotConnection, error)
-	EpochRewardSummaries(ctx context.Context, fromEpoch *int, toEpoch *int, pagination *v2.Pagination) (*v2.EpochRewardSummaryConnection, error)
+	EpochRewardSummaries(ctx context.Context, filter *v2.RewardSummaryFilter, pagination *v2.Pagination) (*v2.EpochRewardSummaryConnection, error)
 	Statistics(ctx context.Context) (*v13.Statistics, error)
 	TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
 	Withdrawal(ctx context.Context, id string) (*vega.Withdrawal, error)
@@ -2319,6 +2320,10 @@ type OrderFilterResolver interface {
 	Status(ctx context.Context, obj *v2.OrderFilter, data []vega.Order_Status) error
 
 	TimeInForce(ctx context.Context, obj *v2.OrderFilter, data []vega.Order_TimeInForce) error
+}
+type RewardSummaryFilterResolver interface {
+	FromEpoch(ctx context.Context, obj *v2.RewardSummaryFilter, data *int) error
+	ToEpoch(ctx context.Context, obj *v2.RewardSummaryFilter, data *int) error
 }
 
 type executableSchema struct {
@@ -7430,7 +7435,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.EpochRewardSummaries(childComplexity, args["fromEpoch"].(*int), args["toEpoch"].(*int), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.EpochRewardSummaries(childComplexity, args["filter"].(*v2.RewardSummaryFilter), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.erc20ListAssetBundle":
 		if e.complexity.Query.Erc20ListAssetBundle == nil {
@@ -9564,6 +9569,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputOrderFilter,
 		ec.unmarshalInputPagination,
 		ec.unmarshalInputPositionsFilter,
+		ec.unmarshalInputRewardSummaryFilter,
 	)
 	first := true
 
@@ -10491,33 +10497,24 @@ func (ec *executionContext) field_Query_deposits_args(ctx context.Context, rawAr
 func (ec *executionContext) field_Query_epochRewardSummaries_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *int
-	if tmp, ok := rawArgs["fromEpoch"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fromEpoch"))
-		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+	var arg0 *v2.RewardSummaryFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalORewardSummaryFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardSummaryFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["fromEpoch"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["toEpoch"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toEpoch"))
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["toEpoch"] = arg1
-	var arg2 *v2.Pagination
+	args["filter"] = arg0
+	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["pagination"] = arg2
+	args["pagination"] = arg1
 	return args, nil
 }
 
@@ -47924,7 +47921,7 @@ func (ec *executionContext) _Query_epochRewardSummaries(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().EpochRewardSummaries(rctx, fc.Args["fromEpoch"].(*int), fc.Args["toEpoch"].(*int), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().EpochRewardSummaries(rctx, fc.Args["filter"].(*v2.RewardSummaryFilter), fc.Args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -61904,6 +61901,64 @@ func (ec *executionContext) unmarshalInputPositionsFilter(ctx context.Context, o
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketIds"))
 			it.MarketIds, err = ec.unmarshalOID2ᚕstringᚄ(ctx, v)
 			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputRewardSummaryFilter(ctx context.Context, obj interface{}) (v2.RewardSummaryFilter, error) {
+	var it v2.RewardSummaryFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"assetIds", "marketIds", "fromEpoch", "toEpoch"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "assetIds":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetIds"))
+			it.AssetIds, err = ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "marketIds":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketIds"))
+			it.MarketIds, err = ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "fromEpoch":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fromEpoch"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.RewardSummaryFilter().FromEpoch(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "toEpoch":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toEpoch"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.RewardSummaryFilter().ToEpoch(ctx, &it, data); err != nil {
 				return it, err
 			}
 		}
@@ -83593,6 +83648,14 @@ func (ec *executionContext) marshalORewardSummaryEdge2ᚖcodeᚗvegaprotocolᚗi
 		return graphql.Null
 	}
 	return ec._RewardSummaryEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalORewardSummaryFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardSummaryFilter(ctx context.Context, v interface{}) (*v2.RewardSummaryFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputRewardSummaryFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalORewardsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.RewardsConnection) graphql.Marshaler {
