@@ -94,10 +94,6 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the validators should have the following val scores for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
 		return steps.ValidatorsShouldHaveTheFollowingScores(execsetup.broker, table, epoch)
 	})
-	s.Step(`^the global reward account gets the following deposits:$`, func(table *godog.Table) error {
-		return steps.DepositToRewardAccount(execsetup.collateralEngine, table, execsetup.netDeposits)
-	})
-
 	s.Step(`^the parties receive the following reward for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
 		return steps.PartiesShouldReceiveTheFollowingReward(execsetup.broker, table, epoch)
 	})
