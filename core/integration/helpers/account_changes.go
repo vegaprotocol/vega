@@ -8,7 +8,8 @@ import (
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
-func ReconcileAccountChanges(before, after []types.Account, depositsInBetween []types.Deposit, transfersInBetween []*types.LedgerEntry) error {
+// ReconcileAccountChanges takes account balances before the step, modifies them based on supplied transfer, deposits, withdrawals as well as insurance pool balance changes intitiated by test code (not regular flow), and then compares them to account balances after the step.
+func ReconcileAccountChanges(before, after []types.Account, deposits []types.Deposit, withdrawals []types.Withdrawal, insurancePoolDeposits map[string]*num.Int, transfersInBetween []*types.LedgerEntry) error {
 	bmp, err := mapFromAccount(before)
 	if err != nil {
 		return err
@@ -18,17 +19,45 @@ func ReconcileAccountChanges(before, after []types.Account, depositsInBetween []
 		return err
 	}
 
-	for _, d := range depositsInBetween {
-		genAccId := fmt.Sprintf("!%v%v%v", d.GetPartyId(), d.GetAsset(), vega.AccountType_value[vega.AccountType_ACCOUNT_TYPE_GENERAL.String()])
-		if _, ok := bmp[genAccId]; !ok {
-			bmp[genAccId] = num.IntZero()
-		}
-
+	for _, d := range deposits {
 		amt, err := stringToBigInt(d.GetAmount())
 		if err != nil {
 			return err
 		}
+
+		genAccId := genAccId(d.GetPartyId(), d.GetAsset())
+		if _, ok := bmp[genAccId]; !ok {
+			bmp[genAccId] = num.IntZero()
+		}
+
 		bmp[genAccId].Add(amt)
+	}
+
+	for _, w := range withdrawals {
+		amt, err := stringToBigInt(w.GetAmount())
+		if err != nil {
+			return err
+		}
+
+		genAccId := genAccId(w.GetPartyId(), w.GetAsset())
+		accBal, ok := bmp[genAccId]
+
+		if !ok {
+			return fmt.Errorf("account %s not found", genAccId)
+		}
+
+		if accBal.LT(amt) {
+			return fmt.Errorf("account %s balance couldn't support the withdrawal specified", genAccId)
+		}
+
+		bmp[genAccId] = accBal.Sub(amt)
+	}
+
+	for acc, amt := range insurancePoolDeposits {
+		if _, ok := bmp[acc]; !ok {
+			bmp[acc] = num.IntZero()
+		}
+		bmp[acc].Add(amt)
 	}
 
 	for _, t := range transfersInBetween {
@@ -53,7 +82,7 @@ func ReconcileAccountChanges(before, after []types.Account, depositsInBetween []
 	for acc, value := range amp {
 		reconciledValue := bmp[acc]
 		if !value.IsZero() && (reconciledValue == nil || !reconciledValue.EQ(value)) {
-			return fmt.Errorf("unexpected value for '%s' account", acc)
+			return fmt.Errorf("'%s' account balance: '%v', expected: '%v'", acc, value, reconciledValue)
 		}
 	}
 
@@ -78,4 +107,8 @@ func stringToBigInt(amnt string) (*num.Int, error) {
 		return nil, fmt.Errorf("error encountered during conversion of '%s' to num.Int", amnt)
 	}
 	return amt, nil
+}
+
+func genAccId(partyId, asset string) string {
+	return fmt.Sprintf("!%v%v%v", partyId, asset, vega.AccountType_value[vega.AccountType_ACCOUNT_TYPE_GENERAL.String()])
 }

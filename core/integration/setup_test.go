@@ -90,9 +90,11 @@ type executionTestSetup struct {
 	netDeposits *num.Uint
 
 	// record accounts before steps
-	accountsBefore        []protos.Account
-	ledgerMovementsBefore int
-	depositsBefore        int
+	accountsBefore                []protos.Account
+	ledgerMovementsBefore         int
+	depositsBefore                int
+	withdrawalsBefore             int
+	insurancePoolDepositsOverStep map[string]*num.Int
 
 	ntry           *notary.SnapshotNotary
 	stateVarEngine *stubs.StateVarStub
