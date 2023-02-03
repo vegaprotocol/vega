@@ -22,7 +22,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
     # setup accounts
 
     Given the insurance pool balance should be "0" for the market "ETH/DEC19"
-    Given the initial insurance pool balance is "15000" for the markets:
+    Given the initial insurance pool balance is "15000" for all the markets
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount     |
       | sellSideProvider | USD   | 1000000000 |

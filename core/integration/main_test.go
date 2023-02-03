@@ -145,7 +145,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	// Other steps
-	s.Step(`^the initial insurance pool balance is "([^"]*)" for the markets:$`, func(amountstr string) error {
+	s.Step(`^the initial insurance pool balance is "([^"]*)" for all the markets$`, func(amountstr string) error {
 		amount, _ := num.UintFromString(amountstr, 10)
 		for _, mkt := range execsetup.markets {
 			asset, _ := mkt.GetAsset()
