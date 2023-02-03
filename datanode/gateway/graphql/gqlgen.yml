@@ -493,6 +493,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.CoreSnapshotEdge
   CoreSnapshotData:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.CoreSnapshotData
+  RewardSummaryFilter:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.RewardSummaryFilter
   EpochRewardSummaryConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EpochRewardSummaryConnection
   EpochRewardSummaryEdge:

@@ -47,15 +47,15 @@ func NewDefaultConfig() Config {
 	}
 }
 
-func (c Config) GetSwarmKey(log *logging.Logger, chainID string) string {
-	swarmKey := chainID
+func (c Config) GetSwarmKeySeed(log *logging.Logger, chainID string) string {
+	swarmKeySeed := chainID
 	if len(c.SwarmKeyOverride) > 0 {
-		swarmKey = c.SwarmKeyOverride
-		log.Info("Using swarm key override as the swarm key", logging.String("swarm key", c.SwarmKeyOverride))
+		swarmKeySeed = c.SwarmKeyOverride
+		log.Info("Using swarm key override as the swarm key seed", logging.String("swarm key seed", c.SwarmKeyOverride))
 	} else {
-		log.Info("Using chain id as the swarm key", logging.String("swarm key", c.SwarmKeyOverride))
+		log.Info("Using chain id as the swarm key seed", logging.String("swarm key seed", c.SwarmKeyOverride))
 	}
-	return swarmKey
+	return swarmKeySeed
 }
 
 func GenerateIdentityFromSeed(seed []byte) (config.Identity, error) {

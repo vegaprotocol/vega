@@ -3,10 +3,12 @@
 ## Unreleased 0.68.0
 
 ### 🚨 Breaking changes
+- [7304](https://github.com/vegaprotocol/vega/issues/7304) - In the `datanode` `GraphQL` schema, move `fromEpoch` and `toEpoch` into a new `filter` for `epochRewardSummaries` query. Also add `assetIds` and `marketIds` to the same filter. 
 - [7419](https://github.com/vegaprotocol/vega/issues/7419) - Remove the deprecated headers with the `Grpc-Metadata-` prefix in `datanode` `API` and `REST` and `GraphQL` gateways.
 - [6963](https://github.com/vegaprotocol/vega/issues/6963) - Remove the legacy fields from network API
 - [7361](https://github.com/vegaprotocol/vega/issues/7361) - Network history loading and current order set tracking - database requires database to be dropped
 - [6963](https://github.com/vegaprotocol/vega/issues/7382) - `IssueSignatures` is no longer a validator command and is now protected by the spam engine
+
 
 ### 🗑️ Deprecation
 - [7385](https://github.com/vegaprotocol/vega/issues/7385) - Deprecating the `X-Vega-Connection` HTTP header in `datanode` `API` and `REST` and `GraphQL` gateways.
@@ -19,6 +21,7 @@
 - [6650](https://github.com/vegaprotocol/vega/issues/6650) - Add ability to filter rewards with `fromEpoch` and `toEpoch`
 - [7289](https://github.com/vegaprotocol/vega/issues/7289) - `positionsConnection` query added to `GraphQL`root query with filter for multiple parties and markets
 - [7454](https://github.com/vegaprotocol/vega/issues/7454) - Retention policies for new types do not honour the `lite` or `archive` when added after `init`
+- [7469](https://github.com/vegaprotocol/vega/issues/7469) - Sanitize `Prometheus` labels for `HTTP API` requests
 
 ### 🐛 Fixes
 - [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema

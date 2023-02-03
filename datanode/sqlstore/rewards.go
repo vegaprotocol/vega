@@ -17,10 +17,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/georgysavva/scany/pgxscan"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	"github.com/georgysavva/scany/pgxscan"
 )
 
 type Rewards struct {
@@ -112,47 +113,30 @@ func (rs *Rewards) GetSummaries(ctx context.Context,
 
 // GetEpochSummaries returns paged epoch reward summary aggregated by asset, market, and reward type for a given range of epochs.
 func (rs *Rewards) GetEpochSummaries(ctx context.Context,
-	fromEpoch *uint64,
-	toEpoch *uint64,
+	filter entities.RewardSummaryFilter,
 	pagination entities.CursorPagination,
 ) ([]entities.EpochRewardSummary, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
-	query := `SELECT epoch_id, asset_id, market_id, reward_type, sum(amount) as amount FROM rewards`
-
-	if fromEpoch != nil && toEpoch != nil {
-		query = fmt.Sprintf("%s WHERE epoch_id >=%s and epoch_id<=%s", query, "$1", "$2")
-	} else if fromEpoch != nil {
-		query = fmt.Sprintf("%s WHERE epoch_id >=%s", query, "$1")
-	} else if toEpoch != nil {
-		query = fmt.Sprintf("%s WHERE epoch_id <=%s", query, "$1")
+	query := `SELECT epoch_id, asset_id, market_id, reward_type, sum(amount) as amount FROM rewards `
+	where, args, err := FilterRewardsQuery(filter)
+	if err != nil {
+		return nil, pageInfo, err
 	}
 
-	query = fmt.Sprintf("%s GROUP BY epoch_id, asset_id, market_id, reward_type", query)
-	var err error
+	query = fmt.Sprintf("%s %s GROUP BY epoch_id, asset_id, market_id, reward_type", query, where)
 	query, _, err = PaginateQuery[entities.EpochRewardSummaryCursor](query, []interface{}{}, rewardsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}
 
-	summaries := []entities.EpochRewardSummary{}
+	var summaries []entities.EpochRewardSummary
 	defer metrics.StartSQLQuery("Rewards", "GetEpochSummaries")()
 
-	if fromEpoch != nil && toEpoch != nil {
-		err = pgxscan.Select(ctx, rs.Connection, &summaries, query, fromEpoch, toEpoch)
-	} else if fromEpoch != nil {
-		err = pgxscan.Select(ctx, rs.Connection, &summaries, query, fromEpoch)
-	} else if toEpoch != nil {
-		err = pgxscan.Select(ctx, rs.Connection, &summaries, query, toEpoch)
-	} else {
-		err = pgxscan.Select(ctx, rs.Connection, &summaries, query)
-	}
-
-	if err != nil {
+	if err = pgxscan.Select(ctx, rs.Connection, &summaries, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("querying epoch reward summaries: %w", err)
 	}
 
 	summaries, pageInfo = entities.PageEntities[*v2.EpochRewardSummaryEdge](summaries, pagination)
-
 	return summaries, pageInfo, nil
 }
 
@@ -184,4 +168,49 @@ func addRewardWhereClause(query string, args []interface{}, partyIDHex, assetIDH
 	}
 
 	return query, args
+}
+
+// FilterRewardsQuery returns a WHERE part of the query and args for filtering the rewards table.
+func FilterRewardsQuery(filter entities.RewardSummaryFilter) (string, []any, error) {
+	var (
+		args       []any
+		conditions []string
+	)
+
+	if len(filter.AssetIDs) > 0 {
+		assetIDs := make([][]byte, len(filter.AssetIDs))
+		for i, assetID := range filter.AssetIDs {
+			bytes, err := assetID.Bytes()
+			if err != nil {
+				return "", nil, fmt.Errorf("could not decode asset ID: %w", err)
+			}
+			assetIDs[i] = bytes
+		}
+		conditions = append(conditions, fmt.Sprintf("asset_id = ANY(%s)", nextBindVar(&args, assetIDs)))
+	}
+
+	if len(filter.MarketIDs) > 0 {
+		marketIDs := make([][]byte, len(filter.MarketIDs))
+		for i, marketID := range filter.MarketIDs {
+			bytes, err := marketID.Bytes()
+			if err != nil {
+				return "", nil, fmt.Errorf("could not decode market ID: %w", err)
+			}
+			marketIDs[i] = bytes
+		}
+		conditions = append(conditions, fmt.Sprintf("market_id = ANY(%s)", nextBindVar(&args, marketIDs)))
+	}
+
+	if filter.FromEpoch != nil {
+		conditions = append(conditions, fmt.Sprintf("epoch_id >= %s", nextBindVar(&args, filter.FromEpoch)))
+	}
+
+	if filter.ToEpoch != nil {
+		conditions = append(conditions, fmt.Sprintf("epoch_id <= %s", nextBindVar(&args, filter.ToEpoch)))
+	}
+
+	if len(conditions) == 0 {
+		return "", nil, nil
+	}
+	return " WHERE " + strings.Join(conditions, " AND "), args, nil
 }

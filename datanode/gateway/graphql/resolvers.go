@@ -27,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -374,6 +375,11 @@ func (r *VegaResolverRoot) OrderFilter() OrderFilterResolver {
 	return (*orderFilterResolver)(r)
 }
 
+// RewardSummaryFilter returns RewardSummaryFilterResolver implementation.
+func (r *VegaResolverRoot) RewardSummaryFilter() RewardSummaryFilterResolver {
+	return (*rewardSummaryFilterResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(ctx context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -639,8 +645,8 @@ func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, n
 	res, err := r.tradingDataClientV2.ListERC20MultiSigSignerAddedBundles(
 		ctx, &v2.ListERC20MultiSigSignerAddedBundlesRequest{
 			NodeId:     nodeID,
-			Submitter:  fromPtr(submitter),
-			EpochSeq:   fromPtr(epochSeq),
+			Submitter:  ptr.UnBox(submitter),
+			EpochSeq:   ptr.UnBox(epochSeq),
 			Pagination: pagination,
 		})
 	if err != nil {
@@ -673,8 +679,8 @@ func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context,
 	res, err := r.tradingDataClientV2.ListERC20MultiSigSignerRemovedBundles(
 		ctx, &v2.ListERC20MultiSigSignerRemovedBundlesRequest{
 			NodeId:     nodeID,
-			Submitter:  fromPtr(submitter),
-			EpochSeq:   fromPtr(epochSeq),
+			Submitter:  ptr.UnBox(submitter),
+			EpochSeq:   ptr.UnBox(epochSeq),
 			Pagination: pagination,
 		})
 	if err != nil {
@@ -701,13 +707,6 @@ func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context,
 		Edges:    edges,
 		PageInfo: res.Bundles.PageInfo,
 	}, nil
-}
-
-func fromPtr[T any](ptr *T) (ret T) {
-	if ptr != nil {
-		ret = *ptr
-	}
-	return
 }
 
 func (r *myQueryResolver) Withdrawal(ctx context.Context, wid string) (*types.Withdrawal, error) {
@@ -982,24 +981,15 @@ func (r *myQueryResolver) CoreSnapshots(ctx context.Context, pagination *v2.Pagi
 	return resp.CoreSnapshots, nil
 }
 
-func (r *myQueryResolver) EpochRewardSummaries(ctx context.Context, fromEpoch *int, toEpoch *int, pagination *v2.Pagination) (*v2.EpochRewardSummaryConnection, error) {
-	var from, to *uint64
-	if fromEpoch != nil {
-		from = new(uint64)
-		if *fromEpoch < 0 {
-			return nil, errors.New("invalid fromEpoch for reward summary - must be positive")
-		}
-		*from = uint64(*fromEpoch)
+func (r *myQueryResolver) EpochRewardSummaries(
+	ctx context.Context,
+	filter *v2.RewardSummaryFilter,
+	pagination *v2.Pagination,
+) (*v2.EpochRewardSummaryConnection, error) {
+	req := v2.ListEpochRewardSummariesRequest{
+		Filter:     filter,
+		Pagination: pagination,
 	}
-	if toEpoch != nil {
-		to = new(uint64)
-		if *toEpoch < 0 {
-			return nil, errors.New("invalid toEpoch for reward summary - must be positive")
-		}
-		*to = uint64(*toEpoch)
-	}
-
-	req := v2.ListEpochRewardSummariesRequest{FromEpoch: to, ToEpoch: from, Pagination: pagination}
 	resp, err := r.tradingDataClientV2.ListEpochRewardSummaries(ctx, &req)
 	if err != nil {
 		return nil, err
