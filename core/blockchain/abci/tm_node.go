@@ -143,4 +143,8 @@ func loadConfig(homeDir string) (*config.Config, error) {
 func overwriteConfig(config *config.Config) {
 	config.Consensus.SkipTimeoutCommit = true
 	config.Consensus.CreateEmptyBlocks = true
+	// enforce using priority mempool
+	config.Mempool.Version = "v1"
+	// enforce compatibility
+	config.P2P.MaxPacketMsgPayloadSize = 16384
 }

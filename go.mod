@@ -36,7 +36,7 @@ require (
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.nanomsg.org/mangos/v3 v3.2.1
 	go.uber.org/zap v1.23.0
-	golang.org/x/crypto v0.1.0
+	golang.org/x/crypto v0.4.0
 	google.golang.org/grpc v1.50.1
 	google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8
 )
@@ -82,9 +82,9 @@ require (
 	github.com/vegaprotocol/go-slip10 v0.1.0
 	github.com/vektah/gqlparser/v2 v2.5.1
 	github.com/wk8/go-ordered-map/v2 v2.0.0
-	golang.org/x/sync v0.0.0-20220929204114-8fcdb60fdcc0
-	golang.org/x/sys v0.1.0
-	golang.org/x/term v0.1.0
+	golang.org/x/sync v0.1.0
+	golang.org/x/sys v0.3.0
+	golang.org/x/term v0.3.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
@@ -253,7 +253,6 @@ require (
 	github.com/prometheus/statsd_exporter v0.21.0 // indirect
 	github.com/raulk/go-watchdog v1.3.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spacemonkeygo/spacelog v0.0.0-20180420211403-2296661a0572 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
@@ -302,8 +301,7 @@ require (
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/btcsuite/btcd v0.22.2 // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.2.1 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/confio/ics23/go v0.7.0 // indirect
@@ -378,10 +376,10 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
-	golang.org/x/mod v0.6.0 // indirect
-	golang.org/x/net v0.1.0 // indirect
-	golang.org/x/text v0.4.0 // indirect
-	golang.org/x/tools v0.2.0 // indirect
+	golang.org/x/mod v0.7.0 // indirect
+	golang.org/x/net v0.4.0 // indirect
+	golang.org/x/text v0.5.0 // indirect
+	golang.org/x/tools v0.4.0 // indirect
 	gonum.org/v1/gonum v0.12.0 // indirect
 	google.golang.org/genproto v0.0.0-20221014213838-99cd37c6964a // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
@@ -396,4 +394,4 @@ replace (
 	github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.3.1-uint256
 )
 
-replace github.com/tendermint/tendermint => github.com/informalsystems/tendermint v0.34.24
+replace github.com/tendermint/tendermint => github.com/informalsystems/tendermint v0.34.25
