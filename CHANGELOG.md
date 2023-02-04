@@ -22,6 +22,8 @@
 - [7289](https://github.com/vegaprotocol/vega/issues/7289) - `positionsConnection` query added to `GraphQL`root query with filter for multiple parties and markets
 - [7454](https://github.com/vegaprotocol/vega/issues/7454) - Retention policies for new types do not honour the `lite` or `archive` when added after `init`
 - [7469](https://github.com/vegaprotocol/vega/issues/7469) - Sanitize `Prometheus` labels for `HTTP API` requests
+- [7495](https://github.com/vegaprotocol/vega/issues/7495) - Upgrade `tendermint` to 0.34.25
+- [7496](https://github.com/vegaprotocol/vega/issues/7496) - Enforce using priority `mempool` and max packet size in `tendermint config`
 
 ### 🐛 Fixes
 - [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema
