@@ -68,12 +68,12 @@ type TradingDataServiceClient interface {
 	ObservePositions(ctx context.Context, in *ObservePositionsRequest, opts ...grpc.CallOption) (TradingDataService_ObservePositionsClient, error)
 	// Ledger entries
 	//
-	// Get ledger entries by asset, market, party, account type, transfer type within the given date range.
+	// List ledger entries by asset, market, party, account type and transfer type within the given date range.
 	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
 	// It returns a time series (implemented as a list of AggregateLedgerEntry structs), with a row for every time
 	// the summed ledger entries of the set of specified accounts changes.
-	// Listed queries should be limited to a single party from each side only. If no or more than one parties are provided
-	// for sending and receiving accounts - the query returns error.
+	// Listed entries should be limited to a single party from each side only. If zero or more than one party is provided
+	// for each of the sides - sending and receiving accounts, the query returns an error.
 	//
 	// Entries can be queried by:
 	//   - listing ledger entries with filtering on the sending account (market_id, asset_id, account_type)
@@ -90,7 +90,7 @@ type TradingDataServiceClient interface {
 	ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (*ExportLedgerEntriesResponse, error)
 	//	Balances
 	//
-	// `ListBalanceChanges` is for querying the change in account balances over a period of time.
+	// `ListBalanceChanges` queries the change in account balances over a period of time.
 	//
 	// An account is defined as a set of (asset_id, type, party_id, market_id).
 	//   - Every account has an associated asset and type.
@@ -139,7 +139,7 @@ type TradingDataServiceClient interface {
 	//
 	// Get the current network limits (is bootstrapping finished, are proposals enabled etc..)
 	GetNetworkLimits(ctx context.Context, in *GetNetworkLimitsRequest, opts ...grpc.CallOption) (*GetNetworkLimitsResponse, error)
-	// Candles list
+	// Candle data
 	//
 	// Get candle data for a given candle ID
 	ListCandleData(ctx context.Context, in *ListCandleDataRequest, opts ...grpc.CallOption) (*ListCandleDataResponse, error)
@@ -149,7 +149,7 @@ type TradingDataServiceClient interface {
 	ObserveCandleData(ctx context.Context, in *ObserveCandleDataRequest, opts ...grpc.CallOption) (TradingDataService_ObserveCandleDataClient, error)
 	// Candle intervals list
 	//
-	// Get all available intervals for a given market along with the corresponding candle id
+	// Get all available intervals for a given market along with the corresponding candle ID
 	ListCandleIntervals(ctx context.Context, in *ListCandleIntervalsRequest, opts ...grpc.CallOption) (*ListCandleIntervalsResponse, error)
 	// Votes list
 	//
@@ -197,7 +197,7 @@ type TradingDataServiceClient interface {
 	GetOracleSpec(ctx context.Context, in *GetOracleSpecRequest, opts ...grpc.CallOption) (*GetOracleSpecResponse, error)
 	// Oracle Spec list
 	//
-	// Get the oracle specs
+	// List specs for an oracle
 	ListOracleSpecs(ctx context.Context, in *ListOracleSpecsRequest, opts ...grpc.CallOption) (*ListOracleSpecsResponse, error)
 	// Oracle data list
 	//
@@ -205,7 +205,7 @@ type TradingDataServiceClient interface {
 	ListOracleData(ctx context.Context, in *ListOracleDataRequest, opts ...grpc.CallOption) (*ListOracleDataResponse, error)
 	// Market
 	//
-	// Get all markets using a cursor based pagination model
+	// Get information about a specific market using its ID
 	GetMarket(ctx context.Context, in *GetMarketRequest, opts ...grpc.CallOption) (*GetMarketResponse, error)
 	// Markets list
 	//
@@ -365,7 +365,7 @@ type TradingDataServiceClient interface {
 	GetVegaTime(ctx context.Context, in *GetVegaTimeRequest, opts ...grpc.CallOption) (*GetVegaTimeResponse, error)
 	// Protocol upgrade status
 	//
-	// Get status of protocol upgrades
+	// Get status of protocol upgrade
 	GetProtocolUpgradeStatus(ctx context.Context, in *GetProtocolUpgradeStatusRequest, opts ...grpc.CallOption) (*GetProtocolUpgradeStatusResponse, error)
 	// Protocol upgrade proposals
 	//
@@ -1612,12 +1612,12 @@ type TradingDataServiceServer interface {
 	ObservePositions(*ObservePositionsRequest, TradingDataService_ObservePositionsServer) error
 	// Ledger entries
 	//
-	// Get ledger entries by asset, market, party, account type, transfer type within the given date range.
+	// List ledger entries by asset, market, party, account type and transfer type within the given date range.
 	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
 	// It returns a time series (implemented as a list of AggregateLedgerEntry structs), with a row for every time
 	// the summed ledger entries of the set of specified accounts changes.
-	// Listed queries should be limited to a single party from each side only. If no or more than one parties are provided
-	// for sending and receiving accounts - the query returns error.
+	// Listed entries should be limited to a single party from each side only. If zero or more than one party is provided
+	// for each of the sides - sending and receiving accounts, the query returns an error.
 	//
 	// Entries can be queried by:
 	//   - listing ledger entries with filtering on the sending account (market_id, asset_id, account_type)
@@ -1634,7 +1634,7 @@ type TradingDataServiceServer interface {
 	ExportLedgerEntries(context.Context, *ExportLedgerEntriesRequest) (*ExportLedgerEntriesResponse, error)
 	//	Balances
 	//
-	// `ListBalanceChanges` is for querying the change in account balances over a period of time.
+	// `ListBalanceChanges` queries the change in account balances over a period of time.
 	//
 	// An account is defined as a set of (asset_id, type, party_id, market_id).
 	//   - Every account has an associated asset and type.
@@ -1683,7 +1683,7 @@ type TradingDataServiceServer interface {
 	//
 	// Get the current network limits (is bootstrapping finished, are proposals enabled etc..)
 	GetNetworkLimits(context.Context, *GetNetworkLimitsRequest) (*GetNetworkLimitsResponse, error)
-	// Candles list
+	// Candle data
 	//
 	// Get candle data for a given candle ID
 	ListCandleData(context.Context, *ListCandleDataRequest) (*ListCandleDataResponse, error)
@@ -1693,7 +1693,7 @@ type TradingDataServiceServer interface {
 	ObserveCandleData(*ObserveCandleDataRequest, TradingDataService_ObserveCandleDataServer) error
 	// Candle intervals list
 	//
-	// Get all available intervals for a given market along with the corresponding candle id
+	// Get all available intervals for a given market along with the corresponding candle ID
 	ListCandleIntervals(context.Context, *ListCandleIntervalsRequest) (*ListCandleIntervalsResponse, error)
 	// Votes list
 	//
@@ -1741,7 +1741,7 @@ type TradingDataServiceServer interface {
 	GetOracleSpec(context.Context, *GetOracleSpecRequest) (*GetOracleSpecResponse, error)
 	// Oracle Spec list
 	//
-	// Get the oracle specs
+	// List specs for an oracle
 	ListOracleSpecs(context.Context, *ListOracleSpecsRequest) (*ListOracleSpecsResponse, error)
 	// Oracle data list
 	//
@@ -1749,7 +1749,7 @@ type TradingDataServiceServer interface {
 	ListOracleData(context.Context, *ListOracleDataRequest) (*ListOracleDataResponse, error)
 	// Market
 	//
-	// Get all markets using a cursor based pagination model
+	// Get information about a specific market using its ID
 	GetMarket(context.Context, *GetMarketRequest) (*GetMarketResponse, error)
 	// Markets list
 	//
@@ -1909,7 +1909,7 @@ type TradingDataServiceServer interface {
 	GetVegaTime(context.Context, *GetVegaTimeRequest) (*GetVegaTimeResponse, error)
 	// Protocol upgrade status
 	//
-	// Get status of protocol upgrades
+	// Get status of protocol upgrade
 	GetProtocolUpgradeStatus(context.Context, *GetProtocolUpgradeStatusRequest) (*GetProtocolUpgradeStatusResponse, error)
 	// Protocol upgrade proposals
 	//
