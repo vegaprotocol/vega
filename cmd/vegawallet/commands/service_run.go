@@ -203,6 +203,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		cliLog.Error("Could not initialise wallets store", zap.Error(err))
 		return fmt.Errorf("could not initialise wallets store: %w", err)
 	}
+	closer.Add(walletStore.Close)
 
 	netStore, err := netStoreV1.InitialiseStore(vegaPaths)
 	if err != nil {
@@ -227,12 +228,12 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 			}
 			return fmt.Errorf("couldn't load the token store: %w", err)
 		}
+		closer.Add(s.Close)
 		tokenStore = s
 	} else {
 		s := tokenStoreV1.NewEmptyStore()
 		tokenStore = s
 	}
-	closer.Add(tokenStore.Close)
 
 	loggerBuilderFunc := func(levelName string) (*zap.Logger, zap.AtomicLevel, error) {
 		svcLog, svcLogPath, level, err := buildJSONFileLogger(vegaPaths, paths.WalletServiceLogsHome, levelName)

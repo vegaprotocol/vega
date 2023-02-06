@@ -43,12 +43,13 @@ type ImportWalletHandler func(api.AdminImportWalletParams) (api.AdminImportWalle
 
 func NewCmdImportWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminImportWalletParams) (api.AdminImportWalletResult, error) {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return api.AdminImportWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		importWallet := api.NewAdminImportWallet(s)
+		importWallet := api.NewAdminImportWallet(walletStore)
 
 		rawResult, errDetails := importWallet.Handle(context.Background(), params)
 		if errDetails != nil {

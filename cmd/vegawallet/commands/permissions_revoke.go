@@ -35,12 +35,13 @@ type RevokePermissionsHandler func(api.AdminRevokePermissionsParams) error
 
 func NewCmdRevokePermissions(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminRevokePermissionsParams) error {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		revokePermissions := api.NewAdminRevokePermissions(s)
+		revokePermissions := api.NewAdminRevokePermissions(walletStore)
 		_, errDetails := revokePermissions.Handle(context.Background(), params)
 		if errDetails != nil {
 			return errors.New(errDetails.Data)

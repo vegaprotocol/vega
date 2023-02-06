@@ -64,17 +64,18 @@ func NewCmdSendTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
 	handler := func(params api.AdminSendTransactionParams, log *zap.Logger) (api.AdminSendTransactionResult, error) {
 		vegaPaths := paths.New(rf.Home)
 
-		ws, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return api.AdminSendTransactionResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
 		ns, err := networkStore.InitialiseStore(vegaPaths)
 		if err != nil {
 			return api.AdminSendTransactionResult{}, fmt.Errorf("couldn't initialise network store: %w", err)
 		}
 
-		signTx := api.NewAdminSendTransaction(ws, ns, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+		signTx := api.NewAdminSendTransaction(walletStore, ns, func(hosts []string, retries uint64) (walletnode.Selector, error) {
 			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries)
 		})
 

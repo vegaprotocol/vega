@@ -32,7 +32,7 @@ type Party struct {
 
 type Wallet struct {
 	handler    *wallets.Handler
-	store      *storev1.Store
+	store      *storev1.FileStore
 	passphrase string
 }
 
