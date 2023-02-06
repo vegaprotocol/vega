@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"fmt"
+	"sort"
 
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -79,7 +80,15 @@ func ReconcileAccountChanges(before, after []types.Account, deposits []types.Dep
 		}
 	}
 
-	for acc, value := range amp {
+	keys := make([]string, 0, len(amp))
+	for k := range amp {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	for _, acc := range keys {
+		value := amp[acc]
 		reconciledValue := bmp[acc]
 		if !value.IsZero() && (reconciledValue == nil || !reconciledValue.EQ(value)) {
 			return fmt.Errorf("'%s' account balance: '%v', expected: '%v'", acc, value, reconciledValue)
