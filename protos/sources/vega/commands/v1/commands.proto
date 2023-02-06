@@ -5,6 +5,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega/commands/v1";
 
 import "vega/governance.proto";
 import "vega/vega.proto";
+import "vega/commands/v1/validator_commands.proto";
 
 // A batch of order instructions.
 // This command accepts only the following batches of commands
@@ -31,8 +32,10 @@ message OrderSubmission {
   // Price for the order, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places,
   // , required field for limit orders, however it is not required for market orders
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string price = 2;
   // Size for the order, for example, in a futures market the size equals the number of units, cannot be negative
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 size = 3;
   // Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field
   // - See `Side`
@@ -73,12 +76,14 @@ message OrderAmendment {
 
   // All fields below can be altered by this command:
 
-  // Amend the price for the order, if the Price value is set, otherwise price will remain unchanged - See [`Price`](#vega.Price)
+  // Amend the price for the order if the price value is set, otherwise price will remain unchanged.
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   optional string price = 3;
   // Amend the size for the order by the delta specified:
   // - To reduce the size from the current value set a negative integer value
   // - To increase the size from the current value, set a positive integer value
   // - To leave the size unchanged set a value of zero
+  // This field needs to be scaled using the market's position decimal places.
   int64 size_delta = 4;
   // Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
@@ -87,6 +92,7 @@ message OrderAmendment {
   // - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`
   vega.Order.TimeInForce time_in_force = 6;
   // Amend the pegged order offset for the order
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string pegged_offset = 7;
   // Amend the pegged order reference for the order
   // - See [`PeggedReference`](#vega.PeggedReference)
@@ -98,6 +104,7 @@ message LiquidityProvisionSubmission {
   // Market identifier for the order, required field
   string market_id = 1;
   // Specified as a unitless number that represents the amount of settlement asset of the market
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
   string commitment_amount = 2;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers
   string fee = 3;
@@ -129,6 +136,7 @@ message LiquidityProvisionAmendment {
 // Represents the submission request to withdraw funds for a party on Vega
 message WithdrawSubmission {
   // The amount to be withdrawn
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string amount = 1;
   // The asset to be withdrawn
   string asset = 2;
@@ -161,6 +169,7 @@ message DelegateSubmission {
   // The ID for the node to delegate to
   string node_id = 1;
   // The amount of stake to delegate
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.
   string amount = 2;
 }
 
@@ -174,6 +183,7 @@ message UndelegateSubmission {
   }
   string node_id = 1;
   // optional, if not specified = ALL
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.
   string amount = 2;
   Method method = 3;
 }
@@ -190,6 +200,7 @@ message Transfer {
   // The asset
   string asset = 4;
   // The amount to be taken from the source account
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string amount = 5;
   // The reference to be attached to the transfer
   string reference = 6;
@@ -223,4 +234,15 @@ message RecurringTransfer {
 message CancelTransfer {
   // The ID of the transfer to cancel
   string transfer_id = 1;
+}
+
+
+// A transaction for a validator to submit signatures to a smart contract
+message IssueSignatures {
+  // The ethereum address which will submit the signatures to the smart contract
+  string submitter = 1;
+  // The kind of signatures to generate, namely for whether a signer is being added or removed
+  NodeSignatureKind kind = 2;
+  // The ID of the node that will be signed in or out of the smart contract
+  string validator_node_id = 3; // the node for which to emit the signatures.
 }

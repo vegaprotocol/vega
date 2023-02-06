@@ -20,9 +20,8 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"google.golang.org/grpc"
-	lumberjack "gopkg.in/natefinch/lumberjack.v2"
+	"gopkg.in/natefinch/lumberjack.v2"
 
-	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
@@ -155,7 +154,7 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 
 	l.Log.Info("Applying Data Retention Policies")
 
-	err = sqlstore.ApplyDataRetentionPolicies(l.conf.SQLStore)
+	err = sqlstore.ApplyDataRetentionPolicies(l.conf.SQLStore, l.Log)
 	if err != nil {
 		return fmt.Errorf("failed to apply data retention policies:%w", err)
 	}
@@ -286,8 +285,7 @@ func (l *NodeCommand) preRun([]string) (err error) {
 		return err
 	}
 
-	coreClient := vegaprotoapi.NewCoreServiceClient(conn)
-	l.vegaCoreServiceClient = api.NewVegaCoreServiceClient(coreClient, conn.GetState)
+	l.vegaCoreServiceClient = vegaprotoapi.NewCoreServiceClient(conn)
 	return nil
 }
 

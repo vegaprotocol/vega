@@ -381,6 +381,14 @@ input LedgerEntryFilter {
   TransferTypes: [TransferType]
 }
 
+"Filter for historical reward summary queries"
+input RewardSummaryFilter {
+  assetIds: [ID!]
+  marketIds: [ID!]
+  fromEpoch: Int,
+  toEpoch: Int,
+}
+
 "Queries allow a caller to read data and filter data via GraphQL."
 type Query {
   "An asset which is used in the vega network"
@@ -541,6 +549,8 @@ type Query {
     id: ID
     "Optional pagination information"
     pagination: Pagination
+    "Whether to include markets that have settled (defaults to true)"
+    includeSettled: Boolean
   ): MarketConnection
 
   "The most recent history segment"
@@ -653,10 +663,9 @@ type Query {
 
   "List reward summary per epoch by asset, market, reward type"
   epochRewardSummaries(
-    fromEpoch: Int,
-    toEpoch: Int,
+    filter: RewardSummaryFilter,
     pagination: Pagination
-    ): EpochRewardSummaryConnection
+  ): EpochRewardSummaryConnection
 
   "Get statistics about the Vega node"
   statistics: Statistics!
@@ -1623,7 +1632,7 @@ type PriceMonitoringParameters {
 }
 
 """
-PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration
 """
 type PriceMonitoringTrigger {
   "Price monitoring projection horizon τ in seconds (> 0)."
@@ -1671,6 +1680,8 @@ type LiquidityMonitoringParameters {
   targetStakeParameters: TargetStakeParameters!
   "Specifies the triggering ratio for entering liquidity auction"
   triggeringRatio: String!
+  "Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction"
+  auctionExtensionSecs: Int!
 }
 
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
@@ -2035,6 +2046,10 @@ type Party {
     assetId: ID
     "Optional pagination information"
     pagination: Pagination
+    "Optionally only return rewards >= this epoch"
+    fromEpoch: Int
+    "Optionally only return rewards <= this epoch"
+    toEpoch: Int
   ): RewardsConnection
 
   "Return net reward information"
@@ -3190,6 +3205,12 @@ type NewMarket {
   riskParameters: RiskModel!
   "Metadata for this instrument, tags"
   metadata: [String!]
+  "Price monitoring parameters"
+  priceMonitoringParameters: PriceMonitoringParameters!
+  "Liquidity monitoring parameters"
+  liquidityMonitoringParameters: LiquidityMonitoringParameters!
+  "Decimal places for order sizes, sets what size the smallest order / position on the market can be"
+  positionDecimalPlaces: Int!
   "Liquidity Provision order price range"
   lpPriceRange: String!
 }
@@ -3927,8 +3948,6 @@ type HistorySegment {
     fromHeight:       Int!
     "To block height of the history segment"
     toHeight: Int!
-    "Chain ID of the history segment"
-    chainID: String!
     "ID of the history segment"
     historySegmentId: String!
 }

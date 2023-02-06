@@ -1,0 +1,995 @@
+{
+	"TestName": "TestGovernance_ProposalNewMarket",
+	"Query": "{ proposalsConnection { edges { node { id terms { change { ... on NewMarket { instrument { name } decimalPlaces riskParameters { ... on SimpleRiskModel { params { factorLong factorShort } } } metadata priceMonitoringParameters { triggers { horizonSecs probability auctionExtensionSecs } } liquidityMonitoringParameters { targetStakeParameters { timeWindow scalingFactor } triggeringRatio auctionExtensionSecs } positionDecimalPlaces lpPriceRange } } } } } } }",
+	"Result": {
+		"proposalsConnection": {
+			"edges": [
+				{
+					"node": {
+						"id": "9dda5be5b1f9e05b84d24b09c41d1c7656d493bf208d020e3b0fc4204ed8ed63",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "ca95acbad256c768b5ea70398ef14b212aae66a6a994d138736873592b81e602",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "9b4e72ed2c5556255f62fa8528e6b14b64f2edfefb6db22df680f6b9cf4baffb",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "c2bdcb623220c59203090bacbb7e5d7dadfed5eac19a621e616738d194eda396",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "4ec6c1f4e33f95636e9c77225149fecd0e3dabb70a54d37b75e5047dea28af64",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "c381218a903c7221f594445427cd799764a57a0cfe743f406cae3be6a4d616fe",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "0004c5c26d8781d31c5da0c70e63f0763cfbbf3299e090f39c2151c7ebb8d457",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6a8bc1f73b4a59887076669a5ae32b6224aa42fb939c8e4e4e0ec040ecb83c67",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "9fc13049d3307eb6373800e41cd50a9949a9d01bf07ec75e4a346e1f71967805",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "e09f511bb2b784e6ec604d64735f3c64d83a15df7587bffaeb024640e1b45414",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "dacb8f842b95373b8797282fe35c44b61dcaa32d59f0a29dc9b218f8623ec48f",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "190387f6c566f5ca5f55e7312c5b9b1a9f1524d8550a90c82d464d7c7ddf9d46",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "0fde31e98c395800a70ba3ab4c38ac04a97905bd4afcaf97932d7392f3742f80",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "c70f3ab5d4856e48efd675739174c6a8e4f37d0f7af1a8c0c4b66e05896b47d6",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "9b9d11b7e8b341a2bdf088ce9b8be84ac2657fcb64e0514c9d8287994b613a43",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "cf33005736ee69fdf8dcb7b1fba3a4548c0eb4198d70a4f6730823369d9c33f7",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "1654115174ce58a2f04b6a5e9e7b5a28e0a2f187854d0daea3e80578219f15eb",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "b0edc9515920880f25bc2a44c716a4121076c45fd697efe8d61232c2693b1019",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "c858fc419e2efe591e1b1dad2d43f3f5a0ffb3fe2dda3a9abfcc67fd8862d764",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "181dd88a93db348229706bf7038e60ee63a206e436f2ed0a500a0ab3264162aa",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "3e5af1fcd80e8b4934bcd7c9c1bee6ea48d3365a207ebd5057414a7662bee055",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "617a6fa03a25fec30aa325cac77df8714654d8df0ad5bb17d3655daad8fd291b",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "12c005f3c29ad98912ee8b637cd82c00a75622ad4b7ad260c6ce6aba5da977b4",
+						"terms": {
+							"change": {
+								"decimalPlaces": 5,
+								"instrument": {
+									"name": "Futures System-Tests Market"
+								},
+								"liquidityMonitoringParameters": {
+									"auctionExtensionSecs": 1,
+									"targetStakeParameters": {
+										"scalingFactor": 5,
+										"timeWindow": 10
+									},
+									"triggeringRatio": "0"
+								},
+								"lpPriceRange": "1",
+								"metadata": [
+									"asset_class:fx/crypto",
+									"product:futures"
+								],
+								"positionDecimalPlaces": 5,
+								"priceMonitoringParameters": {
+									"triggers": []
+								},
+								"riskParameters": {}
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "776b489335c0f7edba027db47c0c76256a9173f1fe202f296183ed5466a7cc45",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "c46c7d33ac5ccd41466b4e248e5f435a23d31c0309be0814c992c554d1971719",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "7a3432c71dba9caf792255e842f93e83b3e6ba69923ca9a6deb0f74206fb1ade",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "569c9ecb0d200083c96c6e63f195bb36240a5bc39295ab93906bb514b84b9d6c",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "9d6ccbb3de308d3e744f77e8bc1a48ae2bd9cd1b10beb49cd10ceb87b1334996",
+						"terms": {
+							"change": {
+								"decimalPlaces": 5,
+								"instrument": {
+									"name": "Futures System-Tests Market"
+								},
+								"liquidityMonitoringParameters": {
+									"auctionExtensionSecs": 1,
+									"targetStakeParameters": {
+										"scalingFactor": 5,
+										"timeWindow": 10
+									},
+									"triggeringRatio": "0"
+								},
+								"lpPriceRange": "1",
+								"metadata": [
+									"asset_class:fx/crypto",
+									"product:futures"
+								],
+								"positionDecimalPlaces": 5,
+								"priceMonitoringParameters": {
+									"triggers": []
+								},
+								"riskParameters": {}
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "fcbe6e37c92b27ba4861d71d6cca4396fbc9266bf4a8a2d8e002fb6a13db0f3b",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "274b807d7142b3dfced6dbb5af625d2e20ea4b93e8a8cf1daeda2eeade1aef01",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "eb358445fde016c82729796e999e8f302277b7effd07f632ac7a478537cd2282",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "37d19a16977c3831fb02c6180318d551476a29a95f84e5a2aace437c8fb9e40b",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "f2ad7f70763d6ba8659526f90b9349a004c1b01e7215e35c65fd0a6c0ab44338",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "7caf36f97a691beaa9382b569277ac219b6b85f13679536a01d2a522a93c66dd",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "54f15f5f0f47d2dc331f182cf3866f77b0bf3c14fc3904267509cb5d66e9aa4f",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "9a64c9df38f275357760c8519fb89b8b29f76ed4fcd0b1c467bc4ef59a292b68",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "a78f0d8e5abc8fc7bccfd8cc7aefe435160347626a5bcc1357e74c0bca3c8103",
+						"terms": {
+							"change": {
+								"decimalPlaces": 5,
+								"instrument": {
+									"name": "Futures System-Tests Market"
+								},
+								"liquidityMonitoringParameters": {
+									"auctionExtensionSecs": 1,
+									"targetStakeParameters": {
+										"scalingFactor": 5,
+										"timeWindow": 10
+									},
+									"triggeringRatio": "0"
+								},
+								"lpPriceRange": "1",
+								"metadata": [
+									"asset_class:fx/crypto",
+									"product:futures"
+								],
+								"positionDecimalPlaces": 5,
+								"priceMonitoringParameters": {
+									"triggers": []
+								},
+								"riskParameters": {}
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "44d292428e042a41799c8083fb10191e1beb7c446a2bc2132e4e79a2e8ec0f07",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "b3c06d3f5adb43088699eac3d6827904c4e3685f943089d4cb033c3c1281988c",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "18d28e25e8975ed1441e9912738194999804726b6669b55565e4b83971df11cf",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "2c7958b314ef00656bd6f187f201762edb4cc1bc8c0ae663091509176f7267ce",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "d695be9480a1738b54a31f66550c10b4002b2cb76059efb57653c0203d88813d",
+						"terms": {
+							"change": {
+								"decimalPlaces": 5,
+								"instrument": {
+									"name": "Futures System-Tests Market"
+								},
+								"liquidityMonitoringParameters": {
+									"auctionExtensionSecs": 1,
+									"targetStakeParameters": {
+										"scalingFactor": 5,
+										"timeWindow": 10
+									},
+									"triggeringRatio": "0"
+								},
+								"lpPriceRange": "1",
+								"metadata": [
+									"asset_class:fx/crypto",
+									"product:futures"
+								],
+								"positionDecimalPlaces": 5,
+								"priceMonitoringParameters": {
+									"triggers": []
+								},
+								"riskParameters": {}
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "3a5bb07acff8f8c29df21f8562089ee6059d8f8d01f64876a176f6a2372502e7",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6051102e1274afa6cd728b82c1d08ec88fcaeb1822084d1a2422ad88b215c962",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "d0dd75dbde83c8562cab79cc8edbb28fbf815a31c2985f27cc34d8d59f1de754",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "098bd5ea1db40c6d40598baa58edfd0e7631568f8fd733a510e5730e34501d5a",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "f475d88a1151284e28430cf0b3b08b5aff6e089b9e1027dfe3fc5100b78d6ecb",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "a9008ce155aa7238b482d20f5013c6fc73d41881b6939126f2de1130d625d6dd",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "397328ff68f4830682cbb963d331c55d3d9ac9b361ad0711bec21bd9d6926c58",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "f874b94e7f09e4be09bb7bc52c6d6566af7b2ebf1882059dcad5bed2c4481ebd",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "967c3f4996e85771789c281d48295e1b3600295a5e67c44610667ba5a3c4d315",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "b6307f5a7eca55656cc46e51a20235f716430a91ddd34df2c8e6af32f5b3e7e7",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "2b548860bc9400f7015ad7a5579f74e277d8e512db1328bbf305c12fe13fb454",
+						"terms": {
+							"change": {
+								"decimalPlaces": 5,
+								"instrument": {
+									"name": "Futures System-Tests Market"
+								},
+								"liquidityMonitoringParameters": {
+									"auctionExtensionSecs": 1,
+									"targetStakeParameters": {
+										"scalingFactor": 5,
+										"timeWindow": 10
+									},
+									"triggeringRatio": "0"
+								},
+								"lpPriceRange": "1",
+								"metadata": [
+									"asset_class:fx/crypto",
+									"product:futures"
+								],
+								"positionDecimalPlaces": 5,
+								"priceMonitoringParameters": {
+									"triggers": []
+								},
+								"riskParameters": {}
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "b56084a134f435996fe490a1aa14e446985858467fe479bd681de34d2f648708",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "67b8979e9d5078a2585b61791e503fb7a971969f8f1e8813693d3adcbd52e14b",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "b92a8d57d42f3a714496d7c80ddd371dc55ad9cb0df77246a1459754f74010f2",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "496aff131817b2c50835db372714d949254230590f08c924a2e2b2f9eb3fe165",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6f8623cf080dc59bc6c7138617bf81a1e476e52551487b7fbbf4a24b7a7531db",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "9d9f686856014c54c5e7078cda2bc4fbcc6e8d993735c4f86fd6358a0acb27ae",
+						"terms": {
+							"change": {
+								"decimalPlaces": 5,
+								"instrument": {
+									"name": "Futures System-Tests Market"
+								},
+								"liquidityMonitoringParameters": {
+									"auctionExtensionSecs": 1,
+									"targetStakeParameters": {
+										"scalingFactor": 5,
+										"timeWindow": 10
+									},
+									"triggeringRatio": "0"
+								},
+								"lpPriceRange": "1",
+								"metadata": [
+									"asset_class:fx/crypto",
+									"product:futures"
+								],
+								"positionDecimalPlaces": 5,
+								"priceMonitoringParameters": {
+									"triggers": []
+								},
+								"riskParameters": {}
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "3d950934cacc72a6012555ab6e98cbcc1d8cb7d476adeee28299f7aed6f276c7",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "103b9c519cf1ab11e50c7dfba96751e34153e5b02ab542d3eeefbaeed8bd8617",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "b5a23bd7381b5a860c87783bd9b067bb474dd8b9c340ed4c4d2ee65ee94d9fae",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "7c0a588b9d0696ee397990f686213760ef5cca1278ef726a49490438bdb2c8a8",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "fdc7fa0d9c8af81793a19eda9b2c9c6205b83f883b97a208958aa518077c1407",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "3e0d41fe77550e31acb88ba6c726d58cf28ac394a365e9d60970891e98e8286d",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "e4646f3bb75aea528b0f25204a9d25302fa68b178485feae99670f7d2145d72e",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "bb6d41c3c861dc631937571318a32bfe71c267d689f9635b0b5e930cf5a83b68",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "b6ffbd5f00f6e2e530f4ce6a3dab75fa11b4e11f15360ee9ad45925c31709296",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "36cd21c0e26e14f707689856bc27f01d4fd58f9e46fee80ae21502b35eb0fb73",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "21644869fa741617c53599ffe4914e16410f22157ba01be2e7f6fe2ee26a8545",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "a1a2970e21d54db90f08f75850741835b506f92d062c28f16ec59c4eeb0c23fd",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6f389a9744e2ed7d972ee852f685bacc7ea025ee283340584d3029e25e70622c",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "bac7c30ad833f95275876f1a39ec6876f5060df8a0545680b6680b3e06bf0fe4",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "8fc48eaf09dd51a98ebcbbfd242b3342f3a362f0c5e9d2e6203450b8506334c7",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6c33a747a17ef43f15d4872e50e5c6ac6e55e09cc83add68aada298845d19663",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "344840a622fe88e28938fc7c2607a90f0ea73cbb9c0107aab58cc4a3eb49ecdd",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "394e72cd9e24cb4b51836a8021e43971f51a856f2c7f74e9519e798d9ea44b90",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "3de781fcdcb89df398d536b3963652ff418d5a5633171eaca2c7c5c19a780527",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "5514079ddbf993475cab4e63f95a6f439e24ec37aafb3c3d351cee536ddcf3a3",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "e5694e26bcc120c02679b7169cad61e41de3941e62302073e2079471c8325e29",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "76528999587a0727b82cfe5ce9daef7b5c4e6115e4a21cd6848157ec291eeff4",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "1b1801df2c16e5e8f8a042456c36b5aefcaa936258f6a0a2f796dd60136f0768",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "6b4d9654df95342ab419fd6f4fde7a49b3eecb391a10f6135f8f8b44ee6ca398",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "7c85c43298733da2e9bd5aa90e389c08b852bbb67e7c2fcd1b641156cab5ac3f",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "9fcec55ffa762e21afe563690f2534902b920e4416a7078a5ba0321ea3866301",
+						"terms": {
+							"change": {
+								"decimalPlaces": 5,
+								"instrument": {
+									"name": "Futures System-Tests Market"
+								},
+								"liquidityMonitoringParameters": {
+									"auctionExtensionSecs": 1,
+									"targetStakeParameters": {
+										"scalingFactor": 5,
+										"timeWindow": 10
+									},
+									"triggeringRatio": "0"
+								},
+								"lpPriceRange": "1",
+								"metadata": [
+									"asset_class:fx/crypto",
+									"product:futures"
+								],
+								"positionDecimalPlaces": 5,
+								"priceMonitoringParameters": {
+									"triggers": []
+								},
+								"riskParameters": {}
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "d1333ac6d0a8aef033d71712a3eaf64bf8a78e90fa25c109cb7cea88b8d489ee",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "067a0aae5d0748b50a4f9c9f95f66a8d852ff51a89673aa46bf4ab909ff2f8ed",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "12d338721bc03c8713cc198c63e2b739dfebc9ffd852d32f6557666265f45f72",
+						"terms": {
+							"change": {
+								"decimalPlaces": 5,
+								"instrument": {
+									"name": "Futures System-Tests Market"
+								},
+								"liquidityMonitoringParameters": {
+									"auctionExtensionSecs": 1,
+									"targetStakeParameters": {
+										"scalingFactor": 5,
+										"timeWindow": 10
+									},
+									"triggeringRatio": "0"
+								},
+								"lpPriceRange": "1",
+								"metadata": [
+									"asset_class:fx/crypto",
+									"product:futures"
+								],
+								"positionDecimalPlaces": 5,
+								"priceMonitoringParameters": {
+									"triggers": []
+								},
+								"riskParameters": {}
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "acbc938daa7648c2fa6355f8bbedfa6a65fcd777cc987b0a1544dfbb73445603",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "9055b22ac086f1487f008f58f1ec2d70be41deefebc84c40292dcbe667b1722f",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "095c91457fbecdc480bd2b2793d0c6d168cab0bf864d0232e977f0641afa4fbf",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "754cb4cfb359811bb007794369418199a9cdceb34779938c2bc7abe2a0983254",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "7513de49d4224aea0f528cf4a1fc8568691205cb2d1fc4c260fbbe562699b11f",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "47c3820f4f6e1a3cdebd3ff65257efd4aeb1e80673c5026628910c98c535c1b3",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "078e7b6b6494f55812844d13299a9c97143a07818497068c71093f4e2185b5ca",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "a7fdb6d9813bd518d703d72892def52850bfbde8dde61f0420ffd1dcb412c9e6",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "e27d21ceab2b5bd6a6dac045644947b483c40f2602029e2729854ed6257e7079",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "c248cb0c9f4c45b99ce41e261853f81bbb99d193ad6e4f940459926df14af4d6",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "274d4d20aa27ad58bed6c10afb6c0aea9ebeb01267c6a76754f40e8cae748db2",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "272a88486ba1b235c947fb91a683fcb2fbd0f20b027bb505fb27cc98db3f8ed7",
+						"terms": {
+							"change": {}
+						}
+					}
+				}
+			]
+		}
+	},
+	"Duration": 9390209
+}

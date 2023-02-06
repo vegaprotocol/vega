@@ -134,7 +134,6 @@ func TestOrders(t *testing.T) {
 
 	// Flush everything from the first block
 	os.Flush(ctx)
-
 	for i := 0; i < numTestOrders; i++ {
 		// Update Another 1/4 of the orders in the next block
 		if i%4 == 2 {
@@ -161,7 +160,8 @@ func TestOrders(t *testing.T) {
 	}
 
 	// Flush everything from the second block
-	os.Flush(ctx)
+	_, err = os.Flush(ctx)
+	require.NoError(t, err)
 
 	t.Run("GetAll", func(t *testing.T) {
 		// Check we inserted new rows only when the update was in a different block

@@ -39,7 +39,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -81,8 +80,6 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	mockCtrl := gomock.NewController(t)
 
 	mockCoreServiceClient = mocks.NewMockCoreServiceClient(mockCtrl)
-
-	mockCoreServiceClient.EXPECT().GetState().Return(connectivity.Ready).AnyTimes()
 
 	mockNetworkHistoryService := mocks.NewMockNetworkHistoryService(mockCtrl)
 

@@ -437,6 +437,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				Param:   netparams.TransferMaxCommandsPerEpoch,
 				Watcher: svcs.spam.OnMaxTransfersChanged,
 			},
+			{
+				Param:   netparams.SpamProtectionMinMultisigUpdates,
+				Watcher: svcs.spam.OnMinTokensForMultisigUpdatesChanged,
+			},
 		}
 	}
 

@@ -137,6 +137,13 @@ http:
       get: '/api/v2/oracle/specs'
     - selector: datanode.api.v2.TradingDataService.ListOracleData
       get: '/api/v2/oracle/data'
+    - selector: datanode.api.v2.TradingDataService.NetworkHistoryStatus
+      get: "/api/v2/networkhistory"
+    - selector: datanode.api.v2.TradingDataService.ListAllNetworkHistorySegments
+      get: "/api/v2/networkhistory/segments"
+    - selector: datanode.api.v2.TradingDataService.NetworkHistoryBootstrapPeers
+      get: "/api/v2/networkhistory/bootstrap"
+
 
     # websockets
 

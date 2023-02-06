@@ -10,7 +10,6 @@ import (
 
 	networkhistory "code.vegaprotocol.io/vega/datanode/networkhistory"
 	snapshot "code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
-	store "code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	sqlstore "code.vegaprotocol.io/vega/datanode/sqlstore"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	gomock "github.com/golang/mock/gomock"
@@ -40,10 +39,10 @@ func (m *MockNetworkHistory) EXPECT() *MockNetworkHistoryMockRecorder {
 }
 
 // FetchHistorySegment mocks base method.
-func (m *MockNetworkHistory) FetchHistorySegment(arg0 context.Context, arg1 string) (store.SegmentIndexEntry, error) {
+func (m *MockNetworkHistory) FetchHistorySegment(arg0 context.Context, arg1 string) (networkhistory.Segment, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchHistorySegment", arg0, arg1)
-	ret0, _ := ret[0].(store.SegmentIndexEntry)
+	ret0, _ := ret[0].(networkhistory.Segment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -85,17 +84,32 @@ func (mr *MockNetworkHistoryMockRecorder) GetMostRecentHistorySegmentFromPeers(a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMostRecentHistorySegmentFromPeers", reflect.TypeOf((*MockNetworkHistory)(nil).GetMostRecentHistorySegmentFromPeers), arg0, arg1)
 }
 
-// LoadNetworkHistoryIntoDatanode mocks base method.
-func (m *MockNetworkHistory) LoadNetworkHistoryIntoDatanode(arg0 context.Context, arg1 sqlstore.ConnectionConfig) (snapshot.LoadResult, error) {
+// ListAllHistorySegments mocks base method.
+func (m *MockNetworkHistory) ListAllHistorySegments() ([]networkhistory.Segment, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoadNetworkHistoryIntoDatanode", arg0, arg1)
+	ret := m.ctrl.Call(m, "ListAllHistorySegments")
+	ret0, _ := ret[0].([]networkhistory.Segment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAllHistorySegments indicates an expected call of ListAllHistorySegments.
+func (mr *MockNetworkHistoryMockRecorder) ListAllHistorySegments() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllHistorySegments", reflect.TypeOf((*MockNetworkHistory)(nil).ListAllHistorySegments))
+}
+
+// LoadNetworkHistoryIntoDatanode mocks base method.
+func (m *MockNetworkHistory) LoadNetworkHistoryIntoDatanode(arg0 context.Context, arg1 networkhistory.ContiguousHistory, arg2 sqlstore.ConnectionConfig, arg3 bool) (snapshot.LoadResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LoadNetworkHistoryIntoDatanode", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(snapshot.LoadResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // LoadNetworkHistoryIntoDatanode indicates an expected call of LoadNetworkHistoryIntoDatanode.
-func (mr *MockNetworkHistoryMockRecorder) LoadNetworkHistoryIntoDatanode(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockNetworkHistoryMockRecorder) LoadNetworkHistoryIntoDatanode(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadNetworkHistoryIntoDatanode", reflect.TypeOf((*MockNetworkHistory)(nil).LoadNetworkHistoryIntoDatanode), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadNetworkHistoryIntoDatanode", reflect.TypeOf((*MockNetworkHistory)(nil).LoadNetworkHistoryIntoDatanode), arg0, arg1, arg2, arg3)
 }

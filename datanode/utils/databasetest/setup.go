@@ -12,10 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/logging"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/jackc/pgx/v4"
+
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var (
@@ -29,8 +30,9 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 	postgresRuntimePath string, sqlFs fs.FS,
 ) int {
 	testDBSocketDir := filepath.Join(postgresRuntimePath)
-	testDBPort := 5432 // GetNextFreePort()
-	sqlConfig := NewTestConfig(testDBPort, testDBSocketDir)
+	testDBPort := 5432
+	testDBHost := ""
+	sqlConfig := NewTestConfig(testDBPort, testDBHost, testDBSocketDir)
 
 	if sqlTestsEnabled {
 		log := logging.NewTestLogger()
@@ -79,7 +81,7 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 			panic(err)
 		}
 
-		if err = sqlstore.ApplyDataRetentionPolicies(sqlConfig); err != nil {
+		if err = sqlstore.ApplyDataRetentionPolicies(sqlConfig, log); err != nil {
 			panic(err)
 		}
 
@@ -91,11 +93,11 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 	return 0
 }
 
-func NewTestConfig(port int, socketDir string) sqlstore.Config {
+func NewTestConfig(port int, host, socketDir string) sqlstore.Config {
 	sqlConfig := sqlstore.NewDefaultConfig()
 	sqlConfig.UseEmbedded = true
 	sqlConfig.ConnectionConfig.Port = port
-	sqlConfig.ConnectionConfig.Host = ""
+	sqlConfig.ConnectionConfig.Host = host
 	sqlConfig.ConnectionConfig.SocketDir = socketDir
 
 	return sqlConfig

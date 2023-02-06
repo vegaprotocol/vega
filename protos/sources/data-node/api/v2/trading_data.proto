@@ -16,7 +16,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.67.2";
+    version: "v0.68.0-dev";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz/datanode/rest"
@@ -481,6 +481,18 @@ service TradingDataService {
     // List the addresses of all active network history peers
     rpc GetActiveNetworkHistoryPeerAddresses(GetActiveNetworkHistoryPeerAddressesRequest) returns (GetActiveNetworkHistoryPeerAddressesResponse);
 
+    // Network history status
+    //
+    // Retrieves information about the current state of network history
+    // Response contains the network history status
+    rpc NetworkHistoryStatus(NetworkHistoryStatusRequest) returns (NetworkHistoryStatusResponse);
+
+    // Network history bootstrap peers
+    //
+    // Retrieves the nodes bootstrap peers
+    // Response contains the bootstrap peers
+    rpc NetworkHistoryBootstrapPeers(NetworkHistoryBootstrapPeersRequest) returns (NetworkHistoryBootstrapPeersResponse);
+
     // Ping
     //
     // Ping the data node
@@ -609,6 +621,7 @@ message InfoResponse {
     // The commit hash from which the data node was built
     string commit_hash = 2;
 }
+
 
 // -- Orders --
 
@@ -1534,6 +1547,8 @@ message GetMarketResponse {
 
 message ListMarketsRequest {
     optional Pagination pagination = 2;
+    // Whether or not to include settled markets in response; default to true if not specified.
+    optional bool include_settled = 3;
 }
 
 message ListMarketsResponse {
@@ -1627,6 +1642,8 @@ message ListRewardsRequest {
     string party_id = 1;
     optional string asset_id = 2;
     optional Pagination pagination = 3;
+    optional uint64 from_epoch = 4;
+    optional uint64 to_epoch = 5;
 }
 
 // The return message with reward details in for a single party
@@ -1656,11 +1673,22 @@ message ListRewardSummariesResponse {
     repeated vega.RewardSummary summaries = 1;
 }
 
+// A filter to restrict the results returned by the ListEpochRewardSummaries
+message RewardSummaryFilter {
+    // Restrict the results to those connected to the assets in this list (pass an empty list for no filter)
+    repeated string asset_ids = 1;
+    // Restrict the results to those connected to the markets in this list (pass an empty list for no filter)
+    repeated string market_ids = 2;
+    // Optional range of epochs to filter on
+    optional uint64 from_epoch = 3;
+    optional uint64 to_epoch = 4;
+}
+
 // A request to get summary of reward per epoch for a given range of epochs
 message ListEpochRewardSummariesRequest {
-    optional uint64 from_epoch = 1;
-    optional uint64 to_epoch = 2;
-    optional Pagination pagination = 3;
+    // Limit the results considered according to the filter supplied
+    RewardSummaryFilter filter = 1;
+    optional Pagination pagination = 4;
 }
 
 // The return message with reward details in for a single party
@@ -2278,9 +2306,8 @@ message CoreSnapshotEdge {
 message HistorySegment {
     int64 from_height = 1;
     int64 to_height = 2;
-    string chain_id = 3;
-    string history_segment_id = 4;
-    string previous_history_segment_id = 5;
+    string history_segment_id = 3;
+    string previous_history_segment_id = 4;
 }
 
 // Request to get the most recent history segment
@@ -2290,7 +2317,7 @@ message GetMostRecentNetworkHistorySegmentRequest {
 // Get most recent history segment response
 message GetMostRecentNetworkHistorySegmentResponse {
     HistorySegment segment = 1;
-    string swarm_key  = 2;
+    string swarm_key_seed  = 2;
 }
 
 // Request to list all the nodes history segments
@@ -2310,6 +2337,31 @@ message GetActiveNetworkHistoryPeerAddressesRequest {
 message GetActiveNetworkHistoryPeerAddressesResponse {
     repeated string ip_addresses = 1;
 }
+
+// Request to get the status of network history
+message NetworkHistoryStatusRequest {}
+
+// Response containing the status of network history
+message NetworkHistoryStatusResponse {
+    // The ipfs address of this node
+    string ipfs_address = 1;
+    // The swarm key
+    string swarm_key = 2;
+    // The swarm key seed
+    string swarm_key_seed = 3;
+    // The connected peers
+    repeated string connected_peers = 5;
+}
+
+// Request to get the nodes network history bootstrap peers
+message NetworkHistoryBootstrapPeersRequest {}
+
+// Response containing the nodes network history bootstrap peers
+message NetworkHistoryBootstrapPeersResponse {
+    // The bootstrap peers
+    repeated string bootstrap_peers = 1;
+}
+
 
 // Request to ping the data node
 message PingRequest {

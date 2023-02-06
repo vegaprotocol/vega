@@ -21,6 +21,8 @@ import (
 	"io/fs"
 	"time"
 
+	"go.uber.org/zap"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -44,7 +46,42 @@ var EmbedMigrations embed.FS
 const (
 	SQLMigrationsDir = "migrations"
 	InfiniteInterval = "forever"
+	blocksEntity     = "blocks"
 )
+
+var defaultRetentionPolicies = map[RetentionPeriod][]RetentionPolicy{
+	RetentionPeriodStandard: {
+		{HypertableOrCaggName: "balances", DataRetentionPeriod: "7 days"},
+		{HypertableOrCaggName: "checkpoints", DataRetentionPeriod: "7 days"},
+		{HypertableOrCaggName: "conflated_balances", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "delegations", DataRetentionPeriod: "7 days"},
+		{HypertableOrCaggName: "ledger", DataRetentionPeriod: "6 months"},
+		{HypertableOrCaggName: "orders", DataRetentionPeriod: "1 month"},
+		{HypertableOrCaggName: "trades", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "trades_candle_1_minute", DataRetentionPeriod: "1 month"},
+		{HypertableOrCaggName: "trades_candle_5_minutes", DataRetentionPeriod: "1 month"},
+		{HypertableOrCaggName: "trades_candle_15_minutes", DataRetentionPeriod: "1 month"},
+		{HypertableOrCaggName: "trades_candle_1_hour", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "trades_candle_6_hours", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "trades_candle_1_day", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "market_data", DataRetentionPeriod: "7 days"},
+		{HypertableOrCaggName: "margin_levels", DataRetentionPeriod: "7 days"},
+		{HypertableOrCaggName: "conflated_margin_levels", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "positions", DataRetentionPeriod: "7 days"},
+		{HypertableOrCaggName: "conflated_positions", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "liquidity_provisions", DataRetentionPeriod: "1 day"},
+		{HypertableOrCaggName: "markets", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "deposits", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "withdrawals", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "blocks", DataRetentionPeriod: "1 year"},
+	},
+	RetentionPeriodArchive: {
+		{HypertableOrCaggName: "*", DataRetentionPeriod: string(RetentionPeriodArchive)},
+	},
+	RetentionPeriodLite: {
+		{HypertableOrCaggName: "*", DataRetentionPeriod: string(RetentionPeriodLite)},
+	},
+}
 
 func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 	goose.SetBaseFS(EmbedMigrations)
@@ -188,8 +225,8 @@ func CreateVegaSchema(log *logging.Logger, connConfig ConnectionConfig) error {
 	return nil
 }
 
-func HasVegaSchema(ctx context.Context, connPool *pgxpool.Pool) (bool, error) {
-	tableNames, err := GetAllTableNames(ctx, connPool)
+func HasVegaSchema(ctx context.Context, conn Connection) (bool, error) {
+	tableNames, err := GetAllTableNames(ctx, conn)
 	if err != nil {
 		return false, fmt.Errorf("failed to get all table names:%w", err)
 	}
@@ -197,7 +234,7 @@ func HasVegaSchema(ctx context.Context, connPool *pgxpool.Pool) (bool, error) {
 	return len(tableNames) != 0, nil
 }
 
-func GetAllTableNames(ctx context.Context, conn *pgxpool.Pool) ([]string, error) {
+func GetAllTableNames(ctx context.Context, conn Connection) ([]string, error) {
 	tableNameRows, err := conn.Query(ctx, "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' and table_type = 'BASE TABLE' and table_name != 'goose_db_version' order by table_name")
 	if err != nil {
 		return nil, fmt.Errorf("failed to query table names:%w", err)
@@ -298,7 +335,60 @@ func dropDatabaseWithRetry(parentCtx context.Context, postgresDbConn *pgx.Conn, 
 
 const oneDayAsSeconds = 60 * 60 * 24
 
-func ApplyDataRetentionPolicies(config Config) error {
+func getRetentionEntities(db *sql.DB) ([]string, error) {
+	rows, err := db.Query(`
+select view_name as table_name
+from timescaledb_information.continuous_aggregates
+union all
+select hypertable_name
+from timescaledb_information.hypertables
+`)
+	if err != nil {
+		return nil, err
+	}
+
+	retentionEntities := make([]string, 0)
+
+	for rows.Next() {
+		var entity string
+		err = rows.Scan(&entity)
+		if err != nil {
+			return nil, err
+		}
+		retentionEntities = append(retentionEntities, entity)
+	}
+
+	return retentionEntities, nil
+}
+
+func getPolicy(entity string, policies []RetentionPolicy) (RetentionPolicy, bool) {
+	for _, override := range policies {
+		if override.HypertableOrCaggName == entity {
+			return override, true
+		}
+	}
+	return RetentionPolicy{}, false
+}
+
+func setRetentionPolicy(db *sql.DB, entity string, policy string, log *logging.Logger) error {
+	if _, err := db.Exec(fmt.Sprintf("SELECT remove_retention_policy('%s', true);", entity)); err != nil {
+		return fmt.Errorf("removing retention policy from %s: %w", entity, err)
+	}
+
+	log.Info("Setting retention policy", zap.String("entity", entity), zap.String("policy", policy))
+	// If we're keeping data forever, don't bother adding a policy at all
+	if policy == InfiniteInterval {
+		return nil
+	}
+
+	if _, err := db.Exec(fmt.Sprintf("SELECT add_retention_policy('%s', INTERVAL '%s');", entity, policy)); err != nil {
+		return fmt.Errorf("adding retention policy to %s: %w", entity, err)
+	}
+
+	return nil
+}
+
+func ApplyDataRetentionPolicies(config Config, log *logging.Logger) error {
 	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
 	if err != nil {
 		return errors.Wrap(err, "applying data retention policy")
@@ -307,53 +397,113 @@ func ApplyDataRetentionPolicies(config Config) error {
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
 	defer db.Close()
 
-	for _, policy := range config.RetentionPolicies {
-		if !config.DisableMinRetentionPolicyCheckForUseInSysTestsOnly {
-			// We have this check to avoid the datanode removing data that is required for creating data snapshots
-			aboveMinimum, err := checkPolicyPeriodIsAtOrAboveMinimum(oneDayAsSeconds, policy, db)
-			if err != nil {
-				return fmt.Errorf("checking retention policy period is above minimum:%w", err)
+	// get the hypertables and caggs that have been created for data node
+	retentionEntities, err := getRetentionEntities(db)
+	if err != nil {
+		// We should panic here because something must be wrong
+		panic(fmt.Errorf("getting entities with retention policies: %w", err))
+	}
+
+	// This is the default retention period the data-node is operating with
+	retentionPeriod := config.RetentionPeriod
+	// These are any retention policy overrides that have been set by the user
+	overridePolicies := config.RetentionPolicies
+
+	defaultPolicies := defaultRetentionPolicies[retentionPeriod]
+
+	var maxRetentionPeriodInSecs int64
+	var blocksRetentionPolicy string
+
+	for _, entity := range retentionEntities {
+		if retentionPeriod == RetentionPeriodLite || retentionPeriod == RetentionPeriodArchive {
+			policy := defaultPolicies[0]
+			override, ok := getPolicy(entity, overridePolicies)
+			if ok { // we have found an override policy so apply it instead of the default
+				policy = override
 			}
 
+			// Set the default retention period
+			if err := setRetentionPolicy(db, entity, policy.DataRetentionPeriod, log); err != nil {
+				return fmt.Errorf("setting retention policy for %s to %s: %w", entity, policy.DataRetentionPeriod, err)
+			}
+
+			continue
+		}
+
+		if entity == blocksEntity {
+			// we should ignore this for now because blocks retention policy needs to be as long as the longest retention period
+			continue
+		}
+
+		// if the retention period is the standard period, we need to check that a default has been defined, otherwise we should panic
+		policy, ok := getPolicy(entity, defaultPolicies)
+		if !ok {
+			// The development team have omitted a default retention policy for this entity, we should panic here.
+			panic(fmt.Errorf("no default retention policy defined for %s", entity))
+		}
+
+		override, ok := getPolicy(entity, overridePolicies)
+		if ok { // we have found an override policy so apply it instead of the default
+			policy = override
+		}
+
+		aboveMinimum, retentionPeriodInSecs, err := checkPolicyPeriodIsAtOrAboveMinimum(oneDayAsSeconds, policy, db)
+		if err != nil {
+			return fmt.Errorf("checking retention policy period is above minimum:%w", err)
+		}
+
+		if retentionPeriodInSecs > maxRetentionPeriodInSecs {
+			maxRetentionPeriodInSecs = retentionPeriodInSecs
+			blocksRetentionPolicy = policy.DataRetentionPeriod
+		}
+
+		if !config.DisableMinRetentionPolicyCheckForUseInSysTestsOnly {
+			// We have this check to avoid the datanode removing data that is required for creating data snapshots
 			if !aboveMinimum {
 				return fmt.Errorf("policy for %s has a retention time less than one day, one day is the minimum permitted", policy.HypertableOrCaggName)
 			}
 		}
 
-		if _, err := db.Exec(fmt.Sprintf("SELECT remove_retention_policy('%s', true);", policy.HypertableOrCaggName)); err != nil {
-			return fmt.Errorf("removing retention policy from %s: %w", policy.HypertableOrCaggName, err)
+		// Set the default retention period
+		if err := setRetentionPolicy(db, entity, policy.DataRetentionPeriod, log); err != nil {
+			return fmt.Errorf("setting retention policy for %s to %s: %w", entity, policy.DataRetentionPeriod, err)
 		}
+	}
 
-		// If we're keeping data forever, don't bother adding a policy at all
-		if policy.DataRetentionPeriod == InfiniteInterval {
-			continue
-		}
-
-		if _, err := db.Exec(fmt.Sprintf("SELECT add_retention_policy('%s', INTERVAL '%s');", policy.HypertableOrCaggName, policy.DataRetentionPeriod)); err != nil {
-			return fmt.Errorf("adding retention policy to %s: %w", policy.HypertableOrCaggName, err)
+	// finally if the retention period is the standard period, we need to set the blocks retention policy to the longest retention period
+	if retentionPeriod == RetentionPeriodStandard {
+		if err := setRetentionPolicy(db, blocksEntity, blocksRetentionPolicy, log); err != nil {
+			return fmt.Errorf("setting retention policy for %s to %s: %w", blocksEntity, blocksRetentionPolicy, err)
 		}
 	}
 
 	return nil
 }
 
-func checkPolicyPeriodIsAtOrAboveMinimum(minimumInSeconds int64, policy RetentionPolicy, db *sql.DB) (bool, error) {
-	if policy.DataRetentionPeriod == InfiniteInterval {
-		return true, nil
-	}
-
-	query := fmt.Sprintf("SELECT EXTRACT(epoch FROM INTERVAL '%s')", policy.DataRetentionPeriod)
+func retentionPeriodToSeconds(db *sql.DB, retentionPeriod string) (int64, error) {
+	query := fmt.Sprintf("SELECT EXTRACT(epoch FROM INTERVAL '%s')", retentionPeriod)
 	row := db.QueryRow(query)
 
 	var seconds decimal.Decimal
 	err := row.Scan(&seconds)
 	if err != nil {
-		return false, errors.Wrapf(err, "failed to get interval in seconds for policy %s", policy.HypertableOrCaggName)
+		return 0, fmt.Errorf("failed to get interval in seconds for retention period %s: %w", retentionPeriod, err)
 	}
 
-	secs := seconds.IntPart()
+	return seconds.IntPart(), nil
+}
 
-	return secs >= minimumInSeconds, nil
+func checkPolicyPeriodIsAtOrAboveMinimum(minimumInSeconds int64, policy RetentionPolicy, db *sql.DB) (bool, int64, error) {
+	if policy.DataRetentionPeriod == InfiniteInterval {
+		return true, 0, nil
+	}
+
+	secs, err := retentionPeriodToSeconds(db, policy.DataRetentionPeriod)
+	if err != nil {
+		return false, 0, fmt.Errorf("failed to get interval in seconds for policy %s: %w", policy.HypertableOrCaggName, err)
+	}
+
+	return secs >= minimumInSeconds, secs, nil
 }
 
 type EmbeddedPostgresLog interface {

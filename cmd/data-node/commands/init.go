@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"math"
 
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -76,19 +78,12 @@ func (opts *InitCmd) Execute(args []string) error {
 	}
 
 	if opts.Archive {
-		for i, policy := range cfg.SQLStore.RetentionPolicies {
-			policy.DataRetentionPeriod = "forever"
-			cfg.SQLStore.RetentionPolicies[i] = policy
-		}
-
 		cfg.NetworkHistory.Store.HistoryRetentionBlockSpan = math.MaxInt64
+		cfg.SQLStore.RetentionPeriod = sqlstore.RetentionPeriodArchive
 	}
 
 	if opts.Lite {
-		for i, policy := range cfg.SQLStore.RetentionPolicies {
-			policy.DataRetentionPeriod = "1 day"
-			cfg.SQLStore.RetentionPolicies[i] = policy
-		}
+		cfg.SQLStore.RetentionPeriod = sqlstore.RetentionPeriodLite
 	}
 
 	cfg.ChainID = chainID
