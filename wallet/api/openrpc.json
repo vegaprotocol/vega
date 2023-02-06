@@ -212,6 +212,9 @@
         },
         {
           "$ref": "#/components/errors/request_interrupted"
+        },
+        {
+          "$ref": "#/components/errors/transaction_would_break_spam_rules"
         }
       ],
       "examples": [
@@ -229,8 +232,7 @@
             },
             {
               "name": "transaction",
-              "value": {
-              }
+              "value": {}
             }
           ],
           "result": {
@@ -337,6 +339,9 @@
         },
         {
           "$ref": "#/components/errors/request_interrupted"
+        },
+        {
+          "$ref": "#/components/errors/transaction_would_break_spam_rules"
         }
       ],
       "examples": [
@@ -3524,6 +3529,11 @@
         "code": 2000,
         "message": "Application error",
         "data": "the public key is not allowed to be used"
+      },
+      "transaction_would_break_spam_rules": {
+        "code": 2000,
+        "message": "Application error",
+        "data": "the transaction will break the network's spam rules"
       },
       "connection_closed": {
         "code": 3000,

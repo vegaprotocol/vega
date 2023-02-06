@@ -19,6 +19,7 @@
 - [7434](https://github.com/vegaprotocol/vega/issues/7434) - Update design architecture diagram
 - [7429](https://github.com/vegaprotocol/vega/issues/7429) - Do not mark wallet and network as incompatible when the patch version doesn't match
 - [6650](https://github.com/vegaprotocol/vega/issues/6650) - Add ability to filter rewards with `fromEpoch` and `toEpoch`
+- [7429](https://github.com/vegaprotocol/vega/issues/7359) - `vega wallet` will not send in a transaction if it will result in a party becoming banned
 - [7289](https://github.com/vegaprotocol/vega/issues/7289) - `positionsConnection` query added to `GraphQL`root query with filter for multiple parties and markets
 - [7454](https://github.com/vegaprotocol/vega/issues/7454) - Retention policies for new types do not honour the `lite` or `archive` when added after `init`
 - [7469](https://github.com/vegaprotocol/vega/issues/7469) - Sanitize `Prometheus` labels for `HTTP API` requests
@@ -41,6 +42,7 @@
 - [7399](https://github.com/vegaprotocol/vega/issues/7399) - Add option to filter out settled markets when listing markets in `API` requests
 - [7417](https://github.com/vegaprotocol/vega/issues/7417) - Missing entries in default data retention configuration for `datanode`
 - [7504](https://github.com/vegaprotocol/vega/issues/7504) - Fixed panic in collateral engine when trying to clear a market
+- [7468](https://github.com/vegaprotocol/vega/issues/7468) - `Datanode` network history load command only prompts when run from a terminal
 
 ## 0.67.2
 

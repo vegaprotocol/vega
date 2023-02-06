@@ -11,7 +11,7 @@ import (
 )
 
 // Generates mocks
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/service/v1 WalletHandler,Auth,NodeForward,RSAStore,ProofOfWork
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/service/v1 WalletHandler,Auth,NodeForward,RSAStore,SpamHandler
 
 //nolint:interfacebloat
 type WalletHandler interface {
@@ -40,6 +40,7 @@ type NodeForward interface {
 	CheckTx(context.Context, *commandspb.Transaction, int) (*api.CheckTransactionResponse, error)
 	HealthCheck(context.Context) error
 	LastBlockHeightAndHash(context.Context) (*api.LastBlockHeightResponse, int, error)
+	SpamStatistics(context.Context, string) (*api.GetSpamStatisticsResponse, int, error)
 	Stop()
 }
 
@@ -47,6 +48,7 @@ type RSAStore interface {
 	GetRsaKeys() (*RSAKeys, error)
 }
 
-type ProofOfWork interface {
-	Generate(pubKey string, blockData *nodetypes.LastBlock) (*commandspb.ProofOfWork, error)
+type SpamHandler interface {
+	GenerateProofOfWork(pubKey string, stats *nodetypes.SpamStatistics) (*commandspb.ProofOfWork, error)
+	CheckSubmission(req *walletpb.SubmitTransactionRequest, stats *nodetypes.SpamStatistics) error
 }
