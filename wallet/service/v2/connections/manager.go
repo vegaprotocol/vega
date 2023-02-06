@@ -127,6 +127,10 @@ func (m *Manager) ConnectedWallet(hostname string, token Token) (api.ConnectedWa
 		return api.ConnectedWallet{}, ErrTokenHasExpired
 	}
 
+	if connection.policy.IsClosed() {
+		return api.ConnectedWallet{}, ErrConnectionHasBeenClosed
+	}
+
 	connection.policy.UpdateActivityDate(now)
 
 	return connection.connectedWallet, nil
@@ -215,8 +219,10 @@ func (m *Manager) loadLongLivingConnections() error {
 }
 
 func (m *Manager) loadLongLivingConnection(ctx context.Context, tokenDescription TokenDescription) error {
-	// We need to ensure the wallet is unlocked before loading it.
 	if err := m.walletStore.UnlockWallet(ctx, tokenDescription.Wallet.Name, tokenDescription.Wallet.Passphrase); err != nil {
+		// We don't properly handle wallets renaming, nor wallets passphrase
+		// update in the token file automatically. We only support a direct
+		// update of the token file.
 		return fmt.Errorf("could not unlock the wallet %q associated to the token %q: %w",
 			tokenDescription.Wallet.Name,
 			tokenDescription.Token.Short(),
@@ -245,27 +251,48 @@ func (m *Manager) loadLongLivingConnection(ctx context.Context, tokenDescription
 // refreshConnections is called when the wallet store notices a change in
 // the wallets. This way the connection manager is able to reload the connected
 // wallets.
-func (m *Manager) refreshConnections(_ context.Context, w wallet.Wallet) {
+func (m *Manager) refreshConnections(_ context.Context, event wallet.Event) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	if event.Type == wallet.WalletRemovedEventType {
+		m.closeConnectionsUsingThisWallet(event.Data.(wallet.WalletRemovedEventData).Name)
+	} else if event.Type == wallet.UnlockedWalletUpdatedEventType {
+		m.updateConnectionsUsingThisWallet(event.Data.(wallet.UnlockedWalletUpdatedEventData).UpdatedWallet)
+	} else if event.Type == wallet.WalletHasBeenLockedEventType {
+		m.expireConnectionsUsingThisWallet(event.Data.(wallet.WalletHasBeenLockedEventData).Name)
+	} else if event.Type == wallet.WalletRenamedEventType {
+		data := event.Data.(wallet.WalletRenamedEventData)
+		m.updateConnectionsUsingThisRenamedWallet(data.PreviousName, data.NewName)
+	}
+}
+
+func (m *Manager) closeConnectionsUsingThisWallet(walletName string) {
+	for token, connection := range m.tokenToConnection {
+		if connection.connectedWallet.Name() != walletName {
+			continue
+		}
+
+		connection.policy.SetAsForcefullyClose()
+
+		delete(m.tokenToConnection, token)
+	}
+}
+
+func (m *Manager) updateConnectionsUsingThisWallet(w wallet.Wallet) {
 	for token, connection := range m.tokenToConnection {
 		if connection.connectedWallet.Name() != w.Name() {
 			continue
 		}
 
+		var updatedConnectedWallet api.ConnectedWallet
 		if connection.policy.IsLongLivingConnection() {
-			m.tokenToConnection[token].connectedWallet = api.NewLongLivingConnectedWallet(w)
-			continue
+			updatedConnectedWallet = api.NewLongLivingConnectedWallet(w)
+		} else {
+			updatedConnectedWallet, _ = api.NewConnectedWallet(connection.connectedWallet.Hostname(), w)
 		}
 
-		cw, err := api.NewConnectedWallet(connection.connectedWallet.Hostname(), w)
-		if err != nil {
-			// There is no reason we end up here.
-			continue
-		}
-
-		m.tokenToConnection[token].connectedWallet = cw
+		m.tokenToConnection[token].connectedWallet = updatedConnectedWallet
 	}
 }
 
@@ -309,6 +336,42 @@ func (m *Manager) refreshLongLivingTokens(ctx context.Context, activeTokensDescr
 
 	for _, tokenDescription := range activeTokens {
 		_ = m.loadLongLivingConnection(ctx, tokenDescription)
+	}
+}
+
+func (m *Manager) expireConnectionsUsingThisWallet(walletName string) {
+	for _, connection := range m.tokenToConnection {
+		if connection.connectedWallet.Name() != walletName {
+			continue
+		}
+
+		connection.policy.SetAsForcefullyClose()
+	}
+}
+
+func (m *Manager) updateConnectionsUsingThisRenamedWallet(previousWalletName, newWalletName string) {
+	var _updatedWallet wallet.Wallet
+
+	// This acts as a cached getter, to avoid multiple or useless fetch.
+	getUpdatedWallet := func() wallet.Wallet {
+		if _updatedWallet == nil {
+			w, _ := m.walletStore.GetWallet(context.Background(), newWalletName)
+			_updatedWallet = w
+		}
+		return _updatedWallet
+	}
+
+	for _, connection := range m.tokenToConnection {
+		if connection.connectedWallet.Name() != previousWalletName {
+			continue
+		} else if connection.policy.IsLongLivingConnection() {
+			// We don't update the long-living connections because they come
+			// from a configuration file that doesn't support token updates, for
+			// now.
+			continue
+		}
+
+		connection.connectedWallet, _ = api.NewConnectedWallet(connection.connectedWallet.Hostname(), getUpdatedWallet())
 	}
 }
 

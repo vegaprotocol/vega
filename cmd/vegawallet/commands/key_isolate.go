@@ -46,12 +46,13 @@ type IsolateKeyHandler func(api.AdminIsolateKeyParams) (api.AdminIsolateKeyResul
 
 func NewCmdIsolateKey(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminIsolateKeyParams) (api.AdminIsolateKeyResult, error) {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return api.AdminIsolateKeyResult{}, fmt.Errorf("could not initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		isolateKey := api.NewAdminIsolateKey(s)
+		isolateKey := api.NewAdminIsolateKey(walletStore)
 		rawResult, errDetails := isolateKey.Handle(context.Background(), params)
 		if errDetails != nil {
 			return api.AdminIsolateKeyResult{}, errors.New(errDetails.Data)
