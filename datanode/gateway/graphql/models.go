@@ -396,8 +396,6 @@ type LossSocialization struct {
 	Amount string `json:"amount"`
 }
 
-func (LossSocialization) IsEvent() {}
-
 // The liquidity commitments for this market
 type MarketDataCommitments struct {
 	// A set of liquidity sell orders to meet the liquidity provision obligation.
@@ -422,16 +420,12 @@ type MarketEvent struct {
 	Payload string `json:"payload"`
 }
 
-func (MarketEvent) IsEvent() {}
-
 type MarketTick struct {
 	// The market ID
 	MarketID string `json:"marketId"`
 	// The block time
 	Time string `json:"time"`
 }
-
-func (MarketTick) IsEvent() {}
 
 // Details on the collection of nodes for particular validator status
 type NodeSet struct {
@@ -489,8 +483,6 @@ type PositionResolution struct {
 	// The mark price at which parties were distressed/closed out
 	MarkPrice string `json:"markPrice"`
 }
-
-func (PositionResolution) IsEvent() {}
 
 // Range of valid prices and the associated price monitoring trigger
 type PriceMonitoringBounds struct {
@@ -609,8 +601,6 @@ type SettleDistressed struct {
 	Price string `json:"price"`
 }
 
-func (SettleDistressed) IsEvent() {}
-
 type SettlePosition struct {
 	// The market in which a position was settled
 	MarketID string `json:"marketId"`
@@ -621,8 +611,6 @@ type SettlePosition struct {
 	// The trades that were settled to close the overall position
 	TradeSettlements []*TradeSettlement `json:"tradeSettlements"`
 }
-
-func (SettlePosition) IsEvent() {}
 
 // Signer is the authorized signature used for the data.
 type Signer struct {
@@ -694,8 +682,6 @@ type TransferResponses struct {
 	Responses []*TransferResponse `json:"responses"`
 }
 
-func (TransferResponses) IsEvent() {}
-
 // An asset originated from an Ethereum ERC20 Token
 type UpdateErc20 struct {
 	// The lifetime limits deposit per address
@@ -720,93 +706,24 @@ type BusEventType string
 const (
 	// Vega Time has changed
 	BusEventTypeTimeUpdate BusEventType = "TimeUpdate"
-	// A balance has been transferred between accounts
-	BusEventTypeTransferResponses BusEventType = "TransferResponses"
-	// A position resolution event has occurred
-	BusEventTypePositionResolution BusEventType = "PositionResolution"
-	// An order has been created or updated
-	BusEventTypeOrder BusEventType = "Order"
-	// An account has been updated
-	BusEventTypeAccount BusEventType = "Account"
-	// A party has been updated
-	BusEventTypeParty BusEventType = "Party"
-	// A trade has been created
-	BusEventTypeTrade BusEventType = "Trade"
-	// Margin levels have changed for a position
-	BusEventTypeMarginLevels BusEventType = "MarginLevels"
-	// A governance proposal has been created or updated
-	BusEventTypeProposal BusEventType = "Proposal"
-	// A vote has been placed on a governance proposal
-	BusEventTypeVote BusEventType = "Vote"
-	// Market data has been updated
-	BusEventTypeMarketData BusEventType = "MarketData"
-	// Validator node signatures for an event
-	BusEventTypeNodeSignature BusEventType = "NodeSignature"
-	// A position has been closed without sufficient insurance pool balance to cover it
-	BusEventTypeLossSocialization BusEventType = "LossSocialization"
-	// A position has been settled
-	BusEventTypeSettlePosition BusEventType = "SettlePosition"
-	// A distressed position has been settled
-	BusEventTypeSettleDistressed BusEventType = "SettleDistressed"
-	// A new market has been created
-	BusEventTypeMarketCreated BusEventType = "MarketCreated"
-	// A market has been updated
-	BusEventTypeMarketUpdated BusEventType = "MarketUpdated"
-	// An asset has been created or update
-	BusEventTypeAsset BusEventType = "Asset"
-	// A market has progressed by one tick
-	BusEventTypeMarketTick BusEventType = "MarketTick"
-	// A market has either entered or exited auction
-	BusEventTypeAuction BusEventType = "Auction"
-	// A risk factor adjustment was made
-	BusEventTypeRiskFactor BusEventType = "RiskFactor"
-	// A liquidity commitment change occurred
-	BusEventTypeLiquidityProvision BusEventType = "LiquidityProvision"
 	// Collateral has deposited in to this Vega network via the bridge
 	BusEventTypeDeposit BusEventType = "Deposit"
 	// Collateral has been withdrawn from this Vega network via the bridge
 	BusEventTypeWithdrawal BusEventType = "Withdrawal"
-	// An oracle spec has been registered
-	BusEventTypeOracleSpec BusEventType = "OracleSpec"
-	// Constant for market events - mainly used for logging
-	BusEventTypeMarket BusEventType = "Market"
 	// The results from processing at transaction
 	BusEventTypeTransactionResult BusEventType = "TransactionResult"
 )
 
 var AllBusEventType = []BusEventType{
 	BusEventTypeTimeUpdate,
-	BusEventTypeTransferResponses,
-	BusEventTypePositionResolution,
-	BusEventTypeOrder,
-	BusEventTypeAccount,
-	BusEventTypeParty,
-	BusEventTypeTrade,
-	BusEventTypeMarginLevels,
-	BusEventTypeProposal,
-	BusEventTypeVote,
-	BusEventTypeMarketData,
-	BusEventTypeNodeSignature,
-	BusEventTypeLossSocialization,
-	BusEventTypeSettlePosition,
-	BusEventTypeSettleDistressed,
-	BusEventTypeMarketCreated,
-	BusEventTypeMarketUpdated,
-	BusEventTypeAsset,
-	BusEventTypeMarketTick,
-	BusEventTypeAuction,
-	BusEventTypeRiskFactor,
-	BusEventTypeLiquidityProvision,
 	BusEventTypeDeposit,
 	BusEventTypeWithdrawal,
-	BusEventTypeOracleSpec,
-	BusEventTypeMarket,
 	BusEventTypeTransactionResult,
 }
 
 func (e BusEventType) IsValid() bool {
 	switch e {
-	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeMarketUpdated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeOracleSpec, BusEventTypeMarket, BusEventTypeTransactionResult:
+	case BusEventTypeTimeUpdate, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeTransactionResult:
 		return true
 	}
 	return false
