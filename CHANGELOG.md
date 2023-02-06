@@ -41,6 +41,7 @@
 - [7399](https://github.com/vegaprotocol/vega/issues/7399) - Add option to filter out settled markets when listing markets in `API` requests
 - [7417](https://github.com/vegaprotocol/vega/issues/7417) - Missing entries in default data retention configuration for `datanode`
 - [7504](https://github.com/vegaprotocol/vega/issues/7504) - Fixed panic in collateral engine when trying to clear a market
+- [7468](https://github.com/vegaprotocol/vega/issues/7468) - `Datanode` network history load command only prompts when run from a terminal
 
 ## 0.67.2
 
