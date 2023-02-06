@@ -136,8 +136,6 @@ func (p *Position) handleOrdersClosedEvent(ctx context.Context, event ordersClos
 	}
 	for _, pos := range positions {
 		pos.UpdateOrdersClosed()
-		// this update can't really fail, the entity is just added to the batch, but add the check
-		// just in case this changes later on
 		if err := p.updatePosition(ctx, pos); err != nil {
 			return fmt.Errorf("failed to update position: %w", err)
 		}
