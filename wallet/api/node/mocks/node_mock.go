@@ -65,6 +65,21 @@ func (mr *MockGRPCAdapterMockRecorder) LastBlock(arg0 interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LastBlock", reflect.TypeOf((*MockGRPCAdapter)(nil).LastBlock), arg0)
 }
 
+// SpamStatistics mocks base method.
+func (m *MockGRPCAdapter) SpamStatistics(arg0 context.Context, arg1 string) (types.SpamStatistics, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SpamStatistics", arg0, arg1)
+	ret0, _ := ret[0].(types.SpamStatistics)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SpamStatistics indicates an expected call of SpamStatistics.
+func (mr *MockGRPCAdapterMockRecorder) SpamStatistics(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SpamStatistics", reflect.TypeOf((*MockGRPCAdapter)(nil).SpamStatistics), arg0, arg1)
+}
+
 // Statistics mocks base method.
 func (m *MockGRPCAdapter) Statistics(arg0 context.Context) (types.Statistics, error) {
 	m.ctrl.T.Helper()
