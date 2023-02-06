@@ -25,8 +25,6 @@ import (
 )
 
 var (
-	ErrDoNotSetPubKeyInTransaction = errors.New("do not set the public key through the transaction, use --pubkey flag instead")
-
 	sendTransactionLong = cli.LongDesc(`
 		Send a transaction to a Vega node via the gRPC API. The transaction can be sent to
 		any node of a registered network or to a specific node address.
@@ -75,11 +73,11 @@ func NewCmdSendTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
 			return api.AdminSendTransactionResult{}, fmt.Errorf("couldn't initialise network store: %w", err)
 		}
 
-		signTx := api.NewAdminSendTransaction(walletStore, ns, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+		sendTx := api.NewAdminSendTransaction(walletStore, ns, func(hosts []string, retries uint64) (walletnode.Selector, error) {
 			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries)
 		})
 
-		rawResult, errDetails := signTx.Handle(context.Background(), params)
+		rawResult, errDetails := sendTx.Handle(context.Background(), params)
 		if errDetails != nil {
 			return api.AdminSendTransactionResult{}, errors.New(errDetails.Data)
 		}

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api/node/types"
@@ -117,15 +118,10 @@ var (
 	ErrMultipleNetworkSources                             = errors.New("network sources are mutually exclusive")
 	ErrNetworkAlreadyExists                               = errors.New("a network with the same name already exists")
 	ErrNetworkConfigurationDoesNotHaveGRPCNodes           = errors.New("the network does not have gRPC hosts configured")
-	ErrNetworkCouldNotProcessTransaction                  = errors.New("the network could not process the transaction")
 	ErrNetworkDoesNotExist                                = errors.New("the network does not exist")
 	ErrNetworkNameIsRequired                              = errors.New("the network name is required")
 	ErrNetworkOrNodeAddressIsRequired                     = errors.New("a network or a node address is required")
-	ErrNetworkRejectedInvalidTransaction                  = errors.New("the network rejected the transaction because it's invalid")
-	ErrNetworkRejectedMalformedTransaction                = errors.New("the network rejected the transaction because it's malformed")
-	ErrNetworkRejectedUnsupportedTransaction              = errors.New("the network does not support this transaction")
 	ErrNetworkSourceIsRequired                            = errors.New("a network source is required")
-	ErrNetworkSpamProtectionActivated                     = errors.New("the network blocked the transaction through the spam protection")
 	ErrNewNameIsRequired                                  = errors.New("the new name is required")
 	ErrNewPassphraseIsRequired                            = errors.New("the new passphrase is required")
 	ErrNextAndCurrentPublicKeysCannotBeTheSame            = errors.New("the next and current public keys cannot be the same")
@@ -196,22 +192,22 @@ func networkErrorFromTransactionError(err error) *jsonrpc.ErrorDetails {
 	txErr := types.TransactionError{}
 	isTxErr := errors.As(err, &txErr)
 	if !isTxErr {
-		return networkError(ErrorCodeNodeCommunicationFailed, ErrTransactionCouldNotBeSentThroughSelectedNode)
+		return networkError(ErrorCodeNodeCommunicationFailed, fmt.Errorf("the transaction failed: %w", err))
 	}
 
 	switch txErr.ABCICode {
 	case 51:
-		return networkError(ErrorCodeNetworkRejectedInvalidTransaction, ErrNetworkRejectedInvalidTransaction)
+		return networkError(ErrorCodeNetworkRejectedInvalidTransaction, fmt.Errorf("the network rejected the transaction because it's invalid: %w", err))
 	case 60:
-		return networkError(ErrorCodeNetworkRejectedMalformedTransaction, ErrNetworkRejectedMalformedTransaction)
+		return networkError(ErrorCodeNetworkRejectedMalformedTransaction, fmt.Errorf("the network rejected the transaction because it's malformed: %w", err))
 	case 70:
-		return networkError(ErrorCodeNetworkCouldNotProcessTransaction, ErrNetworkCouldNotProcessTransaction)
+		return networkError(ErrorCodeNetworkCouldNotProcessTransaction, fmt.Errorf("the network could not process the transaction: %w", err))
 	case 80:
-		return networkError(ErrorCodeNetworkRejectedUnsupportedTransaction, ErrNetworkRejectedUnsupportedTransaction)
+		return networkError(ErrorCodeNetworkRejectedUnsupportedTransaction, fmt.Errorf("the network does not support this transaction: %w", err))
 	case 89:
-		return networkError(ErrorCodeNetworkSpamProtectionActivated, ErrNetworkSpamProtectionActivated)
+		return networkError(ErrorCodeNetworkSpamProtectionActivated, fmt.Errorf("the network blocked the transaction through the spam protection: %w", err))
 	default:
-		return networkError(ErrorCodeNetworkRejectedTransaction, ErrTransactionFailed)
+		return networkError(ErrorCodeNetworkRejectedTransaction, fmt.Errorf("the transaction failed: %w", err))
 	}
 }
 
