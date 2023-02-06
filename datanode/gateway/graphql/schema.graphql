@@ -2170,6 +2170,9 @@ type Position {
   "The total amount of profit and Loss that was not transferred due to loss socialization"
   lossSocializationAmount: String!
 
+  "Enum set if the position was closed out or orders were removed because party was distressed"
+  positionStatus: PositionStatus!
+
   "Margins of the party for the given position"
   marginsConnection(pagination: Pagination): MarginConnection
 
