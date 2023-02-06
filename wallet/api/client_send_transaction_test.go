@@ -29,7 +29,7 @@ func TestSendTransaction(t *testing.T) {
 	t.Run("Interrupting the request does not send the transaction", testInterruptingTheRequestDoesNotSendTransaction)
 	t.Run("Getting internal error during the review does not send the transaction", testGettingInternalErrorDuringReviewDoesNotSendTransaction)
 	t.Run("No healthy node available does not send the transaction", testNoHealthyNodeAvailableDoesNotSendTransaction)
-	t.Run("Failing to get the last block does not send the transaction", testFailingToGetSpamStatsDoesNotSendTransaction)
+	t.Run("Failing to get the spam statistics does not send the transaction", testFailingToGetSpamStatsDoesNotSendTransaction)
 	t.Run("Failure when sending transaction returns an error", testFailureWhenSendingTransactionReturnsAnError)
 	t.Run("Failing spam checks aborts the transaction", testFailingSpamChecksAbortsTheTransaction)
 }

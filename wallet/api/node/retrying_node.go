@@ -71,15 +71,16 @@ func (n *RetryingNode) SpamStatistics(ctx context.Context, pubKey string) (nodet
 		return nodetypes.SpamStatistics{}, err
 	}
 
-	// TODO log it all....
 	n.log.Debug("response from SpamStatistics",
 		zap.String("host", n.grpcAdapter.Host()),
 		zap.String("chain-id", resp.ChainID),
 		zap.Uint64("epoch", resp.EpochSeq),
 		zap.Uint64("block-height", resp.LastBlockHeight),
-		zap.Uint64("prosposals", resp.Proposals.CountForEpoch),
-		zap.Uint64("transfers", resp.Transfers.CountForEpoch),
-		zap.Uint64("delegations", resp.Delegations.CountForEpoch),
+		zap.Uint64("prosposals-count-for-epoch", resp.Proposals.CountForEpoch),
+		zap.Uint64("transfers-count-for-epoch", resp.Transfers.CountForEpoch),
+		zap.Uint64("delegations-count-for-epoch", resp.Delegations.CountForEpoch),
+		zap.Uint64("issue-signatures-count-for-epoch", resp.IssuesSignatures.CountForEpoch),
+		zap.Uint64("node-announcements-count-for-epoch", resp.NodeAnnouncements.CountForEpoch),
 		zap.Time("request-time", requestTime),
 	)
 	return resp, nil

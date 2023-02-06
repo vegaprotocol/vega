@@ -423,7 +423,7 @@ message PoWStatistic {
   repeated PoWBlockState block_states = 1;
   // PoW banned until timestamp as RFC3339Nano
   optional string banned_until = 2;
-  // The number of block behind the current block whose hash can be used for prro-of-work calculations
+  // The number of block behind the current block whose hash can be used for proof-of-work calculations
   uint64 number_of_past_blocks = 3;
 }
 

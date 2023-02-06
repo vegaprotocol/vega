@@ -2088,7 +2088,7 @@ type PoWStatistic struct {
 	BlockStates []*PoWBlockState `protobuf:"bytes,1,rep,name=block_states,json=blockStates,proto3" json:"block_states,omitempty"`
 	// PoW banned until timestamp as RFC3339Nano
 	BannedUntil *string `protobuf:"bytes,2,opt,name=banned_until,json=bannedUntil,proto3,oneof" json:"banned_until,omitempty"`
-	// The number of block behind the current block whose hash can be used for prro-of-work calculations
+	// The number of block behind the current block whose hash can be used for proof-of-work calculations
 	NumberOfPastBlocks uint64 `protobuf:"varint,3,opt,name=number_of_past_blocks,json=numberOfPastBlocks,proto3" json:"number_of_past_blocks,omitempty"`
 }
 
