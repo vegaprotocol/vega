@@ -93,7 +93,7 @@ If a custom mapping is provided, during the upgrade Visor uses the folder given 
 
 <dd>
 
-Allows to define assets that should be automatically downloaded from Github for a specific release.
+Allows you to define the assets that should be automatically downloaded from Github for a specific release.
 
 
 </dd>
@@ -122,7 +122,7 @@ restartsDelaySeconds = 5
 
 
 ## *AutoInstallConfig*
-Allows to define assets that should be automatically downloaded from Github for a specific release.
+Allows you to define the assets that should be automatically downloaded from GitHub for a specific release.
 
 
 ### Fields
@@ -134,7 +134,7 @@ Allows to define assets that should be automatically downloaded from Github for 
 
 <dd>
 
-Whether or not the autoinstall should be used
+Whether or not autoinstall should be used
 
 
 Default value: <code>true</code>
@@ -170,7 +170,7 @@ Default value: <code>vega</code>
 
 <dd>
 
-Definitions of the assets that should be downloaded from the Github repository.
+Definitions of the assets that should be downloaded from the GitHub repository.
 
 </dd>
 
@@ -209,7 +209,7 @@ Definitions of the assets that should be downloaded from the Github repository.
 
 <dd>
 
-Allows to define asset name to download Vega binary.
+Allows you to define the name of the asset to be downloaded.
 
 </dd>
 
@@ -219,7 +219,7 @@ Allows to define asset name to download Vega binary.
 
 <dd>
 
-Allows to define asset name to download data node binary.
+Allows you to define the name of the asset to be downloaded.
 
 </dd>
 
@@ -252,7 +252,7 @@ Name of the asset on Github.
 
 <dd>
 
-Binary name definition can be used in case the asset is a zip file and the binary is included inside of it.
+Binary name definition can be used if the asset is a zip file and the binary is included inside of it.
 
 
 </dd>
