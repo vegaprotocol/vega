@@ -15,6 +15,7 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -68,6 +69,27 @@ func (ps *Positions) GetByMarketAndParty(ctx context.Context,
 	return position, ps.wrapE(pgxscan.Get(ctx, ps.Connection, &position,
 		`SELECT * FROM positions_current WHERE market_id=$1 AND party_id=$2`,
 		marketID, partyID))
+}
+
+func (ps *Positions) GetByMarketAndParties(ctx context.Context, marketIDRaw string, partyIDsRaw []string) ([]entities.Position, error) {
+	marketID := entities.MarketID(marketIDRaw)
+	partyIDs := make([]entities.PartyID, 0, len(partyIDsRaw))
+	in := make([]stirng, 0, len(partyIDsRaw))
+	bindNum := 2
+	for _, p := range partyIDsRaw {
+		partyIDs = append(partyIDs, entities.PartyID(p))
+		in = append(in, fmt.Sprintf("$%d", bindNum))
+		bindNum++
+	}
+	bind := make([]interface{}, 0, len(in)+1)
+	// set all bind vars
+	bind = append(bind, marketID)
+	bind = append(bind, partyIDs...)
+	positions := []entities.Position{}
+	// build the query
+	q := fmt.Sprintf(`SELECT * FROM positions_current WHERE market_id = $1 AND party_id IN (%s)`, strings.Join(in, ", "))
+	err := pgxscan.Select(ctx, ps.Connection, &positions, q, bind...)
+	return positions, err
 }
 
 func (ps *Positions) GetByMarket(ctx context.Context, marketID string) ([]entities.Position, error) {
