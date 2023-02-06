@@ -31,13 +31,13 @@
       },
       "errors": [
         {
-          "$ref": "#/components/errors/connection_closed"
+          "$ref": "#/components/errors/user_error_connection_closed"
         },
         {
-          "$ref": "#/components/errors/request_rejected"
+          "$ref": "#/components/errors/user_error_wallet_connection_rejected"
         },
         {
-          "$ref": "#/components/errors/request_interrupted"
+          "$ref": "#/components/errors/server_error_request_canceled"
         }
       ],
       "examples": [
@@ -122,11 +122,6 @@
           }
         }
       },
-      "errors": [
-        {
-          "$ref": "#/components/errors/read_access_public_keys"
-        }
-      ],
       "examples": [
         {
           "name": "List keys allowed on \"vega.xyz\"",
@@ -196,22 +191,28 @@
       },
       "errors": [
         {
-          "$ref": "#/components/errors/no_healthy_node"
+          "$ref": "#/components/errors/network_error_no_healthy_node"
         },
         {
-          "$ref": "#/components/errors/could_not_get_last_block"
+          "$ref": "#/components/errors/network_error_could_not_get_chain_id"
         },
         {
-          "$ref": "#/components/errors/public_key_not_allowed"
+          "$ref": "#/components/errors/network_error_could_not_get_last_block"
         },
         {
-          "$ref": "#/components/errors/connection_closed"
+          "$ref": "#/components/errors/application_error_public_key_not_allowed"
         },
         {
-          "$ref": "#/components/errors/request_rejected"
+          "$ref": "#/components/errors/user_error_connection_closed"
         },
         {
-          "$ref": "#/components/errors/request_interrupted"
+          "$ref": "#/components/errors/user_error_wallet_connection_rejected"
+        },
+        {
+          "$ref": "#/components/errors/server_error_request_canceled"
+        },
+        {
+          "$ref": "#/components/errors/application_error_transaction_would_break_spam_rules"
         }
       ],
       "examples": [
@@ -229,8 +230,7 @@
             },
             {
               "name": "transaction",
-              "value": {
-              }
+              "value": {}
             }
           ],
           "result": {
@@ -318,25 +318,31 @@
       },
       "errors": [
         {
-          "$ref": "#/components/errors/no_healthy_node"
+          "$ref": "#/components/errors/network_error_no_healthy_node"
         },
         {
-          "$ref": "#/components/errors/could_not_get_last_block"
+          "$ref": "#/components/errors/network_error_could_not_get_chain_id"
         },
         {
-          "$ref": "#/components/errors/transaction_failed"
+          "$ref": "#/components/errors/network_error_could_not_get_last_block"
         },
         {
-          "$ref": "#/components/errors/public_key_not_allowed"
+          "$ref": "#/components/errors/network_error_failed_transaction"
         },
         {
-          "$ref": "#/components/errors/connection_closed"
+          "$ref": "#/components/errors/application_error_public_key_not_allowed"
         },
         {
-          "$ref": "#/components/errors/request_rejected"
+          "$ref": "#/components/errors/user_error_connection_closed"
         },
         {
-          "$ref": "#/components/errors/request_interrupted"
+          "$ref": "#/components/errors/user_error_wallet_connection_rejected"
+        },
+        {
+          "$ref": "#/components/errors/server_error_request_canceled"
+        },
+        {
+          "$ref": "#/components/errors/application_error_transaction_would_break_spam_rules"
         }
       ],
       "examples": [
@@ -400,10 +406,10 @@
       },
       "errors": [
         {
-          "$ref": "#/components/errors/no_healthy_node"
+          "$ref": "#/components/errors/network_error_no_healthy_node"
         },
         {
-          "$ref": "#/components/errors/could_not_get_last_block"
+          "$ref": "#/components/errors/network_error_could_not_get_last_block"
         }
       ],
       "examples": [
@@ -3500,45 +3506,100 @@
       }
     },
     "errors": {
-      "no_healthy_node": {
+      "network_error_no_healthy_node": {
         "code": 1000,
         "message": "Network error",
         "data": "no healthy node available"
       },
-      "could_not_get_last_block": {
+      "network_error_could_not_get_last_block": {
         "code": 1000,
         "message": "Network error",
         "data": "could not get information about the last block on the network"
       },
-      "transaction_failed": {
+      "network_error_could_not_get_chain_id": {
         "code": 1000,
+        "message": "Network error",
+        "data": "could not get the chain ID from the node"
+      },
+      "network_error_transaction_failed": {
+        "code": 1000,
+        "message": "Network error",
+        "data": "the transaction could not be sent through the selected node"
+      },
+      "network_error_failed_transaction": {
+        "code": 1001,
         "message": "Network error",
         "data": "the transaction failed"
       },
-      "read_access_public_keys": {
-        "code": 2000,
-        "message": "Application error",
-        "data": "a \"read\" access on public keys is required"
+      "network_error_invalid_transaction": {
+        "code": 1051,
+        "message": "Network error",
+        "data": "the network rejected the transaction because it's invalid"
       },
-      "public_key_not_allowed": {
+      "network_error_malformed_transaction": {
+        "code": 1060,
+        "message": "Network error",
+        "data": "the network rejected the transaction because it's malformed"
+      },
+      "network_error_unprocessable_transaction": {
+        "code": 1070,
+        "message": "Network error",
+        "data": "the network could not process the transaction"
+      },
+      "network_error_unsupported_transaction": {
+        "code": 1080,
+        "message": "Network error",
+        "data": "the network does not support this transaction"
+      },
+      "network_error_spam_protection_activated": {
+        "code": 1089,
+        "message": "Network error",
+        "data": "the network blocked the transaction through the spam protection"
+      },
+      "application_error_public_key_not_allowed": {
         "code": 2000,
         "message": "Application error",
         "data": "the public key is not allowed to be used"
       },
-      "connection_closed": {
+      "application_error_transaction_would_break_spam_rules": {
+        "code": 2000,
+        "message": "Application error",
+        "data": "the transaction will break the network's spam rules"
+      },
+      "application_error_request_cancelled": {
+        "code": 2001,
+        "message": "Application error",
+        "data": "the application canceled the request"
+      },
+      "user_error_connection_closed": {
         "code": 3000,
-        "message": "Client error",
+        "message": "User error",
         "data": "the user closed the connection"
       },
-      "request_rejected": {
+      "user_error_wallet_connection_rejected": {
         "code": 3001,
-        "message": "Client error",
-        "data": "the user rejected the request"
+        "message": "User error",
+        "data": "the user rejected the wallet connection"
       },
-      "request_interrupted": {
-        "code": -32001,
-        "message": "Server error",
-        "data": "the request has been interrupted"
+      "user_error_keys_access_rejected": {
+        "code": 3001,
+        "message": "User error",
+        "data": "the user rejected the access to the keys"
+      },
+      "user_error_sending_transaction_rejected": {
+        "code": 3001,
+        "message": "User error",
+        "data": "the user rejected the sending of the transaction"
+      },
+      "user_error_signing_transaction_rejected": {
+        "code": 3001,
+        "message": "User error",
+        "data": "the user rejected the signing of the transaction"
+      },
+      "server_error_request_canceled": {
+        "code": 3002,
+        "message": "User error",
+        "data": "the user canceled the request"
       }
     }
   }

@@ -142,6 +142,38 @@ func (n *Forwarder) CheckTx(ctx context.Context, tx *commandspb.Transaction, clt
 	return resp, err
 }
 
+func (n *Forwarder) SpamStatistics(ctx context.Context, pubkey string) (*api.GetSpamStatisticsResponse, int, error) {
+	req := api.GetSpamStatisticsRequest{
+		PartyId: pubkey,
+	}
+	var resp *api.GetSpamStatisticsResponse
+	clt := -1
+	err := backoff.Retry(
+		func() error {
+			clt = n.nextClt()
+			r, err := n.clts[clt].GetSpamStatistics(ctx, &req)
+			if err != nil {
+				n.log.Debug("Couldn't get spam statistics", zap.Error(err))
+				return err
+			}
+			resp = r
+			return nil
+		},
+		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), n.nodeCfgs.Retries),
+	)
+
+	if err != nil {
+		n.log.Error("Couldn't get spam statistics", zap.Error(err))
+		clt = -1
+	} else {
+		n.log.Debug("Spam statistics",
+			zap.Time("request.time", time.Now()),
+		)
+	}
+
+	return resp, clt, err
+}
+
 func (n *Forwarder) SendTx(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type, cltIdx int) (*api.SubmitTransactionResponse, error) {
 	req := api.SubmitTransactionRequest{
 		Tx:   tx,

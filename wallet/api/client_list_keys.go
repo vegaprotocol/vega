@@ -81,7 +81,7 @@ func (h *ClientListKeys) updatePublicKeysPermissions(ctx context.Context, traceI
 		return internalError(ErrCouldNotListKeys)
 	}
 	if !approved {
-		return userRejectionError()
+		return userRejectionError(ErrUserRejectedAccessToKeys)
 	}
 
 	if err := freshWallet.UpdatePermissions(connectedWallet.Hostname(), perms); err != nil {
