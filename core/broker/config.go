@@ -23,9 +23,10 @@ const namedLogger = "broker"
 
 // Config represents the configuration of the broker.
 type Config struct {
-	Level  encoding.LogLevel `long:"log-level"`
-	Socket SocketConfig      `group:"Socket" namespace:"socket"`
-	File   FileConfig        `group:"File" namespace:"file"`
+	Level                    encoding.LogLevel `long:"log-level"`
+	Socket                   SocketConfig      `group:"Socket" namespace:"socket"`
+	File                     FileConfig        `group:"File" namespace:"file"`
+	EventBusClientBufferSize int               `long:"event-bus-client-buffer-size"`
 }
 
 // NewDefaultConfig creates an instance of config with default values.
@@ -47,6 +48,7 @@ func NewDefaultConfig() Config {
 		File: FileConfig{
 			Enabled: false,
 		},
+		EventBusClientBufferSize: 100000,
 	}
 }
 

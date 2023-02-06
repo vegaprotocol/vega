@@ -32,6 +32,7 @@ type Config struct {
 	PanicOnError                   encoding.Bool             `long:"panic-on-error" description:"if an error occurs on event push the broker will panic, else log the error"`
 	UseBufferedEventSource         encoding.Bool             `long:"use-buffered-event-source" description:"if true datanode will buffer events"`
 	BufferedEventSourceConfig      BufferedEventSourceConfig `group:"BufferedEventSource" namespace:"bufferedeventsource"`
+	EventBusClientBufferSize       int                       `long:"event-bus-client-buffer-size"`
 }
 
 // NewDefaultConfig creates an instance of config with default values.
@@ -59,6 +60,7 @@ func NewDefaultConfig() Config {
 			SendChannelBufferSize: 10_000,
 			MaxBufferedEvents:     100_000_000,
 		},
+		EventBusClientBufferSize: 100000,
 	}
 }
 

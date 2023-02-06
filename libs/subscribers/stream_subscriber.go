@@ -1,7 +1,7 @@
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
 //
 // Change Date: 18 months from the later of the date of the first publicly
 // available Distribution of this version of the repository, and 25 June 2022.
@@ -185,7 +185,7 @@ func (s *StreamSub) Push(evts ...events.Event) {
 	}
 	s.changeCount += len(save)
 	s.data = append(s.data, save...)
-	if /*closeUpdate &&*/ (s.bufSize > 0 && s.changeCount >= s.bufSize) || (s.bufSize == 0 && s.changeCount > 0) {
+	if (s.bufSize > 0 && s.changeCount >= s.bufSize) || (s.bufSize == 0 && s.changeCount > 0) {
 		select {
 		case <-s.updated:
 		default:

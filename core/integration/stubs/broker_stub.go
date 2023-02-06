@@ -17,7 +17,8 @@ import (
 	"fmt"
 	"sync"
 
-	"code.vegaprotocol.io/vega/core/broker"
+	"code.vegaprotocol.io/vega/libs/broker"
+
 	"code.vegaprotocol.io/vega/core/events"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	types "code.vegaprotocol.io/vega/protos/vega"
