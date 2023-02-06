@@ -218,7 +218,7 @@ func testRefusingSigningOfTransactionDoesNotSignTransaction(t *testing.T) {
 	}, connectedWallet)
 
 	// then
-	assertUserRejectionError(t, errorDetails)
+	assertUserRejectionError(t, errorDetails, api.ErrUserRejectedSigningOfTransaction)
 	assert.Empty(t, result)
 }
 

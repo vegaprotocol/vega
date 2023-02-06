@@ -294,7 +294,7 @@ func testAdminSendingRawTransactionWithFailedSendingFails(t *testing.T) {
 	})
 
 	// then
-	assertNetworkError(t, errorDetails, api.ErrTransactionFailed)
+	assertNetworkError(t, errorDetails, api.ErrTransactionCouldNotBeSentThroughSelectedNode)
 	assert.Empty(t, result)
 }
 
