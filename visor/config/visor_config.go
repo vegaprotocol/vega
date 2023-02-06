@@ -183,7 +183,7 @@ type VisorConfigFile struct {
 
 	/*
 		description: |
-			Allows to define assets that should be automatically downloaded from Github for a specific release.
+			Allows you to define the assets that should be automatically downloaded from Github for a specific release.
 
 		example:
 			type: toml
