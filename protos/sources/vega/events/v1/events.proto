@@ -420,7 +420,7 @@ message SettleDistressed {
   string price = 4;
 }
 
-// A Distressed order contains the party ID's for all parties that were distressed, but had their orders closed,
+// A distressed order contains the party IDs for all parties that were distressed and had their orders closed,
 // but did not need to be closed out after cancelling their orders
 message DistressedOrders {
   // Market identifier for the event

@@ -3369,7 +3369,7 @@ func (x *SettleDistressed) GetPrice() string {
 	return ""
 }
 
-// A Distressed order contains the party ID's for all parties that were distressed, but had their orders closed,
+// A distressed order contains the party IDs for all parties that were distressed and had their orders closed,
 // but did not need to be closed out after cancelling their orders
 type DistressedOrders struct {
 	state         protoimpl.MessageState
