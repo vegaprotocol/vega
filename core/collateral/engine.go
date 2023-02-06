@@ -1898,7 +1898,7 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 				return nil, err
 			}
 			for _, to = range ret.Balances {
-				ret.Entries = append(ret.Entries, &types.LedgerEntry{
+				lm = &types.LedgerEntry{
 					FromAccount:        acc.ToDetails(),
 					ToAccount:          to.Account.ToDetails(),
 					Amount:             parts,
@@ -1906,12 +1906,13 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 					Timestamp:          now,
 					FromAccountBalance: acc.Balance.Clone(),
 					ToAccountBalance:   num.Sum(to.Account.Balance, parts),
-				})
+				}
+				ret.Entries = append(ret.Entries, lm)
 				to.Balance.AddSum(parts)
 				to.Account.Balance.AddSum(parts)
 			}
 			// add remainder
-			if !remainder.IsZero() {
+			if !remainder.IsZero() && lm != nil {
 				lm.Amount.AddSum(remainder)
 				to.Balance.AddSum(remainder)
 				to.Account.Balance.AddSum(remainder)
