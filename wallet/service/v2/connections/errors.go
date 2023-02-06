@@ -3,6 +3,7 @@ package connections
 import "errors"
 
 var (
+	ErrConnectionHasBeenClosed              = errors.New("the connection has been closed")
 	ErrExpirationDurationMustBeGreaterThan0 = errors.New("the expiration duration must be greater than 0")
 	ErrHostnamesMismatchForThisToken        = errors.New("the hostname from the request does not match the one that initiated the connection")
 	ErrInvalidTokenFormat                   = errors.New("the token has not a valid format")

@@ -35,12 +35,13 @@ type PurgePermissionsHandler func(api.AdminPurgePermissionsParams) error
 
 func NewCmdPurgePermissions(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminPurgePermissionsParams) error {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		purgePermissions := api.NewAdminPurgePermissions(s)
+		purgePermissions := api.NewAdminPurgePermissions(walletStore)
 		_, errDetails := purgePermissions.Handle(context.Background(), params)
 		if errDetails != nil {
 			return errors.New(errDetails.Data)

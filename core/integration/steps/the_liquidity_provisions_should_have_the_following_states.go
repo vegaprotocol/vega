@@ -56,12 +56,10 @@ func TheLiquidityProvisionsShouldHaveTheFollowingStates(broker *stubs.BrokerStub
 
 		bs, err := strconv.Atoi(buyShape)
 		if len(strings.TrimSpace(buyShape)) > 0 && (err != nil || bs != len(e.Buys)) {
-			println("helllllooooo", len(strings.TrimSpace(buyShape)), err.Error())
 			return errLiquidityProvisionEventNotFound()
 		}
 		ss, err := strconv.Atoi(sellShape)
 		if len(strings.TrimSpace(sellShape)) > 0 && (err != nil || ss != len(e.Sells)) {
-			println("helllllooooo", sellShape, err.Error())
 			return errLiquidityProvisionEventNotFound()
 		}
 	}
