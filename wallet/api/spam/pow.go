@@ -1,11 +1,11 @@
-package pow
+package spam
 
 import (
 	"errors"
-	"sync"
 
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/wallet/api/node/types"
 	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
 )
 
@@ -24,7 +24,8 @@ type txCounter struct {
 }
 
 // add increments the counter for the number of times pubkey has sent in a transaction with pow against a particular height.
-func (t *txCounter) add(pubKey string, height int64) (uint32, error) {
+func (t *txCounter) add(pubKey string, state types.PoWBlockState) (uint32, error) {
+	height := int64(state.BlockHeight)
 	if height <= t.lastBlock-t.size {
 		return 0, ErrBlockHeightTooHistoric
 	}
@@ -38,6 +39,14 @@ func (t *txCounter) add(pubKey string, height int64) (uint32, error) {
 	i := height % t.size
 	if t.store[i] == nil {
 		t.store[i] = map[string]uint32{}
+	}
+
+	// if our stored height is less than the current blockstate either we've
+	// restarted the wallet and we can now pick up the current amount, or some
+	// external transaction were sent outside of our view, so we take the biggest
+	// value
+	if t.store[i][pubKey] < uint32(state.TransactionsSeen) {
+		t.store[i][pubKey] = uint32(state.TransactionsSeen)
 	}
 	t.store[i][pubKey]++
 
@@ -78,53 +87,42 @@ func (t *txCounter) resize(n int64) {
 	t.store = newStore
 }
 
-type ProofOfWork struct {
-	// chainID to the counter for transactions sent.
-	counters map[string]*txCounter
-	mu       sync.Mutex
-}
-
-func NewProofOfWork() *ProofOfWork {
-	return &ProofOfWork{
-		counters: map[string]*txCounter{},
+func (s *Handler) getCounterForChain(chainID string) *txCounter {
+	if _, ok := s.counters[chainID]; !ok {
+		s.counters[chainID] = &txCounter{}
 	}
-}
-
-func (p *ProofOfWork) getCounterForChain(chainID string) *txCounter {
-	if _, ok := p.counters[chainID]; !ok {
-		p.counters[chainID] = &txCounter{}
-	}
-	return p.counters[chainID]
+	return s.counters[chainID]
 }
 
 // Generate returns a proof-of-work with difficult that respects the history of transactions sent in against a particular block.
-func (p *ProofOfWork) Generate(pubKey string, lastBlock *nodetypes.LastBlock) (*commandspb.ProofOfWork, error) {
-	p.mu.Lock()
-	counter := p.getCounterForChain(lastBlock.ChainID)
+func (s *Handler) GenerateProofOfWork(pubKey string, st *nodetypes.SpamStatistics) (*commandspb.ProofOfWork, error) {
+	s.mu.Lock()
+	counter := s.getCounterForChain(st.ChainID)
+	blockState := st.PoW.PowBlockStates[0]
 
 	// if the network parameter for past blocks has changed we need to tell the counter so it
 	// can tell us if we're using a now historic block.
-	counter.resize(int64(lastBlock.ProofOfWorkPastBlocks))
-	nSent, err := counter.add(pubKey, int64(lastBlock.BlockHeight))
-	p.mu.Unlock()
+	counter.resize(int64(st.PoW.PastBlocks))
+	nSent, err := counter.add(pubKey, blockState)
+	s.mu.Unlock()
 	if err != nil {
 		return nil, err
 	}
 
-	nPerBlock := lastBlock.ProofOfWorkTxPerBlock
+	nPerBlock := blockState.TxPerBlock
 
 	// now work out the pow difficulty
-	difficulty := lastBlock.ProofOfWorkDifficulty
-	if nSent > nPerBlock {
-		if !lastBlock.ProofOfWorkIncreasingDifficulty {
+	difficulty := blockState.Difficulty
+	if uint64(nSent) > nPerBlock {
+		if !blockState.IncreasingDifficulty {
 			return nil, ErrTransactionsPerBlockLimitReached
 		}
 		// how many times have we hit the limit
-		difficulty += nSent / nPerBlock
+		difficulty += uint64(nSent) / nPerBlock
 	}
 
 	tid := vgcrypto.RandomHash()
-	powNonce, _, err := vgcrypto.PoW(lastBlock.BlockHash, tid, uint(difficulty), vgcrypto.Sha3)
+	powNonce, _, err := vgcrypto.PoW(blockState.BlockHash, tid, uint(difficulty), vgcrypto.Sha3)
 	if err != nil {
 		return nil, err
 	}

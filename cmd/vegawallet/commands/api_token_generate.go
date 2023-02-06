@@ -40,6 +40,7 @@ func NewCmdGenerateAPIToken(w io.Writer, rf *RootFlags) *cobra.Command {
 		if err != nil {
 			return "", fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
 		tokenStore, err := tokenStoreV1.InitialiseStore(vegaPaths, f.passphrase)
 		if err != nil {

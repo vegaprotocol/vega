@@ -30,12 +30,13 @@ type DescribePermissionsHandler func(api.AdminDescribePermissionsParams) (api.Ad
 
 func NewCmdDescribePermissions(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminDescribePermissionsParams) (api.AdminDescribePermissionsResult, error) {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return api.AdminDescribePermissionsResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		describePermissions := api.NewAdminDescribePermissions(s)
+		describePermissions := api.NewAdminDescribePermissions(walletStore)
 		rawResult, errDetails := describePermissions.Handle(context.Background(), params)
 		if errDetails != nil {
 			return api.AdminDescribePermissionsResult{}, errors.New(errDetails.Data)

@@ -52,7 +52,7 @@ type WalletGenerationResult struct {
 }
 
 type WalletLoader struct {
-	store   *storev1.Store
+	store   *storev1.FileStore
 	handler *wallets.Handler
 }
 

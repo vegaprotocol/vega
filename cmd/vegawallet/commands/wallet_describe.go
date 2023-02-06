@@ -30,12 +30,13 @@ type DescribeWalletHandler func(params api.AdminDescribeWalletParams) (api.Admin
 
 func NewCmdDescribeWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminDescribeWalletParams) (api.AdminDescribeWalletResult, error) {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return api.AdminDescribeWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		describeWallet := api.NewAdminDescribeWallet(s)
+		describeWallet := api.NewAdminDescribeWallet(walletStore)
 		rawResult, errorDetails := describeWallet.Handle(context.Background(), params)
 		if errorDetails != nil {
 			return api.AdminDescribeWalletResult{}, errors.New(errorDetails.Data)
