@@ -51,7 +51,7 @@ func PartiesDepositTheFollowingAssets(
 			return errNoGeneralAccountForParty(row, err)
 		}
 		netDeposits.Add(netDeposits, amount)
-		// emit and event manually here as we're not going via the banking flow in integration tests
+		// emit an event manually here as we're not going via the banking flow in integration tests
 		broker.Send(events.NewDepositEvent(ctx,
 			types.Deposit{
 				PartyID: row.Party(),

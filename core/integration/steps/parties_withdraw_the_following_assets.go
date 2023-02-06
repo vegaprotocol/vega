@@ -38,7 +38,7 @@ func PartiesWithdrawTheFollowingAssets(
 		if err := checkExpectedError(row, err, nil); err != nil {
 			return err
 		}
-		// emit and event manually here as we're not going via the banking flow in integration tests
+		// emit an event manually here as we're not going via the banking flow in integration tests
 		broker.Send(events.NewWithdrawalEvent(ctx,
 			types.Withdrawal{
 				PartyID: row.Party(),
