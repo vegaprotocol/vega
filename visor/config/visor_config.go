@@ -40,7 +40,7 @@ type Asset struct {
 	AssetName string `toml:"assset_name"`
 	/*
 		description: |
-			Binary name definition can be used in case the asset is a zip file and the binary is included inside of it.
+			Binary name definition can be used if the asset is a zip file and the binary is included inside of it.
 	*/
 	BinaryName *string `toml:"binary_name"`
 }
@@ -55,11 +55,11 @@ func (a Asset) GetBinaryPath() string {
 
 type AssetsConfig struct {
 	/*
-		description: Allows to define asset name to download Vega binary.
+		description: Allows you to define the name of the asset to be downloaded.
 	*/
 	Vega Asset `toml:"vega"`
 	/*
-		description: Allows to define asset name to download data node binary.
+		description: Allows you to define the name of the asset to be downloaded.
 	*/
 	DataNode *Asset `toml:"data_node"`
 }
@@ -73,7 +73,7 @@ func (ac AssetsConfig) AssetsNames() []string {
 }
 
 /*
-description: Allows to define assets that should be automatically downloaded from Github for a specific release.
+description: Allows you to define the assets that should be automatically downloaded from GitHub for a specific release.
 
 example:
 
@@ -90,7 +90,7 @@ example:
 */
 type AutoInstallConfig struct {
 	/*
-		description: Whether or not the autoinstall should be used
+		description: Whether or not autoinstall should be used
 		default: true
 	*/
 	Enabled bool `toml:"enabled"`
@@ -105,7 +105,7 @@ type AutoInstallConfig struct {
 	*/
 	GithubRepository string `toml:"repository"`
 	/*
-		description: Definitions of the assets that should be downloaded from the Github repository.
+		description: Definitions of the assets that should be downloaded from the GitHub repository.
 		example:
 			type: toml
 			value: |
