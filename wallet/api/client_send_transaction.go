@@ -96,7 +96,7 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 			return nil, internalError(ErrCouldNotSendTransaction)
 		}
 		if !approved {
-			return nil, userRejectionError()
+			return nil, userRejectionError(ErrUserRejectedSendingOfTransaction)
 		}
 	}
 
