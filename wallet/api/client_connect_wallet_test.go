@@ -201,7 +201,7 @@ func testRefusingWalletConnectionDoesNotConnectToWallet(t *testing.T) {
 	result, errorDetails := handler.Handle(ctx, hostname)
 
 	// then
-	assertUserRejectionError(t, errorDetails)
+	assertUserRejectionError(t, errorDetails, api.ErrUserRejectedWalletConnection)
 	assert.Empty(t, result)
 }
 

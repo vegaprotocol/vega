@@ -89,7 +89,7 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 			return nil, internalError(ErrCouldNotSignTransaction)
 		}
 		if !approved {
-			return nil, userRejectionError()
+			return nil, userRejectionError(ErrUserRejectedSigningOfTransaction)
 		}
 	}
 
