@@ -157,7 +157,7 @@ func (b *BrokerStub) GetImmBatch(t events.Type) []events.Event {
 	return r
 }
 
-// GetLedgerMovements returns ledger movements, `mutable` argument specifies if these should be all the scenario events or events that can be cleared by the user
+// GetLedgerMovements returns ledger movements, `mutable` argument specifies if these should be all the scenario events or events that can be cleared by the user.
 func (b *BrokerStub) GetLedgerMovements(mutable bool) []events.LedgerMovements {
 	batch := b.GetBatch(events.LedgerMovementsEvent)
 	if !mutable {
@@ -191,7 +191,7 @@ func (b *BrokerStub) ClearTransferResponseEvents() {
 	b.mu.Unlock()
 }
 
-// GetLedgerMovements returns ledger entries, mutable argument specifies if these should be all the scenario events or events that can be cleared by the user
+// GetTransfers returns ledger entries, mutable argument specifies if these should be all the scenario events or events that can be cleared by the user.
 func (b *BrokerStub) GetTransfers(mutable bool) []*types.LedgerEntry {
 	transferEvents := b.GetLedgerMovements(mutable)
 	transfers := []*types.LedgerEntry{}
@@ -408,7 +408,6 @@ func (b *BrokerStub) GetDeposits() []types.Deposit {
 		switch et := e.(type) {
 		case *events.Deposit:
 			ret = append(ret, et.Deposit())
-
 		}
 	}
 	return ret
@@ -425,7 +424,6 @@ func (b *BrokerStub) GetWithdrawals() []types.Withdrawal {
 		switch et := e.(type) {
 		case *events.Withdrawal:
 			ret = append(ret, et.Withdrawal())
-
 		}
 	}
 	return ret
