@@ -444,6 +444,6 @@ func MarshalPositionStatus(s vega.PositionStatus) graphql.Marshaler {
 	})
 }
 
-func UnmarshalPositionStatus(v interface{}) (vega.ValidatorNodeStatus, error) {
+func UnmarshalPositionStatus(v interface{}) (vega.PositionStatus, error) {
 	return vega.PositionStatus_POSITION_STATUS_UNSPECIFIED, ErrUnimplemented
 }
