@@ -532,7 +532,7 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 	require.NotNil(t, errorDetails)
 	assert.Equal(t, api.ErrorCodeNodeCommunicationFailed, errorDetails.Code)
 	assert.Equal(t, "Network error", errorDetails.Message)
-	assert.Equal(t, api.ErrTransactionCouldNotBeSentThroughSelectedNode.Error(), errorDetails.Data)
+	assert.Equal(t, "the transaction failed: assert.AnError general error for testing", errorDetails.Data)
 	assert.Empty(t, result)
 }
 

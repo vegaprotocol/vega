@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -294,7 +295,7 @@ func testAdminSendingRawTransactionWithFailedSendingFails(t *testing.T) {
 	})
 
 	// then
-	assertNetworkError(t, errorDetails, api.ErrTransactionCouldNotBeSentThroughSelectedNode)
+	assertNetworkError(t, errorDetails, errors.New("the transaction failed: assert.AnError general error for testing"))
 	assert.Empty(t, result)
 }
 
