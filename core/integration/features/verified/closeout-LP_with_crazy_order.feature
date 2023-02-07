@@ -25,7 +25,7 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order
 
   Scenario: Replicate a scenario from Lewis
     # 1. trader B made LP commitment 150,000
-    # 2. trader C and B cross at 0.5 with size of 111, and this opens continuous trading (trade B is short)
+    # 2. trader C and B cross at 1010 with size of 500, and this opens continuous trading (trade B is short)
     # 3. trader C comes with an order with crazy price
     # 4. trader B’s margin has increased sharply because of the order (from step2),
     # 5. trader A and C and trigger MTM
