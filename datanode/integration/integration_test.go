@@ -29,6 +29,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+
 	"code.vegaprotocol.io/vega/cmd/data-node/commands/start"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
@@ -212,6 +214,7 @@ func newTestConfig(postgresRuntimePath string) (*config.Config, error) {
 	cfg.ChainID = chainID
 	cfg.SQLStore = databasetest.NewTestConfig(5432, "", postgresRuntimePath)
 	cfg.NetworkHistory.Enabled = false
+	cfg.SQLStore.RetentionPeriod = sqlstore.RetentionPeriodArchive
 
 	return &cfg, nil
 }
