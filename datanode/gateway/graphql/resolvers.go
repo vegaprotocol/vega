@@ -1869,6 +1869,10 @@ func (r *myPositionResolver) AverageEntryPrice(ctx context.Context, obj *types.P
 	return obj.AverageEntryPrice, nil
 }
 
+func (r *myPositionResolver) LossSocializationAmount(ctx context.Context, obj *types.Position) (string, error) {
+	return obj.LossSocialisationAmount, nil
+}
+
 func (r *myPositionResolver) Party(ctx context.Context, obj *types.Position) (*types.Party, error) {
 	return getParty(ctx, r.log, r.tradingDataClientV2, obj.PartyId)
 }

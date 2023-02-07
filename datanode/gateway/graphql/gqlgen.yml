@@ -503,3 +503,6 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.EpochRewardSummary
   PositionsFilter:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PositionsFilter
+  PositionStatus:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.PositionStatus
