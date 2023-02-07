@@ -27,7 +27,7 @@ func observe[T any](ctx context.Context, log *logging.Logger, eventType string, 
 	defer metrics.StartActiveSubscriptionCountGRPC(eventType)()
 
 	publishedEventStatTicker := time.NewTicker(time.Second)
-	dever publishedEventStatTicker.Stop()
+	defer publishedEventStatTicker.Stop()
 	var publishedEvents int64
 
 	var err error
@@ -73,7 +73,7 @@ func observeBatch[T any](ctx context.Context, log *logging.Logger, eventType str
 	defer metrics.StartActiveSubscriptionCountGRPC(eventType)()
 
 	publishedEventStatTicker := time.NewTicker(time.Second)
-	defer pubshedEventStatTicker.Stop()
+	defer publishedEventStatTicker.Stop()
 	var publishedEvents int64
 	var err error
 	for {
