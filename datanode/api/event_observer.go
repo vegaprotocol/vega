@@ -122,6 +122,7 @@ func observeEvents(
 	ch <-chan []*eventspb.BusEvent,
 ) error {
 	sentEventStatTicker := time.NewTicker(time.Second)
+	defer sentEventStatTicker.Stop()
 	publishedEvents := eventStats{}
 
 	for {
@@ -154,6 +155,7 @@ func observeEventsWithAck(
 	bCh chan<- int,
 ) error {
 	sentEventStatTicker := time.NewTicker(time.Second)
+	defer sentEventStatTicker.Stop()
 	publishedEvents := eventStats{}
 
 	for {
