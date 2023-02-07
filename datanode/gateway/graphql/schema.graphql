@@ -2132,6 +2132,16 @@ type StakeLinking {
   txHash: String!
 }
 
+"Position status can change if a position is distressed"
+enum PositionStatus {
+  "The position is either healthy, or if closed out, was closed out normally"
+  POSITION_STATUS_UNSPECIFIED
+  "The position was distressed, but removing open orders from the book brought the margin level back to a point where the open position could be maintained"
+  POSITION_STATUS_ORDERS_CLOSED
+  "The position was distressed, and had to be closed out entirely - orders were removed from the book, and the open volume was closed out by the network"
+  POSITION_STATUS_CLOSED_OUT
+}
+
 """
 An individual party at any point in time is considered net long or net short. This refers to their Open Volume,
 calculated using FIFO. This volume is signed as either negative for LONG positions and positive for SHORT positions. A
@@ -2156,6 +2166,12 @@ type Position {
 
   "Average entry price for this position"
   averageEntryPrice: String!
+
+  "The total amount of profit and loss that was not transferred due to loss socialisation"
+  lossSocializationAmount: String!
+
+  "Enum set if the position was closed out or orders were removed because party was distressed"
+  positionStatus: PositionStatus!
 
   "Margins of the party for the given position"
   marginsConnection(pagination: Pagination): MarginConnection

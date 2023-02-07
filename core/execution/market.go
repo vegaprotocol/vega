@@ -1911,14 +1911,20 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		// which have acceptable margins
 		okPos, closed = m.risk.ExpectMargins(distressedMarginEvts, m.lastTradedPrice.Clone())
 
-		if m.log.GetLevel() == logging.DebugLevel {
-			for _, v := range okPos {
-				if m.log.GetLevel() == logging.DebugLevel {
-					m.log.Debug("previously distressed party have now an acceptable margin",
-						logging.String("market-id", mktID),
-						logging.String("party-id", v.Party()))
-				}
+		parties := make([]string, 0, len(okPos))
+		for _, v := range okPos {
+			parties = append(parties, v.Party())
+		}
+		if m.log.IsDebug() {
+			for _, pID := range parties {
+				m.log.Debug("previously distressed party have now an acceptable margin",
+					logging.String("market-id", mktID),
+					logging.String("party-id", pID))
 			}
+		}
+		if len(parties) > 0 {
+			// emit event indicating we had to close orders, but parties were not distressed anymore after doing so.
+			m.broker.Send(events.NewDistressedOrdersEvent(ctx, mktID, parties))
 		}
 	}
 
