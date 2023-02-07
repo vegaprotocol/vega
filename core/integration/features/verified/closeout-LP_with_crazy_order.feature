@@ -87,10 +87,10 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150015         | 112           |
 
-    When the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp2 | traderC | ETH/DEC20 | 150000            | 0.001 | sell | ASK              | 100        | 20     | amendmend |
-      | lp2 | traderC | ETH/DEC20 | 150000            | 0.001 | buy  | BID              | 100        | 20     | amendmend |
+    # When the parties submit the following liquidity provision:
+    #   | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+    #   | lp2 | traderC | ETH/DEC20 | 150000            | 0.001 | sell | ASK              | 100        | 20     | amendmend |
+    #   | lp2 | traderC | ETH/DEC20 | 150000            | 0.001 | buy  | BID              | 100        | 20     | amendmend |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price       | resulting trades | type       | tif     |
