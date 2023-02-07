@@ -170,8 +170,12 @@ func (s *FileStore) Close() {
 	}
 }
 
-func (s *FileStore) readTokensFile() (tokensFile, error) {
-	tokens := tokensFile{}
+func (s *FileStore) readTokensFile() (tokens tokensFile, rerr error) {
+	defer func() {
+		if r := recover(); r != nil {
+			tokens, rerr = tokensFile{}, fmt.Errorf("unexpected fs issues reading tokens file: %s", r)
+		}
+	}()
 
 	exists, err := vgfs.FileExists(s.tokensFilePath)
 	if err != nil {
@@ -198,7 +202,12 @@ func (s *FileStore) readTokensFile() (tokensFile, error) {
 	return tokens, nil
 }
 
-func (s *FileStore) writeTokensFile(tokens tokensFile) error {
+func (s *FileStore) writeTokensFile(tokens tokensFile) (rerr error) {
+	defer func() {
+		if r := recover(); r != nil {
+			rerr = fmt.Errorf("unexpected fs issues writing tokens file: %s", r)
+		}
+	}()
 	if err := paths.WriteEncryptedFile(s.tokensFilePath, s.passphrase, tokens); err != nil {
 		return fmt.Errorf("couldn't write the file %s: %w", s.tokensFilePath, err)
 	}
