@@ -14,6 +14,7 @@ package sqlsubscribers
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -54,6 +55,11 @@ type settleDistressed interface {
 	Margin() *num.Uint
 }
 
+type ordersClosed interface {
+	MarketID() string
+	Parties() []string
+}
+
 type settleMarket interface {
 	positionEventBase
 	SettledPrice() *num.Uint
@@ -64,6 +70,7 @@ type PositionStore interface {
 	Add(context.Context, entities.Position) error
 	GetByMarket(ctx context.Context, marketID string) ([]entities.Position, error)
 	GetByMarketAndParty(ctx context.Context, marketID string, partyID string) (entities.Position, error)
+	GetByMarketAndParties(ctx context.Context, marketID string, parties []string) ([]entities.Position, error)
 	Flush(ctx context.Context) error
 }
 
@@ -92,6 +99,7 @@ func (p *Position) Types() []events.Type {
 		events.LossSocializationEvent,
 		events.SettleMarketEvent,
 		events.TradeEvent,
+		events.DistressedOrdersClosedEvent,
 	}
 }
 
@@ -112,9 +120,27 @@ func (p *Position) Push(ctx context.Context, evt events.Event) error {
 		return p.handleSettleMarket(ctx, event)
 	case tradeEvent:
 		return p.handleTradeEvent(ctx, event)
+	case ordersClosed:
+		return p.handleOrdersClosedEvent(ctx, event)
 	default:
 		return errors.Errorf("unknown event type %s", evt.Type().String())
 	}
+}
+
+func (p *Position) handleOrdersClosedEvent(ctx context.Context, event ordersClosed) error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	positions, err := p.store.GetByMarketAndParties(ctx, event.MarketID(), event.Parties())
+	if err != nil {
+		return fmt.Errorf("failed to get positions: %w", err)
+	}
+	for _, pos := range positions {
+		pos.UpdateOrdersClosed()
+		if err := p.updatePosition(ctx, pos); err != nil {
+			return fmt.Errorf("failed to update position: %w", err)
+		}
+	}
+	return nil
 }
 
 func (p *Position) handleTradeEvent(ctx context.Context, event tradeEvent) error {

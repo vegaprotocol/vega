@@ -26,6 +26,7 @@
 - [7495](https://github.com/vegaprotocol/vega/issues/7495) - Upgrade `tendermint` to 0.34.25
 - [7496](https://github.com/vegaprotocol/vega/issues/7496) - Enforce using priority `mempool` and max packet size in `tendermint config`
 - [5987](https://github.com/vegaprotocol/vega/issues/5987) - Pick up the wallet changes when the service is started
+- [7450](https://github.com/vegaprotocol/vega/issues/7450) - Positions API reporting close-out information and loss socialisation data.
 
 ### 🐛 Fixes
 - [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema
@@ -45,6 +46,7 @@
 - [7504](https://github.com/vegaprotocol/vega/issues/7504) - Fixed panic in collateral engine when trying to clear a market
 - [7468](https://github.com/vegaprotocol/vega/issues/7468) - `Datanode` network history load command only prompts when run from a terminal
 - [7164](https://github.com/vegaprotocol/vega/issues/7164) - The command `vega wallet transaction send` now returns verbose errors
+- [7514](https://github.com/vegaprotocol/vega/issues/7514) - Network names cannot contain `/`, `\` or start with a `.`
 
 ## 0.67.2
 
