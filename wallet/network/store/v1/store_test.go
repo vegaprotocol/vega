@@ -18,6 +18,7 @@ func TestFileStoreV1(t *testing.T) {
 	t.Run("New store succeeds", testNewStoreSucceeds)
 	t.Run("Saving already existing network succeeds", testFileStoreV1SaveAlreadyExistingNetworkSucceeds)
 	t.Run("Saving network succeeds", testFileStoreV1SaveNetworkSucceeds)
+	t.Run("Saving network with bad name fails", testFileStoreV1SaveNetworkWithBadNameFails)
 	t.Run("Verifying non-existing network fails", testFileStoreV1VerifyingNonExistingNetworkFails)
 	t.Run("Verifying existing network succeeds", testFileStoreV1VerifyingExistingNetworkSucceeds)
 	t.Run("Getting non-existing network fails", testFileStoreV1GetNonExistingNetworkFails)
@@ -119,6 +120,47 @@ func testFileStoreV1SaveNetworkSucceeds(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, net, returnedNet)
 	assert.Equal(t, net.Name, returnedNet.Name)
+}
+
+func testFileStoreV1SaveNetworkWithBadNameFails(t *testing.T) {
+	vegaHome := newVegaHome(t)
+
+	// given
+	s := initialiseFromPath(t, vegaHome)
+
+	tcs := []struct {
+		name        string
+		network     string
+		expectedErr error
+	}{
+		{
+			name:        "when empty",
+			network:     "",
+			expectedErr: v1.ErrNetworkNameCannotBeEmpty,
+		}, {
+			name:        "starting with `.`",
+			network:     "." + vgrand.RandomStr(3),
+			expectedErr: v1.ErrNetworkNameCannotStartWithDot,
+		}, {
+			name:        "with `/`",
+			network:     "\\" + vgrand.RandomStr(3) + "/" + vgrand.RandomStr(3),
+			expectedErr: v1.ErrNetworkNameCannotContainSlash,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			net := &network.Network{
+				Name: tc.network,
+			}
+
+			// when
+			err := s.SaveNetwork(net)
+
+			// then
+			require.ErrorIs(tt, err, tc.expectedErr)
+		})
+	}
 }
 
 func testFileStoreV1VerifyingNonExistingNetworkFails(t *testing.T) {
