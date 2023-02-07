@@ -106,7 +106,7 @@ func getAllShouldNotIncludeRejectedMarkets(t *testing.T) {
 	err = md.Upsert(ctx, &rejected)
 	require.NoError(t, err, "Saving market entity to database")
 
-	markets, err := md.GetAll(ctx, entities.OffsetPagination{})
+	markets, _, err := md.GetAllPaged(ctx, "", entities.CursorPagination{}, true)
 	require.NoError(t, err)
 	assert.Len(t, markets, 1)
 	assert.Equal(t, market.ID, markets[0].ID)

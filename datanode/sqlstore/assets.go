@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
+	lru "github.com/hashicorp/golang-lru/v2"
 )
 
 var assetOrdering = TableOrdering{
@@ -29,14 +30,19 @@ var assetOrdering = TableOrdering{
 
 type Assets struct {
 	*ConnectionSource
-	cache     map[string]entities.Asset
+	cache     *lru.Cache[string, entities.Asset]
 	cacheLock sync.Mutex
 }
 
 func NewAssets(connectionSource *ConnectionSource) *Assets {
+	cache, err := lru.New[string, entities.Asset](10000)
+	if err != nil {
+		panic(err)
+	}
+
 	a := &Assets{
 		ConnectionSource: connectionSource,
-		cache:            make(map[string]entities.Asset),
+		cache:            cache,
 	}
 	return a
 }
@@ -77,11 +83,9 @@ func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
 	}
 
 	as.AfterCommit(ctx, func() {
-		// delete cache
-		as.cacheLock.Lock()
-		defer as.cacheLock.Unlock()
-		delete(as.cache, a.ID.String())
+		as.cache.Add(a.ID.String(), a)
 	})
+
 	return nil
 }
 
@@ -89,7 +93,7 @@ func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error
 	as.cacheLock.Lock()
 	defer as.cacheLock.Unlock()
 
-	if asset, ok := as.cache[id]; ok {
+	if asset, ok := as.cache.Get(id); ok {
 		return asset, nil
 	}
 
@@ -101,7 +105,7 @@ func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error
 		entities.AssetID(id))
 
 	if err == nil {
-		as.cache[id] = a
+		as.cache.Add(id, a)
 	}
 	return a, as.wrapE(err)
 }

@@ -14,13 +14,12 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/utils"
 	"code.vegaprotocol.io/vega/logging"
 
-	lru "github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru/v2"
 )
 
 type PositionStore interface {
@@ -37,15 +36,20 @@ type positionCacheKey struct {
 	MarketID entities.MarketID
 	PartyID  entities.PartyID
 }
+
+type positionCacheValue struct {
+	pos entities.Position
+	err error
+}
 type Position struct {
 	log      *logging.Logger
 	store    PositionStore
 	observer utils.Observer[entities.Position]
-	cache    *lru.Cache
+	cache    *lru.Cache[positionCacheKey, positionCacheValue]
 }
 
 func NewPosition(store PositionStore, log *logging.Logger) *Position {
-	cache, err := lru.New(10000)
+	cache, err := lru.New[positionCacheKey, positionCacheValue](10000)
 	if err != nil {
 		panic(err)
 	}
@@ -67,8 +71,15 @@ func (p *Position) Flush(ctx context.Context) error {
 }
 
 func (p *Position) Add(ctx context.Context, pos entities.Position) error {
+	// It is a bit unorthodox to add values into the cache here, before flushing; but the current
+	// design of the positions subscriber relies on this cache to be able to fetch up-to-date
+	// positions in the middle of a block/transaction.
+	// TODO: There is potentially an issue here if a position that is evicted from the LRU
+	//       that has been updated in a block and then subsequently needed again; we would
+	//       end up going to the database and getting an out of date version!
 	key := positionCacheKey{pos.MarketID, pos.PartyID}
-	p.cache.Add(key, pos)
+	value := positionCacheValue{pos, nil}
+	p.cache.Add(key, value)
 	return p.store.Add(ctx, pos)
 }
 
@@ -78,23 +89,11 @@ func (p *Position) GetByMarketAndParty(ctx context.Context, marketID string, par
 	if !ok {
 		pos, err := p.store.GetByMarketAndParty(
 			ctx, marketID, partyID)
-		if err == nil {
-			p.cache.Add(key, pos)
-		} else { // If store errors in the cache too
-			p.cache.Add(key, err)
-		}
-
+		p.cache.Add(key, positionCacheValue{pos, err})
 		return pos, err
 	}
 
-	switch v := value.(type) {
-	case entities.Position:
-		return v, nil
-	case error:
-		return entities.Position{}, v
-	default:
-		return entities.Position{}, fmt.Errorf("unknown type in cache")
-	}
+	return value.pos, value.err
 }
 
 func (p *Position) GetByMarket(ctx context.Context, marketID string) ([]entities.Position, error) {

@@ -51,7 +51,7 @@ func TestMarketInitialise(t *testing.T) {
 	svc := service.NewMarkets(store, logging.NewTestLogger())
 	svc.Initialise(ctx)
 
-	allData, err := svc.GetAll(ctx, entities.OffsetPagination{})
+	allData, _, err := svc.GetAllPaged(ctx, "", entities.CursorPagination{}, true)
 	assert.NoError(t, err)
 	assert.Empty(t, cmp.Diff(allData, []entities.Market{testMarket1, testMarket2}, sortMarkets))
 }
@@ -80,7 +80,7 @@ func TestMarketUpsert(t *testing.T) {
 
 	// testMarket3 has the same id as testMarket1 so check we replaced it. Expect no calls to
 	// the store as this should be in the service cache.
-	allData, err := svc.GetAll(ctx, entities.OffsetPagination{})
+	allData, _, err := svc.GetAllPaged(ctx, "", entities.CursorPagination{}, true)
 	assert.NoError(t, err)
 	assert.Empty(t, cmp.Diff(allData, []entities.Market{testMarket2, testMarket3, testMarket4}, sortMarkets))
 

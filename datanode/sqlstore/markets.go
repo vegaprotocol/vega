@@ -15,18 +15,17 @@ package sqlstore
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
+	lru "github.com/hashicorp/golang-lru/v2"
 )
 
 type Markets struct {
 	*ConnectionSource
-	cache     map[string]entities.Market
-	cacheLock sync.Mutex
+	cache *lru.Cache[string, entities.Market]
 }
 
 var marketOrdering = TableOrdering{
@@ -40,9 +39,14 @@ const (
 )
 
 func NewMarkets(connectionSource *ConnectionSource) *Markets {
+	cache, err := lru.New[string, entities.Market](10000)
+	if err != nil {
+		panic(err)
+	}
+
 	return &Markets{
 		ConnectionSource: connectionSource,
-		cache:            make(map[string]entities.Market),
+		cache:            cache,
 	}
 }
 
@@ -74,22 +78,15 @@ set
 	}
 
 	m.AfterCommit(ctx, func() {
-		// delete cache
-		m.cacheLock.Lock()
-		defer m.cacheLock.Unlock()
-		delete(m.cache, market.ID.String())
+		m.cache.Add(market.ID.String(), *market)
 	})
-
 	return nil
 }
 
 func (m *Markets) GetByID(ctx context.Context, marketID string) (entities.Market, error) {
-	m.cacheLock.Lock()
-	defer m.cacheLock.Unlock()
-
 	var market entities.Market
 
-	if market, ok := m.cache[marketID]; ok {
+	if market, ok := m.cache.Get(marketID); ok {
 		return market, nil
 	}
 
@@ -102,26 +99,10 @@ order by id, vega_time desc
 	err := pgxscan.Get(ctx, m.Connection, &market, query, entities.MarketID(marketID))
 
 	if err == nil {
-		m.cache[marketID] = market
+		m.cache.Add(marketID, market)
 	}
 
 	return market, m.wrapE(err)
-}
-
-func (m *Markets) GetAll(ctx context.Context, pagination entities.OffsetPagination) ([]entities.Market, error) {
-	var markets []entities.Market
-	query := fmt.Sprintf(`select %s
-from markets_current
-where state != 'STATE_REJECTED'
-order by id, vega_time desc
-`, sqlMarketsColumns)
-
-	query, _ = orderAndPaginateQuery(query, nil, pagination)
-
-	defer metrics.StartSQLQuery("Markets", "GetAll")()
-	err := pgxscan.Select(ctx, m.Connection, &markets, query)
-
-	return markets, err
 }
 
 func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, includeSettled bool) ([]entities.Market, entities.PageInfo, error) {
@@ -161,6 +142,7 @@ func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination e
 		return markets, pageInfo, err
 	}
 
+	defer metrics.StartSQLQuery("Markets", "GetAllPaged")()
 	if err = pgxscan.Select(ctx, m.Connection, &markets, query, args...); err != nil {
 		return markets, pageInfo, err
 	}

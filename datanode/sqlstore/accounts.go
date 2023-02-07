@@ -17,12 +17,12 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"sync"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/jackc/pgx/v4"
 )
 
@@ -32,14 +32,18 @@ var accountOrdering = TableOrdering{
 
 type Accounts struct {
 	*ConnectionSource
-	idToAccount map[entities.AccountID]entities.Account
-	cacheLock   sync.RWMutex
+	cache *lru.Cache[entities.AccountID, entities.Account]
 }
 
 func NewAccounts(connectionSource *ConnectionSource) *Accounts {
+	cache, err := lru.New[entities.AccountID, entities.Account](10000)
+	if err != nil {
+		panic(err)
+	}
+
 	a := &Accounts{
 		ConnectionSource: connectionSource,
-		idToAccount:      make(map[entities.AccountID]entities.Account),
+		cache:            cache,
 	}
 	return a
 }
@@ -63,16 +67,7 @@ func (as *Accounts) Add(ctx context.Context, a *entities.Account) error {
 }
 
 func (as *Accounts) GetByID(ctx context.Context, accountID entities.AccountID) (entities.Account, error) {
-	if account, ok := as.getAccountFromCache(accountID); ok {
-		return account, nil
-	}
-
-	as.cacheLock.Lock()
-	defer as.cacheLock.Unlock()
-
-	// It's possible that in-between releasing the read lock and obtaining the write lock that the account has been
-	// added to cache, so we need to check here and return the cached account if that's the case.
-	if account, ok := as.idToAccount[accountID]; ok {
+	if account, ok := as.cache.Get(accountID); ok {
 		return account, nil
 	}
 
@@ -86,8 +81,7 @@ func (as *Accounts) GetByID(ctx context.Context, accountID entities.AccountID) (
 	); err != nil {
 		return a, as.wrapE(err)
 	}
-
-	as.idToAccount[accountID] = a
+	as.cache.Add(accountID, a)
 	return a, nil
 }
 
@@ -106,22 +100,8 @@ func (as *Accounts) GetAll(ctx context.Context) ([]entities.Account, error) {
 // In either case, update the entities.Account object passed with an ID from the database.
 func (as *Accounts) Obtain(ctx context.Context, a *entities.Account) error {
 	accountID := deterministicIDFromAccount(a)
-	if account, ok := as.getAccountFromCache(accountID); ok {
-		a.ID = account.ID
-		a.VegaTime = account.VegaTime
-		a.TxHash = account.TxHash
-		return nil
-	}
-
-	as.cacheLock.Lock()
-	defer as.cacheLock.Unlock()
-
-	// It's possible that in-between releasing the cache read lock and obtaining the cache write lock that the account has been
-	// added to the cache, so we need to check here and return the cached account if that's the case.
-	if account, ok := as.idToAccount[accountID]; ok {
-		a.ID = account.ID
-		a.VegaTime = account.VegaTime
-		a.TxHash = account.TxHash
+	if account, ok := as.cache.Get(accountID); ok {
+		*a = account
 		return nil
 	}
 
@@ -154,18 +134,8 @@ func (as *Accounts) Obtain(ctx context.Context, a *entities.Account) error {
 		return fmt.Errorf("scanning account: %w", err)
 	}
 
-	as.idToAccount[accountID] = *a
+	as.cache.Add(accountID, *a)
 	return nil
-}
-
-func (as *Accounts) getAccountFromCache(id entities.AccountID) (entities.Account, bool) {
-	as.cacheLock.RLock()
-	defer as.cacheLock.RUnlock()
-
-	if account, ok := as.idToAccount[id]; ok {
-		return account, true
-	}
-	return entities.Account{}, false
 }
 
 func deterministicIDFromAccount(a *entities.Account) entities.AccountID {
