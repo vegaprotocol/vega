@@ -56,6 +56,7 @@ require (
 	github.com/fullstorydev/grpcui v1.3.0
 	github.com/georgysavva/scany v1.0.0
 	github.com/google/go-cmp v0.5.9
+	github.com/google/go-github/v50 v50.0.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
 	github.com/inhies/go-bytesize v0.0.0-20220417184213-4913239db9cf
@@ -322,7 +323,6 @@ require (
 	github.com/gofrs/uuid v4.3.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/orderedcode v0.0.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/mux v1.8.0

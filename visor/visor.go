@@ -180,7 +180,7 @@ func (v *Visor) Run(ctx context.Context) error {
 				v.log.Info("Starting upgrade")
 
 				if err := v.prepareNextUpgradeFolder(ctx, currentReleaseInfo.VegaReleaseTag); err != nil {
-					return fmt.Errorf("failed to prepare next upgrade folder")
+					return fmt.Errorf("failed to prepare next upgrade folder: %w", err)
 				}
 
 				numOfRestarts = 0
