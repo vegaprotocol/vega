@@ -41,6 +41,12 @@ enum Interval {
   //       - gateway/graphql/schema.graphql (enum Interval)
 }
 
+enum PositionStatus {
+  POSITION_STATUS_UNSPECIFIED = 0;
+  POSITION_STATUS_ORDERS_CLOSED = 1;
+  POSITION_STATUS_CLOSED_OUT = 2;
+}
+
 // A party represents an entity who wishes to trade on or query a Vega network
 message Party {
   // A unique identifier for the party, typically represented by a public key
@@ -515,6 +521,10 @@ message Position {
   string average_entry_price = 6;
   // Timestamp for the latest time the position was updated
   int64 updated_at = 7;
+  // Sum of profit that could not be paid due to loss socialisation.
+  string loss_socialisation_amount = 8;
+  // Position status, indicating whether the party was distressed and had orders cancelled or was closed out.
+  PositionStatus position_status = 9;
 }
 
 message PositionTrade {

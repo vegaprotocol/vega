@@ -18,6 +18,7 @@ type Node interface {
 	SendTransaction(context.Context, *commandspb.Transaction, apipb.SubmitTransactionRequest_Type) (string, error)
 	Statistics(ctx context.Context) (nodetypes.Statistics, error)
 	LastBlock(context.Context) (nodetypes.LastBlock, error)
+	SpamStatistics(ctx context.Context, pubKey string) (nodetypes.SpamStatistics, error)
 }
 
 // ReportType defines the type of event that occurred.

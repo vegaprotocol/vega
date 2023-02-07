@@ -16,13 +16,18 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
+	"path/filepath"
+	"time"
 
 	"code.vegaprotocol.io/vega/visor/utils"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v50/github"
 	"golang.org/x/sync/errgroup"
 )
+
+const zipMimeType = "application/zip"
 
 type AssetsFetcher struct {
 	repositoryOwner string
@@ -76,8 +81,10 @@ func (af *AssetsFetcher) GetAssets(ctx context.Context, releaseID int64) ([]*git
 	return filteredAssets, nil
 }
 
-func (af *AssetsFetcher) DownloadAsset(ctx context.Context, assetID int64, path string) error {
-	ra, _, err := af.Client.Repositories.DownloadReleaseAsset(ctx, af.repositoryOwner, af.repository, assetID)
+func (af *AssetsFetcher) DownloadAsset(ctx context.Context, assetID int64, assetType, path string) error {
+	followClient := &http.Client{Timeout: time.Second * 120}
+
+	ra, _, err := af.Client.Repositories.DownloadReleaseAsset(ctx, af.repositoryOwner, af.repository, assetID, followClient)
 	if err != nil {
 		return fmt.Errorf("failed to download release asset: %w", err)
 	}
@@ -90,6 +97,12 @@ func (af *AssetsFetcher) DownloadAsset(ctx context.Context, assetID int64, path 
 
 	if err := os.WriteFile(path, all, 0o770); err != nil {
 		return fmt.Errorf("failed to write to %q: %w", path, err)
+	}
+
+	if assetType == zipMimeType {
+		if err := utils.UnzipSource(path, filepath.Dir(path)); err != nil {
+			return fmt.Errorf("failed to unzip asset: %w", err)
+		}
 	}
 
 	return nil
@@ -110,10 +123,11 @@ func (af *AssetsFetcher) Download(ctx context.Context, releaseTag, downloadDir s
 	for _, asset := range assetIDs {
 		assetID := asset.GetID()
 		assetName := asset.GetName()
+		assetType := asset.GetContentType()
 
 		eg.Go(func() error {
-			if err := af.DownloadAsset(ctx, assetID, path.Join(downloadDir, assetName)); err != nil {
-				return fmt.Errorf("failed to download asset %q for tag %q: %w", assetName, releaseTag, err)
+			if err := af.DownloadAsset(ctx, assetID, assetType, path.Join(downloadDir, assetName)); err != nil {
+				return fmt.Errorf("failed to download asset %q of type %q for tag %q: %w", assetName, releaseTag, assetType, err)
 			}
 			return nil
 		})

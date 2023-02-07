@@ -11,9 +11,8 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
 	"code.vegaprotocol.io/vega/wallet/crypto"
-	"code.vegaprotocol.io/vega/wallet/service/v1"
+	v1 "code.vegaprotocol.io/vega/wallet/service/v1"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -603,15 +602,18 @@ func testCheckTransactionSucceeds(t *testing.T) {
 	headers := authHeadersV1(t, token)
 	pubKey := vgrand.RandomStr(5)
 	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
-	blockHeightResponse := &api.LastBlockHeightResponse{
-		Height:                      42,
-		Hash:                        "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
-		SpamPowHashFunction:         "sha3_24_rounds",
-		SpamPowDifficulty:           2,
-		SpamPowNumberOfPastBlocks:   2,
-		SpamPowNumberOfTxPerBlock:   2,
-		SpamPowIncreasingDifficulty: false,
-		ChainId:                     chainID,
+	spamStats := &api.GetSpamStatisticsResponse{
+		ChainId: chainID,
+		Statistics: &api.SpamStatistics{
+			Proposals:         &api.SpamStatistic{},
+			Transfers:         &api.SpamStatistic{},
+			Delegations:       &api.SpamStatistic{},
+			NodeAnnouncements: &api.SpamStatistic{},
+			Votes:             &api.VoteSpamStatistics{},
+			Pow: &api.PoWStatistic{
+				BlockStates: []*api.PoWBlockState{},
+			},
+		},
 	}
 
 	// setup
@@ -623,20 +625,11 @@ func testCheckTransactionSucceeds(t *testing.T) {
 		GasWanted: 300,
 		GasUsed:   200,
 	}, nil)
-	s.pow.EXPECT().Generate(pubKey, &nodetypes.LastBlock{
-		ChainID:                         blockHeightResponse.ChainId,
-		BlockHeight:                     blockHeightResponse.Height,
-		BlockHash:                       blockHeightResponse.Hash,
-		ProofOfWorkHashFunction:         blockHeightResponse.SpamPowHashFunction,
-		ProofOfWorkDifficulty:           blockHeightResponse.SpamPowDifficulty,
-		ProofOfWorkPastBlocks:           blockHeightResponse.SpamPowNumberOfPastBlocks,
-		ProofOfWorkTxPerBlock:           blockHeightResponse.SpamPowNumberOfTxPerBlock,
-		ProofOfWorkIncreasingDifficulty: blockHeightResponse.SpamPowIncreasingDifficulty,
-	}).Times(1).Return(&commandspb.ProofOfWork{
+	s.nodeForward.EXPECT().SpamStatistics(gomock.Any(), gomock.Any()).Times(1).Return(spamStats, 0, nil)
+	s.spam.EXPECT().GenerateProofOfWork(pubKey, gomock.Any()).Times(1).Return(&commandspb.ProofOfWork{
 		Tid:   "",
 		Nonce: 10,
 	}, nil)
-	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(blockHeightResponse, 0, nil)
 	// when
 
 	statusCode, _, body := s.serveHTTP(t, checkTxRequest(t, payload, headers))
@@ -661,15 +654,18 @@ func testCheckTransactionWithRejectedTransactionSucceeds(t *testing.T) {
 	headers := authHeadersV1(t, token)
 	pubKey := vgrand.RandomStr(5)
 	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
-	blockHeightResponse := &api.LastBlockHeightResponse{
-		Height:                      42,
-		Hash:                        "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
-		SpamPowHashFunction:         "sha3_24_rounds",
-		SpamPowDifficulty:           2,
-		SpamPowNumberOfPastBlocks:   2,
-		SpamPowNumberOfTxPerBlock:   2,
-		SpamPowIncreasingDifficulty: false,
-		ChainId:                     chainID,
+	spamStats := &api.GetSpamStatisticsResponse{
+		ChainId: chainID,
+		Statistics: &api.SpamStatistics{
+			Proposals:         &api.SpamStatistic{},
+			Transfers:         &api.SpamStatistic{},
+			Delegations:       &api.SpamStatistic{},
+			NodeAnnouncements: &api.SpamStatistic{},
+			Votes:             &api.VoteSpamStatistics{},
+			Pow: &api.PoWStatistic{
+				BlockStates: []*api.PoWBlockState{},
+			},
+		},
 	}
 
 	// setup
@@ -679,20 +675,11 @@ func testCheckTransactionWithRejectedTransactionSucceeds(t *testing.T) {
 		Success: false,
 		Code:    4,
 	}, nil)
-	s.pow.EXPECT().Generate(pubKey, &nodetypes.LastBlock{
-		ChainID:                         blockHeightResponse.ChainId,
-		BlockHeight:                     blockHeightResponse.Height,
-		BlockHash:                       blockHeightResponse.Hash,
-		ProofOfWorkHashFunction:         blockHeightResponse.SpamPowHashFunction,
-		ProofOfWorkDifficulty:           blockHeightResponse.SpamPowDifficulty,
-		ProofOfWorkPastBlocks:           blockHeightResponse.SpamPowNumberOfPastBlocks,
-		ProofOfWorkTxPerBlock:           blockHeightResponse.SpamPowNumberOfTxPerBlock,
-		ProofOfWorkIncreasingDifficulty: blockHeightResponse.SpamPowIncreasingDifficulty,
-	}).Times(1).Return(&commandspb.ProofOfWork{
+	s.spam.EXPECT().GenerateProofOfWork(pubKey, gomock.Any()).Times(1).Return(&commandspb.ProofOfWork{
 		Tid:   "",
 		Nonce: 10,
 	}, nil)
-	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(blockHeightResponse, 0, nil)
+	s.nodeForward.EXPECT().SpamStatistics(gomock.Any(), pubKey).Times(1).Return(spamStats, 0, nil)
 	// when
 
 	statusCode, _, body := s.serveHTTP(t, checkTxRequest(t, payload, headers))
@@ -717,35 +704,29 @@ func testCheckTransactionWithFailedTransactionFails(t *testing.T) {
 	headers := authHeadersV1(t, token)
 	pubKey := vgrand.RandomStr(5)
 	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
-	blockHeightResponse := &api.LastBlockHeightResponse{
-		Height:                      42,
-		Hash:                        "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
-		SpamPowHashFunction:         "sha3_24_rounds",
-		SpamPowDifficulty:           2,
-		SpamPowNumberOfPastBlocks:   2,
-		SpamPowNumberOfTxPerBlock:   2,
-		SpamPowIncreasingDifficulty: false,
-		ChainId:                     chainID,
+	spamStats := &api.GetSpamStatisticsResponse{
+		ChainId: chainID,
+		Statistics: &api.SpamStatistics{
+			Proposals:         &api.SpamStatistic{},
+			Transfers:         &api.SpamStatistic{},
+			Delegations:       &api.SpamStatistic{},
+			NodeAnnouncements: &api.SpamStatistic{},
+			Votes:             &api.VoteSpamStatistics{},
+			Pow: &api.PoWStatistic{
+				BlockStates: []*api.PoWBlockState{},
+			},
+		},
 	}
 
 	// setup
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
 	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), chainID).Times(1).Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().CheckTx(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, assert.AnError)
-	s.pow.EXPECT().Generate(pubKey, &nodetypes.LastBlock{
-		ChainID:                         blockHeightResponse.ChainId,
-		BlockHeight:                     blockHeightResponse.Height,
-		BlockHash:                       blockHeightResponse.Hash,
-		ProofOfWorkHashFunction:         blockHeightResponse.SpamPowHashFunction,
-		ProofOfWorkDifficulty:           blockHeightResponse.SpamPowDifficulty,
-		ProofOfWorkPastBlocks:           blockHeightResponse.SpamPowNumberOfPastBlocks,
-		ProofOfWorkTxPerBlock:           blockHeightResponse.SpamPowNumberOfTxPerBlock,
-		ProofOfWorkIncreasingDifficulty: blockHeightResponse.SpamPowIncreasingDifficulty,
-	}).Times(1).Return(&commandspb.ProofOfWork{
+	s.spam.EXPECT().GenerateProofOfWork(pubKey, gomock.Any()).Times(1).Return(&commandspb.ProofOfWork{
 		Tid:   "",
 		Nonce: 10,
 	}, nil)
-	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(blockHeightResponse, 0, nil)
+	s.nodeForward.EXPECT().SpamStatistics(gomock.Any(), pubKey).Times(1).Return(spamStats, 0, nil)
 
 	// when
 	statusCode, _, _ := s.serveHTTP(t, checkTxRequest(t, payload, headers))
@@ -764,15 +745,18 @@ func testAcceptSigningTransactionSucceeds(t *testing.T) {
 	headers := authHeadersV1(t, token)
 	pubKey := vgrand.RandomStr(5)
 	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
-	blockHeightResponse := &api.LastBlockHeightResponse{
-		Height:                      42,
-		Hash:                        "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
-		SpamPowHashFunction:         "sha3_24_rounds",
-		SpamPowDifficulty:           2,
-		SpamPowNumberOfPastBlocks:   2,
-		SpamPowNumberOfTxPerBlock:   2,
-		SpamPowIncreasingDifficulty: false,
-		ChainId:                     chainID,
+	spamStats := &api.GetSpamStatisticsResponse{
+		ChainId: chainID,
+		Statistics: &api.SpamStatistics{
+			Proposals:         &api.SpamStatistic{},
+			Transfers:         &api.SpamStatistic{},
+			Delegations:       &api.SpamStatistic{},
+			NodeAnnouncements: &api.SpamStatistic{},
+			Votes:             &api.VoteSpamStatistics{},
+			Pow: &api.PoWStatistic{
+				BlockStates: []*api.PoWBlockState{},
+			},
+		},
 	}
 
 	// setup
@@ -780,20 +764,11 @@ func testAcceptSigningTransactionSucceeds(t *testing.T) {
 	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), chainID).Times(1).Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1).
 		Return(&api.SubmitTransactionResponse{Success: true}, nil)
-	s.pow.EXPECT().Generate(pubKey, &nodetypes.LastBlock{
-		ChainID:                         blockHeightResponse.ChainId,
-		BlockHeight:                     blockHeightResponse.Height,
-		BlockHash:                       blockHeightResponse.Hash,
-		ProofOfWorkHashFunction:         blockHeightResponse.SpamPowHashFunction,
-		ProofOfWorkDifficulty:           blockHeightResponse.SpamPowDifficulty,
-		ProofOfWorkPastBlocks:           blockHeightResponse.SpamPowNumberOfPastBlocks,
-		ProofOfWorkTxPerBlock:           blockHeightResponse.SpamPowNumberOfTxPerBlock,
-		ProofOfWorkIncreasingDifficulty: blockHeightResponse.SpamPowIncreasingDifficulty,
-	}).Times(1).Return(&commandspb.ProofOfWork{
+	s.spam.EXPECT().GenerateProofOfWork(pubKey, gomock.Any()).Times(1).Return(&commandspb.ProofOfWork{
 		Tid:   "",
 		Nonce: 10,
 	}, nil)
-	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(blockHeightResponse, 0, nil)
+	s.nodeForward.EXPECT().SpamStatistics(gomock.Any(), pubKey).Times(1).Return(spamStats, 0, nil)
 	// when
 
 	statusCode, _, _ := s.serveHTTP(t, signTxRequest(t, payload, headers))
@@ -846,21 +821,24 @@ func testFailedTransactionSigningFails(t *testing.T) {
 	headers := authHeadersV1(t, token)
 	pubKey := vgrand.RandomStr(5)
 	payload := fmt.Sprintf(`{"propagate": true, "pubKey": "%s", "orderCancellation": {}}`, pubKey)
-	blockHeightResponse := &api.LastBlockHeightResponse{
-		Height:                      42,
-		Hash:                        "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
-		SpamPowHashFunction:         "sha3_24_rounds",
-		SpamPowDifficulty:           2,
-		SpamPowNumberOfPastBlocks:   2,
-		SpamPowNumberOfTxPerBlock:   2,
-		SpamPowIncreasingDifficulty: false,
-		ChainId:                     chainID,
+	spamStats := &api.GetSpamStatisticsResponse{
+		ChainId: chainID,
+		Statistics: &api.SpamStatistics{
+			Proposals:         &api.SpamStatistic{},
+			Transfers:         &api.SpamStatistic{},
+			Delegations:       &api.SpamStatistic{},
+			NodeAnnouncements: &api.SpamStatistic{},
+			Votes:             &api.VoteSpamStatistics{},
+			Pow: &api.PoWStatistic{
+				BlockStates: []*api.PoWBlockState{},
+			},
+		},
 	}
 
 	// setup
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
 	s.handler.EXPECT().SignTx(walletName, gomock.Any(), gomock.Any(), chainID).Times(1).Return(nil, assert.AnError)
-	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(blockHeightResponse, 0, nil)
+	s.nodeForward.EXPECT().SpamStatistics(gomock.Any(), pubKey).Times(1).Return(spamStats, 0, nil)
 
 	// when
 	statusCode, _, _ := s.serveHTTP(t, signTxRequest(t, payload, headers))
@@ -924,34 +902,27 @@ func testAcceptSigningTransactionFailsSpam(t *testing.T) {
 	headers := authHeadersV1(t, token)
 	pubKey := vgrand.RandomStr(5)
 	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
-	blockHeightResponse := &api.LastBlockHeightResponse{
-		Height:                      42,
-		Hash:                        "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
-		SpamPowHashFunction:         "sha3_24_rounds",
-		SpamPowDifficulty:           2,
-		SpamPowNumberOfPastBlocks:   2,
-		SpamPowNumberOfTxPerBlock:   2,
-		SpamPowIncreasingDifficulty: false,
-		ChainId:                     chainID,
+	spamStats := &api.GetSpamStatisticsResponse{
+		ChainId: chainID,
+		Statistics: &api.SpamStatistics{
+			Proposals:         &api.SpamStatistic{},
+			Transfers:         &api.SpamStatistic{},
+			Delegations:       &api.SpamStatistic{},
+			NodeAnnouncements: &api.SpamStatistic{},
+			Votes:             &api.VoteSpamStatistics{},
+			Pow: &api.PoWStatistic{
+				BlockStates: []*api.PoWBlockState{},
+			},
+		},
 	}
-
 	// setup
 	s.auth.EXPECT().VerifyToken(token).AnyTimes().Return(walletName, nil)
 	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), chainID).AnyTimes().Return(&commandspb.Transaction{}, nil)
-	s.pow.EXPECT().Generate(pubKey, &nodetypes.LastBlock{
-		ChainID:                         blockHeightResponse.ChainId,
-		BlockHeight:                     blockHeightResponse.Height,
-		BlockHash:                       blockHeightResponse.Hash,
-		ProofOfWorkHashFunction:         blockHeightResponse.SpamPowHashFunction,
-		ProofOfWorkDifficulty:           blockHeightResponse.SpamPowDifficulty,
-		ProofOfWorkPastBlocks:           blockHeightResponse.SpamPowNumberOfPastBlocks,
-		ProofOfWorkTxPerBlock:           blockHeightResponse.SpamPowNumberOfTxPerBlock,
-		ProofOfWorkIncreasingDifficulty: blockHeightResponse.SpamPowIncreasingDifficulty,
-	}).Times(1).Return(&commandspb.ProofOfWork{
+	s.spam.EXPECT().GenerateProofOfWork(pubKey, gomock.Any()).Times(1).Return(&commandspb.ProofOfWork{
 		Tid:   "",
 		Nonce: 10,
 	}, nil)
-	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(blockHeightResponse, 0, nil)
+	s.nodeForward.EXPECT().SpamStatistics(gomock.Any(), pubKey).Times(1).Return(spamStats, 0, nil)
 	// when
 
 	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1).
@@ -1138,19 +1109,21 @@ func TestEmptyChainIDFromNetworkFails(t *testing.T) {
 	headers := authHeadersV1(t, token)
 	pubKey := vgrand.RandomStr(5)
 	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
-
+	spamStats := &api.GetSpamStatisticsResponse{
+		Statistics: &api.SpamStatistics{
+			Proposals:         &api.SpamStatistic{},
+			Transfers:         &api.SpamStatistic{},
+			Delegations:       &api.SpamStatistic{},
+			NodeAnnouncements: &api.SpamStatistic{},
+			Votes:             &api.VoteSpamStatistics{},
+			Pow: &api.PoWStatistic{
+				BlockStates: []*api.PoWBlockState{},
+			},
+		},
+	}
 	// setup
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
-	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(&api.LastBlockHeightResponse{
-		Height:                      42,
-		Hash:                        "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
-		SpamPowHashFunction:         "sha3_24_rounds",
-		SpamPowDifficulty:           2,
-		SpamPowNumberOfPastBlocks:   2,
-		SpamPowNumberOfTxPerBlock:   2,
-		SpamPowIncreasingDifficulty: false,
-		ChainId:                     "",
-	}, 0, nil)
+	s.nodeForward.EXPECT().SpamStatistics(gomock.Any(), gomock.Any()).Times(1).Return(spamStats, 0, nil)
 	// when
 
 	statusCode, _, _ := s.serveHTTP(t, checkTxRequest(t, payload, headers))

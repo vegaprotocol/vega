@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -731,34 +732,25 @@ func (s *API) CheckTx(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		return
 	}
 
-	blockData, cltIdx, err := s.nodeForward.LastBlockHeightAndHash(r.Context())
+	stats, cltIdx, err := s.nodeForward.SpamStatistics(r.Context(), req.PubKey)
 	if err != nil {
 		s.writeInternalError(w, ErrCouldNotGetBlockHeight)
 		return
 	}
 
-	if blockData.ChainId == "" {
+	if stats.ChainId == "" {
 		s.writeInternalError(w, ErrCouldNotGetChainID)
 		return
 	}
-
-	tx, err := s.handler.SignTx(name, req, blockData.Height, blockData.ChainId)
+	st := convertSpamStatistics(stats)
+	tx, err := s.handler.SignTx(name, req, st.LastBlockHeight, stats.ChainId)
 	if err != nil {
 		s.writeInternalError(w, err)
 		return
 	}
 
 	// generate proof of work for the transaction
-	tx.Pow, err = s.pow.Generate(req.PubKey, &nodetypes.LastBlock{
-		ChainID:                         blockData.ChainId,
-		BlockHeight:                     blockData.Height,
-		BlockHash:                       blockData.Hash,
-		ProofOfWorkHashFunction:         blockData.SpamPowHashFunction,
-		ProofOfWorkDifficulty:           blockData.SpamPowDifficulty,
-		ProofOfWorkPastBlocks:           blockData.SpamPowNumberOfPastBlocks,
-		ProofOfWorkTxPerBlock:           blockData.SpamPowNumberOfTxPerBlock,
-		ProofOfWorkIncreasingDifficulty: blockData.SpamPowIncreasingDifficulty,
-	})
+	tx.Pow, err = s.spam.GenerateProofOfWork(req.PubKey, st)
 	if err != nil {
 		s.writeInternalError(w, err)
 		return
@@ -834,17 +826,9 @@ func (s *API) signTx(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 	}
 	s.log.Info("user approved transaction signing request", zap.Any("request", req))
 
-	blockData, cltIdx, err := s.nodeForward.LastBlockHeightAndHash(r.Context())
-	if err != nil {
-		s.policy.Report(SentTransaction{
-			TxID:  txID,
-			Error: ErrCouldNotGetBlockHeight,
-		})
-		s.writeInternalError(w, ErrCouldNotGetBlockHeight)
-		return
-	}
-
-	if blockData.ChainId == "" {
+	stats, cltIdx, err := s.nodeForward.SpamStatistics(r.Context(), req.PubKey)
+	ss := convertSpamStatistics(stats)
+	if err != nil || ss.ChainID == "" {
 		s.policy.Report(SentTransaction{
 			TxID:  txID,
 			Error: ErrCouldNotGetChainID,
@@ -852,8 +836,7 @@ func (s *API) signTx(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 		s.writeInternalError(w, ErrCouldNotGetChainID)
 		return
 	}
-
-	tx, err := s.handler.SignTx(name, req, blockData.Height, blockData.ChainId)
+	tx, err := s.handler.SignTx(name, req, ss.LastBlockHeight, ss.ChainID)
 	if err != nil {
 		s.policy.Report(SentTransaction{
 			TxID:  txID,
@@ -864,16 +847,7 @@ func (s *API) signTx(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 	}
 
 	// generate proof of work for the transaction
-	tx.Pow, err = s.pow.Generate(req.PubKey, &nodetypes.LastBlock{
-		ChainID:                         blockData.ChainId,
-		BlockHeight:                     blockData.Height,
-		BlockHash:                       blockData.Hash,
-		ProofOfWorkHashFunction:         blockData.SpamPowHashFunction,
-		ProofOfWorkDifficulty:           blockData.SpamPowDifficulty,
-		ProofOfWorkPastBlocks:           blockData.SpamPowNumberOfPastBlocks,
-		ProofOfWorkTxPerBlock:           blockData.SpamPowNumberOfTxPerBlock,
-		ProofOfWorkIncreasingDifficulty: blockData.SpamPowIncreasingDifficulty,
-	})
+	tx.Pow, err = s.spam.GenerateProofOfWork(req.PubKey, ss)
 	if err != nil {
 		s.policy.Report(SentTransaction{
 			Tx:    tx,
@@ -883,7 +857,6 @@ func (s *API) signTx(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 		s.writeInternalError(w, err)
 		return
 	}
-
 	sentAt := time.Now()
 	resp, err := s.nodeForward.SendTx(r.Context(), tx, ty, cltIdx)
 	if err != nil {
@@ -896,7 +869,6 @@ func (s *API) signTx(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 		s.writeInternalError(w, err)
 		return
 	}
-
 	if !resp.Success {
 		s.policy.Report(SentTransaction{
 			Tx:     tx,
@@ -1071,4 +1043,65 @@ func (s *API) writeSuccess(w http.ResponseWriter, data interface{}) {
 		return
 	}
 	s.log.Info(fmt.Sprintf("%d %s", http.StatusOK, http.StatusText(http.StatusOK)))
+}
+
+// convertSpamStatistics takes us from the protos to the nodetypes version
+// the code is copied from the V2 API but is not worth the pain of trying to share
+// because V1 is disappearing soon anyway.
+func convertSpamStatistics(r *api.GetSpamStatisticsResponse) *nodetypes.SpamStatistics {
+	proposals := map[string]uint64{}
+	for _, st := range r.Statistics.Votes.Statistics {
+		proposals[st.Proposal] = st.CountForEpoch
+	}
+
+	blockStates := []nodetypes.PoWBlockState{}
+	for _, b := range r.Statistics.Pow.BlockStates {
+		blockStates = append(blockStates, nodetypes.PoWBlockState{
+			BlockHeight:          b.BlockHeight,
+			BlockHash:            b.BlockHash,
+			TransactionsSeen:     b.TransactionsSeen,
+			ExpectedDifficulty:   b.ExpectedDifficulty,
+			HashFunction:         b.HashFunction,
+			TxPerBlock:           b.TxPerBlock,
+			IncreasingDifficulty: b.IncreasingDifficulty,
+			Difficulty:           b.Difficulty,
+		})
+	}
+
+	// sort by block-height so latest block is first
+	sort.Slice(blockStates, func(i int, j int) bool {
+		return blockStates[i].BlockHeight > blockStates[j].BlockHeight
+	})
+
+	var lastBlockHeight uint64
+	if len(blockStates) > 0 {
+		lastBlockHeight = blockStates[0].BlockHeight
+	}
+	return &nodetypes.SpamStatistics{
+		Proposals:         toSpamStatistic(r.Statistics.Proposals),
+		Delegations:       toSpamStatistic(r.Statistics.Delegations),
+		Transfers:         toSpamStatistic(r.Statistics.Transfers),
+		NodeAnnouncements: toSpamStatistic(r.Statistics.NodeAnnouncements),
+		Votes: &nodetypes.VoteSpamStatistics{
+			Proposals:   proposals,
+			MaxForEpoch: r.Statistics.Votes.MaxForEpoch,
+			BannedUntil: r.Statistics.Votes.BannedUntil,
+		},
+		PoW: &nodetypes.PoWStatistics{
+			PowBlockStates: blockStates,
+			BannedUntil:    r.Statistics.Pow.BannedUntil,
+			PastBlocks:     r.Statistics.Pow.NumberOfPastBlocks,
+		},
+		ChainID:         r.ChainId,
+		EpochSeq:        r.Statistics.EpochSeq,
+		LastBlockHeight: lastBlockHeight,
+	}
+}
+
+func toSpamStatistic(st *api.SpamStatistic) *nodetypes.SpamStatistic {
+	return &nodetypes.SpamStatistic{
+		CountForEpoch: st.CountForEpoch,
+		MaxForEpoch:   st.MaxForEpoch,
+		BannedUntil:   st.BannedUntil,
+	}
 }

@@ -671,9 +671,15 @@ func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.Su
 	return successResponse, nil
 }
 
-func (s *coreService) GetSpamStatistics(_ context.Context, req *protoapi.GetSpamStatisticsRequest) (*protoapi.GetSpamStatisticsResponse, error) {
+func (s *coreService) GetSpamStatistics(ctx context.Context, req *protoapi.GetSpamStatisticsRequest) (*protoapi.GetSpamStatisticsResponse, error) {
 	if req.PartyId == "" {
 		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
+	}
+
+	if !s.hasGenesisTimeAndChainID.Load() {
+		if err := s.getGenesisTimeAndChainID(ctx); err != nil {
+			return nil, fmt.Errorf("failed to intialise chainID: %w", err)
+		}
 	}
 
 	spamStats := &protoapi.SpamStatistics{}
@@ -684,6 +690,7 @@ func (s *coreService) GetSpamStatistics(_ context.Context, req *protoapi.GetSpam
 
 	// Noop PoW Engine is used for NullBlockChain so this should be safe
 	spamStats.Pow = s.powEngine.GetSpamStatistics(req.PartyId)
+	spamStats.EpochSeq = s.stats.GetEpochSeq()
 
 	resp := &protoapi.GetSpamStatisticsResponse{
 		ChainId:    s.chainID,

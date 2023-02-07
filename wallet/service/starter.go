@@ -15,7 +15,7 @@ import (
 	coreversion "code.vegaprotocol.io/vega/version"
 	"code.vegaprotocol.io/vega/wallet/api"
 	nodeapi "code.vegaprotocol.io/vega/wallet/api/node"
-	"code.vegaprotocol.io/vega/wallet/api/pow"
+	"code.vegaprotocol.io/vega/wallet/api/spam"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/node"
 	servicev1 "code.vegaprotocol.io/vega/wallet/service/v1"
@@ -122,7 +122,7 @@ func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck 
 	// when stopping the service.
 	closer := vgclose.NewCloser()
 
-	proofOfWork := pow.NewProofOfWork()
+	proofOfWork := spam.NewHandler()
 
 	// API v1
 	apiV1, err := s.buildAPIV1(jobRunner.Ctx(), apiLogger, networkCfg, serviceCfg, proofOfWork, closer)
@@ -188,7 +188,7 @@ func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck 
 
 // buildAPIV1
 // This API is deprecated.
-func (s *Starter) buildAPIV1(ctx context.Context, logger *zap.Logger, networkCfg *network.Network, serviceCfg *Config, proofOfWork *pow.ProofOfWork, closer *vgclose.Closer) (*servicev1.API, error) {
+func (s *Starter) buildAPIV1(ctx context.Context, logger *zap.Logger, networkCfg *network.Network, serviceCfg *Config, spam *spam.Handler, closer *vgclose.Closer) (*servicev1.API, error) {
 	apiV1Logger := logger.Named("v1")
 
 	forwarder, err := node.NewForwarder(apiV1Logger.Named("forwarder"), networkCfg.API.GRPC)
@@ -213,10 +213,10 @@ func (s *Starter) buildAPIV1(ctx context.Context, logger *zap.Logger, networkCfg
 
 	handler := wallets.NewHandler(s.walletStore)
 
-	return servicev1.NewAPI(apiV1Logger, handler, auth, forwarder, policy, networkCfg, proofOfWork), nil
+	return servicev1.NewAPI(apiV1Logger, handler, auth, forwarder, policy, networkCfg, spam), nil
 }
 
-func (s *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *network.Network, pow api.ProofOfWork, closer *vgclose.Closer) (*servicev2.API, error) {
+func (s *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *network.Network, pow api.SpamHandler, closer *vgclose.Closer) (*servicev2.API, error) {
 	apiV2logger := logger.Named("v2")
 	clientAPILogger := apiV2logger.Named("client-api")
 

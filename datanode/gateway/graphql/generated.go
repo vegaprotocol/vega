@@ -1175,14 +1175,16 @@ type ComplexityRoot struct {
 	}
 
 	Position struct {
-		AverageEntryPrice func(childComplexity int) int
-		MarginsConnection func(childComplexity int, pagination *v2.Pagination) int
-		Market            func(childComplexity int) int
-		OpenVolume        func(childComplexity int) int
-		Party             func(childComplexity int) int
-		RealisedPnl       func(childComplexity int) int
-		UnrealisedPnl     func(childComplexity int) int
-		UpdatedAt         func(childComplexity int) int
+		AverageEntryPrice       func(childComplexity int) int
+		LossSocializationAmount func(childComplexity int) int
+		MarginsConnection       func(childComplexity int, pagination *v2.Pagination) int
+		Market                  func(childComplexity int) int
+		OpenVolume              func(childComplexity int) int
+		Party                   func(childComplexity int) int
+		PositionStatus          func(childComplexity int) int
+		RealisedPnl             func(childComplexity int) int
+		UnrealisedPnl           func(childComplexity int) int
+		UpdatedAt               func(childComplexity int) int
 	}
 
 	PositionConnection struct {
@@ -2081,6 +2083,8 @@ type PositionResolver interface {
 	Market(ctx context.Context, obj *vega.Position) (*vega.Market, error)
 	Party(ctx context.Context, obj *vega.Position) (*vega.Party, error)
 	OpenVolume(ctx context.Context, obj *vega.Position) (string, error)
+
+	LossSocializationAmount(ctx context.Context, obj *vega.Position) (string, error)
 
 	MarginsConnection(ctx context.Context, obj *vega.Position, pagination *v2.Pagination) (*v2.MarginConnection, error)
 }
@@ -6734,6 +6738,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Position.AverageEntryPrice(childComplexity), true
 
+	case "Position.lossSocializationAmount":
+		if e.complexity.Position.LossSocializationAmount == nil {
+			break
+		}
+
+		return e.complexity.Position.LossSocializationAmount(childComplexity), true
+
 	case "Position.marginsConnection":
 		if e.complexity.Position.MarginsConnection == nil {
 			break
@@ -6766,6 +6777,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Position.Party(childComplexity), true
+
+	case "Position.positionStatus":
+		if e.complexity.Position.PositionStatus == nil {
+			break
+		}
+
+		return e.complexity.Position.PositionStatus(childComplexity), true
 
 	case "Position.realisedPNL":
 		if e.complexity.Position.RealisedPnl == nil {
@@ -41399,6 +41417,94 @@ func (ec *executionContext) fieldContext_Position_averageEntryPrice(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _Position_lossSocializationAmount(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Position_lossSocializationAmount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Position().LossSocializationAmount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Position_lossSocializationAmount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Position",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Position_positionStatus(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Position_positionStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PositionStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(vega.PositionStatus)
+	fc.Result = res
+	return ec.marshalNPositionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPositionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Position_positionStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Position",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type PositionStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Position_marginsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Position_marginsConnection(ctx, field)
 	if err != nil {
@@ -41647,6 +41753,10 @@ func (ec *executionContext) fieldContext_PositionEdge_node(ctx context.Context, 
 				return ec.fieldContext_Position_unrealisedPNL(ctx, field)
 			case "averageEntryPrice":
 				return ec.fieldContext_Position_averageEntryPrice(ctx, field)
+			case "lossSocializationAmount":
+				return ec.fieldContext_Position_lossSocializationAmount(ctx, field)
+			case "positionStatus":
+				return ec.fieldContext_Position_positionStatus(ctx, field)
 			case "marginsConnection":
 				return ec.fieldContext_Position_marginsConnection(ctx, field)
 			case "updatedAt":
@@ -71381,6 +71491,33 @@ func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "lossSocializationAmount":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Position_lossSocializationAmount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "positionStatus":
+
+			out.Values[i] = ec._Position_positionStatus(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "marginsConnection":
 			field := field
 
@@ -79561,6 +79698,21 @@ func (ec *executionContext) marshalNPositionEdge2ᚖcodeᚗvegaprotocolᚗioᚋv
 		return graphql.Null
 	}
 	return ec._PositionEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNPositionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPositionStatus(ctx context.Context, v interface{}) (vega.PositionStatus, error) {
+	res, err := marshallers.UnmarshalPositionStatus(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNPositionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPositionStatus(ctx context.Context, sel ast.SelectionSet, v vega.PositionStatus) graphql.Marshaler {
+	res := marshallers.MarshalPositionStatus(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNPositionUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPositionᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Position) graphql.Marshaler {

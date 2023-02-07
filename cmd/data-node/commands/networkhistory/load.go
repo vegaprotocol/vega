@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	vgterm "code.vegaprotocol.io/vega/libs/term"
+
 	"go.uber.org/zap"
 
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
@@ -49,7 +51,7 @@ func (cmd *loadCmd) Execute(args []string) error {
 		return fmt.Errorf("datanode must be shutdown before data can be loaded")
 	}
 
-	if !cmd.Force {
+	if !cmd.Force && vgterm.HasTTY() {
 		if !flags.YesOrNo("Running this command will kill all existing database connections, do you want to continue?") {
 			return nil
 		}
@@ -173,7 +175,7 @@ func (cmd *loadCmd) Execute(args []string) error {
 			" run the load command with the \"wipe-existing-data\" flag which will empty the data node before restoring it from the history data\n\n",
 			from, to, span.FromHeight, span.ToHeight, span.ToHeight+1, to)
 
-		if !cmd.Force {
+		if !cmd.Force && vgterm.HasTTY() {
 			if !flags.YesOrNo(fmt.Sprintf("Do you wish to continue and load all history from height %d to %d ?", span.ToHeight+1, to)) {
 				return nil
 			}
@@ -182,7 +184,7 @@ func (cmd *loadCmd) Execute(args []string) error {
 		fmt.Printf("Network history from block height %d to %d is available to load, current datanode block span is %d to %d\n\n",
 			from, to, span.FromHeight, span.ToHeight)
 
-		if !cmd.Force {
+		if !cmd.Force && vgterm.HasTTY() {
 			if !flags.YesOrNo("Do you want to load this history?") {
 				return nil
 			}
