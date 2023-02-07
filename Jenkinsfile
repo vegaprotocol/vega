@@ -380,28 +380,22 @@ pipeline {
                     }
                 }
                 stage('Vegavisor autoinstall and pup') {
-                    environment {
-                        CGO_ENABLED = 1
-                    }
-                    options { retry(3) }
                     steps {
-                        dir('vega') {
-                            build(
-                                job: '/common/visor-autoinstall-and-pup',
-                                propagate: true, // fast fail
-                                wait: true,
-                                parameters: [
-                                    string(name: 'RELEASES_REPO', value: 'vegaprotocol/vega-dev-releases'),
-                                    string(name: 'VEGA_BRANCH', value: commitHash),
-                                    string(name: 'SYSTEM_TESTS_BRANCH', value: params.SYSTEM_TESTS_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchSystemTests),
-                                    string(name: 'VEGATOOLS_BRANCH', value: params.VEGATOOLS_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchVegatools),
-                                    string(name: 'VEGACAPSULE_BRANCH', value: params.VEGACAPSULE_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchVegaCapsule),
-                                    string(name: 'DEVOPSSCRIPTS_BRANCH', value: params.DEVOPSSCRIPTS_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchDevopsScripts),
-                                    booleanParam(name: 'CREATE_RELEASE', value: true),
-                                    string(name: 'JENKINS_SHARED_LIB_BRANCH', value: params.JENKINS_SHARED_LIB_BRANCH ?: pipelineDefaults.capsuleSystemTests.jenkinsSharedLib),
-                                ]
-                            )
-                        }
+                        build(
+                            job: '/common/visor-autoinstall-and-pup',
+                            propagate: true, // fast fail
+                            wait: true,
+                            parameters: [
+                                string(name: 'RELEASES_REPO', value: 'vegaprotocol/vega-dev-releases'),
+                                string(name: 'VEGA_BRANCH', value: commitHash),
+                                string(name: 'SYSTEM_TESTS_BRANCH', value: params.SYSTEM_TESTS_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchSystemTests),
+                                string(name: 'VEGATOOLS_BRANCH', value: params.VEGATOOLS_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchVegatools),
+                                string(name: 'VEGACAPSULE_BRANCH', value: params.VEGACAPSULE_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchVegaCapsule),
+                                string(name: 'DEVOPSSCRIPTS_BRANCH', value: params.DEVOPSSCRIPTS_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchDevopsScripts),
+                                booleanParam(name: 'CREATE_RELEASE', value: true),
+                                string(name: 'JENKINS_SHARED_LIB_BRANCH', value: params.JENKINS_SHARED_LIB_BRANCH ?: pipelineDefaults.capsuleSystemTests.jenkinsSharedLib),
+                            ]
+                        )
                     }
                 }
                 stage('System Tests') {
