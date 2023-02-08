@@ -458,7 +458,7 @@ func testServiceV2_PostRequests_DisconnectWalletSucceeds(t *testing.T) {
 	rpcErr := intoJSONRPCError(t, rawResponse, "123456789")
 	assert.Equal(t, "Server error", rpcErr.Message)
 	assert.Equal(t, api.ErrorCodeAuthenticationFailure, rpcErr.Code)
-	assert.Equal(t, connections.ErrNoConnectionAssociatedThisToken.Error(), rpcErr.Data)
+	assert.Equal(t, connections.ErrNoConnectionAssociatedThisAuthenticationToken.Error(), rpcErr.Data)
 }
 
 func testServiceV2_PostRequests_ListKeysSucceeds(t *testing.T) {
@@ -569,7 +569,7 @@ func testServiceV2_PostRequests_ListKeysWithUnknownTokenFails(t *testing.T) {
 	rpcErr := intoJSONRPCError(t, rawResponse, "123456789")
 	assert.Equal(t, "Server error", rpcErr.Message)
 	assert.Equal(t, api.ErrorCodeAuthenticationFailure, rpcErr.Code)
-	assert.Equal(t, connections.ErrNoConnectionAssociatedThisToken.Error(), rpcErr.Data)
+	assert.Equal(t, connections.ErrNoConnectionAssociatedThisAuthenticationToken.Error(), rpcErr.Data)
 }
 
 func testServiceV2_PostRequests_ListKeysWithMismatchingHostnameFails(t *testing.T) {
@@ -942,7 +942,7 @@ func testServiceV2_PostRequests_SendTransactionWithUnknownTokenFails(t *testing.
 	rpcErr := intoJSONRPCError(t, rawResponse, "123456789")
 	assert.Equal(t, "Server error", rpcErr.Message)
 	assert.Equal(t, api.ErrorCodeAuthenticationFailure, rpcErr.Code)
-	assert.Equal(t, connections.ErrNoConnectionAssociatedThisToken.Error(), rpcErr.Data)
+	assert.Equal(t, connections.ErrNoConnectionAssociatedThisAuthenticationToken.Error(), rpcErr.Data)
 }
 
 func testServiceV2_PostRequests_SendTransactionWithMismatchingHostnameFails(t *testing.T) {

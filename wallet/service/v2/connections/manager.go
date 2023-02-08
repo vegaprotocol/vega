@@ -114,7 +114,7 @@ func (m *Manager) ConnectedWallet(hostname string, token Token) (api.ConnectedWa
 
 	connection, exists := m.tokenToConnection[token]
 	if !exists {
-		return api.ConnectedWallet{}, ErrNoConnectionAssociatedThisToken
+		return api.ConnectedWallet{}, ErrNoConnectionAssociatedThisAuthenticationToken
 	}
 
 	if !connection.policy.IsLongLivingConnection() && connection.connectedWallet.Hostname() != hostname {
