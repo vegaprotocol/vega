@@ -43,8 +43,6 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | traderB | ETH/DEC20 | 150000            | 0.001 | sell | ASK              | 100        | 20     | submission |
       | lp1 | traderB | ETH/DEC20 | 150000            | 0.001 | buy  | BID              | 100        | 20     | amendmend  |
-      | lp2 | traderC | ETH/DEC20 | 15                | 0.001 | sell | ASK              | 100        | 20     | submission |
-      | lp2 | traderC | ETH/DEC20 | 15                | 0.001 | buy  | BID              | 100        | 20     | amendmend  |
 
     Then the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -65,14 +63,14 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order
 
     And the market data for the market "ETH/DEC20" should be:
       | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 12449        | 150015         | 1             |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 12449        | 150000         | 1             |
 
     Then the order book should have the following volumes for market "ETH/DEC20":
       | side | price | volume |
-      | buy  | 29    | 5174   |
+      | buy  | 29    | 5173   |
       | buy  | 49    | 1      |
       | sell | 2000  | 1      |
-      | sell | 2020  | 75     |
+      | sell | 2020  | 74     |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -85,24 +83,26 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order
 
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150015         | 112           |
+      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150000         | 112           |
 
-    # When the parties submit the following liquidity provision:
-    #   | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-    #   | lp2 | traderC | ETH/DEC20 | 150000            | 0.001 | sell | ASK              | 100        | 20     | amendmend |
-    #   | lp2 | traderC | ETH/DEC20 | 150000            | 0.001 | buy  | BID              | 100        | 20     | amendmend |
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general       | bond   |
+      | traderA | USD   | ETH/DEC20 | 13754  | 9999999985946 | 0      |
+      | traderB | USD   | ETH/DEC20 | 511138 | 2439156       | 150000 |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price       | resulting trades | type       | tif     |
       | traderC | ETH/DEC20 | sell | 120    | 45000000000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general | bond |
-      | traderB | USD   | ETH/DEC20 | 0      | 0       | 0    |
+      | party   | asset | market id | margin         | general       | bond |
+      | traderA | USD   | ETH/DEC20 | 13754          | 9999999985946 | 0    |
+      | traderB | USD   | ETH/DEC20 | 0              | 0             | 0    |
+      | traderC | USD   | ETH/DEC20 | 10000003100294 | 0             | 0    |
 
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 15             | 112           |
+      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 0              | 112           |
 
     And the following trades should be executed:
       | buyer   | price       | size | seller  |
@@ -113,8 +113,10 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order
       | party   | volume | unrealised pnl | realised pnl   |
       | traderA | 112    | -300           | 0              |
       | traderB | 0      | 0              | -3099994       |
-      | traderC | -112   | 5039999994400  | -5039999994400 |
+      | traderC | -112   | 5039999994400  | -5039996894106 |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
+
+
 
 
