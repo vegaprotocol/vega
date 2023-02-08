@@ -140,7 +140,14 @@ func ExecuteBinary(binaryPath string, args []string, v interface{}) ([]byte, err
 	command.Stderr = &stErr
 
 	if err := command.Run(); err != nil {
-		return nil, fmt.Errorf("failed to execute binary %s %v with error: %s: %s", binaryPath, args, stErr.String(), err.Error())
+		return nil, fmt.Errorf(
+			"failed to execute binary %s %v with error: %s, %s: %s",
+			binaryPath,
+			args,
+			stErr.String(),
+			stdOut.String(),
+			err.Error(),
+		)
 	}
 
 	if v == nil {
