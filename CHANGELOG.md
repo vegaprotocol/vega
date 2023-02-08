@@ -49,6 +49,8 @@
 - [7164](https://github.com/vegaprotocol/vega/issues/7164) - The command `vega wallet transaction send` now returns verbose errors
 - [7514](https://github.com/vegaprotocol/vega/issues/7514) - Network names cannot contain `/`, `\` or start with a `.`
 - [7519](https://github.com/vegaprotocol/vega/issues/7519) - Fix memory leak and increased CPU usage when streaming data.
+- [7536](https://github.com/vegaprotocol/vega/issues/7536) - Ensure all errors are displayed when the wallet service cannot bind
+- [7540](https://github.com/vegaprotocol/vega/issues/7540) - Prevent the double appending of the `http` scheme when ensuring port binding
 
 ## 0.67.2
 

@@ -350,11 +350,11 @@ func NewStarter(
 	}
 }
 
-func ensurePortCanBeBound(ctx context.Context, logger *zap.Logger, host string) error {
-	url := "http://" + host
+func ensurePortCanBeBound(ctx context.Context, logger *zap.Logger, url string) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, bytes.NewReader([]byte{}))
 	if err != nil {
-		logger.Error("Could not reach the service", zap.Error(err))
+		logger.Error("Could not build the request verifying the state of the port to bind", zap.Error(err))
+		return fmt.Errorf("could not build the request verifying the state of the port to bind: %w", err)
 	}
 
 	response, err := http.DefaultClient.Do(req)
