@@ -23,6 +23,7 @@ import (
 var (
 	ErrWalletNameCannotContainSlashCharacters = errors.New("the name cannot contain slash (\"/\", \"\\\") characters")
 	ErrWalletNameCannotStartWithDot           = errors.New("the name cannot start with a dot (\".\") character")
+	ErrWalletFileIsEmpty                      = errors.New("the wallet file is empty")
 )
 
 type FileStore struct {
@@ -353,7 +354,12 @@ func (s *FileStore) GetWalletPath(name string) string {
 	return s.walletPath(name)
 }
 
-func (s *FileStore) writeWallet(w wallet.Wallet, passphrase string) error {
+func (s *FileStore) writeWallet(w wallet.Wallet, passphrase string) (rerr error) {
+	defer func() {
+		if r := recover(); r != nil {
+			rerr = fmt.Errorf("a system error occurred while writing the wallet file: %s", r)
+		}
+	}()
 	if err := ensureValidWalletName(w.Name()); err != nil {
 		return err
 	}
@@ -381,10 +387,20 @@ func (s *FileStore) walletPath(name string) string {
 	return filepath.Join(s.walletsHome, name)
 }
 
-func (s *FileStore) readWalletFile(name string, passphrase string) (*wallet.HDWallet, error) {
+func (s *FileStore) readWalletFile(name string, passphrase string) (hd *wallet.HDWallet, rerr error) {
+	defer func() {
+		if r := recover(); r != nil {
+			hd, rerr = nil, fmt.Errorf("a system error occurred while reading the wallet file: %s", r)
+		}
+	}()
+
 	buf, err := fs.ReadFile(os.DirFS(s.walletsHome), name)
 	if err != nil {
 		return nil, fmt.Errorf("could not read the wallet file at %s: %w", s.walletsHome, err)
+	}
+
+	if len(buf) == 0 {
+		return nil, ErrWalletFileIsEmpty
 	}
 
 	decBuf, err := vgcrypto.Decrypt(buf, passphrase)
