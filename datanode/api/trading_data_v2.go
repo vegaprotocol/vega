@@ -661,6 +661,7 @@ func (t *tradingDataServiceV2) ObserveCandleData(req *v2.ObserveCandleDataReques
 	}
 
 	publishedEventStatTicker := time.NewTicker(time.Second)
+	defer publishedEventStatTicker.Stop()
 	var publishedEvents int64
 
 	for {
