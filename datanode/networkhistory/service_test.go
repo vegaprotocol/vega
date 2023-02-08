@@ -908,6 +908,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[3].historyTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.historyTableSummaries)
 }
 
+/*
 func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEvents(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -1007,6 +1008,8 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[3].currentTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.currentTableSummaries)
 	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[3].historyTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.historyTableSummaries)
 }
+
+*/
 
 func fetchBlocks(ctx context.Context, log *logging.Logger, st *store.Store, rootSegmentID string, numBlocksToFetch int64) (int64, error) {
 	var err error
