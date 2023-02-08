@@ -173,7 +173,7 @@ func (s *FileStore) Close() {
 func (s *FileStore) readTokensFile() (tokens tokensFile, rerr error) {
 	defer func() {
 		if r := recover(); r != nil {
-			tokens, rerr = tokensFile{}, fmt.Errorf("unexpected fs issues reading tokens file: %s", r)
+			tokens, rerr = tokensFile{}, fmt.Errorf("a system error occurred while reading the tokens file: %s", r)
 		}
 	}()
 
@@ -205,7 +205,7 @@ func (s *FileStore) readTokensFile() (tokens tokensFile, rerr error) {
 func (s *FileStore) writeTokensFile(tokens tokensFile) (rerr error) {
 	defer func() {
 		if r := recover(); r != nil {
-			rerr = fmt.Errorf("unexpected fs issues writing tokens file: %s", r)
+			rerr = fmt.Errorf("a system error occurred while writing the tokens file:: %s", r)
 		}
 	}()
 	if err := paths.WriteEncryptedFile(s.tokensFilePath, s.passphrase, tokens); err != nil {

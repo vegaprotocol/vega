@@ -357,7 +357,7 @@ func (s *FileStore) GetWalletPath(name string) string {
 func (s *FileStore) writeWallet(w wallet.Wallet, passphrase string) (rerr error) {
 	defer func() {
 		if r := recover(); r != nil {
-			rerr = fmt.Errorf("unexpected fs issues writing wallet file: %s", r)
+			rerr = fmt.Errorf("a system error occurred while writing the wallet file: %s", r)
 		}
 	}()
 	if err := ensureValidWalletName(w.Name()); err != nil {
@@ -390,7 +390,7 @@ func (s *FileStore) walletPath(name string) string {
 func (s *FileStore) readWalletFile(name string, passphrase string) (hd *wallet.HDWallet, rerr error) {
 	defer func() {
 		if r := recover(); r != nil {
-			hd, rerr = nil, fmt.Errorf("unexpected fs issues reading wallet file: %s", r)
+			hd, rerr = nil, fmt.Errorf("a system error occurred while reading the wallet file: %s", r)
 		}
 	}()
 
