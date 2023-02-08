@@ -356,15 +356,15 @@ func (mr *MockInteractorMockRecorder) NotifyError(arg0, arg1, arg2, arg3 interfa
 }
 
 // NotifyFailedTransaction mocks base method.
-func (m *MockInteractor) NotifyFailedTransaction(arg0 context.Context, arg1, arg2, arg3 string, arg4 error, arg5 time.Time) {
+func (m *MockInteractor) NotifyFailedTransaction(arg0 context.Context, arg1, arg2, arg3 string, arg4 error, arg5 time.Time, arg6 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "NotifyFailedTransaction", arg0, arg1, arg2, arg3, arg4, arg5)
+	m.ctrl.Call(m, "NotifyFailedTransaction", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
 // NotifyFailedTransaction indicates an expected call of NotifyFailedTransaction.
-func (mr *MockInteractorMockRecorder) NotifyFailedTransaction(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+func (mr *MockInteractorMockRecorder) NotifyFailedTransaction(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyFailedTransaction", reflect.TypeOf((*MockInteractor)(nil).NotifyFailedTransaction), arg0, arg1, arg2, arg3, arg4, arg5)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyFailedTransaction", reflect.TypeOf((*MockInteractor)(nil).NotifyFailedTransaction), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
 // NotifyInteractionSessionBegan mocks base method.
@@ -406,15 +406,15 @@ func (mr *MockInteractorMockRecorder) NotifySuccessfulRequest(arg0, arg1, arg2 i
 }
 
 // NotifySuccessfulTransaction mocks base method.
-func (m *MockInteractor) NotifySuccessfulTransaction(arg0 context.Context, arg1, arg2, arg3, arg4 string, arg5 time.Time) {
+func (m *MockInteractor) NotifySuccessfulTransaction(arg0 context.Context, arg1, arg2, arg3, arg4 string, arg5 time.Time, arg6 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "NotifySuccessfulTransaction", arg0, arg1, arg2, arg3, arg4, arg5)
+	m.ctrl.Call(m, "NotifySuccessfulTransaction", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
 // NotifySuccessfulTransaction indicates an expected call of NotifySuccessfulTransaction.
-func (mr *MockInteractorMockRecorder) NotifySuccessfulTransaction(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+func (mr *MockInteractorMockRecorder) NotifySuccessfulTransaction(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifySuccessfulTransaction", reflect.TypeOf((*MockInteractor)(nil).NotifySuccessfulTransaction), arg0, arg1, arg2, arg3, arg4, arg5)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifySuccessfulTransaction", reflect.TypeOf((*MockInteractor)(nil).NotifySuccessfulTransaction), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
 // RequestPassphrase mocks base method.

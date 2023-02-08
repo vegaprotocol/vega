@@ -136,6 +136,7 @@ func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	ctx := context.Background()
 	network := newNetwork(t)
 	passphrase := vgrand.RandomStr(5)
+	nodeHost := vgrand.RandomStr(5)
 	w, kp := walletWithKey(t)
 	hash := "hashy mchashface"
 
@@ -153,6 +154,7 @@ func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 			ChainID:                 vgrand.RandomStr(5),
 		}, nil)
 		node.EXPECT().SendTransaction(ctx, gomock.Any(), gomock.Any()).Times(1).Return(hash, nil)
+		node.EXPECT().Host().Times(1).Return(nodeHost)
 		return nodeSelector, nil
 	})
 

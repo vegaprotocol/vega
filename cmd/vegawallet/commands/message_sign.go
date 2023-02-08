@@ -157,5 +157,5 @@ func PrintSignMessageResponse(w io.Writer, req api.AdminSignMessageResult) {
 
 	str.BlueArrow().InfoText("Sign a message").NextLine()
 	str.Text("To verify a message, see the following command:").NextSection()
-	str.Code(fmt.Sprintf("%s verify --help", os.Args[0])).NextSection()
+	str.Code(fmt.Sprintf("%s verify --help", os.Args[0])).NextLine()
 }
