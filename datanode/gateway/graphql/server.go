@@ -25,6 +25,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/datanode/ratelimit"
 	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -58,6 +59,7 @@ type GraphServer struct {
 	tradingDataClientV2 v2.TradingDataServiceClient
 	srv                 *http.Server
 	rl                  *gateway.SubscriptionRateLimiter
+	rateLimit           *ratelimit.RateLimit
 }
 
 // New returns a new instance of the grapqhl server.
@@ -72,7 +74,7 @@ func New(
 
 	serverAddr := fmt.Sprintf("%v:%v", config.Node.IP, config.Node.Port)
 
-	tdconn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	tdconn, err := grpc.Dial(serverAddr, grpc.WithInsecure(), ratelimit.WithSecret())
 	if err != nil {
 		return nil, err
 	}
@@ -93,6 +95,7 @@ func New(
 		tradingDataClientV2: tradingDataClientV2,
 		rl: gateway.NewSubscriptionRateLimiter(
 			log, config.MaxSubscriptionPerClient),
+		rateLimit: ratelimit.NewFromConfig(&config.RateLimit, log),
 	}, nil
 }
 
@@ -110,6 +113,7 @@ func (g *GraphServer) ReloadConf(cfg gateway.Config) {
 	// TODO(): not updating the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
 	g.Config = cfg
+	g.rateLimit.ReloadConfig(&cfg.RateLimit)
 }
 
 type (
@@ -236,15 +240,16 @@ func (g *GraphServer) Start() error {
 		options = append(options, handler.ComplexityLimit(g.GraphQL.ComplexityLimit))
 	}
 
-	// FIXME(jeremy): to be removed once everyone has move to the new endpoint
 	middleware := corz.Handler(
 		gateway.Chain(
 			gateway.RemoteAddrMiddleware(g.log, handler.GraphQL(NewExecutableSchema(config), options...)),
 			gateway.WithAddHeadersMiddleware,
 			g.rl.WithSubscriptionRateLimiter,
+			g.rateLimit.HTTPMiddleware,
 		),
 	)
 
+	// FIXME(jeremy): to be removed once everyone has move to the new endpoint
 	handlr.Handle("/query", middleware)
 	handlr.Handle(g.GraphQL.Endpoint, middleware)
 
