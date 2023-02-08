@@ -34,6 +34,7 @@
 - [7407](https://github.com/vegaprotocol/vega/issues/7407) - fix `ethereum` timestamp in stake linking in `graphql`
 - [7420](https://github.com/vegaprotocol/vega/issues/7420) - `clearFeeActivity` now clears fee activity
 - [7420](https://github.com/vegaprotocol/vega/issues/7420) - set seed nonce for joining and leaving signatures during begin block
+- [7420](https://github.com/vegaprotocol/vega/issues/7515) - protect `vegawallet` with recovers to shield against file system oddities
 - [7399](https://github.com/vegaprotocol/vega/issues/7399) - Fix issue where market cache not working after restoring from network history
 - [7410](https://github.com/vegaprotocol/vega/issues/7410) - Return underlying error when parsing a command failed in the wallet API version 2
 - [7169](https://github.com/vegaprotocol/vega/issues/7169) - Fix migration, account for existing position data
@@ -48,6 +49,8 @@
 - [7164](https://github.com/vegaprotocol/vega/issues/7164) - The command `vega wallet transaction send` now returns verbose errors
 - [7514](https://github.com/vegaprotocol/vega/issues/7514) - Network names cannot contain `/`, `\` or start with a `.`
 - [7519](https://github.com/vegaprotocol/vega/issues/7519) - Fix memory leak and increased CPU usage when streaming data.
+- [7536](https://github.com/vegaprotocol/vega/issues/7536) - Ensure all errors are displayed when the wallet service cannot bind
+- [7540](https://github.com/vegaprotocol/vega/issues/7540) - Prevent the double appending of the `http` scheme when ensuring port binding
 
 ## 0.67.2
 

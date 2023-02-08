@@ -62138,146 +62138,6 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._TimeUpdate(ctx, sel, obj)
-	case MarketEvent:
-		return ec._MarketEvent(ctx, sel, &obj)
-	case *MarketEvent:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._MarketEvent(ctx, sel, obj)
-	case TransferResponses:
-		return ec._TransferResponses(ctx, sel, &obj)
-	case *TransferResponses:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._TransferResponses(ctx, sel, obj)
-	case PositionResolution:
-		return ec._PositionResolution(ctx, sel, &obj)
-	case *PositionResolution:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._PositionResolution(ctx, sel, obj)
-	case vega.Order:
-		return ec._Order(ctx, sel, &obj)
-	case *vega.Order:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Order(ctx, sel, obj)
-	case vega.Trade:
-		return ec._Trade(ctx, sel, &obj)
-	case *vega.Trade:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Trade(ctx, sel, obj)
-	case vega.Account:
-		return ec._AccountEvent(ctx, sel, &obj)
-	case *vega.Account:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AccountEvent(ctx, sel, obj)
-	case vega.Party:
-		return ec._Party(ctx, sel, &obj)
-	case *vega.Party:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Party(ctx, sel, obj)
-	case vega.MarginLevels:
-		return ec._MarginLevels(ctx, sel, &obj)
-	case *vega.MarginLevels:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._MarginLevels(ctx, sel, obj)
-	case vega.GovernanceData:
-		return ec._Proposal(ctx, sel, &obj)
-	case *vega.GovernanceData:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Proposal(ctx, sel, obj)
-	case vega.Vote:
-		return ec._Vote(ctx, sel, &obj)
-	case *vega.Vote:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Vote(ctx, sel, obj)
-	case vega.MarketData:
-		return ec._MarketData(ctx, sel, &obj)
-	case *vega.MarketData:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._MarketData(ctx, sel, obj)
-	case v11.NodeSignature:
-		return ec._NodeSignature(ctx, sel, &obj)
-	case *v11.NodeSignature:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._NodeSignature(ctx, sel, obj)
-	case LossSocialization:
-		return ec._LossSocialization(ctx, sel, &obj)
-	case *LossSocialization:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._LossSocialization(ctx, sel, obj)
-	case SettlePosition:
-		return ec._SettlePosition(ctx, sel, &obj)
-	case *SettlePosition:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._SettlePosition(ctx, sel, obj)
-	case vega.Market:
-		return ec._Market(ctx, sel, &obj)
-	case *vega.Market:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Market(ctx, sel, obj)
-	case vega.Asset:
-		return ec._Asset(ctx, sel, &obj)
-	case *vega.Asset:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Asset(ctx, sel, obj)
-	case MarketTick:
-		return ec._MarketTick(ctx, sel, &obj)
-	case *MarketTick:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._MarketTick(ctx, sel, obj)
-	case SettleDistressed:
-		return ec._SettleDistressed(ctx, sel, &obj)
-	case *SettleDistressed:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._SettleDistressed(ctx, sel, obj)
-	case v1.AuctionEvent:
-		return ec._AuctionEvent(ctx, sel, &obj)
-	case *v1.AuctionEvent:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AuctionEvent(ctx, sel, obj)
-	case vega.RiskFactor:
-		return ec._RiskFactor(ctx, sel, &obj)
-	case *vega.RiskFactor:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._RiskFactor(ctx, sel, obj)
 	case vega.Deposit:
 		return ec._Deposit(ctx, sel, &obj)
 	case *vega.Deposit:
@@ -62292,18 +62152,6 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._Withdrawal(ctx, sel, obj)
-	case *vega.OracleSpec:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._OracleSpec(ctx, sel, obj)
-	case vega.LiquidityProvision:
-		return ec._LiquidityProvision(ctx, sel, &obj)
-	case *vega.LiquidityProvision:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._LiquidityProvision(ctx, sel, obj)
 	case v1.TransactionResult:
 		return ec._TransactionResult(ctx, sel, &obj)
 	case *v1.TransactionResult:
@@ -62739,7 +62587,7 @@ func (ec *executionContext) _AccountEdge(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
-var accountEventImplementors = []string{"AccountEvent", "Event"}
+var accountEventImplementors = []string{"AccountEvent"}
 
 func (ec *executionContext) _AccountEvent(ctx context.Context, sel ast.SelectionSet, obj *vega.Account) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, accountEventImplementors)
@@ -63224,7 +63072,7 @@ func (ec *executionContext) _AggregatedLedgerEntry(ctx context.Context, sel ast.
 	return out
 }
 
-var assetImplementors = []string{"Asset", "Event"}
+var assetImplementors = []string{"Asset"}
 
 func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, obj *vega.Asset) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, assetImplementors)
@@ -63560,7 +63408,7 @@ func (ec *executionContext) _AuctionDuration(ctx context.Context, sel ast.Select
 	return out
 }
 
-var auctionEventImplementors = []string{"AuctionEvent", "Event"}
+var auctionEventImplementors = []string{"AuctionEvent"}
 
 func (ec *executionContext) _AuctionEvent(ctx context.Context, sel ast.SelectionSet, obj *v1.AuctionEvent) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, auctionEventImplementors)
@@ -66778,7 +66626,7 @@ func (ec *executionContext) _LiquidityProviderFeeShare(ctx context.Context, sel 
 	return out
 }
 
-var liquidityProvisionImplementors = []string{"LiquidityProvision", "Event"}
+var liquidityProvisionImplementors = []string{"LiquidityProvision"}
 
 func (ec *executionContext) _LiquidityProvision(ctx context.Context, sel ast.SelectionSet, obj *vega.LiquidityProvision) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, liquidityProvisionImplementors)
@@ -67173,7 +67021,7 @@ func (ec *executionContext) _LogNormalRiskModel(ctx context.Context, sel ast.Sel
 	return out
 }
 
-var lossSocializationImplementors = []string{"LossSocialization", "Event"}
+var lossSocializationImplementors = []string{"LossSocialization"}
 
 func (ec *executionContext) _LossSocialization(ctx context.Context, sel ast.SelectionSet, obj *LossSocialization) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, lossSocializationImplementors)
@@ -67304,7 +67152,7 @@ func (ec *executionContext) _MarginEdge(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
-var marginLevelsImplementors = []string{"MarginLevels", "Event"}
+var marginLevelsImplementors = []string{"MarginLevels"}
 
 func (ec *executionContext) _MarginLevels(ctx context.Context, sel ast.SelectionSet, obj *vega.MarginLevels) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, marginLevelsImplementors)
@@ -67549,7 +67397,7 @@ func (ec *executionContext) _MarginLevelsUpdate(ctx context.Context, sel ast.Sel
 	return out
 }
 
-var marketImplementors = []string{"Market", "Event"}
+var marketImplementors = []string{"Market"}
 
 func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, obj *vega.Market) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, marketImplementors)
@@ -67897,7 +67745,7 @@ func (ec *executionContext) _MarketConnection(ctx context.Context, sel ast.Selec
 	return out
 }
 
-var marketDataImplementors = []string{"MarketData", "Event"}
+var marketDataImplementors = []string{"MarketData"}
 
 func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSet, obj *vega.MarketData) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, marketDataImplementors)
@@ -68614,7 +68462,7 @@ func (ec *executionContext) _MarketEdge(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
-var marketEventImplementors = []string{"MarketEvent", "Event"}
+var marketEventImplementors = []string{"MarketEvent"}
 
 func (ec *executionContext) _MarketEvent(ctx context.Context, sel ast.SelectionSet, obj *MarketEvent) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, marketEventImplementors)
@@ -68649,7 +68497,7 @@ func (ec *executionContext) _MarketEvent(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
-var marketTickImplementors = []string{"MarketTick", "Event"}
+var marketTickImplementors = []string{"MarketTick"}
 
 func (ec *executionContext) _MarketTick(ctx context.Context, sel ast.SelectionSet, obj *MarketTick) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, marketTickImplementors)
@@ -69578,7 +69426,7 @@ func (ec *executionContext) _NodeSet(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
-var nodeSignatureImplementors = []string{"NodeSignature", "Event"}
+var nodeSignatureImplementors = []string{"NodeSignature"}
 
 func (ec *executionContext) _NodeSignature(ctx context.Context, sel ast.SelectionSet, obj *v11.NodeSignature) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, nodeSignatureImplementors)
@@ -70418,7 +70266,7 @@ func (ec *executionContext) _OracleDataEdge(ctx context.Context, sel ast.Selecti
 	return out
 }
 
-var oracleSpecImplementors = []string{"OracleSpec", "Event"}
+var oracleSpecImplementors = []string{"OracleSpec"}
 
 func (ec *executionContext) _OracleSpec(ctx context.Context, sel ast.SelectionSet, obj *vega.OracleSpec) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, oracleSpecImplementors)
@@ -70546,7 +70394,7 @@ func (ec *executionContext) _OracleSpecsConnection(ctx context.Context, sel ast.
 	return out
 }
 
-var orderImplementors = []string{"Order", "Event"}
+var orderImplementors = []string{"Order"}
 
 func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, obj *vega.Order) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, orderImplementors)
@@ -71116,7 +70964,7 @@ func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
-var partyImplementors = []string{"Party", "Event"}
+var partyImplementors = []string{"Party"}
 
 func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, obj *vega.Party) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, partyImplementors)
@@ -71763,7 +71611,7 @@ func (ec *executionContext) _PositionEdge(ctx context.Context, sel ast.Selection
 	return out
 }
 
-var positionResolutionImplementors = []string{"PositionResolution", "Event"}
+var positionResolutionImplementors = []string{"PositionResolution"}
 
 func (ec *executionContext) _PositionResolution(ctx context.Context, sel ast.SelectionSet, obj *PositionResolution) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, positionResolutionImplementors)
@@ -72185,7 +72033,7 @@ func (ec *executionContext) _PropertyKey(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
-var proposalImplementors = []string{"Proposal", "Event"}
+var proposalImplementors = []string{"Proposal"}
 
 func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet, obj *vega.GovernanceData) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, proposalImplementors)
@@ -74627,7 +74475,7 @@ func (ec *executionContext) _RewardsConnection(ctx context.Context, sel ast.Sele
 	return out
 }
 
-var riskFactorImplementors = []string{"RiskFactor", "Event"}
+var riskFactorImplementors = []string{"RiskFactor"}
 
 func (ec *executionContext) _RiskFactor(ctx context.Context, sel ast.SelectionSet, obj *vega.RiskFactor) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, riskFactorImplementors)
@@ -74711,7 +74559,7 @@ func (ec *executionContext) _ScalingFactors(ctx context.Context, sel ast.Selecti
 	return out
 }
 
-var settleDistressedImplementors = []string{"SettleDistressed", "Event"}
+var settleDistressedImplementors = []string{"SettleDistressed"}
 
 func (ec *executionContext) _SettleDistressed(ctx context.Context, sel ast.SelectionSet, obj *SettleDistressed) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, settleDistressedImplementors)
@@ -74760,7 +74608,7 @@ func (ec *executionContext) _SettleDistressed(ctx context.Context, sel ast.Selec
 	return out
 }
 
-var settlePositionImplementors = []string{"SettlePosition", "Event"}
+var settlePositionImplementors = []string{"SettlePosition"}
 
 func (ec *executionContext) _SettlePosition(ctx context.Context, sel ast.SelectionSet, obj *SettlePosition) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, settlePositionImplementors)
@@ -75745,7 +75593,7 @@ func (ec *executionContext) _TradableInstrument(ctx context.Context, sel ast.Sel
 	return out
 }
 
-var tradeImplementors = []string{"Trade", "Event"}
+var tradeImplementors = []string{"Trade"}
 
 func (ec *executionContext) _Trade(ctx context.Context, sel ast.SelectionSet, obj *vega.Trade) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, tradeImplementors)
@@ -76693,7 +76541,7 @@ func (ec *executionContext) _TransferResponse(ctx context.Context, sel ast.Selec
 	return out
 }
 
-var transferResponsesImplementors = []string{"TransferResponses", "Event"}
+var transferResponsesImplementors = []string{"TransferResponses"}
 
 func (ec *executionContext) _TransferResponses(ctx context.Context, sel ast.SelectionSet, obj *TransferResponses) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, transferResponsesImplementors)
@@ -77175,7 +77023,7 @@ func (ec *executionContext) _UpdateNetworkParameter(ctx context.Context, sel ast
 	return out
 }
 
-var voteImplementors = []string{"Vote", "Event"}
+var voteImplementors = []string{"Vote"}
 
 func (ec *executionContext) _Vote(ctx context.Context, sel ast.SelectionSet, obj *vega.Vote) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, voteImplementors)
