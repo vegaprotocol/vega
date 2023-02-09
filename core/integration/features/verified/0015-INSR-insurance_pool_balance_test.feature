@@ -61,7 +61,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general   |
-      | aux1             | USD   | ETH/DEC19 | 1350   | 999998650 |
+      | aux1             | USD   | ETH/DEC19 | 2400   | 999997600 |
       | aux2             | USD   | ETH/DEC19 | 660    | 999999340 |
       | sellSideProvider | USD   | ETH/DEC19 | 900000 | 999100000 |
       | buySideProvider  | USD   | ETH/DEC19 | 240000 | 999760000 |
