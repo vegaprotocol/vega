@@ -333,7 +333,6 @@ func (e *Engine) UpdateMarginsOnSettlement(
 	// var err error
 	// this will keep going until we've closed this channel
 	// this can be the result of an error, or being "finished"
-	auction := e.as.InAuction() || e.as.CanLeave()
 	for _, evt := range evts {
 		// before we do anything, see if the position is 0 now, but the margin balance is still set
 		// in which case the only response is to release the margin balance.
@@ -368,7 +367,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		}
 		// channel is closed, and we've got a nil interface
 		var margins *types.MarginLevels
-		if !auction {
+		if !e.as.InAuction() || e.as.CanLeave() {
 			margins = e.calculateMargins(evt, markPrice, *e.factors, true, false)
 		} else {
 			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors)
@@ -423,7 +422,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 			}
 		} else { // case 3 -> release some collateral
 			// collateral not relased in auction
-			if auction {
+			if e.as.InAuction() {
 				// propagate margins then continue
 				e.broker.Send(events.NewMarginLevelsEvent(ctx, *margins))
 				continue
