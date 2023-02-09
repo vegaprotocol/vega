@@ -574,7 +574,9 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 			},
 			TriggeringRatio: num.DecimalZero(),
 		},
-		LPPriceRange: num.DecimalFromFloat(lpRange),
+		LPPriceRange:            num.DecimalFromFloat(lpRange),
+		LinearSlippageFactor:    num.DecimalFromFloat(0.1),
+		QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 	}
 
 	return mkt

@@ -21,7 +21,10 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
-var ErrInvalidCommitmentAmount = errors.New("invalid commitment amount")
+var (
+	ErrInvalidCommitmentAmount = errors.New("invalid commitment amount")
+	DefaultSlippageFactor      = num.MustDecimalFromString("0.1")
+)
 
 type ProposalTermsNewMarket struct {
 	NewMarket *NewMarket
@@ -116,6 +119,8 @@ type NewMarketConfiguration struct {
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
 	RiskParameters                newRiskParams
 	LpPriceRange                  num.Decimal
+	LinearSlippageFactor          num.Decimal
+	QuadraticSlippageFactor       num.Decimal
 	// New market risk model parameters
 	//
 	// Types that are valid to be assigned to RiskParameters:
@@ -156,6 +161,8 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		PriceMonitoringParameters:     priceMonitoring,
 		LiquidityMonitoringParameters: liquidityMonitoring,
 		LpPriceRange:                  n.LpPriceRange.String(),
+		LinearSlippageFactor:          n.LinearSlippageFactor.String(),
+		QuadraticSlippageFactor:       n.QuadraticSlippageFactor.String(),
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.NewMarketConfiguration_Simple:
@@ -168,10 +175,12 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 
 func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 	cpy := &NewMarketConfiguration{
-		DecimalPlaces:         n.DecimalPlaces,
-		PositionDecimalPlaces: n.PositionDecimalPlaces,
-		Metadata:              make([]string, len(n.Metadata)),
-		LpPriceRange:          n.LpPriceRange.Copy(),
+		DecimalPlaces:           n.DecimalPlaces,
+		PositionDecimalPlaces:   n.PositionDecimalPlaces,
+		Metadata:                make([]string, len(n.Metadata)),
+		LpPriceRange:            n.LpPriceRange.Copy(),
+		LinearSlippageFactor:    n.LinearSlippageFactor.Copy(),
+		QuadraticSlippageFactor: n.QuadraticSlippageFactor.Copy(),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -191,7 +200,7 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 
 func (n NewMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) lpPriceRange(%s)",
+		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) lpPriceRange(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s)",
 		n.Metadata,
 		n.DecimalPlaces,
 		n.PositionDecimalPlaces,
@@ -199,7 +208,9 @@ func (n NewMarketConfiguration) String() string {
 		reflectPointerToString(n.PriceMonitoringParameters),
 		reflectPointerToString(n.LiquidityMonitoringParameters),
 		reflectPointerToString(n.RiskParameters),
-		n.LpPriceRange,
+		n.LpPriceRange.String(),
+		n.LinearSlippageFactor.String(),
+		n.QuadraticSlippageFactor.String(),
 	)
 }
 
@@ -226,6 +237,22 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 	}
 	lppr, _ := num.DecimalFromString(p.LpPriceRange)
 
+	linearSlippageFactor := DefaultSlippageFactor
+	quadraticSlippageFactor := DefaultSlippageFactor
+	var err error
+	if len(p.LinearSlippageFactor) > 0 {
+		linearSlippageFactor, err = num.DecimalFromString(p.LinearSlippageFactor)
+		if err != nil {
+			return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
+		}
+	}
+	if len(p.QuadraticSlippageFactor) > 0 {
+		quadraticSlippageFactor, err = num.DecimalFromString(p.QuadraticSlippageFactor)
+		if err != nil {
+			return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
+		}
+	}
+
 	r := &NewMarketConfiguration{
 		Instrument:                    instrument,
 		DecimalPlaces:                 p.DecimalPlaces,
@@ -234,6 +261,8 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 		PriceMonitoringParameters:     priceMonitoring,
 		LiquidityMonitoringParameters: liquidityMonitoring,
 		LpPriceRange:                  lppr,
+		LinearSlippageFactor:          linearSlippageFactor,
+		QuadraticSlippageFactor:       quadraticSlippageFactor,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {
