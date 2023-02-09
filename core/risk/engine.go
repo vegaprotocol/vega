@@ -194,7 +194,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 	// for now, we can assume a single asset for all events
 	rFactors := *e.factors
 	for _, evt := range evts {
-		levels := e.calculateAuctionMargins(evt, price, rFactors, e.linearSlippageFactor, e.quadraticSlippageFactor)
+		levels := e.calculateAuctionMargins(evt, price, rFactors)
 		if levels == nil {
 			continue
 		}
@@ -248,9 +248,9 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 
 	var margins *types.MarginLevels
 	if !e.as.InAuction() || e.as.CanLeave() {
-		margins = e.calculateMargins(evt, markPrice, *e.factors, true, false, e.linearSlippageFactor, e.quadraticSlippageFactor)
+		margins = e.calculateMargins(evt, markPrice, *e.factors, true, false)
 	} else {
-		margins = e.calculateAuctionMargins(evt, markPrice, *e.factors, e.linearSlippageFactor, e.quadraticSlippageFactor)
+		margins = e.calculateAuctionMargins(evt, markPrice, *e.factors)
 	}
 	// no margins updates, nothing to do then
 	if margins == nil {
@@ -368,9 +368,9 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		// channel is closed, and we've got a nil interface
 		var margins *types.MarginLevels
 		if !e.as.InAuction() || e.as.CanLeave() {
-			margins = e.calculateMargins(evt, markPrice, *e.factors, true, false, e.linearSlippageFactor, e.quadraticSlippageFactor)
+			margins = e.calculateMargins(evt, markPrice, *e.factors, true, false)
 		} else {
-			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors, e.linearSlippageFactor, e.quadraticSlippageFactor)
+			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors)
 		}
 		// no margins updates, nothing to do then
 		if margins == nil {
@@ -455,9 +455,9 @@ func (e *Engine) ExpectMargins(
 	for _, evt := range evts {
 		var margins *types.MarginLevels
 		if !e.as.InAuction() || e.as.CanLeave() {
-			margins = e.calculateMargins(evt, markPrice, *e.factors, false, false, e.linearSlippageFactor, e.quadraticSlippageFactor)
+			margins = e.calculateMargins(evt, markPrice, *e.factors, false, false)
 		} else {
-			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors, e.linearSlippageFactor, e.quadraticSlippageFactor)
+			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors)
 		}
 		// no margins updates, nothing to do then
 		if margins == nil {

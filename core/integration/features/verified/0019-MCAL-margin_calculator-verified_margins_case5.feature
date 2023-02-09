@@ -7,16 +7,16 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
     And the markets:
-      | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config          |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     And the parties deposit on asset's general account the following amount:
-      | party     | asset | amount       |
-      | party1    | ETH   | 980000000    |
+      | party      | asset | amount       |
+      | party1     | ETH   | 980000000    |
       | sellSideMM | ETH   | 100000000000 |
       | buySideMM  | ETH   | 100000000000 |
       | aux        | ETH   | 1000000000   |
       | aux2       | ETH   | 1000000000   |
-      | lpprov     | ETH   | 1000000000 |
+      | lpprov     | ETH   | 1000000000   |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
@@ -25,24 +25,24 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price    | resulting trades | type       | tif     |
-      | aux    | ETH/DEC19 | buy  | 1      | 6999999  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 50000001 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | buy  | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2   | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 1      | 6999999  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 50000001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "10300000" for the market "ETH/DEC19"
 
     # setting mark price
     And the parties place the following orders:
-      | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
 
     # setting order book
     And the parties place the following orders:
-      | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 10     | 15000000 | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
       | sellSideMM | ETH/DEC19 | sell | 14     | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | sell2     |
       | sellSideMM | ETH/DEC19 | sell | 2      | 11200000 | 0                | TYPE_LIMIT | TIF_GTC | sell3     |
@@ -61,7 +61,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | party1 | ETH/DEC19 | sell | 13     | 9000000 | 3                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And "party1" should have general account balance of "698400040" for asset "ETH"
     And the following trades should be executed:
-      | buyer     | price    | size | seller  |
+      | buyer     | price    | size | seller |
       | buySideMM | 10000000 | 1    | party1 |
       | buySideMM | 9600000  | 3    | party1 |
       | buySideMM | 9000000  | 9    | party1 |
@@ -110,10 +110,10 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
     # MTM
     And the following transfers should happen:
-      | from   | to      | from account         | to account              | market id | amount    | asset |
-      | party1 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 273000000 | ETH   |
-      | party1 | party1  | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 144600040 | ETH   |
-      | party1 | party1  | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 144600040 | ETH   |
+      | from   | to     | from account         | to account              | market id | amount    | asset |
+      | party1 | market | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 273000000 | ETH   |
+      | party1 | party1 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 144600040 | ETH   |
+      | party1 | party1 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 144600040 | ETH   |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
@@ -127,7 +127,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
     # ENTER SEARCH LEVEL (& DEPLEAT GENERAL ACCOUNT)
     When the parties place the following orders with ticks:
-      | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 11     | 50000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 50     | 50000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-2     |
     And the parties should have the following margin levels:
@@ -139,7 +139,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
     # FORCED CLOSEOUT
     When the parties place the following orders with ticks:
-      | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 21     | 80000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 11     | 80000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-2     |
     Then the parties should have the following account balances:

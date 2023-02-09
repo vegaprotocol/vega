@@ -3,8 +3,8 @@ Feature: Set up a market, with an opening auction, then uncross the book
   Background:
 
     Given the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     # setup accounts
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
@@ -34,15 +34,15 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 29120   |
       | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 27260   |
-      # values before uint stuff
-      #| party1 | ETH/DEC19 | 25201       | 27721  | 30241   | 65521   |
-      #| party2 | ETH/DEC19 | 23899       | 26289  | 28679   | 57458   |
+    # values before uint stuff
+    #| party1 | ETH/DEC19 | 25201       | 27721  | 30241   | 65521   |
+    #| party2 | ETH/DEC19 | 23899       | 26289  | 28679   | 57458   |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
       | party2 | BTC   | ETH/DEC19 | 13080  | 99986920 |
-      # values before uint
-      #| party1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
+    # values before uint
+    #| party1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
     When the parties withdraw the following assets:
       | party  | asset | amount   |
       | party1 | BTC   | 99969760 |
@@ -51,12 +51,12 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party  | asset | market id | margin | general |
       | party1 | BTC   | ETH/DEC19 | 13440  | 16800   |
       | party2 | BTC   | ETH/DEC19 | 13080  | 15600   |
-      # values before uint
-      #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
+    # values before uint
+    #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
     Then the opening auction period ends for market "ETH/DEC19"
     ## We're seeing these events twice for some reason
     And the following trades should be executed:
-      | buyer  | price | size | seller  |
+      | buyer  | price | size | seller |
       | party1 | 10000 | 3    | party2 |
       | party1 | 10000 | 2    | party2 |
       | party1 | 10000 | 3    | party2 |
@@ -80,8 +80,8 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party  | asset | market id | margin | general |
       | party2 | BTC   | ETH/DEC19 | 19200  | 9480    |
       | party1 | BTC   | ETH/DEC19 | 30240  | 0       |
-      # values before uint
-      #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
+  # values before uint
+  #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
 
   Scenario: Uncross auction via order amendment
     # place orders and generate trades
@@ -89,7 +89,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |
       | party4 | ETH/DEC19 | sell | 1      | 11000 | 0                | TYPE_LIMIT | TIF_GTC | t4-s-1    |
-      | party1 | ETH/DEC19 | buy  | 5      |  9999 | 0                | TYPE_LIMIT | TIF_GTC | t1-b-1    |
+      | party1 | ETH/DEC19 | buy  | 5      | 9999  | 0                | TYPE_LIMIT | TIF_GTC | t1-b-1    |
       | party2 | ETH/DEC19 | sell | 5      | 10000 | 0                | TYPE_LIMIT | TIF_GFA | t2-s-1    |
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |

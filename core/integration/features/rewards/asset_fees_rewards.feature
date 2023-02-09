@@ -12,12 +12,12 @@ Feature: Fees reward calculations for a single asset, single market
       | reward.staking.delegation.competitionLevel        | 1.1    |
       | reward.staking.delegation.minValidators           | 5      |
       | reward.staking.delegation.optimalStakeMultiplier  | 5.0    |
-      | network.markPriceUpdateMaximumFrequency           | 0s    |
+      | network.markPriceUpdateMaximumFrequency           | 0s     |
 
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
 
-     #complete the epoch to advance to a meaningful epoch (can't setup transfer to start at epoch 0)
+    #complete the epoch to advance to a meaningful epoch (can't setup transfer to start at epoch 0)
     Then the network moves ahead "7" blocks
 
   Scenario: Testing fees in continuous trading with one trade and no liquidity providers - testing maker fee received
@@ -33,17 +33,17 @@ Feature: Fees reward calculations for a single asset, single market
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
 
     Given the parties deposit on asset's general account the following amount:
-      | party                                                            | asset  | amount   |
-      | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | VEGA   | 1000000  |
+      | party                                                            | asset | amount  |
+      | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | VEGA  | 1000000 |
 
     # setup recurring transfer to the maker fee reward account - this will start at the end of this epoch (1)
     Given the parties submit the following recurring transfers:
-      | id | from                                                             | from_account_type    | to                                                                | to_account_type                         | asset  | amount | start_epoch | end_epoch | factor | metric                               | metric_asset | markets |
-      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA   | 10000  |       1     |           |    1   |  DISPATCH_METRIC_MAKER_FEES_RECEIVED |      ETH     |         |
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                         | asset | amount | start_epoch | end_epoch | factor | metric                              | metric_asset | markets |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_RECEIVED | ETH          |         |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -151,18 +151,18 @@ Feature: Fees reward calculations for a single asset, single market
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
 
     Given the parties deposit on asset's general account the following amount:
-      | party         | asset | amount   |
-      | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | VEGA   | 10000000 |
+      | party                                                            | asset | amount   |
+      | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | VEGA  | 10000000 |
 
     # setup recurring transfer to the maker fee reward account - this will start at the end of this epoch (1)
     Given the parties submit the following recurring transfers:
-      | id | from                                                             | from_account_type    | to                                                                | to_account_type                         | asset  | amount | start_epoch | end_epoch | factor |               metric                 | metric_asset | markets   |
-      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA   | 10000  |       1     |           |    1   |  DISPATCH_METRIC_MAKER_FEES_RECEIVED |      ETH     |           |
-      | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES     | VEGA   | 1234   |       1     |           |    2   |  DISPATCH_METRIC_MAKER_FEES_PAID     |      ETH     | ETH/DEC21 |
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                         | asset | amount | start_epoch | end_epoch | factor | metric                              | metric_asset | markets   |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_RECEIVED | ETH          |           |
+      | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES     | VEGA  | 1234   | 1           |           | 2      | DISPATCH_METRIC_MAKER_FEES_PAID     | ETH          | ETH/DEC21 |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -290,12 +290,12 @@ Feature: Fees reward calculations for a single asset, single market
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
 
     Given the parties deposit on asset's general account the following amount:
-      | party                                                            | asset  | amount   |
-      | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | VEGA   | 10000000 |
+      | party                                                            | asset | amount   |
+      | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | VEGA  | 10000000 |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -308,10 +308,10 @@ Feature: Fees reward calculations for a single asset, single market
 
     # transfer to the maker fee received reward account and the taker paid fee reward account
     Given the parties submit the following recurring transfers:
-      | id | from                                                             | from_account_type    | to                                                                | to_account_type                         | asset  | amount | start_epoch | end_epoch | factor |               metric                 | metric_asset | markets   |
-      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA   | 10000  |       1     |           |    0.5 |  DISPATCH_METRIC_MAKER_FEES_RECEIVED |      ETH     |           |
-      | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES     | VEGA   | 1234   |       1     |           |    1   |  DISPATCH_METRIC_MAKER_FEES_PAID     |      ETH     | ETH/DEC21 |
-      | 3  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | VEGA   | 500    |       1     |           |    2   |  DISPATCH_METRIC_LP_FEES_RECEIVED    |      ETH     |           |
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                         | asset | amount | start_epoch | end_epoch | factor | metric                              | metric_asset | markets   |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA  | 10000  | 1           |           | 0.5    | DISPATCH_METRIC_MAKER_FEES_RECEIVED | ETH          |           |
+      | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES     | VEGA  | 1234   | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID     | ETH          | ETH/DEC21 |
+      | 3  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | VEGA  | 500    | 1           |           | 2      | DISPATCH_METRIC_LP_FEES_RECEIVED    | ETH          |           |
 
 
     Then the parties place the following orders:
@@ -393,9 +393,9 @@ Feature: Fees reward calculations for a single asset, single market
       | trader3b | ETH   | ETH/DEC21 | 339    | 9667     |
       | trader4  | ETH   | ETH/DEC21 | 480    | 9490     |
       | aux1     | ETH   | ETH/DEC21 | 2978   | 99987024 |
-      #| trader3a | ETH   | ETH/DEC21 | 480    | 9531     |
-      #| trader3b | ETH   | ETH/DEC21 | 240    | 9766     |
-      #| trader4  | ETH   | ETH/DEC21 | 679    | 9291     |
+    #| trader3a | ETH   | ETH/DEC21 | 480    | 9531     |
+    #| trader3b | ETH   | ETH/DEC21 | 240    | 9766     |
+    #| trader4  | ETH   | ETH/DEC21 | 679    | 9291     |
 
     And the accumulated infrastructure fees should be "8" for the asset "ETH"
     And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
@@ -415,9 +415,9 @@ Feature: Fees reward calculations for a single asset, single market
       | trader3b | ETH   | ETH/DEC21 | 339    | 9667     |
       | trader4  | ETH   | ETH/DEC21 | 480    | 9490     |
       | aux1     | ETH   | ETH/DEC21 | 2978   | 99987029 |
-      #| trader3a | ETH   | ETH/DEC21 | 480    | 9531     |
-      #| trader3b | ETH   | ETH/DEC21 | 240    | 9766     |
-      #| trader4  | ETH   | ETH/DEC21 | 679    | 9291     |
+    #| trader3a | ETH   | ETH/DEC21 | 480    | 9531     |
+    #| trader3b | ETH   | ETH/DEC21 | 240    | 9766     |
+    #| trader4  | ETH   | ETH/DEC21 | 679    | 9291     |
 
     # 11/17 x 10000 -> maker fee received reward
     Then "trader3a" should have general account balance of "6470" for asset "VEGA"

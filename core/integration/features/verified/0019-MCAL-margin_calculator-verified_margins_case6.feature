@@ -8,8 +8,8 @@ Feature: CASE-6: Trader submits short order that will trade - new formula & zero
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
     And the markets:
-      | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config          |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     And the parties deposit on asset's general account the following amount:
       | party      | asset | amount     |
       | party1     | ETH   | 1000000000 |
@@ -62,7 +62,7 @@ Feature: CASE-6: Trader submits short order that will trade - new formula & zero
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 13     | 10000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And "party1" should have general account balance of "818000000" for asset "ETH"
-   
+
     And the following trades should be executed:
       | buyer     | price    | size | seller |
       | buySideMM | 25000000 | 13   | party1 |
@@ -79,7 +79,7 @@ Feature: CASE-6: Trader submits short order that will trade - new formula & zero
       | party1 | ETH/DEC19 | 45500000    | 145600000 | 182000000 | 227500000 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 |  -13   |      0         |     0        |
+      | party1 | -13    | 0              | 0            |
 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 260
@@ -87,7 +87,7 @@ Feature: CASE-6: Trader submits short order that will trade - new formula & zero
       | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 1      | 26000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 26000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      
+
     And the following transfers should happen:
       | from   | to        | from account            | to account          | market id | amount   | asset |
       | market | buySideMM | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 14000000 | ETH   |
@@ -100,7 +100,7 @@ Feature: CASE-6: Trader submits short order that will trade - new formula & zero
       | party1 | ETH/DEC19 | 33800000    | 108160000 | 135200000 | 169000000 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -13    |  -13000000     |     0        |
+      | party1 | -13    | -13000000      | 0            |
 
     # CLOSEOUT ATTEMPT (FAILED, no sell-side in order book) BY TRADER
     When the parties place the following orders with ticks:
@@ -114,4 +114,4 @@ Feature: CASE-6: Trader submits short order that will trade - new formula & zero
       | party1 | ETH/DEC19 | 33800000    | 108160000 | 135200000 | 169000000 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -13    |   -13000000    |      0       |
+      | party1 | -13    | -13000000      | 0            |

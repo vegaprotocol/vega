@@ -2,8 +2,8 @@ Feature: Test LP orders invalid shapes
 
   Background:
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | position decimal places |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2                       |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2                       | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
@@ -181,14 +181,14 @@ Feature: Test LP orders invalid shapes
 
   Scenario: liquidity provision submission with all proportions set to 0 results in an error
     Given the parties deposit on asset's general account the following amount:
-      | party            | asset | amount    |
-      | lpprov           | ETH   | 100000000 |
+      | party  | asset | amount    |
+      | lpprov | ETH   | 100000000 |
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    | error                               |
-      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | buy  | BID              |  0         | 100    | submission |                                     |
-      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              |  0         | 100    | amendment  |                                     |
-      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              |  0         | 200    | amendment  |                                     |
-      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              |  0         | 300    | amendment  |                                     |
-      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              |  0         | 400    | amendment  |                                     |
-      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              |  0         | 500    | amendment  | order in shape without a proportion |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | buy  | BID              | 0          | 100    | submission |                                     |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              | 0          | 100    | amendment  |                                     |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              | 0          | 200    | amendment  |                                     |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              | 0          | 300    | amendment  |                                     |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              | 0          | 400    | amendment  |                                     |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              | 0          | 500    | amendment  | order in shape without a proportion |
     Then the supplied stake should be "0" for the market "ETH/DEC19"
