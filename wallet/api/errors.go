@@ -94,7 +94,8 @@ const (
 var (
 	ErrApplicationCanceledTheRequest                      = errors.New("the application canceled the request")
 	ErrBlockHashIsRequired                                = errors.New("the block hash is required")
-	ErrBlockHeightIsRequired                              = errors.New("the block-height is required")
+	ErrBlockHeightIsRequired                              = errors.New("the block height is required")
+	ErrBlockHeightTooHistoric                             = errors.New("the block height is too historic")
 	ErrCannotRotateKeysOnIsolatedWallet                   = errors.New("cannot rotate keys on an isolated wallet")
 	ErrChainIDIsRequired                                  = errors.New("the chain ID is required")
 	ErrCouldNotConnectToWallet                            = errors.New("could not connect to the wallet")
@@ -147,10 +148,10 @@ var (
 	ErrSpecifyingNetworkAndLastBlockDataIsNotSupported    = errors.New("specifying a network and the last block data is not supported")
 	ErrSpecifyingNetworkAndNodeAddressIsNotSupported      = errors.New("specifying a network and a node address is not supported")
 	ErrSubmissionBlockHeightIsRequired                    = errors.New("the submission block height is required")
-	ErrTransactionCouldNotBeSentThroughSelectedNode       = errors.New("the transaction could not be sent through the selected node")
-	ErrTransactionFailed                                  = errors.New("the transaction failed")
+	ErrTransactionBlockedBySpamRules                      = errors.New("the transaction will break the network's spam rules")
 	ErrTransactionIsNotValidJSON                          = errors.New("the transaction is not valid JSON")
 	ErrTransactionIsRequired                              = errors.New("the transaction is required")
+	ErrTransactionsPerBlockLimitReached                   = errors.New("the transaction per block limit has been reached")
 	ErrUserCanceledTheRequest                             = errors.New("the user canceled the request")
 	ErrUserCloseTheConnection                             = errors.New("the user closed the connection")
 	ErrUserRejectedAccessToKeys                           = errors.New("the user rejected the access to the keys")
@@ -163,7 +164,6 @@ var (
 	ErrWalletIsRequired                                   = errors.New("the wallet is required")
 	ErrWalletKeyDerivationVersionIsRequired               = errors.New("the wallet key derivation version is required")
 	ErrWrongPassphrase                                    = errors.New("wrong passphrase")
-	ErrTransactionBlockedBySpamRules                      = errors.New("the transaction will break the network's spam rules")
 )
 
 func applicationError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {

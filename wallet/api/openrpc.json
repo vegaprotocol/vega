@@ -34,10 +34,16 @@
           "$ref": "#/components/errors/user_error_connection_closed"
         },
         {
+          "$ref": "#/components/errors/application_error_request_cancelled"
+        },
+        {
           "$ref": "#/components/errors/user_error_wallet_connection_rejected"
         },
         {
-          "$ref": "#/components/errors/server_error_request_canceled"
+          "$ref": "#/components/errors/user_error_request_canceled"
+        },
+        {
+          "$ref": "#/components/errors/user_error_request_canceled"
         }
       ],
       "examples": [
@@ -209,10 +215,16 @@
           "$ref": "#/components/errors/user_error_wallet_connection_rejected"
         },
         {
-          "$ref": "#/components/errors/server_error_request_canceled"
+          "$ref": "#/components/errors/user_error_request_canceled"
         },
         {
           "$ref": "#/components/errors/application_error_transaction_would_break_spam_rules"
+        },
+        {
+          "$ref": "#/components/errors/application_error_block_height_is_too_historic"
+        },
+        {
+          "$ref": "#/components/errors/application_error_transaction_per_block_limit_reached"
         }
       ],
       "examples": [
@@ -330,19 +342,25 @@
           "$ref": "#/components/errors/network_error_failed_transaction"
         },
         {
-          "$ref": "#/components/errors/application_error_public_key_not_allowed"
-        },
-        {
           "$ref": "#/components/errors/user_error_connection_closed"
         },
         {
           "$ref": "#/components/errors/user_error_wallet_connection_rejected"
         },
         {
-          "$ref": "#/components/errors/server_error_request_canceled"
+          "$ref": "#/components/errors/user_error_request_canceled"
+        },
+        {
+          "$ref": "#/components/errors/application_error_public_key_not_allowed"
         },
         {
           "$ref": "#/components/errors/application_error_transaction_would_break_spam_rules"
+        },
+        {
+          "$ref": "#/components/errors/application_error_block_height_is_too_historic"
+        },
+        {
+          "$ref": "#/components/errors/application_error_transaction_per_block_limit_reached"
         }
       ],
       "examples": [
@@ -3566,6 +3584,16 @@
         "message": "Application error",
         "data": "the transaction will break the network's spam rules"
       },
+      "application_error_block_height_is_too_historic": {
+        "code": 2000,
+        "message": "Application error",
+        "data": "the block height is too historic"
+      },
+      "application_error_transaction_per_block_limit_reached": {
+        "code": 2000,
+        "message": "Application error",
+        "data": "the transaction per block limit has been reached"
+      },
       "application_error_request_cancelled": {
         "code": 2001,
         "message": "Application error",
@@ -3596,7 +3624,7 @@
         "message": "User error",
         "data": "the user rejected the signing of the transaction"
       },
-      "server_error_request_canceled": {
+      "user_error_request_canceled": {
         "code": 3002,
         "message": "User error",
         "data": "the user canceled the request"
