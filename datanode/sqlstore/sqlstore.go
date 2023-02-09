@@ -201,30 +201,6 @@ func WipeDatabaseAndMigrateSchemaToLatestVersion(log *logging.Logger, config Con
 	return nil
 }
 
-func CreateVegaSchema(log *logging.Logger, connConfig ConnectionConfig) error {
-	goose.SetBaseFS(EmbedMigrations)
-	goose.SetLogger(log.Named("snapshot schema creation").GooseLogger())
-
-	poolConfig, err := connConfig.GetPoolConfig()
-	if err != nil {
-		return fmt.Errorf("failed to get connection configuration: %w", err)
-	}
-
-	db := stdlib.OpenDB(*poolConfig.ConnConfig)
-	defer func() {
-		err := db.Close()
-		if err != nil {
-			log.Errorf("error when closing connection used to create vega schema:%w", err)
-		}
-	}()
-
-	if err := goose.Up(db, SQLMigrationsDir); err != nil {
-		return fmt.Errorf("failed to create schema: %w", err)
-	}
-
-	return nil
-}
-
 func HasVegaSchema(ctx context.Context, conn Connection) (bool, error) {
 	tableNames, err := GetAllTableNames(ctx, conn)
 	if err != nil {
