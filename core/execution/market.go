@@ -1118,20 +1118,6 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		updatedOrders = append(updatedOrders, conf.Order)
 	}
 
-	// now that we're left the auction, we can mark all positions
-	// in case any party is distressed (Which shouldn't be possible)
-	// we'll fall back to the a network order at the new mark price (mid-price)
-	cmp := m.getLastTradedPrice()
-	m.markPrice = cmp.Clone()
-	mcmp := num.UintZero().Div(cmp, m.priceFactor) // create the market representation of the price
-	m.confirmMTM(ctx, &types.Order{
-		ID:            m.idgen.NextID(),
-		Price:         cmp,
-		OriginalPrice: mcmp,
-	}, updatedOrders, false)
-	// set next MTM
-	m.nextMTM = m.timeService.GetTimeNow().Add(m.mtmDelta)
-
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.Left(ctx, now)
 
@@ -1145,9 +1131,23 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
 	m.checkLiquidity(ctx, nil, true)
 	m.commandLiquidityAuction(ctx)
-	// only send the auction-left event if we actually *left* the auction.
+
 	if !m.as.InAuction() {
+		// only send the auction-left event if we actually *left* the auction.
 		m.broker.Send(endEvt)
+		// now that we're left the auction, we can mark all positions
+		// in case any party is distressed (Which shouldn't be possible)
+		// we'll fall back to the a network order at the new mark price (mid-price)
+		cmp := m.getLastTradedPrice()
+		m.markPrice = cmp.Clone()
+		mcmp := num.UintZero().Div(cmp, m.priceFactor) // create the market representation of the price
+		m.confirmMTM(ctx, &types.Order{
+			ID:            m.idgen.NextID(),
+			Price:         cmp,
+			OriginalPrice: mcmp,
+		}, updatedOrders, false)
+		// set next MTM
+		m.nextMTM = m.timeService.GetTimeNow().Add(m.mtmDelta)
 	}
 }
 
