@@ -240,7 +240,9 @@ type Market struct {
 	pMonitor PriceMonitor
 	lMonitor LiquidityMonitor
 
-	lpPriceRange num.Decimal
+	lpPriceRange            num.Decimal
+	linearSlippageFactor    num.Decimal
+	quadraticSlippageFactor num.Decimal
 
 	tsCalc TargetStakeCalculator
 
@@ -331,6 +333,8 @@ func NewMarket(
 		positionFactor,
 		false,
 		nil,
+		mkt.LinearSlippageFactor,
+		mkt.QuadraticSlippageFactor,
 	)
 
 	settleEngine := settlement.NewSnapshotEngine(
@@ -414,6 +418,8 @@ func NewMarket(
 		positionFactor:            positionFactor,
 		nextMTM:                   time.Time{}, // default to zero time
 		lpPriceRange:              mkt.LPPriceRange,
+		linearSlippageFactor:      mkt.LinearSlippageFactor,
+		quadraticSlippageFactor:   mkt.QuadraticSlippageFactor,
 	}
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
@@ -451,6 +457,8 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.tsCalc.UpdateParameters(*m.mkt.LiquidityMonitoringParameters.TargetStakeParameters)
 	m.pMonitor.UpdateSettings(m.tradableInstrument.RiskModel, m.mkt.PriceMonitoringSettings)
 	m.lpPriceRange = m.mkt.LPPriceRange
+	m.linearSlippageFactor = m.mkt.LinearSlippageFactor
+	m.quadraticSlippageFactor = m.mkt.QuadraticSlippageFactor
 	m.lMonitor.UpdateParameters(m.mkt.LiquidityMonitoringParameters)
 	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor)
 
@@ -1911,14 +1919,20 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		// which have acceptable margins
 		okPos, closed = m.risk.ExpectMargins(distressedMarginEvts, m.lastTradedPrice.Clone())
 
-		if m.log.GetLevel() == logging.DebugLevel {
-			for _, v := range okPos {
-				if m.log.GetLevel() == logging.DebugLevel {
-					m.log.Debug("previously distressed party have now an acceptable margin",
-						logging.String("market-id", mktID),
-						logging.String("party-id", v.Party()))
-				}
+		parties := make([]string, 0, len(okPos))
+		for _, v := range okPos {
+			parties = append(parties, v.Party())
+		}
+		if m.log.IsDebug() {
+			for _, pID := range parties {
+				m.log.Debug("previously distressed party have now an acceptable margin",
+					logging.String("market-id", mktID),
+					logging.String("party-id", pID))
 			}
+		}
+		if len(parties) > 0 {
+			// emit event indicating we had to close orders, but parties were not distressed anymore after doing so.
+			m.broker.Send(events.NewDistressedOrdersEvent(ctx, mktID, parties))
 		}
 	}
 

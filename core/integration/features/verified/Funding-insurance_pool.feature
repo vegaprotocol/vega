@@ -24,8 +24,8 @@ Feature: Position resolution case 5 lognormal risk model
       | trading.terminated | TYPE_BOOLEAN | trading termination |
 
     And the markets:
-      | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config |
-      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec20Oracle     |
+      | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec20Oracle     | 1e6                    | 1e6                       |
 
     And the following network parameters are set:
       | name                                    | value |
@@ -92,7 +92,7 @@ Feature: Position resolution case 5 lognormal risk model
 
     Then the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
-      | designatedLooser | ETH/DEC19 | 47134       | 56560  | 70701   | 94268  |
+      | designatedLooser | ETH/DEC19 | 47134       | 56560  | 70701   | 94268   |
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |

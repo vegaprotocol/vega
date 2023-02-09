@@ -76,10 +76,10 @@ type Interactor interface {
 	NotifyInteractionSessionEnded(ctx context.Context, traceID string)
 
 	// NotifySuccessfulTransaction is used to report a successful transaction.
-	NotifySuccessfulTransaction(ctx context.Context, traceID, txHash, deserializedInputData, tx string, sentAt time.Time)
+	NotifySuccessfulTransaction(ctx context.Context, traceID, txHash, deserializedInputData, tx string, sentAt time.Time, host string)
 
 	// NotifyFailedTransaction is used to report a failed transaction.
-	NotifyFailedTransaction(ctx context.Context, traceID, deserializedInputData, tx string, err error, sentAt time.Time)
+	NotifyFailedTransaction(ctx context.Context, traceID, deserializedInputData, tx string, err error, sentAt time.Time, host string)
 
 	// NotifySuccessfulRequest is used to notify the user the request is
 	// successful.

@@ -18,6 +18,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/subscribers"
+
 	"github.com/cenkalti/backoff"
 	"google.golang.org/grpc"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -27,7 +29,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -277,7 +278,7 @@ func (l *NodeCommand) preRun([]string) (err error) {
 	}
 
 	// Event service as used by old and new world
-	l.eventService = subscribers.NewService(l.broker)
+	l.eventService = subscribers.NewService(l.Log, l.broker, l.conf.Broker.EventBusClientBufferSize)
 
 	nodeAddr := fmt.Sprintf("%v:%v", l.conf.API.CoreNodeIP, l.conf.API.CoreNodeGRPCPort)
 	conn, err := grpc.Dial(nodeAddr, grpc.WithInsecure())

@@ -68,7 +68,7 @@ func (h *ClientConnectWallet) Handle(ctx context.Context, hostname string) (wall
 	}
 
 	if isConnectionRejected(approval) {
-		return nil, userRejectionError()
+		return nil, userRejectionError(ErrUserRejectedWalletConnection)
 	}
 
 	// Wallet selection process.

@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	events "code.vegaprotocol.io/vega/core/events"
-	subscribers "code.vegaprotocol.io/vega/datanode/subscribers"
+	subscribers "code.vegaprotocol.io/vega/libs/subscribers"
 	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	gomock "github.com/golang/mock/gomock"
 )

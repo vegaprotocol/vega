@@ -1869,6 +1869,10 @@ func (r *myPositionResolver) AverageEntryPrice(ctx context.Context, obj *types.P
 	return obj.AverageEntryPrice, nil
 }
 
+func (r *myPositionResolver) LossSocializationAmount(ctx context.Context, obj *types.Position) (string, error) {
+	return obj.LossSocialisationAmount, nil
+}
+
 func (r *myPositionResolver) Party(ctx context.Context, obj *types.Position) (*types.Party, error) {
 	return getParty(ctx, r.log, r.tradingDataClientV2, obj.PartyId)
 }
@@ -1905,6 +1909,7 @@ func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID 
 		return nil, err
 	}
 
+	sCtx := stream.Context()
 	ch := make(chan *types.Delegation)
 	go func() {
 		defer func() {
@@ -1921,7 +1926,16 @@ func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID 
 				r.log.Error("delegations levls: stream closed", logging.Error(err))
 				break
 			}
-			ch <- dl.Delegation
+			select {
+			case ch <- dl.Delegation:
+				r.log.Debug("delegations: data sent")
+			case <-ctx.Done():
+				r.log.Error("delegations: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("delegations: stream closed by server")
+				break
+			}
 		}
 	}()
 
@@ -1938,6 +1952,7 @@ func (r *mySubscriptionResolver) Rewards(ctx context.Context, assetID, party *st
 		return nil, err
 	}
 
+	sCtx := stream.Context()
 	ch := make(chan *types.Reward)
 	go func() {
 		defer func() {
@@ -1954,7 +1969,16 @@ func (r *mySubscriptionResolver) Rewards(ctx context.Context, assetID, party *st
 				r.log.Error("reward details: stream closed", logging.Error(err))
 				break
 			}
-			ch <- rd.Reward
+			select {
+			case ch <- rd.Reward:
+				r.log.Debug("rewards: data sent")
+			case <-ctx.Done():
+				r.log.Error("rewards: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("rewards: stream closed by server")
+				break
+			}
 		}
 	}()
 
@@ -1971,6 +1995,7 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 		return nil, err
 	}
 
+	sCtx := stream.Context()
 	ch := make(chan *types.MarginLevels)
 	go func() {
 		defer func() {
@@ -1987,7 +2012,16 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 				r.log.Error("margin levls: stream closed", logging.Error(err))
 				break
 			}
-			ch <- m.MarginLevels
+			select {
+			case ch <- m.MarginLevels:
+				r.log.Debug("margin levels: data sent")
+			case <-ctx.Done():
+				r.log.Error("margin levels: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("margin levels: stream closed by server")
+				break
+			}
 		}
 	}()
 
@@ -2029,6 +2063,8 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 	}
 
 	c := make(chan []*v2.AccountBalance)
+	data := []*v2.AccountBalance{}
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2045,12 +2081,24 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 				break
 			}
 
+			// empty slice, but preserve cap to avoid excessive reallocation
+			data = data[:0]
 			if snapshot := a.GetSnapshot(); snapshot != nil {
-				c <- snapshot.Accounts
+				data = append(data, snapshot.Accounts...)
 			}
 
 			if updates := a.GetUpdates(); updates != nil {
-				c <- updates.Accounts
+				data = append(data, updates.Accounts...)
+			}
+			select {
+			case c <- data:
+				r.log.Debug("accounts: data sent")
+			case <-ctx.Done():
+				r.log.Error("accounts: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("accounts: stream closed by server")
+				break
 			}
 		}
 	}()
@@ -2069,6 +2117,8 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 	}
 
 	c := make(chan []*types.Order)
+	data := []*types.Order{}
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2084,11 +2134,22 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 				r.log.Error("orders: stream closed", logging.Error(err))
 				break
 			}
+			data = data[:0]
 			if snapshot := o.GetSnapshot(); snapshot != nil {
-				c <- snapshot.Orders
+				data = append(data, snapshot.Orders...)
 			}
 			if updates := o.GetUpdates(); updates != nil {
-				c <- updates.Orders
+				data = append(data, updates.Orders...)
+			}
+			select {
+			case c <- data:
+				r.log.Debug("orders: data sent")
+			case <-ctx.Done():
+				r.log.Error("orders: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("orders: stream closed by server")
+				break
 			}
 		}
 	}()
@@ -2107,6 +2168,7 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	}
 
 	c := make(chan []*types.Trade)
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2122,7 +2184,16 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 				r.log.Error("trades: stream closed", logging.Error(err))
 				break
 			}
-			c <- t.Trades
+			select {
+			case c <- t.Trades:
+				r.log.Debug("trades: data sent")
+			case <-ctx.Done():
+				r.log.Error("trades: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("trades: stream closed by server")
+				break
+			}
 		}
 	}()
 
@@ -2140,6 +2211,8 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 	}
 
 	c := make(chan []*types.Position)
+	data := []*types.Position{}
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2155,12 +2228,23 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 				r.log.Error("positions: stream closed", logging.Error(err))
 				break
 			}
+			data = data[:0]
 			if snapshot := t.GetSnapshot(); snapshot != nil {
-				c <- snapshot.Positions
+				data = append(data, snapshot.Positions...)
 			}
 
 			if updates := t.GetUpdates(); updates != nil {
-				c <- updates.Positions
+				data = append(data, updates.Positions...)
+			}
+			select {
+			case c <- data:
+				r.log.Debug("positions: data sent")
+			case <-ctx.Done():
+				r.log.Error("positions: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("positions: stream closed by server")
+				break
 			}
 		}
 	}()
@@ -2202,6 +2286,7 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 		return nil, err
 	}
 
+	sCtx := stream.Context()
 	c := make(chan *v2.Candle)
 	go func() {
 		defer func() {
@@ -2219,7 +2304,16 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 				break
 			}
 
-			c <- cdl.Candle
+			select {
+			case c <- cdl.Candle:
+				r.log.Debug("candles: data sent")
+			case <-ctx.Done():
+				r.log.Error("candles: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("candles: stream closed by server")
+				break
+			}
 		}
 	}()
 	return c, nil
@@ -2243,13 +2337,23 @@ func (r *mySubscriptionResolver) subscribeAllProposals(ctx context.Context) (<-c
 		return nil, err
 	}
 	output := make(chan *types.GovernanceData)
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
 			stream.CloseSend()
 			close(output)
 		}()
 		for data, err := stream.Recv(); !isStreamClosed(err, r.log); data, err = stream.Recv() {
-			output <- data.Data
+			select {
+			case output <- data.Data:
+				r.log.Debug("governance (all): data sent")
+			case <-ctx.Done():
+				r.log.Error("governance (all): stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("governance (all): stream closed by server")
+				break
+			}
 		}
 	}()
 	return output, nil
@@ -2262,6 +2366,7 @@ func (r *mySubscriptionResolver) subscribePartyProposals(ctx context.Context, pa
 	if err != nil {
 		return nil, err
 	}
+	sCtx := stream.Context()
 	output := make(chan *types.GovernanceData)
 	go func() {
 		defer func() {
@@ -2269,7 +2374,16 @@ func (r *mySubscriptionResolver) subscribePartyProposals(ctx context.Context, pa
 			close(output)
 		}()
 		for data, err := stream.Recv(); !isStreamClosed(err, r.log); data, err = stream.Recv() {
-			output <- data.Data
+			select {
+			case output <- data.Data:
+				r.log.Debug("governance (party): data sent")
+			case <-ctx.Done():
+				r.log.Error("governance (party): stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("governance (party): stream closed by server")
+				break
+			}
 		}
 	}()
 	return output, nil
@@ -2290,6 +2404,7 @@ func (r *mySubscriptionResolver) subscribeProposalVotes(ctx context.Context, pro
 	if err != nil {
 		return nil, err
 	}
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2300,7 +2415,16 @@ func (r *mySubscriptionResolver) subscribeProposalVotes(ctx context.Context, pro
 			if isStreamClosed(err, r.log) {
 				break
 			}
-			output <- ProposalVoteFromProto(data.Vote)
+			select {
+			case output <- ProposalVoteFromProto(data.Vote):
+				r.log.Debug("votes (proposal): data sent")
+			case <-ctx.Done():
+				r.log.Error("votes (proposal): stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("votes (proposal): stream closed by server")
+				break
+			}
 		}
 	}()
 	return output, nil
@@ -2314,6 +2438,7 @@ func (r *mySubscriptionResolver) subscribePartyVotes(ctx context.Context, partyI
 	if err != nil {
 		return nil, err
 	}
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2324,7 +2449,16 @@ func (r *mySubscriptionResolver) subscribePartyVotes(ctx context.Context, partyI
 			if isStreamClosed(err, r.log) {
 				break
 			}
-			output <- ProposalVoteFromProto(data.Vote)
+			select {
+			case output <- ProposalVoteFromProto(data.Vote):
+				r.log.Debug("votes (party): data sent")
+			case <-ctx.Done():
+				r.log.Error("votes (party): stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("votes (party): stream closed by server")
+				break
+			}
 		}
 	}()
 	return output, nil
@@ -2386,16 +2520,17 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 		}()
 
 		if batchSize == 0 {
-			r.busEvents(stream, out)
+			r.busEvents(ctx, stream, out)
 		} else {
-			r.busEventsWithBatch(int64(batchSize), stream, out)
+			r.busEventsWithBatch(ctx, int64(batchSize), stream, out)
 		}
 	}()
 
 	return out, nil
 }
 
-func (r *mySubscriptionResolver) busEvents(stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
+func (r *mySubscriptionResolver) busEvents(ctx context.Context, stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
+	sCtx := stream.Context()
 	for {
 		// receive batch
 		data, err := stream.Recv()
@@ -2406,12 +2541,21 @@ func (r *mySubscriptionResolver) busEvents(stream v2.TradingDataService_ObserveE
 			r.log.Error("Event bus stream error", logging.Error(err))
 			return
 		}
-		be := busEventFromProto(data.Events...)
-		out <- be
+		select {
+		case out <- busEventFromProto(data.Events...):
+			r.log.Debug("bus events: data sent")
+		case <-ctx.Done():
+			r.log.Debug("bus events: stream closed")
+			return
+		case <-sCtx.Done():
+			r.log.Debug("bus events: stream closed by server")
+			return
+		}
 	}
 }
 
-func (r *mySubscriptionResolver) busEventsWithBatch(batchSize int64, stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
+func (r *mySubscriptionResolver) busEventsWithBatch(ctx context.Context, batchSize int64, stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
+	sCtx := stream.Context()
 	poll := &v2.ObserveEventBusRequest{
 		BatchSize: batchSize,
 	}
@@ -2425,8 +2569,16 @@ func (r *mySubscriptionResolver) busEventsWithBatch(batchSize int64, stream v2.T
 			r.log.Error("Event bus stream error", logging.Error(err))
 			return
 		}
-		be := busEventFromProto(data.Events...)
-		out <- be
+		select {
+		case out <- busEventFromProto(data.Events...):
+			r.log.Debug("bus events: data sent")
+		case <-ctx.Done():
+			r.log.Debug("bus events: stream closed")
+			return
+		case <-sCtx.Done():
+			r.log.Debug("bus events: stream closed by server")
+			return
+		}
 		// send request for the next batch
 		if err := stream.SendMsg(poll); err != nil {
 			r.log.Error("Failed to poll next event batch", logging.Error(err))
@@ -2446,6 +2598,7 @@ func (r *mySubscriptionResolver) LiquidityProvisions(ctx context.Context, partyI
 	}
 
 	c := make(chan []*types.LiquidityProvision)
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2461,8 +2614,19 @@ func (r *mySubscriptionResolver) LiquidityProvisions(ctx context.Context, partyI
 				r.log.Error("orders: stream closed", logging.Error(err))
 				break
 			}
-			if lps := received.LiquidityProvisions; lps != nil {
-				c <- lps
+			lps := received.LiquidityProvisions
+			if len(lps) == 0 {
+				continue
+			}
+			select {
+			case c <- lps:
+				r.log.Debug("liquidity provisions: data sent")
+			case <-sCtx.Done():
+				r.log.Debug("liquidity provisions: stream closed by server")
+				break
+			case <-ctx.Done():
+				r.log.Debug("liquidity provisions: stream closed")
+				break
 			}
 		}
 	}()

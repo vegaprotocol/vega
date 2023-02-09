@@ -35,24 +35,86 @@ const (
 	DataNodeBinaryName = "data-node"
 )
 
-type AssetsConfig struct {
-	Vega     string  `toml:"vega"`
-	DataNode *string `toml:"data_node"`
+type Asset struct {
+	// description: Name of the asset on Github.
+	AssetName string `toml:"assset_name"`
+	/*
+		description: |
+			Binary name definition can be used if the asset is a zip file and the binary is included inside of it.
+	*/
+	BinaryName *string `toml:"binary_name"`
 }
 
-func (ac AssetsConfig) ToSlice() []string {
-	s := []string{ac.Vega}
+func (a Asset) GetBinaryPath() string {
+	if a.BinaryName != nil {
+		return *a.BinaryName
+	}
+
+	return a.AssetName
+}
+
+type AssetsConfig struct {
+	/*
+		description: Allows you to define the name of the asset to be downloaded.
+	*/
+	Vega Asset `toml:"vega"`
+	/*
+		description: Allows you to define the name of the asset to be downloaded.
+	*/
+	DataNode *Asset `toml:"data_node"`
+}
+
+func (ac AssetsConfig) AssetsNames() []string {
+	s := []string{ac.Vega.AssetName}
 	if ac.DataNode != nil {
-		s = append(s, *ac.DataNode)
+		s = append(s, ac.DataNode.AssetName)
 	}
 	return s
 }
 
+/*
+description: Allows you to define the assets that should be automatically downloaded from GitHub for a specific release.
+
+example:
+
+	type: toml
+	value: |
+		[autoInstall]
+			enabled = true
+			repositoryOwner = "vegaprotocol"
+			repository = "vega"
+			[autoInstall.assets]
+				[autoInstall.assets.vega]
+					assset_name = "vega-darwin-amd64.zip"
+					binary_name = "vega"
+*/
 type AutoInstallConfig struct {
-	Enabled               bool         `toml:"enabled"`
-	GithubRepositoryOwner string       `toml:"repositoryOwner"`
-	GithubRepository      string       `toml:"repository"`
-	Assets                AssetsConfig `toml:"assets"`
+	/*
+		description: Whether or not autoinstall should be used
+		default: true
+	*/
+	Enabled bool `toml:"enabled"`
+	/*
+		description: Owner of the repository from where the assets should be downloaded.
+		default: vegaprotocol
+	*/
+	GithubRepositoryOwner string `toml:"repositoryOwner"`
+	/*
+		description: Name of the repository from where the assets should be downloaded.
+		default: vega
+	*/
+	GithubRepository string `toml:"repository"`
+	/*
+		description: Definitions of the assets that should be downloaded from the GitHub repository.
+		example:
+			type: toml
+			value: |
+				[autoInstall.assets]
+					[autoInstall.assets.vega]
+						assset_name = "vega-darwin-amd64.zip"
+						binary_name = "vega"
+	*/
+	Assets AssetsConfig `toml:"assets"`
 }
 
 /*
@@ -119,6 +181,23 @@ type VisorConfigFile struct {
 	*/
 	UpgradeFolders map[string]string `toml:"upgradeFolders,optional"`
 
+	/*
+		description: |
+			Allows you to define the assets that should be automatically downloaded from Github for a specific release.
+
+		example:
+			type: toml
+			value: |
+				[autoInstall]
+					enabled = true
+					repositoryOwner = "vegaprotocol"
+					repository = "vega"
+					[autoInstall.assets]
+						[autoInstall.assets.vega]
+							assset_name = "vega-darwin-amd64.zip"
+							binary_name = "vega"
+
+	*/
 	AutoInstall AutoInstallConfig `toml:"autoInstall"`
 }
 
@@ -155,7 +234,10 @@ func DefaultVisorConfig(log *logging.Logger, homePath string) *VisorConfig {
 				GithubRepositoryOwner: "vegaprotocol",
 				GithubRepository:      "vega",
 				Assets: AssetsConfig{
-					Vega: fmt.Sprintf("vega-%s-%s", runtime.GOOS, "amd64"),
+					Vega: Asset{
+						AssetName:  fmt.Sprintf("vega-%s-%s.zip", runtime.GOOS, "amd64"),
+						BinaryName: toPointer("vega"),
+					},
 				},
 			},
 		},
@@ -313,4 +395,8 @@ func (pc *VisorConfig) WriteToFile() error {
 	defer pc.mut.RUnlock()
 
 	return paths.WriteStructuredFile(pc.configPath, pc.data)
+}
+
+func toPointer[T any](val T) *T {
+	return &val
 }

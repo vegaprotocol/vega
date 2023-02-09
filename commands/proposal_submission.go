@@ -380,6 +380,28 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.lp_price_range", ErrMustBeAtMost100)
 	}
 
+	if len(changes.LinearSlippageFactor) > 0 {
+		linearSlippage, err := num.DecimalFromString(changes.LinearSlippageFactor)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.linear_slippage_factor", ErrIsNotValidNumber)
+		} else if linearSlippage.IsNegative() {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.linear_slippage_factor", ErrMustBePositiveOrZero)
+		} else if linearSlippage.GreaterThan(num.DecimalFromInt64(1000000)) {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.linear_slippage_factor", ErrMustBeAtMost1M)
+		}
+	}
+
+	if len(changes.QuadraticSlippageFactor) > 0 {
+		squaredSlippage, err := num.DecimalFromString(changes.QuadraticSlippageFactor)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor", ErrIsNotValidNumber)
+		} else if squaredSlippage.IsNegative() {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor", ErrMustBePositiveOrZero)
+		} else if squaredSlippage.GreaterThan(num.DecimalFromInt64(1000000)) {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor", ErrMustBeAtMost1M)
+		}
+	}
+
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
 	errs.Merge(checkNewInstrument(changes.Instrument))
@@ -413,6 +435,28 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrMustBePositive)
 	} else if lppr.GreaterThan(num.DecimalFromInt64(100)) {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrMustBeAtMost100)
+	}
+
+	if len(changes.LinearSlippageFactor) > 0 {
+		linearSlippage, err := num.DecimalFromString(changes.LinearSlippageFactor)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.linear_slippage_factor", ErrIsNotValidNumber)
+		} else if linearSlippage.IsNegative() {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.linear_slippage_factor", ErrMustBePositiveOrZero)
+		} else if linearSlippage.GreaterThan(num.DecimalFromInt64(1000000)) {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.linear_slippage_factor", ErrMustBeAtMost1M)
+		}
+	}
+
+	if len(changes.QuadraticSlippageFactor) > 0 {
+		squaredSlippage, err := num.DecimalFromString(changes.QuadraticSlippageFactor)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor", ErrIsNotValidNumber)
+		} else if squaredSlippage.IsNegative() {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor", ErrMustBePositiveOrZero)
+		} else if squaredSlippage.GreaterThan(num.DecimalFromInt64(1000000)) {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor", ErrMustBeAtMost1M)
+		}
 	}
 
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.update_market.changes"))

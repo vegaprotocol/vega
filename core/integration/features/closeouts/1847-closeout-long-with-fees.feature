@@ -6,8 +6,8 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
       | maker fee | infrastructure fee |
       | 0.00025   | 0.0005             |
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | fees           | auction duration | price monitoring | data source config          |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | my-fees-config | 1                | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model                  | margin calculator         | fees           | auction duration | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | my-fees-config | 1                | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -16,7 +16,7 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
-      | party | asset | amount    |
+      | party  | asset | amount    |
       | tt_4   | BTC   | 500000    |
       | tt_5   | BTC   | 100       |
       | tt_6   | BTC   | 100000000 |
@@ -28,7 +28,7 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_aux | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1   |
       | tt_aux | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1   |
       | t2_aux | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-2   |

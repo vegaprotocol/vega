@@ -178,7 +178,7 @@ func testListingKeysRefusingPermissionsUpdateDoesNotUpdatePermissions(t *testing
 	result, errorDetails := handler.handle(t, ctx, connectedWallet)
 
 	// then
-	assertUserRejectionError(t, errorDetails)
+	assertUserRejectionError(t, errorDetails, api.ErrUserRejectedAccessToKeys)
 	assert.Empty(t, result)
 }
 

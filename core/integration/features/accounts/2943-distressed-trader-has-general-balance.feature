@@ -3,8 +3,8 @@ Feature: Distressed parties should not have general balance left
   Background:
     Given time is updated to "2020-10-16T00:00:00Z"
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
-      | ETH/DEC20 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC20 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -82,9 +82,9 @@ Feature: Distressed parties should not have general balance left
 
     ## Now let's increase the mark price so party3 gets distressed
     When the parties place the following orders "1" blocks apart:
-      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | party5 | ETH/DEC20 | buy  | 40     | 165    | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | party1 | ETH/DEC20 | sell | 20     | 1850   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party5 | ETH/DEC20 | buy  | 40     | 165   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party1 | ETH/DEC20 | sell | 20     | 1850  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
     Then the mark price should be "120" for the market "ETH/DEC20"
 
     And the parties should have the following account balances:
