@@ -18,7 +18,6 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
-	"google.golang.org/grpc/codes"
 )
 
 func observe[T any](ctx context.Context, log *logging.Logger, eventType string, eventsInChan <-chan []T,
@@ -40,12 +39,12 @@ func observe[T any](ctx context.Context, log *logging.Logger, eventType string, 
 			if !ok {
 				err = ErrChannelClosed
 				log.Errorf("subscriber to %s, reference %v, error: %v", eventType, ref, err)
-				return apiError(codes.Internal, err)
+				return formatE(err, ErrStreamInternal.Error())
 			}
 			for _, event := range events {
 				if err = send(event); err != nil {
 					log.Errorf("rpc stream error, subscriber to %s, reference %v, error: %v", eventType, ref, err)
-					return apiError(codes.Internal, ErrStreamInternal, err)
+					return formatE(err, ErrStreamInternal.Error())
 				}
 				publishedEvents++
 			}
@@ -54,14 +53,14 @@ func observe[T any](ctx context.Context, log *logging.Logger, eventType string, 
 			if log.GetLevel() == logging.DebugLevel {
 				log.Debugf("rpc stream ctx error, subscriber to %s, reference %v, error: %v", eventType, ref, err)
 			}
-			return apiError(codes.Internal, ErrStreamInternal, err)
+			return formatE(err, ErrStreamInternal.Error())
 		}
 
 		if eventsInChan == nil {
 			if log.GetLevel() == logging.DebugLevel {
 				log.Debugf("rpc stream closed, subscriber to %s, reference %v, error: %v", eventType, ref, err)
 			}
-			return apiError(codes.Internal, ErrStreamClosed)
+			return formatE(ErrStreamClosed)
 		}
 	}
 }
@@ -85,12 +84,12 @@ func observeBatch[T any](ctx context.Context, log *logging.Logger, eventType str
 			if !ok {
 				err = ErrChannelClosed
 				log.Errorf("subscriber to %s, reference %v, error: %v", eventType, ref, err)
-				return apiError(codes.Internal, err)
+				return formatE(err, ErrStreamInternal.Error())
 			}
 			err = send(events)
 			if err != nil {
 				log.Errorf("rpc stream error, subscriber to %s, reference %v, error: %v", eventType, ref, err)
-				return apiError(codes.Internal, ErrStreamInternal, err)
+				return formatE(err, ErrStreamInternal.Error())
 			}
 			publishedEvents = publishedEvents + int64(len(events))
 		case <-ctx.Done():
@@ -98,14 +97,14 @@ func observeBatch[T any](ctx context.Context, log *logging.Logger, eventType str
 			if log.GetLevel() == logging.DebugLevel {
 				log.Debugf("rpc stream ctx error, subscriber to %s, reference %v, error: %v", eventType, ref, err)
 			}
-			return apiError(codes.Internal, ErrStreamInternal, err)
+			return formatE(err, ErrStreamInternal.Error())
 		}
 
 		if eventsInChan == nil {
 			if log.GetLevel() == logging.DebugLevel {
 				log.Debugf("rpc stream closed, subscriber to %s, reference %v, error: %v", eventType, ref, err)
 			}
-			return apiError(codes.Internal, ErrStreamClosed)
+			return formatE(ErrStreamClosed)
 		}
 	}
 }

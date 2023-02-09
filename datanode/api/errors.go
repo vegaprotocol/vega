@@ -13,10 +13,13 @@
 package api
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
+	"strings"
 
+	"code.vegaprotocol.io/vega/datanode/entities"
 	types "code.vegaprotocol.io/vega/protos/vega"
 
+	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -28,9 +31,16 @@ var (
 	ErrChainNotConnected = errors.New("chain not connected")
 	// ErrChannelClosed signals that the channel streaming data is closed.
 	ErrChannelClosed = errors.New("channel closed")
+	// ErrMissingResourceID signals to the caller that the request expected a
+	// resource id but the field is missing or empty.
+	ErrMissingResourceID = errors.New("missing resource ID")
 	// ErrEmptyMissingMarketID signals to the caller that the request expected a
 	// market id but the field is missing or empty.
 	ErrEmptyMissingMarketID = errors.New("empty or missing market ID")
+	// ErrMissingPrice signals to the caller that the request expected a price.
+	ErrMissingPrice = errors.New("missing price")
+	// ErrInvalidOrderPrice signals to the caller that the request expected a valid price.
+	ErrInvalidOrderPrice = errors.New("invalid order price")
 	// ErrEmptyMissingOrderID signals to the caller that the request expected an
 	// order id but the field is missing or empty.
 	ErrEmptyMissingOrderID = errors.New("empty or missing order ID")
@@ -57,44 +67,63 @@ var (
 	ErrMissingOrder = errors.New("missing order in request payload")
 	// ErrMissingPartyID signals that the payload is expected to contain a party id.
 	ErrMissingPartyID = errors.New("missing party id")
+	// ErrInvalidPagination signals that the pagination is invalid.
+	ErrInvalidPagination = errors.New("invalid pagination")
+	// ErrInvalidFilter signals that the filter is invalid.
+	ErrInvalidFilter = errors.New("invalid filter")
 	// ErrMalformedRequest signals that the request was malformed.
 	ErrMalformedRequest = errors.New("malformed request")
 	// ErrMissingAsset signals that an asset was required but not specified.
 	ErrMissingAsset = errors.New("missing asset")
+	// ErrInvalidAssetSource signals that the asset source is invalid.
+	ErrInvalidAssetSource = errors.New("invalid asset source")
 	// ErrSubmitOrder is returned when submitting an order fails for some reason.
 	ErrSubmitOrder = errors.New("submit order failure")
 	// ErrAmendOrder is returned when amending an order fails for some reason.
 	ErrAmendOrder = errors.New("amend order failure")
 	// ErrCancelOrder is returned when cancelling an order fails for some reason.
 	ErrCancelOrder = errors.New("cancel order failure")
+	// ErrERC20InvalidTokenContractAddress is returned when the ERC20 token contract address is invalid.
+	ErrERC20InvalidTokenContractAddress = errors.New("invalid erc20 token contract address")
 	// OrderService...
 	ErrOrderServiceGetByMarket      = errors.New("failed to get orders for market")
 	ErrOrderServiceGetByMarketAndID = errors.New("failed to get orders for market and ID")
 	ErrOrderServiceGetByParty       = errors.New("failed to get orders for party")
 	ErrOrderServiceGetByReference   = errors.New("failed to get orders for reference")
-	ErrMissingOrderIDParameter      = errors.New("missing orderID parameter")
+	ErrOrderServiceGetVersions      = errors.New("failed to get order versions")
+	ErrMissingOrderID               = errors.New("missing orderID parameter")
 	ErrOrderNotFound                = errors.New("order not found")
+	// NodeService...
+	ErrNodeServiceGetNodes = errors.New("failed to get nodes")
 	// TradeService...
 	ErrTradeServiceGetByParty          = errors.New("failed to get trades for party")
 	ErrTradeServiceGetByMarket         = errors.New("failed to get trades for market")
 	ErrTradeServiceGetPositionsByParty = errors.New("failed to get positions for party")
 	ErrTradeServiceGetByOrderID        = errors.New("failed to get trades for order ID")
+	ErrTradeServiceList                = errors.New("failed to list trades")
 	// MarketService...
 	ErrMarketServiceGetMarkets    = errors.New("failed to get markets")
 	ErrMarketServiceGetByID       = errors.New("failed to get market for ID")
 	ErrMarketServiceGetDepth      = errors.New("failed to get market depth")
+	ErrMarketServiceGetAllPaged   = errors.New("failed to get all markets paged")
 	ErrMarketServiceGetMarketData = errors.New("failed to get market data")
 	// AccountService...
-	ErrAccountServiceListAccounts         = errors.New("failed to get accounts")
-	ErrAccountServiceSQLStoreNotAvailable = errors.New("sql balance store for accounts not available")
-	ErrAccountServiceGetMarketAccounts    = errors.New("failed to get market accounts")
-	// AccountService...
-	ErrAccountServiceGetFeeInfrastructureAccounts = errors.New("failed to get fee infrastructure accounts")
-	ErrAccountServiceGetGlobalRewardPoolAccounts  = errors.New("failed to get global reward pool accounts")
-	ErrAccountServiceGetPartyAccounts             = errors.New("failed to get party accounts")
+	ErrAccountServiceListAccounts      = errors.New("failed to get accounts")
+	ErrAccountServiceGetMarketAccounts = errors.New("failed to get market accounts")
+	ErrAccountServiceGetPartyAccounts  = errors.New("failed to get party accounts")
+	// DelegationService...
+	ErrDelegationServiceGet = errors.New("failed to get delegation")
+	// SummaryService...
+	ErrSummaryServiceGet = errors.New("failed to get summary")
+	// WithdrawalService...
+	ErrWithdrawalServiceGet = errors.New("failed to get withdrawal")
+	// PositionService...
+	ErrPositionServiceGetByParty = errors.New("failed to get positions for party")
 	// RiskService...
 	ErrRiskServiceGetMarginLevelsByID = errors.New("failed to get margin levels")
 	ErrInvalidOrderSide               = errors.New("invalid order side")
+	// GovernanceService
+	ErrGovernanceServiceGet = errors.New("failed to get governance")
 	// CandleService...
 	ErrMissingCandleID                  = errors.New("candle id is a required parameter")
 	ErrCandleServiceGetCandleData       = errors.New("failed to get candle data")
@@ -103,13 +132,12 @@ var (
 	// PartyService...
 	ErrPartyServiceGetAll  = errors.New("failed to get parties")
 	ErrPartyServiceGetByID = errors.New("failed to get party for ID")
-	// TimeService...
-	ErrTimeServiceGetTimeNow = errors.New("failed to get time now")
+	// NotaryService...
+	ErrNotaryServiceGetByResourceID = errors.New("failed to get notary for resource ID")
 	// Blockchain...
 	ErrBlockchainBacklogLength = errors.New("failed to get backlog length from blockchain")
 	ErrBlockchainNetworkInfo   = errors.New("failed to get network info from blockchain")
 	ErrBlockchainGenesisTime   = errors.New("failed to get genesis time from blockchain")
-	ErrBlockchainChainID       = errors.New("failed to get chain ID from blockchain")
 	// ErrMissingProposalID returned if proposal with this id is missing.
 	ErrMissingProposalID = errors.New("missing proposal id")
 	// ErrMissingProposalReference returned if proposal with this reference is not found.
@@ -118,24 +146,40 @@ var (
 	ErrMissingWithdrawalID = errors.New("missing withdrawal ID")
 	// ErrMissingOracleSpecID is returned when the ID is missing from the request.
 	ErrMissingOracleSpecID = errors.New("missing oracle spec ID")
-	// ErrOracleServiceSpecID is returned when there was no data foind for the given ID.
-	ErrOracleServiceGetSpec = errors.New("failed retrieve data for oracle spec")
+	// OracleSpecService...
+	// ErrOracleSpecServiceGet is returned when there was no data found for the given ID.
+	ErrOracleSpecServiceGet = errors.New("failed retrieve data for oracle spec")
+	// ErrOracleSpecServiceGetAll is returned when there was no data found for the given ID.
+	ErrOracleSpecServiceGetAll = errors.New("failed retrieve data for oracle specs")
+	// OracleDataService...
+	// ErrOracleDataServiceGet is returned when there was no data found for the given ID.
+	ErrOracleDataServiceGet = errors.New("failed retrieve data for oracle data")
 	// ErrMissingDepositID is returned when the deposit ID is missing from the request.
 	ErrMissingDepositID = errors.New("missing deposit ID")
 	// ErrMissingAssetID is returned when the Asset ID is missing from the request.
 	ErrMissingAssetID = errors.New("missing asset ID")
+	// AssetService...
+	ErrAssetServiceGetAll            = errors.New("failed to get assets")
+	ErrAssetServiceGetByID           = errors.New("failed to get asset for ID")
+	ErrScalingPriceFromMarketToAsset = errors.New("failed to scale price from market to asset")
+	// DepositService...
+	ErrDepositServiceGet = errors.New("failed to get deposit")
+	// TransferService...
+	ErrTransferServiceGet = errors.New("failed to get transfer")
 	// Network Limits...
 	ErrGetNetworkLimits = errors.New("failed to get network limits")
+	// ErrGetNetworkParameters is returned when the network parameters cannot be retrieved.
+	ErrGetNetworkParameters = errors.New("failed to get network parameters")
 	// Rewards.
 	ErrGetRewards = errors.New("failed to get rewards")
 	// Network History.
-	ErrGetActivePeerAddresses       = errors.New("failed to get active peer addresses")
+	ErrGetConnectedPeerAddresses    = errors.New("failed to get connected peer addresses")
 	ErrGetMostRecentHistorySegment  = errors.New("failed to get most recent history segment")
 	ErrListAllNetworkHistorySegment = errors.New("failed to list all history segments")
-	ErrFetchNetworkHistorySegment   = errors.New("failed to fetch segment")
-	ErrNetworkHistoryNotEnabled     = errors.New("network history not enabled")
-	ErrCopyHistorySegmentToFile     = errors.New("failed to copy history segment to file")
 	ErrMissingNodeID                = errors.New("missing node id")
+	// ErrGetEpoch is returned when the epoch cannot be retrieved.
+	ErrGetEpoch     = errors.New("failed to get epoch")
+	ErrEpochIDParse = errors.New("failed to parse epoch id")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.
@@ -185,13 +229,12 @@ var errorMap = map[string]int32{
 	// Risk
 	ErrRiskServiceGetMarginLevelsByID.Error(): 70001,
 	// Accounts
-	ErrAccountServiceGetMarketAccounts.Error():    80001,
-	ErrAccountServiceGetPartyAccounts.Error():     80002,
-	ErrMissingWithdrawalID.Error():                80003,
-	ErrMissingDepositID.Error():                   80004,
-	ErrMissingAssetID.Error():                     80005,
-	ErrAccountServiceListAccounts.Error():         80006,
-	ErrAccountServiceSQLStoreNotAvailable.Error(): 80007,
+	ErrAccountServiceGetMarketAccounts.Error(): 80001,
+	ErrAccountServiceGetPartyAccounts.Error():  80002,
+	ErrMissingWithdrawalID.Error():             80003,
+	ErrMissingDepositID.Error():                80004,
+	ErrMissingAssetID.Error():                  80005,
+	ErrAccountServiceListAccounts.Error():      80006,
 	// Blockchain client
 	ErrBlockchainBacklogLength.Error(): 90001,
 	ErrBlockchainNetworkInfo.Error():   90002,
@@ -239,4 +282,25 @@ func apiError(grpcCode codes.Code, apiError error, innerErrors ...error) error {
 	// Pack the Vega domain specific errorDetails into the status returned by gRPC domain.
 	s, _ = s.WithDetails(&detail)
 	return s.Err()
+}
+
+func formatE(err error, msg ...string) error {
+	if err == nil {
+		return nil
+	}
+
+	if len(msg) > 0 {
+		err = fmt.Errorf("%s: %w", strings.Join(msg, ": "), err)
+	}
+
+	switch {
+	case errors.Is(err, entities.ErrNotFound):
+		return apiError(codes.NotFound, err)
+	case errors.Is(err, entities.ErrInvalidID):
+		return apiError(codes.InvalidArgument, err)
+	default:
+		// could handle more errors like context cancelled,
+		// deadline exceeded, but let's see later
+		return apiError(codes.Internal, err)
+	}
 }

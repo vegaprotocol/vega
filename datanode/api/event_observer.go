@@ -16,8 +16,6 @@ import (
 	"context"
 	"time"
 
-	"google.golang.org/grpc/codes"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
@@ -86,7 +84,7 @@ func observeEventBus(log *logging.Logger, config Config, eventBusServer eventBus
 	// now we will aggregate filter out of the initial request
 	types, err := events.ProtoToInternal(req.Type...)
 	if err != nil {
-		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+		return formatE(err, ErrMalformedRequest.Error())
 	}
 	metrics.StartEventBusActiveSubscriptionCount(types)
 	defer metrics.StopEventBusActiveSubscriptionCount(types)
@@ -137,11 +135,11 @@ func observeEvents(
 
 			if err := stream.Send(data); err != nil {
 				log.Error("Error sending event on stream", logging.Error(err))
-				return apiError(codes.Internal, ErrStreamInternal, err)
+				return formatE(err, ErrStreamInternal.Error())
 			}
 			publishedEvents.updateStats(data)
 		case <-ctx.Done():
-			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+			return formatE(ctx.Err(), ErrStreamInternal.Error())
 		}
 	}
 }
@@ -170,17 +168,17 @@ func observeEventsWithAck(
 
 			if err := stream.Send(data); err != nil {
 				log.Error("Error sending event on stream", logging.Error(err))
-				return apiError(codes.Internal, ErrStreamInternal, err)
+				return formatE(err, ErrStreamInternal.Error())
 			}
 			publishedEvents.updateStats(data)
 		case <-ctx.Done():
-			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+			return formatE(ctx.Err(), ErrStreamInternal.Error())
 		}
 
 		// now we try to read again the new size / ack
 		req, err := recvEventRequest(ctx, defaultReqTimeout, stream)
 		if err != nil {
-			return err
+			return formatE(err, ErrStreamInternal.Error())
 		}
 
 		if req.BatchSize != batchSize {

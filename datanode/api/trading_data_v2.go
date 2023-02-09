@@ -41,7 +41,6 @@ import (
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
@@ -103,22 +102,22 @@ func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAcc
 	defer metrics.StartAPIRequestAndTimeGRPC("ListAccountsV2")()
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	filter, err := entities.AccountFilterFromProto(req.Filter)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+		return nil, formatE(err, ErrInvalidFilter.Error())
 	}
 
 	accountBalances, pageInfo, err := t.accountService.QueryBalances(ctx, filter, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrAccountServiceListAccounts, err)
+		return nil, formatE(err, ErrAccountServiceListAccounts.Error())
 	}
 
 	edges, err := makeEdges[*v2.AccountEdge](accountBalances)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrAccountServiceListAccounts, err)
+		return nil, formatE(err)
 	}
 
 	accountsConnection := &v2.AccountsConnection{
@@ -142,7 +141,7 @@ func (t *tradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest,
 
 	// First get the 'initial image' of accounts matching the request and send those
 	if err := t.sendAccountsSnapshot(ctx, req, srv); err != nil {
-		return err
+		return formatE(err, "failed to send accounts snapshot")
 	}
 	accountsChan, ref := t.accountService.ObserveAccountBalances(
 		ctx, t.config.StreamRetries, req.MarketId, req.PartyId, req.Asset, req.Type)
@@ -186,7 +185,7 @@ func (t *tradingDataServiceV2) sendAccountsSnapshot(ctx context.Context, req *v2
 	}
 
 	if pageInfo.HasNextPage {
-		return fmt.Errorf("initial image spans multiple pages")
+		return errors.New("initial image spans multiple pages")
 	}
 
 	protos := make([]*v2.AccountBalance, len(accounts))
@@ -216,29 +215,26 @@ func (t *tradingDataServiceV2) Info(_ context.Context, _ *v2.InfoRequest) (*v2.I
 
 func (t *tradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.ListLedgerEntriesRequest) (*v2.ListLedgerEntriesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListLedgerEntriesV2")()
-	if t.accountService == nil {
-		return nil, apiError(codes.Internal, ErrAccountServiceSQLStoreNotAvailable, nil)
-	}
 
 	leFilter, err := entities.LedgerEntryFilterFromProto(req.Filter)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse ledger entry filter: %w", err)
+		return nil, formatE(err, ErrInvalidFilter.Error())
 	}
 
 	dateRange := entities.DateRangeFromProto(req.DateRange)
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid cursor: %w", err))
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	entries, pageInfo, err := t.ledgerService.Query(ctx, leFilter, dateRange, pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("could not query ledger entries: %w", err))
+		return nil, formatE(err, "failed to query ledger entries")
 	}
 
 	edges, err := makeEdges[*v2.AggregatedLedgerEntriesEdge](*entries)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrAccountServiceListAccounts, err)
+		return nil, formatE(err)
 	}
 
 	return &v2.ListLedgerEntriesResponse{
@@ -251,19 +247,16 @@ func (t *tradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.Li
 
 func (t *tradingDataServiceV2) ExportLedgerEntries(ctx context.Context, req *v2.ExportLedgerEntriesRequest) (*v2.ExportLedgerEntriesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ExportLedgerEntriesV2")()
-	if t.accountService == nil {
-		return nil, apiError(codes.Internal, ErrAccountServiceSQLStoreNotAvailable, nil)
-	}
 
 	dateRange := entities.DateRangeFromProto(req.DateRange)
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid cursor: %w", err))
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	raw, pageInfo, err := t.ledgerService.Export(ctx, req.PartyId, req.AssetId, dateRange, pagination)
 	if err != nil {
-		apiError(codes.Aborted, err)
+		return nil, formatE(err, "failed to query ledger entries")
 	}
 
 	header := metadata.New(map[string]string{
@@ -271,8 +264,8 @@ func (t *tradingDataServiceV2) ExportLedgerEntries(ctx context.Context, req *v2.
 		"Content-diposition": fmt.Sprintf("attachment;filename=%s", "ledger_entries_export.csv"),
 	})
 
-	if err := grpc.SendHeader(ctx, header); err != nil {
-		return nil, apiError(codes.Internal, fmt.Errorf("unable to send 'x-response-id' header"))
+	if err = grpc.SendHeader(ctx, header); err != nil {
+		return nil, formatE(err, "unable to send header")
 	}
 
 	return &v2.ExportLedgerEntriesResponse{
@@ -283,29 +276,26 @@ func (t *tradingDataServiceV2) ExportLedgerEntries(ctx context.Context, req *v2.
 
 func (t *tradingDataServiceV2) ListBalanceChanges(ctx context.Context, req *v2.ListBalanceChangesRequest) (*v2.ListBalanceChangesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListBalanceChangesV2")()
-	if t.accountService == nil {
-		return nil, fmt.Errorf("sql balance store not available")
-	}
 
 	filter, err := entities.AccountFilterFromProto(req.Filter)
 	if err != nil {
-		return nil, fmt.Errorf("parsing filter: %w", err)
+		return nil, formatE(err, ErrInvalidFilter.Error())
 	}
 
 	dateRange := entities.DateRangeFromProto(req.DateRange)
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid cursor: %w", err))
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	balances, pageInfo, err := t.accountService.QueryAggregatedBalances(ctx, filter, dateRange, pagination)
 	if err != nil {
-		return nil, fmt.Errorf("querying balances: %w", err)
+		return nil, formatE(err, "querying balances")
 	}
 
 	edges, err := makeEdges[*v2.AggregatedBalanceEdge](*balances)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrAccountServiceListAccounts, err)
+		return nil, formatE(err)
 	}
 
 	return &v2.ListBalanceChangesResponse{
@@ -323,7 +313,7 @@ func entityMarketDataListToProtoList(list []entities.MarketData) (*v2.MarketData
 
 	edges, err := makeEdges[*v2.MarketDataEdge](list)
 	if err != nil {
-		return nil, errors.Wrap(err, "making edges")
+		return nil, err
 	}
 
 	connection := v2.MarketDataConnection{
@@ -340,7 +330,7 @@ func (t *tradingDataServiceV2) ObserveMarketsDepth(req *v2.ObserveMarketsDepthRe
 
 	for _, marketID := range req.MarketIds {
 		if !t.marketExistsForID(ctx, marketID) {
-			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketID))
+			return formatE(ErrMalformedRequest, "no market found for ID", marketID)
 		}
 	}
 
@@ -365,7 +355,7 @@ func (t *tradingDataServiceV2) ObserveMarketsDepthUpdates(req *v2.ObserveMarkets
 
 	for _, marketID := range req.MarketIds {
 		if !t.marketExistsForID(ctx, marketID) {
-			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketID))
+			return formatE(ErrMalformedRequest, "no market found for ID", marketID)
 		}
 	}
 	depthChan, ref := t.marketDepthService.ObserveDepthUpdates(
@@ -389,7 +379,7 @@ func (t *tradingDataServiceV2) ObserveMarketsData(req *v2.ObserveMarketsDataRequ
 
 	for _, marketID := range req.MarketIds {
 		if !t.marketExistsForID(ctx, marketID) {
-			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketID))
+			return formatE(ErrMalformedRequest, "no market found for ID", marketID)
 		}
 	}
 
@@ -410,7 +400,7 @@ func (t *tradingDataServiceV2) GetLatestMarketData(ctx context.Context, req *v2.
 
 	md, err := t.marketDataService.GetMarketDataByID(ctx, req.MarketId)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, ErrMarketServiceGetMarketData.Error())
 	}
 	return &v2.GetLatestMarketDataResponse{
 		MarketData: md.ToProto(),
@@ -420,7 +410,11 @@ func (t *tradingDataServiceV2) GetLatestMarketData(ctx context.Context, req *v2.
 // ListLatestMarketData returns the latest market data for every market.
 func (t *tradingDataServiceV2) ListLatestMarketData(ctx context.Context, req *v2.ListLatestMarketDataRequest) (*v2.ListLatestMarketDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListLatestMarketData")()
-	mds, _ := t.marketDataService.GetMarketsData(ctx)
+
+	mds, err := t.marketDataService.GetMarketsData(ctx)
+	if err != nil {
+		return nil, formatE(err, ErrMarketServiceGetMarketData.Error())
+	}
 
 	mdptrs := make([]*vega.MarketData, 0, len(mds))
 	for _, v := range mds {
@@ -436,54 +430,42 @@ func (t *tradingDataServiceV2) ListLatestMarketData(ctx context.Context, req *v2
 func (t *tradingDataServiceV2) GetLatestMarketDepth(ctx context.Context, req *v2.GetLatestMarketDepthRequest) (*v2.GetLatestMarketDepthResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetLatestMarketDepth")()
 
-	var maxDepth uint64
-	if req.MaxDepth != nil {
-		maxDepth = *req.MaxDepth
-	}
-
-	depth := t.marketDepthService.GetMarketDepth(req.MarketId, maxDepth)
-
 	lastOne := entities.OffsetPagination{Skip: 0, Limit: 1, Descending: true}
 	ts, err := t.tradeService.GetByMarket(ctx, req.MarketId, lastOne)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, ErrTradeServiceGetByMarket.Error())
 	}
 
+	var lastTrade *vega.Trade
+	if len(ts) > 0 {
+		lastTrade = ts[0].ToProto()
+	}
+
+	depth := t.marketDepthService.GetMarketDepth(req.MarketId, ptr.UnBox(req.MaxDepth))
 	// Build market depth response, including last trade (if available)
 	resp := &v2.GetLatestMarketDepthResponse{
 		Buy:            depth.Buy,
 		MarketId:       depth.MarketId,
 		Sell:           depth.Sell,
 		SequenceNumber: depth.SequenceNumber,
-	}
-	if len(ts) > 0 {
-		resp.LastTrade = ts[0].ToProto()
+		LastTrade:      lastTrade,
 	}
 	return resp, nil
 }
 
 func (t *tradingDataServiceV2) GetMarketDataHistoryByID(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) (*v2.GetMarketDataHistoryByIDResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetMarketDataHistoryV2")()
-	if t.marketDataService == nil {
-		return nil, errors.New("sql market data service not available")
-	}
 
-	var startTime, endTime time.Time
-
-	if req.StartTimestamp != nil {
-		startTime = time.Unix(0, *req.StartTimestamp)
-	}
-
-	if req.EndTimestamp != nil {
-		endTime = time.Unix(0, *req.EndTimestamp)
-	}
+	startTime := vegatime.Unix(0, ptr.UnBox(req.StartTimestamp))
+	endTime := vegatime.Unix(0, ptr.UnBox(req.EndTimestamp))
 
 	if req.OffsetPagination != nil {
 		// TODO: This has been deprecated in the GraphQL API, but needs to be supported until it is removed.
-		return t.handleGetMarketDataHistoryWithOffsetPagination(ctx, req, startTime, endTime)
+		marketData, err := t.handleGetMarketDataHistoryWithOffsetPagination(ctx, req, startTime, endTime)
+		return marketData, formatE(err, "failed to get market data history with offset pagination")
 	}
-
-	return t.handleGetMarketDataHistoryWithCursorPagination(ctx, req, startTime, endTime)
+	marketData, err := t.handleGetMarketDataHistoryWithCursorPagination(ctx, req, startTime, endTime)
+	return marketData, formatE(err, "failed to get market data history with cursor pagination")
 }
 
 func (t *tradingDataServiceV2) handleGetMarketDataHistoryWithOffsetPagination(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest, startTime, endTime time.Time) (*v2.GetMarketDataHistoryByIDResponse, error) {
@@ -510,16 +492,16 @@ func (t *tradingDataServiceV2) handleGetMarketDataHistoryWithOffsetPagination(ct
 func (t *tradingDataServiceV2) handleGetMarketDataHistoryWithCursorPagination(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest, startTime, endTime time.Time) (*v2.GetMarketDataHistoryByIDResponse, error) {
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse cursor pagination information: %w", err)
+		return nil, errors.Wrap(err, ErrInvalidPagination.Error())
 	}
 	history, pageInfo, err := t.marketDataService.GetBetweenDatesByID(ctx, req.MarketId, startTime, endTime, pagination)
 	if err != nil {
-		return nil, fmt.Errorf("could not retrieve historic market data: %w", err)
+		return nil, errors.Wrap(err, "could not retrieve historic market data")
 	}
 
 	edges, err := makeEdges[*v2.MarketDataEdge](history)
 	if err != nil {
-		return nil, errors.Wrap(err, "making edges")
+		return nil, err
 	}
 
 	connection := v2.MarketDataConnection{
@@ -534,15 +516,9 @@ func (t *tradingDataServiceV2) handleGetMarketDataHistoryWithCursorPagination(ct
 
 func parseMarketDataResults(results []entities.MarketData) (*v2.GetMarketDataHistoryByIDResponse, error) {
 	marketData, err := entityMarketDataListToProtoList(results)
-	if err != nil {
-		return nil, err
-	}
-
-	response := v2.GetMarketDataHistoryByIDResponse{
+	return &v2.GetMarketDataHistoryByIDResponse{
 		MarketData: marketData,
-	}
-
-	return &response, err
+	}, errors.Wrap(err, "could not parse market data results")
 }
 
 func (t *tradingDataServiceV2) getMarketDataHistoryByID(ctx context.Context, id string, start, end time.Time, pagination entities.OffsetPagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
@@ -557,7 +533,7 @@ func (t *tradingDataServiceV2) getMarketDataHistoryByID(ctx context.Context, id 
 func (t *tradingDataServiceV2) getMarketDataByID(ctx context.Context, id string) (*v2.GetMarketDataHistoryByIDResponse, error) {
 	results, err := t.marketDataService.GetMarketDataByID(ctx, id)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, fmt.Errorf("could not retrieve market data for market id: %w", err)
 	}
 
 	return parseMarketDataResults([]entities.MarketData{results})
@@ -583,13 +559,10 @@ func (t *tradingDataServiceV2) getMarketDataHistoryToDateByID(ctx context.Contex
 
 func (t *tradingDataServiceV2) GetNetworkLimits(ctx context.Context, req *v2.GetNetworkLimitsRequest) (*v2.GetNetworkLimitsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNetworkLimitsV2")()
-	if t.networkLimitsService == nil {
-		return nil, errors.New("sql network limits store is not available")
-	}
 
 	limits, err := t.networkLimitsService.GetLatest(ctx)
 	if err != nil {
-		return nil, apiError(codes.Unknown, ErrGetNetworkLimits, err)
+		return nil, formatE(err, ErrGetNetworkLimits.Error())
 	}
 
 	return &v2.GetNetworkLimitsResponse{Limits: limits.ToProto()}, nil
@@ -598,10 +571,6 @@ func (t *tradingDataServiceV2) GetNetworkLimits(ctx context.Context, req *v2.Get
 // ListCandleData for a given market, time range and interval.  Interval must be a valid postgres interval value.
 func (t *tradingDataServiceV2) ListCandleData(ctx context.Context, req *v2.ListCandleDataRequest) (*v2.ListCandleDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListCandleDataV2")()
-	var err error
-	if t.candleService == nil {
-		return nil, errors.New("sql candle service not available")
-	}
 
 	var from, to *time.Time
 	if req.FromTimestamp != 0 {
@@ -612,26 +581,23 @@ func (t *tradingDataServiceV2) ListCandleData(ctx context.Context, req *v2.ListC
 		to = ptr.From(vegatime.UnixNano(req.ToTimestamp))
 	}
 
-	pagination := entities.CursorPagination{}
-	if req.Pagination != nil {
-		pagination, err = entities.CursorPaginationFromProto(req.Pagination)
-		if err != nil {
-			return nil, fmt.Errorf("could not parse cursor pagination information: %w", err)
-		}
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	if req.CandleId == "" {
-		return nil, apiError(codes.InvalidArgument, ErrMissingCandleID)
+		return nil, formatE(ErrMissingCandleID)
 	}
 
 	candles, pageInfo, err := t.candleService.GetCandleDataForTimeSpan(ctx, req.CandleId, from, to, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrCandleServiceGetCandleData, err)
+		return nil, formatE(err, ErrCandleServiceGetCandleData.Error())
 	}
 
 	edges, err := makeEdges[*v2.CandleEdge](candles)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	connection := v2.CandleDataConnection{
@@ -646,10 +612,6 @@ func (t *tradingDataServiceV2) ListCandleData(ctx context.Context, req *v2.ListC
 func (t *tradingDataServiceV2) ObserveCandleData(req *v2.ObserveCandleDataRequest, srv v2.TradingDataService_ObserveCandleDataServer) error {
 	defer metrics.StartActiveSubscriptionCountGRPC("Candle")()
 
-	if t.candleService == nil {
-		return errors.New("sql candle service not available")
-	}
-
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
@@ -657,7 +619,7 @@ func (t *tradingDataServiceV2) ObserveCandleData(req *v2.ObserveCandleDataReques
 	defer t.candleService.Unsubscribe(subscriptionID)
 
 	if err != nil {
-		return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles, err)
+		return formatE(err, ErrCandleServiceSubscribeToCandles.Error())
 	}
 
 	publishedEventStatTicker := time.NewTicker(time.Second)
@@ -671,21 +633,20 @@ func (t *tradingDataServiceV2) ObserveCandleData(req *v2.ObserveCandleDataReques
 			publishedEvents = 0
 		case candle, ok := <-candlesChan:
 			if !ok {
-				return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles, fmt.Errorf("channel closed"))
+				return formatE(ErrChannelClosed)
 			}
 
 			resp := &v2.ObserveCandleDataResponse{
 				Candle: candle.ToV2CandleProto(),
 			}
 			if err = srv.Send(resp); err != nil {
-				return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles,
-					fmt.Errorf("sending candles:%w", err))
+				return formatE(err, ErrCandleServiceSubscribeToCandles.Error())
 			}
 			publishedEvents++
 		case <-ctx.Done():
 			err = ctx.Err()
 			if err != nil {
-				return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles, err)
+				return formatE(err, ErrCandleServiceSubscribeToCandles.Error())
 			}
 			return nil
 		}
@@ -695,13 +656,10 @@ func (t *tradingDataServiceV2) ObserveCandleData(req *v2.ObserveCandleDataReques
 // ListCandleIntervals gets all available intervals for a given market along with the corresponding candle id.
 func (t *tradingDataServiceV2) ListCandleIntervals(ctx context.Context, req *v2.ListCandleIntervalsRequest) (*v2.ListCandleIntervalsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListCandleIntervals")()
-	if t.candleService == nil {
-		return nil, errors.New("sql candle service not available")
-	}
 
 	mappings, err := t.candleService.GetCandlesForMarket(ctx, req.MarketId)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrCandleServiceGetCandlesForMarket, err)
+		return nil, formatE(err, ErrCandleServiceGetCandlesForMarket.Error())
 	}
 
 	intervalToCandleIds := make([]*v2.IntervalToCandleId, 0, len(mappings))
@@ -720,48 +678,34 @@ func (t *tradingDataServiceV2) ListCandleIntervals(ctx context.Context, req *v2.
 // ListERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract.
 func (t *tradingDataServiceV2) ListERC20MultiSigSignerAddedBundles(ctx context.Context, req *v2.ListERC20MultiSigSignerAddedBundlesRequest) (*v2.ListERC20MultiSigSignerAddedBundlesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetERC20MultiSigSignerAddedBundlesV2")()
-	if t.notaryService == nil {
-		return nil, errors.New("sql notary service not available")
-	}
-
-	if t.multiSigService == nil {
-		return nil, errors.New("sql multisig event store not available")
-	}
 
 	var epochID *int64
 	if len(req.EpochSeq) != 0 {
 		e, err := strconv.ParseInt(req.EpochSeq, 10, 64)
 		if err != nil {
-			return nil, apiError(codes.InvalidArgument, fmt.Errorf("epochID is not a valid integer"))
+			return nil, formatE(err, ErrEpochIDParse.Error(), req.EpochSeq)
 		}
 		epochID = &e
 	}
 
-	p := entities.CursorPagination{}
-	var err error
-	if req.Pagination != nil {
-		p, err = entities.CursorPaginationFromProto(req.Pagination)
-		if err != nil {
-			return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid pagination: %w", err))
-		}
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
-	res, pageInfo, err := t.multiSigService.GetAddedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, p)
+	res, pageInfo, err := t.multiSigService.GetAddedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, pagination)
 	if err != nil {
-		c := codes.Internal
-		if errors.Is(err, entities.ErrInvalidID) {
-			c = codes.InvalidArgument
-		}
-		return nil, apiError(c, err)
+		return nil, formatE(err, "failed to get added events")
 	}
 
 	// find bundle for this nodeID, might be multiple if its added, then removed then added again??
 	edges := []*v2.ERC20MultiSigSignerAddedBundleEdge{}
 	for _, b := range res {
 		// it doesn't really make sense to paginate this, so we'll just pass it an empty pagination object and get all available results
+		resID := b.ID.String()
 		signatures, _, err := t.notaryService.GetByResourceID(ctx, b.ID.String(), entities.CursorPagination{})
 		if err != nil {
-			return nil, apiError(codes.Internal, err)
+			return nil, formatE(err, ErrNotaryServiceGetByResourceID.Error(), resID)
 		}
 
 		edges = append(edges,
@@ -792,47 +736,33 @@ func (t *tradingDataServiceV2) ListERC20MultiSigSignerAddedBundles(ctx context.C
 // ListERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract.
 func (t *tradingDataServiceV2) ListERC20MultiSigSignerRemovedBundles(ctx context.Context, req *v2.ListERC20MultiSigSignerRemovedBundlesRequest) (*v2.ListERC20MultiSigSignerRemovedBundlesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetERC20MultiSigSignerRemovedBundlesV2")()
-	if t.notaryService == nil {
-		return nil, errors.New("sql notary store not available")
-	}
-
-	if t.multiSigService == nil {
-		return nil, errors.New("sql multisig event store not available")
-	}
 
 	var epochID *int64
 	if len(req.EpochSeq) != 0 {
 		e, err := strconv.ParseInt(req.EpochSeq, 10, 64)
 		if err != nil {
-			return nil, apiError(codes.InvalidArgument, fmt.Errorf("epochID is not a valid integer"))
+			return nil, formatE(err, ErrEpochIDParse.Error())
 		}
 		epochID = &e
 	}
 
-	p := entities.CursorPagination{}
-	var err error
-	if req.Pagination != nil {
-		p, err = entities.CursorPaginationFromProto(req.Pagination)
-		if err != nil {
-			return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid pagination: %w", err))
-		}
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
-	res, pageInfo, err := t.multiSigService.GetRemovedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, p)
+	res, pageInfo, err := t.multiSigService.GetRemovedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, pagination)
 	if err != nil {
-		c := codes.Internal
-		if errors.Is(err, entities.ErrInvalidID) {
-			c = codes.InvalidArgument
-		}
-		return nil, apiError(c, err)
+		return nil, formatE(err, "failed to get removed events")
 	}
 
 	// find bundle for this nodeID, might be multiple if its added, then removed then added again??
 	edges := []*v2.ERC20MultiSigSignerRemovedBundleEdge{}
 	for _, b := range res {
+		resID := b.ID.String()
 		signatures, _, err := t.notaryService.GetByResourceID(ctx, b.ID.String(), entities.CursorPagination{})
 		if err != nil {
-			return nil, apiError(codes.Internal, err)
+			return nil, formatE(err, ErrNotaryServiceGetByResourceID.Error(), resID)
 		}
 
 		edges = append(edges, &v2.ERC20MultiSigSignerRemovedBundleEdge{
@@ -861,48 +791,48 @@ func (t *tradingDataServiceV2) ListERC20MultiSigSignerRemovedBundles(ctx context
 func (t *tradingDataServiceV2) GetERC20SetAssetLimitsBundle(ctx context.Context, req *v2.GetERC20SetAssetLimitsBundleRequest) (*v2.GetERC20SetAssetLimitsBundleResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetERC20SetAssetLimitsBundleV2")()
 	if len(req.ProposalId) <= 0 {
-		return nil, t.formatE(entities.ErrInvalidID)
+		return nil, formatE(ErrMissingProposalID)
 	}
 
 	// first here we gonna get the proposal by its ID,
 	proposal, err := t.governanceService.GetProposalByID(ctx, req.ProposalId)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, "failed to get proposal")
 	}
 
 	if proposal.Terms.GetUpdateAsset() == nil {
-		return nil, apiError(codes.InvalidArgument, errors.New("not an update asset proposal"))
+		return nil, formatE(errors.New("not an update asset proposal"))
 	}
 	if proposal.Terms.GetUpdateAsset().GetChanges().GetErc20() == nil {
-		return nil, apiError(codes.InvalidArgument, errors.New("not an update erc20 asset proposal"))
+		return nil, formatE(errors.New("not an update erc20 asset proposal"))
 	}
 
 	// then we get the signature and pack them altogether
 	signatures, _, err := t.notaryService.GetByResourceID(ctx, req.ProposalId, entities.CursorPagination{})
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrNotaryServiceGetByResourceID.Error())
 	}
 
 	// first here we gonna get the proposal by its ID,
 	asset, err := t.assetService.GetByID(ctx, proposal.Terms.GetUpdateAsset().AssetId)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, ErrAssetServiceGetByID.Error())
 	}
 
 	var address string
 	if asset.ERC20Contract != "" {
 		address = asset.ERC20Contract
 	} else {
-		return nil, apiError(codes.InvalidArgument, errors.New("invalid asset source"))
+		return nil, formatE(ErrInvalidAssetSource)
 	}
 
 	if len(address) <= 0 {
-		return nil, apiError(codes.Internal, errors.New("invalid erc20 token contract address"))
+		return nil, formatE(ErrERC20InvalidTokenContractAddress)
 	}
 
 	nonce, err := num.UintFromHex("0x" + strings.TrimLeft(req.ProposalId, "0"))
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, "failed to parse proposal id", req.ProposalId)
 	}
 
 	return &v2.GetERC20SetAssetLimitsBundleResponse{
@@ -935,39 +865,35 @@ func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 	defer metrics.StartAPIRequestAndTimeGRPC("GetERC20ListAssetBundleV2")()
 
 	if len(req.AssetId) <= 0 {
-		return nil, t.formatE(entities.ErrInvalidID)
+		return nil, formatE(ErrMissingAssetID)
 	}
 
 	// first here we gonna get the proposal by its ID,
 	asset, err := t.assetService.GetByID(ctx, req.AssetId)
 	if err != nil {
-		return nil, t.formatE(err)
-	}
-
-	if t.notaryService == nil {
-		return nil, errors.New("sql notary store not available")
+		return nil, formatE(err, ErrAssetServiceGetByID.Error())
 	}
 
 	// then we get the signature and pack them altogether
 	signatures, _, err := t.notaryService.GetByResourceID(ctx, req.AssetId, entities.CursorPagination{})
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrNotaryServiceGetByResourceID.Error())
 	}
 
 	var address string
 	if asset.ERC20Contract != "" {
 		address = asset.ERC20Contract
 	} else {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid asset source"))
+		return nil, formatE(ErrInvalidAssetSource)
 	}
 
 	if len(address) <= 0 {
-		return nil, apiError(codes.Internal, fmt.Errorf("invalid erc20 token contract address"))
+		return nil, formatE(err, ErrERC20InvalidTokenContractAddress.Error())
 	}
 
 	nonce, err := num.UintFromHex("0x" + strings.TrimLeft(req.AssetId, "0"))
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, "failed to parse asset id", req.AssetId)
 	}
 
 	return &v2.GetERC20ListAssetBundleResponse{
@@ -981,25 +907,25 @@ func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 func (t *tradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, req *v2.GetERC20WithdrawalApprovalRequest) (*v2.GetERC20WithdrawalApprovalResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetERC20WithdrawalApprovalV2")()
 	if len(req.WithdrawalId) <= 0 {
-		return nil, apiError(codes.InvalidArgument, ErrMissingWithdrawalID)
+		return nil, formatE(ErrMissingWithdrawalID)
 	}
 
 	// get withdrawal first
 	w, err := t.withdrawalService.GetByID(ctx, req.WithdrawalId)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, ErrWithdrawalServiceGet.Error())
 	}
 
 	// get the signatures from  notaryService
 	signatures, _, err := t.notaryService.GetByResourceID(ctx, req.WithdrawalId, entities.CursorPagination{})
 	if err != nil {
-		return nil, apiError(codes.NotFound, err)
+		return nil, formatE(err, ErrNotaryServiceGetByResourceID.Error())
 	}
 
 	// some assets stuff
 	assets, err := t.assetService.GetAll(ctx)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrAssetServiceGetAll.Error())
 	}
 
 	var address string
@@ -1010,7 +936,7 @@ func (t *tradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 		}
 	}
 	if len(address) <= 0 {
-		return nil, apiError(codes.Internal, fmt.Errorf("invalid erc20 token contract address"))
+		return nil, formatE(ErrERC20InvalidTokenContractAddress)
 	}
 
 	return &v2.GetERC20WithdrawalApprovalResponse{
@@ -1029,7 +955,7 @@ func (t *tradingDataServiceV2) GetLastTrade(ctx context.Context, req *v2.GetLast
 	defer metrics.StartAPIRequestAndTimeGRPC("GetLastTradeV2")()
 
 	if len(req.MarketId) <= 0 {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
+		return nil, formatE(ErrEmptyMissingMarketID)
 	}
 
 	p := entities.OffsetPagination{
@@ -1040,7 +966,7 @@ func (t *tradingDataServiceV2) GetLastTrade(ctx context.Context, req *v2.GetLast
 
 	trades, err := t.tradeService.GetByMarket(ctx, req.MarketId, p)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrTradeServiceGetByMarket, err)
+		return nil, formatE(err, ErrTradeServiceGetByMarket.Error())
 	}
 
 	protoTrades := tradesToProto(trades)
@@ -1066,7 +992,7 @@ func (t *tradingDataServiceV2) ListTrades(ctx context.Context, in *v2.ListTrades
 	defer metrics.StartAPIRequestAndTimeGRPC("ListTradesV2")()
 	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 	dateRange := entities.DateRangeFromProto(in.DateRange)
 	trades, pageInfo, err := t.tradeService.List(ctx,
@@ -1076,12 +1002,12 @@ func (t *tradingDataServiceV2) ListTrades(ctx context.Context, in *v2.ListTrades
 		pagination,
 		dateRange)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrTradeServiceList.Error())
 	}
 
 	edges, err := makeEdges[*v2.TradeEdge](trades)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	tradesConnection := &v2.TradeConnection{
@@ -1126,13 +1052,12 @@ func (t *tradingDataServiceV2) GetMarket(ctx context.Context, req *v2.GetMarketR
 	defer metrics.StartAPIRequestAndTimeGRPC("MarketByID_SQL")()
 
 	if len(req.MarketId) == 0 {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
+		return nil, formatE(ErrEmptyMissingMarketID)
 	}
 
 	market, err := t.marketService.GetByID(ctx, req.MarketId)
 	if err != nil {
-		// Show a relevant error here -> no such market exists.
-		return nil, t.formatE(err)
+		return nil, formatE(err, ErrMarketServiceGetByID.Error())
 	}
 
 	return &v2.GetMarketResponse{
@@ -1146,7 +1071,7 @@ func (t *tradingDataServiceV2) ListMarkets(ctx context.Context, in *v2.ListMarke
 
 	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	includeSettled := true
@@ -1156,12 +1081,12 @@ func (t *tradingDataServiceV2) ListMarkets(ctx context.Context, in *v2.ListMarke
 
 	markets, pageInfo, err := t.marketsService.GetAllPaged(ctx, "", pagination, includeSettled)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrMarketServiceGetAllPaged.Error())
 	}
 
 	edges, err := makeEdges[*v2.MarketEdge](markets)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	marketsConnection := &v2.MarketConnection{
@@ -1184,7 +1109,7 @@ func (t *tradingDataServiceV2) ListPositions(ctx context.Context, in *v2.ListPos
 
 	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	parties := []entities.PartyID{entities.PartyID(in.PartyId)}
@@ -1192,12 +1117,12 @@ func (t *tradingDataServiceV2) ListPositions(ctx context.Context, in *v2.ListPos
 
 	positions, pageInfo, err := t.positionService.GetByPartyConnection(ctx, parties, markets, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrPositionServiceGetByParty.Error())
 	}
 
 	edges, err := makeEdges[*v2.PositionEdge](positions)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	PositionsConnection := &v2.PositionConnection{
@@ -1217,7 +1142,7 @@ func (t *tradingDataServiceV2) ListAllPositions(ctx context.Context, req *v2.Lis
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	var parties []entities.PartyID
@@ -1238,12 +1163,12 @@ func (t *tradingDataServiceV2) ListAllPositions(ctx context.Context, req *v2.Lis
 
 	positions, pageInfo, err := t.positionService.GetByPartyConnection(ctx, parties, markets, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrPositionServiceGetByParty.Error())
 	}
 
 	edges, err := makeEdges[*v2.PositionEdge](positions)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	PositionsConnection := &v2.PositionConnection{
@@ -1264,7 +1189,9 @@ func (t *tradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	t.sendPositionsSnapshot(ctx, req, srv)
+	if err := t.sendPositionsSnapshot(ctx, req, srv); err != nil {
+		return formatE(err, "failed to send positions snapshot")
+	}
 
 	var partyID, marketID string
 	if req.PartyId != nil {
@@ -1342,7 +1269,7 @@ func (t *tradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v
 		snapshot := &v2.ObservePositionsResponse_Snapshot{Snapshot: positionList}
 		response := &v2.ObservePositionsResponse{Response: snapshot}
 		if err := srv.Send(response); err != nil {
-			return err
+			return errors.Wrap(err, "sending initial positions")
 		}
 	}
 	return nil
@@ -1353,7 +1280,7 @@ func (t *tradingDataServiceV2) GetParty(ctx context.Context, req *v2.GetPartyReq
 
 	party, err := t.partyService.GetByID(ctx, req.PartyId)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, ErrPartyServiceGetByID.Error())
 	}
 
 	return &v2.GetPartyResponse{
@@ -1367,16 +1294,16 @@ func (t *tradingDataServiceV2) ListParties(ctx context.Context, in *v2.ListParti
 
 	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 	parties, pageInfo, err := t.partyService.GetAllPaged(ctx, in.PartyId, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrPartyServiceGetAll.Error())
 	}
 
 	edges, err := makeEdges[*v2.PartyEdge](parties)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	partyConnection := &v2.PartyConnection{
@@ -1395,17 +1322,17 @@ func (t *tradingDataServiceV2) ListMarginLevels(ctx context.Context, in *v2.List
 
 	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	marginLevels, pageInfo, err := t.riskService.GetMarginLevelsByIDWithCursorPagination(ctx, in.PartyId, in.MarketId, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrRiskServiceGetMarginLevelsByID.Error())
 	}
 
 	edges, err := makeEdges[*v2.MarginEdge](marginLevels, ctx, t.accountService)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	marginLevelsConnection := &v2.MarginConnection{
@@ -1440,7 +1367,7 @@ func (t *tradingDataServiceV2) ObserveMarginLevels(req *v2.ObserveMarginLevelsRe
 	return observe(ctx, t.log, "MarginLevel", marginLevelsChan, ref, func(ml entities.MarginLevels) error {
 		protoMl, err := ml.ToProto(ctx, t.accountService)
 		if err != nil {
-			return apiError(codes.Internal, err)
+			return errors.Wrap(err, "converting margin levels to proto")
 		}
 
 		return srv.Send(&v2.ObserveMarginLevelsResponse{
@@ -1455,17 +1382,17 @@ func (t *tradingDataServiceV2) ListRewards(ctx context.Context, in *v2.ListRewar
 
 	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	rewards, pageInfo, err := t.rewardService.GetByCursor(ctx, &in.PartyId, in.AssetId, in.FromEpoch, in.ToEpoch, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrGetRewards.Error())
 	}
 
 	edges, err := makeEdges[*v2.RewardEdge](rewards)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	rewardsConnection := &v2.RewardsConnection{
@@ -1483,7 +1410,7 @@ func (t *tradingDataServiceV2) ListRewardSummaries(ctx context.Context, in *v2.L
 
 	summaries, err := t.rewardService.GetSummaries(ctx, in.PartyId, in.AssetId)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrSummaryServiceGet.Error())
 	}
 
 	summaryProtos := make([]*vega.RewardSummary, len(summaries))
@@ -1500,24 +1427,20 @@ func (t *tradingDataServiceV2) ListRewardSummaries(ctx context.Context, in *v2.L
 func (t *tradingDataServiceV2) ListEpochRewardSummaries(ctx context.Context, in *v2.ListEpochRewardSummariesRequest) (*v2.ListEpochRewardSummariesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListEpochRewardSummaries")()
 
-	if in == nil {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("empty request"))
-	}
-
 	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	filter := entities.RewardSummaryFilterFromProto(in.Filter)
 	summaries, pageInfo, err := t.rewardService.GetEpochRewardSummaries(ctx, filter, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrSummaryServiceGet.Error())
 	}
 
 	edges, err := makeEdges[*v2.EpochRewardSummaryEdge](summaries)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	connection := v2.EpochRewardSummaryConnection{
@@ -1558,12 +1481,12 @@ func (t *tradingDataServiceV2) ObserveRewards(req *v2.ObserveRewardsRequest, srv
 func (t *tradingDataServiceV2) GetDeposit(ctx context.Context, req *v2.GetDepositRequest) (*v2.GetDepositResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetDepositV2")()
 
-	if req == nil || req.Id == "" {
-		return nil, apiError(codes.InvalidArgument, errors.New("deposit id is required"))
+	if req.Id == "" {
+		return nil, formatE(ErrMissingDepositID)
 	}
 	deposit, err := t.depositService.GetByID(ctx, req.Id)
 	if err != nil {
-		return nil, apiError(codes.Internal, fmt.Errorf("retrieving deposit: %w", err))
+		return nil, formatE(err, ErrDepositServiceGet.Error())
 	}
 
 	return &v2.GetDepositResponse{
@@ -1576,19 +1499,19 @@ func (t *tradingDataServiceV2) ListDeposits(ctx context.Context, req *v2.ListDep
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	dateRange := entities.DateRangeFromProto(req.DateRange)
 
 	deposits, pageInfo, err := t.depositService.GetByParty(ctx, req.PartyId, false, pagination, dateRange)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrDepositServiceGet.Error())
 	}
 
 	edges, err := makeEdges[*v2.DepositEdge](deposits)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	depositConnection := &v2.DepositsConnection{
@@ -1618,12 +1541,12 @@ func makeEdges[T proto.Message, V entities.PagedEntity[T]](inputs []V, args ...a
 func (t *tradingDataServiceV2) GetWithdrawal(ctx context.Context, req *v2.GetWithdrawalRequest) (*v2.GetWithdrawalResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetWithdrawalV2")()
 
-	if req == nil || req.Id == "" {
-		return nil, apiError(codes.InvalidArgument, ErrMissingWithdrawalID)
+	if req.Id == "" {
+		return nil, formatE(ErrMissingWithdrawalID)
 	}
 	withdrawal, err := t.withdrawalService.GetByID(ctx, req.Id)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, ErrWithdrawalServiceGet.Error())
 	}
 
 	return &v2.GetWithdrawalResponse{
@@ -1636,17 +1559,17 @@ func (t *tradingDataServiceV2) ListWithdrawals(ctx context.Context, req *v2.List
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 	dateRange := entities.DateRangeFromProto(req.DateRange)
 	withdrawals, pageInfo, err := t.withdrawalService.GetByParty(ctx, req.PartyId, false, pagination, dateRange)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrWithdrawalServiceGet.Error())
 	}
 
 	edges, err := makeEdges[*v2.WithdrawalEdge](withdrawals)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	depositConnection := &v2.WithdrawalsConnection{
@@ -1662,13 +1585,14 @@ func (t *tradingDataServiceV2) ListWithdrawals(ctx context.Context, req *v2.List
 // -- Assets --.
 func (t *tradingDataServiceV2) GetAsset(ctx context.Context, req *v2.GetAssetRequest) (*v2.GetAssetResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetAssetV2")()
-	if req == nil || req.AssetId == "" {
-		return nil, apiError(codes.InvalidArgument, ErrMissingAssetID)
+
+	if req.AssetId == "" {
+		return nil, formatE(ErrMissingAssetID)
 	}
 
 	asset, err := t.assetService.GetByID(ctx, req.AssetId)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, ErrAssetServiceGetByID.Error())
 	}
 
 	return &v2.GetAssetResponse{
@@ -1679,26 +1603,31 @@ func (t *tradingDataServiceV2) GetAsset(ctx context.Context, req *v2.GetAssetReq
 func (t *tradingDataServiceV2) ListAssets(ctx context.Context, req *v2.ListAssetsRequest) (*v2.ListAssetsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListAssetsV2")()
 
-	if req == nil {
-		req = &v2.ListAssetsRequest{}
+	if assetId := ptr.UnBox(req.AssetId); assetId != "" {
+		asset, err := t.getSingleAsset(ctx, assetId)
+		if err != nil {
+			return nil, formatE(err, ErrAssetServiceGetByID.Error())
+		}
+		return asset, nil
 	}
 
-	if req.AssetId != nil && *req.AssetId != "" {
-		return t.getSingleAsset(ctx, *req.AssetId)
+	assets, err := t.getAllAssets(ctx, req.Pagination)
+	if err != nil {
+		return nil, formatE(err, ErrAssetServiceGetAll.Error())
 	}
 
-	return t.getAllAssets(ctx, req.Pagination)
+	return assets, nil
 }
 
 func (t *tradingDataServiceV2) getSingleAsset(ctx context.Context, assetID string) (*v2.ListAssetsResponse, error) {
 	asset, err := t.assetService.GetByID(ctx, assetID)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, errors.Wrapf(err, "failed to get asset by ID: %s", assetID)
 	}
 
 	edges, err := makeEdges[*v2.AssetEdge]([]entities.Asset{asset})
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, err
 	}
 
 	connection := &v2.AssetsConnection{
@@ -1717,17 +1646,17 @@ func (t *tradingDataServiceV2) getSingleAsset(ctx context.Context, assetID strin
 func (t *tradingDataServiceV2) getAllAssets(ctx context.Context, p *v2.Pagination) (*v2.ListAssetsResponse, error) {
 	pagination, err := entities.CursorPaginationFromProto(p)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, errors.Wrap(err, ErrInvalidPagination.Error())
 	}
 
 	assets, pageInfo, err := t.assetService.GetAllWithCursorPagination(ctx, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, errors.Wrap(err, ErrAssetServiceGetAll.Error())
 	}
 
 	edges, err := makeEdges[*v2.AssetEdge](assets)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, err
 	}
 
 	connection := &v2.AssetsConnection{
@@ -1741,13 +1670,14 @@ func (t *tradingDataServiceV2) getAllAssets(ctx context.Context, p *v2.Paginatio
 
 func (t *tradingDataServiceV2) GetOracleSpec(ctx context.Context, req *v2.GetOracleSpecRequest) (*v2.GetOracleSpecResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetOracleSpecV2")()
-	if req == nil || req.OracleSpecId == "" {
-		return nil, apiError(codes.InvalidArgument, ErrMissingOracleSpecID)
+
+	if req.OracleSpecId == "" {
+		return nil, formatE(ErrMissingOracleSpecID)
 	}
 
 	spec, err := t.oracleSpecService.GetSpecByID(ctx, req.OracleSpecId)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, ErrOracleSpecServiceGet.Error(), "OracleSpecId", req.OracleSpecId)
 	}
 
 	return &v2.GetOracleSpecResponse{
@@ -1764,17 +1694,17 @@ func (t *tradingDataServiceV2) ListOracleSpecs(ctx context.Context, req *v2.List
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	specs, pageInfo, err := t.oracleSpecService.GetSpecsWithCursorPagination(ctx, "", pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrOracleSpecServiceGetAll.Error())
 	}
 
 	edges, err := makeEdges[*v2.OracleSpecEdge](specs)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	connection := &v2.OracleSpecsConnection{
@@ -1794,7 +1724,7 @@ func (t *tradingDataServiceV2) ListOracleData(ctx context.Context, req *v2.ListO
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	var data []entities.OracleData
@@ -1807,12 +1737,12 @@ func (t *tradingDataServiceV2) ListOracleData(ctx context.Context, req *v2.ListO
 	}
 
 	if err != nil {
-		return nil, apiError(codes.Internal, fmt.Errorf("could not retrieve data for OracleSpecID: %s %w", *req.OracleSpecId, err))
+		return nil, formatE(err, ErrOracleDataServiceGet.Error())
 	}
 
 	edges, err := makeEdges[*v2.OracleDataEdge](data)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	connection := &v2.OracleDataConnection{
@@ -1848,17 +1778,18 @@ func (t *tradingDataServiceV2) ListLiquidityProvisions(ctx context.Context, req 
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	lps, pageInfo, err := t.liquidityProvisionService.Get(ctx, partyID, marketID, reference, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, "retrieving liquidity provisions",
+			fmt.Sprintf("partyID: %s, marketID: %s, reference: %s", partyID, marketID, reference))
 	}
 
 	edges, err := makeEdges[*v2.LiquidityProvisionsEdge](lps)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	liquidityProvisionConnection := &v2.LiquidityProvisionsConnection{
@@ -1902,16 +1833,16 @@ func (t *tradingDataServiceV2) GetGovernanceData(ctx context.Context, req *v2.Ge
 	} else if req.Reference != nil {
 		proposal, err = t.governanceService.GetProposalByReference(ctx, *req.Reference)
 	} else {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("proposal id or reference required"))
+		return nil, formatE(err, ErrMissingProposalID.Error()+" or "+ErrMissingProposalReference.Error())
 	}
 
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, ErrGovernanceServiceGet.Error())
 	}
 
 	gd, err := t.proposalToGovernanceData(ctx, proposal)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrNotMapped, err)
+		return nil, formatE(err, ErrNotMapped.Error())
 	}
 
 	return &v2.GetGovernanceDataResponse{Data: gd}, nil
@@ -1927,7 +1858,7 @@ func (t *tradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.L
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	proposals, pageInfo, err := t.governanceService.GetProposals(
@@ -1938,18 +1869,19 @@ func (t *tradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.L
 		pagination,
 	)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrGovernanceServiceGet.Error(), "ProposerPartyId", ptr.UnBox(req.ProposerPartyId))
 	}
 
 	edges, err := makeEdges[*v2.GovernanceDataEdge](proposals)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	for i := range edges {
-		edges[i].Node.Yes, edges[i].Node.No, err = t.getVotesByProposal(ctx, edges[i].Node.Proposal.Id)
+		proposalID := edges[i].Node.Proposal.Id
+		edges[i].Node.Yes, edges[i].Node.No, err = t.getVotesByProposal(ctx, proposalID)
 		if err != nil {
-			return nil, apiError(codes.Internal, err)
+			return nil, formatE(err, "retrieving votes for proposal", proposalID)
 		}
 	}
 
@@ -1964,7 +1896,7 @@ func (t *tradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.L
 func (t *tradingDataServiceV2) getVotesByProposal(ctx context.Context, proposalID string) (yesVotes, noVotes []*vega.Vote, err error) {
 	votes, err := t.governanceService.GetVotes(ctx, &proposalID, nil, nil)
 	if err != nil {
-		return nil, nil, apiError(codes.Internal, err)
+		return nil, nil, err
 	}
 
 	for _, vote := range votes {
@@ -1978,27 +1910,27 @@ func (t *tradingDataServiceV2) getVotesByProposal(ctx context.Context, proposalI
 	return
 }
 
-// Get all Votes using a cursor based pagination model.
-func (t *tradingDataServiceV2) ListVotes(ctx context.Context, in *v2.ListVotesRequest) (*v2.ListVotesResponse, error) {
+// ListVotes gets all Votes using a cursor based pagination model.
+func (t *tradingDataServiceV2) ListVotes(ctx context.Context, req *v2.ListVotesRequest) (*v2.ListVotesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListVotesV2")()
 
-	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
-	if in.PartyId == nil && in.ProposalId == nil {
-		return nil, apiError(codes.InvalidArgument, errors.New("missing party or proposal id"))
+	if req.PartyId == nil || req.ProposalId == nil {
+		return nil, formatE(errors.New("missing party or proposal id"))
 	}
 
-	votes, pageInfo, err := t.governanceService.GetConnection(ctx, in.ProposalId, in.PartyId, pagination)
+	votes, pageInfo, err := t.governanceService.GetConnection(ctx, req.ProposalId, req.PartyId, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, "retrieving votes", "partyID", ptr.UnBox(req.PartyId), "proposalID", ptr.UnBox(req.ProposalId))
 	}
 
 	edges, err := makeEdges[*v2.VoteEdge](votes)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	VotesConnection := &v2.VoteConnection{
@@ -2018,7 +1950,7 @@ func (t *tradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	var transfers []entities.Transfer
@@ -2034,17 +1966,16 @@ func (t *tradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO_OR_FROM:
 			transfers, pageInfo, err = t.transfersService.GetTransfersToOrFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
 		default:
-			return nil, apiError(codes.InvalidArgument, fmt.Errorf("transfer direction not supported:%v", req.Direction))
+			err = fmt.Errorf("unknown transfer direction: %v", req.Direction)
 		}
 	}
-
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrTransferServiceGet.Error(), "pubkey", ptr.UnBox(req.Pubkey))
 	}
 
 	edges, err := makeEdges[*v2.TransferEdge](transfers, ctx, t.accountService)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	return &v2.ListTransfersResponse{Transfers: &v2.TransferConnection{
@@ -2056,29 +1987,16 @@ func (t *tradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 func (t *tradingDataServiceV2) GetOrder(ctx context.Context, req *v2.GetOrderRequest) (*v2.GetOrderResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetOrderV2")()
 
+	if req.OrderId == "" {
+		return nil, formatE(ErrMissingOrderID)
+	}
+
 	order, err := t.orderService.GetOrder(ctx, req.OrderId, req.Version)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, ErrOrderNotFound.Error(), req.OrderId)
 	}
 
 	return &v2.GetOrderResponse{Order: order.ToProto()}, nil
-}
-
-func (t *tradingDataServiceV2) formatE(err error) error {
-	if err == nil {
-		return nil
-	}
-
-	switch {
-	case errors.Is(err, entities.ErrNotFound):
-		return apiError(codes.NotFound, err)
-	case errors.Is(err, entities.ErrInvalidID):
-		return apiError(codes.InvalidArgument, err)
-	default:
-		// could handle more errors like context cancelled,
-		// deadling exceeded, but let's see later
-		return apiError(codes.Internal, err)
-	}
 }
 
 func (t *tradingDataServiceV2) ListOrders(ctx context.Context, in *v2.ListOrdersRequest) (*v2.ListOrdersResponse, error) {
@@ -2086,18 +2004,13 @@ func (t *tradingDataServiceV2) ListOrders(ctx context.Context, in *v2.ListOrders
 
 	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
-	liveOnly := false
-	if in.LiveOnly != nil {
-		liveOnly = *in.LiveOnly
-	}
-	dateRange := entities.DateRangeFromProto(in.DateRange)
 	var filter entities.OrderFilter
-
 	if in.Filter != nil {
 		filter = entities.OrderFilter{
+			// TODO: would it make sense to include partyID, marketID, reference, liveOnly and dataRange in the filter?
 			Statuses:         in.Filter.Statuses,
 			Types:            in.Filter.Types,
 			TimeInForces:     in.Filter.TimeInForces,
@@ -2105,15 +2018,18 @@ func (t *tradingDataServiceV2) ListOrders(ctx context.Context, in *v2.ListOrders
 		}
 	}
 
-	orders, pageInfo, err := t.orderService.ListOrders(ctx, in.PartyId, in.MarketId, in.Reference, liveOnly,
+	dateRange := entities.DateRangeFromProto(in.DateRange)
+
+	orders, pageInfo, err := t.orderService.ListOrders(ctx, in.PartyId, in.MarketId, in.Reference, ptr.UnBox(in.LiveOnly),
 		pagination, dateRange, filter)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, "retrieving orders",
+			"partyID", ptr.UnBox(in.PartyId), "marketID", ptr.UnBox(in.MarketId), "reference", ptr.UnBox(in.Reference))
 	}
 
 	edges, err := makeEdges[*v2.OrderEdge](orders)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	ordersConnection := &v2.OrderConnection{
@@ -2131,18 +2047,22 @@ func (t *tradingDataServiceV2) ListOrders(ctx context.Context, in *v2.ListOrders
 func (t *tradingDataServiceV2) ListOrderVersions(ctx context.Context, in *v2.ListOrderVersionsRequest) (*v2.ListOrderVersionsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListOrderVersionsV2")()
 
+	if in.OrderId == "" {
+		return nil, formatE(ErrMissingOrderID)
+	}
+
 	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 	orders, pageInfo, err := t.orderService.ListOrderVersions(ctx, in.OrderId, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrOrderServiceGetVersions.Error(), in.OrderId)
 	}
 
 	edges, err := makeEdges[*v2.OrderEdge](orders)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	ordersConnection := &v2.OrderConnection{
@@ -2169,7 +2089,7 @@ func (t *tradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v
 	}
 
 	if err := t.sendOrdersSnapshot(ctx, req, srv); err != nil {
-		return t.formatE(err)
+		return formatE(err)
 	}
 	ordersChan, ref := t.orderService.ObserveOrders(ctx, t.config.StreamRetries, req.MarketId, req.PartyId, excludeLiquidity)
 
@@ -2197,7 +2117,7 @@ func (t *tradingDataServiceV2) sendOrdersSnapshot(ctx context.Context, req *v2.O
 	}
 
 	if pageInfo.HasNextPage {
-		return fmt.Errorf("orders initial image spans multiple pages")
+		return errors.New("orders initial image spans multiple pages")
 	}
 
 	protos := make([]*vega.Order, len(orders))
@@ -2223,27 +2143,27 @@ func (t *tradingDataServiceV2) ListDelegations(ctx context.Context, in *v2.ListD
 
 	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	var epochID *int64
 	if in.EpochId != nil {
-		epoch, err := strconv.ParseInt(*in.EpochId, 10, 64)
+		epochIDVal := *in.EpochId
+		epoch, err := strconv.ParseInt(epochIDVal, 10, 64)
 		if err != nil {
-			return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid epoch id: %w", err))
+			return nil, formatE(err, ErrEpochIDParse.Error(), epochIDVal)
 		}
-
 		epochID = &epoch
 	}
 
 	delegations, pageInfo, err := t.delegationService.Get(ctx, in.PartyId, in.NodeId, epochID, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, "retrieving delegations", "partyID", ptr.UnBox(in.PartyId), "nodeID", ptr.UnBox(in.NodeId))
 	}
 
 	edges, err := makeEdges[*v2.DelegationEdge](delegations)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	delegationsConnection := &v2.DelegationsConnection{
@@ -2296,35 +2216,37 @@ func (t *tradingDataServiceV2) GetNetworkData(ctx context.Context, _ *v2.GetNetw
 
 	epoch, err := t.epochService.GetCurrent(ctx)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrGetEpoch.Error())
 	}
 
 	// get the node-y bits
 	networkData, err := t.nodeService.GetNodeData(ctx, uint64(epoch.ID))
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, "retrieving node data", fmt.Sprintf("epochID: %d", epoch.ID))
 	}
 	data := networkData.ToProto()
 
 	// now use network parameters to calculate the maximum nodes allowed in each nodeSet
-	np, err := t.networkParameterService.GetByKey(ctx, "network.validators.tendermint.number")
+	key := "network.validators.tendermint.number"
+	np, err := t.networkParameterService.GetByKey(ctx, key)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrGetNetworkParameters.Error(), "key", key)
 	}
 
 	maxTendermint, err := strconv.ParseUint(np.Value, 10, 32)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrGetNetworkParameters.Error(), "value", np.Value)
 	}
 
-	np, err = t.networkParameterService.GetByKey(ctx, "network.validators.ersatz.multipleOfTendermintValidators")
+	key = "network.validators.ersatz.multipleOfTendermintValidators"
+	np, err = t.networkParameterService.GetByKey(ctx, key)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, ErrGetNetworkParameters.Error(), "key", key)
 	}
 
 	ersatzFactor, err := strconv.ParseFloat(np.Value, 32)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrGetNetworkParameters.Error(), "value", np.Value)
 	}
 
 	data.TendermintNodes.Maximum = ptr.From(uint32(maxTendermint))
@@ -2341,17 +2263,17 @@ func (t *tradingDataServiceV2) GetNode(ctx context.Context, req *v2.GetNodeReque
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNodeV2")()
 
 	if req.GetId() == "" {
-		return nil, apiError(codes.InvalidArgument, ErrMissingNodeID)
+		return nil, formatE(ErrMissingNodeID)
 	}
 
 	epoch, err := t.epochService.GetCurrent(ctx)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, ErrGetEpoch.Error())
 	}
 
 	node, err := t.nodeService.GetNodeByID(ctx, req.GetId(), uint64(epoch.ID))
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err)
 	}
 
 	return &v2.GetNodeResponse{
@@ -2366,10 +2288,6 @@ func (t *tradingDataServiceV2) ListNodes(ctx context.Context, req *v2.ListNodesR
 	var pagination entities.CursorPagination
 	var err error
 
-	if req == nil {
-		return nil, apiError(codes.InvalidArgument, errors.New("request is nil"))
-	}
-
 	if req.EpochSeq == nil || *req.EpochSeq > math.MaxInt64 {
 		epoch, err = t.epochService.GetCurrent(ctx)
 	} else {
@@ -2377,22 +2295,22 @@ func (t *tradingDataServiceV2) ListNodes(ctx context.Context, req *v2.ListNodesR
 		epoch, err = t.epochService.Get(ctx, epochSeq)
 	}
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, ErrGetEpoch.Error())
 	}
 
 	pagination, err = entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid pagination: %w", err))
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	nodes, pageInfo, err := t.nodeService.GetNodes(ctx, uint64(epoch.ID), pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrNodeServiceGetNodes.Error())
 	}
 
 	edges, err := makeEdges[*v2.NodeEdge](nodes)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	nodesConnection := &v2.NodesConnection{
@@ -2409,32 +2327,24 @@ func (t *tradingDataServiceV2) ListNodes(ctx context.Context, req *v2.ListNodesR
 
 func (t *tradingDataServiceV2) ListNodeSignatures(ctx context.Context, req *v2.ListNodeSignaturesRequest) (*v2.ListNodeSignaturesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListNodeSignatures")()
-	if req == nil {
-		return nil, apiError(codes.InvalidArgument, errors.New("request is nil"))
-	}
 
 	if len(req.Id) <= 0 {
-		return nil, apiError(codes.InvalidArgument, errors.New("missing ID"))
+		return nil, formatE(ErrMissingResourceID)
 	}
 
-	var pagination entities.CursorPagination
-	var err error
-
-	if req != nil {
-		pagination, err = entities.CursorPaginationFromProto(req.Pagination)
-		if err != nil {
-			return nil, apiError(codes.InvalidArgument, err)
-		}
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	sigs, pageInfo, err := t.notaryService.GetByResourceID(ctx, req.Id, pagination)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, ErrNotaryServiceGetByResourceID.Error())
 	}
 
 	edges, err := makeEdges[*v2.NodeSignatureEdge](sigs)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	nodeSignatureConnection := &v2.NodeSignaturesConnection{
@@ -2463,14 +2373,14 @@ func (t *tradingDataServiceV2) GetEpoch(ctx context.Context, req *v2.GetEpochReq
 	}
 
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, ErrGetEpoch.Error())
 	}
 
 	protoEpoch := epoch.ToProto()
 
 	delegations, _, err := t.delegationService.Get(ctx, nil, nil, &epoch.ID, nil)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrDelegationServiceGet.Error())
 	}
 
 	protoDelegations := make([]*vega.Delegation, len(delegations))
@@ -2481,7 +2391,7 @@ func (t *tradingDataServiceV2) GetEpoch(ctx context.Context, req *v2.GetEpochReq
 
 	nodes, _, err := t.nodeService.GetNodes(ctx, uint64(epoch.ID), entities.CursorPagination{})
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrNodeServiceGetNodes.Error(), fmt.Sprintf("epoch: %d", epoch.ID))
 	}
 
 	protoNodes := make([]*vega.Node, len(nodes))
@@ -2499,21 +2409,17 @@ func (t *tradingDataServiceV2) GetEpoch(ctx context.Context, req *v2.GetEpochReq
 func (t *tradingDataServiceV2) EstimateFee(ctx context.Context, req *v2.EstimateFeeRequest) (*v2.EstimateFeeResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("EstimateFee SQL")()
 
-	if req == nil {
-		return nil, apiError(codes.InvalidArgument, errors.New("nil request"))
-	}
-
 	if len(req.MarketId) <= 0 {
-		return nil, apiError(codes.InvalidArgument, errors.New("missing market id"))
+		return nil, formatE(ErrEmptyMissingMarketID)
 	}
 
 	if len(req.Price) <= 0 {
-		return nil, apiError(codes.InvalidArgument, errors.New("missing price"))
+		return nil, formatE(ErrMissingPrice)
 	}
 
 	fee, err := t.estimateFee(ctx, req.MarketId, req.Price, req.Size)
 	if err != nil {
-		return nil, err
+		return nil, formatE(err, "estimating fee", "marketID", req.MarketId, "price", req.Price, fmt.Sprintf("size: %d", req.Size))
 	}
 
 	return &v2.EstimateFeeResponse{
@@ -2528,12 +2434,12 @@ func (t *tradingDataServiceV2) scaleFromMarketToAssetPrice(
 ) (*num.Uint, error) {
 	assetID, err := mkt.ToProto().GetAsset()
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, errors.Wrap(err, "getting asset from market")
 	}
 
 	asset, err := t.assetService.GetByID(ctx, assetID)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, errors.Wrapf(err, ErrAssetServiceGetByID.Error(), assetID)
 	}
 
 	// scale the price if needed
@@ -2554,17 +2460,17 @@ func (t *tradingDataServiceV2) estimateFee(
 ) (*vega.Fee, error) {
 	mkt, err := t.marketService.GetByID(ctx, market)
 	if err != nil {
-		return nil, apiError(codes.NotFound, err)
+		return nil, errors.Wrap(err, ErrMarketServiceGetByID.Error())
 	}
 
 	price, overflowed := num.UintFromString(priceS, 10)
 	if overflowed {
-		return nil, apiError(codes.InvalidArgument, errors.New("invalid order price"))
+		return nil, errors.Wrapf(ErrInvalidOrderPrice, "overflowed: %s", priceS)
 	}
 
 	price, err = t.scaleFromMarketToAssetPrice(ctx, mkt, price)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, ErrScalingPriceFromMarketToAsset.Error())
 	}
 
 	mdpd := num.DecimalFromFloat(10).
@@ -2573,7 +2479,7 @@ func (t *tradingDataServiceV2) estimateFee(
 	base := num.DecimalFromUint(price.Mul(price, num.NewUint(size))).Div(mdpd)
 	maker, infra, liquidity, err := t.feeFactors(mkt)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, errors.Wrap(err, "getting fee factors")
 	}
 
 	return &vega.Fee{
@@ -2603,7 +2509,7 @@ func (t *tradingDataServiceV2) EstimateMargin(ctx context.Context, req *v2.Estim
 	margin, err := t.estimateMargin(
 		ctx, req.Side, req.Type, req.MarketId, req.PartyId, req.Price, req.Size)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, "estimating margin", "marketID", req.MarketId, "partyID", req.PartyId, "price", req.Price, fmt.Sprintf("size: %d", req.Size))
 	}
 
 	return &v2.EstimateMarginResponse{
@@ -2625,48 +2531,54 @@ func (t *tradingDataServiceV2) estimateMargin(
 	// first get the risk factors and market data (marketdata->markprice)
 	rf, err := t.riskFactorService.GetMarketRiskFactors(ctx, rMarket)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "getting risk factors: %s", rMarket)
 	}
 	mkt, err := t.marketService.GetByID(ctx, rMarket)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "getting market: %s", rMarket)
 	}
 
 	mktProto := mkt.ToProto()
 
 	mktData, err := t.marketDataService.GetMarketDataByID(ctx, rMarket)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "getting market data: %s", rMarket)
 	}
 
 	f, err := num.DecimalFromString(rf.Short.String())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "parsing risk factor short: %s", rf.Short.String())
 	}
 	if rSide == vega.Side_SIDE_BUY {
 		f, err = num.DecimalFromString(rf.Long.String())
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "parsing risk factor long: %s", rf.Long.String())
 		}
 	}
 
 	asset, err := mktProto.GetAsset()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting asset from market")
 	}
 
 	// now calculate margin maintenance
-	priceD, _ := num.DecimalFromString(mktData.MarkPrice.String())
+	priceD, err := num.DecimalFromString(mktData.MarkPrice.String())
+	if err != nil {
+		return nil, errors.Wrapf(err, "parsing mark price: %s", mktData.MarkPrice.String())
+	}
 
 	// if the order is a limit order, use the limit price to calculate the margin maintenance
 	if rType == vega.Order_TYPE_LIMIT {
-		priceD, _ = num.DecimalFromString(rPrice)
+		priceD, err = num.DecimalFromString(rPrice)
+		if err != nil {
+			return nil, errors.Wrapf(err, "parsing limit price: %s", rPrice)
+		}
 	}
 
 	price, _ := num.UintFromDecimal(priceD)
 	price, err = t.scaleFromMarketToAssetPrice(ctx, mkt, price)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, ErrScalingPriceFromMarketToAsset.Error())
 	}
 
 	priceD = price.ToDecimal()
@@ -2692,23 +2604,19 @@ func (t *tradingDataServiceV2) estimateMargin(
 func (t *tradingDataServiceV2) ListNetworkParameters(ctx context.Context, req *v2.ListNetworkParametersRequest) (*v2.ListNetworkParametersResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListNetworkParametersV2")()
 
-	var pagination entities.CursorPagination
-	var err error
-	if req.Pagination != nil {
-		pagination, err = entities.CursorPaginationFromProto(req.Pagination)
-		if err != nil {
-			return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid pagination: %w", err))
-		}
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	nps, pageInfo, err := t.networkParameterService.GetAll(ctx, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrGetNetworkParameters.Error())
 	}
 
 	edges, err := makeEdges[*v2.NetworkParameterEdge](nps)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	networkParametersConnection := &v2.NetworkParameterConnection{
@@ -2725,7 +2633,7 @@ func (t *tradingDataServiceV2) GetNetworkParameter(ctx context.Context, req *v2.
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNetworkParameter")()
 	nps, _, err := t.networkParameterService.GetAll(ctx, entities.CursorPagination{})
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, ErrGetNetworkParameters.Error())
 	}
 
 	var np *vega.NetworkParameter
@@ -2743,23 +2651,20 @@ func (t *tradingDataServiceV2) GetNetworkParameter(ctx context.Context, req *v2.
 
 func (t *tradingDataServiceV2) ListCheckpoints(ctx context.Context, req *v2.ListCheckpointsRequest) (*v2.ListCheckpointsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("NetworkParametersV2")()
-	var pagination entities.CursorPagination
-	var err error
-	if req.Pagination != nil {
-		pagination, err = entities.CursorPaginationFromProto(req.Pagination)
-		if err != nil {
-			return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid pagination: %w", err))
-		}
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	checkpoints, pageInfo, err := t.checkpointService.GetAll(ctx, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, "getting checkpoints")
 	}
 
 	edges, err := makeEdges[*v2.CheckpointEdge](checkpoints)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	checkpointsConnection := &v2.CheckpointsConnection{
@@ -2775,34 +2680,25 @@ func (t *tradingDataServiceV2) ListCheckpoints(ctx context.Context, req *v2.List
 }
 
 func (t *tradingDataServiceV2) GetStake(ctx context.Context, req *v2.GetStakeRequest) (*v2.GetStakeResponse, error) {
-	if req == nil {
-		return nil, apiError(codes.InvalidArgument, errors.New("nil request"))
-	}
-
 	if len(req.PartyId) <= 0 {
-		return nil, apiError(codes.InvalidArgument, ErrMissingPartyID)
+		return nil, formatE(ErrMissingPartyID)
 	}
-
-	var pagination entities.CursorPagination
 
 	partyID := entities.PartyID(req.PartyId)
 
-	if req.Pagination != nil {
-		var err error
-		pagination, err = entities.CursorPaginationFromProto(req.Pagination)
-		if err != nil {
-			return nil, apiError(codes.Internal, fmt.Errorf("invalid pagination: %w", err))
-		}
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	stake, stakeLinkings, pageInfo, err := t.stakeLinkingService.GetStake(ctx, partyID, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, fmt.Errorf("fetching party stake linkings: %w", err))
+		return nil, formatE(err, "fetching party stake linkings")
 	}
 
 	edges, err := makeEdges[*v2.StakeLinkingEdge](stakeLinkings)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	stakesConnection := &v2.StakesConnection{
@@ -2823,7 +2719,7 @@ func (t *tradingDataServiceV2) GetRiskFactors(ctx context.Context, req *v2.GetRi
 
 	rfs, err := t.riskFactorService.GetMarketRiskFactors(ctx, req.MarketId)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, "getting risk factors", req.MarketId)
 	}
 
 	return &v2.GetRiskFactorsResponse{
@@ -2842,7 +2738,7 @@ func (t *tradingDataServiceV2) ObserveGovernance(req *v2.ObserveGovernanceReques
 	return observe(ctx, t.log, "Governance", ch, ref, func(proposal entities.Proposal) error {
 		gd, err := t.proposalToGovernanceData(ctx, proposal)
 		if err != nil {
-			return t.formatE(err)
+			return errors.Wrap(err, "converting proposal to governance data")
 		}
 		return stream.Send(&v2.ObserveGovernanceResponse{
 			Data: gd,
@@ -2853,13 +2749,13 @@ func (t *tradingDataServiceV2) ObserveGovernance(req *v2.ObserveGovernanceReques
 func (t *tradingDataServiceV2) proposalToGovernanceData(ctx context.Context, proposal entities.Proposal) (*vega.GovernanceData, error) {
 	yesVotes, err := t.governanceService.GetYesVotesForProposal(ctx, proposal.ID.String())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("getting yes votes for proposal: %w", err)
 	}
 	protoYesVotes := voteListToProto(yesVotes)
 
 	noVotes, err := t.governanceService.GetNoVotesForProposal(ctx, proposal.ID.String())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("getting no votes for proposal: %w", err)
 	}
 	protoNoVotes := voteListToProto(noVotes)
 
@@ -2888,7 +2784,7 @@ func (t *tradingDataServiceV2) ObserveVotes(req *v2.ObserveVotesRequest, stream 
 		return t.observeProposalVotes(*req.ProposalId, stream)
 	}
 
-	return apiError(codes.InvalidArgument, errors.New("party id or proposal id required"))
+	return formatE(ErrMissingPartyID, " or "+ErrMissingProposalID.Error())
 }
 
 func (t *tradingDataServiceV2) observePartyVotes(partyID string, stream v2.TradingDataService_ObserveVotesServer) error {
@@ -2929,13 +2825,9 @@ func (t *tradingDataServiceV2) GetProtocolUpgradeStatus(context.Context, *v2.Get
 }
 
 func (t *tradingDataServiceV2) ListProtocolUpgradeProposals(ctx context.Context, req *v2.ListProtocolUpgradeProposalsRequest) (*v2.ListProtocolUpgradeProposalsResponse, error) {
-	if req == nil {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("empty request"))
-	}
-
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	var status *entities.ProtocolUpgradeProposalStatus
@@ -2950,12 +2842,12 @@ func (t *tradingDataServiceV2) ListProtocolUpgradeProposals(ctx context.Context,
 		pagination,
 	)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, "listing protocol upgrade proposals")
 	}
 
 	edges, err := makeEdges[*v2.ProtocolUpgradeProposalEdge](pups)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	connection := v2.ProtocolUpgradeProposalConnection{
@@ -2969,23 +2861,19 @@ func (t *tradingDataServiceV2) ListProtocolUpgradeProposals(ctx context.Context,
 }
 
 func (t *tradingDataServiceV2) ListCoreSnapshots(ctx context.Context, req *v2.ListCoreSnapshotsRequest) (*v2.ListCoreSnapshotsResponse, error) {
-	if req == nil {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("empty request"))
-	}
-
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	snaps, pageInfo, err := t.coreSnapshotService.ListSnapshots(ctx, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, "listing core snapshots")
 	}
 
 	edges, err := makeEdges[*v2.CoreSnapshotEdge](snaps)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	connection := v2.CoreSnapshotConnection{
@@ -3046,28 +2934,32 @@ func (t *tradingDataServiceV2) ObserveLedgerMovements(_ *v2.ObserveLedgerMovemen
 // -- Key Rotations --.
 func (t *tradingDataServiceV2) ListKeyRotations(ctx context.Context, req *v2.ListKeyRotationsRequest) (*v2.ListKeyRotationsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListKeyRotations")()
-	var (
-		pagination entities.CursorPagination
-		err        error
-	)
 
-	if req != nil {
-		pagination, err = entities.CursorPaginationFromProto(req.Pagination)
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(err, ErrInvalidPagination.Error())
+	}
+
+	if nodeID := ptr.UnBox(req.NodeId); nodeID != "" {
+		rotations, err := t.getNodeKeyRotations(ctx, nodeID, pagination)
 		if err != nil {
-			return nil, t.formatE(err)
+			return nil, formatE(err, "getting key rotations for node", nodeID)
 		}
-	}
-	if req.NodeId == nil || *req.NodeId == "" {
-		return t.getAllKeyRotations(ctx, pagination)
+		return rotations, nil
 	}
 
-	return t.getNodeKeyRotations(ctx, *req.NodeId, pagination)
+	rotations, err := t.getAllKeyRotations(ctx, pagination)
+	if err != nil {
+		return nil, formatE(err, "getting all key rotations")
+	}
+
+	return rotations, nil
 }
 
 func (t *tradingDataServiceV2) getAllKeyRotations(ctx context.Context, pagination entities.CursorPagination) (*v2.ListKeyRotationsResponse, error) {
 	rotations, pageInfo, err := t.keyRotationService.GetAllPubKeyRotations(ctx, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, err
 	}
 	return makeKeyRotationResponse(rotations, pageInfo)
 }
@@ -3075,7 +2967,7 @@ func (t *tradingDataServiceV2) getAllKeyRotations(ctx context.Context, paginatio
 func (t *tradingDataServiceV2) getNodeKeyRotations(ctx context.Context, nodeID string, pagination entities.CursorPagination) (*v2.ListKeyRotationsResponse, error) {
 	rotations, pageInfo, err := t.keyRotationService.GetPubKeyRotationsPerNode(ctx, nodeID, pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, err
 	}
 	return makeKeyRotationResponse(rotations, pageInfo)
 }
@@ -3083,7 +2975,7 @@ func (t *tradingDataServiceV2) getNodeKeyRotations(ctx context.Context, nodeID s
 func makeKeyRotationResponse(rotations []entities.KeyRotation, pageInfo entities.PageInfo) (*v2.ListKeyRotationsResponse, error) {
 	edges, err := makeEdges[*v2.KeyRotationEdge](rotations)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, err
 	}
 
 	keyRotationConnection := &v2.KeyRotationConnection{
@@ -3102,17 +2994,17 @@ func (t *tradingDataServiceV2) ListEthereumKeyRotations(ctx context.Context, req
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
 	rotations, pageInfo, err := t.ethereumKeyRotationService.List(ctx, entities.NodeID(req.GetNodeId()), pagination)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err, "getting Ethereum key rotations for node", req.GetNodeId())
 	}
 
 	edges, err := makeEdges[*v2.EthereumKeyRotationEdge](rotations)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		return nil, formatE(err)
 	}
 
 	connection := &v2.EthereumKeyRotationsConnection{
@@ -3129,7 +3021,7 @@ func (t *tradingDataServiceV2) GetVegaTime(ctx context.Context, req *v2.GetVegaT
 	defer metrics.StartAPIRequestAndTimeGRPC("GetVegaTimeV2")()
 	b, err := t.blockService.GetLastBlock(ctx)
 	if err != nil {
-		return nil, t.formatE(err)
+		return nil, formatE(err, "getting last block")
 	}
 
 	return &v2.GetVegaTimeResponse{
@@ -3149,8 +3041,7 @@ func (t *tradingDataServiceV2) GetMostRecentNetworkHistorySegment(context.Contex
 				Segment: nil,
 			}, nil
 		}
-
-		return nil, apiError(codes.Internal, ErrGetMostRecentHistorySegment, err)
+		return nil, formatE(err, ErrGetMostRecentHistorySegment.Error())
 	}
 
 	return &v2.GetMostRecentNetworkHistorySegmentResponse{
@@ -3161,12 +3052,10 @@ func (t *tradingDataServiceV2) GetMostRecentNetworkHistorySegment(context.Contex
 
 func (t *tradingDataServiceV2) ListAllNetworkHistorySegments(context.Context, *v2.ListAllNetworkHistorySegmentsRequest) (*v2.ListAllNetworkHistorySegmentsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListAllNetworkHistorySegments")()
-	if t.networkHistoryService == nil {
-		return nil, apiError(codes.Internal, ErrNetworkHistoryNotEnabled, fmt.Errorf("network history is not enabled"))
-	}
+
 	segments, err := t.networkHistoryService.ListAllHistorySegments()
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrListAllNetworkHistorySegment, err)
+		return nil, formatE(err, ErrListAllNetworkHistorySegment.Error())
 	}
 
 	historySegments := make([]*v2.HistorySegment, 0, len(segments))
@@ -3195,9 +3084,6 @@ func toHistorySegment(segment networkhistory.Segment) *v2.HistorySegment {
 
 func (t *tradingDataServiceV2) GetActiveNetworkHistoryPeerAddresses(_ context.Context, _ *v2.GetActiveNetworkHistoryPeerAddressesRequest) (*v2.GetActiveNetworkHistoryPeerAddressesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentHistorySegmentFromPeers")()
-	if t.networkHistoryService == nil {
-		return nil, apiError(codes.Internal, ErrNetworkHistoryNotEnabled, fmt.Errorf("network history is not enabled"))
-	}
 
 	return &v2.GetActiveNetworkHistoryPeerAddressesResponse{
 		IpAddresses: t.networkHistoryService.GetActivePeerIPAddresses(),
@@ -3207,7 +3093,7 @@ func (t *tradingDataServiceV2) GetActiveNetworkHistoryPeerAddresses(_ context.Co
 func (t *tradingDataServiceV2) NetworkHistoryStatus(_ context.Context, _ *v2.NetworkHistoryStatusRequest) (*v2.NetworkHistoryStatusResponse, error) {
 	connectedPeerAddresses, err := t.networkHistoryService.GetConnectedPeerAddresses()
 	if err != nil {
-		return nil, t.formatE(fmt.Errorf("failed to get connected peer addresses: %w", err))
+		return nil, formatE(err, ErrGetConnectedPeerAddresses.Error())
 	}
 
 	// A subset of the connected peer addresses are likely to be copied to form another nodes peer set, randomise the list
@@ -3218,7 +3104,7 @@ func (t *tradingDataServiceV2) NetworkHistoryStatus(_ context.Context, _ *v2.Net
 
 	ipfsAddress, err := t.networkHistoryService.GetIpfsAddress()
 	if err != nil {
-		return nil, t.formatE(fmt.Errorf("failed to nodes ipfs address: %w", err))
+		return nil, formatE(err, "failed to get node's ipfs address")
 	}
 
 	return &v2.NetworkHistoryStatusResponse{
