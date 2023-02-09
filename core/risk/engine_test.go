@@ -88,6 +88,7 @@ func TestUpdateMargins(t *testing.T) {
 	t.Run("Update Margin with orders in book 2", testMarginWithOrderInBook2)
 	t.Run("Update Margin with orders in book after parameters update", testMarginWithOrderInBookAfterParamsUpdate)
 	t.Run("Top up fail on new order", testMarginTopupOnOrderFailInsufficientFunds)
+	t.Run("Margin not released in auction ", testMarginNotReleasedInAuction)
 }
 
 func testMarginLevelsTS(t *testing.T) {
@@ -165,6 +166,30 @@ func testMarginTopup(t *testing.T) {
 	// min = 15 so we go back to maintenance level
 	assert.EqualValues(t, 15, trans.MinAmount.Uint64())
 	assert.Equal(t, types.TransferTypeMarginLow, trans.Type)
+}
+
+func testMarginNotReleasedInAuction(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
+	evt := testMargin{
+		party:   "party1",
+		size:    1,
+		price:   1000,
+		asset:   "ETH",
+		margin:  70, // relese level is 35 so we need more than that
+		general: 100000,
+		market:  "ETH/DEC19",
+	}
+	eng.tsvc.EXPECT().GetTimeNow().Times(1)
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.as.EXPECT().InAuction().AnyTimes().Return(true)
+	eng.as.EXPECT().CanLeave().AnyTimes().Return(false)
+	eng.orderbook.EXPECT().GetIndicativePrice().Times(1).Return(markPrice.Clone())
+	evts := []events.Margin{evt}
+	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice)
+	assert.Equal(t, 0, len(resp))
 }
 
 func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
