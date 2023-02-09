@@ -114,6 +114,7 @@ func testAdminSendingRawTransactionWithValidParamsSucceeds(t *testing.T) {
 	sendingMode := "TYPE_SYNC"
 	network := newNetwork(t)
 	txHash := vgrand.RandomStr(64)
+	nodeHost := vgrand.RandomStr(5)
 
 	// setup
 	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
@@ -121,6 +122,7 @@ func testAdminSendingRawTransactionWithValidParamsSucceeds(t *testing.T) {
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
 		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(node, nil)
+		node.EXPECT().Host().Times(1).Return(nodeHost)
 		node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return(txHash, nil)
 		return nodeSelector, nil
 	})

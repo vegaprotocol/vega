@@ -292,5 +292,5 @@ func PrintSignTransactionResponse(w io.Writer, req api.AdminSignTransactionResul
 
 	str.BlueArrow().InfoText("Send a transaction").NextLine()
 	str.Text("To send a raw transaction, see the following transaction:").NextSection()
-	str.Code(fmt.Sprintf("%s raw_transaction send --help", os.Args[0])).NextSection()
+	str.Code(fmt.Sprintf("%s raw_transaction send --help", os.Args[0])).NextLine()
 }

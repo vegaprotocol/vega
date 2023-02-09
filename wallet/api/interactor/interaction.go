@@ -319,6 +319,10 @@ type TransactionSucceeded struct {
 	// It's useful to build a list of the sending in a chronological order on
 	// the front-ends.
 	SentAt time.Time `json:"sentAt"`
+
+	// Node contains all the information related to the node selected for the
+	// sending of the transaction.
+	Node SelectedNode `json:"node"`
 }
 
 // TransactionFailed is a notification sent when the sending of a
@@ -342,6 +346,14 @@ type TransactionFailed struct {
 	// It's useful to build a list of the sending in a chronological order on
 	// the front-ends.
 	SentAt time.Time `json:"sentAt"`
+
+	// Node contains all the information related to the node selected for the
+	// sending of the transaction.
+	Node SelectedNode `json:"node"`
+}
+
+type SelectedNode struct {
+	Host string `json:"host"`
 }
 
 // Log is a generic event that shouldn't be confused with a notification. A log
