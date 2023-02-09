@@ -1919,8 +1919,8 @@ func (t *tradingDataServiceV2) ListVotes(ctx context.Context, req *v2.ListVotesR
 		return nil, formatE(err, ErrInvalidPagination.Error())
 	}
 
-	if req.PartyId == nil || req.ProposalId == nil {
-		return nil, formatE(errors.New("missing party or proposal id"))
+	if req.PartyId == nil && req.ProposalId == nil {
+		return nil, formatE(fmt.Errorf("%s and %s", ErrMissingPartyID.Error(), ErrMissingProposalID.Error()))
 	}
 
 	votes, pageInfo, err := t.governanceService.GetConnection(ctx, req.ProposalId, req.PartyId, pagination)
