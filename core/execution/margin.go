@@ -114,63 +114,28 @@ func (m *Market) updateMargin(ctx context.Context, pos []events.MarketPosition) 
 		// add the required margin event
 		margins = append(margins, e)
 	}
-
 	// we should get any and all risk events we need here
 	return m.risk.UpdateMarginsOnSettlement(ctx, margins, price)
 }
 
 func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
-	// 1. Get the price
 	price := m.getMarkPrice(order)
-	// m.log.Infof("calculating margins at %d for order at price %d", price, order.Price)
-	// 2. Get all positions - we have to update margins for all parties on the book so nobody can get distressed when we eventually do uncross
-	allPos := m.position.Positions()
-	// 3. get the asset and ID for this market
 	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
-	// 3-b. Get position for the trader placing this order, if exists
-	if cPos, ok := m.position.GetPositionByPartyID(order.Party); ok {
-		e, err := m.collateral.GetPartyMargin(cPos, asset, mID)
-		if err != nil {
-			return nil, nil, err
-		}
-		_, closed := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, price.Clone())
-		if len(closed) > 0 {
-			// this order would take party below maintenance -> stop here
-			return nil, nil, ErrMarginCheckInsufficient
-		}
-		// we could transfer the funds for this party here, but we're handling all positions lower down, including this one
-		// this is just to stop all margins being updated based on a price that the party can't even manage
+	cPos, ok := m.position.GetPositionByPartyID(order.Party)
+	if !ok {
+		return nil, nil, nil
 	}
-	// 4. construct the events for all positions + margin balances
-	// at this point, we have established the order is going through
-	posEvts := make([]events.Margin, 0, len(allPos))
-	for _, p := range allPos {
-		e, err := m.collateral.GetPartyMargin(p, asset, mID)
-		if err != nil {
-			// this shouldn't happen
-			return nil, nil, err
-		}
-		posEvts = append(posEvts, e)
+	e, err := m.collateral.GetPartyMargin(cPos, asset, mID)
+	if err != nil {
+		return nil, nil, err
 	}
-	// 5. Get all the risk events
-	risk, closed := m.risk.UpdateMarginAuction(ctx, posEvts, price.Clone())
-	distressed := make(map[string]struct{}, len(closed))
-	mposEvts := make([]events.MarketPosition, 0, len(closed))
-	for _, e := range closed {
-		distressed[e.Party()] = struct{}{}
-		mposEvts = append(mposEvts, e)
+	risk, closed := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, price.Clone())
+	if len(closed) > 0 {
+		// this order would take party below maintenance -> stop here
+		return nil, nil, ErrMarginCheckInsufficient
 	}
-	// 6. Attempt margin updates where possible. If position is to be closed, append it to the closed slice we already have
-	riskTransfers := make([]events.Risk, 0, len(risk))
-	for _, ru := range risk {
-		// skip the parties with a shortfall/distressed
-		if _, ok := distressed[ru.Party()]; ok {
-			continue
-		}
-		riskTransfers = append(riskTransfers, ru)
-	}
-	return riskTransfers, mposEvts, nil
+	return risk, nil, nil
 }
 
 func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
