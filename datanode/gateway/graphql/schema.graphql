@@ -1804,6 +1804,12 @@ type Market {
 
   "Liquidity Provision order price range"
   lpPriceRange: String!
+
+  "Linear slippage factor for capping the slippage component of margins"
+  linearSlippageFactor: String!
+
+  "Quadratic slippage factor for capping the slippage component of margins"
+  quadraticSlippageFactor: String!
 }
 
 """
@@ -3229,6 +3235,10 @@ type NewMarket {
   positionDecimalPlaces: Int!
   "Liquidity Provision order price range"
   lpPriceRange: String!
+  "Linear slippage factor for capping the slippage component of margins"
+  linearSlippageFactor: String!
+  "Quadratic slippage factor for capping the slippage component of margins"
+  quadraticSlippageFactor: String!
 }
 
 """

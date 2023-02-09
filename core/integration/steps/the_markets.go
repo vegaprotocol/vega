@@ -263,6 +263,20 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		update.Changes.LpPriceRange = lpprD
 		existing.LPPriceRange = lpprD
 	}
+
+	// linear slippage factor
+	if slippage, ok := row.tryLinearSlippageFactor(); ok {
+		slippageD := num.DecimalFromFloat(slippage)
+		update.Changes.LinearSlippageFactor = slippageD
+		existing.LinearSlippageFactor = slippageD
+	}
+
+	// quadratic slippage factor
+	if slippage, ok := row.tryQuadraticSlippageFactor(); ok {
+		slippageD := num.DecimalFromFloat(slippage)
+		update.Changes.QuadraticSlippageFactor = slippageD
+		existing.QuadraticSlippageFactor = slippageD
+	}
 	return update
 }
 
@@ -304,6 +318,8 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	}
 
 	lpPriceRange := row.lpPriceRange()
+	linearSlippageFactor := row.linearSlippageFactor()
+	quadraticSlippageFactor := row.quadraticSlippageFactor()
 
 	// the governance engine would fill in the liquidity monitor parameters from the network parameters (unless set explicitly)
 	// so we do this step here manually
@@ -353,6 +369,8 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		PriceMonitoringSettings:       types.PriceMonitoringSettingsFromProto(priceMonitoring),
 		LiquidityMonitoringParameters: liqMon,
 		LPPriceRange:                  num.DecimalFromFloat(lpPriceRange),
+		LinearSlippageFactor:          num.DecimalFromFloat(linearSlippageFactor),
+		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
 	}
 
 	tip := m.TradableInstrument.IntoProto()
@@ -516,9 +534,39 @@ func (r marketRow) lpPriceRange() float64 {
 	return r.row.MustF64("lp price range")
 }
 
+func (r marketRow) linearSlippageFactor() float64 {
+	if !r.row.HasColumn("linear slippage factor") {
+		// set to 1e6 by default
+		return 1000000
+	}
+	return r.row.MustF64("linear slippage factor")
+}
+
+func (r marketRow) quadraticSlippageFactor() float64 {
+	if !r.row.HasColumn("quadratic slippage factor") {
+		// set to 1e6 by default
+		return 1000000
+	}
+	return r.row.MustF64("quadratic slippage factor")
+}
+
 func (r marketUpdateRow) tryLpPriceRange() (float64, bool) {
 	if r.row.HasColumn("lp price range") {
 		return r.row.MustF64("lp price range"), true
+	}
+	return -1, false
+}
+
+func (r marketUpdateRow) tryLinearSlippageFactor() (float64, bool) {
+	if r.row.HasColumn("linear slippage factor") {
+		return r.row.MustF64("linear slippage factor"), true
+	}
+	return -1, false
+}
+
+func (r marketUpdateRow) tryQuadraticSlippageFactor() (float64, bool) {
+	if r.row.HasColumn("quadratic slippage factor") {
+		return r.row.MustF64("quadratic slippage factor"), true
 	}
 	return -1, false
 }

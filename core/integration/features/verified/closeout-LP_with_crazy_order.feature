@@ -98,7 +98,8 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order
       | party   | asset | market id | margin         | general       | bond |
       | traderA | USD   | ETH/DEC20 | 13754          | 9999999985946 | 0    |
       | traderB | USD   | ETH/DEC20 | 0              | 0             | 0    |
-      | traderC | USD   | ETH/DEC20 | 10000003100294 | 0             | 0    |
+      # capping in action
+      | traderC | USD   | ETH/DEC20 | 1265600042684  | 8734403057610 | 0    | 
 
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |

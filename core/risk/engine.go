@@ -71,21 +71,23 @@ type marginChange struct {
 // Engine is the risk engine.
 type Engine struct {
 	Config
-	marginCalculator       *types.MarginCalculator
-	scalingFactorsUint     *scalingFactorsUint
-	log                    *logging.Logger
-	cfgMu                  sync.Mutex
-	model                  Model
-	factors                *types.RiskFactor
-	waiting                bool
-	ob                     Orderbook
-	as                     AuctionState
-	timeSvc                TimeService
-	broker                 Broker
-	riskFactorsInitialised bool
-	mktID                  string
-	asset                  string
-	positionFactor         num.Decimal
+	marginCalculator        *types.MarginCalculator
+	scalingFactorsUint      *scalingFactorsUint
+	log                     *logging.Logger
+	cfgMu                   sync.Mutex
+	model                   Model
+	factors                 *types.RiskFactor
+	waiting                 bool
+	ob                      Orderbook
+	as                      AuctionState
+	timeSvc                 TimeService
+	broker                  Broker
+	riskFactorsInitialised  bool
+	mktID                   string
+	asset                   string
+	positionFactor          num.Decimal
+	linearSlippageFactor    num.Decimal
+	quadraticSlippageFactor num.Decimal
 }
 
 // NewEngine instantiate a new risk engine.
@@ -103,6 +105,8 @@ func NewEngine(log *logging.Logger,
 	positionFactor num.Decimal,
 	riskFactorsInitialised bool,
 	initialisedRiskFactors *types.RiskFactor, // if restored from snapshot, will be nil otherwise
+	linearSlippageFactor num.Decimal,
+	quadraticSlippageFactor num.Decimal,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -110,21 +114,23 @@ func NewEngine(log *logging.Logger,
 
 	sfUint := scalingFactorsUintFromDecimals(marginCalculator.ScalingFactors)
 	e := &Engine{
-		log:                    log,
-		Config:                 config,
-		marginCalculator:       marginCalculator,
-		model:                  model,
-		waiting:                false,
-		ob:                     ob,
-		as:                     as,
-		timeSvc:                timeSvc,
-		broker:                 broker,
-		mktID:                  mktID,
-		asset:                  asset,
-		scalingFactorsUint:     sfUint,
-		factors:                model.DefaultRiskFactors(),
-		riskFactorsInitialised: riskFactorsInitialised,
-		positionFactor:         positionFactor,
+		log:                     log,
+		Config:                  config,
+		marginCalculator:        marginCalculator,
+		model:                   model,
+		waiting:                 false,
+		ob:                      ob,
+		as:                      as,
+		timeSvc:                 timeSvc,
+		broker:                  broker,
+		mktID:                   mktID,
+		asset:                   asset,
+		scalingFactorsUint:      sfUint,
+		factors:                 model.DefaultRiskFactors(),
+		riskFactorsInitialised:  riskFactorsInitialised,
+		positionFactor:          positionFactor,
+		linearSlippageFactor:    linearSlippageFactor,
+		quadraticSlippageFactor: quadraticSlippageFactor,
 	}
 	stateVarEngine.RegisterStateVariable(asset, mktID, RiskFactorStateVarName, FactorConverter{}, e.startRiskFactorsCalculation, []statevar.EventType{statevar.EventTypeMarketEnactment, statevar.EventTypeMarketUpdated}, e.updateRiskFactor)
 
@@ -188,7 +194,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 	// for now, we can assume a single asset for all events
 	rFactors := *e.factors
 	for _, evt := range evts {
-		levels := e.calculateAuctionMargins(evt, price, rFactors)
+		levels := e.calculateAuctionMargins(evt, price, rFactors, e.linearSlippageFactor, e.quadraticSlippageFactor)
 		if levels == nil {
 			continue
 		}
@@ -242,9 +248,9 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 
 	var margins *types.MarginLevels
 	if !e.as.InAuction() || e.as.CanLeave() {
-		margins = e.calculateMargins(evt, markPrice, *e.factors, true, false)
+		margins = e.calculateMargins(evt, markPrice, *e.factors, true, false, e.linearSlippageFactor, e.quadraticSlippageFactor)
 	} else {
-		margins = e.calculateAuctionMargins(evt, markPrice, *e.factors)
+		margins = e.calculateAuctionMargins(evt, markPrice, *e.factors, e.linearSlippageFactor, e.quadraticSlippageFactor)
 	}
 	// no margins updates, nothing to do then
 	if margins == nil {
@@ -362,9 +368,9 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		// channel is closed, and we've got a nil interface
 		var margins *types.MarginLevels
 		if !e.as.InAuction() || e.as.CanLeave() {
-			margins = e.calculateMargins(evt, markPrice, *e.factors, true, false)
+			margins = e.calculateMargins(evt, markPrice, *e.factors, true, false, e.linearSlippageFactor, e.quadraticSlippageFactor)
 		} else {
-			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors)
+			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors, e.linearSlippageFactor, e.quadraticSlippageFactor)
 		}
 		// no margins updates, nothing to do then
 		if margins == nil {
@@ -449,9 +455,9 @@ func (e *Engine) ExpectMargins(
 	for _, evt := range evts {
 		var margins *types.MarginLevels
 		if !e.as.InAuction() || e.as.CanLeave() {
-			margins = e.calculateMargins(evt, markPrice, *e.factors, false, false)
+			margins = e.calculateMargins(evt, markPrice, *e.factors, false, false, e.linearSlippageFactor, e.quadraticSlippageFactor)
 		} else {
-			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors)
+			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors, e.linearSlippageFactor, e.quadraticSlippageFactor)
 		}
 		// no margins updates, nothing to do then
 		if margins == nil {

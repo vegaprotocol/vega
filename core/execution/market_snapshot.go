@@ -88,6 +88,8 @@ func NewMarketFromSnapshot(
 		positionFactor,
 		em.RiskFactorConsensusReached,
 		&types.RiskFactor{Market: mkt.ID, Short: em.ShortRiskFactor, Long: em.LongRiskFactor},
+		mkt.LinearSlippageFactor,
+		mkt.QuadraticSlippageFactor,
 	)
 
 	settleEngine := settlement.NewSnapshotEngine(
@@ -157,6 +159,8 @@ func NewMarketFromSnapshot(
 		stateVarEngine:             stateVarEngine,
 		settlementDataInMarket:     em.SettlementData,
 		lpPriceRange:               mkt.LPPriceRange,
+		linearSlippageFactor:       mkt.LinearSlippageFactor,
+		quadraticSlippageFactor:    mkt.QuadraticSlippageFactor,
 	}
 
 	market.assetDP = uint32(assetDetails.DecimalPlaces())
