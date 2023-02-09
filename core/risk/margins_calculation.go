@@ -60,9 +60,9 @@ func addMarginLevels(ml *types.MarginLevels, maintenance num.Decimal, scalingFac
 	ml.CollateralReleaseLevel.AddSum(num.UintZero().Div(num.UintZero().Mul(scalingFactors.release, mtl), exp))
 }
 
-func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice *num.Uint, rf types.RiskFactor, linearSlippageFactor, quadraticSlippageFactor num.Decimal) *types.MarginLevels {
+func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice *num.Uint, rf types.RiskFactor) *types.MarginLevels {
 	// calculate margins without order positions
-	ml := e.calculateMargins(m, markPrice, rf, false, true, linearSlippageFactor, quadraticSlippageFactor)
+	ml := e.calculateMargins(m, markPrice, rf, false, true)
 	// now add the margin levels for orders
 	long, short := num.DecimalFromInt64(m.Buy()).Div(e.positionFactor), num.DecimalFromInt64(m.Sell()).Div(e.positionFactor)
 	var lMargin, sMargin num.Decimal
@@ -86,7 +86,7 @@ func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice *num.Uint, r
 
 // Implementation of the margin calculator per specs:
 // https://github.com/vegaprotocol/product/blob/master/specs/0019-margin-calculator.md
-func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types.RiskFactor, withPotentialBuyAndSell, auction bool, linearSlippageFactor, quadraticSlippageFactor num.Decimal) *types.MarginLevels {
+func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types.RiskFactor, withPotentialBuyAndSell, auction bool) *types.MarginLevels {
 	var (
 		marginMaintenanceLng num.Decimal
 		marginMaintenanceSht num.Decimal
@@ -154,7 +154,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 				num.DecimalZero(),
 				num.MinD(
 					slip,
-					mPriceDec.Mul(linearSlippageFactor.Mul(slippageVolume).Add(quadraticSlippageFactor.Mul(slippageVolume.Mul(slippageVolume)))),
+					mPriceDec.Mul(e.linearSlippageFactor.Mul(slippageVolume).Add(e.quadraticSlippageFactor.Mul(slippageVolume.Mul(slippageVolume)))),
 				),
 			).Add(slippageVolume.Mul(rf.Long).Mul(mPriceDec))
 			maintenanceMarginLongOpenOrders := bDec.Mul(rf.Long).Mul(mPriceDec)
@@ -206,8 +206,8 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			// maintenance_margin_short_open_orders = abs(sell_orders) * [ quantitative_model.risk_factors_short ] . [ Product.value(market_observable) ]
 			//
 			absSlippageVolume := slippageVolume.Abs()
-			linearSlippage := absSlippageVolume.Mul(linearSlippageFactor)
-			quadraticSlipage := absSlippageVolume.Mul(absSlippageVolume).Mul(quadraticSlippageFactor)
+			linearSlippage := absSlippageVolume.Mul(e.linearSlippageFactor)
+			quadraticSlipage := absSlippageVolume.Mul(absSlippageVolume).Mul(e.quadraticSlippageFactor)
 			maintenanceMarginShortOpenPosition := num.MaxD(
 				num.DecimalZero(),
 				num.MinD(

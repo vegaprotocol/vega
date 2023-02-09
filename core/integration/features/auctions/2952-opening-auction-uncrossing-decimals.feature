@@ -13,8 +13,8 @@ Feature: Set up a market, with an opening auction, then uncross the book. Make s
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
     And the markets:
-      | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees           | price monitoring | data source config          | decimal places |
-      | ETH/DEC20 | ETH        | ETH   | my-simple-risk-model | default-margin-calculator | 1                | my-fees-config | default-none     | default-eth-for-future | 2              |
+      | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees           | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC20 | ETH        | ETH   | my-simple-risk-model | default-margin-calculator | 1                | my-fees-config | default-none     | default-eth-for-future | 2              | 1e6                    | 1e6                       |
 
   Scenario: set up 2 parties with balance
     # setup accounts
@@ -43,7 +43,7 @@ Feature: Set up a market, with an opening auction, then uncross the book. Make s
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     And the following trades should be executed:
-      | buyer   | price   | size | seller  |
-      | party1  | 1000000 | 1    | party2  |
+      | buyer  | price   | size | seller |
+      | party1 | 1000000 | 1    | party2 |
     And the mark price should be "1000000" for the market "ETH/DEC20"
 

@@ -3,8 +3,8 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
   Background:
 
     Given the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -58,7 +58,7 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
       | party | asset | market id | margin | general |
       | tt_15 | BTC   | ETH/DEC19 | 0      | 0       |
 
-    # the insurance pool will have received the distressed party collateral but will have 
+    # the insurance pool will have received the distressed party collateral but will have
     # paid it straight out to the party who matched the closing out network trade.
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 

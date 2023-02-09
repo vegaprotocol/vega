@@ -5,7 +5,7 @@ Feature: Test settlement at expiry time from internal oracle
     And the average block duration is "1"
 
     And the oracle spec for settlement data filtering data from "0xCAFECAFE" named "ethDec20Oracle":
-      | property         | type         | binding          |
+      | property         | type         | binding         |
       | prices.ETH.value | TYPE_INTEGER | settlement data |
 
     And the oracle spec for trading termination filtering data from "vegaprotocol.builtin" named "ethDec20Oracle":
@@ -13,7 +13,7 @@ Feature: Test settlement at expiry time from internal oracle
       | vegaprotocol.builtin.timestamp | TYPE_TIMESTAMP | trading termination | OPERATOR_GREATER_THAN_OR_EQUAL | 2019-12-31T23:59:59Z |
 
     And the oracle spec for settlement data filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
-      | property         | type         | binding          |
+      | property         | type         | binding         |
       | prices.ETH.value | TYPE_INTEGER | settlement data |
 
     And the oracle spec for trading termination filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
@@ -22,7 +22,7 @@ Feature: Test settlement at expiry time from internal oracle
 
     And the settlement data decimals for the oracle named "ethDec20Oracle" is given in "0" decimal places
     And the settlement data decimals for the oracle named "ethDec21Oracle" is given in "0" decimal places
-    
+
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -39,9 +39,9 @@ Feature: Test settlement at expiry time from internal oracle
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | data source config  |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle     | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e6                    | 1e6                       |
 
   Scenario: Order cannot be placed once the market is expired
     Given the parties deposit on asset's general account the following amount:
@@ -52,7 +52,7 @@ Feature: Test settlement at expiry time from internal oracle
       | lpprov | ETH   | 100000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lpprov | ETH/DEC19 | 10000             | 0.001 | buy  | BID              | 50         | 1      | submission |
       | lp1 | lpprov | ETH/DEC19 | 10000             | 0.001 | sell | ASK              | 50         | 1      | submission |
 

@@ -1805,10 +1805,10 @@ type Market {
   "Liquidity Provision order price range"
   lpPriceRange: String!
 
-  "Linear slippage factor for capping the slippage component of margins"
+  "Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume"
   linearSlippageFactor: String!
 
-  "Quadratic slippage factor for capping the slippage component of margins"
+  "Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
 }
 
@@ -3235,9 +3235,9 @@ type NewMarket {
   positionDecimalPlaces: Int!
   "Liquidity Provision order price range"
   lpPriceRange: String!
-  "Linear slippage factor for capping the slippage component of margins"
+  "Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume"
   linearSlippageFactor: String!
-  "Quadratic slippage factor for capping the slippage component of margins"
+  "Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
 }
 

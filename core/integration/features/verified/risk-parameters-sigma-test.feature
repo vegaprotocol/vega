@@ -26,10 +26,10 @@ Feature: test risk model parameter sigma
       | horizon | probability | auction extension |
       | 43200   | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model               | margin calculator   | auction duration | fees          | price monitoring   | data source config     |
-      | ETH/MAR53 | ETH        | USD   | log-normal-risk-model-53 | margin-calculator-1 | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR54 | ETH        | USD   | log-normal-risk-model-54 | margin-calculator-1 | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR0  | ETH        | USD   | log-normal-risk-model-0  | margin-calculator-1 | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+      | id        | quote name | asset | risk model               | margin calculator   | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR53 | ETH        | USD   | log-normal-risk-model-53 | margin-calculator-1 | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR54 | ETH        | USD   | log-normal-risk-model-54 | margin-calculator-1 | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR0  | ETH        | USD   | log-normal-risk-model-0  | margin-calculator-1 | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount                      |
       | party0 | USD   | 500000000000000000000000000 |
@@ -44,14 +44,14 @@ Feature: test risk model parameter sigma
   Scenario: 001, test market ETH/MAR53(sigma=50),
 
     Given the liquidity monitoring parameters:
-      | name                | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 0.1              | 24h         | 1              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.1              | 24h         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring |
       | ETH/MAR53 | updated-lqm-params   |
     And the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | name                                  | value |
+      | market.liquidity.bondPenaltyParameter | 0.2   |
 
     And the average block duration is "1"
 
@@ -84,30 +84,30 @@ Feature: test risk model parameter sigma
       | buy  | 1     | 100000000 |
 
     And the parties should have the following account balances:
-      | party  | asset | market id | margin          | general                     | bond      |
-      | party0 | USD   | ETH/MAR53 | 74999925000000  | 499999999999924999975000000 | 100000000 |
-      | party1 | USD   | ETH/MAR53 | 148             | 4999999852                  | 0         |
-      | party2 | USD   | ETH/MAR53 | 164999835       | 4835000165                  | 0         |
+      | party  | asset | market id | margin         | general                     | bond      |
+      | party0 | USD   | ETH/MAR53 | 74999925000000 | 499999999999924999975000000 | 100000000 |
+      | party1 | USD   | ETH/MAR53 | 148            | 4999999852                  | 0         |
+      | party2 | USD   | ETH/MAR53 | 164999835      | 4835000165                  | 0         |
 
     # mentainance margin level for LP: 10*22580646*999999=2.258e14
     # initial  margin level for LP: 10*22580646*999999 *1.5=3.38e14
 
     And the parties should have the following margin levels:
-      | party  | market id | maintenance     | search          | initial         | release         |
-      | party0 | ETH/MAR53 | 49999950000000  | 59999940000000  | 74999925000000  | 84999915000000  |
+      | party  | market id | maintenance    | search         | initial        | release        |
+      | party0 | ETH/MAR53 | 49999950000000 | 59999940000000 | 74999925000000 | 84999915000000 |
 
   @Now
   Scenario: 002, test market ETH/MAR0 (kind of "normal" risk parameters setting),
 
     Given the liquidity monitoring parameters:
-      | name              | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 0.1            | 24h         | 1              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.1              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
+      | id       | liquidity monitoring |
       | ETH/MAR0 | updated-lqm-params   |
     And the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | name                                  | value |
+      | market.liquidity.bondPenaltyParameter | 0.2   |
 
     And the average block duration is "1"
 
@@ -148,7 +148,7 @@ Feature: test risk model parameter sigma
     # initial  margin level for LP: 181819*100*3.5569036 *1.2=9.7e7
 
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search   | initial  | release   |
+      | party  | market id | maintenance | search   | initial  | release  |
       | party0 | ETH/MAR0  | 27361126    | 32833351 | 41041689 | 46513914 |
 
 # Scenario: 003, test market ETH/MAR54(sigma=100),

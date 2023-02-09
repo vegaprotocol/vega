@@ -98,21 +98,21 @@ Feature: test risk model parameter ranges
       | 43200   | 0.99        | 300               |
 
     And the markets:
-      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
-      | ETH/MAR0  | ETH        | USD   | log-normal-risk-model-0  | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR11 | ETH        | USD   | log-normal-risk-model-11 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR12 | ETH        | USD   | log-normal-risk-model-12 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR21 | ETH        | USD   | log-normal-risk-model-21 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-22 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR23 | ETH        | USD   | log-normal-risk-model-23 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR31 | ETH        | USD   | log-normal-risk-model-31 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR32 | ETH        | USD   | log-normal-risk-model-32 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR41 | ETH        | USD   | log-normal-risk-model-41 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR42 | ETH        | USD   | log-normal-risk-model-42 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR43 | ETH        | USD   | log-normal-risk-model-43 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR51 | ETH        | USD   | log-normal-risk-model-51 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR52 | ETH        | USD   | log-normal-risk-model-52 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR53 | ETH        | USD   | log-normal-risk-model-53 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR0  | ETH        | USD   | log-normal-risk-model-0  | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR11 | ETH        | USD   | log-normal-risk-model-11 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR12 | ETH        | USD   | log-normal-risk-model-12 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR21 | ETH        | USD   | log-normal-risk-model-21 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-22 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR23 | ETH        | USD   | log-normal-risk-model-23 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR31 | ETH        | USD   | log-normal-risk-model-31 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR32 | ETH        | USD   | log-normal-risk-model-32 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR41 | ETH        | USD   | log-normal-risk-model-41 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR42 | ETH        | USD   | log-normal-risk-model-42 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR43 | ETH        | USD   | log-normal-risk-model-43 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR51 | ETH        | USD   | log-normal-risk-model-51 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR52 | ETH        | USD   | log-normal-risk-model-52 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR53 | ETH        | USD   | log-normal-risk-model-53 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount         |
       | party0 | USD   | 50000000000000 |
@@ -127,8 +127,8 @@ Feature: test risk model parameter ranges
   Scenario: 001, test different value of risk parameters within defined ranges in different market, AC: 0018-RSKM-001
 
     Given the liquidity monitoring parameters:
-      | name                | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 0.1            | 24h         | 1              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.1              | 24h         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring |
       | ETH/MAR0  | updated-lqm-params   |
@@ -147,8 +147,8 @@ Feature: test risk model parameter ranges
       | ETH/MAR53 | updated-lqm-params   |
 
     And the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | name                                  | value |
+      | market.liquidity.bondPenaltyParameter | 0.2   |
 
     And the average block duration is "1"
 
@@ -434,8 +434,8 @@ Feature: test risk model parameter ranges
   Scenario: 002, test market ETH/MAR23 (tau=1)
 
     Given the liquidity monitoring parameters:
-      | name                | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 0.1              | 24h         | 1              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.1              | 24h         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring |
       | ETH/MAR0  | updated-lqm-params   |
@@ -454,8 +454,8 @@ Feature: test risk model parameter ranges
       | ETH/MAR53 | updated-lqm-params   |
 
     And the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | name                                  | value |
+      | market.liquidity.bondPenaltyParameter | 0.2   |
 
     And the average block duration is "1"
 
@@ -497,8 +497,8 @@ Feature: test risk model parameter ranges
   Scenario: 003, test market ETH/MAR52(sigma=10),
 
     Given the liquidity monitoring parameters:
-      | name                | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 0.1              | 24h         | 1              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.1              | 24h         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring |
       | ETH/MAR0  | updated-lqm-params   |
@@ -516,8 +516,8 @@ Feature: test risk model parameter ranges
       | ETH/MAR52 | updated-lqm-params   |
       | ETH/MAR53 | updated-lqm-params   |
     And the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | name                                  | value |
+      | market.liquidity.bondPenaltyParameter | 0.2   |
 
     And the average block duration is "1"
 
