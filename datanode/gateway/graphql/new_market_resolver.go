@@ -74,6 +74,14 @@ func (r *newMarketResolver) LpPriceRange(_ context.Context, obj *types.NewMarket
 	return obj.Changes.LpPriceRange, nil
 }
 
+func (r *newMarketResolver) LinearSlippageFactor(_ context.Context, obj *types.NewMarket) (string, error) {
+	return obj.Changes.LinearSlippageFactor, nil
+}
+
+func (r *newMarketResolver) QuadraticSlippageFactor(_ context.Context, obj *types.NewMarket) (string, error) {
+	return obj.Changes.QuadraticSlippageFactor, nil
+}
+
 func (r *newMarketResolver) RiskParameters(_ context.Context, obj *types.NewMarket) (RiskModel, error) {
 	switch rm := obj.Changes.RiskParameters.(type) {
 	case *types.NewMarketConfiguration_LogNormal:

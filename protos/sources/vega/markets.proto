@@ -274,6 +274,10 @@ message Market {
   // Percentage move up and down from the mid price which specifies the range of 
   // price levels over which automated liquidity provision orders will be deployed
   string lp_price_range = 12;
+    // Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume
+    string linear_slippage_factor = 13; 
+    // Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume
+    string quadratic_slippage_factor = 14;
 }
 
 // Time stamps for important times about creating, enacting etc the market

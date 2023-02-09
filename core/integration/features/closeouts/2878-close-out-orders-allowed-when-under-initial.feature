@@ -3,8 +3,8 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
   Background:
     Given time is updated to "2020-10-16T00:00:00Z"
     And the markets:
-      | id        | quote name | asset | auction duration | risk model                  | margin calculator         | fees         | price monitoring | data source config          |
-      | ETH/DEC20 | ETH        | ETH   | 1                | default-simple-risk-model-3 | default-margin-calculator | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | auction duration | risk model                  | margin calculator         | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC20 | ETH        | ETH   | 1                | default-simple-risk-model-3 | default-margin-calculator | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -58,8 +58,8 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
       | party4 | ETH   | ETH/DEC20 | 132    | 9999999999868 |
       | party3 | ETH   | ETH/DEC20 | 1220   | 0             |
       | party5 | ETH   | ETH/DEC20 | 1320   | 9999999998580 |
-      # Value before uint stuff
-      # | party4 | ETH   | ETH/DEC20 | 133    | 9999999999867 |
+    # Value before uint stuff
+    # | party4 | ETH   | ETH/DEC20 | 133    | 9999999999867 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party3 | ETH/DEC20 | 1100        | 1210   | 1320    | 1540    |

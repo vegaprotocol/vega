@@ -17,8 +17,8 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order
       | id  | decimal places |
       | USD | 3              |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring   | data source config     | decimal places | position decimal places |
-      | ETH/DEC20 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       |
+      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC20 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -95,10 +95,11 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order
       | traderC | ETH/DEC20 | sell | 120    | 45000000000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin         | general       | bond |
-      | traderA | USD   | ETH/DEC20 | 13754          | 9999999985946 | 0    |
-      | traderB | USD   | ETH/DEC20 | 0              | 0             | 0    |
-      | traderC | USD   | ETH/DEC20 | 10000003100294 | 0             | 0    |
+      | party   | asset | market id | margin        | general       | bond |
+      | traderA | USD   | ETH/DEC20 | 13754         | 9999999985946 | 0    |
+      | traderB | USD   | ETH/DEC20 | 0             | 0             | 0    |
+      # capping in action
+      | traderC | USD   | ETH/DEC20 | 1265600042684 | 8734403057610 | 0    |
 
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
