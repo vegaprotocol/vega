@@ -3,8 +3,8 @@ Feature: Amend orders
   Background:
     Given the average block duration is "1"
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | data source config          |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -12,7 +12,7 @@ Feature: Amend orders
 
   @AmendOA
   Scenario: Amend an order during opening auction, we should leave the auction the next time update
-# setup accounts
+    # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party | asset | amount    |
       | myboi | BTC   | 10000000  |
@@ -29,7 +29,7 @@ Feature: Amend orders
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC19"
     #And the mark price should be "10000" for the market "ETH/DEC19"
-    
+
     # Amend order, we remain in auction
     When the parties amend the following orders:
       | party | reference | price | size delta | tif     |

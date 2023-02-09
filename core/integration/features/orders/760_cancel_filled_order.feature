@@ -2,17 +2,17 @@ Feature: Close a filled order twice
 
   Background:
     Given the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | market.auction.minimumDuration          | 1     |
 
   Scenario: Traders place an order, a trade happens, and orders are cancelled after being filled
-# setup accounts
+    # setup accounts
     Given the parties deposit on asset's general account the following amount:
-      | party           | asset | amount    |
+      | party            | asset | amount    |
       | sellSideProvider | BTC   | 100000000 |
       | buySideProvider  | BTC   | 100000000 |
       | aux              | BTC   | 100000    |
@@ -20,11 +20,11 @@ Feature: Close a filled order twice
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux    | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | aux2   | ETH/DEC19 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
-      | aux    | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux   | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux2  | ETH/DEC19 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux   | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 

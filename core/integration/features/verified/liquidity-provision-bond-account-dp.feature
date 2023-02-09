@@ -21,8 +21,8 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
       | market.liquidity.bondPenaltyParameter         | 0.1   |
       | market.liquidity.targetstake.triggering.ratio | 0.24  |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 2                       |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 2                       | 1e6                    | 1e6                       |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party0 | USD   | 500000    |
@@ -33,7 +33,7 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-    @Now
+  @Now
   Scenario: Bond slashing on LP (0044-LIME-002, 0035-LIQM-004, 0044-LIME-009 )
 
     Given the average block duration is "1"
@@ -145,5 +145,5 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     # open interest updates to include buy order of size 20
     And the market data for the market "ETH/MAR22" should be:
       | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 426828       | 50000          | 120            |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 426828       | 50000          | 120           |
 

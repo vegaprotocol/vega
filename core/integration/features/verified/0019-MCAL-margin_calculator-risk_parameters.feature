@@ -42,11 +42,11 @@ Feature: test risk model parameter change in margin calculation
       | market.liquidity.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          |
-      | ETH/MAR21 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-2 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR23 | ETH        | USD   | log-normal-risk-model-3 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR24 | ETH        | USD   | log-normal-risk-model-4 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR21 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-2 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR23 | ETH        | USD   | log-normal-risk-model-3 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR24 | ETH        | USD   | log-normal-risk-model-4 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
 
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |

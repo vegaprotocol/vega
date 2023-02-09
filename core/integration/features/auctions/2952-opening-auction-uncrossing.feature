@@ -10,8 +10,8 @@ Feature: Set up a market, with an opening auction, then uncross the book. Make s
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
     And the markets:
-      | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees           | price monitoring | data source config          |
-      | ETH/DEC20 | ETH        | ETH   | my-simple-risk-model | default-margin-calculator | 1                | my-fees-config | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees           | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC20 | ETH        | ETH   | my-simple-risk-model | default-margin-calculator | 1                | my-fees-config | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
 
   Scenario: set up 2 parties with balance
     # setup accounts

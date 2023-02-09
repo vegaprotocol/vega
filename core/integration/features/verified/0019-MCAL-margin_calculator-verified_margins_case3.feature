@@ -8,8 +8,8 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
     And the markets:
-      | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config          |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     And the parties deposit on asset's general account the following amount:
       | party      | asset | amount     |
       | party1     | ETH   | 1000000000 |
@@ -26,11 +26,11 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference      |
-      | aux    | ETH/DEC19 | buy  | 1      | 7900000  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-buy  |
-      | aux    | ETH/DEC19 | sell | 1      | 25000000 | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-sell |
-      | aux    | ETH/DEC19 | buy  | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1        |
-      | aux2   | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1        |
+      | party | market id | side | volume | price    | resulting trades | type       | tif     | reference      |
+      | aux   | ETH/DEC19 | buy  | 1      | 7900000  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-buy  |
+      | aux   | ETH/DEC19 | sell | 1      | 25000000 | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-sell |
+      | aux   | ETH/DEC19 | buy  | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1        |
+      | aux2  | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1        |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "10300000" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -49,8 +49,8 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | sellSideMM | ETH/DEC19 | sell | 2      | 11200000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
     Then the parties cancel the following orders:
-      | party  | reference      |
-      | aux    | cancel-me-sell |
+      | party | reference      |
+      | aux   | cancel-me-sell |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
@@ -68,7 +68,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | party1 | 14000000 | 11   | sellSideMM |
 
     Then the following transfers should happen:
-      | from   | to      | from account           | to account          | market id | amount  | asset |
+      | from   | to     | from account            | to account          | market id | amount  | asset |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 5600000 | ETH   |
 
     Then the parties should have the following account balances:
@@ -89,7 +89,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | buySideMM  | ETH/DEC19 | buy  | 1      | 16000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the following transfers should happen:
-      | from   | to      | from account           | to account          | market id | amount   | asset |
+      | from   | to     | from account            | to account          | market id | amount   | asset |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 26000000 | ETH   |
 
     Then the parties should have the following account balances:
