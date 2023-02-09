@@ -18,34 +18,21 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/broker"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/datanode/broker Subscriber,TestInterface,ChainInfoI
-
-// Subscriber interface allows pushing values to subscribers, can be set to
-// a Skip state (temporarily not receiving any events), or closed. Otherwise events are pushed.
-type Subscriber interface {
-	Push(val ...events.Event)
-	Skip() <-chan struct{}
-	Closed() <-chan struct{}
-	C() chan<- []events.Event
-	Types() []events.Type
-	SetID(id int)
-	ID() int
-	Ack() bool
-}
-
 // TestInterface interface (horribly named) is declared here to provide a drop-in replacement for broker mocks used throughout
 // in addition to providing the classical mockgen functionality, this mock can be used to check the actual events that will be generated
 // so we don't have to rely on test-only helper functions.
 type TestInterface interface {
 	Send(event events.Event)
-	Subscribe(s Subscriber) int
-	SubscribeBatch(subs ...Subscriber)
+	Subscribe(s broker.Subscriber) int
+	SubscribeBatch(subs ...broker.Subscriber)
 	Unsubscribe(k int)
 	Receive(ctx context.Context) error
 }
@@ -61,7 +48,7 @@ type eventReceiverSender interface {
 }
 
 type subscription struct {
-	Subscriber
+	broker.Subscriber
 	required bool
 }
 
@@ -124,7 +111,7 @@ func New(ctx context.Context, log *logging.Logger, config Config, chainID string
 	return b, nil
 }
 
-func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) {
+func (b *Broker) sendChannel(sub broker.Subscriber, evts []events.Event) {
 	// wait for a max of 1 second
 	timeout := time.NewTimer(time.Second)
 	defer func() {
@@ -145,7 +132,7 @@ func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) {
 	}
 }
 
-func (b *Broker) sendChannelSync(sub Subscriber, evts []events.Event) bool {
+func (b *Broker) sendChannelSync(sub broker.Subscriber, evts []events.Event) bool {
 	select {
 	case <-b.ctx.Done():
 		return false
@@ -269,14 +256,14 @@ func (b *Broker) getSubsByType(t events.Type, sv int) (map[int]*subscription, in
 }
 
 // Subscribe registers a new subscriber, returning the key.
-func (b *Broker) Subscribe(s Subscriber) int {
+func (b *Broker) Subscribe(s broker.Subscriber) int {
 	b.mu.Lock()
 	k := b.subscribe(s)
 	b.mu.Unlock()
 	return k
 }
 
-func (b *Broker) SubscribeBatch(subs ...Subscriber) {
+func (b *Broker) SubscribeBatch(subs ...broker.Subscriber) {
 	b.mu.Lock()
 	for _, s := range subs {
 		k := b.subscribe(s)
@@ -285,7 +272,7 @@ func (b *Broker) SubscribeBatch(subs ...Subscriber) {
 	b.mu.Unlock()
 }
 
-func (b *Broker) subscribe(s Subscriber) int {
+func (b *Broker) subscribe(s broker.Subscriber) int {
 	k := b.getKey()
 	sub := subscription{
 		Subscriber: s,

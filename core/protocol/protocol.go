@@ -15,6 +15,8 @@ package protocol
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/libs/subscribers"
+
 	"code.vegaprotocol.io/vega/core/spam"
 
 	"code.vegaprotocol.io/vega/core/api"
@@ -28,7 +30,6 @@ import (
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
 	"code.vegaprotocol.io/vega/core/stats"
-	"code.vegaprotocol.io/vega/core/subscribers"
 	"code.vegaprotocol.io/vega/core/vegatime"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
