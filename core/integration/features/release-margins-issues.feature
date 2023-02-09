@@ -2,8 +2,8 @@ Feature: Test margin release on order cancel
 
   Background:
     Given the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -26,19 +26,19 @@ Feature: Test margin release on order cancel
       | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
       | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
-     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type        | tif     |
-      | aux    | ETH/DEC19 | buy  | 1      | 9     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 9     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | party1-1 |
-      | party2 | ETH/DEC19 | sell | 1      | 10000 | 0                | TYPE_LIMIT | TIF_GTC | party2-1 |
-      | party1 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | party1-2 |
-      | party2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | party2-2 |
+      | party1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | party1-1  |
+      | party2 | ETH/DEC19 | sell | 1      | 10000 | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
+      | party1 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | party1-2  |
+      | party2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | party2-2  |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "1000" for the market "ETH/DEC19"
@@ -61,7 +61,7 @@ Feature: Test margin release on order cancel
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | partyGuy | ETH   | ETH/DEC19 |      0 | 10000   |
+      | partyGuy | ETH   | ETH/DEC19 | 0      | 10000   |
 
 
   @MarginRelease
@@ -80,28 +80,28 @@ Feature: Test margin release on order cancel
       | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
 
-     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1      | 9     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 9     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | party1-1 |
-      | party1 | ETH/DEC19 | buy  | 10     | 990   | 0                | TYPE_LIMIT | TIF_GTC | party1-1 |
-      | party2 | ETH/DEC19 | sell | 1      | 10000 | 0                | TYPE_LIMIT | TIF_GTC | party2-1 |
-      | party2 | ETH/DEC19 | sell | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | party2-1 |
-      | party1 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | party1-2 |
-      | party2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | party2-2 |
+      | party1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | party1-1  |
+      | party1 | ETH/DEC19 | buy  | 10     | 990   | 0                | TYPE_LIMIT | TIF_GTC | party1-1  |
+      | party2 | ETH/DEC19 | sell | 1      | 10000 | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
+      | party2 | ETH/DEC19 | sell | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
+      | party1 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | party1-2  |
+      | party2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | party2-2  |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "1000" for the market "ETH/DEC19"
 
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type        | tif     | reference |
-      | partyGuy | ETH/DEC19 | sell | 1      |     0 | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
+      | partyGuy | ETH/DEC19 | sell | 1      | 0     | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
 
     Then the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
@@ -116,16 +116,16 @@ Feature: Test margin release on order cancel
       | partyGuy | -1     | 0              | 0            |
 
     When the parties place the following orders:
-      | party    | market id | side | volume | price | resulting trades | type        | tif     | reference |
-      | partyGuy | ETH/DEC19 | buy  | 1      |  1005 | 0                | TYPE_LIMIT  | TIF_GTC | ref-2     |
+      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | partyGuy | ETH/DEC19 | buy  | 1      | 1005  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     Then the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
       | partyGuy | ETH/DEC19 | 119         | 130    | 142     | 166     |
 
     When the parties place the following orders with ticks:
-      | party    | market id | side | volume | price | resulting trades | type        | tif     | reference |
-      | party1   | ETH/DEC19 | sell  | 1     |  1005 | 1                | TYPE_LIMIT  | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC19 | sell | 1      | 1005  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     Then the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
@@ -152,19 +152,19 @@ Feature: Test margin release on order cancel
       | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
 
-     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1      | 9     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 9     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | party1-1 |
-      | party2 | ETH/DEC19 | sell | 1      | 10000 | 0                | TYPE_LIMIT | TIF_GTC | party2-1 |
-      | party1 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | party1-2 |
-      | party2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | party2-2 |
+      | party1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | party1-1  |
+      | party2 | ETH/DEC19 | sell | 1      | 10000 | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
+      | party1 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | party1-2  |
+      | party2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | party2-2  |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "1000" for the market "ETH/DEC19"
@@ -182,9 +182,9 @@ Feature: Test margin release on order cancel
       | partyGuy | ETH   | ETH/DEC19 | 120    | 0       |
 
     When the parties place the following orders with ticks:
-      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1   | ETH/DEC19 | sell | 1      | 500   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | party2   | ETH/DEC19 | buy  | 1      | 500   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC19 | sell | 1      | 500   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC19 | buy  | 1      | 500   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "500" for the market "ETH/DEC19"
@@ -209,19 +209,19 @@ Feature: Test margin release on order cancel
       | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
       | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
-     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1      | 9     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 9     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | party1-1 |
-      | party2 | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC | party2-1 |
-      | party1 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | party1-2 |
-      | party2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | party2-2 |
+      | party1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | party1-1  |
+      | party2 | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
+      | party1 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | party1-2  |
+      | party2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | party2-2  |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "1000" for the market "ETH/DEC19"
@@ -237,8 +237,8 @@ Feature: Test margin release on order cancel
 
     When the parties place the following orders with ticks:
       | party        | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | partyGuyGood | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party2-2 |
-      | party1       | ETH/DEC19 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party1-2 |
+      | partyGuyGood | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party2-2  |
+      | party1       | ETH/DEC19 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party1-2  |
 
     Then the parties should have the following profit and loss:
       | party        | volume | unrealised pnl | realised pnl |
@@ -248,13 +248,13 @@ Feature: Test margin release on order cancel
       | party        | asset | market id | margin | general |
       | partyGuy     | ETH   | ETH/DEC19 | 120    | 0       |
       | partyGuyGood | ETH   | ETH/DEC19 | 1320   | 998680  |
-      #| partyGuyGood | ETH   | ETH/DEC19 | 252    | 999748  |
+    #| partyGuyGood | ETH   | ETH/DEC19 | 252    | 999748  |
 
     # this will trade with party guy
     # which is going to get him distressed
     When the parties place the following orders with ticks:
-      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party2   | ETH/DEC19 | buy  | 1      | 9999  | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party2 | ETH/DEC19 | buy  | 1      | 9999  | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
@@ -262,10 +262,10 @@ Feature: Test margin release on order cancel
     # not being released when the party is used in the distressed flow
     Then the parties should have the following account balances:
       | party        | asset | market id | margin | general |
-      | partyGuy     | ETH   | ETH/DEC19 |   0    | 0       |
+      | partyGuy     | ETH   | ETH/DEC19 | 0      | 0       |
       | partyGuyGood | ETH   | ETH/DEC19 | 0      | 1008999 |
-      #| partyGuyGood | ETH   | ETH/DEC19 | 13307  | 995693  |
-      # TODO: SHOULD BE THIS
+    #| partyGuyGood | ETH   | ETH/DEC19 | 13307  | 995693  |
+    # TODO: SHOULD BE THIS
 
 
     # TODO: FIX THIS
