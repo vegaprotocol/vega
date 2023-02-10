@@ -92,7 +92,7 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 		}
 
 		if hasError {
-			return errMismatchedAccountBalances(row, actMarAccBal, actGenAccBal, actGenAccBal)
+			return errMismatchedAccountBalances(row, actMarAccBal, actGenAccBal, actBondAccBal)
 		}
 	}
 	return nil

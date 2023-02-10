@@ -336,7 +336,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
 
     And the parties should have the following account balances:
       | party | asset | market id | margin  | general        | bond    |
-      | lp1   | ETH   | USD/DEC21 | 4695112 | 99999983469540 | 1000000 |
+      | lp1   | ETH   | USD/DEC21 | 5127063 | 99999980896617 | 1000000 |
       | lp1   | USD   |           |         | 100000000000   |         |
 
     # amend LP commintment amount
