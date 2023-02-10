@@ -41,7 +41,6 @@ import (
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
-	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -774,13 +773,7 @@ func (m *Market) blockEnd(ctx context.Context) {
 		m.nextMTM = t.Add(m.mtmDelta) // add delta here
 		if hasTraded {
 			// only MTM if we have traded
-			mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
-			dummy := &types.Order{
-				ID:            m.idgen.NextID(),
-				Price:         mp.Clone(),
-				OriginalPrice: mcmp,
-			}
-			m.confirmMTM(ctx, dummy, nil, false)
+			m.confirmMTM(ctx, false)
 		}
 
 		closedWithoutLP := []events.MarketPosition{}
@@ -1135,18 +1128,10 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	if !m.as.InAuction() {
 		// only send the auction-left event if we actually *left* the auction.
 		m.broker.Send(endEvt)
-		// now that we're left the auction, we can mark all positions
-		// in case any party is distressed (Which shouldn't be possible)
-		// we'll fall back to the a network order at the new mark price (mid-price)
-		cmp := m.getLastTradedPrice()
-		m.markPrice = cmp.Clone()
-		mcmp := num.UintZero().Div(cmp, m.priceFactor) // create the market representation of the price
-		// checkForReferenceMoves has already been called with updatedOrders so passing an empty array in now
-		m.confirmMTM(ctx, &types.Order{
-			ID:            m.idgen.NextID(),
-			Price:         cmp,
-			OriginalPrice: mcmp,
-		}, []*types.Order{}, false)
+		// now that we're left the auction, we can mark all positions using the
+		// margin calculation method appropriate for non-auction mode
+		m.markPrice = m.getLastTradedPrice().Clone()
+		m.confirmMTM(ctx, false)
 		// set next MTM
 		m.nextMTM = m.timeService.GetTimeNow().Add(m.mtmDelta)
 	}
@@ -1742,16 +1727,13 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 }
 
 func (m *Market) confirmMTM(
-	ctx context.Context, order *types.Order, orderUpdates []*types.Order, skipMargin bool,
+	ctx context.Context, skipMargin bool,
 ) {
 	// now let's get the transfers for MTM settlement
 	markPrice := m.getLastTradedPrice()
 	evts := m.position.UpdateMarkPrice(markPrice)
 	settle := m.settlement.SettleMTM(ctx, markPrice, evts)
-	if len(orderUpdates) == 0 {
-		// make sure the slice is initialised
-		orderUpdates = []*types.Order{}
-	}
+	orderUpdates := []*types.Order{}
 
 	// Only process collateral and risk once per order, not for every trade
 	margins := m.collateralAndRisk(ctx, settle)
@@ -1774,7 +1756,7 @@ func (m *Market) confirmMTM(
 		}
 		if len(closed) > 0 {
 			upd, err := m.resolveClosedOutParties(
-				ctx, closed, ptr.From(order.ID))
+				ctx, closed)
 			if err != nil {
 				m.log.Error("unable to closed out parties",
 					logging.String("market-id", m.GetID()),
@@ -1827,7 +1809,7 @@ func (m *Market) getLiquidityFee() num.Decimal {
 // need to be closed out -> the network buys/sells the open volume, and trades with the rest of the network
 // this flow is similar to the SubmitOrder bit where trades are made, with fewer checks (e.g. no MTM settlement, no risk checks)
 // pass in the order which caused parties to be distressed.
-func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEvts []events.Margin, orderID *string) ([]*types.Order, error) {
+func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEvts []events.Margin) ([]*types.Order, error) {
 	if len(distressedMarginEvts) == 0 {
 		return nil, nil
 	}
@@ -1965,11 +1947,6 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		size = uint64(-networkPos)
 	}
 
-	ref := "LS"
-	if orderID != nil {
-		ref = fmt.Sprintf("LS-%s", *orderID)
-	}
-
 	no := types.Order{
 		MarketID:    m.GetID(),
 		Remaining:   size,
@@ -1977,7 +1954,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		Party:       types.NetworkParty, // network is not a party as such
 		Side:        types.SideSell,     // assume sell, price is zero in that case anyway
 		CreatedAt:   now.UnixNano(),
-		Reference:   ref,                       // liquidity sourcing, reference the order which caused the problem
+		Reference:   "LS",                      // liquidity sourcing, reference the order which caused the problem
 		TimeInForce: types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 		Type:        types.OrderTypeNetwork,
 		Price:       num.UintZero(),
@@ -2069,24 +2046,14 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		m.broker.SendBatch(tradeEvts)
 	}
 
-	m.zeroOutNetwork(ctx, closedMPs, &no, orderID, distressedPartiesFees)
+	m.zeroOutNetwork(ctx, closedMPs, &no, distressedPartiesFees)
 
 	// swipe all accounts and stuff
 	m.finalizePartiesCloseOut(ctx, closed, closedMPs)
 
-	// get the updated positions
-	evt := m.position.Positions()
-	mp := m.markPrice.Clone()
-	mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
-	dummy := &types.Order{
-		ID:            m.idgen.NextID(),
-		Price:         mp,
-		OriginalPrice: mcmp,
-	}
-	m.confirmMTM(ctx, dummy, nil, false)
+	m.confirmMTM(ctx, false)
 
-	// Only check margins if MTM was successful.
-	return orderUpdates, m.recheckMargin(ctx, evt)
+	return orderUpdates, m.recheckMargin(ctx, m.position.Positions())
 }
 
 func (m *Market) finalizePartiesCloseOut(
@@ -2117,7 +2084,7 @@ func (m *Market) finalizePartiesCloseOut(
 	}
 }
 
-func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosition, settleOrder *types.Order, orderID *string, fees map[string]*types.Fee) {
+func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosition, settleOrder *types.Order, fees map[string]*types.Fee) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "zeroOutNetwork")
 	defer timer.EngineTimeCounterAdd()
 
@@ -2167,11 +2134,6 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 
 		order.ID = m.idgen.NextID()
 
-		ref := fmt.Sprintf("distressed-%d", i)
-		if orderID != nil {
-			ref = fmt.Sprintf("distressed-%d-%s", i, *orderID)
-		}
-
 		// this is the party order
 		partyOrder := types.Order{
 			MarketID:      marketID,
@@ -2183,7 +2145,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 			Price:         settleOrder.Price.Clone(), // average price
 			OriginalPrice: settleOrder.OriginalPrice.Clone(),
 			CreatedAt:     now,
-			Reference:     ref,
+			Reference:     fmt.Sprintf("distressed-%d", i),
 			TimeInForce:   types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 			Type:          types.OrderTypeNetwork,
 		}
@@ -3258,13 +3220,7 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 			// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
 			// works as expected.
 			m.markPrice = mp.Clone()
-			mcmp := num.UintZero().Div(mp, m.priceFactor) // create the market representation of the price
-			dummy := &types.Order{
-				ID:            m.idgen.NextID(),
-				Price:         mp,
-				OriginalPrice: mcmp,
-			}
-			m.confirmMTM(ctx, dummy, nil, true)
+			m.confirmMTM(ctx, true)
 		}
 		m.mkt.State = types.MarketStateTradingTerminated
 		m.mkt.TradingMode = types.MarketTradingModeNoTrading
