@@ -49,6 +49,7 @@
 - [7451](https://github.com/vegaprotocol/vega/issues/7451) - Fix floating point consensus to use voting power rather than node count
 - [7399](https://github.com/vegaprotocol/vega/issues/7399) - Revert previous fix
 - [7399](https://github.com/vegaprotocol/vega/issues/7399) - Add option to filter out settled markets when listing markets in `API` requests
+- [7559](https://github.com/vegaprotocol/vega/issues/7559) - Workaround `leveldb` issue and open `db` in write mode when listing using `vega tools snapshot`
 - [7417](https://github.com/vegaprotocol/vega/issues/7417) - Missing entries in default data retention configuration for `datanode`
 - [7504](https://github.com/vegaprotocol/vega/issues/7504) - Fixed panic in collateral engine when trying to clear a market
 - [7468](https://github.com/vegaprotocol/vega/issues/7468) - `Datanode` network history load command only prompts when run from a terminal

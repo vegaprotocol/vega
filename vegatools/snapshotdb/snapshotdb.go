@@ -33,7 +33,6 @@ func initialiseTree(dbPath string) (*db.GoLevelDB, *iavl.MutableTree, error) {
 		dbPath,
 		&opt.Options{
 			ErrorIfMissing: true,
-			ReadOnly:       true,
 		})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to open database located at %s : %w", dbPath, err)
