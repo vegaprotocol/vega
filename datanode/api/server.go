@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/subscribers"
 
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
+	"code.vegaprotocol.io/vega/datanode/ratelimit"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
@@ -354,9 +355,11 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		lis = tpcLis
 	}
 
+	rateLimit := ratelimit.NewFromConfig(&g.RateLimit, g.log)
 	intercept := grpc.ChainUnaryInterceptor(
 		remoteAddrInterceptor(g.log),
 		headersInterceptor(g.blockService.GetLastBlock, g.log),
+		rateLimit.GRPCInterceptor,
 	)
 
 	g.srv = grpc.NewServer(intercept)
