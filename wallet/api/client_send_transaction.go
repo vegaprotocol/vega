@@ -160,6 +160,10 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	h.interactor.Log(ctx, traceID, InfoLog, "Computing proof-of-work...")
 	tx.Pow, err = h.spam.GenerateProofOfWork(params.PublicKey, &stats)
 	if err != nil {
+		if errors.Is(err, ErrTransactionsPerBlockLimitReached) || errors.Is(err, ErrBlockHeightTooHistoric) {
+			h.interactor.NotifyError(ctx, traceID, ApplicationError, fmt.Errorf("could not compute the proof-of-work: %w", err))
+			return nil, applicationCancellationError(err)
+		}
 		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not compute the proof-of-work: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)
 	}

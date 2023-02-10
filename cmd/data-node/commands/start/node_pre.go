@@ -238,7 +238,15 @@ func (l *NodeCommand) preRun([]string) (err error) {
 			l.Log.Error("failed to create path for buffered event source", logging.Error(err))
 			return err
 		}
-		eventSource, err = broker.NewBufferedEventSource(l.Log, l.conf.Broker.BufferedEventSourceConfig, eventReceiverSender, bufferFilePath)
+
+		archiveFilesPath, err := l.vegaPaths.CreateStatePathFor(paths.DataNodeArchivedEventBufferHome)
+		if err != nil {
+			l.Log.Error("failed to create archive path for buffered event source", logging.Error(err))
+			return err
+		}
+
+		eventSource, err = broker.NewBufferedEventSource(l.ctx, l.Log, l.conf.Broker.BufferedEventSourceConfig, eventReceiverSender,
+			bufferFilePath, archiveFilesPath)
 		if err != nil {
 			l.Log.Error("unable to initialise file buffered event source", logging.Error(err))
 			return err

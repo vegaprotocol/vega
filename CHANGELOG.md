@@ -20,6 +20,7 @@
 - [7386](https://github.com/vegaprotocol/vega/issues/7386) - Add indexed filtering by command type to block explorer
 - [6962](https://github.com/vegaprotocol/vega/issues/6962) - Add a dedicated configuration for the wallet service
 - [7434](https://github.com/vegaprotocol/vega/issues/7434) - Update design architecture diagram
+- [7517](https://github.com/vegaprotocol/vega/issues/7517) - Archive and roll event buffer files
 - [7429](https://github.com/vegaprotocol/vega/issues/7429) - Do not mark wallet and network as incompatible when the patch version doesn't match
 - [6650](https://github.com/vegaprotocol/vega/issues/6650) - Add ability to filter rewards with `fromEpoch` and `toEpoch`
 - [7429](https://github.com/vegaprotocol/vega/issues/7359) - `vega wallet` will not send in a transaction if it will result in a party becoming banned
@@ -57,6 +58,7 @@
 - [7519](https://github.com/vegaprotocol/vega/issues/7519) - Fix memory leak and increased CPU usage when streaming data.
 - [7536](https://github.com/vegaprotocol/vega/issues/7536) - Ensure all errors are displayed when the wallet service cannot bind
 - [7540](https://github.com/vegaprotocol/vega/issues/7540) - Prevent the double appending of the `http` scheme when ensuring port binding
+- [7549](https://github.com/vegaprotocol/vega/issues/7549) - Switch proof-of-work ban error from an internal error to an application error on the wallet API
 
 ## 0.67.2
 

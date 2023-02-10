@@ -44,7 +44,7 @@ func (h *ClientConnectWallet) Handle(ctx context.Context, hostname string) (wall
 	}
 	if len(availableWallets) == 0 {
 		h.interactor.NotifyError(ctx, traceID, ApplicationError, ErrNoWalletToConnectTo)
-		return nil, applicationCancellationError(ErrApplicationCanceledTheRequest)
+		return nil, applicationCancellationError(ErrApplicationCancelledTheRequest)
 	}
 
 	var approval preferences.ConnectionApproval
