@@ -9,7 +9,7 @@ create table blocks
     height        BIGINT                   NOT NULL,
     hash          BYTEA                    NOT NULL
 );
-select create_hypertable('blocks', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+select create_hypertable('blocks', 'vega_time', chunk_time_interval => INTERVAL '1 hour');
 create index on blocks (height);
 
 create table last_block
@@ -97,7 +97,7 @@ create table balances
     PRIMARY KEY(vega_time, account_id) INCLUDE (balance)
 );
 
-select create_hypertable('balances', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+select create_hypertable('balances', 'vega_time', chunk_time_interval => INTERVAL '1 hour');
 create index on balances (account_id, vega_time) INCLUDE(balance);
 
 create table current_balances
@@ -173,7 +173,7 @@ create table ledger
     type                           TEXT,
     PRIMARY KEY(ledger_entry_time)
 );
-SELECT create_hypertable('ledger', 'ledger_entry_time', chunk_time_interval => INTERVAL '1 day');
+SELECT create_hypertable('ledger', 'ledger_entry_time', chunk_time_interval => INTERVAL '1 hour');
 
 CREATE INDEX ON ledger (account_from_id, vega_time DESC);
 CREATE INDEX ON ledger (account_to_id, vega_time DESC);
@@ -209,7 +209,7 @@ CREATE TABLE orders (
     PRIMARY KEY(vega_time, seq_num)
 );
 
-SELECT create_hypertable('orders', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+SELECT create_hypertable('orders', 'vega_time', chunk_time_interval => INTERVAL '1 hour');
 CREATE INDEX ON orders (market_id, vega_time DESC) where current=true;
 CREATE INDEX ON orders (party_id, vega_time DESC) where current=true;
 CREATE INDEX ON orders (reference, vega_time DESC) where current=true;
@@ -331,7 +331,7 @@ create table trades
     primary key (synthetic_time)
 );
 
-SELECT create_hypertable('trades', 'synthetic_time', chunk_time_interval => INTERVAL '1 day');
+SELECT create_hypertable('trades', 'synthetic_time', chunk_time_interval => INTERVAL '1 hour');
 CREATE INDEX ON trades (market_id, synthetic_time DESC);
 CREATE INDEX ON trades(buyer, synthetic_time desc);
 CREATE INDEX ON trades(seller, synthetic_time desc);
@@ -514,7 +514,7 @@ create table market_data (
     PRIMARY KEY (synthetic_time)
 );
 
-select create_hypertable('market_data', 'synthetic_time', chunk_time_interval => INTERVAL '1 day');
+select create_hypertable('market_data', 'synthetic_time', chunk_time_interval => INTERVAL '1 hour');
 
 create index on market_data (market, vega_time);
 
@@ -635,7 +635,7 @@ CREATE TABLE delegations(
   PRIMARY KEY(vega_time, seq_num)
 );
 
-select create_hypertable('delegations', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+select create_hypertable('delegations', 'vega_time', chunk_time_interval => INTERVAL '1 hour');
 create index on delegations (party_id, node_id, epoch_id);
 
 
@@ -694,7 +694,7 @@ create table if not exists markets (
     primary key (id, vega_time)
 );
 
-select create_hypertable('markets', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+select create_hypertable('markets', 'vega_time', chunk_time_interval => INTERVAL '1 hour');
 
 drop view if exists markets_current;
 
@@ -776,7 +776,7 @@ create table if not exists deposits (
 );
 CREATE INDEX ON deposits(party_id);
 
-select create_hypertable('deposits', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+select create_hypertable('deposits', 'vega_time', chunk_time_interval => INTERVAL '1 hour');
 
 CREATE VIEW deposits_current AS (
     -- Assume that party_id is always the same for a given deposit ID to allow filter to be pushed down
@@ -803,7 +803,7 @@ create table if not exists withdrawals (
 
 CREATE INDEX ON withdrawals(party_id);
 
-select create_hypertable('withdrawals', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+select create_hypertable('withdrawals', 'vega_time', chunk_time_interval => INTERVAL '1 hour');
 
 CREATE VIEW withdrawals_current AS (
     -- Assume that party_id is always the same for a given withdrawal ID to allow filter to be pushed down
@@ -869,7 +869,7 @@ create table if not exists margin_levels (
     PRIMARY KEY(vega_time, account_id)
 );
 
-select create_hypertable('margin_levels', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+select create_hypertable('margin_levels', 'vega_time', chunk_time_interval => INTERVAL '1 hour');
 
 create table current_margin_levels
 (
@@ -1022,7 +1022,7 @@ CREATE TABLE checkpoints(
     PRIMARY KEY(vega_time, seq_num)
 );
 
-SELECT create_hypertable('checkpoints', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+SELECT create_hypertable('checkpoints', 'vega_time', chunk_time_interval => INTERVAL '1 hour');
 
 CREATE TABLE positions(
   market_id           BYTEA NOT NULL,
@@ -1039,7 +1039,7 @@ CREATE TABLE positions(
   primary key (party_id, market_id, vega_time)
 );
 
-select create_hypertable('positions', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+select create_hypertable('positions', 'vega_time', chunk_time_interval => INTERVAL '1 hour');
 
 
 CREATE MATERIALIZED VIEW conflated_positions
@@ -1222,7 +1222,7 @@ create table if not exists liquidity_provisions (
     primary key (id, vega_time)
 );
 
-select create_hypertable('liquidity_provisions', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+select create_hypertable('liquidity_provisions', 'vega_time', chunk_time_interval => INTERVAL '1 hour');
 
 
 create table current_liquidity_provisions
