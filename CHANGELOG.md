@@ -32,7 +32,7 @@
 - [7450](https://github.com/vegaprotocol/vega/issues/7450) - Positions API reporting close-out information and loss socialisation data.
 - [7538](https://github.com/vegaprotocol/vega/issues/7538) - Add node information to the wallet response when sending the transaction
 - [7550](https://github.com/vegaprotocol/vega/issues/7550) - Update feature tests to use specify explicitly linear and quadratic slippage factors
-- [7546](https://github.com/vegaprotocol/vega/issues/7546) - Visor automatically uses snapshot on core based on latest data node snapshost.
+- [7546](https://github.com/vegaprotocol/vega/issues/7546) - Visor automatically uses snapshot on core based on latest data node snapshot.
 
 ### 🐛 Fixes
 - [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema
