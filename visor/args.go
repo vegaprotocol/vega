@@ -61,7 +61,7 @@ func (a *Args) ForceSet(name, value string) bool {
 
 // GetFlagWithArg finds and returns a flag with it's argument.
 // Returns nil if not found.
-// Example: --home /path
+// Example: --home /path.
 func (a Args) GetFlagWithArg(name string) []string {
 	if name[0:2] != "--" {
 		name = fmt.Sprintf("--%s", name)
