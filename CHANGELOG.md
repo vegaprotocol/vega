@@ -11,12 +11,11 @@
 - [7445](https://github.com/vegaprotocol/vega/issues/7445) - Added rate limiting to `GRPC`, `Rest` and `GraphQL` `APIs`
 - [7542](https://github.com/vegaprotocol/vega/issues/7542) - Add optional slippage factors to market proposal and use them to cap slippage component of maintenance margin
 
-
-
 ### 🗑️ Deprecation
 - [7385](https://github.com/vegaprotocol/vega/issues/7385) - Deprecating the `X-Vega-Connection` HTTP header in `datanode` `API` and `REST` and `GraphQL` gateways.
 
 ### 🛠 Improvements
+- [7501](https://github.com/vegaprotocol/vega/issues/7501) - Make logs more clear
 - [7386](https://github.com/vegaprotocol/vega/issues/7386) - Add indexed filtering by command type to block explorer
 - [6962](https://github.com/vegaprotocol/vega/issues/6962) - Add a dedicated configuration for the wallet service
 - [7434](https://github.com/vegaprotocol/vega/issues/7434) - Update design architecture diagram

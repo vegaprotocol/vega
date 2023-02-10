@@ -19,10 +19,11 @@ import (
 	"path/filepath"
 	"sync"
 
+	"google.golang.org/protobuf/proto"
+
 	"code.vegaprotocol.io/vega/core/events"
 	vgproto "code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
-	"google.golang.org/protobuf/proto"
 )
 
 type FileClient struct {
@@ -34,9 +35,11 @@ type FileClient struct {
 	mut  sync.RWMutex
 }
 
+const namedFileClientLogger = "file-client"
+
 func NewFileClient(log *logging.Logger, config *FileConfig) (*FileClient, error) {
 	fc := &FileClient{
-		log:    log,
+		log:    log.Named(namedFileClientLogger),
 		config: config,
 	}
 

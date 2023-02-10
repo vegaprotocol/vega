@@ -19,13 +19,14 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/mux"
+	"github.com/gorilla/rpc"
+	"github.com/gorilla/rpc/json"
+
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-	"github.com/gorilla/mux"
-	"github.com/gorilla/rpc"
-	"github.com/gorilla/rpc/json"
 )
 
 type ProtocolUpgradeService interface {
@@ -43,14 +44,15 @@ type Server struct {
 	protocolUpgradeService *ProtocolUpgradeAdminService
 }
 
-func NewNonValidatorServer(log *logging.Logger,
+// NewNonValidatorServer returns a new instance of the non-validator RPC socket server.
+func NewNonValidatorServer(
+	log *logging.Logger,
 	config Config,
-	vegaPaths paths.Paths,
 	protocolUpgradeService ProtocolUpgradeService,
 ) (*Server, error) {
 	// setup logger
-	log = log.Named(namedLogger)
-	log.SetLevel(config.Level.Get())
+	log = log.Named(nvServerNamedLogger)
+	log.SetLevel(config.Level.Get()) // TODO: is this needed?
 
 	return &Server{
 		log:                    log,
@@ -61,7 +63,7 @@ func NewNonValidatorServer(log *logging.Logger,
 	}, nil
 }
 
-// NewServer returns a new instance of the RPC socket server.
+// NewValidatorServer returns a new instance of the validator RPC socket server.
 func NewValidatorServer(
 	log *logging.Logger,
 	config Config,
@@ -71,7 +73,7 @@ func NewValidatorServer(
 	protocolUpgradeService ProtocolUpgradeService,
 ) (*Server, error) {
 	// setup logger
-	log = log.Named(namedLogger)
+	log = log.Named(vServerNamedLogger)
 	log.SetLevel(config.Level.Get())
 
 	nodeWallet, err := NewNodeWallet(log, vegaPaths, nodeWalletPassphrase, nodeWallets)
@@ -104,7 +106,7 @@ func (s *Server) ReloadConf(cfg Config) {
 	s.cfg = cfg
 }
 
-// Start start the server.
+// Start starts the server.
 func (s *Server) Start() {
 	logger := s.log
 

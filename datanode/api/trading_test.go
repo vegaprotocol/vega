@@ -103,7 +103,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 
 	logger := logging.NewTestLogger()
 	eventService := subscribers.NewService(logger, bro, conf.Broker.EventBusClientBufferSize)
-	sqlOrderStore := sqlstore.NewOrders(sqlConn, logger)
+	sqlOrderStore := sqlstore.NewOrders(sqlConn)
 	sqlOrderService := service.NewOrder(sqlOrderStore, logger)
 	sqlNetworkLimitsService := service.NewNetworkLimits(sqlstore.NewNetworkLimits(sqlConn), logger)
 	sqlMarketDataService := service.NewMarketData(sqlstore.NewMarketData(sqlConn), logger)

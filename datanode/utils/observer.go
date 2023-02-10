@@ -41,7 +41,7 @@ type Observer[T any] struct {
 func NewObserver[T any](name string, log *logging.Logger, inChSize, outChSize int) Observer[T] {
 	return Observer[T]{
 		name:        name,
-		log:         log,
+		log:         log.Named("observer." + name),
 		subscribers: map[uint64]subscriber[T]{},
 		inChSize:    inChSize,
 		outChSize:   outChSize,

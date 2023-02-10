@@ -88,7 +88,7 @@ func NewSQLStoreBroker(
 ) *SQLStoreBroker {
 	b := &SQLStoreBroker{
 		config:                config,
-		log:                   log,
+		log:                   log.Named("sqlstore-broker"),
 		subscribers:           subs,
 		typeToSubs:            map[events.Type][]SQLBrokerSubscriber{},
 		eventSource:           eventsource,

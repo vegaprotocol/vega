@@ -39,10 +39,11 @@ type StartCmd struct {
 
 var startCmd StartCmd
 
+const namedLogger = "core"
+
 func (cmd *StartCmd) Execute(args []string) error {
 	log := logging.NewLoggerFromConfig(
-		logging.NewDefaultConfig(),
-	)
+		logging.NewDefaultConfig()).Named(namedLogger)
 	defer log.AtExit()
 
 	// we define this option to parse the cli args each time the config is

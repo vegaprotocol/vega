@@ -34,7 +34,7 @@ import (
 )
 
 const (
-	namedLogger = "gateway.restproxy"
+	namedLogger = "restproxy"
 )
 
 // ProxyServer implement a rest server acting as a proxy to the grpc api.

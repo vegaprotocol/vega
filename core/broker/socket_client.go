@@ -22,14 +22,15 @@ import (
 
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
-	"code.vegaprotocol.io/vega/libs/proto"
-	mangos "go.nanomsg.org/mangos/v3"
+	"go.nanomsg.org/mangos/v3"
 	mangosErr "go.nanomsg.org/mangos/v3/errors"
 	"go.nanomsg.org/mangos/v3/protocol"
 	"go.nanomsg.org/mangos/v3/protocol/pair"
 	_ "go.nanomsg.org/mangos/v3/transport/inproc" // Does some nanomsg magic presumably
 	_ "go.nanomsg.org/mangos/v3/transport/tcp"    // Does some nanomsg magic presumably
 	"golang.org/x/sync/errgroup"
+
+	"code.vegaprotocol.io/vega/libs/proto"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -61,6 +62,8 @@ func pipeEventToString(pe mangos.PipeEvent) string {
 	}
 }
 
+const namedSocketClientLogger = "socket-client"
+
 func newSocketClient(ctx context.Context, log *logging.Logger, config *SocketConfig) (*socketClient, error) {
 	sock, err := pair.NewSocket()
 	if err != nil {
@@ -88,7 +91,7 @@ func newSocketClient(ctx context.Context, log *logging.Logger, config *SocketCon
 	})
 
 	s := &socketClient{
-		log: log,
+		log: log.Named(namedSocketClientLogger),
 
 		config: config,
 		sock:   sock,

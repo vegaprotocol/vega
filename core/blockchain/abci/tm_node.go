@@ -22,6 +22,8 @@ type TmNode struct {
 	node service.Service
 }
 
+const namedLogger = "tendermint"
+
 func NewTmNode(
 	conf blockchain.Config,
 	log *logging.Logger,
@@ -29,7 +31,7 @@ func NewTmNode(
 	app types.Application,
 	genesisDoc *tmtypes.GenesisDoc,
 ) (*TmNode, error) {
-	log = log.Named("tendermint")
+	log = log.Named(namedLogger)
 	log.SetLevel(conf.Tendermint.Level.Get())
 
 	config, err := loadConfig(homeDir)

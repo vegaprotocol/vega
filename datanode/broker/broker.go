@@ -94,7 +94,6 @@ type Broker struct {
 func New(ctx context.Context, log *logging.Logger, config Config, chainID string,
 	eventsource EventReceiver,
 ) (*Broker, error) {
-	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
 	b := &Broker{

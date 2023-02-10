@@ -85,7 +85,7 @@ var defaultRetentionPolicies = map[RetentionPeriod][]RetentionPolicy{
 
 func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 	goose.SetBaseFS(EmbedMigrations)
-	goose.SetLogger(log.Named("db migration").GooseLogger())
+	goose.SetLogger(log.Named("db-migrate").GooseLogger())
 
 	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
 	if err != nil {
@@ -104,7 +104,7 @@ func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 
 func MigrateToSchemaVersion(log *logging.Logger, config Config, version int64, fs fs.FS) error {
 	goose.SetBaseFS(fs)
-	goose.SetLogger(log.Named("db migration").GooseLogger())
+	goose.SetLogger(log.Named("db-migration").GooseLogger())
 
 	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
 	if err != nil {
@@ -123,7 +123,7 @@ func MigrateToSchemaVersion(log *logging.Logger, config Config, version int64, f
 
 func RevertToSchemaVersionZero(log *logging.Logger, config ConnectionConfig, fs fs.FS) error {
 	goose.SetBaseFS(fs)
-	goose.SetLogger(log.Named("revert schema to version 0").GooseLogger())
+	goose.SetLogger(log.Named("revert-schema-to-version-0").GooseLogger())
 
 	poolConfig, err := config.GetPoolConfig()
 	if err != nil {
@@ -142,7 +142,7 @@ func RevertToSchemaVersionZero(log *logging.Logger, config ConnectionConfig, fs 
 
 func WipeDatabaseAndMigrateSchemaToVersion(log *logging.Logger, config ConnectionConfig, version int64, fs fs.FS) error {
 	goose.SetBaseFS(fs)
-	goose.SetLogger(log.Named("wipe database").GooseLogger())
+	goose.SetLogger(log.Named("db-wipe-migrate").GooseLogger())
 
 	poolConfig, err := config.GetPoolConfig()
 	if err != nil {
@@ -174,7 +174,7 @@ func WipeDatabaseAndMigrateSchemaToVersion(log *logging.Logger, config Connectio
 
 func WipeDatabaseAndMigrateSchemaToLatestVersion(log *logging.Logger, config ConnectionConfig, fs fs.FS) error {
 	goose.SetBaseFS(fs)
-	goose.SetLogger(log.Named("wipe database").GooseLogger())
+	goose.SetLogger(log.Named("db-wipe-migrate").GooseLogger())
 
 	poolConfig, err := config.GetPoolConfig()
 	if err != nil {
@@ -203,7 +203,7 @@ func WipeDatabaseAndMigrateSchemaToLatestVersion(log *logging.Logger, config Con
 
 func CreateVegaSchema(log *logging.Logger, connConfig ConnectionConfig) error {
 	goose.SetBaseFS(EmbedMigrations)
-	goose.SetLogger(log.Named("snapshot schema creation").GooseLogger())
+	goose.SetLogger(log.Named("snapshot-schema-creation").GooseLogger())
 
 	poolConfig, err := connConfig.GetPoolConfig()
 	if err != nil {
@@ -511,6 +511,7 @@ type EmbeddedPostgresLog interface {
 }
 
 func StartEmbeddedPostgres(log *logging.Logger, config Config, runtimeDir string, postgresLog EmbeddedPostgresLog) (*embeddedpostgres.EmbeddedPostgres, error) {
+	log = log.Named("embedded-postgres")
 	embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(runtimeDir), "node-data")
 
 	embeddedPostgres := createEmbeddedPostgres(runtimeDir, &embeddedPostgresDataPath,
