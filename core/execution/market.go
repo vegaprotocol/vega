@@ -1141,11 +1141,12 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		cmp := m.getLastTradedPrice()
 		m.markPrice = cmp.Clone()
 		mcmp := num.UintZero().Div(cmp, m.priceFactor) // create the market representation of the price
+		// checkForReferenceMoves has already been called with updatedOrders so passing an empty array in now
 		m.confirmMTM(ctx, &types.Order{
 			ID:            m.idgen.NextID(),
 			Price:         cmp,
 			OriginalPrice: mcmp,
-		}, updatedOrders, false)
+		}, []*types.Order{}, false)
 		// set next MTM
 		m.nextMTM = m.timeService.GetTimeNow().Add(m.mtmDelta)
 	}
