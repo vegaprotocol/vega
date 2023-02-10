@@ -1,4 +1,4 @@
-Feature: Closeout LP scenarios with a trader comes with a crazy order
+Feature: Closeout LP scenarios with a trader comes with a crazy order, check the newly added slippage factor, inear and quadratic
   # Replicate a scenario from Lewis
   Background:
 
@@ -19,13 +19,16 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor |
       | ETH/DEC20 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e0                    | 1e2                       |
+      | ETH/DEC22 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e1                    | 1e3                       |
+      | ETH/DEC23 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e2                    | 1e0                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | market.liquidity.stakeToCcyVolume       | 1     |
 
-  Scenario: Replicate a scenario from Lewis
+  Scenario: 001 Replicate a scenario from Lewis, linear slippage factor = 1e6, quadratic slippage factor = 1e6
     # 1. trader B made LP commitment 150,000
     # 2. trader C and A cross at 0.5 with size of 111, and this opens continuous trading (trade B is short)
     # 3. trader C comes with an order with crazy price
@@ -98,7 +101,6 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order
       | party   | asset | market id | margin        | general       | bond |
       | traderA | USD   | ETH/DEC20 | 13754         | 9999999985946 | 0    |
       | traderB | USD   | ETH/DEC20 | 0             | 0             | 0    |
-      # capping in action
       | traderC | USD   | ETH/DEC20 | 1265600042684 | 8734403057610 | 0    |
 
     And the market data for the market "ETH/DEC20" should be:
@@ -117,6 +119,275 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order
       | traderC | -112   | 5039999994400  | -5039996894106 |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
+
+  Scenario: 002 Replicate a scenario from Lewis, linear slippage factor = 1e0, quadratic slippage factor = 1e2
+    Given the parties deposit on asset's general account the following amount:
+      | party   | asset | amount         |
+      | traderA | USD   | 10000000000000 |
+      | traderB | USD   | 3100000        |
+      | traderC | USD   | 10000000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | traderB | ETH/DEC21 | 150000            | 0.001 | sell | ASK              | 100        | 20     | submission |
+      | lp1 | traderB | ETH/DEC21 | 150000            | 0.001 | buy  | BID              | 100        | 20     | amendmend  |
+
+    Then the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | traderA | ETH/DEC21 | buy  | 1      | 49    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-5    |
+      | traderB | ETH/DEC21 | sell | 1      | 350   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1000 |
+      | traderA | ETH/DEC21 | buy  | 1      | 350   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1    |
+      | traderB | ETH/DEC21 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1    |
+      | traderB | ETH/DEC21 | sell | 1      | 3000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1    |
+    When the opening auction period ends for market "ETH/DEC21"
+
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin  | general | bond   |
+      | traderB | USD   | ETH/DEC21 | 2899518 | 50482   | 150000 |
+
+    And the following trades should be executed:
+      | buyer   | price | size | seller  |
+      | traderA | 350   | 1    | traderB |
+
+    And the market data for the market "ETH/DEC21" should be:
+      | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 12449        | 150000         | 1             |
+
+    Then the order book should have the following volumes for market "ETH/DEC21":
+      | side | price | volume |
+      | buy  | 29    | 5173   |
+      | buy  | 49    | 1      |
+      | sell | 2000  | 1      |
+      | sell | 2020  | 74     |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | traderA | ETH/DEC21 | buy  | 111    | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | traderB | ETH/DEC21 | sell | 111    | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general | bond   |
+      | traderB | USD   | ETH/DEC21 | 511138 | 2439156 | 150000 |
+
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150000         | 112           |
+
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general       | bond   |
+      | traderA | USD   | ETH/DEC21 | 13754  | 9999999985946 | 0      |
+      | traderB | USD   | ETH/DEC21 | 511138 | 2439156       | 150000 |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price       | resulting trades | type       | tif     |
+      | traderC | ETH/DEC21 | sell | 120    | 45000000000 | 0                | TYPE_LIMIT | TIF_GTC |
+
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin    | general       | bond |
+      | traderA | USD   | ETH/DEC21 | 13754     | 9999999985946 | 0    |
+      | traderB | USD   | ETH/DEC21 | 0         | 0             | 0    |
+      | traderC | USD   | ETH/DEC21 | 125493884 | 9999877606410 | 0    |
+
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 0              | 112           |
+
+    And the following trades should be executed:
+      | buyer   | price       | size | seller  |
+      | network | 45000000000 | 112  | traderC |
+      | traderB | 45000000000 | 112  | network |
+
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl   |
+      | traderA | 112    | -300           | 0              |
+      | traderB | 0      | 0              | -3099994       |
+      | traderC | -112   | 5039999994400  | -5039996894106 |
+
+    And the insurance pool balance should be "0" for the market "ETH/DEC21"
+
+  Scenario: 003 Replicate a scenario from Lewis, linear slippage factor = 1e1, quadratic slippage factor = 1e3
+    Given the parties deposit on asset's general account the following amount:
+      | party   | asset | amount         |
+      | traderA | USD   | 10000000000000 |
+      | traderB | USD   | 3100000        |
+      | traderC | USD   | 10000000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | traderB | ETH/DEC22 | 150000            | 0.001 | sell | ASK              | 100        | 20     | submission |
+      | lp1 | traderB | ETH/DEC22 | 150000            | 0.001 | buy  | BID              | 100        | 20     | amendmend  |
+
+    Then the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | traderA | ETH/DEC22 | buy  | 1      | 49    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-5    |
+      | traderB | ETH/DEC22 | sell | 1      | 350   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1000 |
+      | traderA | ETH/DEC22 | buy  | 1      | 350   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1    |
+      | traderB | ETH/DEC22 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1    |
+      | traderB | ETH/DEC22 | sell | 1      | 3000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1    |
+    When the opening auction period ends for market "ETH/DEC22"
+
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin  | general | bond   |
+      | traderB | USD   | ETH/DEC22 | 2899518 | 50482   | 150000 |
+
+    And the following trades should be executed:
+      | buyer   | price | size | seller  |
+      | traderA | 350   | 1    | traderB |
+
+    And the market data for the market "ETH/DEC22" should be:
+      | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 12449        | 150000         | 1             |
+
+    Then the order book should have the following volumes for market "ETH/DEC22":
+      | side | price | volume |
+      | buy  | 29    | 5173   |
+      | buy  | 49    | 1      |
+      | sell | 2000  | 1      |
+      | sell | 2020  | 74     |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | traderA | ETH/DEC22 | buy  | 111    | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | traderB | ETH/DEC22 | sell | 111    | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general | bond   |
+      | traderB | USD   | ETH/DEC22 | 511138 | 2439156 | 150000 |
+
+    And the market data for the market "ETH/DEC22" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150000         | 112           |
+
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general       | bond   |
+      | traderA | USD   | ETH/DEC22 | 13754  | 9999999985946 | 0      |
+      | traderB | USD   | ETH/DEC22 | 511138 | 2439156       | 150000 |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price       | resulting trades | type       | tif     |
+      | traderC | ETH/DEC22 | sell | 120    | 45000000000 | 0                | TYPE_LIMIT | TIF_GTC |
+
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin     | general       | bond |
+      | traderA | USD   | ETH/DEC22 | 13754      | 9999999985946 | 0    |
+      | traderB | USD   | ETH/DEC22 | 0          | 0             | 0    |
+      | traderC | USD   | ETH/DEC22 | 1254554684 | 9998748545610 | 0    |
+
+    And the market data for the market "ETH/DEC22" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 0              | 112           |
+
+    And the following trades should be executed:
+      | buyer   | price       | size | seller  |
+      | network | 45000000000 | 112  | traderC |
+      | traderB | 45000000000 | 112  | network |
+
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl   |
+      | traderA | 112    | -300           | 0              |
+      | traderB | 0      | 0              | -3099994       |
+      | traderC | -112   | 5039999994400  | -5039996894106 |
+
+    And the insurance pool balance should be "0" for the market "ETH/DEC22"
+
+  Scenario: 004 Replicate a scenario from Lewis, linear slippage factor = 1e2, quadratic slippage factor = 1e0
+    Given the parties deposit on asset's general account the following amount:
+      | party   | asset | amount         |
+      | traderA | USD   | 10000000000000 |
+      | traderB | USD   | 3100000        |
+      | traderC | USD   | 10000000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | traderB | ETH/DEC23 | 150000            | 0.001 | sell | ASK              | 100        | 20     | submission |
+      | lp1 | traderB | ETH/DEC23 | 150000            | 0.001 | buy  | BID              | 100        | 20     | amendmend  |
+
+    Then the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | traderA | ETH/DEC23 | buy  | 1      | 49    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-5    |
+      | traderB | ETH/DEC23 | sell | 1      | 350   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1000 |
+      | traderA | ETH/DEC23 | buy  | 1      | 350   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1    |
+      | traderB | ETH/DEC23 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1    |
+      | traderB | ETH/DEC23 | sell | 1      | 3000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1    |
+    When the opening auction period ends for market "ETH/DEC23"
+
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin  | general | bond   |
+      | traderB | USD   | ETH/DEC23 | 2899518 | 50482   | 150000 |
+
+    And the following trades should be executed:
+      | buyer   | price | size | seller  |
+      | traderA | 350   | 1    | traderB |
+
+    And the market data for the market "ETH/DEC23" should be:
+      | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 12449        | 150000         | 1             |
+
+    Then the order book should have the following volumes for market "ETH/DEC23":
+      | side | price | volume |
+      | buy  | 29    | 5173   |
+      | buy  | 49    | 1      |
+      | sell | 2000  | 1      |
+      | sell | 2020  | 74     |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | traderA | ETH/DEC23 | buy  | 111    | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | traderB | ETH/DEC23 | sell | 111    | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general | bond   |
+      | traderB | USD   | ETH/DEC23 | 511138 | 2439156 | 150000 |
+
+    And the market data for the market "ETH/DEC23" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150000         | 112           |
+
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general       | bond   |
+      | traderA | USD   | ETH/DEC23 | 13754  | 9999999985946 | 0      |
+      | traderB | USD   | ETH/DEC23 | 511138 | 2439156       | 150000 |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price       | resulting trades | type       | tif     |
+      | traderC | ETH/DEC23 | sell | 120    | 45000000000 | 0                | TYPE_LIMIT | TIF_GTC |
+
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin  | general       | bond   |
+      | traderA | USD   | ETH/DEC23 | 13754   | 9999999985946 | 0      |
+      | traderB | USD   | ETH/DEC23 | 2441270 | 509024        | 150000 |
+      | traderC | USD   | ETH/DEC23 | 42684   | 9999999957316 | 0      |
+
+    And the market data for the market "ETH/DEC23" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150000         | 112           |
+
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | traderA | 112    | -300           | 0            |
+      | traderB | -112   | 300            | 0            |
+
+    And the insurance pool balance should be "0" for the market "ETH/DEC23"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
