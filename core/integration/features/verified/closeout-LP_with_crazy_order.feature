@@ -28,7 +28,7 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | market.liquidity.stakeToCcyVolume       | 1     |
 
-  Scenario: 001 Replicate a scenario from Lewis, linear slippage factor = 1e6, quadratic slippage factor = 1e6
+  Scenario: 001 Replicate a scenario from Lewis, linear slippage factor = 1e6, quadratic slippage factor = 1e6, 0019-MCAL-001, 0019-MCAL-002
     # 1. trader B made LP commitment 150,000
     # 2. trader C and A cross at 0.5 with size of 111, and this opens continuous trading (trade B is short)
     # 3. trader C comes with an order with crazy price
@@ -59,6 +59,9 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
     And the parties should have the following account balances:
       | party   | asset | market id | margin  | general | bond   |
       | traderB | USD   | ETH/DEC20 | 2899518 | 50482   | 150000 |
+    Then the parties should have the following margin levels:
+      | party   | market id | maintenance | search  | initial | release |
+      | traderB | ETH/DEC20 | 1449759     | 2174638 | 2899518 | 4349277 |
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
@@ -290,13 +293,14 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
 
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
 
-  Scenario: 004 Replicate a scenario from Lewis, linear slippage factor = 1e2, quadratic slippage factor = 1e0
+  Scenario: 004 Replicate a scenario from Lewis, linear slippage factor = 1e2, quadratic slippage factor = 1e0, 0019-MCAL-003
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount         |
       | traderA | USD   | 10000000000000 |
       | traderB | USD   | 3100000        |
       | traderC | USD   | 10000000000000 |
-
+      | traderD | USD   | 10000          |
+      | traderE | USD   | 10000          |
     When the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | traderB | ETH/DEC23 | 150000            | 0.001 | sell | ASK              | 100        | 20     | submission |
@@ -347,6 +351,7 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | party   | asset | market id | margin | general       | bond   |
       | traderA | USD   | ETH/DEC23 | 13754  | 9999999985946 | 0      |
       | traderB | USD   | ETH/DEC23 | 511138 | 2439156       | 150000 |
+    # | traderD | USD   | ETH/DEC23 | 0      | 100           | 0      |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price       | resulting trades | type       | tif     |
@@ -369,8 +374,31 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
 
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
 
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | traderD | ETH/DEC23 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | traderE | ETH/DEC23 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTC |
 
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general | bond |
+      | traderD | USD   | ETH/DEC23 | 82     | 9918    | 0    |
+      | traderE | USD   | ETH/DEC23 | 4256   | 5743    | 0    |
 
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | traderE | ETH/DEC23 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | traderD | ETH/DEC23 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+
+    #for traderD and E, zero position and zero orders results in all zero margin levels
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general | bond |
+      | traderD | USD   | ETH/DEC23 | 0      | 9999    | 0    |
+      | traderE | USD   | ETH/DEC23 | 0      | 9999    | 0    |
+
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | traderD | 0      | 0              | 0            |
+      | traderE | 0      | 0              | 0            |
 
 
 
