@@ -15,6 +15,8 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 )
 
+var errNoHistorySegmentFound = fmt.Errorf("no history segments found")
+
 type latestHistorySegment struct {
 	config.VegaHomeFlag
 	coreConfig.OutputFlag
@@ -48,33 +50,57 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 	ctx, cancelFn := context.WithCancel(context.Background())
 	defer cancelFn()
 
-	networkHistoryStore, err := store.New(ctx, log, cmd.Config.ChainID, cmd.Config.NetworkHistory.Store, vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome), false)
-	if err != nil {
-		handleErr(log, cmd.Output.IsJSON(), "failed to create network history store", err)
-		os.Exit(1)
-	}
+	var latestSegment *v2.HistorySegment
+	if datanodeLive(cmd.Config) {
+		client, conn, err := getDatanodeClient(cmd.Config)
+		if err != nil {
+			handleErr(log, cmd.Output.IsJSON(), "failed to get datanode client", err)
+			os.Exit(1)
+		}
+		defer func() { _ = conn.Close() }()
 
-	segments, err := networkHistoryStore.ListAllIndexEntriesOldestFirst()
-	if err != nil {
-		handleErr(log, cmd.Output.IsJSON(), "failed to list network history segments", err)
-		os.Exit(1)
-	}
+		response, err := client.ListAllNetworkHistorySegments(ctx, &v2.ListAllNetworkHistorySegmentsRequest{})
+		if err != nil {
+			handleErr(log, cmd.Output.IsJSON(), "failed to list all network history segments", errorFromGrpcError("", err))
+			os.Exit(1)
+		}
 
-	if len(segments) < 1 {
-		err := fmt.Errorf("no history segments found")
-		handleErr(log, cmd.Output.IsJSON(), err.Error(), err)
-		os.Exit(1)
-	}
+		if len(response.Segments) < 1 {
+			handleErr(log, cmd.Output.IsJSON(), errNoHistorySegmentFound.Error(), errNoHistorySegmentFound)
+			os.Exit(1)
+		}
 
-	latest := segments[len(segments)-1]
+		latestSegment = response.Segments[0]
+	} else {
+		networkHistoryStore, err := store.New(ctx, log, cmd.Config.ChainID, cmd.Config.NetworkHistory.Store, vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome), false)
+		if err != nil {
+			handleErr(log, cmd.Output.IsJSON(), "failed to create network history store", err)
+			os.Exit(1)
+		}
+
+		segments, err := networkHistoryStore.ListAllIndexEntriesOldestFirst()
+		if err != nil {
+			handleErr(log, cmd.Output.IsJSON(), "failed to list all network history segments", err)
+			os.Exit(1)
+		}
+
+		if len(segments) < 1 {
+			handleErr(log, cmd.Output.IsJSON(), errNoHistorySegmentFound.Error(), errNoHistorySegmentFound)
+			os.Exit(1)
+		}
+
+		latestSegmentIndex := segments[len(segments)-1]
+
+		latestSegment = &v2.HistorySegment{
+			FromHeight:               latestSegmentIndex.GetFromHeight(),
+			ToHeight:                 latestSegmentIndex.GetToHeight(),
+			HistorySegmentId:         latestSegmentIndex.GetHistorySegmentId(),
+			PreviousHistorySegmentId: latestSegmentIndex.GetPreviousHistorySegmentId(),
+		}
+	}
 
 	output := latestHistoryOutput{
-		LatestSegment: &v2.HistorySegment{
-			FromHeight:               latest.GetFromHeight(),
-			ToHeight:                 latest.GetToHeight(),
-			HistorySegmentId:         latest.GetHistorySegmentId(),
-			PreviousHistorySegmentId: latest.GetPreviousHistorySegmentId(),
-		},
+		LatestSegment: latestSegment,
 	}
 
 	if cmd.Output.IsJSON() {
