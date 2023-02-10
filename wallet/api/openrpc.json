@@ -40,10 +40,10 @@
           "$ref": "#/components/errors/user_error_wallet_connection_rejected"
         },
         {
-          "$ref": "#/components/errors/user_error_request_canceled"
+          "$ref": "#/components/errors/user_error_request_cancelled"
         },
         {
-          "$ref": "#/components/errors/user_error_request_canceled"
+          "$ref": "#/components/errors/user_error_request_cancelled"
         }
       ],
       "examples": [
@@ -215,7 +215,7 @@
           "$ref": "#/components/errors/user_error_wallet_connection_rejected"
         },
         {
-          "$ref": "#/components/errors/user_error_request_canceled"
+          "$ref": "#/components/errors/user_error_request_cancelled"
         },
         {
           "$ref": "#/components/errors/application_error_transaction_would_break_spam_rules"
@@ -348,7 +348,7 @@
           "$ref": "#/components/errors/user_error_wallet_connection_rejected"
         },
         {
-          "$ref": "#/components/errors/user_error_request_canceled"
+          "$ref": "#/components/errors/user_error_request_cancelled"
         },
         {
           "$ref": "#/components/errors/application_error_public_key_not_allowed"
@@ -3597,7 +3597,7 @@
       "application_error_request_cancelled": {
         "code": 2001,
         "message": "Application error",
-        "data": "the application canceled the request"
+        "data": "the application cancelled the request"
       },
       "user_error_connection_closed": {
         "code": 3000,
@@ -3624,10 +3624,10 @@
         "message": "User error",
         "data": "the user rejected the signing of the transaction"
       },
-      "user_error_request_canceled": {
+      "user_error_request_cancelled": {
         "code": 3002,
         "message": "User error",
-        "data": "the user canceled the request"
+        "data": "the user cancelled the request"
       }
     }
   }
