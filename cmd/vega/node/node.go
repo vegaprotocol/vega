@@ -359,7 +359,7 @@ func (n *Command) setupCommon(_ []string) (err error) {
 	conf := n.confWatcher.Get()
 
 	// reload logger with the setup from configuration
-	n.Log = logging.NewLoggerFromConfig(conf.Logging)
+	n.Log = logging.NewLoggerFromConfig(conf.Logging).Named("vega")
 
 	// enable pprof if necessary
 	if conf.Pprof.Enabled {

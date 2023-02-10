@@ -37,7 +37,7 @@ var startCmd StartCmd
 func (cmd *StartCmd) Execute(args []string) error {
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig(),
-	)
+	).Named("datanode")
 	defer log.AtExit()
 
 	// we define this option to parse the cli args each time the config is

@@ -51,7 +51,7 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 	conf := l.configWatcher.Get()
 
 	// reload logger with the setup from configuration
-	l.Log = logging.NewLoggerFromConfig(conf.Logging)
+	l.Log = logging.NewLoggerFromConfig(conf.Logging).Named("datanode")
 
 	if conf.Pprof.Enabled {
 		l.Log.Info("vega is starting with pprof profile, this is not a recommended setting for production")
