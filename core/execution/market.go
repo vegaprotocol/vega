@@ -1128,8 +1128,9 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	if !m.as.InAuction() {
 		// only send the auction-left event if we actually *left* the auction.
 		m.broker.Send(endEvt)
-		// now that we're left the auction, we can mark all positions using the
-		// margin calculation method appropriate for non-auction mode
+		// now that we've left the auction and all the orders have been unparked,
+		// we can mark all positions using the margin calculation method appropriate
+		// for non-auction mode and carry out any closeouts if need be
 		m.markPrice = m.getLastTradedPrice().Clone()
 		m.confirmMTM(ctx, false)
 		// set next MTM
