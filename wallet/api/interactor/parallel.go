@@ -418,7 +418,7 @@ func (i *ParallelInteractor) waitForResponse(ctx context.Context, userResponseCh
 	}
 
 	if response.Name == CancelRequestName {
-		return Interaction{}, api.ErrUserCanceledTheRequest
+		return Interaction{}, api.ErrUserCancelledTheRequest
 	}
 
 	if response.Name != name {

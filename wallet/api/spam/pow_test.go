@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	walletapi "code.vegaprotocol.io/vega/wallet/api"
 	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
 	"code.vegaprotocol.io/vega/wallet/api/spam"
 	"github.com/stretchr/testify/require"
@@ -45,7 +46,7 @@ func testTooManyTransactionsWithoutIncreasingDifficulty(t *testing.T) {
 
 	// then pubkey1 is blocked and pubkey2 isn't
 	_, err := p.GenerateProofOfWork(pubkey1, st)
-	require.ErrorIs(t, err, spam.ErrTransactionsPerBlockLimitReached)
+	require.ErrorIs(t, err, walletapi.ErrTransactionsPerBlockLimitReached)
 
 	_, err = p.GenerateProofOfWork(pubkey2, st)
 	require.NoError(t, err)
@@ -107,17 +108,17 @@ func testNumberOfPastBlocksChanges(t *testing.T) {
 	_, err := p.GenerateProofOfWork(pubkey, st)
 	require.NoError(t, err)
 	_, err = p.GenerateProofOfWork(pubkey, st)
-	require.ErrorIs(t, err, spam.ErrTransactionsPerBlockLimitReached)
+	require.ErrorIs(t, err, walletapi.ErrTransactionsPerBlockLimitReached)
 
 	// check we're still blocked after resize
 	st.PoW.PastBlocks = 2
 	_, err = p.GenerateProofOfWork(pubkey, st)
-	require.ErrorIs(t, err, spam.ErrTransactionsPerBlockLimitReached)
+	require.ErrorIs(t, err, walletapi.ErrTransactionsPerBlockLimitReached)
 
 	// now ask to create a pow for a block that is now too historic
 	st.PoW.PowBlockStates[0].BlockHeight = 8
 	_, err = p.GenerateProofOfWork(pubkey, st)
-	require.ErrorIs(t, err, spam.ErrBlockHeightTooHistoric)
+	require.ErrorIs(t, err, walletapi.ErrBlockHeightTooHistoric)
 
 	// now increase and it should be fine
 	st.PoW.PastBlocks = 10
@@ -127,7 +128,7 @@ func testNumberOfPastBlocksChanges(t *testing.T) {
 	// check we are still blocked on the higher block
 	st.PoW.PowBlockStates[0].BlockHeight = 10
 	_, err = p.GenerateProofOfWork(pubkey, st)
-	require.ErrorIs(t, err, spam.ErrTransactionsPerBlockLimitReached)
+	require.ErrorIs(t, err, walletapi.ErrTransactionsPerBlockLimitReached)
 }
 
 func testDifferentChains(t *testing.T) {
@@ -147,7 +148,7 @@ func testDifferentChains(t *testing.T) {
 
 	// then pubkey1 is blocked and pubkey2 isn't
 	_, err := p.GenerateProofOfWork(pubkey1, st)
-	require.ErrorIs(t, err, spam.ErrTransactionsPerBlockLimitReached)
+	require.ErrorIs(t, err, walletapi.ErrTransactionsPerBlockLimitReached)
 
 	st.ChainID = "different-chain"
 	// then pubkey1 is not blocked on a different chain
@@ -167,7 +168,7 @@ func testStatsVsOwnCount(t *testing.T) {
 
 	// we have a fresh state and stats tells us we're already at the limit
 	_, err := p.GenerateProofOfWork(pubkey1, st)
-	require.ErrorIs(t, err, spam.ErrTransactionsPerBlockLimitReached)
+	require.ErrorIs(t, err, walletapi.ErrTransactionsPerBlockLimitReached)
 
 	// we now move onto the next block and generate some proof-of-work
 	st.PoW.PowBlockStates[0].BlockHeight = 150
@@ -181,7 +182,7 @@ func testStatsVsOwnCount(t *testing.T) {
 	// haven't caught up and will tell us there is space, we ignore it
 	st.PoW.PowBlockStates[0].TransactionsSeen = 0
 	_, err = p.GenerateProofOfWork(pubkey1, st)
-	require.ErrorIs(t, err, spam.ErrTransactionsPerBlockLimitReached)
+	require.ErrorIs(t, err, walletapi.ErrTransactionsPerBlockLimitReached)
 }
 
 func defaultSpamStats(t *testing.T) *nodetypes.SpamStatistics {
