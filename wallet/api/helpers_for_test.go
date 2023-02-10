@@ -74,9 +74,9 @@ func assertUserRejectionError(t *testing.T, errorDetails *jsonrpc.ErrorDetails, 
 func assertApplicationCancellationError(t *testing.T, errorDetails *jsonrpc.ErrorDetails) {
 	t.Helper()
 	require.NotNil(t, errorDetails)
-	assert.Equal(t, api.ErrorCodeRequestHasBeenCanceledByApplication, errorDetails.Code)
+	assert.Equal(t, api.ErrorCodeRequestHasBeenCancelledByApplication, errorDetails.Code)
 	assert.Equal(t, string(api.ApplicationError), errorDetails.Message)
-	assert.Equal(t, api.ErrApplicationCanceledTheRequest.Error(), errorDetails.Data)
+	assert.Equal(t, api.ErrApplicationCancelledTheRequest.Error(), errorDetails.Data)
 }
 
 func clientContextForTest() (context.Context, string) {

@@ -58,6 +58,7 @@
 - [7519](https://github.com/vegaprotocol/vega/issues/7519) - Fix memory leak and increased CPU usage when streaming data.
 - [7536](https://github.com/vegaprotocol/vega/issues/7536) - Ensure all errors are displayed when the wallet service cannot bind
 - [7540](https://github.com/vegaprotocol/vega/issues/7540) - Prevent the double appending of the `http` scheme when ensuring port binding
+- [7549](https://github.com/vegaprotocol/vega/issues/7549) - Switch proof-of-work ban error from an internal error to an application error on the wallet API
 
 ## 0.67.2
 

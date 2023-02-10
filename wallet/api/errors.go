@@ -67,10 +67,10 @@ const (
 	// system.
 	ErrorCodeRequestNotPermitted jsonrpc.ErrorCode = 2000
 
-	// ErrorCodeRequestHasBeenCanceledByApplication refers to an automated cancellation of a
+	// ErrorCodeRequestHasBeenCancelledByApplication refers to an automated cancellation of a
 	// request by the application core. This happens when some requirements are
 	// missing to ensure correct handling of a request.
-	ErrorCodeRequestHasBeenCanceledByApplication jsonrpc.ErrorCode = 2001
+	ErrorCodeRequestHasBeenCancelledByApplication jsonrpc.ErrorCode = 2001
 
 	// User error codes are errors that results from the user. It ranges
 	// from 3000 to 3999, included.
@@ -84,17 +84,18 @@ const (
 	// has withdrawn from the action, and thus, abort the action.
 	ErrorCodeRequestHasBeenRejected jsonrpc.ErrorCode = 3001
 
-	// ErrorCodeRequestHasBeenCanceledByUser refers to a cancellation of a request by the
+	// ErrorCodeRequestHasBeenCancelledByUser refers to a cancellation of a request by the
 	// user. It's conceptually different from a rejection. Contrary to a rejection,
 	// when a cancellation is received, the third-party application should temporarily
 	// back off, maintain its state, and wait for the user to be ready to continue.
-	ErrorCodeRequestHasBeenCanceledByUser jsonrpc.ErrorCode = 3002
+	ErrorCodeRequestHasBeenCancelledByUser jsonrpc.ErrorCode = 3002
 )
 
 var (
-	ErrApplicationCanceledTheRequest                      = errors.New("the application canceled the request")
+	ErrApplicationCancelledTheRequest                     = errors.New("the application cancelled the request")
 	ErrBlockHashIsRequired                                = errors.New("the block hash is required")
-	ErrBlockHeightIsRequired                              = errors.New("the block-height is required")
+	ErrBlockHeightIsRequired                              = errors.New("the block height is required")
+	ErrBlockHeightTooHistoric                             = errors.New("the block height is too historic")
 	ErrCannotRotateKeysOnIsolatedWallet                   = errors.New("cannot rotate keys on an isolated wallet")
 	ErrChainIDIsRequired                                  = errors.New("the chain ID is required")
 	ErrCouldNotConnectToWallet                            = errors.New("could not connect to the wallet")
@@ -147,11 +148,11 @@ var (
 	ErrSpecifyingNetworkAndLastBlockDataIsNotSupported    = errors.New("specifying a network and the last block data is not supported")
 	ErrSpecifyingNetworkAndNodeAddressIsNotSupported      = errors.New("specifying a network and a node address is not supported")
 	ErrSubmissionBlockHeightIsRequired                    = errors.New("the submission block height is required")
-	ErrTransactionCouldNotBeSentThroughSelectedNode       = errors.New("the transaction could not be sent through the selected node")
-	ErrTransactionFailed                                  = errors.New("the transaction failed")
+	ErrTransactionBlockedBySpamRules                      = errors.New("the transaction will break the network's spam rules")
 	ErrTransactionIsNotValidJSON                          = errors.New("the transaction is not valid JSON")
 	ErrTransactionIsRequired                              = errors.New("the transaction is required")
-	ErrUserCanceledTheRequest                             = errors.New("the user canceled the request")
+	ErrTransactionsPerBlockLimitReached                   = errors.New("the transaction per block limit has been reached")
+	ErrUserCancelledTheRequest                            = errors.New("the user cancelled the request")
 	ErrUserCloseTheConnection                             = errors.New("the user closed the connection")
 	ErrUserRejectedAccessToKeys                           = errors.New("the user rejected the access to the keys")
 	ErrUserRejectedSendingOfTransaction                   = errors.New("the user rejected the sending of the transaction")
@@ -163,7 +164,6 @@ var (
 	ErrWalletIsRequired                                   = errors.New("the wallet is required")
 	ErrWalletKeyDerivationVersionIsRequired               = errors.New("the wallet key derivation version is required")
 	ErrWrongPassphrase                                    = errors.New("wrong passphrase")
-	ErrTransactionBlockedBySpamRules                      = errors.New("the transaction will break the network's spam rules")
 )
 
 func applicationError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
@@ -232,7 +232,7 @@ func requestInterruptedError(err error) *jsonrpc.ErrorDetails {
 }
 
 func userCancellationError(err error) *jsonrpc.ErrorDetails {
-	return userError(ErrorCodeRequestHasBeenCanceledByUser, err)
+	return userError(ErrorCodeRequestHasBeenCancelledByUser, err)
 }
 
 func userRejectionError(err error) *jsonrpc.ErrorDetails {
@@ -240,7 +240,7 @@ func userRejectionError(err error) *jsonrpc.ErrorDetails {
 }
 
 func applicationCancellationError(err error) *jsonrpc.ErrorDetails {
-	return applicationError(ErrorCodeRequestHasBeenCanceledByApplication, err)
+	return applicationError(ErrorCodeRequestHasBeenCancelledByApplication, err)
 }
 
 func internalError(err error) *jsonrpc.ErrorDetails {
@@ -261,7 +261,7 @@ func handleRequestFlowError(ctx context.Context, traceID string, interactor Inte
 		interactor.NotifyError(ctx, traceID, ServerError, err)
 		return requestInterruptedError(err)
 	}
-	if errors.Is(err, ErrUserCanceledTheRequest) {
+	if errors.Is(err, ErrUserCancelledTheRequest) {
 		return userCancellationError(err)
 	}
 	return nil
