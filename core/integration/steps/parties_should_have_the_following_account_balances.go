@@ -153,7 +153,6 @@ func errMismatchedAccountBalances(row accountBalancesRow, marginAccountBal, gene
 			"bond account balance":    bondAccBal,
 		},
 	)
-
 }
 
 func parseAccountBalancesTable(table *godog.Table) []RowWrapper {
