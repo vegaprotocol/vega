@@ -5,8 +5,8 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 2           | -3            | 0.2                    |
     Given the markets:
-      | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees         | price monitoring | data source config          |
-      | ETH/DEC19 | BTC        | BTC   | my-simple-risk-model | default-margin-calculator | 5                | default-none | default-basic    | default-eth-for-future |
+      | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | BTC        | BTC   | my-simple-risk-model | default-margin-calculator | 5                | default-none | default-basic    | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 5     |
@@ -71,17 +71,17 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
       | party2 | BTC   | ETH/DEC19 | 13080  | 99986920 |
-      # values before uint
-      #| party1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
+    # values before uint
+    #| party1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
     When the opening auction period ends for market "ETH/DEC19"
     ## We're seeing these events twice for some reason
     Then debug trades
     Then the following trades should be executed:
-      | buyer   | price | size | seller |
-      | party1  | 10000 | 1    | party5 |
-      | party1  | 10000 | 3    | party2 |
-      | party1  | 10000 | 1    | party2 |
-      | party1  | 10000 | 4    | party2 |
+      | buyer  | price | size | seller |
+      | party1 | 10000 | 1    | party5 |
+      | party1 | 10000 | 3    | party2 |
+      | party1 | 10000 | 1    | party2 |
+      | party1 | 10000 | 4    | party2 |
     And the mark price should be "10000" for the market "ETH/DEC19"
     ## Network for distressed party1 -> cancelled, nothing on the book is remaining
     And the orders should have the following status:
@@ -98,7 +98,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party2 | ETH/DEC19 | 16000       | 17600  | 19200   | 22400   |
-      #| party7 | ETH/DEC19 | 0           | 0      | 0       | 0       |
+    #| party7 | ETH/DEC19 | 0           | 0      | 0       | 0       |
     Then debug transfers
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
@@ -144,16 +144,16 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
       | party2 | BTC   | ETH/DEC19 | 13080  | 99986920 |
-      # values before uint
-      #| party1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
+    # values before uint
+    #| party1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
     # moves forwards several blocks
     When the opening auction period ends for market "ETH/DEC19"
     ## We're seeing these events twice for some reason
     Then the following trades should be executed:
-      | buyer   | price | size | seller |
-      | party1  | 10000 | 3    | party2 |
-      | party1  | 10000 | 2    | party2 |
-      | party1  | 10000 | 3    | party2 |
+      | buyer  | price | size | seller |
+      | party1 | 10000 | 3    | party2 |
+      | party1 | 10000 | 2    | party2 |
+      | party1 | 10000 | 3    | party2 |
     And the mark price should be "10000" for the market "ETH/DEC19"
     ## Network for distressed party1 -> cancelled, nothing on the book is remaining
     And the orders should have the following status:
@@ -227,16 +227,16 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
       | party2 | BTC   | ETH/DEC19 | 13080  | 99986920 |
-      # values before uint
-      #| party1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
+    # values before uint
+    #| party1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
     When the opening auction period ends for market "ETH/DEC19"
     ## We're seeing these events twice for some reason
     Then the following trades should be executed:
-      | buyer   | price | size | seller |
-      | party1  | 10000 | 1    | party5 |
-      | party1  | 10000 | 3    | party2 |
-      | party1  | 10000 | 1    | party2 |
-      | party1  | 10000 | 4    | party2 |
+      | buyer  | price | size | seller |
+      | party1 | 10000 | 1    | party5 |
+      | party1 | 10000 | 3    | party2 |
+      | party1 | 10000 | 1    | party2 |
+      | party1 | 10000 | 4    | party2 |
     And the mark price should be "10000" for the market "ETH/DEC19"
     ## Network for distressed party1 -> cancelled, nothing on the book is remaining
     And the orders should have the following status:
@@ -258,8 +258,8 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party  | asset | market id | margin | general  |
       | party2 | BTC   | ETH/DEC19 | 19200  | 99980800 |
       | party1 | BTC   | ETH/DEC19 | 108000 | 99892000 |
-      # values before uint
-      #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
+    # values before uint
+    #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
       | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
@@ -315,8 +315,8 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
       | party2 | BTC   | ETH/DEC19 | 13080  | 99986920 |
-      # values before uint
-      #| party1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
+    # values before uint
+    #| party1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
     When the opening auction period ends for market "ETH/DEC19"
     Then the market data for the market "ETH/DEC19" should be:
       | trading mode            |
@@ -324,10 +324,10 @@ Feature: Set up a market, create indiciative price different to actual opening a
     Then debug trades
     ## We're seeing these events twice for some reason
     Then the following trades should be executed:
-      | buyer   | price | size | seller |
-      | party1  | 10000 | 3    | party2 |
-      | party1  | 10000 | 2    | party2 |
-      | party1  | 10000 | 2    | party2 |
+      | buyer  | price | size | seller |
+      | party1 | 10000 | 3    | party2 |
+      | party1 | 10000 | 2    | party2 |
+      | party1 | 10000 | 2    | party2 |
     And the mark price should be "10000" for the market "ETH/DEC19"
     ## Network for distressed party1 -> cancelled, nothing on the book is remaining
     And the orders should have the following status:

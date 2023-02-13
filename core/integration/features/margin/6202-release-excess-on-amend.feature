@@ -18,8 +18,8 @@ Feature: test margin during amending orders
       | market.liquidity.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party0 | USD   | 500000    |
@@ -60,8 +60,8 @@ Feature: test margin during amending orders
     # check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond |
-      | party1 | USD   | ETH/MAR22 | 19218  | 99980782 | 0     |
-      | party4 | USD   | ETH/MAR22 | 93902  | 99906098 | 0     |
+      | party1 | USD   | ETH/MAR22 | 19218  | 99980782 | 0    |
+      | party4 | USD   | ETH/MAR22 | 93902  | 99906098 | 0    |
 
     #margin for party4: 20*1000*3.5569036=71139
 

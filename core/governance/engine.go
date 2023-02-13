@@ -960,6 +960,8 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 			PriceMonitoringParameters:     terms.Changes.PriceMonitoringParameters,
 			LiquidityMonitoringParameters: terms.Changes.LiquidityMonitoringParameters,
 			LpPriceRange:                  terms.Changes.LpPriceRange,
+			LinearSlippageFactor:          terms.Changes.LinearSlippageFactor,
+			QuadraticSlippageFactor:       terms.Changes.QuadraticSlippageFactor,
 		},
 	}
 

@@ -7,8 +7,8 @@ Feature: Amend order to trigger price monitoring auction
       | 5       | 0.95        | 6                 |
       | 10      | 0.99        | 8                 |
     And the markets:
-      | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees         | price monitoring    | data source config          |
-      | ETH/DEC20 | ETH        | ETH   | system-test-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees         | price monitoring    | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC20 | ETH        | ETH   | system-test-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 6     |
