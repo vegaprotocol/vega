@@ -261,7 +261,7 @@ func testMarginOverflow(t *testing.T) {
 		market:  "ETH/DEC19",
 	}
 	eng.tsvc.EXPECT().GetTimeNow().Times(1)
-	eng.as.EXPECT().InAuction().Times(1).Return(false)
+	eng.as.EXPECT().InAuction().Times(2).Return(false)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
 			return markPrice.Clone(), nil
@@ -294,9 +294,9 @@ func testMarginOverflowAuctionEnd(t *testing.T) {
 	}
 	// we're still in auction...
 	eng.tsvc.EXPECT().GetTimeNow().Times(1)
-	eng.as.EXPECT().InAuction().Times(1).Return(true)
+	eng.as.EXPECT().InAuction().Times(2).Return(true)
 	// but the auction is ending
-	eng.as.EXPECT().CanLeave().Times(1).Return(true)
+	eng.as.EXPECT().CanLeave().Times(2).Return(true)
 	// eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {

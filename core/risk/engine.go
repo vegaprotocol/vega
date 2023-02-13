@@ -422,7 +422,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 			}
 		} else { // case 3 -> release some collateral
 			// collateral not relased in auction
-			if e.as.InAuction() {
+			if e.as.InAuction() && !e.as.CanLeave() {
 				// propagate margins then continue
 				e.broker.Send(events.NewMarginLevelsEvent(ctx, *margins))
 				continue
