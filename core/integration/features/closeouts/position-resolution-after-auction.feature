@@ -30,7 +30,7 @@ Feature: Set up a market with an opening auction, then uncross the book so that 
       | lp1 | lp    | ETH/DEC19 | 160000            | 0.01 | sell | MID              | 50         | 100    | submission |
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 29120   |
+      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | BTC   | ETH/DEC19 | 13440  |  6560   |

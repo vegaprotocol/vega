@@ -421,6 +421,12 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				MinAmount: minAmount,
 			}
 		} else { // case 3 -> release some collateral
+			// collateral not relased in auction
+			if e.as.InAuction() && !e.as.CanLeave() {
+				// propagate margins then continue
+				e.broker.Send(events.NewMarginLevelsEvent(ctx, *margins))
+				continue
+			}
 			trnsfr = &types.Transfer{
 				Owner: evt.Party(),
 				Type:  types.TransferTypeMarginHigh,
