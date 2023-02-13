@@ -82,8 +82,8 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | initial  |
       | party0 | ETH/MAR22 | 35078184    | 42093820 |
-      | party1 | ETH/MAR22 | 44388       | 53265    |
-      | party2 | ETH/MAR22 | 187709      | 225250   |
+      | party1 | ETH/MAR22 | 42338       | 50805    |
+      | party2 | ETH/MAR22 | 185609      | 222730   |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
@@ -139,8 +139,8 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | initial  |
       | party0 | ETH/MAR22 | 8771325     | 10525590 |
-      | party1 | ETH/MAR22 | 44388       | 53265    |
-      | party2 | ETH/MAR22 | 187709      | 225250   |
+      | party1 | ETH/MAR22 | 42338       | 50805    |
+      | party2 | ETH/MAR22 | 185609      | 222730   |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |

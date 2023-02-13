@@ -85,8 +85,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
       | lp1    | USD   | ETH/MAR22 | 1320   | 999988680 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 2520   | 99997480  | 0     |
-      | party2 | USD   | ETH/MAR22 | 2520   | 99997480  | 0     |
+      | party1 | USD   | ETH/MAR22 | 1704   | 99998296  | 0     |
+      | party2 | USD   | ETH/MAR22 | 1692   | 99998308  | 0     |
 
     Then the network moves ahead "1" blocks
 
