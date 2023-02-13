@@ -2115,7 +2115,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 	}
 
 	tradeEvts := make([]events.Event, 0, len(parties))
-	for i, party := range parties {
+	for _, party := range parties {
 		tSide, nSide := types.SideSell, types.SideSell // one of them will have to sell
 		if party.Size() < 0 {
 			tSide = types.SideBuy
@@ -2146,7 +2146,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 			Price:         settleOrder.Price.Clone(), // average price
 			OriginalPrice: settleOrder.OriginalPrice.Clone(),
 			CreatedAt:     now,
-			Reference:     fmt.Sprintf("distressed-%d", i),
+			Reference:     fmt.Sprintf("distressed-%s", party.Party()),
 			TimeInForce:   types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 			Type:          types.OrderTypeNetwork,
 		}
