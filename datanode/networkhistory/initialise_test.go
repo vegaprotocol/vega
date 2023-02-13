@@ -87,9 +87,9 @@ func TestInitialiseEmptyDataNode(t *testing.T) {
 			TestSegment{HeightFrom: 0, HeightTo: 1000},
 			TestSegment{HeightFrom: 1001, HeightTo: 2000},
 		},
-	}, gomock.Any(), false).Times(1)
+	}, gomock.Any(), false, false).Times(1)
 
-	networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig, service, []int{})
+	networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig, service, []int{}, false)
 }
 
 func TestInitialiseNonEmptyDataNode(t *testing.T) {
@@ -140,7 +140,7 @@ func TestInitialiseNonEmptyDataNode(t *testing.T) {
 			TestSegment{HeightFrom: 2001, HeightTo: 3000},
 			TestSegment{HeightFrom: 3001, HeightTo: 4000},
 		},
-	}, gomock.Any(), true).Times(1)
+	}, gomock.Any(), true, false).Times(1)
 
 	service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{
 		FromHeight: 0,
@@ -148,7 +148,7 @@ func TestInitialiseNonEmptyDataNode(t *testing.T) {
 		HasData:    true,
 	}, nil)
 
-	networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig, service, []int{})
+	networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig, service, []int{}, false)
 }
 
 func TestLoadingHistoryWithinDatanodeCurrentSpanDoesNothing(t *testing.T) {
@@ -184,7 +184,7 @@ func TestLoadingHistoryWithinDatanodeCurrentSpanDoesNothing(t *testing.T) {
 		HasData:    true,
 	}, nil)
 
-	assert.Nil(t, networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig, service, []int{}))
+	assert.Nil(t, networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig, service, []int{}, false))
 }
 
 func TestWhenMinimumBlockCountExceedsAvailableHistory(t *testing.T) {
@@ -236,10 +236,10 @@ func TestWhenMinimumBlockCountExceedsAvailableHistory(t *testing.T) {
 			TestSegment{HeightFrom: 0, HeightTo: 1000},
 			TestSegment{HeightFrom: 1001, HeightTo: 2000},
 		},
-	}, gomock.Any(), false).Times(1)
+	}, gomock.Any(), false, false).Times(1)
 
 	networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig,
-		service, []int{})
+		service, []int{}, false)
 }
 
 func TestInitialiseToASpecifiedSegment(t *testing.T) {
@@ -269,10 +269,10 @@ func TestInitialiseToASpecifiedSegment(t *testing.T) {
 		SegmentsOldestFirst: []networkhistory.Segment{
 			TestSegment{HeightFrom: 0, HeightTo: 1000},
 		},
-	}, gomock.Any(), false).Times(1)
+	}, gomock.Any(), false, false).Times(1)
 
 	networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig,
-		service, []int{})
+		service, []int{}, false)
 }
 
 func TestAutoInitialiseWhenNoActivePeers(t *testing.T) {
@@ -291,7 +291,7 @@ func TestAutoInitialiseWhenNoActivePeers(t *testing.T) {
 	service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{}, nil)
 
 	assert.NotNil(t, networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig,
-		service, []int{}))
+		service, []int{}, false))
 }
 
 func TestAutoInitialiseWhenNoHistoryAvailableFromPeers(t *testing.T) {
@@ -310,7 +310,7 @@ func TestAutoInitialiseWhenNoHistoryAvailableFromPeers(t *testing.T) {
 	service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{}, nil)
 
 	assert.NotNil(t, networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig,
-		service, []int{}))
+		service, []int{}, false))
 }
 
 func TestInitialiseEmptyDataNodeWhenMultipleContiguousHistories(t *testing.T) {
@@ -364,9 +364,9 @@ func TestInitialiseEmptyDataNodeWhenMultipleContiguousHistories(t *testing.T) {
 				TestSegment{HeightFrom: 5001, HeightTo: 6000},
 				TestSegment{HeightFrom: 6001, HeightTo: 7000},
 			},
-		}, gomock.Any(), false).Times(1)
+		}, gomock.Any(), false, false).Times(1)
 
-	networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig, service, []int{})
+	networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig, service, []int{}, false)
 }
 
 func TestSelectRootSegment(t *testing.T) {
