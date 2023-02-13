@@ -74,6 +74,7 @@ var defaultRetentionPolicies = map[RetentionPeriod][]RetentionPolicy{
 		{HypertableOrCaggName: "deposits", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "withdrawals", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "blocks", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "rewards", DataRetentionPeriod: "1 year"},
 	},
 	RetentionPeriodArchive: {
 		{HypertableOrCaggName: "*", DataRetentionPeriod: string(RetentionPeriodArchive)},
