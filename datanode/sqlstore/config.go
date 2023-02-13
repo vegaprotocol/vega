@@ -41,6 +41,7 @@ type Config struct {
 	LogRotationConfig                                  LogRotationConfig     `group:"LogRotationConfig" namespace:"LogRotationConfig"`
 	DisableMinRetentionPolicyCheckForUseInSysTestsOnly encoding.Bool         `long:"disable-min-retention-policy-use-in-sys-test-only" description:"Disables the minimum retention policy interval check - only for use in system tests"`
 	RetentionPeriod                                    RetentionPeriod       `long:"retention-period" description:"Set the retention level for the database. standard, archive, or lite"`
+	VerboseMigration                                   encoding.Bool         `long:"verbose-migration" description:"Enable verbose logging of SQL migrations"`
 }
 
 type ConnectionConfig struct {
@@ -139,6 +140,7 @@ func NewDefaultConfig() Config {
 			MaxSize: 100,
 			MaxAge:  2,
 		},
-		RetentionPeriod: RetentionPeriodStandard,
+		RetentionPeriod:  RetentionPeriodStandard,
+		VerboseMigration: false,
 	}
 }

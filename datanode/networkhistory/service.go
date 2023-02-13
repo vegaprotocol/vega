@@ -221,13 +221,13 @@ func (d *Service) GetSwarmKeySeed() string {
 }
 
 func (d *Service) LoadNetworkHistoryIntoDatanode(ctx context.Context, contiguousHistory ContiguousHistory,
-	connConfig sqlstore.ConnectionConfig, withIndexesAndOrderTriggers bool,
+	connConfig sqlstore.ConnectionConfig, withIndexesAndOrderTriggers, verbose bool,
 ) (snapshot.LoadResult, error) {
-	return d.LoadNetworkHistoryIntoDatanodeWithLog(ctx, d.log, contiguousHistory, connConfig, withIndexesAndOrderTriggers)
+	return d.LoadNetworkHistoryIntoDatanodeWithLog(ctx, d.log, contiguousHistory, connConfig, withIndexesAndOrderTriggers, verbose)
 }
 
 func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, loadLog snapshot.LoadLog, contiguousHistory ContiguousHistory,
-	connConfig sqlstore.ConnectionConfig, withIndexesAndOrderTriggers bool,
+	connConfig sqlstore.ConnectionConfig, withIndexesAndOrderTriggers, verbose bool,
 ) (snapshot.LoadResult, error) {
 	defer func() { _ = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromDir) }()
 
@@ -262,7 +262,7 @@ func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, loa
 	}
 
 	loadResult, err := d.snapshotService.LoadSnapshotData(ctx, loadLog, currentStateSnapshot, historySnapshots, d.snapshotsCopyFromDir,
-		connConfig, withIndexesAndOrderTriggers)
+		connConfig, withIndexesAndOrderTriggers, verbose)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to load snapshot data:%w", err)
 	}
