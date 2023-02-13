@@ -14,7 +14,7 @@ Feature: Test loss socialization case 5
     Description: case 5 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
 
     # setup accounts
-    Given the initial insurance pool balance is "3000" for the markets:
+    Given the initial insurance pool balance is "3000" for all the markets
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount    |
       | sellSideProvider | BTC   | 100000000 |
