@@ -81,10 +81,10 @@ to the trades. To create an integration test that replicates the system test res
 Feature: A feature that reproduces some system test
 
   Background:
-    Given the initial insurance pool balance is "0" for the markets :
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                | margin calculator         | auction duration | price monitoring | data source config      |
       | ETH/DEC20 | ETH        | ETH   | default-simple-risk-model | default-margin-calculator | 1                | default-none     | default-for-future |
+    And the initial insurance pool balance is "0" for all the markets
 ```
 
 ### Debug problems with VSCode

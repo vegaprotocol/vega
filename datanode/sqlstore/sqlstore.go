@@ -74,6 +74,7 @@ var defaultRetentionPolicies = map[RetentionPeriod][]RetentionPolicy{
 		{HypertableOrCaggName: "deposits", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "withdrawals", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "blocks", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "rewards", DataRetentionPeriod: "1 year"},
 	},
 	RetentionPeriodArchive: {
 		{HypertableOrCaggName: "*", DataRetentionPeriod: string(RetentionPeriodArchive)},
@@ -198,30 +199,6 @@ func WipeDatabaseAndMigrateSchemaToLatestVersion(log *logging.Logger, config Con
 	if err := goose.Up(db, SQLMigrationsDir); err != nil {
 		return fmt.Errorf("failed to goose up the schema: %w", err)
 	}
-	return nil
-}
-
-func CreateVegaSchema(log *logging.Logger, connConfig ConnectionConfig) error {
-	goose.SetBaseFS(EmbedMigrations)
-	goose.SetLogger(log.Named("snapshot schema creation").GooseLogger())
-
-	poolConfig, err := connConfig.GetPoolConfig()
-	if err != nil {
-		return fmt.Errorf("failed to get connection configuration: %w", err)
-	}
-
-	db := stdlib.OpenDB(*poolConfig.ConnConfig)
-	defer func() {
-		err := db.Close()
-		if err != nil {
-			log.Errorf("error when closing connection used to create vega schema:%w", err)
-		}
-	}()
-
-	if err := goose.Up(db, SQLMigrationsDir); err != nil {
-		return fmt.Errorf("failed to create schema: %w", err)
-	}
-
 	return nil
 }
 

@@ -400,7 +400,7 @@ func (m *Market) applyBondPenaltiesAndLiquidationExcludingPending(
 			cancelled[v.Party()] = struct{}{}
 		}
 
-		_, err := m.resolveClosedOutParties(ctx, reallyClosed, nil) // no order ID here
+		_, err := m.resolveClosedOutParties(ctx, reallyClosed)
 		if err != nil {
 			m.log.Error("unable to closed out parties",
 				logging.String("market-id", m.GetID()),

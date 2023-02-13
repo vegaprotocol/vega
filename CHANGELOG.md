@@ -20,6 +20,7 @@
 - [7386](https://github.com/vegaprotocol/vega/issues/7386) - Add indexed filtering by command type to block explorer
 - [6962](https://github.com/vegaprotocol/vega/issues/6962) - Add a dedicated configuration for the wallet service
 - [7434](https://github.com/vegaprotocol/vega/issues/7434) - Update design architecture diagram
+- [7517](https://github.com/vegaprotocol/vega/issues/7517) - Archive and roll event buffer files
 - [7429](https://github.com/vegaprotocol/vega/issues/7429) - Do not mark wallet and network as incompatible when the patch version doesn't match
 - [6650](https://github.com/vegaprotocol/vega/issues/6650) - Add ability to filter rewards with `fromEpoch` and `toEpoch`
 - [7429](https://github.com/vegaprotocol/vega/issues/7359) - `vega wallet` will not send in a transaction if it will result in a party becoming banned
@@ -32,6 +33,8 @@
 - [7450](https://github.com/vegaprotocol/vega/issues/7450) - Positions API reporting close-out information and loss socialisation data.
 - [7538](https://github.com/vegaprotocol/vega/issues/7538) - Add node information to the wallet response when sending the transaction
 - [7550](https://github.com/vegaprotocol/vega/issues/7550) - Update feature tests to use specify explicitly linear and quadratic slippage factors
+- [7558](https://github.com/vegaprotocol/vega/issues/7558) - Add `hypertable` for rewards
+- [7509](https://github.com/vegaprotocol/vega/issues/7509) - Automatically reconcile account balance changes with transfer events after each integration test step
 
 ### 🐛 Fixes
 - [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema
@@ -59,6 +62,8 @@
 - [7536](https://github.com/vegaprotocol/vega/issues/7536) - Ensure all errors are displayed when the wallet service cannot bind
 - [7540](https://github.com/vegaprotocol/vega/issues/7540) - Prevent the double appending of the `http` scheme when ensuring port binding
 - [7549](https://github.com/vegaprotocol/vega/issues/7549) - Switch proof-of-work ban error from an internal error to an application error on the wallet API
+- [7543](https://github.com/vegaprotocol/vega/issues/7543) - Initiate post-auction close out only when all the parked orders get redeployed
+- [7508](https://github.com/vegaprotocol/vega/issues/7508) - Assure transfer events always sent after margin recheck
 
 ## 0.67.2
 

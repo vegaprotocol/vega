@@ -25,8 +25,6 @@ Feature: Test closeout type 1: margin >= cost of closeout
     And the average block duration is "1"
 
   Scenario: case 1 test closeout cost and insurance pool balance
-    # setup accounts
-    Given the initial insurance pool balance is "15000" for the markets:
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount     |
       | sellSideProvider | USD   | 1000000000 |
