@@ -119,18 +119,17 @@ func (m *Market) updateMargin(ctx context.Context, pos []events.MarketPosition) 
 }
 
 func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
-	price := m.getMarkPrice(order)
-	asset, _ := m.mkt.GetAsset()
-	mID := m.GetID()
 	cPos, ok := m.position.GetPositionByPartyID(order.Party)
 	if !ok {
 		return nil, nil, nil
 	}
+	asset, _ := m.mkt.GetAsset()
+	mID := m.GetID()
 	e, err := m.collateral.GetPartyMargin(cPos, asset, mID)
 	if err != nil {
 		return nil, nil, err
 	}
-	risk, closed := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, price.Clone())
+	risk, closed := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, m.getMarketObservable(order).Clone())
 	if len(closed) > 0 {
 		// this order would take party below maintenance -> stop here
 		return nil, nil, ErrMarginCheckInsufficient
@@ -139,7 +138,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 }
 
 func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
-	price := m.getMarkPrice(order)
+	price := m.getMarketObservable(order)
 	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
 	pos, err := m.collateral.GetPartyMargin(mpos, asset, mID)
@@ -162,14 +161,13 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 	return []events.Risk{risk}, nil, nil
 }
 
-func (m *Market) getMarkPrice(o *types.Order) *num.Uint {
-	// during opening auction we don't have a prior mark price, so we use the indicative price instead
+func (m *Market) getMarketObservable(o *types.Order) *num.Uint {
+	// during opening auction we don't have a last traded price, so we use the indicative price instead
 	if m.as.IsOpeningAuction() {
-		// we have no last known mark price
 		if ip := m.matching.GetIndicativePrice(); !ip.IsZero() {
 			return ip
 		}
-		// we don't have an indicative price yet, this must be the first order, so we use its price
+		// we don't have an indicative price yet so we use the order price
 		return o.Price.Clone()
 	}
 	if m.lastTradedPrice == nil {
