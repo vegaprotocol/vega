@@ -475,13 +475,7 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 		return nil
 	}
 	// We know the risk model has been updated, so we have to recalculate margin requirements
-	if err := m.recheckMargin(ctx, m.position.Positions()); err != nil {
-		m.log.Warn(
-			"Error encountered re-checking margin requirements after risk model update",
-			logging.Error(err),
-			logging.MarketID(m.mkt.ID),
-		)
-	}
+	m.recheckMargin(ctx, m.position.Positions())
 
 	return nil
 }
@@ -1776,9 +1770,7 @@ func (m *Market) confirmMTM(
 		ctx, orderUpdates, false)
 	if !skipMargin {
 		// release excess margin for all positions
-		pos := m.position.Positions()
-		// we can safely ignore the error here
-		_ = m.recheckMargin(ctx, pos)
+		m.recheckMargin(ctx, m.position.Positions())
 	}
 	// release any excess if needed
 	// m.releaseExcessMargin(ctx, pos...)
@@ -2053,8 +2045,9 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	m.finalizePartiesCloseOut(ctx, closed, closedMPs)
 
 	m.confirmMTM(ctx, false)
+	m.recheckMargin(ctx, m.position.Positions())
 
-	return orderUpdates, m.recheckMargin(ctx, m.position.Positions())
+	return orderUpdates, nil
 }
 
 func (m *Market) finalizePartiesCloseOut(
@@ -2205,13 +2198,13 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 	}
 }
 
-func (m *Market) recheckMargin(ctx context.Context, pos []events.MarketPosition) error {
+func (m *Market) recheckMargin(ctx context.Context, pos []events.MarketPosition) {
 	risk := m.updateMargin(ctx, pos)
 	if len(risk) == 0 {
-		return nil
+		return
 	}
 	// now transfer margins, ignore closed because we're only recalculating for non-distressed parties.
-	return m.transferRecheckMargins(ctx, risk)
+	m.transferRecheckMargins(ctx, risk)
 }
 
 func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) error {

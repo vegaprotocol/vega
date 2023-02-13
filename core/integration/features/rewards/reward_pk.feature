@@ -59,16 +59,18 @@ Feature: Staking & Delegation
     | party1 |  node2   |  200   |       
     | party1 |  node3   |  300   |     
 
+    And the parties deposit on asset's general account the following amount:
+      | party                                                            | asset | amount |
+      | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | VEGA  | 100000 |
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 50000  | 2021-08-26T00:00:01Z |
     #complete the first epoch for the self delegation to take effect
     Then the network moves ahead "7" blocks
 
   Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped 
     Description: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 
     
-    And the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 50000 |   
-
     #advance to the end of the epoch
     Then the network moves ahead "7" blocks
 
@@ -114,9 +116,9 @@ Feature: Staking & Delegation
     And "pk13" should have general account balance of "3828" for asset "VEGA"
 
     #top up to 25000
-    And the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 24991  |  
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 24991  | 2021-08-26T00:00:01Z |
 
     Then the network moves ahead "7" blocks
     And the parties receive the following reward for epoch 2:
@@ -152,9 +154,9 @@ Feature: Staking & Delegation
     And "pk13" should have general account balance of "5742" for asset "VEGA"
 
     # top up to 12507
-    When the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 12500  |  
+    When the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 12500  | 2021-08-26T00:00:01Z |
 
     Then the network moves ahead "7" blocks
     And the parties receive the following reward for epoch 3:
