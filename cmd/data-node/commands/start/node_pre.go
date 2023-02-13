@@ -93,7 +93,8 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 	}
 
 	if l.conf.SQLStore.WipeOnStartup {
-		if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(l.Log, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations); err != nil {
+		if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(l.Log, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations,
+			bool(l.conf.SQLStore.VerboseMigration)); err != nil {
 			return fmt.Errorf("failed to wiped database:%w", err)
 		}
 		l.Log.Info("Wiped all existing data from the datanode")
@@ -120,7 +121,8 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 			apiPorts = append(apiPorts, l.conf.NetworkHistory.Initialise.GrpcAPIPorts...)
 
 			if err = networkhistory.InitialiseDatanodeFromNetworkHistory(l.ctx, l.conf.NetworkHistory.Initialise,
-				l.Log, l.conf.SQLStore.ConnectionConfig, l.networkHistoryService, apiPorts); err != nil {
+				l.Log, l.conf.SQLStore.ConnectionConfig, l.networkHistoryService, apiPorts,
+				bool(l.conf.SQLStore.VerboseMigration)); err != nil {
 				return fmt.Errorf("failed to initialize datanode from network history: %w", err)
 			}
 
