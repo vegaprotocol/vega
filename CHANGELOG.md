@@ -36,6 +36,7 @@
 - [7558](https://github.com/vegaprotocol/vega/issues/7558) - Add `hypertable` for rewards
 - [7509](https://github.com/vegaprotocol/vega/issues/7509) - Automatically reconcile account balance changes with transfer events after each integration test step
 - [7564](https://github.com/vegaprotocol/vega/issues/7564) - Add logging when database migrations are run
+- [7546](https://github.com/vegaprotocol/vega/issues/7546) - Visor automatically uses snapshot on core based on latest data node snapshot.
 
 ### 🐛 Fixes
 - [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema
@@ -65,6 +66,7 @@
 - [7549](https://github.com/vegaprotocol/vega/issues/7549) - Switch proof-of-work ban error from an internal error to an application error on the wallet API
 - [7543](https://github.com/vegaprotocol/vega/issues/7543) - Initiate post-auction close out only when all the parked orders get redeployed
 - [7508](https://github.com/vegaprotocol/vega/issues/7508) - Assure transfer events always sent after margin recheck
+- [7492](https://github.com/vegaprotocol/vega/issues/7492) - Send market depth events at the end of each block
 
 ## 0.67.2
 

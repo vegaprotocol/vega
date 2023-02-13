@@ -22,6 +22,7 @@ import (
 
 type MarketDepthService interface {
 	AddOrder(order *types.Order, vegaTime time.Time, sequenceNumber uint64)
+	PublishAtEndOfBlock()
 }
 
 type MarketDepth struct {
@@ -39,15 +40,25 @@ func NewMarketDepth(depthService MarketDepthService) *MarketDepth {
 }
 
 func (m *MarketDepth) Types() []events.Type {
-	return []events.Type{events.OrderEvent}
+	return []events.Type{events.OrderEvent, events.EndBlockEvent}
 }
 
 func (m *MarketDepth) Push(_ context.Context, evt events.Event) error {
-	m.consume(evt.(OrderEvent))
+	switch evt.Type() {
+	case events.OrderEvent:
+		m.consumeOrder(evt.(OrderEvent))
+	case events.EndBlockEvent:
+		m.consumeEndBlock()
+	}
+
 	return nil
 }
 
-func (m *MarketDepth) consume(event OrderEvent) {
+func (m *MarketDepth) consumeEndBlock() {
+	m.depthService.PublishAtEndOfBlock()
+}
+
+func (m *MarketDepth) consumeOrder(event OrderEvent) {
 	order, err := types.OrderFromProto(event.Order())
 	if err != nil {
 		panic(err)
