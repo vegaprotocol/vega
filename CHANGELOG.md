@@ -33,6 +33,7 @@
 - [7450](https://github.com/vegaprotocol/vega/issues/7450) - Positions API reporting close-out information and loss socialisation data.
 - [7538](https://github.com/vegaprotocol/vega/issues/7538) - Add node information to the wallet response when sending the transaction
 - [7550](https://github.com/vegaprotocol/vega/issues/7550) - Update feature tests to use specify explicitly linear and quadratic slippage factors
+- [7558](https://github.com/vegaprotocol/vega/issues/7558) - Add `hypertable` for rewards
 - [7509](https://github.com/vegaprotocol/vega/issues/7509) - Automatically reconcile account balance changes with transfer events after each integration test step
 
 ### 🐛 Fixes
