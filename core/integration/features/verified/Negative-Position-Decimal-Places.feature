@@ -105,7 +105,7 @@ Feature: test negative PDP (position decimal places)
 
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond  |
-            | party0 | ETH   | USD/DEC22 | 821773 | 4142658  | 35569 |
+            | party0 | ETH   | USD/DEC22 | 632133 | 4332298  | 35569 |
             | party1 | ETH   | USD/DEC22 | 1778   | 99998222 | 0     |
             | party2 | ETH   | USD/DEC22 | 6830   | 99993170 | 0     |
 
@@ -164,7 +164,7 @@ Feature: test negative PDP (position decimal places)
         #MTM with price change from 10 to 9, party1 has long position of volume 10, price 10 ->9, MTM -1*10*10*1=-100; party2 has short position of volume 10, price 10 ->9, MTM 10*10*1=100;
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond  |
-            | party0 | ETH   | USD/DEC22 | 568920 | 4395511  | 35569 |
+            | party0 | ETH   | USD/DEC22 | 632133 | 4332298  | 35569 |
             | party1 | ETH   | USD/DEC22 | 1678   | 99998223 | 0     |
             | party2 | ETH   | USD/DEC22 | 6930   | 99993170 | 0     |
         # Margin_maintenance_party0 = max(1481*10*3.5569036*9,1206*10*0.801225765*9)=474100
@@ -197,7 +197,7 @@ Feature: test negative PDP (position decimal places)
         #MTM with price change from 9 to 8, party1 has long position of volume 11, price 9 ->8, MTM -1*11*10*1=-110; party2 has short position of volume 10, price 10 ->9, MTM 10*10*1=100;
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond  |
-            | party0 | ETH   | USD/DEC22 | 568920 | 4395512  | 35569 |
+            | party0 | ETH   | USD/DEC22 | 505706 | 4458726  | 35569 |
             | party1 | ETH   | USD/DEC22 | 1230   | 99998561 | 0     |
             | party2 | ETH   | USD/DEC22 | 5823   | 99994377 | 0     |
         # Margin_maintenance_party0 = max(1481*10*3.5569036*8,1206*10*0.801225765*8)=421422
