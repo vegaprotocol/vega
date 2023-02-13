@@ -375,6 +375,11 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | party   | market id | maintenance | search | initial | release |
       | traderB | ETH/DEC23 | 255419      | 383128 | 510838  | 766257  |
 
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | traderA | 112    | -300           | 0            |
+      | traderB | -112   | 300            | 0            |
+
     And the market data for the market "ETH/DEC23" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150000         | 112           |
