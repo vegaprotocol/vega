@@ -27,9 +27,11 @@ func observe[T any](ctx context.Context, log *logging.Logger, eventType string, 
 
 	publishedEventStatTicker := time.NewTicker(time.Second)
 	defer publishedEventStatTicker.Stop()
-	var publishedEvents int64
 
-	var err error
+	var (
+		publishedEvents int64
+		err             error
+	)
 	for {
 		select {
 		case <-publishedEventStatTicker.C:
@@ -73,8 +75,11 @@ func observeBatch[T any](ctx context.Context, log *logging.Logger, eventType str
 
 	publishedEventStatTicker := time.NewTicker(time.Second)
 	defer publishedEventStatTicker.Stop()
-	var publishedEvents int64
-	var err error
+
+	var (
+		publishedEvents int64
+		err             error
+	)
 	for {
 		select {
 		case <-publishedEventStatTicker.C:

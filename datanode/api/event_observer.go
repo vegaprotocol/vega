@@ -59,10 +59,7 @@ func (t coreServiceEventBusServer) Send(data []*eventspb.BusEvent) error {
 func (e *eventObserver) ObserveEventBus(
 	stream protoapi.CoreService_ObserveEventBusServer,
 ) error {
-	server := coreServiceEventBusServer{stream}
-	eventService := e.eventService
-
-	return observeEventBus(e.log, e.Config, server, eventService)
+	return observeEventBus(e.log, e.Config, coreServiceEventBusServer{stream}, e.eventService)
 }
 
 func observeEventBus(log *logging.Logger, config Config, eventBusServer eventBusServer, eventService EventService) error {
@@ -87,10 +84,11 @@ func observeEventBus(log *logging.Logger, config Config, eventBusServer eventBus
 	if err != nil {
 		return formatE(err, ErrMalformedRequest.Error())
 	}
+
 	metrics.StartEventBusActiveSubscriptionCount(types)
 	defer metrics.StopEventBusActiveSubscriptionCount(types)
 
-	filters := []subscribers.EventFilter{}
+	var filters []subscribers.EventFilter
 	if len(req.MarketId) > 0 && len(req.PartyId) > 0 {
 		filters = append(filters, events.GetPartyAndMarketFilter(req.MarketId, req.PartyId))
 	} else {
@@ -107,11 +105,10 @@ func observeEventBus(log *logging.Logger, config Config, eventBusServer eventBus
 	defer close(bCh)
 
 	if req.BatchSize > 0 {
-		err := observeEventsWithAck(ctx, log, eventBusServer, req.BatchSize, ch, bCh)
-		return err
+		return observeEventsWithAck(ctx, log, eventBusServer, req.BatchSize, ch, bCh)
 	}
-	err = observeEvents(ctx, log, eventBusServer, ch)
-	return err
+
+	return observeEvents(ctx, log, eventBusServer, ch)
 }
 
 func observeEvents(
