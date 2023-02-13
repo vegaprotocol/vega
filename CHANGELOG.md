@@ -163,6 +163,7 @@
 - [7195](https://github.com/vegaprotocol/vega/issues/7195) - Ignore oracle messages while market is in proposed state
 - [7198](https://github.com/vegaprotocol/vega/issues/7198) - Reduce `RAM` usage when tendermint calls list snapshot
 - [6996](https://github.com/vegaprotocol/vega/issues/6996) - Add Visor docs
+- [7577](https://github.com/vegaprotocol/vega/issues/7577) - Use correct trade size when calculating pending open volume
 
 ## 0.65.0
 
