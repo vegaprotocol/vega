@@ -18,21 +18,62 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
     title: "Vega data node APIs";
     version: "v0.68.0-dev";
   }
-  schemes: [HTTP, HTTPS]
-  host: "lb.testnet.vega.xyz/datanode/rest"
+  schemes: [HTTP, HTTPS];
+  host: "https://lb.testnet.vega.xyz/datanode/rest";
+  consumes: "application/json";
+  responses: { // can add more keys herer to specify common errors between all endpoints, can also be overwritten per rpc call
+    key: "500";
+    value: {
+      description: "An internal server error";
+      schema: {
+        json_schema: {
+          ref: ".google.rpc.Status";
+        }
+      }
+    }
+  }
 };
 
 service TradingDataService {
-    // Accounts
-    //
-    // Returns a list of accounts matching the supplied filter, including their current balances.
-    // If a given account has never had a balance, it will be absent from the list.
-    rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse);
+  // Accounts
+  //
+  // Returns a list of accounts matching the supplied filter, including their current balances.
+  // If a given account has never had a balance, it will be absent from the list.
+  rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "List accounts"; // this is shown on the top level dropdown for the endpoint
+      tags: "Accounts"; // this creates a category for accounts
+      responses: {
+        key: "200" // multiple keys allowed here, you add one per error returns, as well.
+	  value: {
+	  description: "A successful reponse"
+          examples: {
+            key: "application/json"
+	      value: "{\"accounts\": [{\"balance\": \"10000\", \"assetId\": \"d1984e3d365faa05bcafbe41f50f90e3663ee7c0da22bb1e24b164e9532691b2\", \"type\": \"ACCOUNT_TYPE_MARGIN\"}]}"
+	  }
+        }
+      }
+    };
+  }
 
-    // Accounts subscription
-    //
-    // Subscribe to a stream of accounts
-    rpc ObserveAccounts(ObserveAccountsRequest) returns (stream ObserveAccountsResponse);
+  // Accounts subscription
+  //
+  // Subscribe to a stream of accounts
+  rpc ObserveAccounts(ObserveAccountsRequest) returns (stream ObserveAccountsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Accounts subscription";
+      tags: "Accounts";
+      responses: {
+        key: "200"
+	  value: {
+          examples: {
+            key: "application/json"
+	      value: "{\"accounts\": []}"
+	  }
+        }
+      }
+    };
+  }
 
     // Data node info
     //
@@ -921,14 +962,26 @@ message AggregatedBalanceConnection {
 }
 
 message AccountFilter{
-    // Restrict accounts to those holding balances in this asset ID
-    string asset_id = 1;
-    // Restrict accounts to those owned by the parties in this list (pass an empty list for no filter)
-    repeated string party_ids = 2;
-    // Restrict accounts to those connected to the markets in this list (pass an empty list for no filter)
-    repeated string market_ids = 3;
-    // Restrict accounts to those connected to any of the types in this list (pass an empty list for no filter)
-    repeated vega.AccountType account_types = 4;
+  // Restrict accounts to those holding balances in this asset ID
+  string asset_id = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      pattern: "^[0-9a-f]$",
+      format: "public key"
+      example: "\"d1984e3d365faa05bcafbe41f50f90e3663ee7c0da22bb1e24b164e9532691b2\""
+    }];
+  // Restrict accounts to those owned by the parties in this list (pass an empty list for no filter)
+  repeated string party_ids = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      pattern: "^[0-9a-f]$",
+      format: "asset IDs"
+      example: "[\"d1984e3d365faa05bcafbe41f50f90e3663ee7c0da22bb1e24b164e9532691b2\"]"
+    }];
+  // Restrict accounts to those connected to the markets in this list (pass an empty list for no filter)
+  repeated string market_ids = 3 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      pattern: "^[0-9a-f]$",
+      format: "market IDs"
+      example: "[\"d1984e3d365faa05bcafbe41f50f90e3663ee7c0da22bb1e24b164e9532691b2\"]"
+    }];
+  // Restrict accounts to those connected to any of the types in this list (pass an empty list for no filter)
+  repeated vega.AccountType account_types = 4;
 }
 
 // A list of the properties of an account, used for grouping
