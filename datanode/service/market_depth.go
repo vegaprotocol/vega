@@ -64,23 +64,11 @@ func (m *MarketDepth) Initialise(ctx context.Context) error {
 		m.AddOrder(order, liveOrder.VegaTime, liveOrder.SeqNum)
 	}
 
-	m.startPublishingChanges(ctx)
 	return nil
 }
 
-func (m *MarketDepth) startPublishingChanges(ctx context.Context) {
-	ticker := time.NewTicker(100 * time.Millisecond)
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				m.publishChanges()
-			case <-ctx.Done():
-				ticker.Stop()
-				return
-			}
-		}
-	}()
+func (m *MarketDepth) PublishAtEndOfBlock() {
+	m.publishChanges()
 }
 
 func (m *MarketDepth) publishChanges() {

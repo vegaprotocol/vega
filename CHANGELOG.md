@@ -65,6 +65,7 @@
 - [7549](https://github.com/vegaprotocol/vega/issues/7549) - Switch proof-of-work ban error from an internal error to an application error on the wallet API
 - [7543](https://github.com/vegaprotocol/vega/issues/7543) - Initiate post-auction close out only when all the parked orders get redeployed
 - [7508](https://github.com/vegaprotocol/vega/issues/7508) - Assure transfer events always sent after margin recheck
+- [7492](https://github.com/vegaprotocol/vega/issues/7492) - Send market depth events at the end of each block
 
 ## 0.67.2
 
