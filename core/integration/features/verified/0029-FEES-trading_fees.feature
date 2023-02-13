@@ -844,8 +844,8 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 5900   | 4110    |
-      | trader4  | ETH   | ETH/DEC21 | 9225   | 742     |
+      | trader3a | ETH   | ETH/DEC21 | 5976   | 4034    |
+      | trader4  | ETH   | ETH/DEC21 | 9292   | 675     |
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -984,12 +984,12 @@ Feature: Fees calculations
       | trader3a | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader4 | ETH/DEC21 | 4393        | 4832   | 5271    | 6150    |
+      | party   | market id | maintenance | initial |
+      | trader4 | ETH/DEC21 | 4421        | 5305    |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 3372   | 1622    |
+      | trader3a | ETH   | ETH/DEC21 | 3410   | 1584    |
       | trader4  | ETH   | ETH/DEC21 | 5255   | 0       |
 
     Then the market data for the market "ETH/DEC21" should be:
@@ -1085,12 +1085,13 @@ Feature: Fees calculations
       | trader3a | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 1      | ETH   |
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader4 | ETH/DEC21 | 2380        | 2618   | 2856    | 3332    |
+      | party    | market id | maintenance | initial |
+      | trader3a | ETH/DEC21 | 1170        | 1404    |
+      | trader4  | ETH/DEC21 | 2390        | 2868    |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1392   | 3504    |
+      | trader3a | ETH   | ETH/DEC21 | 1404   | 3492    |
       | trader4  | ETH   | ETH/DEC21 | 2756   | 0       |
 
     Then the market data for the market "ETH/DEC21" should be:
@@ -1197,8 +1198,8 @@ Feature: Fees calculations
       | trader3a | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader4 | ETH/DEC21 | 4393        | 4832   | 5271    | 6150    |
+      | party   | market id | maintenance | initial |
+      | trader4 | ETH/DEC21 | 4421        | 5305    |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
@@ -1282,7 +1283,11 @@ Feature: Fees calculations
 
     Then the following trades should be executed:
       | buyer    | price | size | seller  |
+      | trader3a | 1002  | 1    | trader4 |
       | trader3a | 900   | 2    | trader4 |
+      | aux1     | 500   | 1    | network |
+      | aux1     | 490   | 2    | network |
+      | network  | 493   | 3    | trader3a |
 
     # For trader3a & 4- Sharing IF and LP
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 2 * 900 = 1800
@@ -1303,7 +1308,7 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1597   | 0       |
+      | trader3a | ETH   | ETH/DEC21 |    0   | 0       |
       | trader4  | ETH   | ETH/DEC21 | 3801   | 0       |
 
     Then the market data for the market "ETH/DEC21" should be:
@@ -1401,8 +1406,8 @@ Feature: Fees calculations
       | trader3a | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader4 | ETH/DEC21 | 4760        | 5236   | 5712    | 6664    |
+      | party   | market id | maintenance | initial |
+      | trader4 | ETH/DEC21 | 4788        | 5745    |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |

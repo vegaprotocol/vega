@@ -17,22 +17,35 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/collateral"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/cucumber/godog"
 )
 
 func PartiesWithdrawTheFollowingAssets(
 	collateral *collateral.Engine,
+	broker *stubs.BrokerStub,
 	netDeposits *num.Uint,
 	table *godog.Table,
 ) error {
+	ctx := context.Background()
 	for _, r := range parseWithdrawAssetTable(table) {
 		row := withdrawAssetRow{row: r}
 		amount := row.Amount()
-		_, err := collateral.Withdraw(context.Background(), row.Party(), row.Asset(), amount)
+		_, err := collateral.Withdraw(ctx, row.Party(), row.Asset(), amount)
 		if err := checkExpectedError(row, err, nil); err != nil {
 			return err
 		}
+		// emit an event manually here as we're not going via the banking flow in integration tests
+		broker.Send(events.NewWithdrawalEvent(ctx,
+			types.Withdrawal{
+				PartyID: row.Party(),
+				Asset:   row.Asset(),
+				Amount:  amount,
+				Status:  types.WithdrawalStatusFinalized,
+			}))
 		netDeposits = netDeposits.Sub(netDeposits, amount)
 	}
 	return nil

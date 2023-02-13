@@ -26,7 +26,7 @@ func TheFollowingTransfersShouldHappen(
 	broker *stubs.BrokerStub,
 	table *godog.Table,
 ) error {
-	transfers := getTransfers(broker)
+	transfers := broker.GetTransfers(true)
 
 	for _, r := range parseTransferTable(table) {
 		row := transferRow{row: r}
@@ -77,17 +77,6 @@ func matchTransfers(ledgerEntries []*types.LedgerEntry, row transferRow) (bool, 
 		}
 	}
 	return false, divergingAmounts
-}
-
-func getTransfers(broker *stubs.BrokerStub) []*types.LedgerEntry {
-	transferEvents := broker.GetLedgerMovements()
-	transfers := []*types.LedgerEntry{}
-	for _, e := range transferEvents {
-		for _, response := range e.LedgerMovements() {
-			transfers = append(transfers, response.GetEntries()...)
-		}
-	}
-	return transfers
 }
 
 func parseTransferTable(table *godog.Table) []RowWrapper {

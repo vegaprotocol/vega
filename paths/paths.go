@@ -289,6 +289,9 @@ var (
 	// DataNodeEventBufferHome is the folder containing event buffer files.
 	DataNodeEventBufferHome = StatePath(filepath.Join(DataNodeStateHome.String(), "eventsbuffer"))
 
+	// DataNodeArchivedEventBufferHome is the folder containing archived event buffer files.
+	DataNodeArchivedEventBufferHome = StatePath(filepath.Join(DataNodeStateHome.String(), "archivedeventbuffers"))
+
 	// NodeStateHome is the folder containing the state of the node.
 	NodeStateHome = StatePath("node")
 

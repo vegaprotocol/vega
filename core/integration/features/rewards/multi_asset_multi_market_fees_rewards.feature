@@ -232,13 +232,13 @@ Feature: Fees rewards with multiple markets and assets
       | lpprov | party1 | 1089  | 7    |
       | party2 | party1 | 1030  | 5    |
 
-    Then "party1" should have general account balance of "599979904" for asset "ETH"
+    Then "party1" should have general account balance of "599979308" for asset "ETH"
     Then "party2" should have general account balance of "599994774" for asset "ETH"
     Then "lp1" should have general account balance of "5999984128" for asset "ETH"
     Then "lp2" should have general account balance of "5999995630" for asset "ETH"
 
     Then "party1" should have general account balance of "299987176" for asset "BTC"
-    Then "party2" should have general account balance of "299986327" for asset "BTC"
+    Then "party2" should have general account balance of "299986599" for asset "BTC"
     Then "lp1" should have general account balance of "2999990841" for asset "BTC"
     Then "lp2" should have general account balance of "2999997067" for asset "BTC"
 
