@@ -80,20 +80,21 @@ func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk,
 	return nil
 }
 
-func (m *Market) transferRecheckMargins(ctx context.Context, risk []events.Risk) error {
+func (m *Market) transferRecheckMargins(ctx context.Context, risk []events.Risk) {
 	if len(risk) == 0 {
-		return nil
+		return
 	}
 	mID := m.GetID()
 	evts := make([]events.Event, 0, len(risk))
-	var err error
-	var closed events.Margin
 	for _, r := range risk {
 		var tr *types.LedgerMovement
 		responses := make([]*types.LedgerMovement, 0, 1)
-		tr, closed, err = m.collateral.MarginUpdateOnOrder(ctx, mID, r)
+		tr, closed, err := m.collateral.MarginUpdateOnOrder(ctx, mID, r)
 		if err != nil {
-			break
+			m.log.Warn("margin recheck failed",
+				logging.MarketID(m.GetID()),
+				logging.PartyID(r.Party()),
+				logging.Error(err))
 		}
 		if tr != nil {
 			responses = append(responses, tr)
@@ -113,7 +114,6 @@ func (m *Market) transferRecheckMargins(ctx context.Context, risk []events.Risk)
 		evts = append(evts, events.NewLedgerMovements(ctx, responses))
 	}
 	m.broker.SendBatch(evts)
-	return err
 }
 
 func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Risk) error {
