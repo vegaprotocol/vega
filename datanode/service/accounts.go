@@ -40,7 +40,6 @@ type Account struct {
 	aStore    AccountStore
 	bStore    BalanceStore
 	bObserver utils.Observer[entities.AccountBalance]
-	log       *logging.Logger
 }
 
 func NewAccount(aStore AccountStore, bStore BalanceStore, log *logging.Logger) *Account {
@@ -48,7 +47,6 @@ func NewAccount(aStore AccountStore, bStore BalanceStore, log *logging.Logger) *
 		aStore:    aStore,
 		bStore:    bStore,
 		bObserver: utils.NewObserver[entities.AccountBalance]("account_balance", log, 0, 0),
-		log:       log,
 	}
 }
 

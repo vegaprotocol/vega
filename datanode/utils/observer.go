@@ -41,7 +41,7 @@ type Observer[T any] struct {
 func NewObserver[T any](name string, log *logging.Logger, inChSize, outChSize int) Observer[T] {
 	return Observer[T]{
 		name:        name,
-		log:         log.Named("observer." + name),
+		log:         log,
 		subscribers: map[uint64]subscriber[T]{},
 		inChSize:    inChSize,
 		outChSize:   outChSize,
@@ -182,7 +182,7 @@ func (o *Observer[T]) logDebug(ip string, ref uint64, msg string) {
 }
 
 func (o *Observer[T]) logWarning(ip string, ref uint64, msg string) {
-	o.log.Debug(
+	o.log.Warn(
 		fmt.Sprintf("%s subscriber: %s", o.name, msg),
 		logging.Uint64("id", ref),
 		logging.String("ip-address", ip),

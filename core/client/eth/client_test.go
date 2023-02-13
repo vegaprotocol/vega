@@ -15,20 +15,24 @@ package eth_test
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"math/big"
 	"testing"
+
+	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 
 	"code.vegaprotocol.io/vega/core/client/eth"
 	"code.vegaprotocol.io/vega/core/client/eth/mocks"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
-	ethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNullChain(t *testing.T) {
 	t.Run("test valid hash", testValidHash)
 	t.Run("test mismatch hash", testMismatchHash)
+	t.Run("test current block", testCurrentBlock)
 }
 
 func testValidHash(t *testing.T) {
@@ -60,6 +64,20 @@ func testMismatchHash(t *testing.T) {
 
 	err := c.client.VerifyContract(context.Background(), ethcommon.HexToAddress(contractAddress), "iamnotthehashyouarelookingfor")
 	assert.ErrorIs(t, err, eth.ErrUnexpectedContractHash)
+}
+
+func testCurrentBlock(t *testing.T) {
+	number := big.NewInt(19)
+	c := getTestClient(t)
+	c.mockEthClient.EXPECT().HeaderByNumber(gomock.Any(), gomock.Any()).Return(&types.Header{Number: number}, nil).AnyTimes()
+
+	defer c.ctrl.Finish()
+
+	got, err := c.client.CurrentHeight(context.Background())
+	if !assert.NoError(t, err, fmt.Sprintf("CurrentHeight()")) {
+		return
+	}
+	assert.Equal(t, number.Uint64(), got, "CurrentHeight()")
 }
 
 type testClient struct {

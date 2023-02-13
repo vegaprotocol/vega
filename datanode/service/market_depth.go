@@ -32,7 +32,6 @@ type OrderStore interface {
 type MarketDepth struct {
 	marketDepths   map[string]*entities.MarketDepth
 	orderStore     OrderStore
-	log            *logging.Logger
 	depthObserver  utils.Observer[*types.MarketDepth]
 	updateObserver utils.Observer[*types.MarketDepthUpdate]
 	mu             sync.RWMutex
@@ -43,7 +42,6 @@ func NewMarketDepth(orderStore OrderStore, logger *logging.Logger) *MarketDepth 
 	return &MarketDepth{
 		marketDepths:   map[string]*entities.MarketDepth{},
 		orderStore:     orderStore,
-		log:            logger,
 		depthObserver:  utils.NewObserver[*types.MarketDepth]("market_depth", logger, 100, 100),
 		updateObserver: utils.NewObserver[*types.MarketDepthUpdate]("market_depth_update", logger, 100, 100),
 	}

@@ -35,7 +35,6 @@ type LedgerEntriesStore interface {
 
 type Ledger struct {
 	store             ledgerStore
-	log               *logging.Logger
 	transferResponses []*vega.LedgerMovement
 	observer          utils.Observer[*vega.LedgerMovement]
 }
@@ -43,7 +42,6 @@ type Ledger struct {
 func NewLedger(store ledgerStore, log *logging.Logger) *Ledger {
 	return &Ledger{
 		store:    store,
-		log:      log,
 		observer: utils.NewObserver[*vega.LedgerMovement]("ledger", log, 0, 0),
 	}
 }

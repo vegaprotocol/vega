@@ -114,7 +114,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	sqlAssetService := service.NewAsset(sqlstore.NewAssets(sqlConn))
 	sqlAccountService := service.NewAccount(sqlstore.NewAccounts(sqlConn), sqlstore.NewBalances(sqlConn), logger)
 	sqlRewardsService := service.NewReward(sqlstore.NewRewards(sqlConn), logger)
-	sqlMarketsService := service.NewMarkets(sqlstore.NewMarkets(sqlConn), logger)
+	sqlMarketsService := service.NewMarkets(sqlstore.NewMarkets(sqlConn))
 	sqlDelegationService := service.NewDelegation(sqlstore.NewDelegations(sqlConn), logger)
 	sqlEpochService := service.NewEpoch(sqlstore.NewEpochs(sqlConn))
 	sqlDepositService := service.NewDeposit(sqlstore.NewDeposits(sqlConn))
@@ -139,7 +139,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	sqlMarketDepthService := service.NewMarketDepth(sqlOrderService, logger)
 	sqlLedgerService := service.NewLedger(sqlstore.NewLedger(sqlConn), logger)
 	sqlProtocolUpgradeService := service.NewProtocolUpgrade(sqlstore.NewProtocolUpgradeProposals(sqlConn), logger)
-	sqlCoreSnapshotService := service.NewSnapshotData(sqlstore.NewCoreSnapshotData(sqlConn), logger)
+	sqlCoreSnapshotService := service.NewSnapshotData(sqlstore.NewCoreSnapshotData(sqlConn))
 
 	g := api.NewGRPCServer(
 		logger,

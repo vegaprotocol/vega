@@ -228,7 +228,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.liquidityProvisionService = service.NewLiquidityProvision(s.liquidityProvisionStore)
 	s.marketDataService = service.NewMarketData(s.marketDataStore, log.Named("marketData"))
 	s.marketDepthService = service.NewMarketDepth(s.orderStore, log.Named("marketDepth"))
-	s.marketsService = service.NewMarkets(s.marketsStore, log.Named("markets"))
+	s.marketsService = service.NewMarkets(s.marketsStore)
 	s.multiSigService = service.NewMultiSig(s.multiSigSignerAddedStore)
 	s.networkLimitsService = service.NewNetworkLimits(s.networkLimitsStore)
 	s.networkParameterService = service.NewNetworkParameter(s.netParamStore)
@@ -246,9 +246,9 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.tradeService = service.NewTrade(s.tradeStore, log.Named("trade"))
 	s.transferService = service.NewTransfer(s.transfersStore)
 	s.withdrawalService = service.NewWithdrawal(s.withdrawalsStore)
-	s.chainService = service.NewChain(s.chainStore, log.Named("chain"))
+	s.chainService = service.NewChain(s.chainStore)
 	s.protocolUpgradeService = service.NewProtocolUpgrade(s.pupStore, log.Named("protocolUpgrade"))
-	s.coreSnapshotService = service.NewSnapshotData(s.snapStore, log.Named("snapshot"))
+	s.coreSnapshotService = service.NewSnapshotData(s.snapStore)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,
