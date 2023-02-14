@@ -82,7 +82,7 @@ func observeEventBus(log *logging.Logger, config Config, eventBusServer eventBus
 	// now we will aggregate filter out of the initial request
 	types, err := events.ProtoToInternal(req.Type...)
 	if err != nil {
-		return formatE(err, ErrMalformedRequest.Error())
+		return formatE(ErrMalformedRequest, err)
 	}
 
 	metrics.StartEventBusActiveSubscriptionCount(types)
@@ -133,11 +133,11 @@ func observeEvents(
 
 			if err := stream.Send(data); err != nil {
 				log.Error("Error sending event on stream", logging.Error(err))
-				return formatE(err, ErrStreamInternal.Error())
+				return formatE(ErrStreamInternal, err)
 			}
 			publishedEvents.updateStats(data)
 		case <-ctx.Done():
-			return formatE(ctx.Err(), ErrStreamInternal.Error())
+			return formatE(ErrStreamInternal, ctx.Err())
 		}
 	}
 }
@@ -166,17 +166,17 @@ func observeEventsWithAck(
 
 			if err := stream.Send(data); err != nil {
 				log.Error("Error sending event on stream", logging.Error(err))
-				return formatE(err, ErrStreamInternal.Error())
+				return formatE(ErrStreamInternal, err)
 			}
 			publishedEvents.updateStats(data)
 		case <-ctx.Done():
-			return formatE(ctx.Err(), ErrStreamInternal.Error())
+			return formatE(ErrStreamInternal, ctx.Err())
 		}
 
 		// now we try to read again the new size / ack
 		req, err := recvEventRequest(ctx, defaultReqTimeout, stream)
 		if err != nil {
-			return formatE(err, ErrStreamInternal.Error())
+			return formatE(ErrStreamInternal, err)
 		}
 
 		if req.BatchSize != batchSize {

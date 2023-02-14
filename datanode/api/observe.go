@@ -41,12 +41,12 @@ func observe[T any](ctx context.Context, log *logging.Logger, eventType string, 
 			if !ok {
 				err = ErrChannelClosed
 				log.Errorf("subscriber to %s, reference %v, error: %v", eventType, ref, err)
-				return formatE(err, ErrStreamInternal.Error())
+				return formatE(ErrStreamInternal, err)
 			}
 			for _, event := range events {
 				if err = send(event); err != nil {
 					log.Errorf("rpc stream error, subscriber to %s, reference %v, error: %v", eventType, ref, err)
-					return formatE(err, ErrStreamInternal.Error())
+					return formatE(ErrStreamInternal, err)
 				}
 				publishedEvents++
 			}
@@ -55,7 +55,7 @@ func observe[T any](ctx context.Context, log *logging.Logger, eventType string, 
 			if log.GetLevel() == logging.DebugLevel {
 				log.Debugf("rpc stream ctx error, subscriber to %s, reference %v, error: %v", eventType, ref, err)
 			}
-			return formatE(err, ErrStreamInternal.Error())
+			return formatE(ErrStreamInternal, err)
 		}
 
 		if eventsInChan == nil {
@@ -89,12 +89,12 @@ func observeBatch[T any](ctx context.Context, log *logging.Logger, eventType str
 			if !ok {
 				err = ErrChannelClosed
 				log.Errorf("subscriber to %s, reference %v, error: %v", eventType, ref, err)
-				return formatE(err, ErrStreamInternal.Error())
+				return formatE(ErrStreamInternal, err)
 			}
 			err = send(events)
 			if err != nil {
 				log.Errorf("rpc stream error, subscriber to %s, reference %v, error: %v", eventType, ref, err)
-				return formatE(err, ErrStreamInternal.Error())
+				return formatE(ErrStreamInternal, err)
 			}
 			publishedEvents = publishedEvents + int64(len(events))
 		case <-ctx.Done():
@@ -102,7 +102,7 @@ func observeBatch[T any](ctx context.Context, log *logging.Logger, eventType str
 			if log.GetLevel() == logging.DebugLevel {
 				log.Debugf("rpc stream ctx error, subscriber to %s, reference %v, error: %v", eventType, ref, err)
 			}
-			return formatE(err, ErrStreamInternal.Error())
+			return formatE(ErrStreamInternal, err)
 		}
 
 		if eventsInChan == nil {

@@ -15,13 +15,14 @@ package sqlstore_test
 import (
 	"testing"
 
+	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-	"github.com/shopspring/decimal"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestAccount(t *testing.T) {
@@ -94,6 +95,7 @@ func TestAccount(t *testing.T) {
 		assert.Len(t, accs, 0)
 	})
 
+	// TODO: remove
 	t.Run("query account balance v1", func(t *testing.T) {
 		// QueryBalanceV1 correctly filters on marketID
 		filter := entities.AccountFilter{AssetID: asset.ID, MarketIDs: []entities.MarketID{account.MarketID}}

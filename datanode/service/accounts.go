@@ -26,6 +26,7 @@ type AccountStore interface {
 	GetAll(ctx context.Context) ([]entities.Account, error)
 	Obtain(ctx context.Context, a *entities.Account) error
 	Query(ctx context.Context, filter entities.AccountFilter) ([]entities.Account, error)
+	// TODO: remove
 	QueryBalancesV1(ctx context.Context, filter entities.AccountFilter, pagination entities.OffsetPagination) ([]entities.AccountBalance, error)
 	QueryBalances(ctx context.Context, filter entities.AccountFilter, pagination entities.CursorPagination) ([]entities.AccountBalance, entities.PageInfo, error)
 }
@@ -68,6 +69,7 @@ func (a *Account) Query(ctx context.Context, filter entities.AccountFilter) ([]e
 	return a.aStore.Query(ctx, filter)
 }
 
+// TODO: remove
 func (a *Account) QueryBalancesV1(ctx context.Context, filter entities.AccountFilter, pagination entities.OffsetPagination) ([]entities.AccountBalance, error) {
 	return a.aStore.QueryBalancesV1(ctx, filter, pagination)
 }
