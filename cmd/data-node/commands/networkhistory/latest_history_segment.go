@@ -6,14 +6,16 @@ import (
 	"os"
 
 	coreConfig "code.vegaprotocol.io/vega/core/config"
-	"code.vegaprotocol.io/vega/datanode/networkhistory"
 	vgjson "code.vegaprotocol.io/vega/libs/json"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"code.vegaprotocol.io/vega/datanode/config"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
+
+var errNoHistorySegmentFound = fmt.Errorf("no history segments found")
 
 type latestHistorySegment struct {
 	config.VegaHomeFlag
@@ -21,28 +23,17 @@ type latestHistorySegment struct {
 	config.Config
 }
 
-type segmentInfo struct {
-	Peer         string
-	SwarmKeySeed string
-	Segment      *v2.HistorySegment
-}
 type latestHistoryOutput struct {
-	Segments              []segmentInfo
-	SuggestedFetchSegment *v2.HistorySegment
+	LatestSegment *v2.HistorySegment
 }
 
 func (o *latestHistoryOutput) printHuman() {
-	segmentsInfo := "Most Recent History Segments:\n\n"
-	for _, segment := range o.Segments {
-		segmentsInfo += fmt.Sprintf("Peer:%-39s,  Swarm Key:%s, Segment{%s}\n\n", segment.Peer, segment.SwarmKeySeed, segment.Segment)
-	}
-	fmt.Println(segmentsInfo)
-	fmt.Printf("Suggested segment to use to fetch network history data {%s}\n\n", o.SuggestedFetchSegment)
+	fmt.Printf("Latest segment to use data {%s}\n\n", o.LatestSegment)
 }
 
 func (cmd *latestHistorySegment) Execute(_ []string) error {
 	cfg := logging.NewDefaultConfig()
-	cfg.Custom.Zap.Level = logging.InfoLevel
+	cfg.Custom.Zap.Level = logging.ErrorLevel
 	cfg.Environment = "custom"
 	log := logging.NewLoggerFromConfig(
 		cfg,
@@ -56,47 +47,60 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 		os.Exit(1)
 	}
 
-	if !datanodeLive(cmd.Config) {
-		return fmt.Errorf("datanode must be running for this command to work")
+	ctx, cancelFn := context.WithCancel(context.Background())
+	defer cancelFn()
+
+	var latestSegment *v2.HistorySegment
+	if datanodeLive(cmd.Config) {
+		client, conn, err := getDatanodeClient(cmd.Config)
+		if err != nil {
+			handleErr(log, cmd.Output.IsJSON(), "failed to get datanode client", err)
+			os.Exit(1)
+		}
+		defer func() { _ = conn.Close() }()
+
+		response, err := client.ListAllNetworkHistorySegments(ctx, &v2.ListAllNetworkHistorySegmentsRequest{})
+		if err != nil {
+			handleErr(log, cmd.Output.IsJSON(), "failed to list all network history segments", errorFromGrpcError("", err))
+			os.Exit(1)
+		}
+
+		if len(response.Segments) < 1 {
+			handleErr(log, cmd.Output.IsJSON(), errNoHistorySegmentFound.Error(), errNoHistorySegmentFound)
+			os.Exit(1)
+		}
+
+		latestSegment = response.Segments[0]
+	} else {
+		networkHistoryStore, err := store.New(ctx, log, cmd.Config.ChainID, cmd.Config.NetworkHistory.Store, vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome), false)
+		if err != nil {
+			handleErr(log, cmd.Output.IsJSON(), "failed to create network history store", err)
+			os.Exit(1)
+		}
+
+		segments, err := networkHistoryStore.ListAllIndexEntriesOldestFirst()
+		if err != nil {
+			handleErr(log, cmd.Output.IsJSON(), "failed to list all network history segments", err)
+			os.Exit(1)
+		}
+
+		if len(segments) < 1 {
+			handleErr(log, cmd.Output.IsJSON(), errNoHistorySegmentFound.Error(), errNoHistorySegmentFound)
+			os.Exit(1)
+		}
+
+		latestSegmentIndex := segments[len(segments)-1]
+
+		latestSegment = &v2.HistorySegment{
+			FromHeight:               latestSegmentIndex.GetFromHeight(),
+			ToHeight:                 latestSegmentIndex.GetToHeight(),
+			HistorySegmentId:         latestSegmentIndex.GetHistorySegmentId(),
+			PreviousHistorySegmentId: latestSegmentIndex.GetPreviousHistorySegmentId(),
+		}
 	}
 
-	client, conn, err := getDatanodeClient(cmd.Config)
-	if err != nil {
-		handleErr(log, cmd.Output.IsJSON(), "failed to get datanode client", err)
-		os.Exit(1)
-	}
-	defer func() { _ = conn.Close() }()
-
-	resp, err := client.GetActiveNetworkHistoryPeerAddresses(context.Background(), &v2.GetActiveNetworkHistoryPeerAddressesRequest{})
-	if err != nil {
-		handleErr(log, cmd.Output.IsJSON(), "failed to get active peer addresses", errorFromGrpcError("", err))
-		os.Exit(1)
-	}
-
-	peerAddresses := resp.IpAddresses
-
-	grpcAPIPorts := []int{cmd.Config.API.Port}
-	grpcAPIPorts = append(grpcAPIPorts, cmd.Config.NetworkHistory.Initialise.GrpcAPIPorts...)
-	selectedResponse, peerToResponse, err := networkhistory.GetMostRecentHistorySegmentFromPeersAddresses(context.Background(), peerAddresses,
-		cmd.Config.NetworkHistory.Store.GetSwarmKeySeed(log, cmd.Config.ChainID), grpcAPIPorts)
-	if err != nil {
-		handleErr(log, cmd.Output.IsJSON(), "failed to get most recent history segment from peers", err)
-		os.Exit(1)
-	}
-
-	output := latestHistoryOutput{}
-	output.Segments = []segmentInfo{}
-
-	for peer, segment := range peerToResponse {
-		output.Segments = append(output.Segments, segmentInfo{
-			Peer:         peer,
-			SwarmKeySeed: segment.SwarmKeySeed,
-			Segment:      segment.Segment,
-		})
-	}
-
-	if selectedResponse != nil {
-		output.SuggestedFetchSegment = selectedResponse.Response.Segment
+	output := latestHistoryOutput{
+		LatestSegment: latestSegment,
 	}
 
 	if cmd.Output.IsJSON() {

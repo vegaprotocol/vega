@@ -157,8 +157,12 @@ func (b *BrokerStub) GetImmBatch(t events.Type) []events.Event {
 	return r
 }
 
-func (b *BrokerStub) GetLedgerMovements() []events.LedgerMovements {
+// GetLedgerMovements returns ledger movements, `mutable` argument specifies if these should be all the scenario events or events that can be cleared by the user.
+func (b *BrokerStub) GetLedgerMovements(mutable bool) []events.LedgerMovements {
 	batch := b.GetBatch(events.LedgerMovementsEvent)
+	if !mutable {
+		batch = b.GetImmBatch((events.LedgerMovementsEvent))
+	}
 	if len(batch) == 0 {
 		return nil
 	}
@@ -185,6 +189,18 @@ func (b *BrokerStub) ClearTransferResponseEvents() {
 	cs := make([]events.Event, 0, len(b.data[events.LedgerMovementsEvent]))
 	b.data[events.LedgerMovementsEvent] = cs
 	b.mu.Unlock()
+}
+
+// GetTransfers returns ledger entries, mutable argument specifies if these should be all the scenario events or events that can be cleared by the user.
+func (b *BrokerStub) GetTransfers(mutable bool) []*types.LedgerEntry {
+	transferEvents := b.GetLedgerMovements(mutable)
+	transfers := []*types.LedgerEntry{}
+	for _, e := range transferEvents {
+		for _, response := range e.LedgerMovements() {
+			transfers = append(transfers, response.GetEntries()...)
+		}
+	}
+	return transfers
 }
 
 func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy map[string]uint64) {
@@ -379,6 +395,38 @@ func (b *BrokerStub) GetAccountEvents() []events.Acc {
 		s = append(s, e)
 	}
 	return s
+}
+
+func (b *BrokerStub) GetDeposits() []types.Deposit {
+	// Use GetImmBatch so that clearing events doesn't affact this method
+	batch := b.GetImmBatch(events.DepositEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]types.Deposit, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.Deposit:
+			ret = append(ret, et.Deposit())
+		}
+	}
+	return ret
+}
+
+func (b *BrokerStub) GetWithdrawals() []types.Withdrawal {
+	// Use GetImmBatch so that clearing events doesn't affact this method
+	batch := b.GetImmBatch(events.WithdrawalEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]types.Withdrawal, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.Withdrawal:
+			ret = append(ret, et.Withdrawal())
+		}
+	}
+	return ret
 }
 
 func (b *BrokerStub) GetDelegationBalanceEvents(epochSeq string) []events.DelegationBalance {

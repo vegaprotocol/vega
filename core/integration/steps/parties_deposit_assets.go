@@ -19,7 +19,9 @@ import (
 	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/core/collateral"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
@@ -49,6 +51,14 @@ func PartiesDepositTheFollowingAssets(
 			return errNoGeneralAccountForParty(row, err)
 		}
 		netDeposits.Add(netDeposits, amount)
+		// emit an event manually here as we're not going via the banking flow in integration tests
+		broker.Send(events.NewDepositEvent(ctx,
+			types.Deposit{
+				PartyID: row.Party(),
+				Asset:   row.Asset(),
+				Amount:  amount,
+				Status:  types.DepositStatusFinalized,
+			}))
 	}
 	return nil
 }

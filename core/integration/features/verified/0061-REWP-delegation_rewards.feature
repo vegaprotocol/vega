@@ -95,10 +95,13 @@ Feature: Staking & Delegation
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 
     
     #the available amount for the epoch is 50k
-    Given the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 50000  | 
-
+    And the parties deposit on asset's general account the following amount:
+      | party                                                            | asset | amount |
+      | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | VEGA  | 100000 |
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 50000  | 2021-08-26T00:00:01Z |
+      
     #advance to the end of the epoch
     Then the network moves ahead "7" blocks
   
@@ -142,9 +145,12 @@ Feature: Staking & Delegation
     | party1 |  node2   |  150   | end of epoch |      
     | party1 |  node3   |  300   | end of epoch |
 
-    Given the global reward account gets the following deposits:
-    | asset | amount |
-    | VEGA  | 50000  | 
+    And the parties deposit on asset's general account the following amount:
+      | party                                                            | asset | amount |
+      | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | VEGA  | 100000 |
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 50000  | 2021-08-26T00:00:01Z |
     #advance to the end of the epoch
     When the network moves ahead "7" blocks
 
@@ -174,9 +180,12 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  3828  | 
     | node13 | VEGA  |  3828  | 
 
-    Given the global reward account gets the following deposits:
-    | asset | amount |
-    | VEGA  | 25000  | 
+    And the parties deposit on asset's general account the following amount:
+      | party                                                            | asset | amount |
+      | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | VEGA  | 100000 |
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 25000  | 2021-08-26T00:00:01Z |
 
     #advance to the beginning and end of the following epoch 
     When the network moves ahead "7" blocks
@@ -220,9 +229,12 @@ Feature: Staking & Delegation
     | party1 |  node2   |  150   | now  |      
     | party1 |  node3   |  300   | now  |
 
-    Given the global reward account gets the following deposits:
-    | asset | amount |
-    | VEGA  | 50000  | 
+    And the parties deposit on asset's general account the following amount:
+      | party                                                            | asset | amount |
+      | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | VEGA  | 100000 |
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 50000  | 2021-08-26T00:00:01Z | 
     
     #advance to the end of the epoch
     When the network moves ahead "7" blocks
@@ -269,9 +281,12 @@ Feature: Staking & Delegation
     | party  | asset  | amount |
     | party1 | VEGA   |  9850  |
 
-    Given the global reward account gets the following deposits:
-    | asset | amount |
-    | VEGA  | 50000  | 
+    And the parties deposit on asset's general account the following amount:
+      | party                                                            | asset | amount |
+      | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | VEGA  | 100000 |
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 50000  | 2021-08-26T00:00:01Z |
     
     #advance to the end of the epoch
     When the network moves ahead "7" blocks
@@ -348,9 +363,12 @@ Feature: Staking & Delegation
     | party1 |  node1   |  190   |  
 
     #advance to the end of the epoch for the delegation to become effective
-    Given the global reward account gets the following deposits:
-    | asset | amount |
-    | VEGA  | 25004  | 
+    And the parties deposit on asset's general account the following amount:
+      | party                                                            | asset | amount |
+      | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | VEGA  | 100000 |
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 25004  | 2021-08-26T00:00:01Z |
     Then the network moves ahead "7" blocks    
 
      #verify validator score 
@@ -394,9 +412,12 @@ Feature: Staking & Delegation
     | party1 |  node3   |  0     | 
 
      #advance to the beginning and end of the following epoch 
-    Given the global reward account gets the following deposits:
-    | asset | amount |
-    | VEGA  | 12497  | 
+    And the parties deposit on asset's general account the following amount:
+      | party                                                            | asset | amount |
+      | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | VEGA  | 100000 |
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 12497  | 2021-08-26T00:00:01Z |
     Then the network moves ahead "7" blocks
 
     #verify validator score 
@@ -442,9 +463,12 @@ Feature: Staking & Delegation
     | party  | node id  |  amount | 
     | party1 |  node4   |   100   | 
     #advance to the end of the epoch
-    Given the global reward account gets the following deposits:
-    | asset | amount |
-    | VEGA  | 50000  | 
+    And the parties deposit on asset's general account the following amount:
+      | party                                                            | asset | amount |
+      | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | VEGA  | 100000 |
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 50000  | 2021-08-26T00:00:01Z |
     Then the network moves ahead "7" blocks
     #node1 has 10k self delegation + 100 from party1
     #node2 has 10k self delegation + 200 from party1 
@@ -477,9 +501,12 @@ Feature: Staking & Delegation
     | party1 |  node4   | 100    | 
     #advance to the beginning and end of the following epoch 
 
-    Given the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 24995  | 
+    And the parties deposit on asset's general account the following amount:
+      | party                                                            | asset | amount |
+      | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | VEGA  | 100000 |
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 24995  | 2021-08-26T00:00:01Z |
 
     Then the network moves ahead "7" blocks
     #verify validator score 
@@ -530,9 +557,12 @@ Feature: Staking & Delegation
     | party  | node id  |  amount | 
     | party1 |  node1   |    50   |
 
-    Given the global reward account gets the following deposits:
-    | asset | amount |
-    | VEGA  | 25004  | 
+    And the parties deposit on asset's general account the following amount:
+      | party                                                            | asset | amount |
+      | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | VEGA  | 100000 |
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 25004  | 2021-08-26T00:00:01Z |
 
     When the network moves ahead "7" blocks
     #verify validator score 
@@ -572,9 +602,12 @@ Feature: Staking & Delegation
     | party1 |  node1   |  50    | 
     #advance to the beginning and end of the following epoch 
     
-     Given the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 12501  | 
+    And the parties deposit on asset's general account the following amount:
+      | party                                                            | asset | amount |
+      | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | VEGA  | 100000 |
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 12501  | 2021-08-26T00:00:01Z |
 
     When the network moves ahead "7" blocks
     #verify validator score 
@@ -618,9 +651,12 @@ Feature: Staking & Delegation
       | reward.staking.delegation.maxPayoutPerParticipant | 3000  |
     #the reward amount for each participant per epoch is capped to 3k by maxPayoutPerParticipant
     #advance to the end of the epoch
-    Given the global reward account gets the following deposits:
-    | asset | amount |
-    | VEGA  | 50000  | 
+    And the parties deposit on asset's general account the following amount:
+      | party                                                            | asset | amount |
+      | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | VEGA  | 100000 |
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 50000  | 2021-08-26T00:00:01Z |
     When the network moves ahead "7" blocks
     #verify validator score 
     Then the validators should have the following val scores for epoch 1:
@@ -658,9 +694,12 @@ Feature: Staking & Delegation
   Scenario: Topping up the reward account and confirming reward transfers are correctly refelected in parties account balances (0061-REWP-additional-tests)
     Description: Topping up the reward account and confirming reward transfers are correctly refelected in parties account balances when they get rewarded for a full epoch of having delegated stake
     #advance to the end of the epoch
-    Given the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 25000  | 
+    And the parties deposit on asset's general account the following amount:
+      | party                                                            | asset | amount |
+      | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | VEGA  | 100000 |
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 25000  | 2021-08-26T00:00:01Z |
     When the network moves ahead "7" blocks
 
     #verify validator score 
@@ -701,9 +740,12 @@ Feature: Staking & Delegation
     Then "party1" should have general account balance of "99" for asset "VEGA"
     Then "node1" should have general account balance of "1916" for asset "VEGA"
   
-    And the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 49992  | 
+    And the parties deposit on asset's general account the following amount:
+      | party                                                            | asset | amount |
+      | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | VEGA  | 100000 |
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 49992  | 2021-08-26T00:00:01Z |
     
     When the network moves ahead "7" blocks
 
@@ -747,9 +789,12 @@ Feature: Staking & Delegation
     Description:  Validators get the smallest reward amount of 1 and delegator earns nothing
     # Explanation - 1 vega is actually 1000000000000000000 so when reward account = 27 then that’s a very very very small fraction of a vega. Hence noone gets anything because the calculation is made in integers so anything that ends up being less than one is 0
 
-    Given the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  |     14 | 
+    Given the parties deposit on asset's general account the following amount:
+      | party                                                            | asset | amount |
+      | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | VEGA  | 100000 |
+    And the parties submit the following one off transfers:
+      | id | from                                                             | from_account_type    | to                                                               |  to_account_type           | asset | amount | delivery_time        |
+      | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_GLOBAL_REWARD | VEGA  | 14     | 2021-08-26T00:00:01Z |
 
     #advance to the end of the epoch
     When the network moves ahead "7" blocks

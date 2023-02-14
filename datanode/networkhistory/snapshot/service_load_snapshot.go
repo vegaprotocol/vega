@@ -41,7 +41,7 @@ type LoadLog interface {
 }
 
 func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStateSnapshot CurrentState,
-	contiguousHistory []History, sourceDir string, connConfig sqlstore.ConnectionConfig, withIndexesAndOrderTriggers bool,
+	contiguousHistory []History, sourceDir string, connConfig sqlstore.ConnectionConfig, withIndexesAndOrderTriggers, verbose bool,
 ) (LoadResult, error) {
 	datanodeBlockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, b.connPool)
 	if err != nil {
@@ -59,7 +59,7 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 	if datanodeBlockSpan.HasData {
 		heightToLoadFrom = datanodeBlockSpan.ToHeight + 1
 	} else {
-		sqlstore.RevertToSchemaVersionZero(b.log, connConfig, sqlstore.EmbedMigrations)
+		sqlstore.RevertToSchemaVersionZero(b.log, connConfig, sqlstore.EmbedMigrations, verbose)
 		heightToLoadFrom = historyFromHeight
 	}
 
