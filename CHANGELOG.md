@@ -37,7 +37,7 @@
 - [7509](https://github.com/vegaprotocol/vega/issues/7509) - Automatically reconcile account balance changes with transfer events after each integration test step
 - [7564](https://github.com/vegaprotocol/vega/issues/7564) - Add logging when database migrations are run
 - [7546](https://github.com/vegaprotocol/vega/issues/7546) - Visor automatically uses snapshot on core based on latest data node snapshot.
-- [7576](https://github.com/vegaprotocol/vega/issues/7576) - include the ap version in the block hash
+- [7576](https://github.com/vegaprotocol/vega/issues/7576) - include the application version in the block hash
 
 ### 🐛 Fixes
 - [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema
