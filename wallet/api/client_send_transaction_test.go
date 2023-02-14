@@ -141,6 +141,7 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx, traceID := clientContextForTest()
 	hostname := vgrand.RandomStr(5)
+	nodeHost := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:      wallet.ReadAccess,
@@ -179,13 +180,14 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().SpamStatistics(ctx, kp.PublicKey()).Times(1).Return(spamStats, nil)
+	handler.node.EXPECT().Host().Times(1).Return(nodeHost)
 	handler.spam.EXPECT().CheckSubmission(gomock.Any(), &spamStats).Times(1).Return(nil)
 	handler.spam.EXPECT().GenerateProofOfWork(kp.PublicKey(), gomock.Any()).Times(1).Return(&commandspb.ProofOfWork{
 		Tid:   vgrand.RandomStr(5),
 		Nonce: 12345678,
 	}, nil)
 	handler.node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return(txHash, nil)
-	handler.interactor.EXPECT().NotifySuccessfulTransaction(ctx, traceID, txHash, gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	handler.interactor.EXPECT().NotifySuccessfulTransaction(ctx, traceID, txHash, gomock.Any(), gomock.Any(), gomock.Any(), nodeHost).Times(1)
 	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
@@ -484,6 +486,7 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 	// given
 	ctx, traceID := clientContextForTest()
 	hostname := vgrand.RandomStr(5)
+	nodeHost := vgrand.RandomStr(5)
 	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:      wallet.ReadAccess,
@@ -512,13 +515,14 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().SpamStatistics(ctx, kp.PublicKey()).Times(1).Return(stats, nil)
+	handler.node.EXPECT().Host().Times(1).Return(nodeHost)
 	handler.spam.EXPECT().CheckSubmission(gomock.Any(), &stats).Times(1)
 	handler.spam.EXPECT().GenerateProofOfWork(kp.PublicKey(), &stats).Times(1).Return(&commandspb.ProofOfWork{
 		Tid:   vgrand.RandomStr(5),
 		Nonce: 12345678,
 	}, nil)
 	handler.node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return("", assert.AnError)
-	handler.interactor.EXPECT().NotifyFailedTransaction(ctx, traceID, gomock.Any(), gomock.Any(), assert.AnError, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().NotifyFailedTransaction(ctx, traceID, gomock.Any(), gomock.Any(), assert.AnError, gomock.Any(), nodeHost).Times(1)
 	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
@@ -590,7 +594,7 @@ func testFailingSpamChecksAbortsTheTransaction(t *testing.T) {
 
 	// then
 	require.NotNil(t, errorDetails)
-	assert.Equal(t, api.ErrorCodeRequestHasBeenCanceledByApplication, errorDetails.Code)
+	assert.Equal(t, api.ErrorCodeRequestHasBeenCancelledByApplication, errorDetails.Code)
 	assert.Equal(t, "Application error", errorDetails.Message)
 	assert.Equal(t, api.ErrTransactionBlockedBySpamRules.Error(), errorDetails.Data)
 	assert.Empty(t, result)

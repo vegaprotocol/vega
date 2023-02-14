@@ -16,11 +16,12 @@ import (
 	"context"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/subscribers"
+
 	"google.golang.org/grpc/codes"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/metrics"
-	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"

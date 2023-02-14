@@ -149,7 +149,9 @@ func TestMarketFromIntoProto(t *testing.T) {
 			Open:     2,
 			Close:    360,
 		},
-		LpPriceRange: "0.95",
+		LpPriceRange:            "0.95",
+		LinearSlippageFactor:    "0.1",
+		QuadraticSlippageFactor: "0.1",
 	}
 
 	domain, err := types.MarketFromProto(pMarket)

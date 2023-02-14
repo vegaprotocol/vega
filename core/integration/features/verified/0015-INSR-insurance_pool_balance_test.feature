@@ -12,8 +12,8 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | 2             | 3              | 5              |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator   | auction duration | fees         | price monitoring | data source config     |
-      | ETH/DEC19 | USD        | USD   | simple-risk-model-1 | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model          | margin calculator   | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | USD        | USD   | simple-risk-model-1 | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -22,7 +22,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
     # setup accounts
 
     Given the insurance pool balance should be "0" for the market "ETH/DEC19"
-    Given the initial insurance pool balance is "15000" for the markets:
+    Given the initial insurance pool balance is "15000" for all the markets
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount     |
       | sellSideProvider | USD   | 1000000000 |
@@ -349,7 +349,6 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
     # setup accounts
-    Given the initial insurance pool balance is "15000" for the markets:
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount     |
       | sellSideProvider | USD   | 1000000000 |

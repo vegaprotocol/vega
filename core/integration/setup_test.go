@@ -35,6 +35,7 @@ import (
 	"code.vegaprotocol.io/vega/core/plugins"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
+	protos "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/golang/mock/gomock"
 )
@@ -87,6 +88,13 @@ type executionTestSetup struct {
 
 	// keep track of net deposits/withdrawals (ignores asset type)
 	netDeposits *num.Uint
+
+	// record accounts before steps
+	accountsBefore                []protos.Account
+	ledgerMovementsBefore         int
+	depositsBefore                int
+	withdrawalsBefore             int
+	insurancePoolDepositsOverStep map[string]*num.Int
 
 	ntry           *notary.SnapshotNotary
 	stateVarEngine *stubs.StateVarStub

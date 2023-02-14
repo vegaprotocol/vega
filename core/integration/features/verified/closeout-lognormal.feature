@@ -12,9 +12,9 @@ Feature: Closeout scenarios
       | search factor | initial factor | release factor |
       | 1.5           | 2              | 3              |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring | data source config     |
-      | ETH/DEC19 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future |
-      | ETH/DEC20 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | default-basic    | default-eth-for-future |
+      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC20 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | default-basic    | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -64,9 +64,9 @@ Feature: Closeout scenarios
       | sell | 1050  | 96     |
 
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search    | initial | release |
-      | trader2 | ETH/DEC19 | 321         | 481       | 642     | 963     |
-      | lprov   | ETH/DEC19 | 800729      | 1201093   | 1601458 | 2402187 |
+      | party   | market id | maintenance | search  | initial | release |
+      | trader2 | ETH/DEC19 | 321         | 481     | 642     | 963     |
+      | lprov   | ETH/DEC19 | 800729      | 1201093 | 1601458 | 2402187 |
     # margin level_trader2= OrderSize*MarkPrice*RF = 40*10*0.801225765=321
     # margin level_Lprov= OrderSize*MarkPrice*RF = max(223*10*3.55690359157934000,4040*10*0.801225765)=32370
 
@@ -121,7 +121,7 @@ Feature: Closeout scenarios
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC19 | 2089   | 0       |
-      #| trader2 | USD   | ETH/DEC19 | 642    | 1358    |
+    #| trader2 | USD   | ETH/DEC19 | 642    | 1358    |
     #trader2 has enough balance to maintain their position of 10 long, but not the order
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
@@ -149,7 +149,7 @@ Feature: Closeout scenarios
       | lprov      | 0      | 0              | 0            |
     And the mark price should be "100" for the market "ETH/DEC19"
 
-Scenario: Position becomes distressed upon exiting an auction (0012-POSR-007)
+  Scenario: Position becomes distressed upon exiting an auction (0012-POSR-007)
     Given the insurance pool balance should be "0" for the market "ETH/DEC19"
     Given the parties deposit on asset's general account the following amount:
       | party      | asset | amount        |
@@ -175,9 +175,9 @@ Scenario: Position becomes distressed upon exiting an auction (0012-POSR-007)
       | 10         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 10      | 10        | 10        | 3556         | 100000         | 10            |
 
     When the parties place the following orders with ticks:
-      | party      | market id  | side | volume | price | resulting trades | type       | tif     |
-      | auxiliary2 | ETH/DEC20  | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2    | ETH/DEC20  | sell | 1      | 10    | 1                | TYPE_LIMIT | TIF_GTC |
+      | party      | market id | side | volume | price | resulting trades | type       | tif     |
+      | auxiliary2 | ETH/DEC20 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2    | ETH/DEC20 | sell | 1      | 10    | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
@@ -192,7 +192,7 @@ Scenario: Position becomes distressed upon exiting an auction (0012-POSR-007)
       | auxiliary1 | ETH/DEC20 | sell | 10     | 40    | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary2 | ETH/DEC20 | buy  | 10     | 40    | 0                | TYPE_LIMIT | TIF_GTC |
 
-   Then the market data for the market "ETH/DEC20" should be:
+    Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode                    | auction trigger       | target stake | supplied stake | open interest |
       | 10         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 29877        | 100000         | 11            |
 
@@ -202,13 +202,13 @@ Scenario: Position becomes distressed upon exiting an auction (0012-POSR-007)
 
     Then the network moves ahead "14" blocks
     And the market data for the market "ETH/DEC20" should be:
-      | mark price | trading mode            | auction trigger               | target stake | supplied stake | open interest |
+      | mark price | trading mode                    | auction trigger       | target stake | supplied stake | open interest |
       | 10         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 29877        | 100000         | 11            |
 
     Then the network moves ahead "1" blocks
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 40         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 29877        | 100000         | 21            |   
+      | 40         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 29877        | 100000         | 21            |
 
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
@@ -216,4 +216,4 @@ Scenario: Position becomes distressed upon exiting an auction (0012-POSR-007)
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC20 | 0      | 0       |
-   
+

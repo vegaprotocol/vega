@@ -1,7 +1,7 @@
 Feature: Target stake
 
-# Market risk parameters and assets don't really matter.
-# We need to track open interest i.e. sum of all long positions across the parties and how they change over time
+  # Market risk parameters and assets don't really matter.
+  # We need to track open interest i.e. sum of all long positions across the parties and how they change over time
 
   Background:
     Given the following network parameters are set:
@@ -22,16 +22,16 @@ Feature: Target stake
       | search factor | initial factor | release factor |
       | 1.1           | 1.2            | 1.4            |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          | position decimal places |
-      | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 2                       |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 2                       | 1e6                    | 1e6                       |
 
-# Above, it says mark price but really I don't mind if we start
-# with an opening auction as long as at start of the scenario
-# no-one has any open positions in the market.
-# So if we want to start with an auction, trade volume 1, then close out the position.
+    # Above, it says mark price but really I don't mind if we start
+    # with an opening auction as long as at start of the scenario
+    # no-one has any open positions in the market.
+    # So if we want to start with an auction, trade volume 1, then close out the position.
 
-# T0 + 8 days so whatever open interest was there after the auction
-# this is now out of the time window.
+    # T0 + 8 days so whatever open interest was there after the auction
+    # this is now out of the time window.
     And time is updated to "2021-03-08T00:00:00Z"
 
   Scenario: Max open interest changes over time
@@ -51,9 +51,9 @@ Feature: Target stake
       | tt_0  | ETH/DEC21 | sell | 100000 | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_0_1    |
 
     Then the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | tt_0   | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | tt_0   | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 10     | submission |
+      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
 
     # nothing should have traded, we have mark price set apriori or
     # due to auction closing.
@@ -70,7 +70,7 @@ Feature: Target stake
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake |
-      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 990          | 2000              |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 990          | 2000           |
 
     # So now parties 1,2,3 are long 10+20+30 = 60.
     Then the mark price should be "110" for the market "ETH/DEC21"

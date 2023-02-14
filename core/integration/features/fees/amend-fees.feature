@@ -13,8 +13,8 @@ Feature: Fees when amend trades
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
@@ -59,8 +59,8 @@ Feature: Fees when amend trades
       | trader3a | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | t3a-b3-02 |
       | trader3b | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | t3b-b1-02 |
       | trader4  | ETH/DEC21 | sell | 4      | 1002  | 2                | TYPE_LIMIT | TIF_GTC | t4-s4-02  |
-      #| trader5  | ETH/DEC21 | sell | 1      | 2002  | 0                | TYPE_LIMIT | TIF_GTC | t5-s4-02  |
-      #| trader5  | ETH/DEC21 | buy  | 1      | 101   | 0                | TYPE_LIMIT | TIF_GTC | t5-b1-02  |
+    #| trader5  | ETH/DEC21 | sell | 1      | 2002  | 0                | TYPE_LIMIT | TIF_GTC | t5-s4-02  |
+    #| trader5  | ETH/DEC21 | buy  | 1      | 101   | 0                | TYPE_LIMIT | TIF_GTC | t5-b1-02  |
 
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
@@ -111,7 +111,7 @@ Feature: Fees when amend trades
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 1171   | 8840    |
       | trader4  | ETH   | ETH/DEC21 | 984    | 8986    |
-      # ensure orders are on the book
+    # ensure orders are on the book
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
       | sell | 1080  | 1      |
@@ -133,7 +133,7 @@ Feature: Fees when amend trades
       | sell | 1080  | 1      |
       | buy  | 1001  | 2      |
       | buy  | 920   | 1      |
-      | buy  | 991   | 10    |
+      | buy  | 991   | 10     |
       | sell | 1012  | 10     |
       | sell | 1002  | 5      |
 
@@ -232,7 +232,7 @@ Feature: Fees when amend trades
       | trader3b | ETH   | ETH/DEC21 | 339    | 9667    |
       | trader4  | ETH   | ETH/DEC21 | 693    | 530     |
 
-   # Placing second set of orders
+    # Placing second set of orders
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3a | ETH/DEC21 | buy  | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader3a-buy-1 |
@@ -243,7 +243,7 @@ Feature: Fees when amend trades
       | trader3a | ETH   | ETH/DEC21 | 1279   | 8732    |
       | trader4  | ETH   | ETH/DEC21 | 1174   | 49      |
 
-      # reducing size
+    # reducing size
     And the parties amend the following orders:
       | party   | reference      | price | size delta | tif     |
       | trader4 | trader4-sell-2 | 1000  | 0          | TIF_GTC |
@@ -254,7 +254,7 @@ Feature: Fees when amend trades
       | buyer    | price | size | seller  |
       | trader3a | 1000  | 2    | trader4 |
 
-      # checking if continuous mode still exists
+    # checking if continuous mode still exists
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |

@@ -59,6 +59,10 @@ message NewMarketConfiguration {
   // Percentage move up and down from the mid price which specifies the range of 
   // price levels over which automated liquidity provision orders will be deployed
   string lp_price_range = 8;
+  // Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume
+  string linear_slippage_factor = 9; 
+  // Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume
+  string quadratic_slippage_factor = 10;
 }
 
 // New market on Vega
@@ -95,6 +99,10 @@ message UpdateMarketConfiguration {
   // Percentage move up and down from the mid price which specifies the range of 
   // price levels over which automated liquidity provision orders will be deployed
   string lp_price_range = 5;
+  // Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume
+  string linear_slippage_factor = 6; 
+  // Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume
+  string quadratic_slippage_factor = 7;
 }
 
 // Instrument configuration
@@ -345,6 +353,10 @@ enum ProposalError {
   PROPOSAL_ERROR_LP_PRICE_RANGE_NONPOSITIVE = 42;
   // The LP price range must not be larger than 100
   PROPOSAL_ERROR_LP_PRICE_RANGE_TOO_LARGE = 43;
+  // The linear slippage factor is out of range (either negative or too large)
+  PROPOSAL_ERROR_LINEAR_SLIPPAGE_FACTOR_OUT_OF_RANGE = 44;
+  // The quadratic slippage factor is out of range (either negative or too large)
+  PROPOSAL_ERROR_QUADRATIC_SLIPPAGE_FACTOR_OUT_OF_RANGE = 45;
 }
 
 // Governance vote

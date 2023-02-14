@@ -758,6 +758,7 @@ type ComplexityRoot struct {
 		Depth                         func(childComplexity int, maxDepth *int) int
 		Fees                          func(childComplexity int) int
 		Id                            func(childComplexity int) int
+		LinearSlippageFactor          func(childComplexity int) int
 		LiquidityMonitoringParameters func(childComplexity int) int
 		LiquidityProvisionsConnection func(childComplexity int, partyID *string, pagination *v2.Pagination) int
 		LpPriceRange                  func(childComplexity int) int
@@ -767,6 +768,7 @@ type ComplexityRoot struct {
 		PositionDecimalPlaces         func(childComplexity int) int
 		PriceMonitoringSettings       func(childComplexity int) int
 		Proposal                      func(childComplexity int) int
+		QuadraticSlippageFactor       func(childComplexity int) int
 		RiskFactors                   func(childComplexity int) int
 		State                         func(childComplexity int) int
 		TradableInstrument            func(childComplexity int) int
@@ -910,11 +912,13 @@ type ComplexityRoot struct {
 	NewMarket struct {
 		DecimalPlaces                 func(childComplexity int) int
 		Instrument                    func(childComplexity int) int
+		LinearSlippageFactor          func(childComplexity int) int
 		LiquidityMonitoringParameters func(childComplexity int) int
 		LpPriceRange                  func(childComplexity int) int
 		Metadata                      func(childComplexity int) int
 		PositionDecimalPlaces         func(childComplexity int) int
 		PriceMonitoringParameters     func(childComplexity int) int
+		QuadraticSlippageFactor       func(childComplexity int) int
 		RiskParameters                func(childComplexity int) int
 	}
 
@@ -1989,6 +1993,8 @@ type NewMarketResolver interface {
 	LiquidityMonitoringParameters(ctx context.Context, obj *vega.NewMarket) (*LiquidityMonitoringParameters, error)
 	PositionDecimalPlaces(ctx context.Context, obj *vega.NewMarket) (int, error)
 	LpPriceRange(ctx context.Context, obj *vega.NewMarket) (string, error)
+	LinearSlippageFactor(ctx context.Context, obj *vega.NewMarket) (string, error)
+	QuadraticSlippageFactor(ctx context.Context, obj *vega.NewMarket) (string, error)
 }
 type NodeResolver interface {
 	DelegationsConnection(ctx context.Context, obj *vega.Node, partyID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error)
@@ -4757,6 +4763,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Market.Id(childComplexity), true
 
+	case "Market.linearSlippageFactor":
+		if e.complexity.Market.LinearSlippageFactor == nil {
+			break
+		}
+
+		return e.complexity.Market.LinearSlippageFactor(childComplexity), true
+
 	case "Market.liquidityMonitoringParameters":
 		if e.complexity.Market.LiquidityMonitoringParameters == nil {
 			break
@@ -4829,6 +4842,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.Proposal(childComplexity), true
+
+	case "Market.quadraticSlippageFactor":
+		if e.complexity.Market.QuadraticSlippageFactor == nil {
+			break
+		}
+
+		return e.complexity.Market.QuadraticSlippageFactor(childComplexity), true
 
 	case "Market.riskFactors":
 		if e.complexity.Market.RiskFactors == nil {
@@ -5437,6 +5457,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NewMarket.Instrument(childComplexity), true
 
+	case "NewMarket.linearSlippageFactor":
+		if e.complexity.NewMarket.LinearSlippageFactor == nil {
+			break
+		}
+
+		return e.complexity.NewMarket.LinearSlippageFactor(childComplexity), true
+
 	case "NewMarket.liquidityMonitoringParameters":
 		if e.complexity.NewMarket.LiquidityMonitoringParameters == nil {
 			break
@@ -5471,6 +5498,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NewMarket.PriceMonitoringParameters(childComplexity), true
+
+	case "NewMarket.quadraticSlippageFactor":
+		if e.complexity.NewMarket.QuadraticSlippageFactor == nil {
+			break
+		}
+
+		return e.complexity.NewMarket.QuadraticSlippageFactor(childComplexity), true
 
 	case "NewMarket.riskParameters":
 		if e.complexity.NewMarket.RiskParameters == nil {
@@ -12096,6 +12130,10 @@ func (ec *executionContext) fieldContext_AccountBalance_market(ctx context.Conte
 				return ec.fieldContext_Market_riskFactors(ctx, field)
 			case "lpPriceRange":
 				return ec.fieldContext_Market_lpPriceRange(ctx, field)
+			case "linearSlippageFactor":
+				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
+			case "quadraticSlippageFactor":
+				return ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -12686,6 +12724,10 @@ func (ec *executionContext) fieldContext_AccountEvent_market(ctx context.Context
 				return ec.fieldContext_Market_riskFactors(ctx, field)
 			case "lpPriceRange":
 				return ec.fieldContext_Market_lpPriceRange(ctx, field)
+			case "linearSlippageFactor":
+				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
+			case "quadraticSlippageFactor":
+				return ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -25244,6 +25286,10 @@ func (ec *executionContext) fieldContext_LiquidityProvision_market(ctx context.C
 				return ec.fieldContext_Market_riskFactors(ctx, field)
 			case "lpPriceRange":
 				return ec.fieldContext_Market_lpPriceRange(ctx, field)
+			case "linearSlippageFactor":
+				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
+			case "quadraticSlippageFactor":
+				return ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -27052,6 +27098,10 @@ func (ec *executionContext) fieldContext_MarginLevels_market(ctx context.Context
 				return ec.fieldContext_Market_riskFactors(ctx, field)
 			case "lpPriceRange":
 				return ec.fieldContext_Market_lpPriceRange(ctx, field)
+			case "linearSlippageFactor":
+				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
+			case "quadraticSlippageFactor":
+				return ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -28927,6 +28977,94 @@ func (ec *executionContext) fieldContext_Market_lpPriceRange(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Market_linearSlippageFactor(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Market_linearSlippageFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LinearSlippageFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Market_linearSlippageFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Market",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Market_quadraticSlippageFactor(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.QuadraticSlippageFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Market_quadraticSlippageFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Market",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MarketConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.MarketConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MarketConnection_edges(ctx, field)
 	if err != nil {
@@ -29112,6 +29250,10 @@ func (ec *executionContext) fieldContext_MarketData_market(ctx context.Context, 
 				return ec.fieldContext_Market_riskFactors(ctx, field)
 			case "lpPriceRange":
 				return ec.fieldContext_Market_lpPriceRange(ctx, field)
+			case "linearSlippageFactor":
+				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
+			case "quadraticSlippageFactor":
+				return ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -30777,6 +30919,10 @@ func (ec *executionContext) fieldContext_MarketDepth_market(ctx context.Context,
 				return ec.fieldContext_Market_riskFactors(ctx, field)
 			case "lpPriceRange":
 				return ec.fieldContext_Market_lpPriceRange(ctx, field)
+			case "linearSlippageFactor":
+				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
+			case "quadraticSlippageFactor":
+				return ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -31212,6 +31358,10 @@ func (ec *executionContext) fieldContext_MarketDepthUpdate_market(ctx context.Co
 				return ec.fieldContext_Market_riskFactors(ctx, field)
 			case "lpPriceRange":
 				return ec.fieldContext_Market_lpPriceRange(ctx, field)
+			case "linearSlippageFactor":
+				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
+			case "quadraticSlippageFactor":
+				return ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -31486,6 +31636,10 @@ func (ec *executionContext) fieldContext_MarketEdge_node(ctx context.Context, fi
 				return ec.fieldContext_Market_riskFactors(ctx, field)
 			case "lpPriceRange":
 				return ec.fieldContext_Market_lpPriceRange(ctx, field)
+			case "linearSlippageFactor":
+				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
+			case "quadraticSlippageFactor":
+				return ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -33095,6 +33249,94 @@ func (ec *executionContext) _NewMarket_lpPriceRange(ctx context.Context, field g
 }
 
 func (ec *executionContext) fieldContext_NewMarket_lpPriceRange(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewMarket_linearSlippageFactor(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewMarket_linearSlippageFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewMarket().LinearSlippageFactor(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewMarket_linearSlippageFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewMarket_quadraticSlippageFactor(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewMarket_quadraticSlippageFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewMarket().QuadraticSlippageFactor(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewMarket_quadraticSlippageFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "NewMarket",
 		Field:      field,
@@ -37717,6 +37959,10 @@ func (ec *executionContext) fieldContext_Order_market(ctx context.Context, field
 				return ec.fieldContext_Market_riskFactors(ctx, field)
 			case "lpPriceRange":
 				return ec.fieldContext_Market_lpPriceRange(ctx, field)
+			case "linearSlippageFactor":
+				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
+			case "quadraticSlippageFactor":
+				return ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -41156,6 +41402,10 @@ func (ec *executionContext) fieldContext_Position_market(ctx context.Context, fi
 				return ec.fieldContext_Market_riskFactors(ctx, field)
 			case "lpPriceRange":
 				return ec.fieldContext_Market_lpPriceRange(ctx, field)
+			case "linearSlippageFactor":
+				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
+			case "quadraticSlippageFactor":
+				return ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -46524,6 +46774,10 @@ func (ec *executionContext) fieldContext_Query_market(ctx context.Context, field
 				return ec.fieldContext_Market_riskFactors(ctx, field)
 			case "lpPriceRange":
 				return ec.fieldContext_Market_lpPriceRange(ctx, field)
+			case "linearSlippageFactor":
+				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
+			case "quadraticSlippageFactor":
+				return ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -54680,6 +54934,10 @@ func (ec *executionContext) fieldContext_Trade_market(ctx context.Context, field
 				return ec.fieldContext_Market_riskFactors(ctx, field)
 			case "lpPriceRange":
 				return ec.fieldContext_Market_lpPriceRange(ctx, field)
+			case "linearSlippageFactor":
+				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
+			case "quadraticSlippageFactor":
+				return ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -62138,146 +62396,6 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._TimeUpdate(ctx, sel, obj)
-	case MarketEvent:
-		return ec._MarketEvent(ctx, sel, &obj)
-	case *MarketEvent:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._MarketEvent(ctx, sel, obj)
-	case TransferResponses:
-		return ec._TransferResponses(ctx, sel, &obj)
-	case *TransferResponses:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._TransferResponses(ctx, sel, obj)
-	case PositionResolution:
-		return ec._PositionResolution(ctx, sel, &obj)
-	case *PositionResolution:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._PositionResolution(ctx, sel, obj)
-	case vega.Order:
-		return ec._Order(ctx, sel, &obj)
-	case *vega.Order:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Order(ctx, sel, obj)
-	case vega.Trade:
-		return ec._Trade(ctx, sel, &obj)
-	case *vega.Trade:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Trade(ctx, sel, obj)
-	case vega.Account:
-		return ec._AccountEvent(ctx, sel, &obj)
-	case *vega.Account:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AccountEvent(ctx, sel, obj)
-	case vega.Party:
-		return ec._Party(ctx, sel, &obj)
-	case *vega.Party:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Party(ctx, sel, obj)
-	case vega.MarginLevels:
-		return ec._MarginLevels(ctx, sel, &obj)
-	case *vega.MarginLevels:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._MarginLevels(ctx, sel, obj)
-	case vega.GovernanceData:
-		return ec._Proposal(ctx, sel, &obj)
-	case *vega.GovernanceData:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Proposal(ctx, sel, obj)
-	case vega.Vote:
-		return ec._Vote(ctx, sel, &obj)
-	case *vega.Vote:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Vote(ctx, sel, obj)
-	case vega.MarketData:
-		return ec._MarketData(ctx, sel, &obj)
-	case *vega.MarketData:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._MarketData(ctx, sel, obj)
-	case v11.NodeSignature:
-		return ec._NodeSignature(ctx, sel, &obj)
-	case *v11.NodeSignature:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._NodeSignature(ctx, sel, obj)
-	case LossSocialization:
-		return ec._LossSocialization(ctx, sel, &obj)
-	case *LossSocialization:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._LossSocialization(ctx, sel, obj)
-	case SettlePosition:
-		return ec._SettlePosition(ctx, sel, &obj)
-	case *SettlePosition:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._SettlePosition(ctx, sel, obj)
-	case vega.Market:
-		return ec._Market(ctx, sel, &obj)
-	case *vega.Market:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Market(ctx, sel, obj)
-	case vega.Asset:
-		return ec._Asset(ctx, sel, &obj)
-	case *vega.Asset:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Asset(ctx, sel, obj)
-	case MarketTick:
-		return ec._MarketTick(ctx, sel, &obj)
-	case *MarketTick:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._MarketTick(ctx, sel, obj)
-	case SettleDistressed:
-		return ec._SettleDistressed(ctx, sel, &obj)
-	case *SettleDistressed:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._SettleDistressed(ctx, sel, obj)
-	case v1.AuctionEvent:
-		return ec._AuctionEvent(ctx, sel, &obj)
-	case *v1.AuctionEvent:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AuctionEvent(ctx, sel, obj)
-	case vega.RiskFactor:
-		return ec._RiskFactor(ctx, sel, &obj)
-	case *vega.RiskFactor:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._RiskFactor(ctx, sel, obj)
 	case vega.Deposit:
 		return ec._Deposit(ctx, sel, &obj)
 	case *vega.Deposit:
@@ -62292,18 +62410,6 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._Withdrawal(ctx, sel, obj)
-	case *vega.OracleSpec:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._OracleSpec(ctx, sel, obj)
-	case vega.LiquidityProvision:
-		return ec._LiquidityProvision(ctx, sel, &obj)
-	case *vega.LiquidityProvision:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._LiquidityProvision(ctx, sel, obj)
 	case v1.TransactionResult:
 		return ec._TransactionResult(ctx, sel, &obj)
 	case *v1.TransactionResult:
@@ -62739,7 +62845,7 @@ func (ec *executionContext) _AccountEdge(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
-var accountEventImplementors = []string{"AccountEvent", "Event"}
+var accountEventImplementors = []string{"AccountEvent"}
 
 func (ec *executionContext) _AccountEvent(ctx context.Context, sel ast.SelectionSet, obj *vega.Account) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, accountEventImplementors)
@@ -63224,7 +63330,7 @@ func (ec *executionContext) _AggregatedLedgerEntry(ctx context.Context, sel ast.
 	return out
 }
 
-var assetImplementors = []string{"Asset", "Event"}
+var assetImplementors = []string{"Asset"}
 
 func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, obj *vega.Asset) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, assetImplementors)
@@ -63560,7 +63666,7 @@ func (ec *executionContext) _AuctionDuration(ctx context.Context, sel ast.Select
 	return out
 }
 
-var auctionEventImplementors = []string{"AuctionEvent", "Event"}
+var auctionEventImplementors = []string{"AuctionEvent"}
 
 func (ec *executionContext) _AuctionEvent(ctx context.Context, sel ast.SelectionSet, obj *v1.AuctionEvent) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, auctionEventImplementors)
@@ -66778,7 +66884,7 @@ func (ec *executionContext) _LiquidityProviderFeeShare(ctx context.Context, sel 
 	return out
 }
 
-var liquidityProvisionImplementors = []string{"LiquidityProvision", "Event"}
+var liquidityProvisionImplementors = []string{"LiquidityProvision"}
 
 func (ec *executionContext) _LiquidityProvision(ctx context.Context, sel ast.SelectionSet, obj *vega.LiquidityProvision) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, liquidityProvisionImplementors)
@@ -67173,7 +67279,7 @@ func (ec *executionContext) _LogNormalRiskModel(ctx context.Context, sel ast.Sel
 	return out
 }
 
-var lossSocializationImplementors = []string{"LossSocialization", "Event"}
+var lossSocializationImplementors = []string{"LossSocialization"}
 
 func (ec *executionContext) _LossSocialization(ctx context.Context, sel ast.SelectionSet, obj *LossSocialization) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, lossSocializationImplementors)
@@ -67304,7 +67410,7 @@ func (ec *executionContext) _MarginEdge(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
-var marginLevelsImplementors = []string{"MarginLevels", "Event"}
+var marginLevelsImplementors = []string{"MarginLevels"}
 
 func (ec *executionContext) _MarginLevels(ctx context.Context, sel ast.SelectionSet, obj *vega.MarginLevels) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, marginLevelsImplementors)
@@ -67549,7 +67655,7 @@ func (ec *executionContext) _MarginLevelsUpdate(ctx context.Context, sel ast.Sel
 	return out
 }
 
-var marketImplementors = []string{"Market", "Event"}
+var marketImplementors = []string{"Market"}
 
 func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, obj *vega.Market) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, marketImplementors)
@@ -67851,6 +67957,20 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "linearSlippageFactor":
+
+			out.Values[i] = ec._Market_linearSlippageFactor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "quadraticSlippageFactor":
+
+			out.Values[i] = ec._Market_quadraticSlippageFactor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -67897,7 +68017,7 @@ func (ec *executionContext) _MarketConnection(ctx context.Context, sel ast.Selec
 	return out
 }
 
-var marketDataImplementors = []string{"MarketData", "Event"}
+var marketDataImplementors = []string{"MarketData"}
 
 func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSet, obj *vega.MarketData) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, marketDataImplementors)
@@ -68614,7 +68734,7 @@ func (ec *executionContext) _MarketEdge(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
-var marketEventImplementors = []string{"MarketEvent", "Event"}
+var marketEventImplementors = []string{"MarketEvent"}
 
 func (ec *executionContext) _MarketEvent(ctx context.Context, sel ast.SelectionSet, obj *MarketEvent) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, marketEventImplementors)
@@ -68649,7 +68769,7 @@ func (ec *executionContext) _MarketEvent(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
-var marketTickImplementors = []string{"MarketTick", "Event"}
+var marketTickImplementors = []string{"MarketTick"}
 
 func (ec *executionContext) _MarketTick(ctx context.Context, sel ast.SelectionSet, obj *MarketTick) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, marketTickImplementors)
@@ -69228,6 +69348,46 @@ func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet
 				return innerFunc(ctx)
 
 			})
+		case "linearSlippageFactor":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewMarket_linearSlippageFactor(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "quadraticSlippageFactor":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewMarket_quadraticSlippageFactor(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -69578,7 +69738,7 @@ func (ec *executionContext) _NodeSet(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
-var nodeSignatureImplementors = []string{"NodeSignature", "Event"}
+var nodeSignatureImplementors = []string{"NodeSignature"}
 
 func (ec *executionContext) _NodeSignature(ctx context.Context, sel ast.SelectionSet, obj *v11.NodeSignature) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, nodeSignatureImplementors)
@@ -70418,7 +70578,7 @@ func (ec *executionContext) _OracleDataEdge(ctx context.Context, sel ast.Selecti
 	return out
 }
 
-var oracleSpecImplementors = []string{"OracleSpec", "Event"}
+var oracleSpecImplementors = []string{"OracleSpec"}
 
 func (ec *executionContext) _OracleSpec(ctx context.Context, sel ast.SelectionSet, obj *vega.OracleSpec) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, oracleSpecImplementors)
@@ -70546,7 +70706,7 @@ func (ec *executionContext) _OracleSpecsConnection(ctx context.Context, sel ast.
 	return out
 }
 
-var orderImplementors = []string{"Order", "Event"}
+var orderImplementors = []string{"Order"}
 
 func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, obj *vega.Order) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, orderImplementors)
@@ -71116,7 +71276,7 @@ func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
-var partyImplementors = []string{"Party", "Event"}
+var partyImplementors = []string{"Party"}
 
 func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, obj *vega.Party) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, partyImplementors)
@@ -71763,7 +71923,7 @@ func (ec *executionContext) _PositionEdge(ctx context.Context, sel ast.Selection
 	return out
 }
 
-var positionResolutionImplementors = []string{"PositionResolution", "Event"}
+var positionResolutionImplementors = []string{"PositionResolution"}
 
 func (ec *executionContext) _PositionResolution(ctx context.Context, sel ast.SelectionSet, obj *PositionResolution) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, positionResolutionImplementors)
@@ -72185,7 +72345,7 @@ func (ec *executionContext) _PropertyKey(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
-var proposalImplementors = []string{"Proposal", "Event"}
+var proposalImplementors = []string{"Proposal"}
 
 func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet, obj *vega.GovernanceData) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, proposalImplementors)
@@ -74627,7 +74787,7 @@ func (ec *executionContext) _RewardsConnection(ctx context.Context, sel ast.Sele
 	return out
 }
 
-var riskFactorImplementors = []string{"RiskFactor", "Event"}
+var riskFactorImplementors = []string{"RiskFactor"}
 
 func (ec *executionContext) _RiskFactor(ctx context.Context, sel ast.SelectionSet, obj *vega.RiskFactor) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, riskFactorImplementors)
@@ -74711,7 +74871,7 @@ func (ec *executionContext) _ScalingFactors(ctx context.Context, sel ast.Selecti
 	return out
 }
 
-var settleDistressedImplementors = []string{"SettleDistressed", "Event"}
+var settleDistressedImplementors = []string{"SettleDistressed"}
 
 func (ec *executionContext) _SettleDistressed(ctx context.Context, sel ast.SelectionSet, obj *SettleDistressed) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, settleDistressedImplementors)
@@ -74760,7 +74920,7 @@ func (ec *executionContext) _SettleDistressed(ctx context.Context, sel ast.Selec
 	return out
 }
 
-var settlePositionImplementors = []string{"SettlePosition", "Event"}
+var settlePositionImplementors = []string{"SettlePosition"}
 
 func (ec *executionContext) _SettlePosition(ctx context.Context, sel ast.SelectionSet, obj *SettlePosition) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, settlePositionImplementors)
@@ -75745,7 +75905,7 @@ func (ec *executionContext) _TradableInstrument(ctx context.Context, sel ast.Sel
 	return out
 }
 
-var tradeImplementors = []string{"Trade", "Event"}
+var tradeImplementors = []string{"Trade"}
 
 func (ec *executionContext) _Trade(ctx context.Context, sel ast.SelectionSet, obj *vega.Trade) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, tradeImplementors)
@@ -76693,7 +76853,7 @@ func (ec *executionContext) _TransferResponse(ctx context.Context, sel ast.Selec
 	return out
 }
 
-var transferResponsesImplementors = []string{"TransferResponses", "Event"}
+var transferResponsesImplementors = []string{"TransferResponses"}
 
 func (ec *executionContext) _TransferResponses(ctx context.Context, sel ast.SelectionSet, obj *TransferResponses) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, transferResponsesImplementors)
@@ -77175,7 +77335,7 @@ func (ec *executionContext) _UpdateNetworkParameter(ctx context.Context, sel ast
 	return out
 }
 
-var voteImplementors = []string{"Vote", "Event"}
+var voteImplementors = []string{"Vote"}
 
 func (ec *executionContext) _Vote(ctx context.Context, sel ast.SelectionSet, obj *vega.Vote) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, voteImplementors)

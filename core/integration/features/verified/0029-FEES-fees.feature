@@ -15,16 +15,16 @@ Feature: Fees calculations
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
 
-Scenario: 001: Testing fees get collected when amended order trades (0029-FEES-005)
+  Scenario: 001: Testing fees get collected when amended order trades (0029-FEES-005)
     Given the parties deposit on asset's general account the following amount:
-      | party    | asset | amount    |
-      | aux1     | ETH   | 100000000 |
-      | aux2     | ETH   | 100000000 |
-      | trader1  | ETH   | 10000     |
-      | trader2  | ETH   | 10000     |
+      | party   | asset | amount    |
+      | aux1    | ETH   | 100000000 |
+      | aux2    | ETH   | 100000000 |
+      | trader1 | ETH   | 10000     |
+      | trader2 | ETH   | 10000     |
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -84,6 +84,6 @@ Scenario: 001: Testing fees get collected when amended order trades (0029-FEES-0
     # Trader1 margin + general account balance = 10000 + 9 ( Maker fees) = 10009
     # Trader2  margin + general account balance = 10000 - (9) ( Maker fees) - 7 (Infra fee) - 5 (Liquidity Fee) = 9979
     Then the parties should have the following account balances:
-      | party    | asset | market id | margin | general |
-      | trader1  | ETH   | ETH/DEC21 | 480    | 9529    |
-      | trader2  | ETH   | ETH/DEC21 | 480    | 9499    |
+      | party   | asset | market id | margin | general |
+      | trader1 | ETH   | ETH/DEC21 | 480    | 9529    |
+      | trader2 | ETH   | ETH/DEC21 | 480    | 9499    |

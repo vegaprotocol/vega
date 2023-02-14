@@ -25,7 +25,7 @@ var ErrChainNotFound = errors.New("no chain found")
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/networkhistory_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/networkhistory NetworkHistory
 type NetworkHistory interface {
 	FetchHistorySegment(ctx context.Context, historySegmentID string) (Segment, error)
-	LoadNetworkHistoryIntoDatanode(ctx context.Context, contiguousHistory ContiguousHistory, cfg sqlstore.ConnectionConfig, withIndexesAndOrderTriggers bool) (snapshot.LoadResult, error)
+	LoadNetworkHistoryIntoDatanode(ctx context.Context, contiguousHistory ContiguousHistory, cfg sqlstore.ConnectionConfig, withIndexesAndOrderTriggers, verbose bool) (snapshot.LoadResult, error)
 	GetMostRecentHistorySegmentFromPeers(ctx context.Context, grpcAPIPorts []int) (*PeerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, error)
 	GetDatanodeBlockSpan(ctx context.Context) (sqlstore.DatanodeBlockSpan, error)
 	ListAllHistorySegments() ([]Segment, error)
@@ -33,7 +33,7 @@ type NetworkHistory interface {
 
 func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg InitializationConfig, log *logging.Logger,
 	connCfg sqlstore.ConnectionConfig, networkHistoryService NetworkHistory,
-	grpcPorts []int,
+	grpcPorts []int, verboseMigration bool,
 ) error {
 	ctx, ctxCancelFn := context.WithTimeout(parentCtx, cfg.TimeOut.Duration)
 	defer ctxCancelFn()
@@ -127,7 +127,7 @@ func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg Initial
 
 	contiguousHistory := GetContiguousHistoryForSpan(contiguousHistories, from, to)
 
-	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanode(ctx, *contiguousHistory, connCfg, currentSpan.HasData)
+	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanode(ctx, *contiguousHistory, connCfg, currentSpan.HasData, verboseMigration)
 	if err != nil {
 		return fmt.Errorf("failed to load history into the datanode: %w", err)
 	}

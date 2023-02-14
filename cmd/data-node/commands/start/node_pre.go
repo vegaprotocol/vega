@@ -18,6 +18,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/subscribers"
+
 	"github.com/cenkalti/backoff"
 	"google.golang.org/grpc"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -27,7 +29,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -92,7 +93,8 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 	}
 
 	if l.conf.SQLStore.WipeOnStartup {
-		if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(l.Log, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations); err != nil {
+		if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(l.Log, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations,
+			bool(l.conf.SQLStore.VerboseMigration)); err != nil {
 			return fmt.Errorf("failed to wiped database:%w", err)
 		}
 		l.Log.Info("Wiped all existing data from the datanode")
@@ -119,7 +121,8 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 			apiPorts = append(apiPorts, l.conf.NetworkHistory.Initialise.GrpcAPIPorts...)
 
 			if err = networkhistory.InitialiseDatanodeFromNetworkHistory(l.ctx, l.conf.NetworkHistory.Initialise,
-				l.Log, l.conf.SQLStore.ConnectionConfig, l.networkHistoryService, apiPorts); err != nil {
+				l.Log, l.conf.SQLStore.ConnectionConfig, l.networkHistoryService, apiPorts,
+				bool(l.conf.SQLStore.VerboseMigration)); err != nil {
 				return fmt.Errorf("failed to initialize datanode from network history: %w", err)
 			}
 
@@ -237,7 +240,15 @@ func (l *NodeCommand) preRun([]string) (err error) {
 			l.Log.Error("failed to create path for buffered event source", logging.Error(err))
 			return err
 		}
-		eventSource, err = broker.NewBufferedEventSource(l.Log, l.conf.Broker.BufferedEventSourceConfig, eventReceiverSender, bufferFilePath)
+
+		archiveFilesPath, err := l.vegaPaths.CreateStatePathFor(paths.DataNodeArchivedEventBufferHome)
+		if err != nil {
+			l.Log.Error("failed to create archive path for buffered event source", logging.Error(err))
+			return err
+		}
+
+		eventSource, err = broker.NewBufferedEventSource(l.ctx, l.Log, l.conf.Broker.BufferedEventSourceConfig, eventReceiverSender,
+			bufferFilePath, archiveFilesPath)
 		if err != nil {
 			l.Log.Error("unable to initialise file buffered event source", logging.Error(err))
 			return err
@@ -277,7 +288,7 @@ func (l *NodeCommand) preRun([]string) (err error) {
 	}
 
 	// Event service as used by old and new world
-	l.eventService = subscribers.NewService(l.broker)
+	l.eventService = subscribers.NewService(l.Log, l.broker, l.conf.Broker.EventBusClientBufferSize)
 
 	nodeAddr := fmt.Sprintf("%v:%v", l.conf.API.CoreNodeIP, l.conf.API.CoreNodeGRPCPort)
 	conn, err := grpc.Dial(nodeAddr, grpc.WithInsecure())

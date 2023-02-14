@@ -42,11 +42,11 @@ Feature: test risk model parameter change in margin calculation
       | market.liquidity.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          |
-      | ETH/MAR21 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-2 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR23 | ETH        | USD   | log-normal-risk-model-3 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/MAR24 | ETH        | USD   | log-normal-risk-model-4 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR21 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-2 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR23 | ETH        | USD   | log-normal-risk-model-3 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR24 | ETH        | USD   | log-normal-risk-model-4 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
 
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
@@ -142,58 +142,57 @@ Feature: test risk model parameter change in margin calculation
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR21 | 9937   | 248653   | 50000 |
-      | party1 | USD   | ETH/MAR21 | 3117   | 99985528 | 0     |
-      | party2 | USD   | ETH/MAR21 | 3429   | 99983148 | 0     |
+      | party1 | USD   | ETH/MAR21 | 3333   | 99984664 | 0     |
+      | party2 | USD   | ETH/MAR21 | 3645   | 99982284 | 0     |
 
-    #party1 margin level is: margin_position+margin_order = vol * (MarkPrice-ExitPrice)+ vol * rf * MarkPrice + order * rf * MarkPrice = 10 * (1000-900)+10*0.145263949*1000 + 1*0.145263949*1000=2598
+    #party1 margin level is: margin_position+margin_order = vol * (MarkPrice-ExitPrice)+ vol * rf * MarkPrice + order * rf * MarkPrice = 10 * (1000-882)+10*0.145263949*1000 + 1*0.145263949*1000=2778
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party0 | ETH/MAR21 | 8281        | 9109   | 9937    | 11593   |
-      | party1 | ETH/MAR21 | 2598        | 2857   | 3117    | 3637    |
-      | party2 | ETH/MAR21 | 2858        | 3143   | 3429    | 4001    |
+      | party1 | ETH/MAR21 | 2778        | 3055   | 3333    | 3889    |
+      | party2 | ETH/MAR21 | 3038        | 3341   | 3645    | 4253    |
 
     # risk model 002: check the required balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 19701  | 248653   | 50000 |
-      | party1 | USD   | ETH/MAR22 | 4766   | 99985528 | 0     |
-      | party2 | USD   | ETH/MAR22 | 6016   | 99983148 | 0     |
+      | party1 | USD   | ETH/MAR22 | 4982   | 99984664 | 0     |
+      | party2 | USD   | ETH/MAR22 | 6232   | 99982284 | 0     |
 
-    #party1 margin level is: margin_position+margin_order = vol * (MarkPrice-ExitPrice)+ vol * rf * MarkPrice + order * rf * MarkPrice = 10 * (1000-900)+10*0.270133394*1000 + 1*0.270133394*1000=3972
+    #party1 margin level is: margin_position+margin_order = vol * (MarkPrice-ExitPrice)+ vol * rf * MarkPrice + order * rf * MarkPrice = 10 * (1000-882)+10*0.270133394*1000 + 1*0.270133394*1000=4152
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party0 | ETH/MAR22 | 16418       | 18059  | 19701   | 22985   |
-      | party1 | ETH/MAR22 | 3972        | 4369   | 4766    | 5560    |
-      | party2 | ETH/MAR22 | 5014        | 5515   | 6016    | 7019    |
+      | party1 | ETH/MAR22 | 4152        | 4567   | 4982    | 5812    |
+      | party2 | ETH/MAR22 | 5194        | 5713   | 6232    | 7271    |
 
     #risk model 003: check the required balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR23 | 13632  | 248653   | 50000 |
-      | party1 | USD   | ETH/MAR23 | 3831   | 99985528 | 0     |
-      | party2 | USD   | ETH/MAR23 | 4454   | 99983148 | 0     |
+      | party1 | USD   | ETH/MAR23 | 4047   | 99984664 | 0     |
+      | party2 | USD   | ETH/MAR23 | 4670   | 99982284 | 0     |
 
-    #party1 margin level is: margin_position+margin_order = vol * (MarkPrice-ExitPrice)+ vol * rf * MarkPrice + order * rf * MarkPrice = 10 * (1000-900)+10*0.24649034405344100*1000 + 1*0.24649034405344100*1000=3712
+    #party1 margin level is: margin_position+margin_order = vol * (MarkPrice-ExitPrice)+ vol * rf * MarkPrice + order * rf * MarkPrice = 10 * (1000-882)+10*0.199294303*1000 + 1*0.199294303*1000=3373
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party0 | ETH/MAR23 | 11360       | 12496  | 13632   | 15904   |
-      | party1 | ETH/MAR23 | 3193        | 3512   | 3831    | 4470    |
-      | party2 | ETH/MAR23 | 3712        | 4083   | 4454    | 5196    |
-
+      | party1 | ETH/MAR23 | 3373        | 3710   | 4047    | 4722    |
+      | party2 | ETH/MAR23 | 3892        | 4281   | 4670    | 5448    |
+      # | party1 | ETH/MAR23 | 3193        | 3512   | 3831    | 4470    |
+      # | party2 | ETH/MAR23 | 3712        | 4083   | 4454    | 5196    |
     # risk model 004: check the required balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR24 | 8077   | 248653   | 50000 |
-      | party1 | USD   | ETH/MAR24 | 2758   | 99985528 | 0     |
-      | party2 | USD   | ETH/MAR24 | 2953   | 99983148 | 0     |
+      | party1 | USD   | ETH/MAR24 | 2974   | 99984664 | 0     |
+      | party2 | USD   | ETH/MAR24 | 3169   | 99982284 | 0     |
 
-    #party1 margin level is: margin_position+margin_order = vol * (MarkPrice-ExitPrice)+ vol * rf * MarkPrice + order * rf * MarkPrice = 10 * (1000-900)+10*0.118078679*1000 + 1*0.118078679*1000=2299
+    #party1 margin level is: margin_position+margin_order = vol * (MarkPrice-ExitPrice)+ vol * rf * MarkPrice + order * rf * MarkPrice = 10 * (1000-882)+10*0.118078679*1000 + 1*0.118078679*1000=2479
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party0 | ETH/MAR24 | 6731        | 7404   | 8077    | 9423    |
-      | party1 | ETH/MAR24 | 2299        | 2528   | 2758    | 3218    |
-      | party2 | ETH/MAR24 | 2461        | 2707   | 2953    | 3445    |
-
-
+      | party1 | ETH/MAR24 | 2479        | 2726   | 2974    | 3470    |
+      | party2 | ETH/MAR24 | 2641        | 2905   | 3169    | 3697    |
 
 

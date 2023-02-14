@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
@@ -257,4 +258,6 @@ func PrintSendTransactionResponse(w io.Writer, res api.AdminSendTransactionResul
 	defer p.Print(str)
 	str.CheckMark().SuccessText("Transaction sending successful").NextSection()
 	str.Text("Transaction Hash:").NextLine().WarningText(res.TxHash).NextSection()
+	str.Text("Sent at:").NextLine().WarningText(res.SentAt.Format(time.ANSIC)).NextSection()
+	str.Text("Selected node:").NextLine().WarningText(res.Node.Host).NextLine()
 }

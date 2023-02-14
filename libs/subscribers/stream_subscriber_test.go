@@ -1,7 +1,7 @@
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
 //
 // Change Date: 18 months from the later of the date of the first publicly
 // available Distribution of this version of the repository, and 25 June 2022.
@@ -20,8 +20,9 @@ import (
 	"sync"
 	"testing"
 
+	"code.vegaprotocol.io/vega/libs/subscribers"
+
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/subscribers"
 	dtypes "code.vegaprotocol.io/vega/core/types"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"

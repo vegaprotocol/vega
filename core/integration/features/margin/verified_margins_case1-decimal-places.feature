@@ -7,8 +7,8 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
       | id  | decimal places |
       | ETH | 5              |
     And the markets:
-      | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config          | decimal places |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2              |
+      | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2              | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
@@ -30,15 +30,15 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
       | lp1 | lpprov | ETH/DEC19 | 90000000000       | 0.1 | sell | ASK              | 50         | 100    | submission |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | party  | market id | side | volume | price    | resulting trades | type       | tif     |
-      | aux    | ETH/DEC19 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 20000000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | buy  | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2   | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party | market id | side | volume | price    | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 20000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "10300000" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-    
+
     # setting mark price
     And the parties place the following orders with ticks:
       | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |

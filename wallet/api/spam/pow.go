@@ -1,17 +1,11 @@
 package spam
 
 import (
-	"errors"
-
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/node/types"
 	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
-)
-
-var (
-	ErrTransactionsPerBlockLimitReached = errors.New("cannot generate proof-of-work - transaction per block limit reached")
-	ErrBlockHeightTooHistoric           = errors.New("cannot generate proof-of-work - block data is too historic")
 )
 
 type txCounter struct {
@@ -23,11 +17,12 @@ type txCounter struct {
 	lastBlock int64 // the highest last block we've counted against.
 }
 
-// add increments the counter for the number of times pubkey has sent in a transaction with pow against a particular height.
+// add increments the counter for the number of times the public key has sent in
+// a transaction with pow against a particular height.
 func (t *txCounter) add(pubKey string, state types.PoWBlockState) (uint32, error) {
 	height := int64(state.BlockHeight)
 	if height <= t.lastBlock-t.size {
-		return 0, ErrBlockHeightTooHistoric
+		return 0, api.ErrBlockHeightTooHistoric
 	}
 
 	// our new height might be more than 1 bigger than the lastBlock we sent a transaction for,
@@ -41,9 +36,9 @@ func (t *txCounter) add(pubKey string, state types.PoWBlockState) (uint32, error
 		t.store[i] = map[string]uint32{}
 	}
 
-	// if our stored height is less than the current blockstate either we've
-	// restarted the wallet and we can now pick up the current amount, or some
-	// external transaction were sent outside of our view, so we take the biggest
+	// If our stored height is less than the current block state either we've
+	// restarted the wallet, and we can now pick up the current amount, or some
+	// external transaction were sent outside our view, so we take the biggest
 	// value
 	if t.store[i][pubKey] < uint32(state.TransactionsSeen) {
 		t.store[i][pubKey] = uint32(state.TransactionsSeen)
@@ -94,14 +89,15 @@ func (s *Handler) getCounterForChain(chainID string) *txCounter {
 	return s.counters[chainID]
 }
 
-// Generate returns a proof-of-work with difficult that respects the history of transactions sent in against a particular block.
+// GenerateProofOfWork Generate returns a proof-of-work with difficult that
+// respects the history of transactions sent in against a particular block.
 func (s *Handler) GenerateProofOfWork(pubKey string, st *nodetypes.SpamStatistics) (*commandspb.ProofOfWork, error) {
 	s.mu.Lock()
 	counter := s.getCounterForChain(st.ChainID)
 	blockState := st.PoW.PowBlockStates[0]
 
-	// if the network parameter for past blocks has changed we need to tell the counter so it
-	// can tell us if we're using a now historic block.
+	// If the network parameter for past blocks has changed we need to tell the
+	// counter, so it can tell us if we're using a now historic block.
 	counter.resize(int64(st.PoW.PastBlocks))
 	nSent, err := counter.add(pubKey, blockState)
 	s.mu.Unlock()
@@ -115,7 +111,7 @@ func (s *Handler) GenerateProofOfWork(pubKey string, st *nodetypes.SpamStatistic
 	difficulty := blockState.Difficulty
 	if uint64(nSent) > nPerBlock {
 		if !blockState.IncreasingDifficulty {
-			return nil, ErrTransactionsPerBlockLimitReached
+			return nil, api.ErrTransactionsPerBlockLimitReached
 		}
 		// how many times have we hit the limit
 		difficulty += uint64(nSent) / nPerBlock

@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/subscribers"
+
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/api/mocks"
 	"code.vegaprotocol.io/vega/datanode/broker"
@@ -27,7 +29,6 @@ import (
 	vgtesting "code.vegaprotocol.io/vega/datanode/libs/testing"
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
@@ -101,7 +102,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	}
 
 	logger := logging.NewTestLogger()
-	eventService := subscribers.NewService(bro)
+	eventService := subscribers.NewService(logger, bro, conf.Broker.EventBusClientBufferSize)
 	sqlOrderStore := sqlstore.NewOrders(sqlConn, logger)
 	sqlOrderService := service.NewOrder(sqlOrderStore, logger)
 	sqlNetworkLimitsService := service.NewNetworkLimits(sqlstore.NewNetworkLimits(sqlConn), logger)

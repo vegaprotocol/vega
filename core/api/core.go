@@ -21,11 +21,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/subscribers"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/evtforward"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/stats"
-	"code.vegaprotocol.io/vega/core/subscribers"
 	"code.vegaprotocol.io/vega/core/vegatime"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"

@@ -160,6 +160,10 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	h.interactor.Log(ctx, traceID, InfoLog, "Computing proof-of-work...")
 	tx.Pow, err = h.spam.GenerateProofOfWork(params.PublicKey, &stats)
 	if err != nil {
+		if errors.Is(err, ErrTransactionsPerBlockLimitReached) || errors.Is(err, ErrBlockHeightTooHistoric) {
+			h.interactor.NotifyError(ctx, traceID, ApplicationError, fmt.Errorf("could not compute the proof-of-work: %w", err))
+			return nil, applicationCancellationError(err)
+		}
 		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not compute the proof-of-work: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)
 	}
@@ -170,11 +174,11 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	h.interactor.Log(ctx, traceID, InfoLog, "Sending the transaction...")
 	txHash, err := currentNode.SendTransaction(ctx, tx, params.SendingMode)
 	if err != nil {
-		h.interactor.NotifyFailedTransaction(ctx, traceID, protoToJSON(rawInputData), protoToJSON(tx), err, sentAt)
+		h.interactor.NotifyFailedTransaction(ctx, traceID, protoToJSON(rawInputData), protoToJSON(tx), err, sentAt, currentNode.Host())
 		return nil, networkErrorFromTransactionError(err)
 	}
 
-	h.interactor.NotifySuccessfulTransaction(ctx, traceID, txHash, protoToJSON(rawInputData), protoToJSON(tx), sentAt)
+	h.interactor.NotifySuccessfulTransaction(ctx, traceID, txHash, protoToJSON(rawInputData), protoToJSON(tx), sentAt, currentNode.Host())
 
 	return ClientSendTransactionResult{
 		ReceivedAt: receivedAt,

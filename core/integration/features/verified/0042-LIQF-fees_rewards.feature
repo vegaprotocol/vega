@@ -22,8 +22,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     |
-      | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
 
     Given the average block duration is "2"
 
@@ -85,8 +85,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
       | lp1    | USD   | ETH/MAR22 | 1320   | 999988680 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 2520   | 99997480  | 0     |
-      | party2 | USD   | ETH/MAR22 | 2520   | 99997480  | 0     |
+      | party1 | USD   | ETH/MAR22 | 1704   | 99998296  | 0     |
+      | party2 | USD   | ETH/MAR22 | 1692   | 99998308  | 0     |
 
     Then the network moves ahead "1" blocks
 

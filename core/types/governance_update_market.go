@@ -123,24 +123,30 @@ type UpdateMarketConfiguration struct {
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
 	RiskParameters                updateRiskParams
 	LpPriceRange                  num.Decimal
+	LinearSlippageFactor          num.Decimal
+	QuadraticSlippageFactor       num.Decimal
 }
 
 func (n UpdateMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"instrument(%s) metadata(%v) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) lpPriceRange(%s)",
+		"instrument(%s) metadata(%v) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) lpPriceRange(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s)",
 		reflectPointerToString(n.Instrument),
 		MetadataList(n.Metadata).String(),
 		reflectPointerToString(n.PriceMonitoringParameters),
 		reflectPointerToString(n.LiquidityMonitoringParameters),
 		reflectPointerToString(n.RiskParameters),
-		n.LpPriceRange,
+		n.LpPriceRange.String(),
+		n.LinearSlippageFactor.String(),
+		n.QuadraticSlippageFactor.String(),
 	)
 }
 
 func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
 	cpy := &UpdateMarketConfiguration{
-		Metadata:     make([]string, len(n.Metadata)),
-		LpPriceRange: n.LpPriceRange.Copy(),
+		Metadata:                make([]string, len(n.Metadata)),
+		LpPriceRange:            n.LpPriceRange.Copy(),
+		LinearSlippageFactor:    n.LinearSlippageFactor.Copy(),
+		QuadraticSlippageFactor: n.QuadraticSlippageFactor.Copy(),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -182,6 +188,8 @@ func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration
 		PriceMonitoringParameters:     priceMonitoring,
 		LiquidityMonitoringParameters: liquidityMonitoring,
 		LpPriceRange:                  n.LpPriceRange.String(),
+		LinearSlippageFactor:          n.LinearSlippageFactor.String(),
+		QuadraticSlippageFactor:       n.QuadraticSlippageFactor.String(),
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.UpdateMarketConfiguration_Simple:
@@ -215,6 +223,21 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*U
 	}
 
 	lppr, _ := num.DecimalFromString(p.LpPriceRange)
+	linearSlippageFactor := DefaultSlippageFactor
+	quadraticSlippageFactor := DefaultSlippageFactor
+	var err error
+	if len(p.LinearSlippageFactor) > 0 {
+		linearSlippageFactor, err = num.DecimalFromString(p.LinearSlippageFactor)
+		if err != nil {
+			return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
+		}
+	}
+	if len(p.QuadraticSlippageFactor) > 0 {
+		quadraticSlippageFactor, err = num.DecimalFromString(p.QuadraticSlippageFactor)
+		if err != nil {
+			return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
+		}
+	}
 
 	r := &UpdateMarketConfiguration{
 		Instrument:                    instrument,
@@ -222,6 +245,8 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*U
 		PriceMonitoringParameters:     priceMonitoring,
 		LiquidityMonitoringParameters: liquidityMonitoring,
 		LpPriceRange:                  lppr,
+		LinearSlippageFactor:          linearSlippageFactor,
+		QuadraticSlippageFactor:       quadraticSlippageFactor,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

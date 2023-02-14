@@ -16,33 +16,60 @@ import (
 	"context"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/broker"
+
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/datanode/broker"
+	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mocks.go -package mocks code.vegaprotocol.io/vega/libs/subscribers Broker
 type Broker interface {
 	Subscribe(s broker.Subscriber) int
 	Unsubscribe(id int)
 }
 
 type Service struct {
-	broker Broker
+	log           *logging.Logger
+	broker        Broker
+	maxBufferSize int
 }
 
-func NewService(broker Broker) *Service {
+type StreamSubscription interface {
+	Halt()
+	Push(evts ...events.Event)
+	UpdateBatchSize(ctx context.Context, size int) []*eventspb.BusEvent
+	Types() []events.Type
+	GetData(ctx context.Context) []*eventspb.BusEvent
+	C() chan<- []events.Event
+	Closed() <-chan struct{}
+	Skip() <-chan struct{}
+	SetID(id int)
+	ID() int
+	Ack() bool
+}
+
+func NewService(log *logging.Logger, broker Broker, maxBufferSize int) *Service {
 	return &Service{
-		broker: broker,
+		log:           log,
+		broker:        broker,
+		maxBufferSize: maxBufferSize,
 	}
 }
 
 func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...EventFilter) (<-chan []*eventspb.BusEvent, chan<- int) {
+	return s.ObserveEventsOnStream(ctx, retries, NewStreamSub(ctx, eTypes, batchSize, filters...))
+}
+
+func (s *Service) ObserveEventsOnStream(ctx context.Context, retries int,
+	sub StreamSubscription,
+) (<-chan []*eventspb.BusEvent, chan<- int) {
 	// one batch buffer for the out channel
 	in, out := make(chan int), make(chan []*eventspb.BusEvent, 1)
 	ctx, cfunc := context.WithCancel(ctx)
+
 	// use stream subscriber
 	// use buffer size of 0 for the time being
-	sub := NewStreamSub(ctx, eTypes, batchSize, filters...)
 	id := s.broker.Subscribe(sub)
 
 	// makes the tick duration 2000ms max to wait basically
@@ -82,14 +109,28 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 			case bs := <-in:
 				// batch size changed: drain buffer and send data
 				data = append(data, sub.UpdateBatchSize(ctx, bs)...)
-				if len(data) > 0 {
+				dataLength := len(data)
+
+				if dataLength > s.maxBufferSize {
+					s.log.Warningf("slow consumer detected, closing event observer")
+					return
+				}
+
+				if dataLength > 0 {
 					trySend()
 				}
 			default:
 				// wait for actual changes
 				data = append(data, sub.GetData(ctx)...)
+				dataLength := len(data)
+
+				if dataLength > s.maxBufferSize {
+					s.log.Warningf("slow consumer detected, closing event observer")
+					return
+				}
+
 				// this is a very rare thing, but it can happen
-				if len(data) > 0 {
+				if dataLength > 0 {
 					trySend()
 				}
 			}
