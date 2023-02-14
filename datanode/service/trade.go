@@ -31,14 +31,12 @@ type tradeStore interface {
 
 type Trade struct {
 	store    tradeStore
-	log      *logging.Logger
 	observer utils.Observer[*entities.Trade]
 }
 
 func NewTrade(store tradeStore, log *logging.Logger) *Trade {
 	return &Trade{
 		store:    store,
-		log:      log,
 		observer: utils.NewObserver[*entities.Trade]("trade", log, 0, 0),
 	}
 }

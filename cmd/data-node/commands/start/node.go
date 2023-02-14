@@ -101,6 +101,7 @@ func (l *NodeCommand) Stop() {
 func (l *NodeCommand) runNode([]string) error {
 	defer l.cancel()
 
+	nodeLog := l.Log.Named("start.runNode")
 	ctx, cancel := context.WithCancel(l.ctx)
 	eg, ctx := errgroup.WithContext(ctx)
 
@@ -150,7 +151,7 @@ func (l *NodeCommand) runNode([]string) error {
 
 		select {
 		case sig := <-gracefulStop:
-			l.Log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
+			nodeLog.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
 			cancel()
 		case <-ctx.Done():
 			return ctx.Err()
@@ -160,7 +161,7 @@ func (l *NodeCommand) runNode([]string) error {
 
 	metrics.Start(l.conf.Metrics)
 
-	l.Log.Info("Vega data node startup complete")
+	nodeLog.Info("Vega data node startup complete")
 
 	err := eg.Wait()
 

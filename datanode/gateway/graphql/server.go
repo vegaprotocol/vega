@@ -45,7 +45,7 @@ import (
 )
 
 const (
-	namedLogger = "gateway.gql"
+	namedLogger = "gql"
 )
 
 // GraphServer is the graphql server.

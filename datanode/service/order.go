@@ -38,14 +38,12 @@ type orderStore interface {
 
 type Order struct {
 	store    orderStore
-	log      *logging.Logger
 	observer utils.Observer[entities.Order]
 }
 
 func NewOrder(store orderStore, log *logging.Logger) *Order {
 	return &Order{
 		store:    store,
-		log:      log,
 		observer: utils.NewObserver[entities.Order]("order", log, 0, 0),
 	}
 }

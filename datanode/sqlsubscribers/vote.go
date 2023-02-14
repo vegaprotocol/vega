@@ -15,11 +15,11 @@ package sqlsubscribers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"github.com/pkg/errors"
 )
 
 type VoteEvent interface {
@@ -37,16 +37,11 @@ type GovernanceService interface {
 type Vote struct {
 	subscriber
 	store GovernanceService
-	log   *logging.Logger
 }
 
-func NewVote(
-	store GovernanceService,
-	log *logging.Logger,
-) *Vote {
+func NewVote(store GovernanceService) *Vote {
 	vs := &Vote{
 		store: store,
-		log:   log,
 	}
 	return vs
 }

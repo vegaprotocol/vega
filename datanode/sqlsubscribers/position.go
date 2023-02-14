@@ -17,12 +17,12 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"github.com/pkg/errors"
 )
 
 type tradeEvent interface {
@@ -77,17 +77,12 @@ type PositionStore interface {
 type Position struct {
 	subscriber
 	store PositionStore
-	log   *logging.Logger
 	mutex sync.Mutex
 }
 
-func NewPosition(
-	store PositionStore,
-	log *logging.Logger,
-) *Position {
+func NewPosition(store PositionStore) *Position {
 	t := &Position{
 		store: store,
-		log:   log,
 	}
 	return t
 }
