@@ -27,6 +27,9 @@ func TestCheckTransfer(t *testing.T) {
 	}
 
 	e.OnMinTransferQuantumMultiple(context.Background(), num.DecimalFromFloat(1))
+
+	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Return(&types.Account{Balance: num.NewUint(200)}, nil).AnyTimes()
+
 	// asset exists
 	e.assets.EXPECT().Get(gomock.Any()).Times(2).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
 	require.EqualError(t,
@@ -52,4 +55,14 @@ func TestCheckTransfer(t *testing.T) {
 		e.CheckTransfer(transfer),
 		"could not transfer funds, cannot transfer zero funds",
 	)
+
+	e.OnTransferFeeFactorUpdate(context.Background(), num.DecimalFromFloat(0.01))
+	e.assets.EXPECT().Get(gomock.Any()).Times(2).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	// sufficient balance to cover fees
+	transfer.Amount = num.NewUint(100)
+	require.NoError(t, e.CheckTransfer(transfer))
+
+	// insufficient balance to cover fees
+	transfer.Amount = num.NewUint(200)
+	require.EqualError(t, e.CheckTransfer(transfer), "could not transfer funds, not enough funds to transfer")
 }
