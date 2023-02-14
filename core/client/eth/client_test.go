@@ -15,7 +15,6 @@ package eth_test
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"math/big"
 	"testing"
 
@@ -74,7 +73,7 @@ func testCurrentBlock(t *testing.T) {
 	defer c.ctrl.Finish()
 
 	got, err := c.client.CurrentHeight(context.Background())
-	if !assert.NoError(t, err, fmt.Sprintf("CurrentHeight()")) {
+	if !assert.NoError(t, err, "CurrentHeight()") {
 		return
 	}
 	assert.Equal(t, number.Uint64(), got, "CurrentHeight()")
