@@ -15,11 +15,11 @@ package sqlsubscribers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"github.com/pkg/errors"
 )
 
 type ERC20MultiSigSignerAddedEvent interface {
@@ -39,13 +39,11 @@ type ERC20MultiSigSignerEventStore interface {
 type ERC20MultiSigSignerEvent struct {
 	subscriber
 	store ERC20MultiSigSignerEventStore
-	log   *logging.Logger
 }
 
-func NewERC20MultiSigSignerEvent(store ERC20MultiSigSignerEventStore, log *logging.Logger) *ERC20MultiSigSignerEvent {
+func NewERC20MultiSigSignerEvent(store ERC20MultiSigSignerEventStore) *ERC20MultiSigSignerEvent {
 	return &ERC20MultiSigSignerEvent{
 		store: store,
-		log:   log,
 	}
 }
 

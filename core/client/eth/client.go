@@ -27,7 +27,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
@@ -51,7 +50,6 @@ type ETHClient interface { //revive:disable:exported
 	bind.ContractBackend
 	ChainID(context.Context) (*big.Int, error)
 	NetworkID(context.Context) (*big.Int, error)
-	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
 }
 
 type Client struct {

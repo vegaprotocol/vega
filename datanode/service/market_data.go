@@ -35,7 +35,6 @@ type MarketDataStore interface {
 
 type MarketData struct {
 	store     MarketDataStore
-	log       *logging.Logger
 	observer  utils.Observer[*entities.MarketData]
 	cache     map[entities.MarketID]*entities.MarketData
 	cacheLock sync.RWMutex
@@ -43,7 +42,6 @@ type MarketData struct {
 
 func NewMarketData(store MarketDataStore, log *logging.Logger) *MarketData {
 	return &MarketData{
-		log:      log,
 		store:    store,
 		observer: utils.NewObserver[*entities.MarketData]("market_data", log, 0, 0),
 		cache:    make(map[entities.MarketID]*entities.MarketData),

@@ -16,12 +16,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
-	"code.vegaprotocol.io/vega/logging"
-	"github.com/golang/mock/gomock"
 )
 
 func TestStakeLinking_Push(t *testing.T) {
@@ -31,7 +31,7 @@ func TestStakeLinking_Push(t *testing.T) {
 	store := mocks.NewMockStakeLinkingStore(ctrl)
 
 	store.EXPECT().Upsert(context.Background(), gomock.Any()).Times(1)
-	subscriber := sqlsubscribers.NewStakeLinking(store, logging.NewTestLogger())
+	subscriber := sqlsubscribers.NewStakeLinking(store)
 	subscriber.Flush(context.Background())
 	subscriber.Push(context.Background(), events.NewStakeLinking(context.Background(), types.StakeLinking{}))
 }

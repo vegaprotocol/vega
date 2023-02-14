@@ -15,11 +15,11 @@ package sqlsubscribers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
-	"github.com/pkg/errors"
 )
 
 type PartyEvent interface {
@@ -34,16 +34,11 @@ type PartyStore interface {
 type Party struct {
 	subscriber
 	store PartyStore
-	log   *logging.Logger
 }
 
-func NewParty(
-	store PartyStore,
-	log *logging.Logger,
-) *Party {
+func NewParty(store PartyStore) *Party {
 	ps := &Party{
 		store: store,
-		log:   log,
 	}
 	return ps
 }

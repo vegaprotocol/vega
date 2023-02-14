@@ -17,14 +17,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
 	"code.vegaprotocol.io/vega/libs/num"
-	"code.vegaprotocol.io/vega/logging"
-	"github.com/golang/mock/gomock"
 )
 
 func TestMarginLevels_Push(t *testing.T) {
@@ -37,7 +37,7 @@ func TestMarginLevels_Push(t *testing.T) {
 
 	store.EXPECT().Add(gomock.Any()).Times(1)
 	store.EXPECT().Flush(gomock.Any()).Times(2)
-	subscriber := sqlsubscribers.NewMarginLevels(store, accountSource, logging.NewTestLogger())
+	subscriber := sqlsubscribers.NewMarginLevels(store, accountSource)
 	subscriber.Flush(context.Background())
 	subscriber.Push(context.Background(), events.NewMarginLevelsEvent(context.Background(), types.MarginLevels{
 		MaintenanceMargin:      num.NewUint(1000),

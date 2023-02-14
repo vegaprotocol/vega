@@ -16,11 +16,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/protos/vega"
-	"github.com/pkg/errors"
 )
 
 type MarketDataEvent interface {
@@ -35,7 +35,6 @@ type MarketDataStore interface {
 
 type MarketData struct {
 	subscriber
-	log   *logging.Logger
 	store MarketDataStore
 }
 
@@ -51,9 +50,8 @@ func (md *MarketData) Types() []events.Type {
 	return []events.Type{events.MarketDataEvent}
 }
 
-func NewMarketData(store MarketDataStore, log *logging.Logger) *MarketData {
+func NewMarketData(store MarketDataStore) *MarketData {
 	return &MarketData{
-		log:   log,
 		store: store,
 	}
 }

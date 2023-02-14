@@ -34,10 +34,11 @@ type StartCmd struct {
 
 var startCmd StartCmd
 
+const namedLogger = "datanode"
+
 func (cmd *StartCmd) Execute(args []string) error {
 	log := logging.NewLoggerFromConfig(
-		logging.NewDefaultConfig(),
-	)
+		logging.NewDefaultConfig()).Named(namedLogger)
 	defer log.AtExit()
 
 	// we define this option to parse the cli args each time the config is
@@ -77,7 +78,7 @@ func (cmd *StartCmd) Execute(args []string) error {
 	)
 }
 
-func Node(ctx context.Context, parser *flags.Parser) error {
+func Node(_ context.Context, parser *flags.Parser) error {
 	startCmd = StartCmd{
 		Config: config.NewDefaultConfig(),
 	}
@@ -95,7 +96,7 @@ func Node(ctx context.Context, parser *flags.Parser) error {
 	return nil
 }
 
-func Start(ctx context.Context, parser *flags.Parser) error {
+func Start(_ context.Context, parser *flags.Parser) error {
 	startCmd = StartCmd{
 		Config: config.NewDefaultConfig(),
 	}
