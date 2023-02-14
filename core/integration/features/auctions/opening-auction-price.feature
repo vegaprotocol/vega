@@ -65,8 +65,8 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party7 | ETH/DEC19 | sell | 1      | 11000 | 0                | TYPE_LIMIT | TIF_GFA | t7-s-1    |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 29120   |
-      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 28340   |
+      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |
+      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 15260   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
@@ -131,8 +131,8 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 100    | submission |
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 29120   |
-      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 27260   |
+      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |
+      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 15260   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
@@ -212,8 +212,8 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party2 | ETH/DEC19 | sell | 3      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t2-s-3    |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 29120   |
-      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 27260   |
+      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |
+      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 15260   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
@@ -301,7 +301,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party2 | ETH/DEC19 | sell | 3      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t2-s-3    |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 27260   |
+      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 15260   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |

@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMultipleTradesOfSameSize(t *testing.T) {
@@ -155,4 +156,48 @@ func (t tradeStub) Price() *num.Uint {
 
 func (t tradeStub) MarketPrice() *num.Uint {
 	return t.price.Clone()
+}
+
+func TestCalculateOpenClosedVolume(t *testing.T) {
+	open := int64(0)
+	closed := int64(0)
+	// no pending volume, new buy trade of 100, expect to open 100 close 0
+	open, closed = entities.CalculateOpenClosedVolume(0, 100)
+	require.Equal(t, int64(100), open)
+	require.Equal(t, int64(0), closed)
+
+	// no pending volume, new sell trade of 100, expect to open -100 close 0
+	open, closed = entities.CalculateOpenClosedVolume(0, -100)
+	require.Equal(t, int64(-100), open)
+	require.Equal(t, int64(0), closed)
+
+	// we have a pending open volume of 100 and we get a new buy trade of 50, expect to return opened 50, close 0
+	open, closed = entities.CalculateOpenClosedVolume(100, 50)
+	require.Equal(t, int64(50), open)
+	require.Equal(t, int64(0), closed)
+
+	// we have a pending open volume of -100 and we get a new sell trade of 50, expect to return opened -50, close 0
+	open, closed = entities.CalculateOpenClosedVolume(-100, -50)
+	require.Equal(t, int64(-50), open)
+	require.Equal(t, int64(0), closed)
+
+	// we have a pending open volume of 100 and we get a new sell trade of 50, expect to return opened 0, close 50
+	open, closed = entities.CalculateOpenClosedVolume(100, -50)
+	require.Equal(t, int64(0), open)
+	require.Equal(t, int64(50), closed)
+
+	// we have a pending open volume of -100 and we get a new sell trade of 50, expect to return opened 0, close -50
+	open, closed = entities.CalculateOpenClosedVolume(-100, 50)
+	require.Equal(t, int64(0), open)
+	require.Equal(t, int64(-50), closed)
+
+	// we have a pending open volume of 100 and we get a new sell trade of 150, expect to return opened -50, close 100
+	open, closed = entities.CalculateOpenClosedVolume(100, -150)
+	require.Equal(t, int64(-50), open)
+	require.Equal(t, int64(100), closed)
+
+	// we have a pending open volume of -100 and we get a new sell trade of 50, expect to return opened 50, close -100
+	open, closed = entities.CalculateOpenClosedVolume(-100, 150)
+	require.Equal(t, int64(50), open)
+	require.Equal(t, int64(-100), closed)
 }

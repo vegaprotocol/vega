@@ -68,10 +68,9 @@ Feature: test negative PDP (position decimal places)
 
         And the parties should have the following margin levels:
             | party  | market id | maintenance | search | initial | release |
-            | party0 | USD/DEC22 | 39126       | 43038  | 46951   | 63424   |
-            | party1 | USD/DEC22 | 8008        | 8808   | 9609    | 20820   |
-            | party2 | USD/DEC22 | 35570       | 39127  | 42684   | 92482   |
-
+            | party0 | USD/DEC22 | 39126       | 43038  | 46951   | 54776   |
+            | party1 | USD/DEC22 | 8008        | 8808   | 9609    | 11211   |
+            | party2 | USD/DEC22 | 35570       | 39127  | 42684   | 49798   |
 
     @Now
     Scenario: 002, test negative PDP when trading mode is continuous (0003-MTMK-014, 0003-MTMK-015, 0019-MCAL-010, 0029-FEES-014)
