@@ -787,6 +787,8 @@ func (m *Market) blockEnd(ctx context.Context) {
 		m.lastTradedPrice = mp.Clone()
 	}
 	m.releaseExcessMargin(ctx, m.position.Positions()...)
+	// send position events
+	m.position.FlushPositionEvents(ctx)
 }
 
 func (m *Market) updateMarketValueProxy() {
