@@ -113,7 +113,7 @@ func (e *Engine) sendBufferedPosition(ctx context.Context) {
 	}
 
 	e.broker.SendBatch(evts)
-	e.updatedPositions = map[string]struct{}{}
+	e.updatedPositions = make(map[string]struct{}, len(e.updatedPositions))
 }
 
 func (e *Engine) sendPosition(ctx context.Context, pos *MarketPosition) {
