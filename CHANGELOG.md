@@ -36,6 +36,7 @@
 - [7509](https://github.com/vegaprotocol/vega/issues/7509) - Automatically reconcile account balance changes with transfer events after each integration test step
 - [7564](https://github.com/vegaprotocol/vega/issues/7564) - Add logging when database migrations are run
 - [7546](https://github.com/vegaprotocol/vega/issues/7546) - Visor automatically uses snapshot on core based on latest data node snapshot.
+- [7576](https://github.com/vegaprotocol/vega/issues/7576) - include the application version in the block hash
 
 ### 🐛 Fixes
 - [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema
@@ -66,6 +67,8 @@
 - [7543](https://github.com/vegaprotocol/vega/issues/7543) - Initiate post-auction close out only when all the parked orders get redeployed
 - [7508](https://github.com/vegaprotocol/vega/issues/7508) - Assure transfer events always sent after margin recheck
 - [7492](https://github.com/vegaprotocol/vega/issues/7492) - Send market depth events at the end of each block
+- [7582](https://github.com/vegaprotocol/vega/issues/7582) - Validate transfer amount in `checkTx`
+- [7577](https://github.com/vegaprotocol/vega/issues/7577) - Use correct trade size when calculating pending open volume
 
 ## 0.67.2
 
@@ -163,7 +166,6 @@
 - [7195](https://github.com/vegaprotocol/vega/issues/7195) - Ignore oracle messages while market is in proposed state
 - [7198](https://github.com/vegaprotocol/vega/issues/7198) - Reduce `RAM` usage when tendermint calls list snapshot
 - [6996](https://github.com/vegaprotocol/vega/issues/6996) - Add Visor docs
-- [7577](https://github.com/vegaprotocol/vega/issues/7577) - Use correct trade size when calculating pending open volume
 
 ## 0.65.0
 

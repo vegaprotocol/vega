@@ -656,7 +656,7 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 	return &protoapi.PoWStatistic{
 		BlockStates:        stats,
 		BannedUntil:        bannedUntil,
-		NumberOfPastBlocks: e.getActiveParams().spamPoWNumberOfTxPerBlock,
+		NumberOfPastBlocks: e.getActiveParams().spamPoWNumberOfPastBlocks,
 	}
 }
 
