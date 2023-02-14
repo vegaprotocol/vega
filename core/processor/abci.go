@@ -882,7 +882,8 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	resp.Data = snapHash
 
 	if len(snapHash) == 0 {
-		resp.Data = app.exec.Hash()
+		resp.Data = crypto.Hash([]byte(app.version))
+		resp.Data = append(resp.Data, app.exec.Hash()...)
 		resp.Data = append(resp.Data, app.delegation.Hash()...)
 		resp.Data = append(resp.Data, app.gov.Hash()...)
 		resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
