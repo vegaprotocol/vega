@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"code.vegaprotocol.io/vega/datanode/networkhistory"
 	"google.golang.org/grpc/status"
+
+	"code.vegaprotocol.io/vega/datanode/networkhistory"
 
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
@@ -92,7 +93,7 @@ func verifyChainID(log *logging.Logger, connConfig sqlstore.ConnectionConfig, ch
 	defer connSource.Close()
 
 	store := sqlstore.NewChain(connSource)
-	chainService := service.NewChain(store, log)
+	chainService := service.NewChain(store)
 
 	err = networkhistory.VerifyChainID(chainID, chainService)
 	if err != nil {
