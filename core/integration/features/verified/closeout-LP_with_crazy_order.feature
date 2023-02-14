@@ -289,9 +289,9 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
     # traderB has both LP pegged orders, limit order, and positions
     # margin for pegged orders long: 5173*0.801225765*50=207237.0441
     # margin for pegged+limit orders short:76*3.5569036*50=13516.23368
-    # margin for short positions: min(112*((2000-50)*1/76+(2020-50)*74/76+(3000-50)*1/76), 50*(112*1e1+112^2*1e3))+112*50*3.55690359157934000 =241973.397
+    # margin for short positions: min(112*((2000-50)*1/112+(2020-50)*74/112+(3000-50)*1/112+(45000000000-50)*36/112), 50*(112*1e1+112^2*1e3))+112*50*3.55690359157934000 =627275918.7
     # margin_long = 207237.0441
-    # margin_short= 13516.23368+241973.397=255489.6307
+    # margin_short= 13516.23368+627275918.7=627289434.9
 
     And the parties should have the following account balances:
       | party   | asset | market id | margin     | general       | bond |
@@ -430,9 +430,9 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
     # traderB has both LP pegged orders, limit order, and positions
     # margin for pegged orders long: 5173*0.801225765*50=207237.0441
     # margin for pegged orders short:76*3.5569036*50=13516.23368
-    # margin for short positions: min(112*((2000-50)*1/112+(2020-50)*74/112+(3000-50)*1/112+(45000000000-50)*36/112), 50*(112*1e1+112^2*1e3))+112*50*3.55690359157934000 =627275918.7
+    # margin for short positions: min(112*((2000-50)*1/112+(2020-50)*74/112+(3000-50)*1/112+(45000000000-50)*36/112), 50*(112*1e2+112^2*1e0))+112*50*3.55690359157934000 =1207118.66
     # margin_long = 207237.0441
-    # margin_short= 13516.23368+627275918.7=627289434.9
+    # margin_short= 13516.23368+1207118.66=1220634.894
 
     And the parties should have the following account balances:
       | party   | asset | market id | margin  | general       | bond   |
