@@ -742,6 +742,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	m.updateMarketValueProxy()
 	m.updateLiquidityScores()
 	m.updateLiquidityFee(ctx)
+	m.position.FlushPositionEvents(ctx)
 	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
 	return m.closed
 }

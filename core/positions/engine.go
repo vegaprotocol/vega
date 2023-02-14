@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"golang.org/x/exp/maps"
 )
 
 // Errors.
@@ -56,6 +57,10 @@ type Engine struct {
 	// this slice.
 	positionsCpy []events.MarketPosition
 
+	// keep track of the position updated during the current block to avoid sending
+	updatedPositions map[string]struct{}
+	positionUpdated  func(context.Context, *MarketPosition)
+
 	broker Broker
 }
 
@@ -65,14 +70,54 @@ func New(log *logging.Logger, config Config, marketID string, broker Broker) *En
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	return &Engine{
-		marketID:     marketID,
-		Config:       config,
-		log:          log,
-		positions:    map[string]*MarketPosition{},
-		positionsCpy: []events.MarketPosition{},
-		broker:       broker,
+	e := &Engine{
+		marketID:         marketID,
+		Config:           config,
+		log:              log,
+		positions:        map[string]*MarketPosition{},
+		positionsCpy:     []events.MarketPosition{},
+		broker:           broker,
+		updatedPositions: map[string]struct{}{},
 	}
+	e.positionUpdated = e.bufferPosition
+	if config.StreamPositionVerbose {
+		e.positionUpdated = e.sendPosition
+	}
+
+	return e
+}
+
+func (e *Engine) FlushPositionEvents(ctx context.Context) {
+	if e.StreamPositionVerbose {
+		return
+	}
+
+	e.sendBufferedPosition(ctx)
+}
+
+func (e *Engine) bufferPosition(ctx context.Context, pos *MarketPosition) {
+	e.updatedPositions[pos.partyID] = struct{}{}
+}
+
+func (e *Engine) sendBufferedPosition(ctx context.Context) {
+	parties := maps.Keys(e.updatedPositions)
+	sort.Strings(parties)
+	evts := make([]events.Event, 0, len(parties))
+
+	for _, v := range parties {
+		// ensure the position exists,
+		// party might have been distressed or something
+		if pos, ok := e.positions[v]; ok {
+			evts = append(evts, events.NewPositionStateEvent(ctx, pos, e.marketID))
+		}
+	}
+
+	e.broker.SendBatch(evts)
+	e.updatedPositions = map[string]struct{}{}
+}
+
+func (e *Engine) sendPosition(ctx context.Context, pos *MarketPosition) {
+	e.broker.Send(events.NewPositionStateEvent(ctx, pos, e.marketID))
 }
 
 func (e *Engine) Hash() []byte {
@@ -135,7 +180,7 @@ func (e *Engine) RegisterOrder(ctx context.Context, order *types.Order) *MarketP
 	}
 
 	pos.RegisterOrder(order)
-	e.broker.Send(events.NewPositionStateEvent(ctx, pos, order.MarketID))
+	e.positionUpdated(ctx, pos)
 	return pos
 }
 
@@ -148,7 +193,7 @@ func (e *Engine) UnregisterOrder(ctx context.Context, order *types.Order) *Marke
 			logging.Order(*order))
 	}
 	pos.UnregisterOrder(e.log, order)
-	e.broker.Send(events.NewPositionStateEvent(ctx, pos, order.MarketID))
+	e.positionUpdated(ctx, pos)
 	return pos
 }
 
@@ -163,7 +208,7 @@ func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.
 	}
 
 	pos.AmendOrder(e.log, originalOrder, newOrder)
-	e.broker.Send(events.NewPositionStateEvent(ctx, pos, originalOrder.MarketID))
+	e.positionUpdated(ctx, pos)
 	return pos
 }
 
@@ -215,7 +260,7 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events
 	}
 	pos.size += size
 
-	e.broker.Send(events.NewPositionStateEvent(ctx, pos, trade.MarketID))
+	e.positionUpdated(ctx, pos)
 	cpy := pos.Clone()
 	return []events.MarketPosition{*cpy}
 }
@@ -264,12 +309,8 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade) []events.Market
 		*seller.Clone(),
 	}
 
-	e.broker.SendBatch(
-		[]events.Event{
-			events.NewPositionStateEvent(ctx, buyer, trade.MarketID),
-			events.NewPositionStateEvent(ctx, seller, trade.MarketID),
-		},
-	)
+	e.positionUpdated(ctx, buyer)
+	e.positionUpdated(ctx, seller)
 
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Positions Updated for trade",
