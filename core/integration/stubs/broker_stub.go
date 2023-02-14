@@ -127,10 +127,20 @@ func (b *BrokerStub) Send(e events.Event) {
 	b.mu.Unlock()
 }
 
-func (b *BrokerStub) GetAllEvents() []events.Event {
+func (b *BrokerStub) GetAllEventsSinceCleared() []events.Event {
 	b.mu.Lock()
 	evs := []events.Event{}
 	for _, d := range b.data {
+		evs = append(evs, d...)
+	}
+	b.mu.Unlock()
+	return evs
+}
+
+func (b *BrokerStub) GetAllEvents() []events.Event {
+	b.mu.Lock()
+	evs := []events.Event{}
+	for _, d := range b.immdata {
 		evs = append(evs, d...)
 	}
 	b.mu.Unlock()

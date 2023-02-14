@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/integration/helpers"
@@ -35,6 +36,8 @@ var (
 	}
 
 	features string
+
+	expectingEventsOverStepText = `there were "([0-9]+)" events emitted over the last step`
 )
 
 func init() {
@@ -69,6 +72,12 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		execsetup.depositsBefore = len(execsetup.broker.GetDeposits())
 		execsetup.withdrawalsBefore = len(execsetup.broker.GetWithdrawals())
 		execsetup.insurancePoolDepositsOverStep = make(map[string]*num.Int)
+
+		// don't record events before step if it's the step that's meant to assess number of events over a regular step
+		if b, _ := regexp.MatchString(expectingEventsOverStepText, st.Text); !b {
+			execsetup.eventsBefore = len(execsetup.broker.GetAllEvents())
+		}
+
 		return ctx, nil
 	})
 	s.StepContext().After(func(ctx context.Context, st *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
@@ -358,6 +367,12 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`the auction ends with a traded volume of "([^"]+)" at a price of "([^"]+)"`, func(vol, price string) error {
 		now := execsetup.timeService.GetTimeNow()
 		return steps.TheAuctionTradedVolumeAndPriceShouldBe(execsetup.broker, vol, price, now)
+	})
+	s.Step(expectingEventsOverStepText, func(eventCounter int) error {
+		return steps.ExpectingEventsOverStep(execsetup.broker, execsetup.eventsBefore, eventCounter)
+	})
+	s.Step(`there were "([0-9]+)" events emitted in this scenario so far`, func(eventCounter int) error {
+		return steps.ExpectingEventsInTheSecenarioSoFar(execsetup.broker, eventCounter)
 	})
 
 	// Debug steps

@@ -89,12 +89,13 @@ type executionTestSetup struct {
 	// keep track of net deposits/withdrawals (ignores asset type)
 	netDeposits *num.Uint
 
-	// record accounts before steps
+	// record parts of state before each step
 	accountsBefore                []protos.Account
 	ledgerMovementsBefore         int
 	depositsBefore                int
 	withdrawalsBefore             int
 	insurancePoolDepositsOverStep map[string]*num.Int
+	eventsBefore                  int
 
 	ntry           *notary.SnapshotNotary
 	stateVarEngine *stubs.StateVarStub
