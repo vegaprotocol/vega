@@ -232,9 +232,15 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
     And the parties should have the following account balances:
       | party   | asset | market id | margin  | general | bond   |
       | traderB | USD   | ETH/DEC22 | 2899518 | 50482   | 150000 |
-    And the parties should have the following account balances:
-      | party   | asset | market id | margin  | general | bond   |
-      | traderB | USD   | ETH/DEC22 | 2899518 | 50482   | 150000 |
+
+    Then the parties should have the following margin levels:
+      | party   | market id | maintenance | search  | initial | release |
+      | traderB | ETH/DEC23 | 1449759     | 2174638 | 2899518 | 4349277 |
+
+    # traderB has both LP pegged orders, limit order, and positions
+    # margin for pegged orders long and short: max(76*3.5569036,5173*0.800728208)*350=1449758.457
+    # margin for short position: min(1*(2000-350)*1/1, 350*(1*1e2+1^2*1e0))+1*350*3.55690359157934000 =2894.916257
+    # margin for the long position/orders is larger than the short size, so we take the margin for long side which is 1449759
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
@@ -260,6 +266,13 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | party   | asset | market id | margin | general | bond   |
       | traderB | USD   | ETH/DEC22 | 511138 | 2439156 | 150000 |
 
+    # traderB has both LP pegged orders, limit order, and positions
+    # margin for pegged orders long: 5173*0.801225765*50=207237.0441
+    # margin for pegged+limit orders short:76*3.5569036*50=13516.23368
+    # margin for short positions: min(112*((2000-50)*1/76+(2020-50)*74/76+(3000-50)*1/76), 50*(112*1e2+112^2*1e0))+112*50*3.55690359157934000 =241973.397
+    # margin_long = 207237.0441
+    # margin_short= 13516.23368+241973.397=255489.6307
+
     And the market data for the market "ETH/DEC22" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150000         | 112           |
@@ -272,6 +285,13 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price       | resulting trades | type       | tif     |
       | traderC | ETH/DEC22 | sell | 120    | 45000000000 | 0                | TYPE_LIMIT | TIF_GTC |
+
+    # traderB has both LP pegged orders, limit order, and positions
+    # margin for pegged orders long: 5173*0.801225765*50=207237.0441
+    # margin for pegged+limit orders short:76*3.5569036*50=13516.23368
+    # margin for short positions: min(112*((2000-50)*1/76+(2020-50)*74/76+(3000-50)*1/76), 50*(112*1e1+112^2*1e3))+112*50*3.55690359157934000 =241973.397
+    # margin_long = 207237.0441
+    # margin_short= 13516.23368+241973.397=255489.6307
 
     And the parties should have the following account balances:
       | party   | asset | market id | margin     | general       | bond |
@@ -410,9 +430,9 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
     # traderB has both LP pegged orders, limit order, and positions
     # margin for pegged orders long: 5173*0.801225765*50=207237.0441
     # margin for pegged orders short:76*3.5569036*50=13516.23368
-    # margin for short positions: min(112*((2000-50)*1/112+(2020-50)*74/112+(3000-50)*1/112+(45000000000-50)*36/112), 50*(112*1e2+112^2*1e0))+112*50*3.55690359157934000 =1207118.66
+    # margin for short positions: min(112*((2000-50)*1/112+(2020-50)*74/112+(3000-50)*1/112+(45000000000-50)*36/112), 50*(112*1e1+112^2*1e3))+112*50*3.55690359157934000 =627275918.7
     # margin_long = 207237.0441
-    # margin_short= 13516.23368+1207118.66=1220634.894
+    # margin_short= 13516.23368+627275918.7=627289434.9
 
     And the parties should have the following account balances:
       | party   | asset | market id | margin  | general       | bond   |
@@ -460,4 +480,5 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | party   | volume | unrealised pnl | realised pnl |
       | traderD | 0      | 0              | 0            |
       | traderE | 0      | 0              | 0            |
+
 
