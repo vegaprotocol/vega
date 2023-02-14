@@ -78,9 +78,6 @@ func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice *num.Uint, r
 	} else {
 		addMarginLevels(ml, sMargin, e.scalingFactorsUint)
 	}
-	// this is a bit of a hack, perhaps, but it keeps the remaining flow in the core simple:
-	// artificially increase the release level so we never release the margin balance during auction
-	ml.CollateralReleaseLevel.AddSum(m.MarginBalance())
 	return ml
 }
 

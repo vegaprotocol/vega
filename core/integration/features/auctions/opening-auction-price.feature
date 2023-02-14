@@ -65,17 +65,13 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party7 | ETH/DEC19 | sell | 1      | 11000 | 0                | TYPE_LIMIT | TIF_GFA | t7-s-1    |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 29120   |
-      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 28340   |
+      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |
+      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 15260   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
       | party2 | BTC   | ETH/DEC19 | 13080  | 99986920 |
-    # values before uint
-    #| party1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
     When the opening auction period ends for market "ETH/DEC19"
-    ## We're seeing these events twice for some reason
-    Then debug trades
     Then the following trades should be executed:
       | buyer  | price | size | seller |
       | party1 | 10000 | 1    | party5 |
@@ -83,7 +79,6 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party1 | 10000 | 1    | party2 |
       | party1 | 10000 | 4    | party2 |
     And the mark price should be "10000" for the market "ETH/DEC19"
-    ## Network for distressed party1 -> cancelled, nothing on the book is remaining
     And the orders should have the following status:
       | party  | reference | status           |
       | party1 | t1-b-1    | STATUS_FILLED    |
@@ -94,16 +89,14 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party2 | t2-s-3    | STATUS_FILLED    |
       | party5 | t5-s-1    | STATUS_FILLED    |
       | party6 | t6-b-1    | STATUS_CANCELLED |
-
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party2 | ETH/DEC19 | 16000       | 17600  | 19200   | 22400   |
-    #| party7 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-    Then debug transfers
+      | party2 | ETH/DEC19 | 39200       | 43120  | 47040   | 54880   |
+      | party1 | ETH/DEC19 | 45900       | 50490  | 55080   | 64260   |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
-      | party2 | BTC   | ETH/DEC19 | 19200  | 99980800 |
-      | party1 | BTC   | ETH/DEC19 | 108000 | 99892000 |
+      | party2 | BTC   | ETH/DEC19 | 47040  | 99952960 |
+      | party1 | BTC   | ETH/DEC19 | 55080  | 99944920 |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
       | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
@@ -138,14 +131,12 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 100    | submission |
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 29120   |
-      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 27260   |
+      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |
+      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 15260   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
       | party2 | BTC   | ETH/DEC19 | 13080  | 99986920 |
-    # values before uint
-    #| party1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
     # moves forwards several blocks
     When the opening auction period ends for market "ETH/DEC19"
     ## We're seeing these events twice for some reason
@@ -168,12 +159,12 @@ Feature: Set up a market, create indiciative price different to actual opening a
     When the network moves ahead "1" blocks
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party2 | ETH/DEC19 | 16000       | 17600  | 19200   | 22400   |
+      | party2 | ETH/DEC19 | 39200       | 43120  | 47040   | 54880   |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
-      | party2 | BTC   | ETH/DEC19 | 19200  | 99980800 |
-      | party1 | BTC   | ETH/DEC19 | 96000  | 99904000 |
+      | party2 | BTC   | ETH/DEC19 | 47040  | 99952960 |
+      | party1 | BTC   | ETH/DEC19 | 48960  | 99951040 |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
       | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
@@ -221,14 +212,12 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party2 | ETH/DEC19 | sell | 3      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t2-s-3    |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 29120   |
-      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 27260   |
+      | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |
+      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 15260   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
       | party2 | BTC   | ETH/DEC19 | 13080  | 99986920 |
-    # values before uint
-    #| party1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
     When the opening auction period ends for market "ETH/DEC19"
     ## We're seeing these events twice for some reason
     Then the following trades should be executed:
@@ -238,7 +227,6 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party1 | 10000 | 1    | party2 |
       | party1 | 10000 | 4    | party2 |
     And the mark price should be "10000" for the market "ETH/DEC19"
-    ## Network for distressed party1 -> cancelled, nothing on the book is remaining
     And the orders should have the following status:
       | party  | reference | status           |
       | party1 | t1-b-1    | STATUS_FILLED    |
@@ -252,14 +240,17 @@ Feature: Set up a market, create indiciative price different to actual opening a
 
     When the network moves ahead "1" blocks
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | party2 | ETH/DEC19 | 16000       | 17600  | 19200   | 22400   |
+      | party  | market id | maintenance | initial |
+      | party2 | ETH/DEC19 | 39200       | 47040   |
+      | party1 | ETH/DEC19 | 45900       | 55080   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
-      | party2 | BTC   | ETH/DEC19 | 19200  | 99980800 |
-      | party1 | BTC   | ETH/DEC19 | 108000 | 99892000 |
-    # values before uint
-    #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
+      | party2 | BTC   | ETH/DEC19 | 47040  | 99952960 |
+      | party1 | BTC   | ETH/DEC19 | 55080  | 99944920 |
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party2 | -8     | 0              | 0            |
+      | party1 |  9     | 0              | 0            |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
       | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
@@ -310,7 +301,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party2 | ETH/DEC19 | sell | 3      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t2-s-3    |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 27260   |
+      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 15260   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
@@ -344,8 +335,8 @@ Feature: Set up a market, create indiciative price different to actual opening a
     When the network moves ahead "1" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
-      | party2 | BTC   | ETH/DEC19 | 19200  | 99980800 |
-      | party1 | BTC   | ETH/DEC19 | 84000  | 99916000 |
+      | party2 | BTC   | ETH/DEC19 | 47040  | 99952960 |
+      | party1 | BTC   | ETH/DEC19 | 42840  | 99957160 |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
       | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |

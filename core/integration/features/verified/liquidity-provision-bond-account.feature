@@ -80,10 +80,10 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | party2 | USD   | ETH/MAR22 | 51630  | 99948370 | 0     |
     #check the margin levels
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | party0 | ETH/MAR22 | 174289      | 191717 | 209146  | 244004  |
-      | party1 | ETH/MAR22 | 10159       | 11174  | 12190   | 14222   |
-      | party2 | ETH/MAR22 | 43233       | 47556  | 51879   | 60526   |
+      | party  | market id | maintenance | initial |
+      | party0 | ETH/MAR22 | 174289      | 209146  |
+      | party1 | ETH/MAR22 | 9889        | 11866   |
+      | party2 | ETH/MAR22 | 42963       | 51555   |
     #check position (party0 has no position)
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |

@@ -95,7 +95,8 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 	}
 
 	if l.conf.SQLStore.WipeOnStartup {
-		if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(preLog, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations); err != nil {
+		if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(preLog, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations,
+			bool(l.conf.SQLStore.VerboseMigration)); err != nil {
 			return fmt.Errorf("failed to wiped database:%w", err)
 		}
 		preLog.Info("Wiped all existing data from the datanode")
@@ -122,7 +123,8 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 			apiPorts = append(apiPorts, l.conf.NetworkHistory.Initialise.GrpcAPIPorts...)
 
 			if err = networkhistory.InitialiseDatanodeFromNetworkHistory(l.ctx, l.conf.NetworkHistory.Initialise,
-				preLog, l.conf.SQLStore.ConnectionConfig, l.networkHistoryService, apiPorts); err != nil {
+				preLog, l.conf.SQLStore.ConnectionConfig, l.networkHistoryService, apiPorts,
+				bool(l.conf.SQLStore.VerboseMigration)); err != nil {
 				return fmt.Errorf("failed to initialize datanode from network history: %w", err)
 			}
 
@@ -246,7 +248,15 @@ func (l *NodeCommand) preRun([]string) (err error) {
 			preLog.Error("failed to create path for buffered event source", logging.Error(err))
 			return err
 		}
-		eventSource, err = broker.NewBufferedEventSource(l.Log, l.conf.Broker.BufferedEventSourceConfig, eventReceiverSender, bufferFilePath)
+
+		archiveFilesPath, err := l.vegaPaths.CreateStatePathFor(paths.DataNodeArchivedEventBufferHome)
+		if err != nil {
+			l.Log.Error("failed to create archive path for buffered event source", logging.Error(err))
+			return err
+		}
+
+		eventSource, err = broker.NewBufferedEventSource(l.ctx, l.Log, l.conf.Broker.BufferedEventSourceConfig, eventReceiverSender,
+			bufferFilePath, archiveFilesPath)
 		if err != nil {
 			preLog.Error("unable to initialise file buffered event source", logging.Error(err))
 			return err

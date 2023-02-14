@@ -97,6 +97,8 @@ func (v *Visor) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	var isRestarting bool
+
 	for {
 		runConf, err := config.ParseRunConfig(v.conf.CurrentRunConfigPath())
 		if err != nil {
@@ -121,9 +123,10 @@ func (v *Visor) Run(ctx context.Context) error {
 			time.Second*time.Duration(v.conf.StopSignalTimeoutSeconds()),
 			currentReleaseInfo,
 		)
-		binErrs := binRunner.Run(ctx, runConf)
+		binErrs := binRunner.Run(ctx, runConf, isRestarting)
 
 		upgradeTicker.Reset(upgradeAPICallTickerDuration)
+		isRestarting = false
 
 	CheckLoop:
 		for {
@@ -141,6 +144,8 @@ func (v *Visor) Run(ctx context.Context) error {
 				v.log.Info("Binaries restart is scheduled", logging.Duration("restartDelay", restartsDelay))
 				time.Sleep(restartsDelay)
 				v.log.Info("Restarting binaries", logging.Int("remainingRestarts", maxNumRestarts-numOfRestarts))
+
+				isRestarting = true
 
 				break CheckLoop
 			case <-upgradeTicker.C:

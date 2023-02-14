@@ -77,7 +77,7 @@ Feature: Test settlement at expiry time from internal oracle
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
 
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - no insurance taken
-    Given the initial insurance pool balance is "10000" for the markets:
+    Given the initial insurance pool balance is "10000" for all the markets
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
       | party1   | ETH   | 10000     |
@@ -211,7 +211,7 @@ Feature: Test settlement at expiry time from internal oracle
 
   Scenario: Same as above, but the other market already terminated before the end of scenario, expecting 0 balances in per market insurance pools - all should go to per asset insurance pool
 
-    Given the initial insurance pool balance is "10000" for the markets:
+    Given the initial insurance pool balance is "10000" for all the markets
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
       | party1   | ETH   | 10000     |
@@ -325,7 +325,7 @@ Feature: Test settlement at expiry time from internal oracle
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - insurance covers losses
-    Given the initial insurance pool balance is "1000" for the markets:
+    Given the initial insurance pool balance is "1000" for all the markets
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
       | party1   | ETH   | 10000     |
@@ -400,7 +400,7 @@ Feature: Test settlement at expiry time from internal oracle
     And the insurance pool balance should be "1042" for the market "ETH/DEC21"
 
   Scenario: Settlement happened when market is being closed - loss socialisation in action - insurance doesn't cover all losses
-    Given the initial insurance pool balance is "500" for the markets:
+    Given the initial insurance pool balance is "500" for all the markets
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
       | party1   | ETH   | 10000     |
@@ -471,7 +471,7 @@ Feature: Test settlement at expiry time from internal oracle
 
   Scenario: Settlement happened when market is being closed whilst being suspended (due to protective auction) - loss socialisation in action - insurance doesn't covers all losses
 
-    Given the initial insurance pool balance is "500" for the markets:
+    Given the initial insurance pool balance is "500" for all the markets
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
       | party1   | ETH   | 10000     |
