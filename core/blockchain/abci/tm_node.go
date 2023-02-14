@@ -74,7 +74,7 @@ func NewTmNode(
 	}
 
 	// create logger
-	logger := newTmLogger(log)
+	logger := &TmLogger{log.ToSugared()}
 
 	// create node
 	node, err := nm.NewNode(
@@ -118,12 +118,6 @@ func (t *TmNode) Stop() error {
 	}
 	<-t.node.Quit()
 	return nil
-}
-
-func newTmLogger(log *logging.Logger) *TmLogger {
-	// return tmlog.MustNewDefaultLogger(tmlog.LogFormatPlain, tmlog.LogLevelInfo, false)
-	tmLogger := &TmLogger{log.ToSugared()}
-	return tmLogger
 }
 
 func loadConfig(homeDir string) (*config.Config, error) {

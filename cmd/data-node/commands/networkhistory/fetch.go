@@ -49,7 +49,7 @@ func (cmd *fetchCmd) Execute(args []string) error {
 		return fmt.Errorf("failed to fix config:%w", err)
 	}
 
-	err = verifyChainID(log, cmd.SQLStore.ConnectionConfig, cmd.ChainID)
+	err = verifyChainID(cmd.SQLStore.ConnectionConfig, cmd.ChainID)
 	if err != nil {
 		return fmt.Errorf("failed to verify chain id:%w", err)
 	}
@@ -84,7 +84,7 @@ func (cmd *fetchCmd) Execute(args []string) error {
 	return nil
 }
 
-func verifyChainID(log *logging.Logger, connConfig sqlstore.ConnectionConfig, chainID string) error {
+func verifyChainID(connConfig sqlstore.ConnectionConfig, chainID string) error {
 	connSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), connConfig)
 	if err != nil {
 		return fmt.Errorf("failed to create new transactional connection source: %w", err)

@@ -65,6 +65,7 @@ func pipeEventToString(pe mangos.PipeEvent) string {
 const namedSocketClientLogger = "socket-client"
 
 func newSocketClient(ctx context.Context, log *logging.Logger, config *SocketConfig) (*socketClient, error) {
+	log = log.Named(namedSocketClientLogger)
 	sock, err := pair.NewSocket()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new push socket: %w", err)
@@ -91,7 +92,7 @@ func newSocketClient(ctx context.Context, log *logging.Logger, config *SocketCon
 	})
 
 	s := &socketClient{
-		log: log.Named(namedSocketClientLogger),
+		log: log,
 
 		config: config,
 		sock:   sock,

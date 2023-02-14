@@ -185,8 +185,7 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		return fmt.Errorf("failed to verify chain id:%w", err)
 	}
 
-	logSqlSubscribers := l.Log.Named("sqlsubscribers")
-	l.SetupSQLSubscribers(l.ctx, logSqlSubscribers)
+	l.SetupSQLSubscribers()
 
 	return nil
 }

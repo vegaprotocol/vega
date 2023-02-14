@@ -36,8 +36,11 @@ type Server struct {
 const namedLogger = "gateway"
 
 func New(cfg gateway.Config, log *logging.Logger, vegaPaths paths.Paths) *Server {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Get())
+
 	return &Server{
-		log:       log.Named(namedLogger),
+		log:       log,
 		cfg:       &cfg,
 		vegaPaths: vegaPaths,
 	}

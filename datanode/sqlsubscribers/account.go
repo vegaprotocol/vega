@@ -16,12 +16,12 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
+
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 type AccountEvent interface {
@@ -38,16 +38,11 @@ type AccountService interface {
 type Account struct {
 	subscriber
 	accounts AccountService
-	log      *logging.Logger
 }
 
-func NewAccount(
-	accounts AccountService,
-	log *logging.Logger,
-) *Account {
+func NewAccount(accounts AccountService) *Account {
 	return &Account{
 		accounts: accounts,
-		log:      log,
 	}
 }
 

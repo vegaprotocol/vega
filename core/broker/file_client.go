@@ -38,8 +38,9 @@ type FileClient struct {
 const namedFileClientLogger = "file-client"
 
 func NewFileClient(log *logging.Logger, config *FileConfig) (*FileClient, error) {
+	log = log.Named(namedFileClientLogger)
 	fc := &FileClient{
-		log:    log.Named(namedFileClientLogger),
+		log:    log,
 		config: config,
 	}
 

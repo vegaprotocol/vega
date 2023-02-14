@@ -16,13 +16,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
 	"code.vegaprotocol.io/vega/libs/num"
-	"code.vegaprotocol.io/vega/logging"
-	"github.com/golang/mock/gomock"
 )
 
 func TestRiskFactor_Push(t *testing.T) {
@@ -32,7 +32,7 @@ func TestRiskFactor_Push(t *testing.T) {
 	store := mocks.NewMockRiskFactorStore(ctrl)
 
 	store.EXPECT().Upsert(context.Background(), gomock.Any()).Times(1)
-	subscriber := sqlsubscribers.NewRiskFactor(store, logging.NewTestLogger())
+	subscriber := sqlsubscribers.NewRiskFactor(store)
 	subscriber.Flush(context.Background())
 	subscriber.Push(context.Background(), events.NewRiskFactorEvent(context.Background(), types.RiskFactor{
 		Market: "deadbeef",

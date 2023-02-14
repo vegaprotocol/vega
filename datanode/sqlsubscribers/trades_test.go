@@ -17,20 +17,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
-	"code.vegaprotocol.io/vega/logging"
-
-	"github.com/stretchr/testify/assert"
 )
-
-var logger = logging.NewTestLogger()
 
 func TestSubscriberSequenceNumber(t *testing.T) {
 	ts := testStore{}
-	sub := NewTradesSubscriber(&ts, logger)
+	sub := NewTradesSubscriber(&ts)
 
 	now := time.Now()
 	nowPlusOne := time.Now().Add(time.Second)

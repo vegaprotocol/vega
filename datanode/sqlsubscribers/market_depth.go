@@ -30,7 +30,7 @@ type MarketDepth struct {
 	depthService MarketDepthService
 }
 
-// NewMarketDepthBuilder constructor to create a market depth subscriber.
+// NewMarketDepth is the constructor to create a market depth subscriber.
 func NewMarketDepth(depthService MarketDepthService) *MarketDepth {
 	m := MarketDepth{
 		depthService: depthService,

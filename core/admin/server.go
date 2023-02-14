@@ -52,7 +52,7 @@ func NewNonValidatorServer(
 ) (*Server, error) {
 	// setup logger
 	log = log.Named(nvServerNamedLogger)
-	log.SetLevel(config.Level.Get()) // TODO: is this needed?
+	log.SetLevel(config.Level.Get())
 
 	return &Server{
 		log:                    log,
