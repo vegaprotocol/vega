@@ -87,8 +87,8 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | lp1    | USD   | ETH/MAR22 | 53353554   | 9999946636446 | 10000      |
       | lp2    | USD   | ETH/MAR22 | 53353554   | 9999945646446 | 1000000    |
       | lp3    | USD   | ETH/MAR22 | 4801819849 | 9994198180151 | 1000000000 |
-      | party1 | USD   | ETH/MAR22 | 228207540  | 999771792460  | 0          |
-      | party2 | USD   | ETH/MAR22 | 1120424632 | 98879575368   | 0          |
+      | party1 | USD   | ETH/MAR22 | 228207540  | 999771792460  |            |
+      | party2 | USD   | ETH/MAR22 | 1120424632 | 98879575368   |            |
 
     Then the network moves ahead "1" blocks
 
@@ -104,8 +104,8 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | lp1    | USD   | ETH/MAR22 | 53353554   | 9999946636446 | 10000      |
       | lp2    | USD   | ETH/MAR22 | 53353554   | 9999945646446 | 1000000    |
       | lp3    | USD   | ETH/MAR22 | 4801819849 | 9994198180151 | 1000000000 |
-      | party1 | USD   | ETH/MAR22 | 548535540  | 999451544460  | 0          |
-      | party2 | USD   | ETH/MAR22 | 135109231  | 99864010769   | 0          |
+      | party1 | USD   | ETH/MAR22 | 548535540  | 999451544460  |            |
+      | party2 | USD   | ETH/MAR22 | 135109231  | 99864010769   |            |
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |

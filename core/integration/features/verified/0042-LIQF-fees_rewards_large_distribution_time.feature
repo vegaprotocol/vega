@@ -83,8 +83,8 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
       | lp1    | USD   | ETH/MAR22 | 1320   | 999988680 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 2520   | 99997480  | 0     |
-      | party2 | USD   | ETH/MAR22 | 2520   | 99997480  | 0     |
+      | party1 | USD   | ETH/MAR22 | 1704   | 99998296  |       |
+      | party2 | USD   | ETH/MAR22 | 1692   | 99998308  |       |
 
     Then the network moves ahead "1" blocks
 
@@ -102,8 +102,8 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
       | lp1    | USD   | ETH/MAR22 | 2870   | 999986742 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 1317   | 99998688  | 0     |
-      | party2 | USD   | ETH/MAR22 | 1932   | 99998411  | 0     |
+      | party1 | USD   | ETH/MAR22 | 1317   | 99998688  |       |
+      | party2 | USD   | ETH/MAR22 | 1932   | 99998411  |       |
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
