@@ -65,6 +65,11 @@ func (e *Engine) CheckTransfer(t *types.TransferBase) error {
 	if err := e.ensureMinimalTransferAmount(a, t.Amount); err != nil {
 		return err
 	}
+
+	_, err = e.ensureFeeForTransferFunds(t.Amount, t.From, t.Asset, t.FromAccountType)
+	if err != nil {
+		return fmt.Errorf("could not transfer funds, insufficient funds to cover for transfer fee: %w", err)
+	}
 	return nil
 }
 
