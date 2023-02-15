@@ -34,18 +34,12 @@ func PartiesWithdrawTheFollowingAssets(
 	for _, r := range parseWithdrawAssetTable(table) {
 		row := withdrawAssetRow{row: r}
 		amount := row.Amount()
-		_, err := collateral.Withdraw(ctx, row.Party(), row.Asset(), amount)
+		res, err := collateral.Withdraw(ctx, row.Party(), row.Asset(), amount)
 		if err := checkExpectedError(row, err, nil); err != nil {
 			return err
 		}
 		// emit an event manually here as we're not going via the banking flow in integration tests
-		broker.Send(events.NewWithdrawalEvent(ctx,
-			types.Withdrawal{
-				PartyID: row.Party(),
-				Asset:   row.Asset(),
-				Amount:  amount,
-				Status:  types.WithdrawalStatusFinalized,
-			}))
+		broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{res}))
 		netDeposits = netDeposits.Sub(netDeposits, amount)
 	}
 	return nil

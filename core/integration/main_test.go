@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/integration/helpers"
@@ -35,6 +36,8 @@ var (
 	}
 
 	features string
+
+	expectingEventsOverStepText = `there were "([0-9]+)" events emitted over the last step`
 )
 
 func init() {
@@ -66,9 +69,13 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		// record accounts before step
 		execsetup.accountsBefore = execsetup.broker.GetAccounts()
 		execsetup.ledgerMovementsBefore = len(execsetup.broker.GetTransfers(false))
-		execsetup.depositsBefore = len(execsetup.broker.GetDeposits())
-		execsetup.withdrawalsBefore = len(execsetup.broker.GetWithdrawals())
 		execsetup.insurancePoolDepositsOverStep = make(map[string]*num.Int)
+
+		// don't record events before step if it's the step that's meant to assess number of events over a regular step
+		if b, _ := regexp.MatchString(expectingEventsOverStepText, st.Text); !b {
+			execsetup.eventsBefore = len(execsetup.broker.GetAllEvents())
+		}
+
 		return ctx, nil
 	})
 	s.StepContext().After(func(ctx context.Context, st *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
@@ -359,6 +366,15 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		now := execsetup.timeService.GetTimeNow()
 		return steps.TheAuctionTradedVolumeAndPriceShouldBe(execsetup.broker, vol, price, now)
 	})
+	s.Step(expectingEventsOverStepText, func(eventCounter int) error {
+		return steps.ExpectingEventsOverStep(execsetup.broker, execsetup.eventsBefore, eventCounter)
+	})
+	s.Step(`there were "([0-9]+)" events emitted in this scenario so far`, func(eventCounter int) error {
+		return steps.ExpectingEventsInTheSecenarioSoFar(execsetup.broker, eventCounter)
+	})
+	s.Step(`fail`, func() {
+		reporter.Fatalf("fail step invoked")
+	})
 
 	// Debug steps
 	s.Step(`^debug accounts$`, func() error {
@@ -410,6 +426,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^debug detailed orderbook volumes for market "([^"]*)"$`, func(mkt string) error {
 		return steps.DebugVolumesForMarketDetail(execsetup.log, execsetup.broker, mkt)
 	})
+	s.Step(`^debug last "([0-9]+)" events$`, func(eventCounter int) error {
+		steps.DebugLastNEvents(eventCounter, execsetup.broker, execsetup.log)
+		return nil
+	})
 
 	// Event steps
 	s.Step(`^clear all events$`, func() error {
@@ -445,7 +465,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 }
 
 func reconcileAccounts() error {
-	return helpers.ReconcileAccountChanges(execsetup.accountsBefore, execsetup.broker.GetAccounts(), extractDepositsOverStep(), extractWithdrawalsOverStep(), execsetup.insurancePoolDepositsOverStep, extractLedgerEntriesOverStep())
+	return helpers.ReconcileAccountChanges(execsetup.collateralEngine, execsetup.accountsBefore, execsetup.broker.GetAccounts(), execsetup.insurancePoolDepositsOverStep, extractLedgerEntriesOverStep())
 }
 
 func extractLedgerEntriesOverStep() []*vega.LedgerEntry {
@@ -455,30 +475,6 @@ func extractLedgerEntriesOverStep() []*vega.LedgerEntry {
 	if n > 0 {
 		for i := execsetup.ledgerMovementsBefore; i < len(transfers); i++ {
 			ret = append(ret, transfers[i])
-		}
-	}
-	return ret
-}
-
-func extractDepositsOverStep() []vega.Deposit {
-	deposits := execsetup.broker.GetDeposits()
-	n := len(deposits) - execsetup.depositsBefore
-	ret := make([]vega.Deposit, 0, n)
-	if n > 0 {
-		for i := execsetup.depositsBefore; i < len(deposits); i++ {
-			ret = append(ret, deposits[i])
-		}
-	}
-	return ret
-}
-
-func extractWithdrawalsOverStep() []vega.Withdrawal {
-	withdrawals := execsetup.broker.GetWithdrawals()
-	n := len(withdrawals) - execsetup.withdrawalsBefore
-	ret := make([]vega.Withdrawal, 0, n)
-	if n > 0 {
-		for i := execsetup.withdrawalsBefore; i < len(withdrawals); i++ {
-			ret = append(ret, withdrawals[i])
 		}
 	}
 	return ret

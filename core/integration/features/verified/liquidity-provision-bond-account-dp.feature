@@ -74,8 +74,8 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 209146 | 240854   | 50000 |
-      | party1 | USD   | ETH/MAR22 | 11425  | 99988575 | 0     |
-      | party2 | USD   | ETH/MAR22 | 51688  | 99948312 | 0     |
+      | party1 | USD   | ETH/MAR22 | 11425  | 99988575 |       |
+      | party2 | USD   | ETH/MAR22 | 51688  | 99948312 |       |
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | initial |
@@ -106,8 +106,8 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 209146 | 240854   | 50000 |
-      | party1 | USD   | ETH/MAR22 | 11425  | 99988575 | 0     |
-      | party2 | USD   | ETH/MAR22 | 264970 | 99734880 | 0     |
+      | party1 | USD   | ETH/MAR22 | 11425  | 99988575 |       |
+      | party2 | USD   | ETH/MAR22 | 264970 | 99734880 |       |
 
     And the insurance pool balance should be "0" for the market "ETH/MAR22"
 
@@ -130,9 +130,9 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 467474 | 2278     | 28537 |
-      | party1 | USD   | ETH/MAR22 | 107954 | 99891646 | 0     |
-      | party2 | USD   | ETH/MAR22 | 264970 | 99734960 | 0     |
-      | party3 | USD   | ETH/MAR22 | 28826  | 99971294 | 0     |
+      | party1 | USD   | ETH/MAR22 | 107954 | 99891646 |       |
+      | party2 | USD   | ETH/MAR22 | 264970 | 99734960 |       |
+      | party3 | USD   | ETH/MAR22 | 28826  | 99971294 |       |
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
