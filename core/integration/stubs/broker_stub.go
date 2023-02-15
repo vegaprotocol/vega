@@ -34,7 +34,8 @@ type BrokerStub struct {
 	data map[events.Type][]events.Event
 	subT map[events.Type][]broker.Subscriber
 
-	immdata map[events.Type][]events.Event
+	immdata      map[events.Type][]events.Event
+	immdataSlice []events.Event
 }
 
 func NewBrokerStub() *BrokerStub {
@@ -124,6 +125,7 @@ func (b *BrokerStub) Send(e events.Event) {
 	}
 	b.data[t] = append(b.data[t], e)
 	b.immdata[t] = append(b.immdata[t], e)
+	b.immdataSlice = append(b.immdataSlice, e)
 	b.mu.Unlock()
 }
 
@@ -139,12 +141,10 @@ func (b *BrokerStub) GetAllEventsSinceCleared() []events.Event {
 
 func (b *BrokerStub) GetAllEvents() []events.Event {
 	b.mu.Lock()
-	evs := []events.Event{}
-	for _, d := range b.immdata {
-		evs = append(evs, d...)
-	}
+	ret := make([]events.Event, len(b.immdataSlice))
+	copy(ret, b.immdataSlice)
 	b.mu.Unlock()
-	return evs
+	return ret
 }
 
 func (b *BrokerStub) GetBatch(t events.Type) []events.Event {

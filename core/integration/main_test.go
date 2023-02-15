@@ -374,6 +374,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`there were "([0-9]+)" events emitted in this scenario so far`, func(eventCounter int) error {
 		return steps.ExpectingEventsInTheSecenarioSoFar(execsetup.broker, eventCounter)
 	})
+	s.Step(`fail`, func() {
+		reporter.Fatalf("fail step invoked")
+	})
 
 	// Debug steps
 	s.Step(`^debug accounts$`, func() error {
@@ -424,6 +427,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^debug detailed orderbook volumes for market "([^"]*)"$`, func(mkt string) error {
 		return steps.DebugVolumesForMarketDetail(execsetup.log, execsetup.broker, mkt)
+	})
+	s.Step(`^debug last "([0-9]+)" events$`, func(eventCounter int) error {
+		steps.DebugLastNEvents(eventCounter, execsetup.broker, execsetup.log)
+		return nil
 	})
 
 	// Event steps
