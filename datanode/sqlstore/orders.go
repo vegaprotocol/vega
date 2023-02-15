@@ -98,7 +98,7 @@ func (os *Orders) GetOrder(ctx context.Context, orderIDStr string, version *int3
 	return order, os.wrapE(err)
 }
 
-// GetByMarketAndID returns all orders with given IDs for a market
+// GetByMarketAndID returns all orders with given IDs for a market.
 func (os *Orders) GetByMarketAndID(ctx context.Context, marketIDstr string, orderIDs []string) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetByMarket")()
 	marketID := entities.MarketID(marketIDstr)
