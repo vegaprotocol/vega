@@ -92,8 +92,6 @@ type executionTestSetup struct {
 	// record parts of state before each step
 	accountsBefore                []protos.Account
 	ledgerMovementsBefore         int
-	depositsBefore                int
-	withdrawalsBefore             int
 	insurancePoolDepositsOverStep map[string]*num.Int
 	eventsBefore                  int
 

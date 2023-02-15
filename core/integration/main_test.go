@@ -69,8 +69,6 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		// record accounts before step
 		execsetup.accountsBefore = execsetup.broker.GetAccounts()
 		execsetup.ledgerMovementsBefore = len(execsetup.broker.GetTransfers(false))
-		execsetup.depositsBefore = len(execsetup.broker.GetDeposits())
-		execsetup.withdrawalsBefore = len(execsetup.broker.GetWithdrawals())
 		execsetup.insurancePoolDepositsOverStep = make(map[string]*num.Int)
 
 		// don't record events before step if it's the step that's meant to assess number of events over a regular step
@@ -467,7 +465,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 }
 
 func reconcileAccounts() error {
-	return helpers.ReconcileAccountChanges(execsetup.accountsBefore, execsetup.broker.GetAccounts(), extractDepositsOverStep(), extractWithdrawalsOverStep(), execsetup.insurancePoolDepositsOverStep, extractLedgerEntriesOverStep())
+	return helpers.ReconcileAccountChanges(execsetup.collateralEngine, execsetup.accountsBefore, execsetup.broker.GetAccounts(), execsetup.insurancePoolDepositsOverStep, extractLedgerEntriesOverStep())
 }
 
 func extractLedgerEntriesOverStep() []*vega.LedgerEntry {
@@ -477,30 +475,6 @@ func extractLedgerEntriesOverStep() []*vega.LedgerEntry {
 	if n > 0 {
 		for i := execsetup.ledgerMovementsBefore; i < len(transfers); i++ {
 			ret = append(ret, transfers[i])
-		}
-	}
-	return ret
-}
-
-func extractDepositsOverStep() []vega.Deposit {
-	deposits := execsetup.broker.GetDeposits()
-	n := len(deposits) - execsetup.depositsBefore
-	ret := make([]vega.Deposit, 0, n)
-	if n > 0 {
-		for i := execsetup.depositsBefore; i < len(deposits); i++ {
-			ret = append(ret, deposits[i])
-		}
-	}
-	return ret
-}
-
-func extractWithdrawalsOverStep() []vega.Withdrawal {
-	withdrawals := execsetup.broker.GetWithdrawals()
-	n := len(withdrawals) - execsetup.withdrawalsBefore
-	ret := make([]vega.Withdrawal, 0, n)
-	if n > 0 {
-		for i := execsetup.withdrawalsBefore; i < len(withdrawals); i++ {
-			ret = append(ret, withdrawals[i])
 		}
 	}
 	return ret
