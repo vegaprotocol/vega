@@ -79,6 +79,7 @@ func (os *Order) expired(ctx context.Context, eo ExpiredOrdersEvent, seqNum uint
 	for _, o := range orders {
 		o.Status = entities.OrderStatusExpired
 		o.SeqNum = seqNum
+		o.UpdatedAt = os.vegaTime
 		o.VegaTime = os.vegaTime
 		if err := os.store.Add(o); err != nil {
 			return errors.Wrap(os.store.Add(o), "adding order to database")
