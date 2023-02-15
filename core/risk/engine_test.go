@@ -118,8 +118,8 @@ func testMarginLevelsTS(t *testing.T) {
 		})
 
 	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		mle, ok := e.(MLEvent)
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(e []events.Event) {
+		mle, ok := e[0].(MLEvent)
 		assert.True(t, ok)
 		ml := mle.MarginLevels()
 		assert.Equal(t, now.UnixNano(), ml.Timestamp)
@@ -151,7 +151,7 @@ func testMarginTopup(t *testing.T) {
 		market:  "ETH/DEC19",
 	}
 	eng.tsvc.EXPECT().GetTimeNow().Times(1)
-	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
@@ -183,7 +183,7 @@ func testMarginNotReleasedInAuction(t *testing.T) {
 		market:  "ETH/DEC19",
 	}
 	eng.tsvc.EXPECT().GetTimeNow().Times(1)
-	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	eng.as.EXPECT().InAuction().AnyTimes().Return(true)
 	eng.as.EXPECT().CanLeave().AnyTimes().Return(false)
 	eng.orderbook.EXPECT().GetIndicativePrice().Times(1).Return(markPrice.Clone())
@@ -221,7 +221,7 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 func testMarginNoop(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
-	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	evt := testMargin{
@@ -248,7 +248,7 @@ func testMarginNoop(t *testing.T) {
 func testMarginOverflow(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
-	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	evt := testMargin{
@@ -280,7 +280,7 @@ func testMarginOverflow(t *testing.T) {
 func testMarginOverflowAuctionEnd(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
-	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	evt := testMargin{
@@ -670,6 +670,7 @@ func getTestEngine(t *testing.T) *testEngine {
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
 	conf := risk.NewDefaultConfig()
+	conf.StreamMarginLevelsVerbose = true
 	ob := mocks.NewMockOrderbook(ctrl)
 	ts := mocks.NewMockTimeService(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
