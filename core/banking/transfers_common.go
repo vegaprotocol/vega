@@ -50,6 +50,29 @@ func (e *Engine) TransferFunds(
 	}
 }
 
+func (e *Engine) CheckTransfer(t *types.TransferBase) error {
+	// ensure asset exists
+	a, err := e.assets.Get(t.Asset)
+	if err != nil {
+		e.log.Debug("cannot transfer funds, invalid asset", logging.Error(err))
+		return fmt.Errorf("could not transfer funds, %w", err)
+	}
+
+	if err = t.IsValid(); err != nil {
+		return fmt.Errorf("could not transfer funds, %w", err)
+	}
+
+	if err := e.ensureMinimalTransferAmount(a, t.Amount); err != nil {
+		return err
+	}
+
+	_, err = e.ensureFeeForTransferFunds(t.Amount, t.From, t.Asset, t.FromAccountType)
+	if err != nil {
+		return fmt.Errorf("could not transfer funds, %w", err)
+	}
+	return nil
+}
+
 func (e *Engine) ensureMinimalTransferAmount(a *assets.Asset, amount *num.Uint) error {
 	quantum := a.Type().Details.Quantum
 	// no reason this would produce an error

@@ -15,11 +15,11 @@ package sqlsubscribers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"github.com/pkg/errors"
 )
 
 type TransferEvent interface {
@@ -40,14 +40,12 @@ type Transfer struct {
 	subscriber
 	store         TransferStore
 	accountSource AccountSource
-	log           *logging.Logger
 }
 
-func NewTransfer(store TransferStore, accountSource AccountSource, log *logging.Logger) *Transfer {
+func NewTransfer(store TransferStore, accountSource AccountSource) *Transfer {
 	return &Transfer{
 		store:         store,
 		accountSource: accountSource,
-		log:           log,
 	}
 }
 

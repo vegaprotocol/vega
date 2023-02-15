@@ -17,12 +17,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/service/mocks"
-	"code.vegaprotocol.io/vega/logging"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestChainService(t *testing.T) {
@@ -30,7 +30,7 @@ func TestChainService(t *testing.T) {
 	ctx := context.Background()
 	defer ctrl.Finish()
 	store := mocks.NewMockChainStore(ctrl)
-	svc := service.NewChain(store, logging.NewTestLogger())
+	svc := service.NewChain(store)
 
 	t.Run("fetching unset chain", func(t *testing.T) {
 		// Should not be cached so expect another call to the store

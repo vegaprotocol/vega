@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-const namedLogger = "datanode.admin.server"
+const namedLogger = "admin.server"
 
 // ServerConfig contains the configuration for the admin server.
 type ServerConfig struct {

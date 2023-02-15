@@ -15,11 +15,11 @@ package sqlsubscribers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"github.com/pkg/errors"
 )
 
 type WithdrawalEvent interface {
@@ -34,13 +34,11 @@ type WithdrawalStore interface {
 type Withdrawal struct {
 	subscriber
 	store WithdrawalStore
-	log   *logging.Logger
 }
 
-func NewWithdrawal(store WithdrawalStore, log *logging.Logger) *Withdrawal {
+func NewWithdrawal(store WithdrawalStore) *Withdrawal {
 	return &Withdrawal{
 		store: store,
-		log:   log,
 	}
 }
 

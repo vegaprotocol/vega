@@ -39,7 +39,6 @@ type positionCacheKey struct {
 	PartyID  entities.PartyID
 }
 type Position struct {
-	log      *logging.Logger
 	store    PositionStore
 	observer utils.Observer[entities.Position]
 	cache    *lru.Cache
@@ -52,7 +51,6 @@ func NewPosition(store PositionStore, log *logging.Logger) *Position {
 	}
 	return &Position{
 		store:    store,
-		log:      log,
 		observer: utils.NewObserver[entities.Position]("positions", log, 0, 0),
 		cache:    cache,
 	}

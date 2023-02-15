@@ -27,6 +27,7 @@ import (
 const (
 	upgradeAPICallTickerDuration = time.Second * 2
 	maxUpgradeStatusErrs         = 10
+	namedLogger                  = "visor"
 )
 
 type Visor struct {
@@ -63,7 +64,7 @@ func NewVisor(ctx context.Context, log *logging.Logger, clientFactory client.Fac
 	v := &Visor{
 		conf:          visorConf,
 		clientFactory: clientFactory,
-		log:           log,
+		log:           log.Named(namedLogger),
 	}
 
 	if !currentFolderExists {

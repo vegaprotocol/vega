@@ -111,6 +111,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	ctrl := gomock.NewController(&reporter)
 	execsetup.ctrl = ctrl
 	execsetup.cfg = execution.NewDefaultConfig()
+	execsetup.cfg.Position.StreamPositionVerbose = true
 	execsetup.log = logging.NewTestLogger()
 	execsetup.timeService = stubs.NewTimeStub()
 	execsetup.broker = stubs.NewBrokerStub()
