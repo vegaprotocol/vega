@@ -142,8 +142,8 @@ Feature: test risk model parameter change in margin calculation
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR21 | 9937   | 248653   | 50000 |
-      | party1 | USD   | ETH/MAR21 | 3333   | 99984664 | 0     |
-      | party2 | USD   | ETH/MAR21 | 3645   | 99982284 | 0     |
+      | party1 | USD   | ETH/MAR21 | 3333   | 99984664 |       |
+      | party2 | USD   | ETH/MAR21 | 3645   | 99982284 |       |
 
     #party1 margin level is: margin_position+margin_order = vol * (MarkPrice-ExitPrice)+ vol * rf * MarkPrice + order * rf * MarkPrice = 10 * (1000-882)+10*0.145263949*1000 + 1*0.145263949*1000=2778
     Then the parties should have the following margin levels:
@@ -156,8 +156,8 @@ Feature: test risk model parameter change in margin calculation
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 19701  | 248653   | 50000 |
-      | party1 | USD   | ETH/MAR22 | 4982   | 99984664 | 0     |
-      | party2 | USD   | ETH/MAR22 | 6232   | 99982284 | 0     |
+      | party1 | USD   | ETH/MAR22 | 4982   | 99984664 |       |
+      | party2 | USD   | ETH/MAR22 | 6232   | 99982284 |       |
 
     #party1 margin level is: margin_position+margin_order = vol * (MarkPrice-ExitPrice)+ vol * rf * MarkPrice + order * rf * MarkPrice = 10 * (1000-882)+10*0.270133394*1000 + 1*0.270133394*1000=4152
     Then the parties should have the following margin levels:
@@ -170,8 +170,8 @@ Feature: test risk model parameter change in margin calculation
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR23 | 13632  | 248653   | 50000 |
-      | party1 | USD   | ETH/MAR23 | 4047   | 99984664 | 0     |
-      | party2 | USD   | ETH/MAR23 | 4670   | 99982284 | 0     |
+      | party1 | USD   | ETH/MAR23 | 4047   | 99984664 |       |
+      | party2 | USD   | ETH/MAR23 | 4670   | 99982284 |       |
 
     #party1 margin level is: margin_position+margin_order = vol * (MarkPrice-ExitPrice)+ vol * rf * MarkPrice + order * rf * MarkPrice = 10 * (1000-882)+10*0.199294303*1000 + 1*0.199294303*1000=3373
     Then the parties should have the following margin levels:
@@ -185,8 +185,8 @@ Feature: test risk model parameter change in margin calculation
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR24 | 8077   | 248653   | 50000 |
-      | party1 | USD   | ETH/MAR24 | 2974   | 99984664 | 0     |
-      | party2 | USD   | ETH/MAR24 | 3169   | 99982284 | 0     |
+      | party1 | USD   | ETH/MAR24 | 2974   | 99984664 |       |
+      | party2 | USD   | ETH/MAR24 | 3169   | 99982284 |       |
 
     #party1 margin level is: margin_position+margin_order = vol * (MarkPrice-ExitPrice)+ vol * rf * MarkPrice + order * rf * MarkPrice = 10 * (1000-882)+10*0.118078679*1000 + 1*0.118078679*1000=2479
     Then the parties should have the following margin levels:

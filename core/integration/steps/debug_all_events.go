@@ -19,8 +19,16 @@ import (
 
 func DebugAllEvents(broker *stubs.BrokerStub, log *logging.Logger) {
 	log.Info("DUMPING EVENTS")
-	data := broker.GetAllEvents()
+	data := broker.GetAllEventsSinceCleared()
 	for _, a := range data {
 		log.Info(a.Type().String())
+	}
+}
+
+func DebugLastNEvents(n int, broker *stubs.BrokerStub, log *logging.Logger) {
+	log.Infof("DUMPING LAST %d EVENTS", n)
+	data := broker.GetAllEvents()
+	for i := len(data) - n; i < len(data); i++ {
+		log.Info(data[i].Type().String())
 	}
 }
