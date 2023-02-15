@@ -617,6 +617,10 @@ func (m *Market) Reject(ctx context.Context) error {
 	return nil
 }
 
+func (m *Market) onTxProcessed() {
+	m.risk.FlushMarginLevelsEvents()
+}
+
 // CanLeaveOpeningAuction checks if the market can leave the opening auction based on whether floating point consensus has been reached on all 3 vars.
 func (m *Market) CanLeaveOpeningAuction() bool {
 	boundFactorsInitialised := m.pMonitor.IsBoundFactorsInitialised()
@@ -633,6 +637,8 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 	if m.mkt.State != types.MarketStateProposed {
 		return ErrCannotStartOpeningAuctionForMarketNotInProposedState
 	}
+
+	defer m.onTxProcessed()
 
 	// now we start the opening auction
 	if m.as.AuctionStart() {
@@ -683,6 +689,8 @@ func (m *Market) PostRestore(ctx context.Context) error {
 // OnTick notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
 func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
+	defer m.onTxProcessed()
+
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "OnTick")
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -1352,6 +1360,8 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
 	idgen IDGenerator,
 	orderID string,
 ) (oc *types.OrderConfirmation, _ error) {
+	defer m.onTxProcessed()
+
 	m.idgen = idgen
 	defer func() { m.idgen = nil }()
 
@@ -2278,6 +2288,8 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 }
 
 func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.OrderCancellationConfirmation, error) {
+	defer m.onTxProcessed()
+
 	if !m.canTrade() {
 		return nil, ErrTradingNotAllowed
 	}
@@ -2354,6 +2366,8 @@ func (m *Market) CancelOrderWithIDGenerator(
 	partyID, orderID string,
 	idgen IDGenerator,
 ) (oc *types.OrderCancellationConfirmation, _ error) {
+	defer m.onTxProcessed()
+
 	m.idgen = idgen
 	defer func() { m.idgen = nil }()
 
@@ -2474,6 +2488,8 @@ func (m *Market) AmendOrderWithIDGenerator(
 	idgen IDGenerator,
 ) (oc *types.OrderConfirmation, _ error,
 ) {
+	defer m.onTxProcessed()
+
 	m.idgen = idgen
 	defer func() { m.idgen = nil }()
 
