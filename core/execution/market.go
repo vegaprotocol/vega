@@ -738,6 +738,8 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 }
 
 func (m *Market) blockEnd(ctx context.Context) {
+	defer m.onTxProcessed()
+
 	// MTM if enough time has elapsed, we are not in auction, and we have a non-zero mark price.
 	// we MTM in leaveAuction before deploying LP orders like we did before, but we do update nextMTM there
 	var tID string
