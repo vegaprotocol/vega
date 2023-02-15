@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	vgencoding "code.vegaprotocol.io/vega/libs/encoding"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+	"code.vegaprotocol.io/vega/wallet/network"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -14,12 +14,9 @@ type AdminDescribeNetworkParams struct {
 }
 
 type AdminDescribeNetworkResult struct {
-	Name        string              `json:"name"`
-	LogLevel    vgencoding.LogLevel `json:"logLevel"`
-	TokenExpiry vgencoding.Duration `json:"tokenExpiry"`
-	Port        int                 `json:"port"`
-	Host        string              `json:"host"`
-	API         struct {
+	Name     string `json:"name"`
+	Metadata []network.Metadata
+	API      struct {
 		GRPCConfig struct {
 			Hosts   []string `json:"hosts"`
 			Retries uint64   `json:"retries"`
@@ -31,6 +28,11 @@ type AdminDescribeNetworkResult struct {
 			Hosts []string `json:"hosts"`
 		} `json:"graphQLConfig"`
 	} `json:"api"`
+	Apps struct {
+		Explorer  string `json:"explorer"`
+		Console   string `json:"console"`
+		TokenDApp string `json:"tokenDApp"`
+	} `json:"apps"`
 }
 
 type AdminDescribeNetwork struct {
@@ -62,6 +64,10 @@ func (h *AdminDescribeNetwork) Handle(_ context.Context, rawParams jsonrpc.Param
 	resp.API.GRPCConfig.Retries = n.API.GRPC.Retries
 	resp.API.RESTConfig.Hosts = n.API.REST.Hosts
 	resp.API.GraphQLConfig.Hosts = n.API.GraphQL.Hosts
+	resp.Apps.TokenDApp = n.Apps.TokenDApp
+	resp.Apps.Explorer = n.Apps.Explorer
+	resp.Apps.Console = n.Apps.Console
+	resp.Metadata = n.Metadata
 	return resp, nil
 }
 

@@ -8,8 +8,10 @@ import (
 var ErrNetworkDoesNotHaveGRPCHostConfigured = errors.New("network configuration does not have any gRPC host set")
 
 type Network struct {
-	Name string    `json:"name"`
-	API  APIConfig `json:"api"`
+	Name     string     `json:"name"`
+	Metadata []Metadata `json:"metadata"`
+	API      APIConfig  `json:"api"`
+	Apps     AppsConfig `json:"apps"`
 }
 
 type APIConfig struct {
@@ -29,6 +31,17 @@ type RESTConfig struct {
 
 type GraphQLConfig struct {
 	Hosts []string `json:"hosts"`
+}
+
+type AppsConfig struct {
+	Console   string `json:"console"`
+	TokenDApp string `json:"tokenDApp"`
+	Explorer  string `json:"explorer"`
+}
+
+type Metadata struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 func (n *Network) EnsureCanConnectGRPCNode() error {

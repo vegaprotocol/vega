@@ -56,9 +56,7 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 		errs.AddForProperty("transfer_to", ErrIsNotValid)
 	}
 
-	if cmd.FromAccountType == vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
-		errs.AddForProperty("transfer.from_account_type", ErrIsNotValid)
-	} else if _, ok := vega.AccountType_name[int32(cmd.FromAccountType)]; !ok {
+	if cmd.FromAccountType != vega.AccountType_ACCOUNT_TYPE_GENERAL {
 		errs.AddForProperty("transfer.from_account_type", ErrIsNotValid)
 	}
 
