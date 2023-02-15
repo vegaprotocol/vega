@@ -98,6 +98,29 @@ func (os *Orders) GetOrder(ctx context.Context, orderIDStr string, version *int3
 	return order, os.wrapE(err)
 }
 
+// GetByMarketAndID returns all orders with given IDs for a market
+func (os *Orders) GetByMarketAndID(ctx context.Context, marketIDstr string, orderIDs []string) ([]entities.Order, error) {
+	defer metrics.StartSQLQuery("Orders", "GetByMarket")()
+	marketID := entities.MarketID(marketIDstr)
+	IDs := make([]interface{}, 0, len(orderIDs))
+	in := make([]string, 0, len(orderIDs))
+	bindNum := 2
+	for _, o := range orderIDs {
+		IDs = append(IDs, entities.OrderID(o))
+		in = append(in, fmt.Sprintf("$%d", bindNum))
+		bindNum++
+	}
+	bind := make([]interface{}, 0, len(in)+1)
+	// set all bind vars
+	bind = append(bind, marketID)
+	bind = append(bind, IDs...)
+	query := fmt.Sprintf(`SELECT %s from orders_current WHERE market_id=$1 AND id IN (%s)`, sqlOrderColumns, strings.Join(in, ", "))
+	orders := make([]entities.Order, 0, len(orderIDs))
+	err := pgxscan.Select(ctx, os.Connection, &orders, query, bind...)
+
+	return orders, os.wrapE(err)
+}
+
 // GetByMarket returns the last update of the all the orders in a particular market.
 func (os *Orders) GetByMarket(ctx context.Context, marketIDStr string, p entities.OffsetPagination) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetByMarket")()

@@ -27,6 +27,7 @@ type orderStore interface {
 	GetAll(ctx context.Context) ([]entities.Order, error)
 	GetOrder(ctx context.Context, orderID string, version *int32) (entities.Order, error)
 	GetByMarket(ctx context.Context, marketID string, p entities.OffsetPagination) ([]entities.Order, error)
+	GetByMarketAndID(ctx context.Context, marketIDstr string, orderIDs []string) ([]entities.Order, error)
 	GetByParty(ctx context.Context, partyID string, p entities.OffsetPagination) ([]entities.Order, error)
 	GetByReference(ctx context.Context, reference string, p entities.OffsetPagination) ([]entities.Order, error)
 	GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error)
@@ -79,6 +80,10 @@ func (o *Order) GetAll(ctx context.Context) ([]entities.Order, error) {
 
 func (o *Order) GetOrder(ctx context.Context, orderID string, version *int32) (entities.Order, error) {
 	return o.store.GetOrder(ctx, orderID, version)
+}
+
+func (o *Order) GetByMarketAndID(ctx context.Context, marketIDstr string, orderIDs []string) ([]entities.Order, error) {
+	return o.store.GetByMarketAndID(ctx, marketIDstr, orderIDs)
 }
 
 func (o *Order) GetByMarket(ctx context.Context, marketID string, p entities.OffsetPagination) ([]entities.Order, error) {
