@@ -71,6 +71,7 @@
 - [7582](https://github.com/vegaprotocol/vega/issues/7582) - Validate transfer amount in `checkTx`
 - [7577](https://github.com/vegaprotocol/vega/issues/7577) - Use correct trade size when calculating pending open volume
 - [7598](https://github.com/vegaprotocol/vega/issues/7598) - Set up log for rate limiter
+- [7607](https://github.com/vegaprotocol/vega/issues/7607) - Fix handling of removed transfers
 
 ## 0.67.2
 
