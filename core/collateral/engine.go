@@ -1354,9 +1354,14 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 		return nil, nil, err
 	}
 
+	available := num.UintZero()
+	for _, acc := range req.FromAccount {
+		available.Add(available, acc.Balance)
+	}
+
 	// we do not have enough money to get to the minimum amount,
 	// we return an error.
-	if num.Sum(mevt.GeneralBalance(), mevt.MarginBalance()).LT(transfer.MinAmount) {
+	if available.LT(transfer.MinAmount) {
 		return nil, mevt, ErrMinAmountNotReached
 	}
 
