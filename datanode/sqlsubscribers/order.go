@@ -76,11 +76,13 @@ func (os *Order) expired(ctx context.Context, eo ExpiredOrdersEvent, seqNum uint
 	if err != nil {
 		return err
 	}
+	txHash := entities.TxHash(eo.TxHash())
 	for _, o := range orders {
 		o.Status = entities.OrderStatusExpired
 		o.SeqNum = seqNum
 		o.UpdatedAt = os.vegaTime
 		o.VegaTime = os.vegaTime
+		o.TxHash = txHash
 		if err := os.store.Add(o); err != nil {
 			return errors.Wrap(os.store.Add(o), "adding order to database")
 		}
