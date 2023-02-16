@@ -1134,7 +1134,8 @@
           "type": "object",
           "required": [
             "name",
-            "api"
+            "api",
+            "apps"
           ],
           "properties": {
             "name": {
