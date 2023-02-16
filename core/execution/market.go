@@ -3001,17 +3001,6 @@ func (m *Market) removeExpiredOrders(
 		// so we get the most recent version from the book
 		// to continue with
 		order = originalOrder
-		// make sure the order ID matches whatever the current object is on the book
-		if order != nil {
-			// this should be completely impossible - still, because clearly something goes wrong here log it for now
-			if order.ID != orderID && m.log.IsDebug() {
-				m.log.Debug("expired order ID does not match the order ID found on book",
-					logging.String("expired order ID", orderID),
-					logging.OrderID(originalOrder.ID),
-				)
-			}
-			orderID = order.ID
-		}
 
 		// if the order was on the book basically
 		// either a pegged + non parked
@@ -3034,7 +3023,9 @@ func (m *Market) removeExpiredOrders(
 		expired = append(expired, order)
 		ids = append(ids, orderID)
 	}
-	m.broker.Send(events.NewExpiredOrdersEvent(ctx, m.mkt.ID, ids))
+	if len(ids) > 0 {
+		m.broker.Send(events.NewExpiredOrdersEvent(ctx, m.mkt.ID, ids))
+	}
 
 	// If we have removed an expired order, do we need to reprice any
 	// or maybe notify the liquidity engine

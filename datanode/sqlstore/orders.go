@@ -123,14 +123,6 @@ func (os *Orders) GetByMarketAndID(ctx context.Context, marketIDstr string, orde
 	bind = append(bind, marketID)
 	bind = append(bind, IDs...)
 	query := fmt.Sprintf(`SELECT %s from orders_current WHERE market_id=$1 AND id IN (%s)`, sqlOrderColumns, strings.Join(in, ", "))
-	os.log.Debug("Selecting orders by market and ID's",
-		logging.String("Query (formatted)", query),
-		logging.Strings("order IDs", orderIDs),
-		logging.String("bind dump", fmt.Sprintf("%#v", bind)),
-	)
-	if len(orderIDs) != len(IDs) {
-		os.log.Panic("Check log above - something is terribly wrong")
-	}
 	orders := make([]entities.Order, 0, len(orderIDs))
 	err := pgxscan.Select(ctx, os.Connection, &orders, query, bind...)
 
