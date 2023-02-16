@@ -440,17 +440,17 @@ service TradingDataService {
 
     // Vega Time
     //
-    // Get the current time of the network
+    // Get the current time of the network, displayed as a Unix timestamp in nano seconds
     rpc GetVegaTime(GetVegaTimeRequest) returns (GetVegaTimeResponse);
 
     // Protocol upgrade status
     //
-    // Get status of protocol upgrade
+    // Get status of a protocol upgrade
     rpc GetProtocolUpgradeStatus(GetProtocolUpgradeStatusRequest) returns (GetProtocolUpgradeStatusResponse);
 
     // Protocol upgrade proposals
     //
-    // List protocol upgrades proposals, optionally filtering on status or approver.
+    // List protocol upgrade proposals, optionally filtering on status or approver.
     rpc ListProtocolUpgradeProposals(ListProtocolUpgradeProposalsRequest) returns (ListProtocolUpgradeProposalsResponse);
 
     // Snapshots
@@ -678,7 +678,7 @@ message ListOrdersRequest {
     optional bool live_only = 5;
     // The date range of the orders being listed
     optional DateRange date_range = 6;
-    // The OrderFilter contains all filtering conditions and values that are applied to the orders listing
+    // The order filter contains all filtering conditions and values that are applied to the orders listing
     optional OrderFilter filter = 7;
 }
 
@@ -834,8 +834,8 @@ message PositionUpdates{
     repeated vega.Position positions = 1;
 }
 
-// LedgerEntryFilter sets filters on returned set of ledger entries.
-// LedgerEntry data can be filtered by asset_id, market_id, party_id for sending and receiving account, as well as by transfer type.
+// Ledger entry filter sets filters on returned set of ledger entries.
+// Ledger entry data can be filtered by asset ID, market ID, party ID for sending and receiving account, as well as by transfer type.
 message LedgerEntryFilter {
     // close_on_account_filters determines whether an entry must have accounts matching both the account_from_filter
     // and the account_to_filter. If set to 'true', entries must have matches in both filters.
@@ -927,7 +927,7 @@ message ExportLedgerEntriesResponse {
     PageInfo page_info = 2;
 }
 
-// Represents the AggregatedLedgerEntry data with corresponding cursor for it
+// Represents the aggregated ledger entry data with corresponding cursor for it
 message AggregatedLedgerEntriesEdge {
     // 'AggregatedLedgerEntry' data
     AggregatedLedgerEntry node = 1;
@@ -987,9 +987,9 @@ message AggregatedBalanceEdge {
     string cursor = 2;
 }
 
-// Represents the list of AggregatedBalance objects with the corresponding page information
+// Represents the list of aggregated balance objects with the corresponding page information
 message AggregatedBalanceConnection {
-    // List of AggregatedBalance data chunks
+    // List of aggregated balance data chunks
     repeated AggregatedBalanceEdge edges = 1;
     // Page information that is used for fetching further pages
     PageInfo page_info = 2;
@@ -1348,7 +1348,7 @@ message VoteConnection {
     PageInfo page_info = 2;
 }
 
-// Request that is sent to sibscribe to votes
+// Request that is sent to subscribe to votes
 message ObserveVotesRequest {
     // Party ID for which the votes are requested
     optional string party_id = 1;
@@ -1388,15 +1388,15 @@ message ListERC20MultiSigSignerAddedBundlesResponse {
 message ERC20MultiSigSignerAddedEdge {
     // Signature data to be added
     vega.events.v1.ERC20MultiSigSignerAdded node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
-// Represents the signature bundle data with to be added the corresponding cursor for it
+// Represents the signature bundle data that is to be added the corresponding cursor for it
 message ERC20MultiSigSignerAddedBundleEdge {
     // Signature bundle data to be added
     ERC20MultiSigSignerAddedBundle node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -1446,7 +1446,7 @@ message ListERC20MultiSigSignerRemovedBundlesRequest {
     Pagination pagination = 4;
 }
 
-// Response from removing a signature bundle from the signer list of the multisig contract for particular validator 
+// Response when removing a signature bundle from the signer list of the multisig contract for a particular validator 
 message ListERC20MultiSigSignerRemovedBundlesResponse {
     // List of signer bundle data parts for that validator
     ERC20MultiSigSignerRemovedConnection bundles = 1;
@@ -1456,19 +1456,19 @@ message ListERC20MultiSigSignerRemovedBundlesResponse {
 message ERC20MultiSigSignerRemovedEdge {
     // Signature data to be removed
     vega.events.v1.ERC20MultiSigSignerRemoved node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
-// Represents the signature bundle data with to be removed the corresponding cursor for it
+// Represents the signature bundle data to be removed, with the corresponding cursor for it
 message ERC20MultiSigSignerRemovedBundleEdge {
     // Signature bundle data to be added
     ERC20MultiSigSignerRemovedBundle node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
-// Represents the list of signature data chunks to be removed with the corresponding list page information
+// Represents the list of signature data chunks to be removed, with the corresponding list page information
 message ERC20MultiSigSignerRemovedConnection {
     // List of signature bundle data parts
     repeated ERC20MultiSigSignerRemovedBundleEdge edges = 1;
@@ -1499,13 +1499,13 @@ message ERC20MultiSigSignerRemovedBundle {
 
 }
 
-// Request for listing the signature bundle to an ERC20 token in the collateral bridge
+// Request for listing the signature bundle to an ERC-20 token in the collateral bridge
 message GetERC20ListAssetBundleRequest {
   // The ID of the asset requested
   string asset_id = 1;
 }
 
-// Response from listing the signature bundle to an ERC20 token in the collateral bridge
+// Response from listing the signature bundle to an ERC-20 token in the collateral bridge
 message GetERC20ListAssetBundleResponse {
   // The address of the asset on ethereum
   string asset_source = 1;
@@ -1582,9 +1582,9 @@ message GetLastTradeResponse {
 
 // Request to list trades
 message ListTradesRequest {
-    // Market ID for which to list trades fo, if provided
+    // Market ID for which to list trades for, if provided
     optional string market_id = 1;
-    // Order ID for which to list tradesfor, if provided
+    // Order ID for which to list trades for, if provided
     optional string order_id = 2;
     // Party ID for which to list trades for, if provided
     optional string party_id = 3;
@@ -1612,11 +1612,11 @@ message TradeConnection {
 message TradeEdge {
     // Trade data
     vega.Trade node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
-// Request to subscribe for a stream of (Trades)[#vega.Trade]
+// Request to subscribe to a stream of trades
 message ObserveTradesRequest {
     // The fields for market ID and party ID are optional filters:
     // If omitted all trades, for all parties on all markets will be returned on the stream
@@ -1679,7 +1679,7 @@ message ListOracleDataResponse {
 message OracleSpecEdge {
     // List of oracle spec data
     vega.OracleSpec node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -1691,11 +1691,11 @@ message OracleSpecsConnection {
     PageInfo page_info = 2;
 }
 
-// Oracle data with correponsing cursos
+// Oracle data with corresponding cursor
 message OracleDataEdge {
     // Oracle data
     vega.OracleData node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -1739,13 +1739,13 @@ message ListMarketsResponse {
 message MarketEdge {
     // Market data
     vega.Market node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
-// Market data list with correposnding list page information
+// Market data list with corresponding list page information
 message MarketConnection {
-    // List of makets data
+    // List of markets data
     repeated MarketEdge edges = 1;
     // Page information that is used for fetching further pages
     PageInfo page_info = 2;
@@ -1779,11 +1779,11 @@ message ListPartiesResponse {
     PartyConnection parties = 1;
 }
 
-// Party data with corresponding cursos
+// Party data with corresponding cursors
 message PartyEdge {
     // Party data
     vega.Party node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -1799,11 +1799,11 @@ message PartyConnection {
 message OrderEdge {
     // Order data
     vega.Order node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
-// Request for lising margin levels
+// Request for listing margin levels
 message ListMarginLevelsRequest {
     // Party ID for which to list the margin levels
     string party_id = 1;
@@ -1841,17 +1841,17 @@ message OrderConnection {
     PageInfo page_info = 2;
 }
 
-// Margin data with corresponding cursos
+// Margin data with corresponding cursors
 message MarginEdge {
     // Margin levels data
     vega.MarginLevels node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
 // List of margins data with corresponding page information
 message MarginConnection {
-    // List of marings
+    // List of margins
     repeated MarginEdge edges = 1;
     // Page information that is used for fetching further pages
     PageInfo page_info = 2;
@@ -1867,7 +1867,7 @@ message ListRewardsRequest {
     optional Pagination pagination = 3;
     // Epoch from which to list the rewards, if provided
     optional uint64 from_epoch = 4;
-    // Epoch to which to list the rewards, if provided
+    // Epoch up-to-which to list the rewards, if provided
     optional uint64 to_epoch = 5;
 }
 
@@ -1881,7 +1881,7 @@ message ListRewardsResponse {
 message RewardEdge {
     // Rewards data
     vega.Reward node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -1942,11 +1942,11 @@ message EpochRewardSummaryConnection {
     PageInfo page_info = 2;
 }
 
-// Rewards summary data for epoch with corresponding cursos
+// Rewards summary data for epoch with corresponding cursors
 message EpochRewardSummaryEdge {
     // Rewards summary data for epoch
     vega.EpochRewardSummary node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -1958,7 +1958,7 @@ message ObserveRewardsRequest {
     optional string party_id = 2;
 }
 
-// Reponse that is received from subscribing to rewards data
+// Response that is received from subscribing to rewards data
 message ObserveRewardsResponse {
     // Rewards data received
     vega.Reward reward = 1;
@@ -1966,21 +1966,21 @@ message ObserveRewardsResponse {
 
 // -- Deposits --
 
-// A request to get a specific deposit by identifier
+// A request to get data about a specific deposit by ID
 message GetDepositRequest {
-    // The identifier of the deposit
+    // The deposit ID, which can be obtained using the List Deposits query
     string id = 1;
 }
 
-// A response that is received from getting a deposit
+// A response that is received from getting deposit data
 message GetDepositResponse {
-    // The deposit matching the identifier from the request
+    // The deposit matching the ID from the request
     vega.Deposit deposit = 1 ;
 }
 
 // A request to list all deposits for a given party
 message ListDepositsRequest {
-    // The identifier of a party whose deposits are to be retrieved
+    // The ID of the party whose deposits are to be retrieved
     string party_id = 1;
     // Optional pagination information to limit the data that is returned
     optional Pagination pagination = 2;
@@ -1998,7 +1998,7 @@ message ListDepositsResponse {
 message DepositEdge {
     // Deposit data
     vega.Deposit node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -2044,7 +2044,7 @@ message ListWithdrawalsResponse {
 message WithdrawalEdge {
     // Withdrawals data
     vega.Withdrawal node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -2088,7 +2088,7 @@ message ListAssetsResponse {
 message AssetEdge {
     // The asset data returned
     vega.Asset node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -2102,7 +2102,7 @@ message AssetsConnection {
 
 // -- Liquidity Provisions --
 
-// Request for listing liquidity proisions
+// Request for listing liquidity provisions
 message ListLiquidityProvisionsRequest {
     // The target market for the liquidity provision orders
     optional string market_id = 1;
@@ -2116,7 +2116,7 @@ message ListLiquidityProvisionsRequest {
 
 // Response from listing liquidity provisions
 message ListLiquidityProvisionsResponse {
-    // Listuidity provisions data with corresponding page information
+    // List liquidity provisions data with corresponding page information
     LiquidityProvisionsConnection liquidity_provisions = 1;
 }
 
@@ -2124,7 +2124,7 @@ message ListLiquidityProvisionsResponse {
 message LiquidityProvisionsEdge {
     // Liquidity provision data
     vega.LiquidityProvision node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -2135,7 +2135,7 @@ message LiquidityProvisionsConnection {
     PageInfo page_info = 2;
 }
 
-// Request sent to subscribe to lisquidity provisions
+// Request sent to subscribe to liquidity provisions
 message ObserveLiquidityProvisionsRequest {
     // The target market to observe for liquidity provision orders
     optional string market_id = 1;
@@ -2206,7 +2206,7 @@ message ListGovernanceDataResponse {
 message GovernanceDataEdge {
     // Governance data content
     vega.GovernanceData node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -2236,23 +2236,23 @@ message ListDelegationsRequest {
     optional string party_id = 1;
     // Node ID to list delegations for, if provided
     optional string node_id = 2;
-    // Epoch ID to list delegations for if provided
+    // Epoch ID to list delegations for, if provided
     optional string epoch_id = 3;
     // Optional pagination information to limit the data that is returned
     optional Pagination pagination = 4;
 }
 
-// Response from lising delegations
+// Response from listing delegations
 message ListDelegationsResponse {
     // Delegations data with corresponding page information
     DelegationsConnection delegations = 1;
 }
 
-// Delegation data with corresponding cursos
+// Delegation data with corresponding cursors
 message DelegationEdge {
     // Delegation data
     vega.Delegation node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -2264,7 +2264,7 @@ message DelegationsConnection {
     PageInfo page_info = 2;
 }
 
-// Request to subscribe to all event related to delegation with the given filters
+// Request to subscribe to all event related to delegations, with the given filters
 message ObserveDelegationsRequest {
     // Party ID to get delegations for, if provided
     optional string party_id = 1;
@@ -2272,7 +2272,7 @@ message ObserveDelegationsRequest {
     optional string node_id = 2;
 }
 
-// Response with all events related to delegation with the given filters
+// Response with all events related to delegations, with the given filters
 message ObserveDelegationsResponse {
     // Delegation data
     vega.Delegation delegation = 1;
@@ -2319,7 +2319,7 @@ message ListNodesResponse {
 message NodeEdge {
     // Node data
     vega.Node node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -2349,7 +2349,7 @@ message ListNodeSignaturesResponse {
 message NodeSignatureEdge {
     // Node signature data
     vega.commands.v1.NodeSignature node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -2396,7 +2396,7 @@ message EstimateFeeResponse {
 message EstimateMarginRequest {
     // Market ID for the order
     string market_id = 1;
-    // Party ID of the oder
+    // Party ID of the order
     string party_id = 2;
     // Order side - indicator for Seller or Buyer side
     vega.Side side = 3;
@@ -2408,7 +2408,7 @@ message EstimateMarginRequest {
     string price = 6;
 }
 
-// Response to a EstimateMarginRequest, containing the estimated marginLevels for a given order
+// Response to an estimate margin request, containing the estimated margin levels for a given order
 message EstimateMarginResponse {
     // Summary of the estimated margins for this order if it were to trade now
     vega.MarginLevels margin_levels = 2;
@@ -2442,7 +2442,7 @@ message GetNetworkParameterResponse {
 message NetworkParameterEdge {
     // Network parameter data
     vega.NetworkParameter node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -2482,7 +2482,7 @@ message ListCheckpointsResponse {
 message CheckpointEdge {
     // Checkpoint data
     Checkpoint node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -2493,19 +2493,19 @@ message CheckpointsConnection {
     PageInfo page_info = 2;
 }
 
-// Reuquest to get stake
+// Request to get stake
 message GetStakeRequest {
-    // Party ID for which the stake is requested
+    // Party ID for which the stake information is requested
     string party_id = 1;
     // Optional pagination information to limit the data that is returned
     optional Pagination pagination = 2;
 }
 
-// Response that is received from requesting a stake
+// Response that is received from requesting stake information
 message GetStakeResponse {
     // Current stake available info
     string current_stake_available = 1;
-    // Paged list of stakes data with corresponding page information
+    // Paged list of stake data with corresponding page information
     StakesConnection stake_linkings = 2;
 }
 
@@ -2513,13 +2513,13 @@ message GetStakeResponse {
 message StakeLinkingEdge {
     // A stake linking represent the intent from a party to deposit
     vega.events.v1.StakeLinking node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
-// Paged list of stakes data with corresponding page info
+// Paged list of stake data with corresponding page info
 message StakesConnection {
-    // List of stakes data
+    // List of stake data
     repeated StakeLinkingEdge edges = 1;
     // Page information that is used for fetching further pages
     PageInfo page_info = 2;
@@ -2570,7 +2570,7 @@ message ObserveLedgerMovementsRequest {}
 
 // Response from ledger movements subscription
 message ObserveLedgerMovementsResponse {
-    // Ledger movements data with list of ledger entries and and post transfer balances
+    // Ledger movements data with list of ledger entries and and post-transfer balances
     vega.LedgerMovement ledger_movement = 1;
 }
 
@@ -2592,9 +2592,9 @@ message ListKeyRotationsResponse {
 
 // Key rotation data with corresponding cursor
 message KeyRotationEdge {
-    // Noe's key rotation datas
+    // Node's key rotation data
     vega.events.v1.KeyRotation node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -2624,17 +2624,17 @@ message ListEthereumKeyRotationsResponse {
 
 // List of Ethereum key rotations data with corresponding page information
 message EthereumKeyRotationsConnection {
-    // List of Ethereum key rotaitons data with corresponding cursors
+    // List of Ethereum key rotations data with corresponding cursors
     repeated EthereumKeyRotationEdge edges = 1;
     // Page information that is used for fetching further pages
     PageInfo page_info = 2;
 }
 
-// Ethereum key rotaiton data with corresponding cursor
+// Ethereum key rotation data with corresponding cursor
 message EthereumKeyRotationEdge {
-    // Key rodation data for the node
+    // Key rotation data for the node
     vega.events.v1.EthereumKeyRotation node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -2672,7 +2672,7 @@ message GetProtocolUpgradeStatusResponse {
 
 // Request type for ListProtocolUpgradeProposals; fetches a paginated list of protocol upgrade proposals
 message ListProtocolUpgradeProposalsRequest {
-    // ProtocolUPgrade proposal status to filter results from listing proposals, if provided
+    // Protocol upgrade proposal status to filter results from listing proposals, if provided
     optional vega.events.v1.ProtocolUpgradeProposalStatus status = 1;
     // Option to filter listed proposals on being approved or not, if provided
     optional string approved_by = 2;
@@ -2698,7 +2698,7 @@ message ProtocolUpgradeProposalConnection {
 message ProtocolUpgradeProposalEdge {
     // Protocol upgrade proposal data
     vega.events.v1.ProtocolUpgradeEvent node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -2725,7 +2725,7 @@ message CoreSnapshotConnection {
 message CoreSnapshotEdge {
     // Core snapshot data
     vega.events.v1.CoreSnapshotData node = 1;
-    // Cursor that can be used to fetch futher pages
+    // Cursor that can be used to fetch further pages
     string cursor = 2;
 }
 
@@ -2753,7 +2753,7 @@ message GetMostRecentNetworkHistorySegmentRequest {
 
 // Response from getting most recent history segment
 message GetMostRecentNetworkHistorySegmentResponse {
-    // HistorySegment daya
+    // HistorySegment data
     HistorySegment segment = 1;
     // Key seed for the swarm section
     string swarm_key_seed  = 2;
@@ -2784,7 +2784,7 @@ message NetworkHistoryStatusRequest {}
 
 // Response containing the status of network history
 message NetworkHistoryStatusResponse {
-    // The ipfs address of this node
+    // The IPFS address of this node
     string ipfs_address = 1;
     // The swarm key
     string swarm_key = 2;
