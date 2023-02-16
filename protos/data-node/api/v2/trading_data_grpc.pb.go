@@ -361,15 +361,15 @@ type TradingDataServiceClient interface {
 	ListEthereumKeyRotations(ctx context.Context, in *ListEthereumKeyRotationsRequest, opts ...grpc.CallOption) (*ListEthereumKeyRotationsResponse, error)
 	// Vega Time
 	//
-	// Get the current time of the network
+	// Get the current time of the network, displayed as a Unix timestamp in nano seconds
 	GetVegaTime(ctx context.Context, in *GetVegaTimeRequest, opts ...grpc.CallOption) (*GetVegaTimeResponse, error)
 	// Protocol upgrade status
 	//
-	// Get status of protocol upgrade
+	// Get status of a protocol upgrade
 	GetProtocolUpgradeStatus(ctx context.Context, in *GetProtocolUpgradeStatusRequest, opts ...grpc.CallOption) (*GetProtocolUpgradeStatusResponse, error)
 	// Protocol upgrade proposals
 	//
-	// List protocol upgrades proposals, optionally filtering on status or approver.
+	// List protocol upgrade proposals, optionally filtering on status or approver.
 	ListProtocolUpgradeProposals(ctx context.Context, in *ListProtocolUpgradeProposalsRequest, opts ...grpc.CallOption) (*ListProtocolUpgradeProposalsResponse, error)
 	// Snapshots
 	//
@@ -1905,15 +1905,15 @@ type TradingDataServiceServer interface {
 	ListEthereumKeyRotations(context.Context, *ListEthereumKeyRotationsRequest) (*ListEthereumKeyRotationsResponse, error)
 	// Vega Time
 	//
-	// Get the current time of the network
+	// Get the current time of the network, displayed as a Unix timestamp in nano seconds
 	GetVegaTime(context.Context, *GetVegaTimeRequest) (*GetVegaTimeResponse, error)
 	// Protocol upgrade status
 	//
-	// Get status of protocol upgrade
+	// Get status of a protocol upgrade
 	GetProtocolUpgradeStatus(context.Context, *GetProtocolUpgradeStatusRequest) (*GetProtocolUpgradeStatusResponse, error)
 	// Protocol upgrade proposals
 	//
-	// List protocol upgrades proposals, optionally filtering on status or approver.
+	// List protocol upgrade proposals, optionally filtering on status or approver.
 	ListProtocolUpgradeProposals(context.Context, *ListProtocolUpgradeProposalsRequest) (*ListProtocolUpgradeProposalsResponse, error)
 	// Snapshots
 	//
