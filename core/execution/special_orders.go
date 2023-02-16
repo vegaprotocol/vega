@@ -233,9 +233,10 @@ func (m *Market) updateLPOrders(
 		now       = m.timeService.GetTimeNow().UnixNano()
 	)
 
-	// now we gonna map all the all order which
-	// where to be cancelled, and just do nothing in
-	// those case.
+	// now we gonna map all the order which
+	// where to be cancelled. Then send events
+	// if they are to be cancelled, or do nothing
+	// if they are to be submitted again.
 	for _, v := range cancels {
 		for _, id := range v.OrderIDs {
 			cancelIDs[id] = struct{}{}

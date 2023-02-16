@@ -244,12 +244,6 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 				types.OrderStatusActive,
 				size - 20,
 			},
-			// {
-			// 	// this is the replacement order created
-			// 	// by engine.
-			// 	types.OrderStatusCancelled,
-			// 	size - 20,
-			// },
 			{
 				// this is the re-deployment
 				types.OrderStatusActive,
