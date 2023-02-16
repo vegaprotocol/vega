@@ -3058,7 +3058,9 @@ func (m *Market) removeExpiredOrders(
 		expired = append(expired, order)
 		ids = append(ids, orderID)
 	}
-	m.broker.Send(events.NewExpiredOrdersEvent(ctx, m.mkt.ID, ids))
+	if len(ids) > 0 {
+		m.broker.Send(events.NewExpiredOrdersEvent(ctx, m.mkt.ID, ids))
+	}
 
 	// If we have removed an expired order, do we need to reprice any
 	// or maybe notify the liquidity engine
