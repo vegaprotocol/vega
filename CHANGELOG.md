@@ -9,6 +9,7 @@
 - [7361](https://github.com/vegaprotocol/vega/issues/7361) - Network history loading and current order set tracking - database requires database to be dropped
 - [6963](https://github.com/vegaprotocol/vega/issues/7382) - `IssueSignatures` is no longer a validator command and is now protected by the spam engine
 - [7445](https://github.com/vegaprotocol/vega/issues/7445) - Added rate limiting to `GRPC`, `Rest` and `GraphQL` `APIs`
+- [7614](https://github.com/vegaprotocol/vega/issues/7614) - Market parties added to snapshot state to ensure proper restoration
 - [7542](https://github.com/vegaprotocol/vega/issues/7542) - Add optional slippage factors to market proposal and use them to cap slippage component of maintenance margin
 
 ### 🗑️ Deprecation
