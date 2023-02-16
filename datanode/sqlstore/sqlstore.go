@@ -86,8 +86,9 @@ var defaultRetentionPolicies = map[RetentionPeriod][]RetentionPolicy{
 }
 
 func MigrateToLatestSchema(log *logging.Logger, config Config) error {
+	log = log.Named("db-migrate")
 	goose.SetBaseFS(EmbedMigrations)
-	goose.SetLogger(log.Named("db migration").GooseLogger())
+	goose.SetLogger(log.GooseLogger())
 	goose.SetVerbose(bool(config.VerboseMigration))
 
 	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
@@ -131,8 +132,9 @@ func MigrateToSchemaVersion(log *logging.Logger, config Config, version int64, f
 }
 
 func RevertToSchemaVersionZero(log *logging.Logger, config ConnectionConfig, fs fs.FS, verbose bool) error {
+	log = log.Named("revert-schema-to-version-0")
 	goose.SetBaseFS(fs)
-	goose.SetLogger(log.Named("revert schema to version 0").GooseLogger())
+	goose.SetLogger(log.GooseLogger())
 	goose.SetVerbose(verbose)
 
 	poolConfig, err := config.GetPoolConfig()
@@ -153,8 +155,9 @@ func RevertToSchemaVersionZero(log *logging.Logger, config ConnectionConfig, fs 
 }
 
 func WipeDatabaseAndMigrateSchemaToVersion(log *logging.Logger, config ConnectionConfig, version int64, fs fs.FS, verbose bool) error {
+	log = log.Named("db-wipe-migrate")
 	goose.SetBaseFS(fs)
-	goose.SetLogger(log.Named("wipe database").GooseLogger())
+	goose.SetLogger(log.GooseLogger())
 	goose.SetVerbose(verbose)
 
 	poolConfig, err := config.GetPoolConfig()
@@ -188,8 +191,9 @@ func WipeDatabaseAndMigrateSchemaToVersion(log *logging.Logger, config Connectio
 }
 
 func WipeDatabaseAndMigrateSchemaToLatestVersion(log *logging.Logger, config ConnectionConfig, fs fs.FS, verbose bool) error {
+	log = log.Named("db-wipe-migrate")
 	goose.SetBaseFS(fs)
-	goose.SetLogger(log.Named("wipe database").GooseLogger())
+	goose.SetLogger(log.GooseLogger())
 	goose.SetVerbose(verbose)
 
 	poolConfig, err := config.GetPoolConfig()
@@ -506,6 +510,8 @@ type EmbeddedPostgresLog interface {
 }
 
 func StartEmbeddedPostgres(log *logging.Logger, config Config, runtimeDir string, postgresLog EmbeddedPostgresLog) (*embeddedpostgres.EmbeddedPostgres, error) {
+	log = log.Named("embedded-postgres")
+	log.SetLevel(config.Level.Get())
 	embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(runtimeDir), "node-data")
 
 	embeddedPostgres := createEmbeddedPostgres(runtimeDir, &embeddedPostgresDataPath,

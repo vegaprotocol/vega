@@ -457,8 +457,8 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
       | lp1    | USD   | ETH/MAR22 | 170732 | 999789268 | 40000 |
-      | party1 | USD   | ETH/MAR22 | 10464  | 99989536  |     0 |
-      | party2 | USD   | ETH/MAR22 | 47374  | 99952626  |     0 |
+      | party1 | USD   | ETH/MAR22 | 10464  | 99989536  |       |
+      | party2 | USD   | ETH/MAR22 | 47374  | 99952626  |       |
 
     Then the network moves ahead "1" blocks
 

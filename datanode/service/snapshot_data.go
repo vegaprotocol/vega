@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 )
 
 type snapStore interface {
@@ -13,13 +12,11 @@ type snapStore interface {
 }
 type SnapshotData struct {
 	snapStore snapStore
-	log       *logging.Logger
 }
 
-func NewSnapshotData(snapStore snapStore, log *logging.Logger) *SnapshotData {
+func NewSnapshotData(snapStore snapStore) *SnapshotData {
 	return &SnapshotData{
 		snapStore: snapStore,
-		log:       log,
 	}
 }
 

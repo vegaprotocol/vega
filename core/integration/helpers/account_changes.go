@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"sort"
 
+	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/libs/num"
-	"code.vegaprotocol.io/vega/protos/vega"
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 // ReconcileAccountChanges takes account balances before the step, modifies them based on supplied transfer, deposits, withdrawals as well as insurance pool balance changes intitiated by test code (not regular flow), and then compares them to account balances after the step.
-func ReconcileAccountChanges(before, after []types.Account, deposits []types.Deposit, withdrawals []types.Withdrawal, insurancePoolDeposits map[string]*num.Int, transfersInBetween []*types.LedgerEntry) error {
+func ReconcileAccountChanges(collateralEngine *collateral.Engine, before, after []types.Account, insurancePoolDeposits map[string]*num.Int, transfersInBetween []*types.LedgerEntry) error {
 	bmp, err := mapFromAccount(before)
 	if err != nil {
 		return err
@@ -18,40 +18,6 @@ func ReconcileAccountChanges(before, after []types.Account, deposits []types.Dep
 	amp, err := mapFromAccount(after)
 	if err != nil {
 		return err
-	}
-
-	for _, d := range deposits {
-		amt, err := stringToBigInt(d.GetAmount())
-		if err != nil {
-			return err
-		}
-
-		genAccId := genAccId(d.GetPartyId(), d.GetAsset())
-		if _, ok := bmp[genAccId]; !ok {
-			bmp[genAccId] = num.IntZero()
-		}
-
-		bmp[genAccId].Add(amt)
-	}
-
-	for _, w := range withdrawals {
-		amt, err := stringToBigInt(w.GetAmount())
-		if err != nil {
-			return err
-		}
-
-		genAccId := genAccId(w.GetPartyId(), w.GetAsset())
-		accBal, ok := bmp[genAccId]
-
-		if !ok {
-			return fmt.Errorf("account %s not found", genAccId)
-		}
-
-		if accBal.LT(amt) {
-			return fmt.Errorf("account %s balance couldn't support the withdrawal specified", genAccId)
-		}
-
-		bmp[genAccId] = accBal.Sub(amt)
 	}
 
 	for acc, amt := range insurancePoolDeposits {
@@ -95,6 +61,27 @@ func ReconcileAccountChanges(before, after []types.Account, deposits []types.Dep
 		}
 	}
 
+	return checkAgainstCollateralEngineState(collateralEngine, amp)
+}
+
+func checkAgainstCollateralEngineState(collateralEngine *collateral.Engine, accounts map[string]*num.Int) error {
+	for id, expectedValue := range accounts {
+		acc, err := collateralEngine.GetAccountByID(id)
+		if err != nil {
+			if expectedValue.IsZero() {
+				continue
+			}
+			return err
+		}
+		actualValue := acc.Balance
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_EXTERNAL {
+			// we don't sent account events for external accounts
+			continue
+		}
+		if !expectedValue.EQ(num.IntFromUint(actualValue, true)) {
+			return fmt.Errorf("invalid balance for account '%s', expected: '%s', got: '%s'", id, expectedValue, actualValue)
+		}
+	}
 	return nil
 }
 
@@ -116,8 +103,4 @@ func stringToBigInt(amnt string) (*num.Int, error) {
 		return nil, fmt.Errorf("error encountered during conversion of '%s' to num.Int", amnt)
 	}
 	return amt, nil
-}
-
-func genAccId(partyId, asset string) string {
-	return fmt.Sprintf("!%v%v%v", partyId, asset, vega.AccountType_value[vega.AccountType_ACCOUNT_TYPE_GENERAL.String()])
 }

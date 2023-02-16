@@ -45,7 +45,6 @@ type VoteStore interface {
 type Governance struct {
 	pStore    ProposalStore
 	vStore    VoteStore
-	log       *logging.Logger
 	pObserver utils.Observer[entities.Proposal]
 	vObserver utils.Observer[entities.Vote]
 }
@@ -56,7 +55,6 @@ func NewGovernance(pStore ProposalStore, vStore VoteStore, log *logging.Logger) 
 		vStore:    vStore,
 		pObserver: utils.NewObserver[entities.Proposal]("proposal", log, 0, 0),
 		vObserver: utils.NewObserver[entities.Vote]("vote", log, 0, 0),
-		log:       log,
 	}
 }
 

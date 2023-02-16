@@ -20,9 +20,12 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-// namedLogger is the identifier for package and should ideally match the package name
-// this is simply emitted as a hierarchical label e.g. 'admin.server'.
-const namedLogger = "admin.server"
+const (
+	nvServerNamedLogger   = "admin.non-validator-server"
+	vServerNamedLogger    = "admin.validator-server"
+	clientNamedLogger     = "admin-client"
+	nodeWalletNamedLogger = "admin.node-wallet"
+)
 
 // ServerConfig represent the configuration of the server.
 type ServerConfig struct {

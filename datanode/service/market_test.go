@@ -17,14 +17,14 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/service"
-	"code.vegaprotocol.io/vega/datanode/service/mocks"
-	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
+
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/service"
+	"code.vegaprotocol.io/vega/datanode/service/mocks"
 )
 
 var (
@@ -48,7 +48,7 @@ func TestMarketInitialise(t *testing.T) {
 	}, nil)
 
 	// Initialise and check that we get that data out of the cache (e.g. no other calls to store)
-	svc := service.NewMarkets(store, logging.NewTestLogger())
+	svc := service.NewMarkets(store)
 	svc.Initialise(ctx)
 
 	allData, err := svc.GetAll(ctx, entities.OffsetPagination{})
@@ -73,7 +73,7 @@ func TestMarketUpsert(t *testing.T) {
 	store.EXPECT().Upsert(ctx, &testMarket4).Return(nil)
 
 	// Make service; initialise (mock store has 2 records in it); and add two more bits of data.
-	svc := service.NewMarkets(store, logging.NewTestLogger())
+	svc := service.NewMarkets(store)
 	svc.Initialise(ctx)
 	svc.Upsert(ctx, &testMarket3)
 	svc.Upsert(ctx, &testMarket4)

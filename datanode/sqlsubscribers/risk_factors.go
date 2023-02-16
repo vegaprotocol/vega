@@ -15,11 +15,11 @@ package sqlsubscribers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"github.com/pkg/errors"
 )
 
 type RiskFactorEvent interface {
@@ -34,13 +34,11 @@ type RiskFactorStore interface {
 type RiskFactor struct {
 	subscriber
 	store RiskFactorStore
-	log   *logging.Logger
 }
 
-func NewRiskFactor(store RiskFactorStore, log *logging.Logger) *RiskFactor {
+func NewRiskFactor(store RiskFactorStore) *RiskFactor {
 	return &RiskFactor{
 		store: store,
-		log:   log,
 	}
 }
 

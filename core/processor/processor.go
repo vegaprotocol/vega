@@ -199,6 +199,7 @@ type Banking interface {
 	CancelTransferFunds(context.Context, *types.CancelTransferFunds) error
 	BridgeStopped(context.Context, bool, string, uint64, uint64, string) error
 	BridgeResumed(context.Context, bool, string, uint64, uint64, string) error
+	CheckTransfer(t *types.TransferBase) error
 }
 
 // NetworkParameters ...

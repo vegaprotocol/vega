@@ -33,10 +33,6 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 		if row.ExpectGeneralAccountBalance() && len(row.GeneralAccountBalance()) > 0 {
 			generalAccount, err := broker.GetPartyGeneralAccount(row.Party(), expectedAsset)
 			if err != nil {
-				if row.GeneralAccountBalance() == "0" {
-					// we coulnd't get the account but the expectation is 0 so it's fine
-					continue
-				}
 				return errCannotGetPartyGeneralAccount(row.Party(), expectedAsset, err)
 			}
 			if generalAccount.GetAsset() != expectedAsset {
@@ -54,10 +50,6 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 			}
 			marginAccount, err := broker.GetPartyMarginAccount(row.Party(), row.MarketID())
 			if err != nil {
-				if row.MarginAccountBalance() == "0" {
-					// we coulnd't get the account but the expectation is 0 so it's fine
-					continue
-				}
 				return errCannotGetPartyMarginAccount(row.Party(), row.MarketID(), err)
 			}
 			if marginAccount.GetAsset() != expectedAsset {
@@ -76,10 +68,6 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 			}
 			bondAcc, err := broker.GetPartyBondAccountForMarket(row.Party(), expectedAsset, row.MarketID())
 			if err != nil {
-				if row.BondAccountBalance() == "0" {
-					// we coulnd't get the account but the expectation is 0 so it's fine
-					continue
-				}
 				return errCannotGetPartyBondAccount(row.Party(), row.MarketID(), err)
 			}
 			if bondAcc.GetAsset() != expectedAsset {

@@ -39,11 +39,17 @@ type StartCmd struct {
 
 var startCmd StartCmd
 
-func (cmd *StartCmd) Execute(args []string) error {
+const namedLogger = "core"
+
+func (cmd *StartCmd) Execute([]string) error {
 	log := logging.NewLoggerFromConfig(
-		logging.NewDefaultConfig(),
-	)
-	defer log.AtExit()
+		logging.NewDefaultConfig())
+	logCore := log.Named(namedLogger)
+
+	defer func() {
+		log.AtExit()
+		logCore.AtExit()
+	}()
 
 	// we define this option to parse the cli args each time the config is
 	// loaded. So that we can respect the cli flag precedence.
@@ -58,7 +64,7 @@ func (cmd *StartCmd) Execute(args []string) error {
 		return errors.New("--network-url and --network cannot be set together")
 	}
 
-	confWatcher, err := config.NewWatcher(context.Background(), log, vegaPaths, config.Use(parseFlagOpt))
+	confWatcher, err := config.NewWatcher(context.Background(), logCore, vegaPaths, config.Use(parseFlagOpt))
 	if err != nil {
 		return err
 	}
@@ -90,7 +96,7 @@ func (cmd *StartCmd) Execute(args []string) error {
 	}
 
 	return (&node.Command{
-		Log: log,
+		Log: logCore,
 	}).Run(
 		confWatcher,
 		vegaPaths,
@@ -98,7 +104,7 @@ func (cmd *StartCmd) Execute(args []string) error {
 		cmd.TendermintHome,
 		cmd.NetworkURL,
 		cmd.Network,
-		args,
+		log,
 	)
 }
 

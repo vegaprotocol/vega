@@ -55,7 +55,7 @@ Feature: Set up a market with an opening auction, then uncross the book so that 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the parties should have the following account balances:
       | party  | asset | market id | margin |  general |   bond |
-      | party1 | BTC   | ETH/DEC19 | 0      |        0 |      0 |
+      | party1 | BTC   | ETH/DEC19 | 0      |        0 |        |
       |     lp | BTC   | ETH/DEC19 | 82560  | 99776968 | 160000 | 
     # sum of lp accounts = 100019528
     # lp started with 100000000, should've made 8*(10000-5900)=32800 in MTM gains following the closeout,

@@ -1153,7 +1153,7 @@ func setupSQLBroker(ctx context.Context, testDbConfig sqlstore.Config, snapshotS
 		return nil, err
 	}
 
-	subscribers.SetupSQLSubscribers(ctx, logging.NewTestLogger())
+	subscribers.SetupSQLSubscribers()
 
 	blockStore := sqlstore.NewBlocks(transactionalConnectionSource)
 

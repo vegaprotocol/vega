@@ -89,12 +89,11 @@ type executionTestSetup struct {
 	// keep track of net deposits/withdrawals (ignores asset type)
 	netDeposits *num.Uint
 
-	// record accounts before steps
+	// record parts of state before each step
 	accountsBefore                []protos.Account
 	ledgerMovementsBefore         int
-	depositsBefore                int
-	withdrawalsBefore             int
 	insurancePoolDepositsOverStep map[string]*num.Int
+	eventsBefore                  int
 
 	ntry           *notary.SnapshotNotary
 	stateVarEngine *stubs.StateVarStub
@@ -111,6 +110,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	ctrl := gomock.NewController(&reporter)
 	execsetup.ctrl = ctrl
 	execsetup.cfg = execution.NewDefaultConfig()
+	execsetup.cfg.Position.StreamPositionVerbose = true
 	execsetup.log = logging.NewTestLogger()
 	execsetup.timeService = stubs.NewTimeStub()
 	execsetup.broker = stubs.NewBrokerStub()

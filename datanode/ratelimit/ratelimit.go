@@ -62,6 +62,7 @@ func NewFromConfig(cfg *Config, log *logging.Logger) *RateLimit {
 	r := &RateLimit{
 		lmt:         lmt,
 		naughtyStep: ns,
+		log:         log,
 	}
 	r.cfg.Store(cfg)
 	return r

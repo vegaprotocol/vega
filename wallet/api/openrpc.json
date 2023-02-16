@@ -1054,7 +1054,19 @@
             "networks": {
               "type": "array",
               "items": {
-                "type": "string"
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "required": true
+                  },
+                  "metadata": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/metadata"
+                    }
+                  }
+                }
               }
             }
           }
@@ -1068,9 +1080,27 @@
             "name": "Success",
             "value": {
               "networks": [
-                "mainnet",
-                "fairground",
-                "local-network"
+                {
+                  "name": "mainnet1",
+                  "metadata": [
+                    {
+                      "key": "network",
+                      "value": "mainnet"
+                    }
+                  ]
+                },
+                {
+                  "name": "fairground",
+                  "metadata": [
+                    {
+                      "key": "network",
+                      "value": "testnet"
+                    }
+                  ]
+                },
+                {
+                  "name": "local-network"
+                }
               ]
             }
           }
@@ -1106,14 +1136,24 @@
           "type": "object",
           "required": [
             "name",
-            "api"
+            "api",
+            "apps"
           ],
           "properties": {
             "name": {
               "type": "string"
             },
+            "metadata": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/metadata"
+              }
+            },
             "api": {
               "$ref": "#/components/schemas/network_api_config"
+            },
+            "apps": {
+              "$ref": "#/components/schemas/network_apps_config"
             }
           }
         }
@@ -1131,6 +1171,12 @@
             "name": "Success",
             "value": {
               "name": "local-network",
+              "metadata": [
+                {
+                  "key": "network",
+                  "value": "local"
+                }
+              ],
               "api": {
                 "grpcConfig": {
                   "hosts": [
@@ -1148,6 +1194,11 @@
                     "localhost:3029"
                   ]
                 }
+              },
+              "apps": {
+                "console": "console.vega.xyz",
+                "tokenDApp": "token.vega.xyz",
+                "explorer": "explorer.vega.xyz"
               }
             }
           }
@@ -1176,10 +1227,26 @@
           }
         },
         {
+          "name": "metadata",
+          "schema": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/metadata"
+            }
+          }
+        },
+        {
           "name": "api",
           "required": true,
           "schema": {
             "$ref": "#/components/schemas/network_api_config"
+          }
+        },
+        {
+          "name": "apps",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/network_apps_config"
           }
         }
       ],
@@ -1390,9 +1457,7 @@
           "schema": {
             "type": "array",
             "items": {
-              "schema": {
-                "$ref": "#/components/schemas/metadata"
-              }
+              "$ref": "#/components/schemas/metadata"
             }
           }
         }
@@ -3345,7 +3410,7 @@
       },
       "metadata": {
         "type": "object",
-        "description": "The key's metadata.",
+        "description": "The object metadata.",
         "required": [
           "key",
           "value"
@@ -3486,6 +3551,21 @@
                 }
               }
             }
+          }
+        }
+      },
+      "network_apps_config": {
+        "type": "object",
+        "description": "The URLs to the network applications.",
+        "properties": {
+          "console": {
+            "type": "string"
+          },
+          "tokenDApp": {
+            "type": "string"
+          },
+          "explorer": {
+            "type": "string"
           }
         }
       },
