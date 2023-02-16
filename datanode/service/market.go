@@ -16,56 +16,33 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 )
 
-var (
-	nilPagination     = entities.OffsetPagination{}
-	refreshCacheEvery = 30 * time.Second
-)
+var nilPagination = entities.OffsetPagination{}
 
 type MarketStore interface {
 	Upsert(ctx context.Context, market *entities.Market) error
 	GetByID(ctx context.Context, marketID string) (entities.Market, error)
 	GetAll(ctx context.Context, pagination entities.OffsetPagination) ([]entities.Market, error)
-	GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination) ([]entities.Market, entities.PageInfo, error)
+	GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, includeSettled bool) ([]entities.Market, entities.PageInfo, error)
 }
 
 type Markets struct {
 	store     MarketStore
-	log       *logging.Logger
 	cache     map[entities.MarketID]*entities.Market
 	cacheLock sync.RWMutex
 }
 
-func NewMarkets(store MarketStore, log *logging.Logger) *Markets {
+func NewMarkets(store MarketStore) *Markets {
 	return &Markets{
 		store: store,
-		log:   log,
 		cache: make(map[entities.MarketID]*entities.Market),
 	}
 }
 
 func (m *Markets) Initialise(ctx context.Context) error {
-	// This hacky timer is needed to ensure that the cache is re-populated when restoring
-	// from network history segments. It would be better to explicitly refresh the cache when
-	// loading in a segment, but this quick fix will work for now.
-	go func() {
-		for range time.NewTicker(refreshCacheEvery).C {
-			err := m.refreshCache(ctx)
-			if err != nil {
-				m.log.Warn("error refreshing market cache", logging.Error(err))
-			}
-		}
-	}()
-
-	return m.refreshCache(ctx)
-}
-
-func (m *Markets) refreshCache(ctx context.Context) error {
 	m.cacheLock.Lock()
 	defer m.cacheLock.Unlock()
 
@@ -115,6 +92,6 @@ func (m *Markets) GetAll(ctx context.Context, pagination entities.OffsetPaginati
 	return data, nil
 }
 
-func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination) ([]entities.Market, entities.PageInfo, error) {
-	return m.store.GetAllPaged(ctx, marketID, pagination)
+func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, includeSettled bool) ([]entities.Market, entities.PageInfo, error) {
+	return m.store.GetAllPaged(ctx, marketID, pagination, includeSettled)
 }

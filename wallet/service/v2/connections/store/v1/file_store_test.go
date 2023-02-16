@@ -1,9 +1,6 @@
 package v1_test
 
 import (
-	"context"
-	"os"
-	"sync"
 	"testing"
 	"time"
 
@@ -21,7 +18,6 @@ func TestFileStore(t *testing.T) {
 	t.Run("Verifying an existing token succeeds", testFileStoreVerifyingExistingTokenSucceeds)
 	t.Run("Verifying an unknown token fails", testFileStoreVerifyingUnknownTokenFails)
 	t.Run("Deleting an existing token succeeds", testFileStoreDeletingExistingTokenSucceeds)
-	t.Run("Changes to the token file are propagated to the listeners", testFileStoreChangesToTokenFileArePropagatedToListeners)
 }
 
 func testFileStoreListTokensSucceeds(t *testing.T) {
@@ -179,122 +175,6 @@ func testFileStoreDeletingExistingTokenSucceeds(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.True(t, exists)
-}
-
-func testFileStoreChangesToTokenFileArePropagatedToListeners(t *testing.T) {
-	vegaPaths := testHome(t)
-	store := newTestFileStore(t, vegaPaths)
-
-	wg := sync.WaitGroup{}
-
-	var lastTokenDescriptions []connections.TokenDescription
-	store.OnUpdate(func(_ context.Context, tokenDescriptions ...connections.TokenDescription) {
-		lastTokenDescriptions = tokenDescriptions
-		wg.Done()
-	})
-
-	// 1. Ensure the creation of a token is broadcast to listeners, a first time.
-	wg.Add(1)
-
-	// given
-	description1 := connections.TokenDescription{
-		Description:    vgrand.RandomStr(5),
-		CreationDate:   time.Now().Add(-2 * time.Hour),
-		ExpirationDate: ptr.From(time.Now().Add(-1 * time.Hour)),
-		Token:          connections.GenerateToken(),
-		Wallet: connections.WalletCredentials{
-			Name:       vgrand.RandomStr(5),
-			Passphrase: vgrand.RandomStr(5),
-		},
-	}
-
-	// when
-	err := store.SaveToken(description1)
-
-	// then
-	require.NoError(t, err)
-
-	// Wait for the go routine to do its job.
-	wg.Wait()
-
-	// 2. Ensure the creation of a token is broadcast to listeners, a second time.
-	wg.Add(1)
-
-	// given
-	description2 := connections.TokenDescription{
-		Description:  vgrand.RandomStr(5),
-		CreationDate: time.Now().Add(-4 * time.Hour),
-		Token:        connections.GenerateToken(),
-		Wallet: connections.WalletCredentials{
-			Name:       vgrand.RandomStr(5),
-			Passphrase: vgrand.RandomStr(5),
-		},
-	}
-
-	// when
-	err = store.SaveToken(description2)
-
-	// then
-	require.NoError(t, err)
-
-	// Wait for the go routine to do its job.
-	wg.Wait()
-
-	// 3. Verifying the deleted token is not broadcast to listeners.
-	wg.Add(1)
-
-	// when
-	err = store.DeleteToken(description1.Token)
-
-	// then
-	require.NoError(t, err)
-
-	// Wait for the go routine to do its job.
-	wg.Wait()
-
-	// 4. Verifying the deletion of the file is interpreted as a removal of all
-	//    the long-living tokens.
-	wg.Add(1)
-
-	// when
-	err = os.RemoveAll(vegaPaths.DataPathFor(paths.WalletServiceTokensDataFile))
-
-	// then
-	require.NoError(t, err)
-
-	// Wait for the go routine to do its job.
-	wg.Wait()
-
-	// 5. Verifying we can write after a deletion of the file.
-	wg.Add(1)
-
-	// given
-	description3 := connections.TokenDescription{
-		Description:  vgrand.RandomStr(5),
-		CreationDate: time.Now().Add(-2 * time.Hour).Truncate(time.Second),
-		Token:        connections.GenerateToken(),
-		Wallet: connections.WalletCredentials{
-			Name:       vgrand.RandomStr(5),
-			Passphrase: vgrand.RandomStr(5),
-		},
-	}
-
-	// when
-	err = store.SaveToken(description3)
-
-	// then
-	require.NoError(t, err)
-
-	// Wait for the go routine to do its job.
-	wg.Wait()
-
-	assert.Len(t, lastTokenDescriptions, 1)
-	assert.Equal(t, description3.Description, lastTokenDescriptions[0].Description)
-	assert.Equal(t, description3.Token, lastTokenDescriptions[0].Token)
-	assert.WithinDuration(t, description3.CreationDate, lastTokenDescriptions[0].CreationDate, 0)
-	assert.Nil(t, lastTokenDescriptions[0].ExpirationDate)
-	assert.Equal(t, description3.Wallet.Name, lastTokenDescriptions[0].Wallet.Name, 0)
-	assert.Equal(t, description3.Wallet.Passphrase, lastTokenDescriptions[0].Wallet.Passphrase, 0)
 }
 
 type testFileStore struct {

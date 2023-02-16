@@ -64,7 +64,7 @@ func NewTransactionalConnectionSource(log *logging.Logger, connConfig Connection
 	}
 
 	connectionSource := &ConnectionSource{
-		log:        log.Named("connection_source"),
+		log:        log.Named("connection-source"),
 		pool:       pool,
 		Connection: &delegatingConnection{pool: pool},
 	}

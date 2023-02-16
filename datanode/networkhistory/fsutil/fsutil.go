@@ -133,7 +133,7 @@ func TarDirectoryWithDeterministicHeader(w io.Writer, devMajorVersion int64, sou
 	return nil
 }
 
-func GetSnapshotDatabaseVersion(snapshotFile string) (int64, error) {
+func GetHistorySegmentDatabaseVersion(snapshotFile string) (int64, error) {
 	sourceFile, err := os.Open(snapshotFile)
 	defer func() { _ = sourceFile.Close() }()
 	if err != nil {

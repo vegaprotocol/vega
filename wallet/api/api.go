@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	"code.vegaprotocol.io/vega/wallet/api/node"
 	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
 	"code.vegaprotocol.io/vega/wallet/network"
@@ -14,7 +15,7 @@ import (
 )
 
 // Generates mocks
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Interactor,ConnectionsManager,ProofOfWork
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Interactor,ConnectionsManager,SpamHandler
 
 type NodeSelectorBuilder func(hosts []string, retries uint64) (node.Selector, error)
 
@@ -50,8 +51,9 @@ type ConnectionsManager interface {
 	ListSessionConnections() []Connection
 }
 
-type ProofOfWork interface {
-	Generate(pubKey string, blockData *nodetypes.LastBlock) (*commandspb.ProofOfWork, error)
+type SpamHandler interface {
+	GenerateProofOfWork(pubKey string, blockData *nodetypes.SpamStatistics) (*commandspb.ProofOfWork, error)
+	CheckSubmission(req *walletpb.SubmitTransactionRequest, latest *nodetypes.SpamStatistics) error
 }
 
 // Interactor is the component in charge of delegating the JSON-RPC API
@@ -74,10 +76,10 @@ type Interactor interface {
 	NotifyInteractionSessionEnded(ctx context.Context, traceID string)
 
 	// NotifySuccessfulTransaction is used to report a successful transaction.
-	NotifySuccessfulTransaction(ctx context.Context, traceID, txHash, deserializedInputData, tx string, sentAt time.Time)
+	NotifySuccessfulTransaction(ctx context.Context, traceID, txHash, deserializedInputData, tx string, sentAt time.Time, host string)
 
 	// NotifyFailedTransaction is used to report a failed transaction.
-	NotifyFailedTransaction(ctx context.Context, traceID, deserializedInputData, tx string, err error, sentAt time.Time)
+	NotifyFailedTransaction(ctx context.Context, traceID, deserializedInputData, tx string, err error, sentAt time.Time, host string)
 
 	// NotifySuccessfulRequest is used to notify the user the request is
 	// successful.
@@ -197,14 +199,14 @@ func (a *ClientAPI) SendTransaction(ctx context.Context, rawParams jsonrpc.Param
 	return a.sendTransaction.Handle(ctx, rawParams, connectedWallet)
 }
 
-func BuildClientAPI(walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, pow ProofOfWork) (*ClientAPI, error) {
+func BuildClientAPI(walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, spam SpamHandler) (*ClientAPI, error) {
 	clientAPI := &ClientAPI{}
 
 	clientAPI.connectWallet = NewConnectWallet(walletStore, interactor)
 	clientAPI.getChainID = NewGetChainID(nodeSelector)
 	clientAPI.listKeys = NewListKeys(walletStore, interactor)
-	clientAPI.signTransaction = NewClientSignTransaction(walletStore, interactor, nodeSelector, pow)
-	clientAPI.sendTransaction = NewClientSendTransaction(walletStore, interactor, nodeSelector, pow)
+	clientAPI.signTransaction = NewClientSignTransaction(walletStore, interactor, nodeSelector, spam)
+	clientAPI.sendTransaction = NewClientSendTransaction(walletStore, interactor, nodeSelector, spam)
 
 	return clientAPI, nil
 }

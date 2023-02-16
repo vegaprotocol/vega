@@ -4,6 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
+	"time"
+
+	vgterm "code.vegaprotocol.io/vega/libs/term"
+
+	"go.uber.org/zap"
 
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
@@ -21,11 +27,12 @@ type loadCmd struct {
 	config.VegaHomeFlag
 	config.Config
 
-	Force            bool `short:"f" long:"force" description:"do not prompt for confirmation"`
-	WipeExistingData bool `short:"w" long:"wipe-existing-data" description:"Erase all data from the node before loading from networkhistory"`
+	Force                       bool   `short:"f" long:"force" description:"do not prompt for confirmation"`
+	WipeExistingData            bool   `short:"w" long:"wipe-existing-data" description:"Erase all data from the node before loading from network history"`
+	WithIndexesAndOrderTriggers string `short:"i" long:"with-indexes-and-order-triggers" required:"false" description:"if true the load will not drop indexes and order triggers when loading data, this is usually the best option when appending new segments onto existing datanode data" choice:"default" choice:"true" choice:"false" default:"default"`
 }
 
-func (cmd *loadCmd) Execute(_ []string) error {
+func (cmd *loadCmd) Execute(args []string) error {
 	cfg := logging.NewDefaultConfig()
 	cfg.Custom.Zap.Level = logging.WarnLevel
 	cfg.Environment = "custom"
@@ -44,8 +51,8 @@ func (cmd *loadCmd) Execute(_ []string) error {
 		return fmt.Errorf("datanode must be shutdown before data can be loaded")
 	}
 
-	if !cmd.Force {
-		if !flags.YesOrNo("Running this command will kill all existing database connections, do you with to continue?") {
+	if !cmd.Force && vgterm.HasTTY() {
+		if !flags.YesOrNo("Running this command will kill all existing database connections, do you want to continue?") {
 			return nil
 		}
 	}
@@ -60,7 +67,7 @@ func (cmd *loadCmd) Execute(_ []string) error {
 	}
 	defer connPool.Close()
 
-	// Wiping data from networkhistory before loading then trying to load the data should never happen in any circumstance
+	// Wiping data from network history before loading then trying to load the data should never happen in any circumstance
 	cmd.Config.NetworkHistory.WipeOnStartup = false
 
 	hasSchema, err := sqlstore.HasVegaSchema(context.Background(), connPool)
@@ -69,7 +76,7 @@ func (cmd *loadCmd) Execute(_ []string) error {
 	}
 
 	if hasSchema {
-		err = verifyChainID(log, cmd.SQLStore.ConnectionConfig, cmd.ChainID)
+		err = verifyChainID(cmd.SQLStore.ConnectionConfig, cmd.ChainID)
 		if err != nil {
 			if !errors.Is(err, networkhistory.ErrChainNotFound) {
 				return fmt.Errorf("failed to verify chain id:%w", err)
@@ -78,7 +85,8 @@ func (cmd *loadCmd) Execute(_ []string) error {
 	}
 
 	if hasSchema && cmd.WipeExistingData {
-		err := sqlstore.WipeDatabaseAndMigrateSchemaToVersion(log, cmd.Config.SQLStore.ConnectionConfig, 0, sqlstore.EmbedMigrations)
+		err := sqlstore.WipeDatabaseAndMigrateSchemaToVersion(log, cmd.Config.SQLStore.ConnectionConfig, 0,
+			sqlstore.EmbedMigrations, bool(cmd.Config.SQLStore.VerboseMigration))
 		if err != nil {
 			return fmt.Errorf("failed to wipe database and migrate schema to version: %w", err)
 		}
@@ -112,9 +120,36 @@ func (cmd *loadCmd) Execute(_ []string) error {
 		return fmt.Errorf("failed new networkhistory service:%w", err)
 	}
 
-	from, to, err := getSpanOfAllAvailableHistory(networkHistoryService)
-	if err != nil {
-		return fmt.Errorf("failed to get span of all available history:%w", err)
+	segments, err := networkHistoryService.ListAllHistorySegments()
+	mostRecentContiguousHistory := networkhistory.GetMostRecentContiguousHistory(segments)
+
+	if mostRecentContiguousHistory == nil {
+		fmt.Println("No history is available to load.  Data can be fetched using the fetch command")
+		return nil
+	}
+
+	from := mostRecentContiguousHistory.HeightFrom
+	if len(args) >= 1 {
+		from, err = strconv.ParseInt(args[0], 10, 64)
+		if err != nil {
+			return fmt.Errorf("failed to parse from height: %w", err)
+		}
+	}
+
+	to := mostRecentContiguousHistory.HeightTo
+	if len(args) == 2 {
+		to, err = strconv.ParseInt(args[1], 10, 64)
+		if err != nil {
+			return fmt.Errorf("failed to parse to height: %w", err)
+		}
+	}
+
+	contiguousHistory := networkhistory.GetContiguousHistoryForSpan(networkhistory.GetContiguousHistories(segments), from, to)
+	if contiguousHistory == nil {
+		fmt.Printf("No contiguous history is available for block span %d to %d. From and To Heights must match "+
+			"from and to heights of the segments in the contiguous history span.\nUse the show command with the '-s' "+
+			"option to see all available segments\n", from, to)
+		return nil
 	}
 
 	span, err := sqlstore.GetDatanodeBlockSpan(ctx, connPool)
@@ -141,7 +176,7 @@ func (cmd *loadCmd) Execute(_ []string) error {
 			" run the load command with the \"wipe-existing-data\" flag which will empty the data node before restoring it from the history data\n\n",
 			from, to, span.FromHeight, span.ToHeight, span.ToHeight+1, to)
 
-		if !cmd.Force {
+		if !cmd.Force && vgterm.HasTTY() {
 			if !flags.YesOrNo(fmt.Sprintf("Do you wish to continue and load all history from height %d to %d ?", span.ToHeight+1, to)) {
 				return nil
 			}
@@ -150,16 +185,31 @@ func (cmd *loadCmd) Execute(_ []string) error {
 		fmt.Printf("Network history from block height %d to %d is available to load, current datanode block span is %d to %d\n\n",
 			from, to, span.FromHeight, span.ToHeight)
 
-		if !cmd.Force {
+		if !cmd.Force && vgterm.HasTTY() {
 			if !flags.YesOrNo("Do you want to load this history?") {
 				return nil
 			}
 		}
 	}
 
-	fmt.Println("Loading history...")
+	withIndexesAndOrderTriggers := false
+	switch cmd.WithIndexesAndOrderTriggers {
+	case "true":
+		withIndexesAndOrderTriggers = true
+	case "default":
+		withIndexesAndOrderTriggers = span.HasData
+	}
 
-	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanode(context.Background(), cmd.Config.SQLStore.ConnectionConfig)
+	if withIndexesAndOrderTriggers {
+		fmt.Println("Loading history with indexes and order triggers...")
+	} else {
+		fmt.Println("Loading history...")
+	}
+
+	loadLog := newLoadLog()
+	defer loadLog.AtExit()
+	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanodeWithLog(context.Background(), loadLog, *contiguousHistory,
+		cmd.Config.SQLStore.ConnectionConfig, withIndexesAndOrderTriggers, bool(cmd.Config.SQLStore.VerboseMigration))
 	if err != nil {
 		return fmt.Errorf("failed to load all available history:%w", err)
 	}
@@ -169,15 +219,31 @@ func (cmd *loadCmd) Execute(_ []string) error {
 	return nil
 }
 
-func getSpanOfAllAvailableHistory(networkhistoryService *networkhistory.Service) (from int64, to int64, err error) {
-	contiguousHistory, err := networkhistoryService.GetContiguousHistoryFromHighestHeight()
-	if err != nil {
-		return 0, 0, fmt.Errorf("failed to get contiguous history data")
-	}
+type loadLog struct {
+	log *logging.Logger
+}
 
-	if len(contiguousHistory) == 0 {
-		return 0, 0, nil
-	}
+func newLoadLog() *loadLog {
+	cfg := logging.NewDefaultConfig()
+	cfg.Custom.Zap.Level = logging.InfoLevel
+	cfg.Environment = "custom"
 
-	return contiguousHistory[0].HeightFrom, contiguousHistory[len(contiguousHistory)-1].HeightTo, nil
+	return &loadLog{
+		log: logging.NewLoggerFromConfig(cfg),
+	}
+}
+
+func (l *loadLog) AtExit() {
+	l.log.AtExit()
+}
+
+func (l *loadLog) Infof(s string, args ...interface{}) {
+	currentTime := time.Now()
+	argsWithTime := []any{currentTime.Format("2006-01-02 15:04:05")}
+	argsWithTime = append(argsWithTime, args...)
+	fmt.Printf("%s "+s+"\n", argsWithTime...)
+}
+
+func (l *loadLog) Info(msg string, fields ...zap.Field) {
+	l.log.Info(msg, fields...)
 }

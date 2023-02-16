@@ -18,11 +18,11 @@ import (
 	"math"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"github.com/pkg/errors"
 
 	"github.com/shopspring/decimal"
 )
@@ -39,13 +39,11 @@ type AssetStore interface {
 type Asset struct {
 	subscriber
 	store AssetStore
-	log   *logging.Logger
 }
 
-func NewAsset(store AssetStore, log *logging.Logger) *Asset {
+func NewAsset(store AssetStore) *Asset {
 	return &Asset{
 		store: store,
-		log:   log,
 	}
 }
 

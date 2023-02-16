@@ -19,6 +19,7 @@ func TestGovernance(t *testing.T) {
 		"Proposals":           `{ proposalsConnection{ edges { node { id, reference, party { id }, state, datetime, rejectionReason, errorDetails } } } }`,
 		"ProposalVoteSummary": `{ proposalsConnection{ edges { node { id votes{ yes{ totalNumber totalWeight totalTokens } } } } } }`,
 		"ProposalVoteDetails": `{ proposalsConnection{ edges { node { id votes{ yes{ votes{value party { id } datetime proposalId governanceTokenBalance governanceTokenWeight } } } } } } }`,
+		"ProposalNewMarket":   `{ proposalsConnection { edges { node { id terms { change { ... on NewMarket { instrument { name } decimalPlaces riskParameters { ... on SimpleRiskModel { params { factorLong factorShort } } } metadata priceMonitoringParameters { triggers { horizonSecs probability auctionExtensionSecs } } liquidityMonitoringParameters { targetStakeParameters { timeWindow scalingFactor } triggeringRatio auctionExtensionSecs } positionDecimalPlaces lpPriceRange } } } } } } }`,
 	}
 
 	for name, query := range queries {

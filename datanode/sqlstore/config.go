@@ -22,6 +22,14 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
+type RetentionPeriod string
+
+const (
+	RetentionPeriodStandard RetentionPeriod = "standard"
+	RetentionPeriodArchive  RetentionPeriod = "forever"
+	RetentionPeriodLite     RetentionPeriod = "1 day"
+)
+
 type Config struct {
 	ConnectionConfig                                   ConnectionConfig      `group:"ConnectionConfig" namespace:"ConnectionConfig"`
 	WipeOnStartup                                      encoding.Bool         `long:"wipe-on-startup"`
@@ -32,6 +40,8 @@ type Config struct {
 	ConnectionRetryConfig                              ConnectionRetryConfig `group:"ConnectionRetryConfig" namespace:"ConnectionRetryConfig"`
 	LogRotationConfig                                  LogRotationConfig     `group:"LogRotationConfig" namespace:"LogRotationConfig"`
 	DisableMinRetentionPolicyCheckForUseInSysTestsOnly encoding.Bool         `long:"disable-min-retention-policy-use-in-sys-test-only" description:"Disables the minimum retention policy interval check - only for use in system tests"`
+	RetentionPeriod                                    RetentionPeriod       `long:"retention-period" description:"Set the retention level for the database. standard, archive, or lite"`
+	VerboseMigration                                   encoding.Bool         `long:"verbose-migration" description:"Enable verbose logging of SQL migrations"`
 }
 
 type ConnectionConfig struct {
@@ -120,26 +130,6 @@ func NewDefaultConfig() Config {
 		UseEmbedded:      false,
 		FanOutBufferSize: 1000,
 		DisableMinRetentionPolicyCheckForUseInSysTestsOnly: false,
-		RetentionPolicies: []RetentionPolicy{
-			{HypertableOrCaggName: "balances", DataRetentionPeriod: "7 days"},
-			{HypertableOrCaggName: "checkpoints", DataRetentionPeriod: "7 days"},
-			{HypertableOrCaggName: "conflated_balances", DataRetentionPeriod: "1 year"},
-			{HypertableOrCaggName: "delegations", DataRetentionPeriod: "7 days"},
-			{HypertableOrCaggName: "ledger", DataRetentionPeriod: "6 months"},
-			{HypertableOrCaggName: "orders", DataRetentionPeriod: "1 month"},
-			{HypertableOrCaggName: "trades", DataRetentionPeriod: "1 year"},
-			{HypertableOrCaggName: "trades_candle_1_minute", DataRetentionPeriod: "1 month"},
-			{HypertableOrCaggName: "trades_candle_5_minutes", DataRetentionPeriod: "1 month"},
-			{HypertableOrCaggName: "trades_candle_15_minutes", DataRetentionPeriod: "1 month"},
-			{HypertableOrCaggName: "trades_candle_1_hour", DataRetentionPeriod: "1 year"},
-			{HypertableOrCaggName: "trades_candle_6_hours", DataRetentionPeriod: "1 year"},
-			{HypertableOrCaggName: "market_data", DataRetentionPeriod: "7 days"},
-			{HypertableOrCaggName: "margin_levels", DataRetentionPeriod: "7 days"},
-			{HypertableOrCaggName: "conflated_margin_levels", DataRetentionPeriod: "1 year"},
-			{HypertableOrCaggName: "positions", DataRetentionPeriod: "7 days"},
-			{HypertableOrCaggName: "conflated_positions", DataRetentionPeriod: "1 year"},
-			{HypertableOrCaggName: "liquidity_provisions", DataRetentionPeriod: "1 day"},
-		},
 		ConnectionRetryConfig: ConnectionRetryConfig{
 			MaxRetries:      10,
 			InitialInterval: time.Second,
@@ -150,5 +140,7 @@ func NewDefaultConfig() Config {
 			MaxSize: 100,
 			MaxAge:  2,
 		},
+		RetentionPeriod:  RetentionPeriodStandard,
+		VerboseMigration: false,
 	}
 }

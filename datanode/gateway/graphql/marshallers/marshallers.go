@@ -437,3 +437,13 @@ func UnmarshalProtocolUpgradeProposalStatus(v interface{}) (eventspb.ProtocolUpg
 
 	return eventspb.ProtocolUpgradeProposalStatus(t), nil
 }
+
+func MarshalPositionStatus(s vega.PositionStatus) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalPositionStatus(v interface{}) (vega.PositionStatus, error) {
+	return vega.PositionStatus_POSITION_STATUS_UNSPECIFIED, ErrUnimplemented
+}

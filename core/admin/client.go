@@ -20,9 +20,10 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/gorilla/rpc/json"
+
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
-	"github.com/gorilla/rpc/json"
 )
 
 // Client implement a socket client allowing to run simple RPC commands.
@@ -32,13 +33,13 @@ type Client struct {
 	http *http.Client
 }
 
-// Client returns a new instance of the RPC socket client.
+// NewClient returns a new instance of the RPC socket client.
 func NewClient(
 	log *logging.Logger,
 	config Config,
 ) *Client {
 	// setup logger
-	log = log.Named(namedLogger)
+	log = log.Named(clientNamedLogger)
 	log.SetLevel(config.Level.Get())
 
 	return &Client{

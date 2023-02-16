@@ -17,6 +17,8 @@ import (
 	"errors"
 	"sync"
 
+	lb "code.vegaprotocol.io/vega/libs/broker"
+
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/coreapi/services"
 	"code.vegaprotocol.io/vega/logging"
@@ -290,7 +292,7 @@ func (s *Service) ListDelegations(
 }
 
 func (s *Service) subscribeAll() {
-	subscribers := []broker.Subscriber{}
+	subscribers := []lb.Subscriber{}
 
 	if s.cfg.Accounts {
 		subscribers = append(subscribers, s.accounts)

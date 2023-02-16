@@ -40,8 +40,6 @@ CREATE TRIGGER update_last_block AFTER INSERT ON blocks FOR EACH ROW EXECUTE fun
 
 
 
-
-
 create table chain
 (
     id            TEXT NOT NULL,
@@ -207,15 +205,15 @@ CREATE TABLE orders (
     tx_hash           BYTEA                    NOT NULL,
     vega_time         TIMESTAMP WITH TIME ZONE NOT NULL,
     seq_num           BIGINT NOT NULL,
-    vega_time_to      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT 'infinity',
+    current           BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(vega_time, seq_num)
 );
 
 SELECT create_hypertable('orders', 'vega_time', chunk_time_interval => INTERVAL '1 day');
-CREATE INDEX ON orders (market_id, vega_time DESC) where vega_time_to='infinity';
-CREATE INDEX ON orders (party_id, vega_time DESC) where vega_time_to='infinity';
-CREATE INDEX ON orders (reference, vega_time DESC) where vega_time_to='infinity';
-CREATE INDEX ON orders (id, vega_time_to);
+CREATE INDEX ON orders (market_id, vega_time DESC) where current=true;
+CREATE INDEX ON orders (party_id, vega_time DESC) where current=true;
+CREATE INDEX ON orders (reference, vega_time DESC) where current=true;
+CREATE INDEX ON orders (id, current);
 
 CREATE TABLE orders_live (
     id                BYTEA                     NOT NULL,
@@ -241,7 +239,7 @@ CREATE TABLE orders_live (
     tx_hash           BYTEA                    NOT NULL,
     vega_time         TIMESTAMP WITH TIME ZONE NOT NULL,
     seq_num           BIGINT NOT NULL, -- event sequence number in the block
-    vega_time_to      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT 'infinity',
+    current           BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id)
 );
 
@@ -259,10 +257,10 @@ $$
     BEGIN
     -- It is permitted by core to re-use order IDs and 'resurrect' done orders (specifically,
     -- LP orders do this, so we need to check our history table to see if we need to updated
-    -- vega_time_to on any most-recent-version-of an order.
+    -- current flag on any most-recent-version-of an order.
     UPDATE orders
-       SET vega_time_to = NEW.vega_time
-     WHERE vega_time_to = 'infinity'
+       SET current = false
+     WHERE current = true
        AND id = NEW.id;
 
       DELETE from orders_live
@@ -279,7 +277,7 @@ $$
               new.size, new.remaining, new.time_in_force, new.type, new.status,
               new.reference, new.reason, new.version, new.batch_id, new.pegged_offset,
               new.pegged_reference, new.lp_id, new.created_at, new.updated_at, new.expires_at,
-              new.tx_hash, new.vega_time, new.seq_num, 'infinity');
+              new.tx_hash, new.vega_time, new.seq_num, true);
     END IF;
 
     RETURN NEW;
@@ -296,7 +294,7 @@ CREATE TRIGGER archive_orders BEFORE INSERT ON orders FOR EACH ROW EXECUTE funct
 -- this view contains the *current* state of the latest version each order
 --  (e.g. it's unique on order ID)
 CREATE VIEW orders_current AS (
-  SELECT * FROM orders WHERE vega_time_to = 'infinity'
+  SELECT * FROM orders WHERE current = true
 );
 
 -- Manual updates to the order (e.g. user changing price level) increment the 'version'

@@ -52,10 +52,16 @@ type TradingDataServiceClient interface {
 	//
 	// Subscribe to a stream of orders
 	ObserveOrders(ctx context.Context, in *ObserveOrdersRequest, opts ...grpc.CallOption) (TradingDataService_ObserveOrdersClient, error)
+	// Deprecated: Do not use.
+	// Positions (deprecated)
+	//
+	// Get a list of positions by party (public key) using cursor based pagination
+	// Deprecated: use ListAllPositions instead
+	ListPositions(ctx context.Context, in *ListPositionsRequest, opts ...grpc.CallOption) (*ListPositionsResponse, error)
 	// Positions
 	//
 	// Get a list of positions by party (public key) using cursor based pagination
-	ListPositions(ctx context.Context, in *ListPositionsRequest, opts ...grpc.CallOption) (*ListPositionsResponse, error)
+	ListAllPositions(ctx context.Context, in *ListAllPositionsRequest, opts ...grpc.CallOption) (*ListAllPositionsResponse, error)
 	// Positions subscription
 	//
 	// Subscribe to a stream of positions
@@ -381,6 +387,16 @@ type TradingDataServiceClient interface {
 	//
 	// List the addresses of all active network history peers
 	GetActiveNetworkHistoryPeerAddresses(ctx context.Context, in *GetActiveNetworkHistoryPeerAddressesRequest, opts ...grpc.CallOption) (*GetActiveNetworkHistoryPeerAddressesResponse, error)
+	// Network history status
+	//
+	// Retrieves information about the current state of network history
+	// Response contains the network history status
+	NetworkHistoryStatus(ctx context.Context, in *NetworkHistoryStatusRequest, opts ...grpc.CallOption) (*NetworkHistoryStatusResponse, error)
+	// Network history bootstrap peers
+	//
+	// Retrieves the nodes bootstrap peers
+	// Response contains the bootstrap peers
+	NetworkHistoryBootstrapPeers(ctx context.Context, in *NetworkHistoryBootstrapPeersRequest, opts ...grpc.CallOption) (*NetworkHistoryBootstrapPeersResponse, error)
 	// Ping
 	//
 	// Ping the data node
@@ -504,9 +520,19 @@ func (x *tradingDataServiceObserveOrdersClient) Recv() (*ObserveOrdersResponse, 
 	return m, nil
 }
 
+// Deprecated: Do not use.
 func (c *tradingDataServiceClient) ListPositions(ctx context.Context, in *ListPositionsRequest, opts ...grpc.CallOption) (*ListPositionsResponse, error) {
 	out := new(ListPositionsResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListPositions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListAllPositions(ctx context.Context, in *ListAllPositionsRequest, opts ...grpc.CallOption) (*ListAllPositionsResponse, error) {
+	out := new(ListAllPositionsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListAllPositions", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1509,6 +1535,24 @@ func (c *tradingDataServiceClient) GetActiveNetworkHistoryPeerAddresses(ctx cont
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) NetworkHistoryStatus(ctx context.Context, in *NetworkHistoryStatusRequest, opts ...grpc.CallOption) (*NetworkHistoryStatusResponse, error) {
+	out := new(NetworkHistoryStatusResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/NetworkHistoryStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) NetworkHistoryBootstrapPeers(ctx context.Context, in *NetworkHistoryBootstrapPeersRequest, opts ...grpc.CallOption) (*NetworkHistoryBootstrapPeersResponse, error) {
+	out := new(NetworkHistoryBootstrapPeersResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/NetworkHistoryBootstrapPeers", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	out := new(PingResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/Ping", in, out, opts...)
@@ -1552,10 +1596,16 @@ type TradingDataServiceServer interface {
 	//
 	// Subscribe to a stream of orders
 	ObserveOrders(*ObserveOrdersRequest, TradingDataService_ObserveOrdersServer) error
+	// Deprecated: Do not use.
+	// Positions (deprecated)
+	//
+	// Get a list of positions by party (public key) using cursor based pagination
+	// Deprecated: use ListAllPositions instead
+	ListPositions(context.Context, *ListPositionsRequest) (*ListPositionsResponse, error)
 	// Positions
 	//
 	// Get a list of positions by party (public key) using cursor based pagination
-	ListPositions(context.Context, *ListPositionsRequest) (*ListPositionsResponse, error)
+	ListAllPositions(context.Context, *ListAllPositionsRequest) (*ListAllPositionsResponse, error)
 	// Positions subscription
 	//
 	// Subscribe to a stream of positions
@@ -1881,6 +1931,16 @@ type TradingDataServiceServer interface {
 	//
 	// List the addresses of all active network history peers
 	GetActiveNetworkHistoryPeerAddresses(context.Context, *GetActiveNetworkHistoryPeerAddressesRequest) (*GetActiveNetworkHistoryPeerAddressesResponse, error)
+	// Network history status
+	//
+	// Retrieves information about the current state of network history
+	// Response contains the network history status
+	NetworkHistoryStatus(context.Context, *NetworkHistoryStatusRequest) (*NetworkHistoryStatusResponse, error)
+	// Network history bootstrap peers
+	//
+	// Retrieves the nodes bootstrap peers
+	// Response contains the bootstrap peers
+	NetworkHistoryBootstrapPeers(context.Context, *NetworkHistoryBootstrapPeersRequest) (*NetworkHistoryBootstrapPeersResponse, error)
 	// Ping
 	//
 	// Ping the data node
@@ -1915,6 +1975,9 @@ func (UnimplementedTradingDataServiceServer) ObserveOrders(*ObserveOrdersRequest
 }
 func (UnimplementedTradingDataServiceServer) ListPositions(context.Context, *ListPositionsRequest) (*ListPositionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPositions not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListAllPositions(context.Context, *ListAllPositionsRequest) (*ListAllPositionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAllPositions not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ObservePositions(*ObservePositionsRequest, TradingDataService_ObservePositionsServer) error {
 	return status.Errorf(codes.Unimplemented, "method ObservePositions not implemented")
@@ -2141,6 +2204,12 @@ func (UnimplementedTradingDataServiceServer) ListAllNetworkHistorySegments(conte
 func (UnimplementedTradingDataServiceServer) GetActiveNetworkHistoryPeerAddresses(context.Context, *GetActiveNetworkHistoryPeerAddressesRequest) (*GetActiveNetworkHistoryPeerAddressesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetActiveNetworkHistoryPeerAddresses not implemented")
 }
+func (UnimplementedTradingDataServiceServer) NetworkHistoryStatus(context.Context, *NetworkHistoryStatusRequest) (*NetworkHistoryStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NetworkHistoryStatus not implemented")
+}
+func (UnimplementedTradingDataServiceServer) NetworkHistoryBootstrapPeers(context.Context, *NetworkHistoryBootstrapPeersRequest) (*NetworkHistoryBootstrapPeersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NetworkHistoryBootstrapPeers not implemented")
+}
 func (UnimplementedTradingDataServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
@@ -2303,6 +2372,24 @@ func _TradingDataService_ListPositions_Handler(srv interface{}, ctx context.Cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).ListPositions(ctx, req.(*ListPositionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListAllPositions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAllPositionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListAllPositions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListAllPositions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListAllPositions(ctx, req.(*ListAllPositionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3704,6 +3791,42 @@ func _TradingDataService_GetActiveNetworkHistoryPeerAddresses_Handler(srv interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_NetworkHistoryStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NetworkHistoryStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).NetworkHistoryStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/NetworkHistoryStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).NetworkHistoryStatus(ctx, req.(*NetworkHistoryStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_NetworkHistoryBootstrapPeers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NetworkHistoryBootstrapPeersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).NetworkHistoryBootstrapPeers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/NetworkHistoryBootstrapPeers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).NetworkHistoryBootstrapPeers(ctx, req.(*NetworkHistoryBootstrapPeersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PingRequest)
 	if err := dec(in); err != nil {
@@ -3752,6 +3875,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListPositions",
 			Handler:    _TradingDataService_ListPositions_Handler,
+		},
+		{
+			MethodName: "ListAllPositions",
+			Handler:    _TradingDataService_ListAllPositions_Handler,
 		},
 		{
 			MethodName: "ListLedgerEntries",
@@ -3996,6 +4123,14 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetActiveNetworkHistoryPeerAddresses",
 			Handler:    _TradingDataService_GetActiveNetworkHistoryPeerAddresses_Handler,
+		},
+		{
+			MethodName: "NetworkHistoryStatus",
+			Handler:    _TradingDataService_NetworkHistoryStatus_Handler,
+		},
+		{
+			MethodName: "NetworkHistoryBootstrapPeers",
+			Handler:    _TradingDataService_NetworkHistoryBootstrapPeers_Handler,
 		},
 		{
 			MethodName: "Ping",

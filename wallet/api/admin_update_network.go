@@ -4,19 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	vgencoding "code.vegaprotocol.io/vega/libs/encoding"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"github.com/mitchellh/mapstructure"
 )
 
 type AdminUpdateNetworkParams struct {
-	Name        string `json:"name"`
-	Level       string `json:"logLevel"`
-	TokenExpiry string `json:"tokenExpiry"`
-	Port        int    `json:"port"`
-	Host        string `json:"host"`
-	API         struct {
+	Name string `json:"name"`
+	API  struct {
 		GRPCConfig struct {
 			Hosts   []string `json:"hosts"`
 			Retries uint64   `json:"retries"`
@@ -66,22 +61,8 @@ func validateUpdateNetworkParams(rawParams jsonrpc.Params) (network.Network, err
 		return network.Network{}, ErrNetworkNameIsRequired
 	}
 
-	tokenExpiry := &vgencoding.Duration{}
-	if err := tokenExpiry.UnmarshalText([]byte(params.TokenExpiry)); err != nil {
-		return network.Network{}, ErrInvalidTokenExpiryValue
-	}
-
-	logLevel := &vgencoding.LogLevel{}
-	if err := logLevel.UnmarshalText([]byte(params.Level)); err != nil {
-		return network.Network{}, ErrInvalidLogLevelValue
-	}
-
 	return network.Network{
-		Name:        params.Name,
-		LogLevel:    *logLevel,
-		TokenExpiry: *tokenExpiry,
-		Port:        params.Port,
-		Host:        params.Host,
+		Name: params.Name,
 		API: network.APIConfig{
 			GRPC: network.GRPCConfig{
 				Hosts:   params.API.GRPCConfig.Hosts,

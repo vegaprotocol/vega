@@ -100,6 +100,10 @@ func TestCheckProposalSubmissionForUpdateMarket(t *testing.T) {
 	t.Run("Submitting an LP price range change with zero value fails", testUpdateMarketWithLpRangeZeroFails)
 	t.Run("Submitting an LP price range change with value above 100 fails", testUpdateMarketWithLpRangeGreterThan100Fails)
 	t.Run("Submitting an LP price range change with value in [0,100] range succeeds", testUpdateMarketWithLpRangePositiveSucceeds)
+	t.Run("Submitting a slippage fraction change with 'banana' value fails", tesUpdateMarketChangeSubmissionWithSlippageFactorBananaFails)
+	t.Run("Submitting a slippage fraction change with a negative value fails", testUpdateMarketChangeSubmissionWithSlippageFactorNegativeFails)
+	t.Run("Submitting a slippage fraction change with a too large value fails", testUpdateMarketChangeSubmissionWithSlippageFactorTooLargeFails)
+	t.Run("Submitting a slippage fraction change with an empty string succeeds", testUpdateNewMarketChangeSubmissionWithEmptySlippageFactorPasses)
 }
 
 func testUpdateMarketChangeSubmissionWithoutUpdateMarketFails(t *testing.T) {
@@ -2512,4 +2516,99 @@ func testUpdateMarketWithLpRangePositiveSucceeds(t *testing.T) {
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.lp_price_range"), commands.ErrIsNotValidNumber)
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.lp_price_range"), commands.ErrMustBePositive)
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.lp_price_range"), commands.ErrMustBeAtMost100)
+}
+
+func tesUpdateMarketChangeSubmissionWithSlippageFactorBananaFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateMarket{
+				UpdateMarket: &types.UpdateMarket{
+					Changes: &types.UpdateMarketConfiguration{
+						LinearSlippageFactor: "banana",
+					},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.linear_slippage_factor"), commands.ErrIsNotValidNumber)
+	err = checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateMarket{
+				UpdateMarket: &types.UpdateMarket{
+					Changes: &types.UpdateMarketConfiguration{
+						QuadraticSlippageFactor: "banana",
+					},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor"), commands.ErrIsNotValidNumber)
+}
+
+func testUpdateMarketChangeSubmissionWithSlippageFactorNegativeFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateMarket{
+				UpdateMarket: &types.UpdateMarket{
+					Changes: &types.UpdateMarketConfiguration{
+						LinearSlippageFactor: "-0.1",
+					},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.linear_slippage_factor"), commands.ErrMustBePositiveOrZero)
+	err = checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateMarket{
+				UpdateMarket: &types.UpdateMarket{
+					Changes: &types.UpdateMarketConfiguration{
+						QuadraticSlippageFactor: "-0.1",
+					},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor"), commands.ErrMustBePositiveOrZero)
+}
+
+func testUpdateMarketChangeSubmissionWithSlippageFactorTooLargeFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateMarket{
+				UpdateMarket: &types.UpdateMarket{
+					Changes: &types.UpdateMarketConfiguration{
+						LinearSlippageFactor: "1000000.000001",
+					},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.linear_slippage_factor"), commands.ErrMustBeAtMost1M)
+	err = checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateMarket{
+				UpdateMarket: &types.UpdateMarket{
+					Changes: &types.UpdateMarketConfiguration{
+						QuadraticSlippageFactor: "1000000.000001",
+					},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor"), commands.ErrMustBeAtMost1M)
+}
+
+func testUpdateNewMarketChangeSubmissionWithEmptySlippageFactorPasses(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateMarket{
+				UpdateMarket: &types.UpdateMarket{
+					Changes: &types.UpdateMarketConfiguration{},
+				},
+			},
+		},
+	})
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.linear_slippage_factor"), commands.ErrIsNotValidNumber)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor"), commands.ErrIsNotValidNumber)
 }

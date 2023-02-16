@@ -10,8 +10,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.000001      | 0.00011407711613050422 | 0  | 0.016 | 2.0   |
     And the markets:
-      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring    | data source config          |
-      | ETH/DEC20 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 60               | default-none | my-price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring    | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC20 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 60               | default-none | my-price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 60    |
@@ -20,11 +20,11 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
   @SupStake
   Scenario: Persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction. (0032-PRIM-002, 0032-PRIM-005)
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount         |
-      | party1 | ETH   | 10000000000    |
-      | party2 | ETH   | 10000000000    |
-      | aux    | ETH   | 100000000000   |
-      | aux2   | ETH   | 100000000000   |
+      | party  | asset | amount       |
+      | party1 | ETH   | 10000000000  |
+      | party2 | ETH   | 10000000000  |
+      | aux    | ETH   | 100000000000 |
+      | aux2   | ETH   | 100000000000 |
       | lpprov | ETH   | 100000000000 |
 
     When the parties submit the following liquidity provision:
@@ -45,8 +45,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 100000     | TRADING_MODE_CONTINUOUS | 60      | 99461     | 100541    | 74340        | 0       | 1             |
-      | 100000     | TRADING_MODE_CONTINUOUS | 600     | 97776     | 102267    | 74340        | 0       | 1             |
+      | 100000     | TRADING_MODE_CONTINUOUS | 60      | 99461     | 100541    | 74340        | 0              | 1             |
+      | 100000     | TRADING_MODE_CONTINUOUS | 600     | 97776     | 102267    | 74340        | 0              | 1             |
 
     And the accumulated infrastructure fees should be "0" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC20"
@@ -64,13 +64,13 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 100000     | TRADING_MODE_CONTINUOUS | 60      | 99461     | 100541    | 148680        | 0       | 2             |
-      | 100000     | TRADING_MODE_CONTINUOUS | 600     | 97776     | 102267    | 148680        | 0       | 2             |
+      | 100000     | TRADING_MODE_CONTINUOUS | 60      | 99461     | 100541    | 148680       | 0              | 2             |
+      | 100000     | TRADING_MODE_CONTINUOUS | 600     | 97776     | 102267    | 148680       | 0              | 2             |
 
     And the order book should have the following volumes for market "ETH/DEC20":
-      | side | price  | volume   |
-      | sell | 200000 | 1        |
-      | buy  | 1      | 1        |
+      | side | price  | volume |
+      | sell | 200000 | 1      |
+      | buy  | 1      | 1      |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
@@ -273,7 +273,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "110000" for the market "ETH/DEC20"
 
-    Scenario: Non-persistent order results in an auction (one trigger breached), orders placed during auction result in trade with indicative price outside the price monitoring bounds, hence auction get extended, additional orders resulting in more trades placed, auction concludes. (0032-PRIM-008)
+  Scenario: Non-persistent order results in an auction (one trigger breached), orders placed during auction result in trade with indicative price outside the price monitoring bounds, hence auction get extended, additional orders resulting in more trades placed, auction concludes. (0032-PRIM-008)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -380,7 +380,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | aux   | ETH/DEC20 | sell | 1      | 200000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC20 | buy  | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC |
       | aux   | ETH/DEC20 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC |
-    
+
     Then the network moves ahead "59" blocks
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
@@ -411,12 +411,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     When the parties place the following orders:
-      | party | market id | side | volume | price   | resulting trades | type       | tif     |
-      | aux   | ETH/DEC20 | buy  | 1      | 1       | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC20 | sell | 1      | 200000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC20 | buy  | 1      | 1000    | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC20 | sell | 1      | 1000    | 0                | TYPE_LIMIT | TIF_GTC |
-    
+      | party | market id | side | volume | price  | resulting trades | type       | tif     |
+      | aux   | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC20 | buy  | 1      | 1000   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 1      | 1000   | 0                | TYPE_LIMIT | TIF_GTC |
+
     Then the network moves ahead "59" blocks
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
@@ -429,5 +429,5 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000000    | TRADING_MODE_CONTINUOUS | 60      | 994606    | 1005415   |   7434000    | 90000000       | 10            |
-      | 1000000    | TRADING_MODE_CONTINUOUS | 600     | 977751    | 1022678   |   7434000    | 90000000       | 10            |
+      | 1000000    | TRADING_MODE_CONTINUOUS | 60      | 994606    | 1005415   | 7434000      | 90000000       | 10            |
+      | 1000000    | TRADING_MODE_CONTINUOUS | 600     | 977751    | 1022678   | 7434000      | 90000000       | 10            |

@@ -2,6 +2,7 @@ package adapters
 
 import (
 	"context"
+	"sort"
 
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
@@ -19,6 +20,78 @@ type InsecureGRPCAdapter struct {
 
 func (c *InsecureGRPCAdapter) Host() string {
 	return c.host
+}
+
+func toSpamStatistic(st *apipb.SpamStatistic) *nodetypes.SpamStatistic {
+	if st == nil {
+		// can happen if pointing to an older version of core where this
+		// particular spam statistic doesn't exist yet
+		return &nodetypes.SpamStatistic{}
+	}
+	return &nodetypes.SpamStatistic{
+		CountForEpoch: st.CountForEpoch,
+		MaxForEpoch:   st.MaxForEpoch,
+		BannedUntil:   st.BannedUntil,
+	}
+}
+
+func (c *InsecureGRPCAdapter) SpamStatistics(ctx context.Context, party string) (nodetypes.SpamStatistics, error) {
+	r, err := c.client.GetSpamStatistics(ctx,
+		&apipb.GetSpamStatisticsRequest{
+			PartyId: party,
+		})
+	if err != nil {
+		return nodetypes.SpamStatistics{}, err
+	}
+
+	proposals := map[string]uint64{}
+	for _, st := range r.Statistics.Votes.Statistics {
+		proposals[st.Proposal] = st.CountForEpoch
+	}
+
+	blockStates := []nodetypes.PoWBlockState{}
+	for _, b := range r.Statistics.Pow.BlockStates {
+		blockStates = append(blockStates, nodetypes.PoWBlockState{
+			BlockHeight:          b.BlockHeight,
+			BlockHash:            b.BlockHash,
+			TransactionsSeen:     b.TransactionsSeen,
+			ExpectedDifficulty:   b.ExpectedDifficulty,
+			HashFunction:         b.HashFunction,
+			Difficulty:           b.Difficulty,
+			TxPerBlock:           b.TxPerBlock,
+			IncreasingDifficulty: b.IncreasingDifficulty,
+		})
+	}
+
+	// sort by block-height so latest block is first
+	sort.Slice(blockStates, func(i int, j int) bool {
+		return blockStates[i].BlockHeight > blockStates[j].BlockHeight
+	})
+
+	var lastBlockHeight uint64
+	if len(blockStates) > 0 {
+		lastBlockHeight = blockStates[0].BlockHeight
+	}
+	return nodetypes.SpamStatistics{
+		Proposals:         toSpamStatistic(r.Statistics.Proposals),
+		Delegations:       toSpamStatistic(r.Statistics.Delegations),
+		Transfers:         toSpamStatistic(r.Statistics.Transfers),
+		NodeAnnouncements: toSpamStatistic(r.Statistics.NodeAnnouncements),
+		IssuesSignatures:  toSpamStatistic(r.Statistics.IssueSignatures),
+		Votes: &nodetypes.VoteSpamStatistics{
+			Proposals:   proposals,
+			MaxForEpoch: r.Statistics.Votes.MaxForEpoch,
+			BannedUntil: r.Statistics.Votes.BannedUntil,
+		},
+		PoW: &nodetypes.PoWStatistics{
+			PowBlockStates: blockStates,
+			BannedUntil:    r.Statistics.Pow.BannedUntil,
+			PastBlocks:     r.Statistics.Pow.NumberOfPastBlocks,
+		},
+		ChainID:         r.ChainId,
+		EpochSeq:        r.Statistics.EpochSeq,
+		LastBlockHeight: lastBlockHeight,
+	}, nil
 }
 
 func (c *InsecureGRPCAdapter) Statistics(ctx context.Context) (nodetypes.Statistics, error) {

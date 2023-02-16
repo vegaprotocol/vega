@@ -294,9 +294,9 @@ func NewApp(
 		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.RotateEthereumKeySubmissionCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ProtocolUpgradeCommand, app.CheckProtocolUpgradeProposal).
-		HandleCheckTx(txn.IssueSignatures, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.BatchMarketInstructions, app.CheckBatchMarketInstructions).
-		HandleCheckTx(txn.ProposeCommand, app.CheckPropose)
+		HandleCheckTx(txn.ProposeCommand, app.CheckPropose).
+		HandleCheckTx(txn.TransferFundsCommand, app.CheckTransferCommand)
 
 	app.abci.
 		// node commands
@@ -883,7 +883,8 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	resp.Data = snapHash
 
 	if len(snapHash) == 0 {
-		resp.Data = app.exec.Hash()
+		resp.Data = crypto.Hash([]byte(app.version))
+		resp.Data = append(resp.Data, app.exec.Hash()...)
 		resp.Data = append(resp.Data, app.delegation.Hash()...)
 		resp.Data = append(resp.Data, app.gov.Hash()...)
 		resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
@@ -1193,6 +1194,26 @@ func (app *App) DeliverValidatorHeartbeat(ctx context.Context, tx abci.Tx) error
 	}
 
 	return app.top.ProcessValidatorHeartbeat(ctx, an, signatures.VerifyVegaSignature, signatures.VerifyEthereumSignature)
+}
+
+func (app *App) CheckTransferCommand(ctx context.Context, tx abci.Tx) error {
+	tfr := &commandspb.Transfer{}
+	if err := tx.Unmarshal(tfr); err != nil {
+		return err
+	}
+	party := tx.Party()
+	transfer, err := types.NewTransferFromProto("", party, tfr)
+	if err != nil {
+		return err
+	}
+	switch transfer.Kind {
+	case types.TransferCommandKindOneOff:
+		return app.banking.CheckTransfer(transfer.OneOff.TransferBase)
+	case types.TransferCommandKindRecurring:
+		return app.banking.CheckTransfer(transfer.Recurring.TransferBase)
+	default:
+		return errors.New("unsupported transfer kind")
+	}
 }
 
 func (app *App) DeliverTransferFunds(ctx context.Context, tx abci.Tx, id string) error {

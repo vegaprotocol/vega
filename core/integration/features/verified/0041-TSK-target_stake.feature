@@ -18,8 +18,8 @@ Feature: Target stake
       | search factor | initial factor | release factor |
       | 1.1           | 1.2            | 1.4            |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
-      | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     And the average block duration is "1"
 
     # T0
@@ -44,8 +44,8 @@ Feature: Target stake
   Scenario: Max open interest changes over time (0041-TSTK-002, 0041-TSTK-003, 0042-LIQF-007)
 
     Given the liquidity monitoring parameters:
-      | name                | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 0.0            | 10s         | 1.5              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.0              | 10s         | 1.5            |
     When the markets are updated:
       | id        | liquidity monitoring |
       | ETH/DEC21 | updated-lqm-params   |
@@ -69,22 +69,22 @@ Feature: Target stake
 
     Then the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp_1  | ETH/DEC21 |  135              | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | lp_1  | ETH/DEC21 |  135              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
-      | lp2 | lp_2  | ETH/DEC21 |  165              | 0.002 | buy  | BID              | 1          | 10     | submission |
-      | lp2 | lp_2  | ETH/DEC21 |  165              | 0.002 | sell | ASK              | 1          | 10     | amendment  |
-      | lp3 | lp_3  | ETH/DEC21 |  300              | 0.003 | buy  | BID              | 1          | 10     | submission |
-      | lp3 | lp_3  | ETH/DEC21 |  300              | 0.003 | sell | ASK              | 1          | 10     | amendment  |
-      | lp4 | lp_4  | ETH/DEC21 |  300              | 0.004 | buy  | BID              | 1          | 10     | submission |
-      | lp4 | lp_4  | ETH/DEC21 |  300              | 0.004 | sell | ASK              | 1          | 10     | amendment  |
-      | lp5 | lp_5  | ETH/DEC21 |  500              | 0.005 | buy  | BID              | 1          | 10     | submission |
-      | lp5 | lp_5  | ETH/DEC21 |  500              | 0.005 | sell | ASK              | 1          | 10     | amendment  |
-      | lp6 | lp_6  | ETH/DEC21 |  300              | 0.006 | buy  | BID              | 1          | 10     | submission |
-      | lp6 | lp_6  | ETH/DEC21 |  300              | 0.006 | sell | ASK              | 1          | 10     | amendment  |
-      | lp7 | lp_7  | ETH/DEC21 |  200              | 0.007 | buy  | BID              | 1          | 10     | submission |
-      | lp7 | lp_7  | ETH/DEC21 |  200              | 0.007 | sell | ASK              | 1          | 10     | amendment  |
-      | lp8 | lp_8  | ETH/DEC21 |  100              | 0.008 | buy  | BID              | 1          | 10     | submission |
-      | lp8 | lp_8  | ETH/DEC21 |  100              | 0.008 | sell | ASK              | 1          | 10     | amendment  |
+      | lp1 | lp_1  | ETH/DEC21 | 135               | 0.001 | buy  | BID              | 1          | 10     | submission |
+      | lp1 | lp_1  | ETH/DEC21 | 135               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | lp2 | lp_2  | ETH/DEC21 | 165               | 0.002 | buy  | BID              | 1          | 10     | submission |
+      | lp2 | lp_2  | ETH/DEC21 | 165               | 0.002 | sell | ASK              | 1          | 10     | amendment  |
+      | lp3 | lp_3  | ETH/DEC21 | 300               | 0.003 | buy  | BID              | 1          | 10     | submission |
+      | lp3 | lp_3  | ETH/DEC21 | 300               | 0.003 | sell | ASK              | 1          | 10     | amendment  |
+      | lp4 | lp_4  | ETH/DEC21 | 300               | 0.004 | buy  | BID              | 1          | 10     | submission |
+      | lp4 | lp_4  | ETH/DEC21 | 300               | 0.004 | sell | ASK              | 1          | 10     | amendment  |
+      | lp5 | lp_5  | ETH/DEC21 | 500               | 0.005 | buy  | BID              | 1          | 10     | submission |
+      | lp5 | lp_5  | ETH/DEC21 | 500               | 0.005 | sell | ASK              | 1          | 10     | amendment  |
+      | lp6 | lp_6  | ETH/DEC21 | 300               | 0.006 | buy  | BID              | 1          | 10     | submission |
+      | lp6 | lp_6  | ETH/DEC21 | 300               | 0.006 | sell | ASK              | 1          | 10     | amendment  |
+      | lp7 | lp_7  | ETH/DEC21 | 200               | 0.007 | buy  | BID              | 1          | 10     | submission |
+      | lp7 | lp_7  | ETH/DEC21 | 200               | 0.007 | sell | ASK              | 1          | 10     | amendment  |
+      | lp8 | lp_8  | ETH/DEC21 | 100               | 0.008 | buy  | BID              | 1          | 10     | submission |
+      | lp8 | lp_8  | ETH/DEC21 | 100               | 0.008 | sell | ASK              | 1          | 10     | amendment  |
 
     Then the opening auction period ends for market "ETH/DEC21"
 
@@ -194,8 +194,8 @@ Feature: Target stake
   Scenario: Max open interest changes over time, testing change of timewindow (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
 
     Given the liquidity monitoring parameters:
-      | name              | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 0.0            | 20s         | 1.5              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.0              | 20s         | 1.5            |
     When the markets are updated:
       | id        | liquidity monitoring |
       | ETH/DEC21 | updated-lqm-params   |
@@ -267,8 +267,8 @@ Feature: Target stake
     And the target stake should be "2310" for the market "ETH/DEC21"
 
     Given the liquidity monitoring parameters:
-      | name              | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 0.0            | 10s         | 1              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.0              | 10s         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring |
       | ETH/DEC21 | updated-lqm-params   |
@@ -286,8 +286,8 @@ Feature: Target stake
   Scenario: Target stake is calculate correctly during auction in presence of wash trades
 
     Given the liquidity monitoring parameters:
-      | name              | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 0.0            | 10s         | 1              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.0              | 10s         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring |
       | ETH/DEC21 | updated-lqm-params   |
@@ -334,8 +334,8 @@ Feature: Target stake
   Scenario: Target stake can drop during auction
 
     Given the liquidity monitoring parameters:
-      | name                | triggering ratio | time window | scaling factor |
-      | updated-lqm-params  | 1.0              | 10s         | 1              |
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 1.0              | 10s         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring |
       | ETH/DEC21 | updated-lqm-params   |

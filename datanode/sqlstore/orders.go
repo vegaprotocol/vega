@@ -22,7 +22,6 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
-	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
 
@@ -34,6 +33,8 @@ const (
                        tx_hash, vega_time, seq_num`
 
 	ordersFilterDateColumn = "vega_time"
+
+	OrdersTableName = "orders"
 )
 
 type Orders struct {
@@ -46,11 +47,11 @@ var ordersOrdering = TableOrdering{
 	ColumnOrdering{Name: "seq_num", Sorting: ASC},
 }
 
-func NewOrders(connectionSource *ConnectionSource, _ *logging.Logger) *Orders {
+func NewOrders(connectionSource *ConnectionSource) *Orders {
 	a := &Orders{
 		ConnectionSource: connectionSource,
 		batcher: NewMapBatcher[entities.OrderKey, entities.Order](
-			"orders",
+			OrdersTableName,
 			entities.OrderColumns),
 	}
 	return a

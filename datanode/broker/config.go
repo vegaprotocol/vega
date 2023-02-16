@@ -32,6 +32,7 @@ type Config struct {
 	PanicOnError                   encoding.Bool             `long:"panic-on-error" description:"if an error occurs on event push the broker will panic, else log the error"`
 	UseBufferedEventSource         encoding.Bool             `long:"use-buffered-event-source" description:"if true datanode will buffer events"`
 	BufferedEventSourceConfig      BufferedEventSourceConfig `group:"BufferedEventSource" namespace:"bufferedeventsource"`
+	EventBusClientBufferSize       int                       `long:"event-bus-client-buffer-size"`
 }
 
 // NewDefaultConfig creates an instance of config with default values.
@@ -50,15 +51,19 @@ func NewDefaultConfig() Config {
 			File:                  "vega.evt",
 			TimeBetweenBlocks:     encoding.Duration{Duration: 1 * time.Second},
 			SendChannelBufferSize: 1000,
+			IsBufferFile:          false,
 		},
 		UseEventFile:           false,
 		PanicOnError:           false,
 		UseBufferedEventSource: true,
 		BufferedEventSourceConfig: BufferedEventSourceConfig{
-			EventsPerFile:         10_000_000,
-			SendChannelBufferSize: 10_000,
-			MaxBufferedEvents:     100_000_000,
+			EventsPerFile:           10_000_000,
+			SendChannelBufferSize:   10_000,
+			MaxBufferedEvents:       100_000_000,
+			Archive:                 true,
+			ArchiveMaximumSizeBytes: 10_000_000_000,
 		},
+		EventBusClientBufferSize: 100000,
 	}
 }
 
@@ -66,6 +71,7 @@ type FileEventSourceConfig struct {
 	File                  string            `long:"file" description:"the event file"`
 	TimeBetweenBlocks     encoding.Duration `string:"time-between-blocks" description:"the time between sending blocks"`
 	SendChannelBufferSize int               `long:"send-buffer-size" description:"size of channel buffer used to send events to broker "`
+	IsBufferFile          bool              `long:"is-buffer-file" description:"if true the source file is a data-node buffer file"`
 }
 
 type SocketConfig struct {
@@ -76,7 +82,9 @@ type SocketConfig struct {
 }
 
 type BufferedEventSourceConfig struct {
-	EventsPerFile         int `long:"events-per-file" description:"the number of events to store in a file buffer, set to 0 to disable the buffer"`
-	SendChannelBufferSize int `long:"send-buffer-size" description:"sink event channel buffer size"`
-	MaxBufferedEvents     int `long:"max-buffered-events" description:"max number of events that can be buffered, after this point events will no longer be buffered"`
+	EventsPerFile           int   `long:"events-per-file" description:"the number of events to store in a file buffer, set to 0 to disable the buffer"`
+	SendChannelBufferSize   int   `long:"send-buffer-size" description:"sink event channel buffer size"`
+	MaxBufferedEvents       int   `long:"max-buffered-events" description:"max number of events that can be buffered, after this point events will no longer be buffered"`
+	Archive                 bool  `long:"archive" description:"archives event buffer files after they have been read, default false"`
+	ArchiveMaximumSizeBytes int64 `long:"archive-maximum-size" description:"the maximum size of the archive directory"`
 }

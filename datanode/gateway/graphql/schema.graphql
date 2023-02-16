@@ -381,6 +381,14 @@ input LedgerEntryFilter {
   TransferTypes: [TransferType]
 }
 
+"Filter for historical reward summary queries"
+input RewardSummaryFilter {
+  assetIds: [ID!]
+  marketIds: [ID!]
+  fromEpoch: Int,
+  toEpoch: Int,
+}
+
 "Queries allow a caller to read data and filter data via GraphQL."
 type Query {
   "An asset which is used in the vega network"
@@ -541,6 +549,8 @@ type Query {
     id: ID
     "Optional pagination information"
     pagination: Pagination
+    "Whether to include markets that have settled (defaults to true)"
+    includeSettled: Boolean
   ): MarketConnection
 
   "The most recent history segment"
@@ -653,10 +663,9 @@ type Query {
 
   "List reward summary per epoch by asset, market, reward type"
   epochRewardSummaries(
-    fromEpoch: Int,
-    toEpoch: Int,
+    filter: RewardSummaryFilter,
     pagination: Pagination
-    ): EpochRewardSummaryConnection
+  ): EpochRewardSummaryConnection
 
   "Get statistics about the Vega node"
   statistics: Statistics!
@@ -681,6 +690,12 @@ type Query {
     "Pagination options"
     pagination: Pagination,
   ): WithdrawalsConnection
+
+  "Fetch all positions"
+  positions(
+    filter: PositionsFilter,
+    pagination: Pagination
+  ): PositionConnection
 }
 
 "All the states a transfer can transition between"
@@ -1617,7 +1632,7 @@ type PriceMonitoringParameters {
 }
 
 """
-PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration
 """
 type PriceMonitoringTrigger {
   "Price monitoring projection horizon τ in seconds (> 0)."
@@ -1665,6 +1680,8 @@ type LiquidityMonitoringParameters {
   targetStakeParameters: TargetStakeParameters!
   "Specifies the triggering ratio for entering liquidity auction"
   triggeringRatio: String!
+  "Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction"
+  auctionExtensionSecs: Int!
 }
 
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
@@ -1787,6 +1804,12 @@ type Market {
 
   "Liquidity Provision order price range"
   lpPriceRange: String!
+
+  "Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume"
+  linearSlippageFactor: String!
+
+  "Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume"
+  quadraticSlippageFactor: String!
 }
 
 """
@@ -1960,7 +1983,7 @@ type Party {
   ): AccountsConnection
 
   "Trading positions relating to a party"
-  positionsConnection(market: ID, pagination: Pagination): PositionConnection
+  positionsConnection(market: ID, pagination: Pagination): PositionConnection @deprecated (reason: "Use root positions query instead of sub-query")
 
   "Margin levels for a market"
   marginsConnection(
@@ -2029,6 +2052,10 @@ type Party {
     assetId: ID
     "Optional pagination information"
     pagination: Pagination
+    "Optionally only return rewards >= this epoch"
+    fromEpoch: Int
+    "Optionally only return rewards <= this epoch"
+    toEpoch: Int
   ): RewardsConnection
 
   "Return net reward information"
@@ -2111,6 +2138,16 @@ type StakeLinking {
   txHash: String!
 }
 
+"Position status can change if a position is distressed"
+enum PositionStatus {
+  "The position is either healthy, or if closed out, was closed out normally"
+  POSITION_STATUS_UNSPECIFIED
+  "The position was distressed, but removing open orders from the book brought the margin level back to a point where the open position could be maintained"
+  POSITION_STATUS_ORDERS_CLOSED
+  "The position was distressed, and had to be closed out entirely - orders were removed from the book, and the open volume was closed out by the network"
+  POSITION_STATUS_CLOSED_OUT
+}
+
 """
 An individual party at any point in time is considered net long or net short. This refers to their Open Volume,
 calculated using FIFO. This volume is signed as either negative for LONG positions and positive for SHORT positions. A
@@ -2135,6 +2172,12 @@ type Position {
 
   "Average entry price for this position"
   averageEntryPrice: String!
+
+  "The total amount of profit and loss that was not transferred due to loss socialisation"
+  lossSocializationAmount: String!
+
+  "Enum set if the position was closed out or orders were removed because party was distressed"
+  positionStatus: PositionStatus!
 
   "Margins of the party for the given position"
   marginsConnection(pagination: Pagination): MarginConnection
@@ -3184,8 +3227,18 @@ type NewMarket {
   riskParameters: RiskModel!
   "Metadata for this instrument, tags"
   metadata: [String!]
+  "Price monitoring parameters"
+  priceMonitoringParameters: PriceMonitoringParameters!
+  "Liquidity monitoring parameters"
+  liquidityMonitoringParameters: LiquidityMonitoringParameters!
+  "Decimal places for order sizes, sets what size the smallest order / position on the market can be"
+  positionDecimalPlaces: Int!
   "Liquidity Provision order price range"
   lpPriceRange: String!
+  "Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume"
+  linearSlippageFactor: String!
+  "Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume"
+  quadraticSlippageFactor: String!
 }
 
 """
@@ -3594,56 +3647,10 @@ enum AuctionTrigger {
 enum BusEventType {
   "Vega Time has changed"
   TimeUpdate
-  "A balance has been transferred between accounts"
-  TransferResponses
-  "A position resolution event has occurred"
-  PositionResolution
-  "An order has been created or updated"
-  Order
-  "An account has been updated"
-  Account
-  "A party has been updated"
-  Party
-  "A trade has been created"
-  Trade
-  "Margin levels have changed for a position"
-  MarginLevels
-  "A governance proposal has been created or updated"
-  Proposal
-  "A vote has been placed on a governance proposal"
-  Vote
-  "Market data has been updated"
-  MarketData
-  "Validator node signatures for an event"
-  NodeSignature
-  "A position has been closed without sufficient insurance pool balance to cover it"
-  LossSocialization
-  "A position has been settled"
-  SettlePosition
-  "A distressed position has been settled"
-  SettleDistressed
-  "A new market has been created"
-  MarketCreated
-  "A market has been updated"
-  MarketUpdated
-  "An asset has been created or update"
-  Asset
-  "A market has progressed by one tick"
-  MarketTick
-  "A market has either entered or exited auction"
-  Auction
-  "A risk factor adjustment was made"
-  RiskFactor
-  "A liquidity commitment change occurred"
-  LiquidityProvision
   "Collateral has deposited in to this Vega network via the bridge"
   Deposit
   "Collateral has been withdrawn from this Vega network via the bridge"
   Withdrawal
-  "An oracle spec has been registered"
-  OracleSpec
-  "Constant for market events - mainly used for logging"
-  Market
   "The results from processing at transaction"
   TransactionResult
 }
@@ -3651,30 +3658,8 @@ enum BusEventType {
 "Union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
 union Event =
   TimeUpdate
-  | MarketEvent
-  | TransferResponses
-  | PositionResolution
-  | Order
-  | Trade
-  | AccountEvent
-  | Party
-  | MarginLevels
-  | Proposal
-  | Vote
-  | MarketData
-  | NodeSignature
-  | LossSocialization
-  | SettlePosition
-  | Market
-  | Asset
-  | MarketTick
-  | SettleDistressed
-  | AuctionEvent
-  | RiskFactor
   | Deposit
   | Withdrawal
-  | OracleSpec
-  | LiquidityProvision
   | TransactionResult
 
 type BusEvent {
@@ -3921,8 +3906,6 @@ type HistorySegment {
     fromHeight:       Int!
     "To block height of the history segment"
     toHeight: Int!
-    "Chain ID of the history segment"
-    chainID: String!
     "ID of the history segment"
     historySegmentId: String!
 }
@@ -4042,6 +4025,12 @@ type PositionEdge {
   node: Position!
     "The cursor for this position"
   cursor: String
+}
+
+"Filter to apply to the positions connection query"
+input PositionsFilter {
+  partyIds: [ID!]
+  marketIds: [ID!]
 }
 
 "Connection type for retrieving cursor-based paginated position information"

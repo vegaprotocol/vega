@@ -104,35 +104,42 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 		transactionTypeToPolicy: map[txn.Command]Policy{},
 	}
 
+	// simple policies
 	proposalPolicy := NewSimpleSpamPolicy("proposal", netparams.SpamProtectionMinTokensForProposal, netparams.SpamProtectionMaxProposals, log, accounting)
 	valJoinPolicy := NewSimpleSpamPolicy("validatorJoin", netparams.StakingAndDelegationRewardMinimumValidatorStake, "", log, accounting)
 	delegationPolicy := NewSimpleSpamPolicy("delegation", netparams.SpamProtectionMinTokensForDelegation, netparams.SpamProtectionMaxDelegations, log, accounting)
-	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, log, accounting)
 	transferPolicy := NewSimpleSpamPolicy("transfer", "", netparams.TransferMaxCommandsPerEpoch, log, accounting)
+	issuesSignaturesPolicy := NewSimpleSpamPolicy("issueSignature", netparams.SpamProtectionMinMultisigUpdates, "", log, accounting)
+
+	// complex policies
+	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, log, accounting)
 
 	voteKey := (&types.PayloadVoteSpamPolicy{}).Key()
 	e.policyNameToPolicy = map[string]Policy{
-		voteKey:                     votePolicy,
-		proposalPolicy.policyName:   proposalPolicy,
-		delegationPolicy.policyName: delegationPolicy,
-		transferPolicy.policyName:   transferPolicy,
-		valJoinPolicy.policyName:    valJoinPolicy,
+		proposalPolicy.policyName:         proposalPolicy,
+		valJoinPolicy.policyName:          valJoinPolicy,
+		delegationPolicy.policyName:       delegationPolicy,
+		transferPolicy.policyName:         transferPolicy,
+		issuesSignaturesPolicy.policyName: issuesSignaturesPolicy,
+		voteKey:                           votePolicy,
 	}
 	e.hashKeys = []string{
-		voteKey,
 		proposalPolicy.policyName,
+		valJoinPolicy.policyName,
 		delegationPolicy.policyName,
 		transferPolicy.policyName,
-		valJoinPolicy.policyName,
+		issuesSignaturesPolicy.policyName,
+		voteKey,
 	}
 
 	e.transactionTypeToPolicy[txn.ProposeCommand] = proposalPolicy
-	e.transactionTypeToPolicy[txn.VoteCommand] = votePolicy
+	e.transactionTypeToPolicy[txn.AnnounceNodeCommand] = valJoinPolicy
 	e.transactionTypeToPolicy[txn.DelegateCommand] = delegationPolicy
 	e.transactionTypeToPolicy[txn.UndelegateCommand] = delegationPolicy
 	e.transactionTypeToPolicy[txn.TransferFundsCommand] = transferPolicy
 	e.transactionTypeToPolicy[txn.CancelTransferFundsCommand] = transferPolicy
-	e.transactionTypeToPolicy[txn.AnnounceNodeCommand] = valJoinPolicy
+	e.transactionTypeToPolicy[txn.IssueSignatures] = issuesSignaturesPolicy
+	e.transactionTypeToPolicy[txn.VoteCommand] = votePolicy
 
 	// register for epoch end notifications
 	epochEngine.NotifyOnEpoch(e.OnEpochEvent, e.OnEpochRestore)
@@ -195,6 +202,12 @@ func (e *Engine) OnMaxTransfersChanged(_ context.Context, maxTransfers int64) er
 func (e *Engine) OnMinValidatorTokensChanged(_ context.Context, minTokens num.Decimal) error {
 	minTokensForJoiningValidator, _ := num.UintFromDecimal(minTokens)
 	return e.transactionTypeToPolicy[txn.AnnounceNodeCommand].UpdateUintParam(netparams.StakingAndDelegationRewardMinimumValidatorStake, minTokensForJoiningValidator)
+}
+
+// OnMinTokensForProposalChanged is called when the net param for min tokens requirement for submitting a proposal has changed.
+func (e *Engine) OnMinTokensForMultisigUpdatesChanged(ctx context.Context, minTokens num.Decimal) error {
+	minTokensForMultisigUpdates, _ := num.UintFromDecimal(minTokens)
+	return e.transactionTypeToPolicy[txn.IssueSignatures].UpdateUintParam(netparams.SpamProtectionMinMultisigUpdates, minTokensForMultisigUpdates)
 }
 
 // OnEpochEvent is a callback for epoch events.
@@ -270,6 +283,8 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.SpamStatistics {
 			stats.Transfers = policy.GetSpamStats(partyID)
 		case txn.AnnounceNodeCommand:
 			stats.NodeAnnouncements = policy.GetSpamStats(partyID)
+		case txn.IssueSignatures:
+			stats.IssueSignatures = policy.GetSpamStats(partyID)
 		case txn.VoteCommand:
 			stats.Votes = policy.GetVoteSpamStats(partyID)
 		default:

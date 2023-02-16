@@ -7,6 +7,7 @@ package mocks
 import (
 	reflect "reflect"
 
+	service "code.vegaprotocol.io/vega/wallet/service"
 	v1 "code.vegaprotocol.io/vega/wallet/service/v1"
 	gomock "github.com/golang/mock/gomock"
 )
@@ -32,6 +33,36 @@ func NewMockStore(ctrl *gomock.Controller) *MockStore {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
+}
+
+// ConfigExists mocks base method.
+func (m *MockStore) ConfigExists() (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConfigExists")
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConfigExists indicates an expected call of ConfigExists.
+func (mr *MockStoreMockRecorder) ConfigExists() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigExists", reflect.TypeOf((*MockStore)(nil).ConfigExists))
+}
+
+// GetConfig mocks base method.
+func (m *MockStore) GetConfig() (*service.Config, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfig")
+	ret0, _ := ret[0].(*service.Config)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetConfig indicates an expected call of GetConfig.
+func (mr *MockStoreMockRecorder) GetConfig() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockStore)(nil).GetConfig))
 }
 
 // GetRsaKeys mocks base method.
@@ -62,6 +93,20 @@ func (m *MockStore) RSAKeysExists() (bool, error) {
 func (mr *MockStoreMockRecorder) RSAKeysExists() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RSAKeysExists", reflect.TypeOf((*MockStore)(nil).RSAKeysExists))
+}
+
+// SaveConfig mocks base method.
+func (m *MockStore) SaveConfig(arg0 *service.Config) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveConfig", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveConfig indicates an expected call of SaveConfig.
+func (mr *MockStoreMockRecorder) SaveConfig(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveConfig", reflect.TypeOf((*MockStore)(nil).SaveConfig), arg0)
 }
 
 // SaveRSAKeys mocks base method.

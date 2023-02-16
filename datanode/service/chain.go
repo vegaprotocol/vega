@@ -18,7 +18,6 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 )
 
 type ChainStore interface {
@@ -29,14 +28,12 @@ type ChainStore interface {
 type Chain struct {
 	store ChainStore
 	chain *entities.Chain
-	log   *logging.Logger
 	mu    sync.Mutex
 }
 
-func NewChain(store ChainStore, log *logging.Logger) *Chain {
+func NewChain(store ChainStore) *Chain {
 	return &Chain{
 		store: store,
-		log:   log,
 	}
 }
 

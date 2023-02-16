@@ -53,6 +53,7 @@ jobs:
           cp -r vega/protos/generated/* "documentation/specs/${ref}/"
           cp "vega/datanode/gateway/graphql/schema.graphql" "documentation/specs/${ref}/datanode-schema.graphql"
           cp "vega/wallet/api/openrpc.json" "documentation/specs/${ref}/wallet/api/openrpc.json"
+          cp "vega/wallet/service/openapi.json" "documentation/specs/${ref}/wallet/api/wallet.openapi.json"
           cd documentation
           git config --global user.email "vega-ci-bot@vega.xyz"
           git config --global user.name "vega-ci-bot"

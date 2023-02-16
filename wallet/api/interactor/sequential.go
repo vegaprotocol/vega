@@ -65,7 +65,7 @@ func (i *SequentialInteractor) NotifyError(ctx context.Context, traceID string, 
 	}
 }
 
-func (i *SequentialInteractor) NotifySuccessfulTransaction(ctx context.Context, traceID, txHash, deserializedInputData, tx string, sentAt time.Time) {
+func (i *SequentialInteractor) NotifySuccessfulTransaction(ctx context.Context, traceID, txHash, deserializedInputData, tx string, sentAt time.Time, host string) {
 	if err := ctx.Err(); err != nil {
 		return
 	}
@@ -78,11 +78,14 @@ func (i *SequentialInteractor) NotifySuccessfulTransaction(ctx context.Context, 
 			TxHash:                txHash,
 			Tx:                    tx,
 			SentAt:                sentAt,
+			Node: SelectedNode{
+				Host: host,
+			},
 		},
 	}
 }
 
-func (i *SequentialInteractor) NotifyFailedTransaction(ctx context.Context, traceID, deserializedInputData, tx string, err error, sentAt time.Time) {
+func (i *SequentialInteractor) NotifyFailedTransaction(ctx context.Context, traceID, deserializedInputData, tx string, err error, sentAt time.Time, host string) {
 	if err := ctx.Err(); err != nil {
 		return
 	}
@@ -95,6 +98,9 @@ func (i *SequentialInteractor) NotifyFailedTransaction(ctx context.Context, trac
 			Tx:                    tx,
 			Error:                 err,
 			SentAt:                sentAt,
+			Node: SelectedNode{
+				Host: host,
+			},
 		},
 	}
 }
@@ -314,7 +320,7 @@ func (i *SequentialInteractor) waitForResponse(ctx context.Context, traceID stri
 	}
 
 	if response.Name == CancelRequestName {
-		return Interaction{}, api.ErrUserCanceledTheRequest
+		return Interaction{}, api.ErrUserCancelledTheRequest
 	}
 
 	if response.Name != expectedResponseName {

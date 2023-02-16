@@ -15,11 +15,13 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	"github.com/georgysavva/scany/pgxscan"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	"github.com/georgysavva/scany/pgxscan"
 )
 
 type Rewards struct {
@@ -69,10 +71,14 @@ func (rs *Rewards) GetAll(ctx context.Context) ([]entities.Reward, error) {
 func (rs *Rewards) GetByCursor(ctx context.Context,
 	partyIDHex *string,
 	assetIDHex *string,
+	fromEpoch *uint64,
+	toEpoch *uint64,
 	pagination entities.CursorPagination,
 ) ([]entities.Reward, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
-	query, args := selectRewards(partyIDHex, assetIDHex)
+	query := `SELECT * from rewards`
+	args := []interface{}{}
+	query, args = addRewardWhereClause(query, args, partyIDHex, assetIDHex, fromEpoch, toEpoch)
 
 	query, args, err := PaginateQuery[entities.RewardCursor](query, args, rewardsOrdering, pagination)
 	if err != nil {
@@ -88,39 +94,12 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 	return rewards, pageInfo, nil
 }
 
-func (rs *Rewards) GetByOffset(ctx context.Context,
-	partyIDHex *string,
-	assetIDHex *string,
-	pagination *entities.OffsetPagination,
-) ([]entities.Reward, error) {
-	query, args := selectRewards(partyIDHex, assetIDHex)
-
-	if pagination != nil {
-		orderCols := []string{"epoch_id", "party_id", "asset_id"}
-		query, args = orderAndPaginateQuery(query, orderCols, *pagination, args...)
-	}
-
-	rewards := []entities.Reward{}
-	defer metrics.StartSQLQuery("Rewards", "Get")()
-	if err := pgxscan.Select(ctx, rs.Connection, &rewards, query, args...); err != nil {
-		return nil, fmt.Errorf("querying rewards: %w", err)
-	}
-	return rewards, nil
-}
-
-func selectRewards(partyIDHex, assetIDHex *string) (string, []interface{}) {
-	query := `SELECT * from rewards`
-	args := []interface{}{}
-	addRewardWhereClause(&query, &args, partyIDHex, assetIDHex)
-	return query, args
-}
-
 func (rs *Rewards) GetSummaries(ctx context.Context,
 	partyIDHex *string, assetIDHex *string,
 ) ([]entities.RewardSummary, error) {
 	query := `SELECT party_id, asset_id, sum(amount) as amount FROM rewards`
 	args := []interface{}{}
-	addRewardWhereClause(&query, &args, partyIDHex, assetIDHex)
+	query, args = addRewardWhereClause(query, args, partyIDHex, assetIDHex, nil, nil)
 	query = fmt.Sprintf("%s GROUP BY party_id, asset_id", query)
 
 	summaries := []entities.RewardSummary{}
@@ -134,67 +113,104 @@ func (rs *Rewards) GetSummaries(ctx context.Context,
 
 // GetEpochSummaries returns paged epoch reward summary aggregated by asset, market, and reward type for a given range of epochs.
 func (rs *Rewards) GetEpochSummaries(ctx context.Context,
-	fromEpoch *uint64,
-	toEpoch *uint64,
+	filter entities.RewardSummaryFilter,
 	pagination entities.CursorPagination,
 ) ([]entities.EpochRewardSummary, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
-	query := `SELECT epoch_id, asset_id, market_id, reward_type, sum(amount) as amount FROM rewards`
-
-	if fromEpoch != nil && toEpoch != nil {
-		query = fmt.Sprintf("%s WHERE epoch_id >=%s and epoch_id<=%s", query, "$1", "$2")
-	} else if fromEpoch != nil {
-		query = fmt.Sprintf("%s WHERE epoch_id >=%s", query, "$1")
-	} else if toEpoch != nil {
-		query = fmt.Sprintf("%s WHERE epoch_id <=%s", query, "$1")
+	query := `SELECT epoch_id, asset_id, market_id, reward_type, sum(amount) as amount FROM rewards `
+	where, args, err := FilterRewardsQuery(filter)
+	if err != nil {
+		return nil, pageInfo, err
 	}
 
-	query = fmt.Sprintf("%s GROUP BY epoch_id, asset_id, market_id, reward_type", query)
-	var err error
+	query = fmt.Sprintf("%s %s GROUP BY epoch_id, asset_id, market_id, reward_type", query, where)
 	query, _, err = PaginateQuery[entities.EpochRewardSummaryCursor](query, []interface{}{}, rewardsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}
 
-	summaries := []entities.EpochRewardSummary{}
+	var summaries []entities.EpochRewardSummary
 	defer metrics.StartSQLQuery("Rewards", "GetEpochSummaries")()
 
-	if fromEpoch != nil && toEpoch != nil {
-		err = pgxscan.Select(ctx, rs.Connection, &summaries, query, fromEpoch, toEpoch)
-	} else if fromEpoch != nil {
-		err = pgxscan.Select(ctx, rs.Connection, &summaries, query, fromEpoch)
-	} else if toEpoch != nil {
-		err = pgxscan.Select(ctx, rs.Connection, &summaries, query, toEpoch)
-	} else {
-		err = pgxscan.Select(ctx, rs.Connection, &summaries, query)
-	}
-
-	if err != nil {
+	if err = pgxscan.Select(ctx, rs.Connection, &summaries, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("querying epoch reward summaries: %w", err)
 	}
 
 	summaries, pageInfo = entities.PageEntities[*v2.EpochRewardSummaryEdge](summaries, pagination)
-
 	return summaries, pageInfo, nil
 }
 
 // -------------------------------------------- Utility Methods
 
-func addRewardWhereClause(queryPtr *string, args *[]interface{}, partyIDHex, assetIDHex *string) {
-	query := *queryPtr
+func addRewardWhereClause(query string, args []interface{}, partyIDHex, assetIDHex *string, fromEpoch, toEpoch *uint64) (string, []interface{}) {
+	predicates := []string{}
+
 	if partyIDHex != nil && *partyIDHex != "" {
 		partyID := entities.PartyID(*partyIDHex)
-		query = fmt.Sprintf("%s WHERE party_id=%s", query, nextBindVar(args, partyID))
+		predicates = append(predicates, fmt.Sprintf("party_id = %s", nextBindVar(&args, partyID)))
 	}
 
 	if assetIDHex != nil && *assetIDHex != "" {
-		clause := "WHERE"
-		if partyIDHex != nil {
-			clause = "AND"
-		}
-
 		assetID := entities.AssetID(*assetIDHex)
-		query = fmt.Sprintf("%s %s asset_id=%s", query, clause, nextBindVar(args, assetID))
+		predicates = append(predicates, fmt.Sprintf("asset_id = %s", nextBindVar(&args, assetID)))
 	}
-	*queryPtr = query
+
+	if fromEpoch != nil {
+		predicates = append(predicates, fmt.Sprintf("epoch_id >= %s", nextBindVar(&args, *fromEpoch)))
+	}
+
+	if toEpoch != nil {
+		predicates = append(predicates, fmt.Sprintf("epoch_id <= %s", nextBindVar(&args, *toEpoch)))
+	}
+
+	if len(predicates) > 0 {
+		query = fmt.Sprintf("%s WHERE %s", query, strings.Join(predicates, " AND "))
+	}
+
+	return query, args
+}
+
+// FilterRewardsQuery returns a WHERE part of the query and args for filtering the rewards table.
+func FilterRewardsQuery(filter entities.RewardSummaryFilter) (string, []any, error) {
+	var (
+		args       []any
+		conditions []string
+	)
+
+	if len(filter.AssetIDs) > 0 {
+		assetIDs := make([][]byte, len(filter.AssetIDs))
+		for i, assetID := range filter.AssetIDs {
+			bytes, err := assetID.Bytes()
+			if err != nil {
+				return "", nil, fmt.Errorf("could not decode asset ID: %w", err)
+			}
+			assetIDs[i] = bytes
+		}
+		conditions = append(conditions, fmt.Sprintf("asset_id = ANY(%s)", nextBindVar(&args, assetIDs)))
+	}
+
+	if len(filter.MarketIDs) > 0 {
+		marketIDs := make([][]byte, len(filter.MarketIDs))
+		for i, marketID := range filter.MarketIDs {
+			bytes, err := marketID.Bytes()
+			if err != nil {
+				return "", nil, fmt.Errorf("could not decode market ID: %w", err)
+			}
+			marketIDs[i] = bytes
+		}
+		conditions = append(conditions, fmt.Sprintf("market_id = ANY(%s)", nextBindVar(&args, marketIDs)))
+	}
+
+	if filter.FromEpoch != nil {
+		conditions = append(conditions, fmt.Sprintf("epoch_id >= %s", nextBindVar(&args, filter.FromEpoch)))
+	}
+
+	if filter.ToEpoch != nil {
+		conditions = append(conditions, fmt.Sprintf("epoch_id <= %s", nextBindVar(&args, filter.ToEpoch)))
+	}
+
+	if len(conditions) == 0 {
+		return "", nil, nil
+	}
+	return " WHERE " + strings.Join(conditions, " AND "), args, nil
 }

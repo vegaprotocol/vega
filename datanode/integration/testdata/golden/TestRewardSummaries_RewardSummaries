@@ -1,0 +1,47 @@
+{
+	"TestName": "TestRewardSummaries_RewardSummaries",
+	"Query": "{ epochRewardSummaries(filter: { assetIds:[\"41498ab9aca53472efe12c37209689f755e30f681170cba3a5bd7012a1ef2001\"], marketIds:[\"\"], fromEpoch: 266, toEpoch: 276 }) { edges { node { epoch marketId assetId rewardType amount } } } }",
+	"Result": {
+		"epochRewardSummaries": {
+			"edges": [
+				{
+					"node": {
+						"amount": "960000000000000000",
+						"assetId": "41498ab9aca53472efe12c37209689f755e30f681170cba3a5bd7012a1ef2001",
+						"epoch": 276,
+						"marketId": "",
+						"rewardType": "ACCOUNT_TYPE_FEES_INFRASTRUCTURE"
+					}
+				},
+				{
+					"node": {
+						"amount": "4880000000000000000",
+						"assetId": "41498ab9aca53472efe12c37209689f755e30f681170cba3a5bd7012a1ef2001",
+						"epoch": 268,
+						"marketId": "",
+						"rewardType": "ACCOUNT_TYPE_FEES_INFRASTRUCTURE"
+					}
+				},
+				{
+					"node": {
+						"amount": "980000000000000000",
+						"assetId": "41498ab9aca53472efe12c37209689f755e30f681170cba3a5bd7012a1ef2001",
+						"epoch": 267,
+						"marketId": "",
+						"rewardType": "ACCOUNT_TYPE_FEES_INFRASTRUCTURE"
+					}
+				},
+				{
+					"node": {
+						"amount": "785600001949999999999",
+						"assetId": "41498ab9aca53472efe12c37209689f755e30f681170cba3a5bd7012a1ef2001",
+						"epoch": 266,
+						"marketId": "",
+						"rewardType": "ACCOUNT_TYPE_FEES_INFRASTRUCTURE"
+					}
+				}
+			]
+		}
+	},
+	"Duration": 9112500
+}

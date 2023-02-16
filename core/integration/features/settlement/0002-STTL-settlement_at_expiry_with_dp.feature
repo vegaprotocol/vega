@@ -43,9 +43,9 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | 0.2  | 0.1   | 10000000    | -10000000     | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | data source config | decimal places |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle     | 3              |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 2              |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | data source config | decimal places | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle     | 3              | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 2              | 1e6                    | 1e6                       |
 
   Scenario: Order cannot be placed once the market is expired (0002-STTL-001)
     Given the parties deposit on asset's general account the following amount:
@@ -88,7 +88,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | party1 | ETH/DEC19 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
 
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - no insurance taken (0002-STTL-002, 0002-STTL-007, 0005-COLL-002, 0015-INSR-002)
-    Given the initial insurance pool balance is "1000000000" for the markets:
+    Given the initial insurance pool balance is "1000000000" for all the markets
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount         |
       | party1   | ETH   | 1000000000     |
@@ -233,7 +233,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
 
   Scenario: Same as above, but the other market already terminated before the end of scenario, expecting 0 balances in per market insurance pools - all should go to per asset insurance pool (0002-STTL-additional-tests, 0005-COLL-002, 0015-INSR-002, 0032-PRIM-018)
 
-    Given the initial insurance pool balance is "1000000000" for the markets:
+    Given the initial insurance pool balance is "1000000000" for all the markets
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount         |
       | party1   | ETH   | 1000000000     |
@@ -365,7 +365,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the network treasury balance should be "2000000000" for the asset "ETH"
 
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - insurance covers losses (0002-STTL-008)
-    Given the initial insurance pool balance is "100000000" for the markets:
+    Given the initial insurance pool balance is "100000000" for all the markets
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount         |
       | party1   | ETH   | 1000000000     |
@@ -444,7 +444,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the insurance pool balance should be "104200000" for the market "ETH/DEC21"
 
   Scenario: Settlement happened when market is being closed - loss socialisation in action - insurance doesn't cover all losses (0002-STTL-009)
-    Given the initial insurance pool balance is "50000000" for the markets:
+    Given the initial insurance pool balance is "50000000" for all the markets
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount         |
       | party1   | ETH   | 1000000000     |
@@ -520,7 +520,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
 
   Scenario: Settlement happened when market is being closed whilst being suspended (due to protective auction) - loss socialisation in action - insurance doesn't covers all losses (0002-STTL-004, 0002-STTL-009)
 
-    Given the initial insurance pool balance is "50000000" for the markets:
+    Given the initial insurance pool balance is "50000000" for all the markets
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount         |
       | party1   | ETH   | 1000000000     |

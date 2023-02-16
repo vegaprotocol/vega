@@ -8,7 +8,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	store "code.vegaprotocol.io/vega/datanode/networkhistory/store"
+	networkhistory "code.vegaprotocol.io/vega/datanode/networkhistory"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -50,10 +50,10 @@ func (mr *MockNetworkHistoryServiceMockRecorder) CopyHistorySegmentToFile(arg0, 
 }
 
 // FetchHistorySegment mocks base method.
-func (m *MockNetworkHistoryService) FetchHistorySegment(arg0 context.Context, arg1 string) (store.SegmentIndexEntry, error) {
+func (m *MockNetworkHistoryService) FetchHistorySegment(arg0 context.Context, arg1 string) (networkhistory.Segment, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchHistorySegment", arg0, arg1)
-	ret0, _ := ret[0].(store.SegmentIndexEntry)
+	ret0, _ := ret[0].(networkhistory.Segment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -64,25 +64,54 @@ func (mr *MockNetworkHistoryServiceMockRecorder) FetchHistorySegment(arg0, arg1 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchHistorySegment", reflect.TypeOf((*MockNetworkHistoryService)(nil).FetchHistorySegment), arg0, arg1)
 }
 
-// GetActivePeerAddresses mocks base method.
-func (m *MockNetworkHistoryService) GetActivePeerAddresses() []string {
+// GetActivePeerIPAddresses mocks base method.
+func (m *MockNetworkHistoryService) GetActivePeerIPAddresses() []string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetActivePeerAddresses")
+	ret := m.ctrl.Call(m, "GetActivePeerIPAddresses")
 	ret0, _ := ret[0].([]string)
 	return ret0
 }
 
-// GetActivePeerAddresses indicates an expected call of GetActivePeerAddresses.
-func (mr *MockNetworkHistoryServiceMockRecorder) GetActivePeerAddresses() *gomock.Call {
+// GetActivePeerIPAddresses indicates an expected call of GetActivePeerIPAddresses.
+func (mr *MockNetworkHistoryServiceMockRecorder) GetActivePeerIPAddresses() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActivePeerAddresses", reflect.TypeOf((*MockNetworkHistoryService)(nil).GetActivePeerAddresses))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActivePeerIPAddresses", reflect.TypeOf((*MockNetworkHistoryService)(nil).GetActivePeerIPAddresses))
+}
+
+// GetBootstrapPeers mocks base method.
+func (m *MockNetworkHistoryService) GetBootstrapPeers() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBootstrapPeers")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetBootstrapPeers indicates an expected call of GetBootstrapPeers.
+func (mr *MockNetworkHistoryServiceMockRecorder) GetBootstrapPeers() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBootstrapPeers", reflect.TypeOf((*MockNetworkHistoryService)(nil).GetBootstrapPeers))
+}
+
+// GetConnectedPeerAddresses mocks base method.
+func (m *MockNetworkHistoryService) GetConnectedPeerAddresses() ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConnectedPeerAddresses")
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetConnectedPeerAddresses indicates an expected call of GetConnectedPeerAddresses.
+func (mr *MockNetworkHistoryServiceMockRecorder) GetConnectedPeerAddresses() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConnectedPeerAddresses", reflect.TypeOf((*MockNetworkHistoryService)(nil).GetConnectedPeerAddresses))
 }
 
 // GetHighestBlockHeightHistorySegment mocks base method.
-func (m *MockNetworkHistoryService) GetHighestBlockHeightHistorySegment() (store.SegmentIndexEntry, error) {
+func (m *MockNetworkHistoryService) GetHighestBlockHeightHistorySegment() (networkhistory.Segment, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHighestBlockHeightHistorySegment")
-	ret0, _ := ret[0].(store.SegmentIndexEntry)
+	ret0, _ := ret[0].(networkhistory.Segment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -91,6 +120,21 @@ func (m *MockNetworkHistoryService) GetHighestBlockHeightHistorySegment() (store
 func (mr *MockNetworkHistoryServiceMockRecorder) GetHighestBlockHeightHistorySegment() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHighestBlockHeightHistorySegment", reflect.TypeOf((*MockNetworkHistoryService)(nil).GetHighestBlockHeightHistorySegment))
+}
+
+// GetIpfsAddress mocks base method.
+func (m *MockNetworkHistoryService) GetIpfsAddress() (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIpfsAddress")
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetIpfsAddress indicates an expected call of GetIpfsAddress.
+func (mr *MockNetworkHistoryServiceMockRecorder) GetIpfsAddress() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIpfsAddress", reflect.TypeOf((*MockNetworkHistoryService)(nil).GetIpfsAddress))
 }
 
 // GetSwarmKey mocks base method.
@@ -107,11 +151,25 @@ func (mr *MockNetworkHistoryServiceMockRecorder) GetSwarmKey() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSwarmKey", reflect.TypeOf((*MockNetworkHistoryService)(nil).GetSwarmKey))
 }
 
+// GetSwarmKeySeed mocks base method.
+func (m *MockNetworkHistoryService) GetSwarmKeySeed() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSwarmKeySeed")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetSwarmKeySeed indicates an expected call of GetSwarmKeySeed.
+func (mr *MockNetworkHistoryServiceMockRecorder) GetSwarmKeySeed() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSwarmKeySeed", reflect.TypeOf((*MockNetworkHistoryService)(nil).GetSwarmKeySeed))
+}
+
 // ListAllHistorySegments mocks base method.
-func (m *MockNetworkHistoryService) ListAllHistorySegments() ([]store.SegmentIndexEntry, error) {
+func (m *MockNetworkHistoryService) ListAllHistorySegments() ([]networkhistory.Segment, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListAllHistorySegments")
-	ret0, _ := ret[0].([]store.SegmentIndexEntry)
+	ret0, _ := ret[0].([]networkhistory.Segment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

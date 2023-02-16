@@ -627,6 +627,8 @@ type Market struct {
 	PriceMonitoringSettings       *PriceMonitoringSettings
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
 	LPPriceRange                  num.Decimal
+	LinearSlippageFactor          num.Decimal
+	QuadraticSlippageFactor       num.Decimal
 
 	TradingMode      MarketTradingMode
 	State            MarketState
@@ -637,6 +639,8 @@ type Market struct {
 func MarketFromProto(mkt *proto.Market) (*Market, error) {
 	asset, _ := mkt.GetAsset()
 	lppr, _ := num.DecimalFromString(mkt.LpPriceRange)
+	linearSlippageFactor, _ := num.DecimalFromString(mkt.LinearSlippageFactor)
+	quadraticSlippageFactor, _ := num.DecimalFromString(mkt.QuadraticSlippageFactor)
 	liquidityParameters, err := LiquidityMonitoringParametersFromProto(mkt.LiquidityMonitoringParameters)
 	if err != nil {
 		return nil, err
@@ -656,6 +660,8 @@ func MarketFromProto(mkt *proto.Market) (*Market, error) {
 		MarketTimestamps:              MarketTimestampsFromProto(mkt.MarketTimestamps),
 		asset:                         asset,
 		LPPriceRange:                  lppr,
+		LinearSlippageFactor:          linearSlippageFactor,
+		QuadraticSlippageFactor:       quadraticSlippageFactor,
 	}
 	return m, nil
 }
@@ -700,6 +706,8 @@ func (m Market) IntoProto() *proto.Market {
 		State:                         m.State,
 		MarketTimestamps:              mktTS,
 		LpPriceRange:                  m.LPPriceRange.String(),
+		LinearSlippageFactor:          m.LinearSlippageFactor.String(),
+		QuadraticSlippageFactor:       m.QuadraticSlippageFactor.String(),
 	}
 	return r
 }
@@ -756,13 +764,15 @@ func (m Market) String() string {
 
 func (m Market) DeepClone() *Market {
 	cpy := &Market{
-		ID:                    m.ID,
-		DecimalPlaces:         m.DecimalPlaces,
-		PositionDecimalPlaces: m.PositionDecimalPlaces,
-		TradingMode:           m.TradingMode,
-		State:                 m.State,
-		asset:                 m.asset,
-		LPPriceRange:          m.LPPriceRange,
+		ID:                      m.ID,
+		DecimalPlaces:           m.DecimalPlaces,
+		PositionDecimalPlaces:   m.PositionDecimalPlaces,
+		TradingMode:             m.TradingMode,
+		State:                   m.State,
+		asset:                   m.asset,
+		LPPriceRange:            m.LPPriceRange,
+		LinearSlippageFactor:    m.LinearSlippageFactor,
+		QuadraticSlippageFactor: m.QuadraticSlippageFactor,
 	}
 
 	if m.TradableInstrument != nil {

@@ -15,10 +15,8 @@ package integration_test
 import "testing"
 
 func TestERC20WithdrawalApproval(t *testing.T) {
-	t.Skip("missing data")
-
 	queries := map[string]string{
-		"ERC20WithdrawalApproval": `{ erc20WithdrawalApproval(withdrawalId: "GIMME_AN_ID"){ assetSource amount nonce signatures targetAddress } }`,
+		"ERC20WithdrawalApproval": `{ erc20WithdrawalApproval(withdrawalId: "7EB9B511E4DA3397DFC2A71D05A1A0DD4CC1782AA5080D4FE30C2EC1E31622E6"){ assetSource amount nonce signatures targetAddress } }`,
 	}
 
 	for name, query := range queries {

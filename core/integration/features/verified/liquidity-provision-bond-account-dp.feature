@@ -21,8 +21,8 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
       | market.liquidity.bondPenaltyParameter         | 0.1   |
       | market.liquidity.targetstake.triggering.ratio | 0.24  |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 2                       |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 2                       | 1e6                    | 1e6                       |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party0 | USD   | 500000    |
@@ -33,7 +33,7 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-    @Now
+  @Now
   Scenario: Bond slashing on LP (0044-LIME-002, 0035-LIQM-004, 0044-LIME-009 )
 
     Given the average block duration is "1"
@@ -74,14 +74,14 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 209146 | 240854   | 50000 |
-      | party1 | USD   | ETH/MAR22 | 11425  | 99988575 | 0     |
-      | party2 | USD   | ETH/MAR22 | 51688  | 99948312 | 0     |
+      | party1 | USD   | ETH/MAR22 | 11425  | 99988575 |       |
+      | party2 | USD   | ETH/MAR22 | 51688  | 99948312 |       |
     #check the margin levels
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | party0 | ETH/MAR22 | 174289      | 191717 | 209146  | 244004  |
-      | party1 | ETH/MAR22 | 10159       | 11174  | 12190   | 14222   |
-      | party2 | ETH/MAR22 | 43233       | 47556  | 51879   | 60526   |
+      | party  | market id | maintenance | initial |
+      | party0 | ETH/MAR22 | 174289      | 209146  |
+      | party1 | ETH/MAR22 | 9889        | 11866   |
+      | party2 | ETH/MAR22 | 42963       | 51555   |
     #check position (party0 has no position)
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
@@ -106,8 +106,8 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 209146 | 240854   | 50000 |
-      | party1 | USD   | ETH/MAR22 | 11425  | 99988575 | 0     |
-      | party2 | USD   | ETH/MAR22 | 264970 | 99734880 | 0     |
+      | party1 | USD   | ETH/MAR22 | 11425  | 99988575 |       |
+      | party2 | USD   | ETH/MAR22 | 264970 | 99734880 |       |
 
     And the insurance pool balance should be "0" for the market "ETH/MAR22"
 
@@ -130,9 +130,9 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 467474 | 2278     | 28537 |
-      | party1 | USD   | ETH/MAR22 | 107954 | 99891646 | 0     |
-      | party2 | USD   | ETH/MAR22 | 264970 | 99734960 | 0     |
-      | party3 | USD   | ETH/MAR22 | 28826  | 99971294 | 0     |
+      | party1 | USD   | ETH/MAR22 | 107954 | 99891646 |       |
+      | party2 | USD   | ETH/MAR22 | 264970 | 99734960 |       |
+      | party3 | USD   | ETH/MAR22 | 28826  | 99971294 |       |
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
@@ -145,5 +145,5 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     # open interest updates to include buy order of size 20
     And the market data for the market "ETH/MAR22" should be:
       | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 426828       | 50000          | 120            |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 426828       | 50000          | 120           |
 

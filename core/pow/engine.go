@@ -619,7 +619,10 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 						partyState.observedDifficulty,
 						params.spamPoWIncreasingDifficulty,
 					),
-					HashFunction: params.spamPoWHashFunction,
+					IncreasingDifficulty: params.spamPoWIncreasingDifficulty,
+					TxPerBlock:           params.spamPoWNumberOfTxPerBlock,
+					HashFunction:         params.spamPoWHashFunction,
+					Difficulty:           uint64(params.spamPoWDifficulty),
 				})
 			}
 		}
@@ -630,11 +633,14 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 		params := getParamsForBlock(e.currentBlock, e.activeParams)
 		expected := uint64(params.spamPoWDifficulty)
 		stats = append(stats, &protoapi.PoWBlockState{
-			BlockHeight:        e.currentBlock,
-			BlockHash:          e.blockHash[e.currentBlock%ringSize],
-			TransactionsSeen:   0,
-			ExpectedDifficulty: &expected,
-			HashFunction:       params.spamPoWHashFunction,
+			BlockHeight:          e.currentBlock,
+			BlockHash:            e.blockHash[e.currentBlock%ringSize],
+			TransactionsSeen:     0,
+			ExpectedDifficulty:   &expected,
+			HashFunction:         params.spamPoWHashFunction,
+			IncreasingDifficulty: params.spamPoWIncreasingDifficulty,
+			TxPerBlock:           params.spamPoWNumberOfTxPerBlock,
+			Difficulty:           uint64(params.spamPoWDifficulty),
 		})
 	}
 
@@ -648,8 +654,9 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 	}
 
 	return &protoapi.PoWStatistic{
-		BlockStates: stats,
-		BannedUntil: bannedUntil,
+		BlockStates:        stats,
+		BannedUntil:        bannedUntil,
+		NumberOfPastBlocks: e.getActiveParams().spamPoWNumberOfPastBlocks,
 	}
 }
 

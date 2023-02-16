@@ -6,10 +6,11 @@ import (
 	"os"
 	"sort"
 
+	"code.vegaprotocol.io/vega/datanode/networkhistory"
+
 	"github.com/jackc/pgx/v4/pgxpool"
 
 	coreConfig "code.vegaprotocol.io/vega/core/config"
-	"code.vegaprotocol.io/vega/datanode/networkhistory/aggregation"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/paths"
@@ -24,34 +25,46 @@ type showCmd struct {
 	config.VegaHomeFlag
 	config.Config
 	coreConfig.OutputFlag
+
+	AllSegments bool `short:"s" long:"segments" description:"show all segments for each contiguous history"`
 }
 
 type showOutput struct {
-	Segments                   []*v2.HistorySegment
-	AvailableHistoryBlockStart int64
-	AvailableHistoryBlockEnd   int64
-	LocalHistoryBlockStart     int64
-	LocalHistoryBlockEnd       int64
+	Segments            []*v2.HistorySegment
+	ContiguousHistories []*networkhistory.ContiguousHistory
+	DataNodeBlockStart  int64
+	DataNodeBlockEnd    int64
 }
 
-func (o *showOutput) printHuman() {
-	fmt.Printf("All Network History Segments:\n\n")
-	for _, segment := range o.Segments {
-		fmt.Printf("%s\n", segment)
-	}
+func (o *showOutput) printHuman(allSegments bool) {
+	if len(o.ContiguousHistories) > 0 {
+		fmt.Printf("Available contiguous history spans:")
+		for _, contiguousHistory := range o.ContiguousHistories {
+			fmt.Printf("\n\nContiguous history from block height %d to %d, from segment id: %s to %s\n",
+				contiguousHistory.HeightFrom,
+				contiguousHistory.HeightTo,
+				contiguousHistory.SegmentsOldestFirst[0].GetHistorySegmentId(),
+				contiguousHistory.SegmentsOldestFirst[len(contiguousHistory.SegmentsOldestFirst)-1].GetHistorySegmentId(),
+			)
 
-	if o.AvailableHistoryBlockEnd > 0 {
-		fmt.Printf("\nAvailable contiguous network history spans block %d to %d\n",
-			o.AvailableHistoryBlockStart,
-			o.AvailableHistoryBlockEnd)
+			if allSegments {
+				for _, segment := range contiguousHistory.SegmentsOldestFirst {
+					fmt.Printf("\n%d to %d, id: %s, previous segment id: %s",
+						segment.GetFromHeight(),
+						segment.GetToHeight(),
+						segment.GetHistorySegmentId(),
+						segment.GetPreviousHistorySegmentId())
+				}
+			}
+		}
 	} else {
 		fmt.Printf("\nNo network history is available.  Use the fetch command to fetch network history\n")
 	}
 
-	if o.LocalHistoryBlockEnd > 0 {
-		fmt.Printf("\nDatanode currently has data from block height %d to %d\n", o.LocalHistoryBlockStart, o.LocalHistoryBlockEnd)
+	if o.DataNodeBlockEnd > 0 {
+		fmt.Printf("\n\nDatanode currently has data from block height %d to %d\n", o.DataNodeBlockStart, o.DataNodeBlockEnd)
 	} else {
-		fmt.Printf("\nDatanode contains no data\n")
+		fmt.Printf("\n\nDatanode contains no data\n")
 	}
 }
 
@@ -99,12 +112,7 @@ func (cmd *showCmd) Execute(_ []string) error {
 		return output.Segments[i].ToHeight < output.Segments[j].ToHeight
 	})
 
-	contiguousHistory := GetHighestContiguousHistoryFromHistorySegments(output.Segments)
-
-	if contiguousHistory != nil {
-		output.AvailableHistoryBlockStart = contiguousHistory[0].HeightFrom
-		output.AvailableHistoryBlockEnd = contiguousHistory[len(contiguousHistory)-1].HeightTo
-	}
+	output.ContiguousHistories = networkhistory.GetContiguousHistories(response.Segments)
 
 	pool, err := getCommandConnPool(cmd.Config.SQLStore.ConnectionConfig)
 	if err != nil {
@@ -119,8 +127,8 @@ func (cmd *showCmd) Execute(_ []string) error {
 	}
 
 	if span.HasData {
-		output.LocalHistoryBlockStart = span.FromHeight
-		output.LocalHistoryBlockEnd = span.ToHeight
+		output.DataNodeBlockStart = span.FromHeight
+		output.DataNodeBlockEnd = span.ToHeight
 	}
 
 	if cmd.Output.IsJSON() {
@@ -129,7 +137,7 @@ func (cmd *showCmd) Execute(_ []string) error {
 			os.Exit(1)
 		}
 	} else {
-		output.printHuman()
+		output.printHuman(cmd.AllSegments)
 	}
 
 	return nil
@@ -144,17 +152,4 @@ func getCommandConnPool(conf sqlstore.ConnectionConfig) (*pgxpool.Pool, error) {
 	}
 
 	return connPool, nil
-}
-
-func GetHighestContiguousHistoryFromHistorySegments(histories []*v2.HistorySegment) []aggregation.AggregatedHistorySegment {
-	aggHistory := make([]aggregation.AggregatedHistorySegment, 0, 10)
-	for _, history := range histories {
-		aggHistory = append(aggHistory, aggregation.AggregatedHistorySegment{
-			HeightFrom: history.FromHeight,
-			HeightTo:   history.ToHeight,
-			ChainID:    history.ChainId,
-		})
-	}
-
-	return aggregation.GetHighestContiguousHistory(aggHistory)
 }

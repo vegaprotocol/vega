@@ -16,9 +16,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"code.vegaprotocol.io/vega/libs/subscribers"
 
 	"code.vegaprotocol.io/vega/datanode/admin"
 
@@ -33,7 +36,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -99,6 +101,7 @@ func (l *NodeCommand) Stop() {
 func (l *NodeCommand) runNode([]string) error {
 	defer l.cancel()
 
+	nodeLog := l.Log.Named("start.runNode")
 	ctx, cancel := context.WithCancel(l.ctx)
 	eg, ctx := errgroup.WithContext(ctx)
 
@@ -120,7 +123,12 @@ func (l *NodeCommand) runNode([]string) error {
 	eg.Go(func() error { return grpcServer.Start(ctx, nil) })
 
 	// start the admin server
-	eg.Go(func() error { return adminServer.Start(ctx) })
+	eg.Go(func() error {
+		if err := adminServer.Start(ctx); err != nil && err != http.ErrServerClosed {
+			return err
+		}
+		return nil
+	})
 
 	// start gateway
 	if l.conf.GatewayEnabled {
@@ -143,7 +151,7 @@ func (l *NodeCommand) runNode([]string) error {
 
 		select {
 		case sig := <-gracefulStop:
-			l.Log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
+			nodeLog.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
 			cancel()
 		case <-ctx.Done():
 			return ctx.Err()
@@ -153,7 +161,7 @@ func (l *NodeCommand) runNode([]string) error {
 
 	metrics.Start(l.conf.Metrics)
 
-	l.Log.Info("Vega data node startup complete")
+	nodeLog.Info("Vega data node startup complete")
 
 	err := eg.Wait()
 

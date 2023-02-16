@@ -32,12 +32,13 @@ type SignMessageHandler func(api.AdminSignMessageParams) (api.AdminSignMessageRe
 
 func NewCmdSignMessage(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminSignMessageParams) (api.AdminSignMessageResult, error) {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return api.AdminSignMessageResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		signMessage := api.NewAdminSignMessage(s)
+		signMessage := api.NewAdminSignMessage(walletStore)
 		rawResult, errorDetails := signMessage.Handle(context.Background(), params)
 		if errorDetails != nil {
 			return api.AdminSignMessageResult{}, errors.New(errorDetails.Data)
@@ -156,5 +157,5 @@ func PrintSignMessageResponse(w io.Writer, req api.AdminSignMessageResult) {
 
 	str.BlueArrow().InfoText("Sign a message").NextLine()
 	str.Text("To verify a message, see the following command:").NextSection()
-	str.Code(fmt.Sprintf("%s verify --help", os.Args[0])).NextSection()
+	str.Code(fmt.Sprintf("%s verify --help", os.Args[0])).NextLine()
 }

@@ -206,6 +206,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 		feeConfig        = fee.NewDefaultConfig()
 		liquidityConfig  = liquidity.NewDefaultConfig()
 	)
+	positionConfig.StreamPositionVerbose = true
 
 	oracleEngine := oracles.NewEngine(tm.log, oracles.NewDefaultConfig(), tm.timeService, tm.broker)
 
@@ -574,7 +575,9 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 			},
 			TriggeringRatio: num.DecimalZero(),
 		},
-		LPPriceRange: num.DecimalFromFloat(lpRange),
+		LPPriceRange:            num.DecimalFromFloat(lpRange),
+		LinearSlippageFactor:    num.DecimalFromFloat(0.1),
+		QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 	}
 
 	return mkt

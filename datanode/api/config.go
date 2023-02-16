@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
+	"code.vegaprotocol.io/vega/datanode/ratelimit"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -35,6 +36,7 @@ type Config struct {
 	StreamRetries    int               `long:"stream-retries"`
 	CoreNodeIP       string            `long:"core-node-ip"`
 	CoreNodeGRPCPort int               `long:"core-node-grpc-port"`
+	RateLimit        ratelimit.Config  `group:"rate-limits"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -52,5 +54,6 @@ func NewDefaultConfig() Config {
 		StreamRetries:    3,
 		CoreNodeIP:       "127.0.0.1",
 		CoreNodeGRPCPort: 3002,
+		RateLimit:        ratelimit.NewDefaultConfig(),
 	}
 }

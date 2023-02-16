@@ -3,12 +3,12 @@ Feature: Set up a market, create indiciative price different to actual opening a
   Background:
 
     Given the markets:
-      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config          |
-      | ETH/DEC19 | BTC        | BTC   | default-log-normal-risk-model | default-margin-calculator | 8                | default-none | default-basic    | default-eth-for-future |
+      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | BTC        | BTC   | default-log-normal-risk-model | default-margin-calculator | 8                | default-none | default-basic    | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
-      | name                               | value |
-      | market.auction.minimumDuration     | 8     |
-      #| network.floatingPointUpdates.delay | 30s   |
+      | name                           | value |
+      | market.auction.minimumDuration | 8     |
+  #| network.floatingPointUpdates.delay | 30s   |
 
   @IPOTest
   Scenario: Simple test with different indicative price before auction uncross
@@ -68,10 +68,10 @@ Feature: Set up a market, create indiciative price different to actual opening a
     ## We're seeing these events twice for some reason
     Then debug trades
     Then the following trades should be executed:
-      | buyer   | price | size | seller |
-      | party1  | 10000 | 3    | party2 |
-      | party1  | 10000 | 2    | party2 |
-      | party1  | 10000 | 3    | party2 |
+      | buyer  | price | size | seller |
+      | party1 | 10000 | 3    | party2 |
+      | party1 | 10000 | 2    | party2 |
+      | party1 | 10000 | 3    | party2 |
     And the mark price should be "10000" for the market "ETH/DEC19"
     ## Network for distressed party1 -> cancelled, nothing on the book is remaining
     And the orders should have the following status:
@@ -84,7 +84,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party2 | t2-s-3    | STATUS_FILLED    |
       | party5 | t5-s-1    | STATUS_CANCELLED |
       | party6 | t6-b-1    | STATUS_CANCELLED |
-      #| party6 | t6-b-1    | STATUS_FILLED    |
+    #| party6 | t6-b-1    | STATUS_FILLED    |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
       | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9985      | 10015     | 10000     |
