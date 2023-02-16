@@ -14,11 +14,15 @@ package core_test
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"regexp"
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/integration/helpers"
 	"code.vegaprotocol.io/vega/core/integration/steps"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
@@ -32,6 +36,8 @@ var (
 	}
 
 	features string
+
+	expectingEventsOverStepText = `there were "([0-9]+)" events emitted over the last step`
 )
 
 func init() {
@@ -59,21 +65,32 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.BeforeScenario(func(*godog.Scenario) {
 		execsetup = newExecutionTestSetup()
 	})
-	s.BeforeStep(func(step *godog.Step) {
-		// no need to do anything here, the framework will take care of error reporting
-	})
-	s.AfterStep(func(step *godog.Step, err error) {
-		// no need to do anything here, the framework will take care of error reporting
-	})
-	s.AfterScenario(func(s *godog.Scenario, err error) {
-		if err != nil {
-			return
+	s.StepContext().Before(func(ctx context.Context, st *godog.Step) (context.Context, error) {
+		// record accounts before step
+		execsetup.accountsBefore = execsetup.broker.GetAccounts()
+		execsetup.ledgerMovementsBefore = len(execsetup.broker.GetTransfers(false))
+		execsetup.insurancePoolDepositsOverStep = make(map[string]*num.Int)
+
+		// don't record events before step if it's the step that's meant to assess number of events over a regular step
+		if b, _ := regexp.MatchString(expectingEventsOverStepText, st.Text); !b {
+			execsetup.eventsBefore = len(execsetup.broker.GetAllEvents())
 		}
+
+		return ctx, nil
+	})
+	s.StepContext().After(func(ctx context.Context, st *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
+		aerr := reconcileAccounts()
+		if aerr != nil {
+			aerr = fmt.Errorf("failed to reconcile account balance changes over the last step from emitted events: %v", aerr)
+		}
+		return ctx, aerr
+	})
+	s.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
 		berr := steps.TheCumulatedBalanceForAllAccountsShouldBeWorth(execsetup.broker, execsetup.netDeposits.String())
 		if berr != nil {
-			reporter.scenario = s.Name
-			reporter.Fatalf("\n\nError at scenario end (testing net deposits/withdrawals against cumulated balance for all accounts): %v\n\n", berr)
+			berr = fmt.Errorf("error at scenario end (testing net deposits/withdrawals against cumulated balance for all accounts): %v", berr)
 		}
+		return ctx, berr
 	})
 
 	// delegation/validator steps
@@ -87,10 +104,6 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the validators should have the following val scores for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
 		return steps.ValidatorsShouldHaveTheFollowingScores(execsetup.broker, table, epoch)
 	})
-	s.Step(`^the global reward account gets the following deposits:$`, func(table *godog.Table) error {
-		return steps.DepositToRewardAccount(execsetup.collateralEngine, table, execsetup.netDeposits)
-	})
-
 	s.Step(`^the parties receive the following reward for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
 		return steps.PartiesShouldReceiveTheFollowingReward(execsetup.broker, table, epoch)
 	})
@@ -138,8 +151,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	// Other steps
-	s.Step(`^the initial insurance pool balance is "([^"]*)" for the markets:$`, func(amountstr string) error {
-		//		amount, _ := strconv.ParseUint(amountstr, 10, 0)
+	s.Step(`^the initial insurance pool balance is "([^"]*)" for all the markets$`, func(amountstr string) error {
 		amount, _ := num.UintFromString(amountstr, 10)
 		for _, mkt := range execsetup.markets {
 			asset, _ := mkt.GetAsset()
@@ -150,6 +162,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), marketInsuranceAccount.ID, amount); err != nil {
 				return err
 			}
+			execsetup.insurancePoolDepositsOverStep[marketInsuranceAccount.ID] = num.IntFromUint(amount, true)
 			// add to the net deposits
 			execsetup.netDeposits.Add(execsetup.netDeposits, amount)
 		}
@@ -189,7 +202,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	s.Step(`^the parties withdraw the following assets:$`, func(table *godog.Table) error {
-		return steps.PartiesWithdrawTheFollowingAssets(execsetup.collateralEngine, execsetup.netDeposits, table)
+		return steps.PartiesWithdrawTheFollowingAssets(execsetup.collateralEngine, execsetup.broker, execsetup.netDeposits, table)
 	})
 	s.Step(`^the parties place the following orders:$`, func(table *godog.Table) error {
 		return steps.PartiesPlaceTheFollowingOrders(execsetup.executionEngine, table)
@@ -353,6 +366,15 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		now := execsetup.timeService.GetTimeNow()
 		return steps.TheAuctionTradedVolumeAndPriceShouldBe(execsetup.broker, vol, price, now)
 	})
+	s.Step(expectingEventsOverStepText, func(eventCounter int) error {
+		return steps.ExpectingEventsOverStep(execsetup.broker, execsetup.eventsBefore, eventCounter)
+	})
+	s.Step(`there were "([0-9]+)" events emitted in this scenario so far`, func(eventCounter int) error {
+		return steps.ExpectingEventsInTheSecenarioSoFar(execsetup.broker, eventCounter)
+	})
+	s.Step(`fail`, func() {
+		reporter.Fatalf("fail step invoked")
+	})
 
 	// Debug steps
 	s.Step(`^debug accounts$`, func() error {
@@ -404,6 +426,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^debug detailed orderbook volumes for market "([^"]*)"$`, func(mkt string) error {
 		return steps.DebugVolumesForMarketDetail(execsetup.log, execsetup.broker, mkt)
 	})
+	s.Step(`^debug last "([0-9]+)" events$`, func(eventCounter int) error {
+		steps.DebugLastNEvents(eventCounter, execsetup.broker, execsetup.log)
+		return nil
+	})
 
 	// Event steps
 	s.Step(`^clear all events$`, func() error {
@@ -436,4 +462,20 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		execsetup.assetsEngine.SetPermissive()
 		return nil
 	})
+}
+
+func reconcileAccounts() error {
+	return helpers.ReconcileAccountChanges(execsetup.collateralEngine, execsetup.accountsBefore, execsetup.broker.GetAccounts(), execsetup.insurancePoolDepositsOverStep, extractLedgerEntriesOverStep())
+}
+
+func extractLedgerEntriesOverStep() []*vega.LedgerEntry {
+	transfers := execsetup.broker.GetTransfers(false)
+	n := len(transfers) - execsetup.ledgerMovementsBefore
+	ret := make([]*vega.LedgerEntry, 0, n)
+	if n > 0 {
+		for i := execsetup.ledgerMovementsBefore; i < len(transfers); i++ {
+			ret = append(ret, transfers[i])
+		}
+	}
+	return ret
 }

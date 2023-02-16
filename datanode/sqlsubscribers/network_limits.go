@@ -15,11 +15,11 @@ package sqlsubscribers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"github.com/pkg/errors"
 )
 
 type NetworkLimitsEvent interface {
@@ -34,17 +34,11 @@ type NetworkLimitStore interface {
 type NetworkLimits struct {
 	subscriber
 	store NetworkLimitStore
-	log   *logging.Logger
 }
 
-func NewNetworkLimitSub(
-	ctx context.Context,
-	store NetworkLimitStore,
-	log *logging.Logger,
-) *NetworkLimits {
+func NewNetworkLimitSub(store NetworkLimitStore) *NetworkLimits {
 	t := &NetworkLimits{
 		store: store,
-		log:   log,
 	}
 	return t
 }

@@ -34,7 +34,6 @@ type AccountSource interface {
 type Risk struct {
 	mlStore       MarginLevelsStore
 	accountSource AccountSource
-	log           *logging.Logger
 	observer      utils.Observer[entities.MarginLevels]
 }
 
@@ -42,7 +41,6 @@ func NewRisk(mlStore MarginLevelsStore, accountSource AccountSource, log *loggin
 	return &Risk{
 		mlStore:       mlStore,
 		accountSource: accountSource,
-		log:           log,
 		observer:      utils.NewObserver[entities.MarginLevels]("margin_levels", log, 0, 0),
 	}
 }

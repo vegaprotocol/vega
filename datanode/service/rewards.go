@@ -29,7 +29,6 @@ type rewardStore interface {
 }
 
 type Reward struct {
-	log      *logging.Logger
 	store    rewardStore
 	observer utils.Observer[entities.Reward]
 }
@@ -37,7 +36,6 @@ type Reward struct {
 func NewReward(store rewardStore, log *logging.Logger) *Reward {
 	return &Reward{
 		store:    store,
-		log:      log,
 		observer: utils.NewObserver[entities.Reward]("reward", log, 0, 0),
 	}
 }

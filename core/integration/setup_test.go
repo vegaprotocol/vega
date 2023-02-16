@@ -35,6 +35,7 @@ import (
 	"code.vegaprotocol.io/vega/core/plugins"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
+	protos "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/golang/mock/gomock"
 )
@@ -88,6 +89,12 @@ type executionTestSetup struct {
 	// keep track of net deposits/withdrawals (ignores asset type)
 	netDeposits *num.Uint
 
+	// record parts of state before each step
+	accountsBefore                []protos.Account
+	ledgerMovementsBefore         int
+	insurancePoolDepositsOverStep map[string]*num.Int
+	eventsBefore                  int
+
 	ntry           *notary.SnapshotNotary
 	stateVarEngine *stubs.StateVarStub
 	witness        *validators.Witness
@@ -103,6 +110,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	ctrl := gomock.NewController(&reporter)
 	execsetup.ctrl = ctrl
 	execsetup.cfg = execution.NewDefaultConfig()
+	execsetup.cfg.Position.StreamPositionVerbose = true
 	execsetup.log = logging.NewTestLogger()
 	execsetup.timeService = stubs.NewTimeStub()
 	execsetup.broker = stubs.NewBrokerStub()

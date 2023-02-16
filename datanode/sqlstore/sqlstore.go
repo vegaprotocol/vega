@@ -1,4 +1,5 @@
 // Copyright (c) 2022 Gobalsky Labs Limited
+
 //
 // Use of this software is governed by the Business Source License included
 // in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
@@ -74,6 +75,7 @@ var defaultRetentionPolicies = map[RetentionPeriod][]RetentionPolicy{
 		{HypertableOrCaggName: "deposits", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "withdrawals", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "blocks", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "rewards", DataRetentionPeriod: "1 year"},
 	},
 	RetentionPeriodArchive: {
 		{HypertableOrCaggName: "*", DataRetentionPeriod: string(RetentionPeriodArchive)},
@@ -84,8 +86,10 @@ var defaultRetentionPolicies = map[RetentionPeriod][]RetentionPolicy{
 }
 
 func MigrateToLatestSchema(log *logging.Logger, config Config) error {
+	log = log.Named("db-migrate")
 	goose.SetBaseFS(EmbedMigrations)
-	goose.SetLogger(log.Named("db migration").GooseLogger())
+	goose.SetLogger(log.GooseLogger())
+	goose.SetVerbose(bool(config.VerboseMigration))
 
 	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
 	if err != nil {
@@ -95,9 +99,11 @@ func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
 	defer db.Close()
 
+	log.Info("Checking database version and migrating sql schema to latest version, please wait...")
 	if err = goose.Up(db, SQLMigrationsDir); err != nil {
 		return fmt.Errorf("error migrating sql schema: %w", err)
 	}
+	log.Info("Sql schema migration completed successfully")
 
 	return nil
 }
@@ -105,6 +111,8 @@ func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 func MigrateToSchemaVersion(log *logging.Logger, config Config, version int64, fs fs.FS) error {
 	goose.SetBaseFS(fs)
 	goose.SetLogger(log.Named("db migration").GooseLogger())
+	goose.SetVerbose(bool(config.VerboseMigration))
+	goose.SetVerbose(true)
 
 	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
 	if err != nil {
@@ -114,16 +122,20 @@ func MigrateToSchemaVersion(log *logging.Logger, config Config, version int64, f
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
 	defer db.Close()
 
+	log.Infof("Checking database version and migrating sql schema to version %d, please wait...", version)
 	if err = goose.UpTo(db, SQLMigrationsDir, version); err != nil {
 		return fmt.Errorf("error migrating sql schema: %w", err)
 	}
+	log.Info("Sql schema migration completed successfully")
 
 	return nil
 }
 
-func RevertToSchemaVersionZero(log *logging.Logger, config ConnectionConfig, fs fs.FS) error {
+func RevertToSchemaVersionZero(log *logging.Logger, config ConnectionConfig, fs fs.FS, verbose bool) error {
+	log = log.Named("revert-schema-to-version-0")
 	goose.SetBaseFS(fs)
-	goose.SetLogger(log.Named("revert schema to version 0").GooseLogger())
+	goose.SetLogger(log.GooseLogger())
+	goose.SetVerbose(verbose)
 
 	poolConfig, err := config.GetPoolConfig()
 	if err != nil {
@@ -133,16 +145,20 @@ func RevertToSchemaVersionZero(log *logging.Logger, config ConnectionConfig, fs 
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
 	defer db.Close()
 
+	log.Info("Checking database version and reverting sql schema to version 0, please wait...")
 	if err := goose.DownTo(db, SQLMigrationsDir, 0); err != nil {
 		return fmt.Errorf("failed to goose down the schema to version 0: %w", err)
 	}
+	log.Info("Sql schema migration completed successfully")
 
 	return nil
 }
 
-func WipeDatabaseAndMigrateSchemaToVersion(log *logging.Logger, config ConnectionConfig, version int64, fs fs.FS) error {
+func WipeDatabaseAndMigrateSchemaToVersion(log *logging.Logger, config ConnectionConfig, version int64, fs fs.FS, verbose bool) error {
+	log = log.Named("db-wipe-migrate")
 	goose.SetBaseFS(fs)
-	goose.SetLogger(log.Named("wipe database").GooseLogger())
+	goose.SetLogger(log.GooseLogger())
+	goose.SetVerbose(verbose)
 
 	poolConfig, err := config.GetPoolConfig()
 	if err != nil {
@@ -157,6 +173,7 @@ func WipeDatabaseAndMigrateSchemaToVersion(log *logging.Logger, config Connectio
 		return err
 	}
 
+	log.Infof("Wiping database and migrating schema to version %d", version)
 	if currentVersion > 0 {
 		if err := goose.DownTo(db, SQLMigrationsDir, 0); err != nil {
 			return fmt.Errorf("failed to goose down the schema: %w", err)
@@ -168,13 +185,16 @@ func WipeDatabaseAndMigrateSchemaToVersion(log *logging.Logger, config Connectio
 			return fmt.Errorf("failed to goose up the schema: %w", err)
 		}
 	}
+	log.Info("Sql schema migration completed successfully")
 
 	return nil
 }
 
-func WipeDatabaseAndMigrateSchemaToLatestVersion(log *logging.Logger, config ConnectionConfig, fs fs.FS) error {
+func WipeDatabaseAndMigrateSchemaToLatestVersion(log *logging.Logger, config ConnectionConfig, fs fs.FS, verbose bool) error {
+	log = log.Named("db-wipe-migrate")
 	goose.SetBaseFS(fs)
-	goose.SetLogger(log.Named("wipe database").GooseLogger())
+	goose.SetLogger(log.GooseLogger())
+	goose.SetVerbose(verbose)
 
 	poolConfig, err := config.GetPoolConfig()
 	if err != nil {
@@ -189,6 +209,7 @@ func WipeDatabaseAndMigrateSchemaToLatestVersion(log *logging.Logger, config Con
 		return err
 	}
 
+	log.Info("Wiping database and migrating schema to latest version")
 	if currentVersion > 0 {
 		if err := goose.DownTo(db, SQLMigrationsDir, 0); err != nil {
 			return fmt.Errorf("failed to goose down the schema: %w", err)
@@ -198,29 +219,7 @@ func WipeDatabaseAndMigrateSchemaToLatestVersion(log *logging.Logger, config Con
 	if err := goose.Up(db, SQLMigrationsDir); err != nil {
 		return fmt.Errorf("failed to goose up the schema: %w", err)
 	}
-	return nil
-}
-
-func CreateVegaSchema(log *logging.Logger, connConfig ConnectionConfig) error {
-	goose.SetBaseFS(EmbedMigrations)
-	goose.SetLogger(log.Named("snapshot schema creation").GooseLogger())
-
-	poolConfig, err := connConfig.GetPoolConfig()
-	if err != nil {
-		return fmt.Errorf("failed to get connection configuration: %w", err)
-	}
-
-	db := stdlib.OpenDB(*poolConfig.ConnConfig)
-	defer func() {
-		err := db.Close()
-		if err != nil {
-			log.Errorf("error when closing connection used to create vega schema:%w", err)
-		}
-	}()
-
-	if err := goose.Up(db, SQLMigrationsDir); err != nil {
-		return fmt.Errorf("failed to create schema: %w", err)
-	}
+	log.Info("Sql schema migration completed successfully")
 
 	return nil
 }
@@ -511,6 +510,8 @@ type EmbeddedPostgresLog interface {
 }
 
 func StartEmbeddedPostgres(log *logging.Logger, config Config, runtimeDir string, postgresLog EmbeddedPostgresLog) (*embeddedpostgres.EmbeddedPostgres, error) {
+	log = log.Named("embedded-postgres")
+	log.SetLevel(config.Level.Get())
 	embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(runtimeDir), "node-data")
 
 	embeddedPostgres := createEmbeddedPostgres(runtimeDir, &embeddedPostgresDataPath,

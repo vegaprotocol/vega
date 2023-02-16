@@ -320,7 +320,7 @@ func (i *SequentialInteractor) waitForResponse(ctx context.Context, traceID stri
 	}
 
 	if response.Name == CancelRequestName {
-		return Interaction{}, api.ErrUserCanceledTheRequest
+		return Interaction{}, api.ErrUserCancelledTheRequest
 	}
 
 	if response.Name != expectedResponseName {

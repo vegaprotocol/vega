@@ -480,7 +480,7 @@ func TestFailingSpamChecksAbortsSigningTheTransaction(t *testing.T) {
 
 	// then
 	require.NotNil(t, errorDetails)
-	assert.Equal(t, api.ErrorCodeRequestHasBeenCanceledByApplication, errorDetails.Code)
+	assert.Equal(t, api.ErrorCodeRequestHasBeenCancelledByApplication, errorDetails.Code)
 	assert.Equal(t, "Application error", errorDetails.Message)
 	assert.Equal(t, api.ErrTransactionBlockedBySpamRules.Error(), errorDetails.Data)
 	assert.Empty(t, result)

@@ -143,15 +143,15 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
     And the parties should have the following account balances:
       | party  | asset | market id | margin     | general        | bond       |
       | lp1    | ETH   | USD/DEC19 | 4134260182 | 99984597723110 | 1000000000 |
-      | lp1    | USD   | USD/DEC19 | 4134260182 | 100000000000   |            |
+      | lp1    | USD   |           |            | 100000000000   |            |
       | lp1    | ETH   | USD/DEC20 | 4133756526 | 99984597723110 | 1000000000 |
-      | lp1    | USD   | USD/DEC20 | 4133756526 | 100000000000   |            |
+      | lp1    | USD   |           |            | 100000000000   |            |
       | lp1    | ETH   | USD/DEC21 | 4134260182 | 99984597723110 | 1000000000 |
-      | lp1    | USD   | USD/DEC21 | 4134260182 | 100000000000   | 1000000000 |
-      | party1 | ETH   | USD/DEC19 | 1176961234 | 9996469116298  |            |
-      | party1 | USD   | USD/DEC19 | 1176961234 | 10000000000    |            |
+      | lp1    | USD   |           |            | 100000000000   |            |
+      | party1 | ETH   | USD/DEC19 | 1047352495 | 9996857942515  |            |
+      | party1 | USD   |           |            | 10000000000    |            |
       | party2 | ETH   | USD/DEC19 | 4737795542 | 9985786613374  |            |
-      | party2 | USD   | USD/DEC19 | 4737795542 | 10000000000    |            |
+      | party2 | USD   |           |            | 10000000000    |            |
 
   Scenario: 002: 0070-MKTD-007, 0042-LIQF-001, 0038-OLIQ-002; 0038-OLIQ-006; 0019-MCAL-008, check updated version of dpd feature in 0038-OLIQ-liquidity_provision_order_type.md
 
@@ -299,15 +299,15 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
     And the parties should have the following account balances:
       | party  | asset | market id | margin     | general        | bond    |
       | lp1    | ETH   | USD/DEC19 | 4695112    | 99999983469540 | 1000000 |
-      | lp1    | USD   | USD/DEC19 | 4695112    | 100000000000   |         |
+      | lp1    | USD   |           |            | 100000000000   |         |
       | lp1    | ETH   | USD/DEC20 | 4140236    | 99999983469540 | 1000000 |
-      | lp1    | USD   | USD/DEC20 | 4140236    | 100000000000   |         |
+      | lp1    | USD   |           |            | 100000000000   |         |
       | lp1    | ETH   | USD/DEC21 | 4695112    | 99999983469540 | 1000000 |
-      | lp1    | USD   | USD/DEC21 | 4695112    | 100000000000   |         |
-      | party1 | ETH   | USD/DEC19 | 1176961234 | 9996469116298  |         |
-      | party1 | USD   | USD/DEC19 | 1176961234 | 10000000000    |         |
+      | lp1    | USD   |           |            | 100000000000   |         |
+      | party1 | ETH   | USD/DEC19 | 1179036394 | 9996462886930  |         |
+      | party1 | USD   |           |            | 10000000000    |         |
       | party2 | ETH   | USD/DEC19 | 4737795542 | 9985786613374  |         |
-      | party2 | USD   | USD/DEC19 | 4737795542 | 10000000000    |         |
+      | party2 | USD   |           |            | 10000000000    |         |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     |
@@ -337,7 +337,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
     And the parties should have the following account balances:
       | party | asset | market id | margin  | general        | bond    |
       | lp1   | ETH   | USD/DEC21 | 5127063 | 99999980896617 | 1000000 |
-      | lp1   | USD   | USD/DEC21 | 5127063 | 100000000000   |         |
+      | lp1   | USD   |           |         | 100000000000   |         |
 
     # amend LP commintment amount
     And the parties submit the following liquidity provision:
@@ -457,8 +457,8 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
       | lp1    | USD   | ETH/MAR22 | 170732 | 999789268 | 40000 |
-      | party1 | USD   | ETH/MAR22 | 11770  | 99988230  | 0     |
-      | party2 | USD   | ETH/MAR22 | 47374  | 99952626  | 0     |
+      | party1 | USD   | ETH/MAR22 | 10464  | 99989536  |       |
+      | party2 | USD   | ETH/MAR22 | 47374  | 99952626  |       |
 
     Then the network moves ahead "1" blocks
 

@@ -49,9 +49,11 @@ type StreamSubscription interface {
 	Ack() bool
 }
 
+const namedLogger = "subscribers"
+
 func NewService(log *logging.Logger, broker Broker, maxBufferSize int) *Service {
 	return &Service{
-		log:           log,
+		log:           log.Named(namedLogger),
 		broker:        broker,
 		maxBufferSize: maxBufferSize,
 	}

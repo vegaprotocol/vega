@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
+	"code.vegaprotocol.io/vega/datanode/ratelimit"
 	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -58,6 +59,7 @@ type Config struct {
 	AutoCertDomain           string                   `long:"auto-cert-domain" description:"Automatically generate and sign https certificate via LetsEncrypt"`
 	CertificateFile          string                   `long:"certificate-file" description:"Path to SSL certificate, if using HTTPS but not autocert"`
 	KeyFile                  string                   `long:"key-file" description:"Path to private key, if using HTTPS but not autocert"`
+	RateLimit                ratelimit.Config         `group:"RateLimits" namespace:"rate-limits"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -94,5 +96,6 @@ func NewDefaultConfig() Config {
 			AllowedOrigins: []string{"*"},
 			MaxAge:         7200,
 		},
+		RateLimit: ratelimit.NewDefaultConfig(),
 	}
 }

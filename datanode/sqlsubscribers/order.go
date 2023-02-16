@@ -15,11 +15,11 @@ package sqlsubscribers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"github.com/pkg/errors"
 )
 
 type OrderEvent interface {
@@ -35,13 +35,11 @@ type OrderStore interface {
 type Order struct {
 	subscriber
 	store OrderStore
-	log   *logging.Logger
 }
 
-func NewOrder(store OrderStore, log *logging.Logger) *Order {
+func NewOrder(store OrderStore) *Order {
 	return &Order{
 		store: store,
-		log:   log,
 	}
 }
 

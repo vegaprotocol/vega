@@ -18,15 +18,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"github.com/shopspring/decimal"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block entities.Block, party entities.Party, market entities.Market, reference string,
@@ -68,9 +68,8 @@ func TestOrders(t *testing.T) {
 	ctx, rollback := tempTransaction(t)
 	defer rollback()
 
-	logger := logging.NewTestLogger()
 	ps := sqlstore.NewParties(connectionSource)
-	os := sqlstore.NewOrders(connectionSource, logger)
+	os := sqlstore.NewOrders(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 	block := addTestBlock(t, ctx, bs)
 	block2 := addTestBlock(t, ctx, bs)
@@ -426,11 +425,11 @@ func generateTestOrders(t *testing.T, ctx context.Context, blocks []entities.Blo
 func TestOrders_GetLiveOrders(t *testing.T) {
 	ctx, rollback := tempTransaction(t)
 	defer rollback()
-	logger := logging.NewTestLogger()
+
 	bs := sqlstore.NewBlocks(connectionSource)
 	ps := sqlstore.NewParties(connectionSource)
 	ms := sqlstore.NewMarkets(connectionSource)
-	os := sqlstore.NewOrders(connectionSource, logger)
+	os := sqlstore.NewOrders(connectionSource)
 
 	// set up the blocks, parties and markets we need to generate the orders
 	blocks := generateTestBlocks(t, ctx, 3, bs)
@@ -528,12 +527,11 @@ type orderTestData struct {
 
 func setupOrderCursorPaginationTests(t *testing.T) *orderTestStores {
 	t.Helper()
-	logger := logging.NewTestLogger()
 	stores := &orderTestStores{
 		bs: sqlstore.NewBlocks(connectionSource),
 		ps: sqlstore.NewParties(connectionSource),
 		ms: sqlstore.NewMarkets(connectionSource),
-		os: sqlstore.NewOrders(connectionSource, logger),
+		os: sqlstore.NewOrders(connectionSource),
 	}
 
 	return stores

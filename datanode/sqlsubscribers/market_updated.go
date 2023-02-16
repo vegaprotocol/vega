@@ -17,7 +17,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/pkg/errors"
@@ -31,13 +30,11 @@ type MarketUpdatedEvent interface {
 type MarketUpdated struct {
 	subscriber
 	store MarketsStore
-	log   *logging.Logger
 }
 
-func NewMarketUpdated(store MarketsStore, log *logging.Logger) *MarketUpdated {
+func NewMarketUpdated(store MarketsStore) *MarketUpdated {
 	return &MarketUpdated{
 		store: store,
-		log:   log,
 	}
 }
 

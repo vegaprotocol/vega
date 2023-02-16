@@ -88,7 +88,6 @@ Feature: Fees calculations
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader3 | ETH   | ETH/DEC21 | 1330   | 8686    |
-      #| trader3 | ETH   | ETH/DEC21 | 1082   | 8934    |
       | trader4 | ETH   | ETH/DEC21 | 718    | 8958    |
 
     And the accumulated infrastructure fees should be "7" for the asset "ETH"
@@ -194,9 +193,7 @@ Feature: Fees calculations
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 846    | 9165    |
-      #| trader3a | ETH   | ETH/DEC21 | 721    | 9290    |
       | trader3b | ETH   | ETH/DEC21 | 363    | 9643    |
-      #| trader3b | ETH   | ETH/DEC21 | 361    | 9645    |
       | trader4  | ETH   | ETH/DEC21 | 718    | 8955    |
 
     And the accumulated infrastructure fees should be "8" for the asset "ETH"
@@ -266,9 +263,7 @@ Feature: Fees calculations
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 690    | 9321    |
-      #| trader3a | ETH   | ETH/DEC21 | 480    | 9531    |
       | trader3b | ETH   | ETH/DEC21 | 339    | 9667    |
-    #| trader3b | ETH   | ETH/DEC21 | 240    | 9766    |
 
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
@@ -846,14 +841,12 @@ Feature: Fees calculations
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 3372   | 6644    |
-      #| trader3a | ETH   | ETH/DEC21 | 1010   | 9006    |
       | trader4  | ETH   | ETH/DEC21 | 5271   | 4702    |
 
+    #maitenance_margin_trader3a: 4*((1002-492)*4)/4 + 4*0.2*1002=2842
     Then the parties should have the following margin levels:
-      | party    | market id | maintenance | search | initial | release |
-      | trader3a | ETH/DEC21 | 2810        | 3091   | 3372    | 3934    |
-
-    #maitenance_margin_trader3a: 4*((1002-500)*4)/4 + 4*0.2*1002=2810
+      | party    | market id | maintenance | initial |
+      | trader3a | ETH/DEC21 | 2842        | 3410    |
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -890,7 +883,7 @@ Feature: Fees calculations
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 3242   | 6364    |
-      | trader4  | ETH   | ETH/DEC21 | 7140   | 3239    |
+      | trader4  | ETH   | ETH/DEC21 | 7188   | 3191    |
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             |
@@ -990,13 +983,12 @@ Feature: Fees calculations
     #| trader3a | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader4 | ETH/DEC21 | 4393        | 4832   | 5271    | 6150    |
+      | party   | market id | maintenance | initial | 
+      | trader4 | ETH/DEC21 | 4421        | 5305    | 
 
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 3372   | 1644    |
-      #| trader3a | ETH   | ETH/DEC21 | 1010   | 4006    |
       | trader4  | ETH   | ETH/DEC21 | 5234   | 0       |
 
     # We apparently left auction
@@ -1100,12 +1092,13 @@ Feature: Fees calculations
       | trader3a | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 1      | ETH   |
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader4 | ETH/DEC21 | 2380        | 2618   | 2856    | 3332    |
+      | party    | market id | maintenance | initial |
+      | trader3a | ETH/DEC21 | 1170        | 1404    |
+      | trader4  | ETH/DEC21 | 2390        | 2868    |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1392   | 3504    |
+      | trader3a | ETH   | ETH/DEC21 | 1404   | 3492    |
       | trader4  | ETH   | ETH/DEC21 | 2756   | 0       |
 
     Then the market data for the market "ETH/DEC21" should be:
@@ -1286,10 +1279,13 @@ Feature: Fees calculations
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
 
     Then the network moves ahead "301" blocks
-
     Then the following trades should be executed:
-      | buyer    | price | size | seller  |
-      | trader3a | 900   | 200  | trader4 |
+      | buyer    | price | size | seller   |
+      | trader3a | 1002  | 100  | trader4  |
+      | trader3a | 900   | 200  | trader4  |
+      | aux1     | 500   | 100  | network  |
+      | aux1     | 490   | 200  | network  |
+      | network  | 493   | 300  | trader3a |
 
     # For trader3a & 4- Sharing IF and LP
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 2 * 900 = 1800
@@ -1310,11 +1306,11 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1597   | 0       |
-      | trader4  | ETH   | ETH/DEC21 | 3801   | 0       |
+      | trader3a | ETH   | ETH/DEC21 |      0 | 0       |
+      | trader4  | ETH   | ETH/DEC21 |   3801 | 0       |
 
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode            | auction trigger             |
+      | trading mode            | auction trigger             | 
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
   Scenario: WIP - Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade does not go ahead
@@ -1412,8 +1408,8 @@ Feature: Fees calculations
       | trader3a | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader4 | ETH/DEC21 | 4760        | 5236   | 5712    | 6664    |
+      | party   | market id | maintenance | initial |
+      | trader4 | ETH/DEC21 | 4788        | 5745    |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
@@ -1541,8 +1537,6 @@ Feature: Fees calculations
       | aux2     | ETH   | 1000000000000 |
       | trader3a | ETH   | 10000         |
       | trader3b | ETH   | 30000         |
-    # | trader3a | ETH   | 9750         |
-    # | trader3b | ETH   | 29750         |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |

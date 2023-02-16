@@ -85,8 +85,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
       | lp1    | USD   | ETH/MAR22 | 1320   | 999988680 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 2520   | 99997480  | 0     |
-      | party2 | USD   | ETH/MAR22 | 2520   | 99997480  | 0     |
+      | party1 | USD   | ETH/MAR22 | 1704   | 99998296  |       |
+      | party2 | USD   | ETH/MAR22 | 1692   | 99998308  |       |
 
     Then the network moves ahead "1" blocks
 
@@ -104,8 +104,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
       | lp1    | USD   | ETH/MAR22 | 2870   | 999986742 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 1317   | 99998688  | 0     |
-      | party2 | USD   | ETH/MAR22 | 1932   | 99998411  | 0     |
+      | party1 | USD   | ETH/MAR22 | 1317   | 99998688  |       |
+      | party2 | USD   | ETH/MAR22 | 1932   | 99998411  |       |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
     And the accumulated liquidity fees should be "20" for the market "ETH/MAR22"

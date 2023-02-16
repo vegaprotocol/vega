@@ -76,7 +76,7 @@ func (cmd *loadCmd) Execute(args []string) error {
 	}
 
 	if hasSchema {
-		err = verifyChainID(log, cmd.SQLStore.ConnectionConfig, cmd.ChainID)
+		err = verifyChainID(cmd.SQLStore.ConnectionConfig, cmd.ChainID)
 		if err != nil {
 			if !errors.Is(err, networkhistory.ErrChainNotFound) {
 				return fmt.Errorf("failed to verify chain id:%w", err)
@@ -85,7 +85,8 @@ func (cmd *loadCmd) Execute(args []string) error {
 	}
 
 	if hasSchema && cmd.WipeExistingData {
-		err := sqlstore.WipeDatabaseAndMigrateSchemaToVersion(log, cmd.Config.SQLStore.ConnectionConfig, 0, sqlstore.EmbedMigrations)
+		err := sqlstore.WipeDatabaseAndMigrateSchemaToVersion(log, cmd.Config.SQLStore.ConnectionConfig, 0,
+			sqlstore.EmbedMigrations, bool(cmd.Config.SQLStore.VerboseMigration))
 		if err != nil {
 			return fmt.Errorf("failed to wipe database and migrate schema to version: %w", err)
 		}
@@ -208,7 +209,7 @@ func (cmd *loadCmd) Execute(args []string) error {
 	loadLog := newLoadLog()
 	defer loadLog.AtExit()
 	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanodeWithLog(context.Background(), loadLog, *contiguousHistory,
-		cmd.Config.SQLStore.ConnectionConfig, withIndexesAndOrderTriggers)
+		cmd.Config.SQLStore.ConnectionConfig, withIndexesAndOrderTriggers, bool(cmd.Config.SQLStore.VerboseMigration))
 	if err != nil {
 		return fmt.Errorf("failed to load all available history:%w", err)
 	}
