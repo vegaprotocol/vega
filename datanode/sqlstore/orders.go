@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
 
@@ -100,8 +101,15 @@ func (os *Orders) GetOrder(ctx context.Context, orderIDStr string, version *int3
 
 // GetByMarketAndID returns all orders with given IDs for a market.
 func (os *Orders) GetByMarketAndID(ctx context.Context, marketIDstr string, orderIDs []string) ([]entities.Order, error) {
-	defer metrics.StartSQLQuery("Orders", "GetByMarket")()
+	if len(orderIDs) == 0 {
+		os.log.Warn("GetByMarketAndID called with an empty order slice",
+			logging.String("market ID", marketIDstr),
+		)
+		return nil, nil
+	}
+	defer metrics.StartSQLQuery("Orders", "GetByMarketAndID")()
 	marketID := entities.MarketID(marketIDstr)
+	// IDs := make([]entities.OrderID, 0, len(orderIDs))
 	IDs := make([]interface{}, 0, len(orderIDs))
 	in := make([]string, 0, len(orderIDs))
 	bindNum := 2
@@ -115,6 +123,14 @@ func (os *Orders) GetByMarketAndID(ctx context.Context, marketIDstr string, orde
 	bind = append(bind, marketID)
 	bind = append(bind, IDs...)
 	query := fmt.Sprintf(`SELECT %s from orders_current WHERE market_id=$1 AND id IN (%s)`, sqlOrderColumns, strings.Join(in, ", "))
+	os.log.Debug("Selecting orders by market and ID's",
+		logging.String("Query (formatted)", query),
+		logging.Strings("order IDs", orderIDs),
+		logging.String("bind dump", fmt.Sprintf("%#v", bind)),
+	)
+	if len(orderIDs) != len(IDs) {
+		os.log.Panic("Check log above - something is terribly wrong")
+	}
 	orders := make([]entities.Order, 0, len(orderIDs))
 	err := pgxscan.Select(ctx, os.Connection, &orders, query, bind...)
 
