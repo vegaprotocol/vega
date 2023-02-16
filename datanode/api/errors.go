@@ -396,9 +396,22 @@ func (e *invalidArgumentError) Error() string {
 	return e.err.Error()
 }
 
-func isInvalidArgumentError(err error) bool {
-	_, ok := err.(*invalidArgumentError)
-	return ok
+func hasInvalidArgumentError(errs ...error) bool {
+	for _, err := range errs {
+		if _, ok := err.(*invalidArgumentError); ok || errors.Is(err, entities.ErrInvalidID) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasNotFoundError(errs ...error) bool {
+	for _, err := range errs {
+		if errors.Is(err, entities.ErrNotFound) {
+			return true
+		}
+	}
+	return false
 }
 
 func formatE(err error, errs ...error) error {
@@ -406,21 +419,20 @@ func formatE(err error, errs ...error) error {
 		return nil
 	}
 
-	isInvalid := isInvalidArgumentError(err)
-
-	for _, e := range errs {
-		err = errors.Wrap(err, e.Error())
-	}
+	allErrs := append(errs, err)
 
 	switch {
 	// only for "GetOne"-like store methods
-	case errors.Is(err, entities.ErrNotFound):
-		return apiError(codes.NotFound, err)
-	case errors.Is(err, entities.ErrInvalidID), isInvalid:
-		return apiError(codes.InvalidArgument, err)
+	case hasNotFoundError(allErrs...):
+		return apiError(codes.NotFound, err, errs...)
+	case hasInvalidArgumentError(allErrs...):
+		return apiError(codes.InvalidArgument, err, errs...)
 	default:
 		// could handle more errors like context cancelled,
 		// deadline exceeded, but let's see later
-		return apiError(codes.Internal, err)
+		return apiError(codes.Internal, err, errs...)
 	}
 }
+
+// FormatE exports the formatE function (primarily for testing)
+var FormatE = formatE
