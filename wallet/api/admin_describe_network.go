@@ -14,8 +14,8 @@ type AdminDescribeNetworkParams struct {
 }
 
 type AdminDescribeNetworkResult struct {
-	Name     string `json:"name"`
-	Metadata []network.Metadata
+	Name     string             `json:"name"`
+	Metadata []network.Metadata `json:"metadata"`
 	API      struct {
 		GRPCConfig struct {
 			Hosts   []string `json:"hosts"`
