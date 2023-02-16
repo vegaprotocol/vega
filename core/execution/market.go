@@ -658,23 +658,6 @@ func (m *Market) GetID() string {
 }
 
 func (m *Market) PostRestore(ctx context.Context) error {
-	pps := m.position.Parties()
-	peggedOrder := m.peggedOrders.parked
-	parties := make(map[string]struct{}, len(pps)+len(peggedOrder))
-
-	for _, p := range pps {
-		parties[p] = struct{}{}
-	}
-
-	for _, o := range m.peggedOrders.parked {
-		parties[o.Party] = struct{}{}
-	}
-
-	for _, p := range m.liquidity.GetPending() {
-		parties[p] = struct{}{}
-	}
-	m.parties = parties
-
 	// tell the matching engine about the markets price factor so it can finish restoring orders
 	m.matching.RestoreWithMarketPriceFactor(m.priceFactor)
 	return nil

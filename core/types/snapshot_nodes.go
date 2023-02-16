@@ -334,6 +334,7 @@ type ExecMarket struct {
 	FeeSplitter                *FeeSplitter
 	SettlementData             *num.Numeric
 	NextMTM                    int64
+	Parties                    []string
 }
 
 type PriceMonitor struct {
@@ -2945,6 +2946,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		SettlementData:             sp,
 		NextMTM:                    em.NextMarkToMarket,
 		LastTradedPrice:            lastTradedPrice,
+		Parties:                    em.Parties,
 	}
 	for _, o := range em.ExpiringOrders {
 		or, _ := OrderFromProto(o)
@@ -2975,6 +2977,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		SettlementData:             num.NumericToString(e.SettlementData),
 		NextMarkToMarket:           e.NextMTM,
 		LastTradedPrice:            e.LastTradedPrice.String(),
+		Parties:                    e.Parties,
 	}
 	for _, o := range e.ExpiringOrders {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())
