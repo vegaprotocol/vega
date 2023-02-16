@@ -17,6 +17,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
       | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC20 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | price-monitoring-1     | default-eth-for-future | 1e6                    | 1e6                       |
 
     And the following network parameters are set:
       | name                                    | value |
@@ -309,5 +310,3 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     Then the parties should have the following account balances:
       | party           | asset | market id | margin | general |
       | designatedLoser | USD   | ETH/DEC20 | 0      | 0       |
-
-
