@@ -112,7 +112,11 @@ func getTableSortOrders(ctx context.Context, conn *pgxpool.Pool) (map[string]str
 		if len(split) != 2 {
 			return nil, fmt.Errorf("unexpected primary key index definition:%s", pkIdx.Indexdef)
 		}
-		tableNameToSortOrder[pkIdx.Tablename] = strings.Replace(split[1], ")", "", 1)
+		so := strings.Replace(split[1], ")", "", 1)
+		if noSpace := strings.ReplaceAll(so, " ", ""); len(noSpace) == 0 {
+			so = "vega_time" // default to time sort
+		}
+		tableNameToSortOrder[pkIdx.Tablename] = so
 	}
 	return tableNameToSortOrder, nil
 }
