@@ -38,7 +38,7 @@ type TradingDataServiceClient interface {
 	Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*InfoResponse, error)
 	// Order
 	//
-	// Gets the current version of an order, or optionally provide a version ID to retrieve a given version.
+	// Gets the current version of an order, or optionally provide a version ID to retrieve a given version if order was amended.
 	GetOrder(ctx context.Context, in *GetOrderRequest, opts ...grpc.CallOption) (*GetOrderResponse, error)
 	// Orders list
 	//
@@ -76,8 +76,8 @@ type TradingDataServiceClient interface {
 	// for each of the sides - sending and receiving accounts, the query returns an error.
 	//
 	// Entries can be queried by:
-	//   - listing ledger entries with filtering on the sending account (market_id, asset_id, account_type)
-	//   - listing ledger entries with filtering on the receiving account (market_id, asset_id, account_type)
+	//   - listing ledger entries with filtering on the sending account (market ID, asset ID, account type)
+	//   - listing ledger entries with filtering on the receiving account (market ID, asset ID, account type)
 	//   - listing ledger entries with filtering on the sending AND receiving account
 	//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 	ListLedgerEntries(ctx context.Context, in *ListLedgerEntriesRequest, opts ...grpc.CallOption) (*ListLedgerEntriesResponse, error)
@@ -141,7 +141,7 @@ type TradingDataServiceClient interface {
 	GetNetworkLimits(ctx context.Context, in *GetNetworkLimitsRequest, opts ...grpc.CallOption) (*GetNetworkLimitsResponse, error)
 	// Candle data
 	//
-	// Get candle data for a given candle ID
+	// Get candle data for a given candle ID. You can get a candle ID from the list candle intervals query
 	ListCandleData(ctx context.Context, in *ListCandleDataRequest, opts ...grpc.CallOption) (*ListCandleDataResponse, error)
 	// Candle updates
 	//
@@ -153,29 +153,29 @@ type TradingDataServiceClient interface {
 	ListCandleIntervals(ctx context.Context, in *ListCandleIntervalsRequest, opts ...grpc.CallOption) (*ListCandleIntervalsResponse, error)
 	// Votes list
 	//
-	// Get Votes for a Party ID using a cursor based pagination model
+	// Get votes for a party ID using a cursor based pagination model
 	ListVotes(ctx context.Context, in *ListVotesRequest, opts ...grpc.CallOption) (*ListVotesResponse, error)
 	// Votes subscription
 	//
 	// Subscribe to a stream of votes
 	ObserveVotes(ctx context.Context, in *ObserveVotesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveVotesClient, error)
-	// ERC20 add signer bundle
+	// ERC-20 add signer bundle
 	//
 	// List the signature bundle to add a particular validator to the signer list of the multisig contract
 	ListERC20MultiSigSignerAddedBundles(ctx context.Context, in *ListERC20MultiSigSignerAddedBundlesRequest, opts ...grpc.CallOption) (*ListERC20MultiSigSignerAddedBundlesResponse, error)
-	// ERC20 remove signer bundle
+	// ERC-20 remove signer bundle
 	//
 	// List the signatures bundle to remove a particular validator from signer list of the multisig contract
 	ListERC20MultiSigSignerRemovedBundles(ctx context.Context, in *ListERC20MultiSigSignerRemovedBundlesRequest, opts ...grpc.CallOption) (*ListERC20MultiSigSignerRemovedBundlesResponse, error)
-	// ERC20 list asset bundle
+	// ERC-20 list asset bundle
 	//
 	// Get the signatures bundle to allowlist an ERC20 token in the collateral bridge
 	GetERC20ListAssetBundle(ctx context.Context, in *GetERC20ListAssetBundleRequest, opts ...grpc.CallOption) (*GetERC20ListAssetBundleResponse, error)
-	// ERC20 set asset limit bundle
+	// ERC-20 set asset limit bundle
 	//
 	// Get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
 	GetERC20SetAssetLimitsBundle(ctx context.Context, in *GetERC20SetAssetLimitsBundleRequest, opts ...grpc.CallOption) (*GetERC20SetAssetLimitsBundleResponse, error)
-	// ERC20 withdrawal bundle
+	// ERC-20 withdrawal bundle
 	//
 	// Get the signature bundle to finalize a withdrawal on ethereum
 	GetERC20WithdrawalApproval(ctx context.Context, in *GetERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*GetERC20WithdrawalApprovalResponse, error)
@@ -193,7 +193,7 @@ type TradingDataServiceClient interface {
 	ObserveTrades(ctx context.Context, in *ObserveTradesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTradesClient, error)
 	// Oracle Spec
 	//
-	// Get an oracle spec by ID.
+	// Get an oracle spec by ID. Use the oracle spec list to query for oracle spec IDs
 	GetOracleSpec(ctx context.Context, in *GetOracleSpecRequest, opts ...grpc.CallOption) (*GetOracleSpecResponse, error)
 	// Oracle Spec list
 	//
@@ -205,7 +205,7 @@ type TradingDataServiceClient interface {
 	ListOracleData(ctx context.Context, in *ListOracleDataRequest, opts ...grpc.CallOption) (*ListOracleDataResponse, error)
 	// Market
 	//
-	// Get information about a specific market using its ID
+	// Get information about a specific market using its ID. Use the market lists query to get a market's ID
 	GetMarket(ctx context.Context, in *GetMarketRequest, opts ...grpc.CallOption) (*GetMarketResponse, error)
 	// Markets list
 	//
@@ -253,7 +253,7 @@ type TradingDataServiceClient interface {
 	ListDeposits(ctx context.Context, in *ListDepositsRequest, opts ...grpc.CallOption) (*ListDepositsResponse, error)
 	// Withdrawal
 	//
-	// Get a withdrawal by its identifier
+	// Get a withdrawal by its ID. Use the withdrawls list query to get withdrawal IDs
 	GetWithdrawal(ctx context.Context, in *GetWithdrawalRequest, opts ...grpc.CallOption) (*GetWithdrawalResponse, error)
 	// Withdrawals list
 	//
@@ -261,7 +261,7 @@ type TradingDataServiceClient interface {
 	ListWithdrawals(ctx context.Context, in *ListWithdrawalsRequest, opts ...grpc.CallOption) (*ListWithdrawalsResponse, error)
 	// Asset
 	//
-	// Get a single asset using its identifier
+	// Get a single asset using its ID. Use the assets list query to get an asset's ID
 	GetAsset(ctx context.Context, in *GetAssetRequest, opts ...grpc.CallOption) (*GetAssetResponse, error)
 	// Assets list
 	//
@@ -1582,7 +1582,7 @@ type TradingDataServiceServer interface {
 	Info(context.Context, *InfoRequest) (*InfoResponse, error)
 	// Order
 	//
-	// Gets the current version of an order, or optionally provide a version ID to retrieve a given version.
+	// Gets the current version of an order, or optionally provide a version ID to retrieve a given version if order was amended.
 	GetOrder(context.Context, *GetOrderRequest) (*GetOrderResponse, error)
 	// Orders list
 	//
@@ -1620,8 +1620,8 @@ type TradingDataServiceServer interface {
 	// for each of the sides - sending and receiving accounts, the query returns an error.
 	//
 	// Entries can be queried by:
-	//   - listing ledger entries with filtering on the sending account (market_id, asset_id, account_type)
-	//   - listing ledger entries with filtering on the receiving account (market_id, asset_id, account_type)
+	//   - listing ledger entries with filtering on the sending account (market ID, asset ID, account type)
+	//   - listing ledger entries with filtering on the receiving account (market ID, asset ID, account type)
 	//   - listing ledger entries with filtering on the sending AND receiving account
 	//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 	ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error)
@@ -1685,7 +1685,7 @@ type TradingDataServiceServer interface {
 	GetNetworkLimits(context.Context, *GetNetworkLimitsRequest) (*GetNetworkLimitsResponse, error)
 	// Candle data
 	//
-	// Get candle data for a given candle ID
+	// Get candle data for a given candle ID. You can get a candle ID from the list candle intervals query
 	ListCandleData(context.Context, *ListCandleDataRequest) (*ListCandleDataResponse, error)
 	// Candle updates
 	//
@@ -1697,29 +1697,29 @@ type TradingDataServiceServer interface {
 	ListCandleIntervals(context.Context, *ListCandleIntervalsRequest) (*ListCandleIntervalsResponse, error)
 	// Votes list
 	//
-	// Get Votes for a Party ID using a cursor based pagination model
+	// Get votes for a party ID using a cursor based pagination model
 	ListVotes(context.Context, *ListVotesRequest) (*ListVotesResponse, error)
 	// Votes subscription
 	//
 	// Subscribe to a stream of votes
 	ObserveVotes(*ObserveVotesRequest, TradingDataService_ObserveVotesServer) error
-	// ERC20 add signer bundle
+	// ERC-20 add signer bundle
 	//
 	// List the signature bundle to add a particular validator to the signer list of the multisig contract
 	ListERC20MultiSigSignerAddedBundles(context.Context, *ListERC20MultiSigSignerAddedBundlesRequest) (*ListERC20MultiSigSignerAddedBundlesResponse, error)
-	// ERC20 remove signer bundle
+	// ERC-20 remove signer bundle
 	//
 	// List the signatures bundle to remove a particular validator from signer list of the multisig contract
 	ListERC20MultiSigSignerRemovedBundles(context.Context, *ListERC20MultiSigSignerRemovedBundlesRequest) (*ListERC20MultiSigSignerRemovedBundlesResponse, error)
-	// ERC20 list asset bundle
+	// ERC-20 list asset bundle
 	//
 	// Get the signatures bundle to allowlist an ERC20 token in the collateral bridge
 	GetERC20ListAssetBundle(context.Context, *GetERC20ListAssetBundleRequest) (*GetERC20ListAssetBundleResponse, error)
-	// ERC20 set asset limit bundle
+	// ERC-20 set asset limit bundle
 	//
 	// Get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
 	GetERC20SetAssetLimitsBundle(context.Context, *GetERC20SetAssetLimitsBundleRequest) (*GetERC20SetAssetLimitsBundleResponse, error)
-	// ERC20 withdrawal bundle
+	// ERC-20 withdrawal bundle
 	//
 	// Get the signature bundle to finalize a withdrawal on ethereum
 	GetERC20WithdrawalApproval(context.Context, *GetERC20WithdrawalApprovalRequest) (*GetERC20WithdrawalApprovalResponse, error)
@@ -1737,7 +1737,7 @@ type TradingDataServiceServer interface {
 	ObserveTrades(*ObserveTradesRequest, TradingDataService_ObserveTradesServer) error
 	// Oracle Spec
 	//
-	// Get an oracle spec by ID.
+	// Get an oracle spec by ID. Use the oracle spec list to query for oracle spec IDs
 	GetOracleSpec(context.Context, *GetOracleSpecRequest) (*GetOracleSpecResponse, error)
 	// Oracle Spec list
 	//
@@ -1749,7 +1749,7 @@ type TradingDataServiceServer interface {
 	ListOracleData(context.Context, *ListOracleDataRequest) (*ListOracleDataResponse, error)
 	// Market
 	//
-	// Get information about a specific market using its ID
+	// Get information about a specific market using its ID. Use the market lists query to get a market's ID
 	GetMarket(context.Context, *GetMarketRequest) (*GetMarketResponse, error)
 	// Markets list
 	//
@@ -1797,7 +1797,7 @@ type TradingDataServiceServer interface {
 	ListDeposits(context.Context, *ListDepositsRequest) (*ListDepositsResponse, error)
 	// Withdrawal
 	//
-	// Get a withdrawal by its identifier
+	// Get a withdrawal by its ID. Use the withdrawls list query to get withdrawal IDs
 	GetWithdrawal(context.Context, *GetWithdrawalRequest) (*GetWithdrawalResponse, error)
 	// Withdrawals list
 	//
@@ -1805,7 +1805,7 @@ type TradingDataServiceServer interface {
 	ListWithdrawals(context.Context, *ListWithdrawalsRequest) (*ListWithdrawalsResponse, error)
 	// Asset
 	//
-	// Get a single asset using its identifier
+	// Get a single asset using its ID. Use the assets list query to get an asset's ID
 	GetAsset(context.Context, *GetAssetRequest) (*GetAssetResponse, error)
 	// Assets list
 	//

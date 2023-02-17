@@ -2272,9 +2272,9 @@ type ObservePositionsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Optional party identifier
+	// Optional party ID
 	PartyId *string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3,oneof" json:"party_id,omitempty"`
-	// Optional market identifier
+	// Optional market ID
 	MarketId *string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3,oneof" json:"market_id,omitempty"`
 }
 
