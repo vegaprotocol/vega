@@ -42,7 +42,7 @@ service TradingDataService {
 
     // Order
     //
-    // Gets the current version of an order, or optionally provide a version ID to retrieve a given version if amended.
+    // Gets the current version of an order, or optionally provide a version ID to retrieve a given version if order was amended.
     rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
 
     // Orders list
