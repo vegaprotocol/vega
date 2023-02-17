@@ -3501,9 +3501,7 @@
         "type": "object",
         "description": "The API configuration for the network.",
         "required": [
-          "grpcConfig",
-          "graphQLConfig",
-          "restConfig"
+          "grpcConfig"
         ],
         "properties": {
           "grpcConfig": {
