@@ -43,7 +43,7 @@ func (h History) GetCopySQL(dbMetaData DatabaseMetadata, databaseSnapshotsPath s
 	for tableName, meta := range dbMetaData.TableNameToMetaData {
 		if dbMetaData.TableNameToMetaData[tableName].Hypertable {
 			if len(meta.SortOrder) == 0 {
-				meta.SortOrder = "vega_time" // force sorting by time
+				meta.SortOrder = "vega_time, seq_num" // force sorting by time and sequence number
 			}
 			partitionColumn := dbMetaData.TableNameToMetaData[tableName].PartitionColumn
 			snapshotFile := filepath.Join(databaseSnapshotsPath, h.UncompressedDataDir(), tableName)

@@ -378,12 +378,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmWfrGCfF7K1k87C1jbMbef6Jsw1Ss2utpyhVscG44J5GY", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmdrBBP7uq5V6PRg8Fok3dM1SXqgnKHyhyDUY7DM3c7MXv", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmTGysvL12irtkYnHTT4wKKfxrL8wd565TurdNQS6jFCHy", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmWvtfdqMXPU3YUy2wf5PxX3MLk4FBhHAcRDptDLNtkQEE", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmSChxbXGDp6Csf4jRjyfbFeYVicFZsVs131xLrXxY5cda", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmSRqqf2wxQTDi5UR7nANNnbTaQjY5Z7zm8SUjq6Tn2FbX", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmSdt6UgB6SNUmKgRnwXHT71jHBgUoEMLVFnfqGh5sg7D4", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmU1BibuzhqSFEJVQytxm3M99RagbtJHGp4bcGWoVzR2DY", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmdaCJCMMxaUnSA54KTN1JGFCmTSbj8Cstv5RdGtfNZPqE", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmecFv3Kn3dHdkJJMABp3FwhtCMqWaHhhdPNufpYwbphVe", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmQJLQE5wgwwVxpaiAnG4KSc3WELpjajDfwzGq5HJu5Gdc", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "Qmc4xsUjDgKYxjaMEqf4Go5NohEZxoNsQQLBF3CWD8PTRd", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
@@ -1265,7 +1265,7 @@ func getDatabaseDataSummary(ctx context.Context, connConfig sqlstore.ConnectionC
 
 	for table, meta := range dbMetaData.TableNameToMetaData {
 		if len(meta.SortOrder) == 0 {
-			meta.SortOrder = "vega_time"
+			meta.SortOrder = "vega_time, seq_num"
 		}
 		summary := tableDataSummary{tableName: table}
 		err = conn.QueryRow(ctx, fmt.Sprintf("select count(*) from %s", table)).Scan(&summary.rowCount)
@@ -1324,7 +1324,7 @@ func getSnapshotIntervalToHistoryTableDeltaSummary(ctx context.Context,
 		for table, meta := range dbMetaData.TableNameToMetaData {
 			if meta.Hypertable {
 				if len(meta.SortOrder) == 0 {
-					meta.SortOrder = "vega_time"
+					meta.SortOrder = "vega_time, seq_num"
 				}
 				summary := tableDataSummary{tableName: table}
 				err := conn.QueryRow(ctx, fmt.Sprintf("select count(*) from %s %s", table, whereClause)).Scan(&summary.rowCount)
