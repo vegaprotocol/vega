@@ -42,7 +42,7 @@ service TradingDataService {
 
     // Order
     //
-    // Gets the current version of an order, or optionally provide a version ID to retrieve a given version.
+    // Gets the current version of an order, or optionally provide a version ID to retrieve a given version if amended.
     rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
 
     // Orders list
@@ -88,8 +88,8 @@ service TradingDataService {
     // for each of the sides - sending and receiving accounts, the query returns an error.
     //
     // Entries can be queried by:
-    //   - listing ledger entries with filtering on the sending account (market_id, asset_id, account_type)
-    //   - listing ledger entries with filtering on the receiving account (market_id, asset_id, account_type)
+    //   - listing ledger entries with filtering on the sending account (market ID, asset ID, account type)
+    //   - listing ledger entries with filtering on the receiving account (market ID, asset ID, account type)
     //   - listing ledger entries with filtering on the sending AND receiving account
     //   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
     rpc ListLedgerEntries(ListLedgerEntriesRequest) returns (ListLedgerEntriesResponse) {}
@@ -165,7 +165,7 @@ service TradingDataService {
 
     // Candle data
     //
-    // Get candle data for a given candle ID
+    // Get candle data for a given candle ID. You can get a candle ID from the list candle intervals query
     rpc ListCandleData(ListCandleDataRequest) returns (ListCandleDataResponse);
 
     // Candle updates
@@ -180,7 +180,7 @@ service TradingDataService {
 
     // Votes list
     //
-    // Get Votes for a Party ID using a cursor based pagination model
+    // Get votes for a party ID using a cursor based pagination model
     rpc ListVotes(ListVotesRequest) returns (ListVotesResponse);
 
     // Votes subscription
@@ -188,27 +188,27 @@ service TradingDataService {
     // Subscribe to a stream of votes
     rpc ObserveVotes(ObserveVotesRequest) returns (stream ObserveVotesResponse);
 
-    // ERC20 add signer bundle
+    // ERC-20 add signer bundle
     //
     // List the signature bundle to add a particular validator to the signer list of the multisig contract
     rpc ListERC20MultiSigSignerAddedBundles(ListERC20MultiSigSignerAddedBundlesRequest) returns (ListERC20MultiSigSignerAddedBundlesResponse);
 
-    // ERC20 remove signer bundle
+    // ERC-20 remove signer bundle
     //
     // List the signatures bundle to remove a particular validator from signer list of the multisig contract
     rpc ListERC20MultiSigSignerRemovedBundles(ListERC20MultiSigSignerRemovedBundlesRequest) returns (ListERC20MultiSigSignerRemovedBundlesResponse);
 
-    // ERC20 list asset bundle
+    // ERC-20 list asset bundle
     //
     // Get the signatures bundle to allowlist an ERC20 token in the collateral bridge
     rpc GetERC20ListAssetBundle(GetERC20ListAssetBundleRequest) returns (GetERC20ListAssetBundleResponse);
 
-    // ERC20 set asset limit bundle
+    // ERC-20 set asset limit bundle
     //
     // Get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
     rpc GetERC20SetAssetLimitsBundle(GetERC20SetAssetLimitsBundleRequest) returns (GetERC20SetAssetLimitsBundleResponse);
 
-    // ERC20 withdrawal bundle
+    // ERC-20 withdrawal bundle
     //
     // Get the signature bundle to finalize a withdrawal on ethereum
     rpc GetERC20WithdrawalApproval(GetERC20WithdrawalApprovalRequest) returns (GetERC20WithdrawalApprovalResponse);
@@ -230,7 +230,7 @@ service TradingDataService {
 
     // Oracle Spec
     //
-    // Get an oracle spec by ID.
+    // Get an oracle spec by ID. Use the oracle spec list to query for oracle spec IDs
     rpc GetOracleSpec(GetOracleSpecRequest) returns (GetOracleSpecResponse);
 
     // Oracle Spec list
@@ -245,7 +245,7 @@ service TradingDataService {
 
     // Market
     //
-    // Get information about a specific market using its ID
+    // Get information about a specific market using its ID. Use the market lists query to get a market's ID
     rpc GetMarket(GetMarketRequest) returns (GetMarketResponse);
 
     // Markets list
@@ -305,7 +305,7 @@ service TradingDataService {
 
     // Withdrawal
     //
-    // Get a withdrawal by its identifier
+    // Get a withdrawal by its ID. Use the withdrawls list query to get withdrawal IDs
     rpc GetWithdrawal(GetWithdrawalRequest) returns (GetWithdrawalResponse);
 
     // Withdrawals list
@@ -315,7 +315,7 @@ service TradingDataService {
 
     // Asset
     //
-    // Get a single asset using its identifier
+    // Get a single asset using its ID. Use the assets list query to get an asset's ID
     rpc GetAsset(GetAssetRequest) returns (GetAssetResponse);
 
     // Assets list
@@ -804,9 +804,9 @@ message PositionConnection {
 
 // Request that is used to subscribe to a stream of positions
 message ObservePositionsRequest {
-    // Optional party identifier
+    // Optional party ID
     optional string party_id = 1;
-    // Optional market identifier
+    // Optional market ID
     optional string market_id = 2;
 }
 
@@ -860,7 +860,7 @@ enum LedgerEntryField {
 // Represents an aggregated view of ledger entry data, sender and receiver accounts,
 // details and balances for both sides after the transfer has been made
 message AggregatedLedgerEntry {
-    // Removing ID field as it is not used, there is no ID for an aggregated ledger entry
+    // Removed ID field as it is not used, there is no ID for an aggregated ledger entry
     reserved 1;
     // Timestamp to of block the result is referring to, in nanoseconds since the epoch
     int64 timestamp = 2;
