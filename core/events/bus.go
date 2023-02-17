@@ -75,7 +75,7 @@ type Event interface {
 	StreamMessage() *eventspb.BusEvent
 	// used for events like ExpiredOrders. It is used to increment the sequence ID by the number of records
 	// this event will produce to ensure history tables using time + sequence number to function properly.
-	CompositeCount() int
+	CompositeCount() uint64
 }
 
 const (
@@ -351,7 +351,7 @@ func newBase(ctx context.Context, t Type) *Base {
 	}
 }
 
-// CompositeCount on the base event will default to 1
+// CompositeCount on the base event will default to 1.
 func (b Base) CompositeCount() uint64 {
 	return 1
 }
