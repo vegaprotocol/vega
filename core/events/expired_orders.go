@@ -44,6 +44,10 @@ func (d ExpiredOrders) OrderIDs() []string {
 	return d.pb.OrderIds
 }
 
+func (d ExpiredOrders) CompositeCount() uint64 {
+	return uint64(len(d.pb.OrderIds))
+}
+
 func (d ExpiredOrders) IsMarket(marketID string) bool {
 	return d.pb.MarketId == marketID
 }

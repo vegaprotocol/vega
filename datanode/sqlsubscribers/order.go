@@ -86,6 +86,8 @@ func (os *Order) expired(ctx context.Context, eo ExpiredOrdersEvent, seqNum uint
 		if err := os.store.Add(o); err != nil {
 			return errors.Wrap(os.store.Add(o), "adding order to database")
 		}
+		// the next order will be insterted as though it was the next event on the bus, with a new sequence number:
+		seqNum++
 	}
 	return nil
 }

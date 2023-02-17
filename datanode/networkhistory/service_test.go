@@ -1264,9 +1264,6 @@ func getDatabaseDataSummary(ctx context.Context, connConfig sqlstore.ConnectionC
 	}
 
 	for table, meta := range dbMetaData.TableNameToMetaData {
-		if len(meta.SortOrder) == 0 {
-			meta.SortOrder = "vega_time, seq_num"
-		}
 		summary := tableDataSummary{tableName: table}
 		err = conn.QueryRow(ctx, fmt.Sprintf("select count(*) from %s", table)).Scan(&summary.rowCount)
 		if err != nil {
@@ -1274,13 +1271,10 @@ func getDatabaseDataSummary(ctx context.Context, connConfig sqlstore.ConnectionC
 		}
 
 		if summary.rowCount > 0 {
-			q := fmt.Sprintf("SELECT md5(CAST((array_agg(f.* order by %s))AS text)) FROM %s f; ", meta.SortOrder, table)
-			err = conn.QueryRow(ctx, q).Scan(&summary.dataHash)
-			// err = conn.QueryRow(ctx, fmt.Sprintf("SELECT md5(CAST((array_agg(f.* order by %s))AS text)) FROM %s f; ",
-			// meta.SortOrder, table)).Scan(&summary.dataHash)
+			err = conn.QueryRow(ctx, fmt.Sprintf("SELECT md5(CAST((array_agg(f.* order by %s))AS text)) FROM %s f; ",
+				meta.SortOrder, table)).Scan(&summary.dataHash)
 			if err != nil {
-				panic(fmt.Sprintf("Query: %s\nWhere: '%s'\nError: %v\n", q, meta.SortOrder, err))
-				// panic(q + " " + err.Error())
+				panic(err)
 			}
 		}
 
@@ -1323,9 +1317,6 @@ func getSnapshotIntervalToHistoryTableDeltaSummary(ctx context.Context,
 		intervalHistoryTableSummary := map[string]tableDataSummary{}
 		for table, meta := range dbMetaData.TableNameToMetaData {
 			if meta.Hypertable {
-				if len(meta.SortOrder) == 0 {
-					meta.SortOrder = "vega_time, seq_num"
-				}
 				summary := tableDataSummary{tableName: table}
 				err := conn.QueryRow(ctx, fmt.Sprintf("select count(*) from %s %s", table, whereClause)).Scan(&summary.rowCount)
 				if err != nil {
