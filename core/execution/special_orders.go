@@ -229,16 +229,25 @@ func (m *Market) updateLPOrders(
 	var (
 		orderEvts []events.Event
 		cancelIDs = map[string]struct{}{}
+		submitIDs = map[string]struct{}{}
 		now       = m.timeService.GetTimeNow().UnixNano()
 	)
 
-	// now we gonna map all the all order which
-	// where to be cancelled, and just do nothing in
-	// those case.
+	// now we gonna map all the order which
+	// where to be cancelled. Then send events
+	// if they are to be cancelled, or do nothing
+	// if they are to be submitted again.
 	for _, v := range cancels {
 		for _, id := range v.OrderIDs {
 			cancelIDs[id] = struct{}{}
 		}
+	}
+
+	// now we gonna map all the all order which
+	// where are to be submitted, to avoid cancelling them
+	// them submitting them
+	for _, v := range submits {
+		submitIDs[v.ID] = struct{}{}
 	}
 
 	subFn := func(order *types.Order) {
@@ -261,10 +270,14 @@ func (m *Market) updateLPOrders(
 	for _, order := range allOrders {
 		order.UpdatedAt = now
 
+		_, toCancel := cancelIDs[order.ID]
+		_, toSubmit := submitIDs[order.ID]
 		// these order were actually cancelled, just send the event
-		if _, ok := cancelIDs[order.ID]; ok {
-			order.Status = types.OrderStatusCancelled
-			orderEvts = append(orderEvts, events.NewOrderEvent(ctx, order))
+		if toCancel {
+			if !toSubmit {
+				order.Status = types.OrderStatusCancelled
+				orderEvts = append(orderEvts, events.NewOrderEvent(ctx, order))
+			}
 			continue
 		}
 
