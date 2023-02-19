@@ -88,7 +88,7 @@ func New(log *logging.Logger, config Config, marketID string, broker Broker) *En
 }
 
 func (e *Engine) FlushPositionEvents(ctx context.Context) {
-	if e.StreamPositionVerbose {
+	if e.StreamPositionVerbose || len(e.updatedPositions) <= 0 {
 		return
 	}
 
