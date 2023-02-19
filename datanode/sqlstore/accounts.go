@@ -196,7 +196,7 @@ func (as *Accounts) Query(ctx context.Context, filter entities.AccountFilter) ([
 	return accs, nil
 }
 
-// TODO: remove
+// TODO: remove.
 func (as *Accounts) QueryBalancesV1(ctx context.Context, filter entities.AccountFilter, pagination entities.OffsetPagination) ([]entities.AccountBalance, error) {
 	query, args, err := filterAccountBalancesQuery(filter)
 	if err != nil {

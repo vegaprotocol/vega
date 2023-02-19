@@ -95,7 +95,7 @@ func TestAccount(t *testing.T) {
 		assert.Len(t, accs, 0)
 	})
 
-	// TODO: remove
+	// TODO: remove.
 	t.Run("query account balance v1", func(t *testing.T) {
 		// QueryBalanceV1 correctly filters on marketID
 		filter := entities.AccountFilter{AssetID: asset.ID, MarketIDs: []entities.MarketID{account.MarketID}}
