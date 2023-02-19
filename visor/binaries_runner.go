@@ -53,10 +53,16 @@ func NewBinariesRunner(log *logging.Logger, binsFolder string, stopTimeout time.
 	}
 }
 
-func (r *BinariesRunner) runBinary(ctx context.Context, binPath string, args []string) error {
+func (r *BinariesRunner) cleanBinaryPath(binPath string) string {
 	if !filepath.IsAbs(binPath) {
-		binPath = path.Join(r.binsFolder, binPath)
+		return path.Join(r.binsFolder, binPath)
 	}
+
+	return binPath
+}
+
+func (r *BinariesRunner) runBinary(ctx context.Context, binPath string, args []string) error {
+	binPath = r.cleanBinaryPath(binPath)
 
 	if err := utils.EnsureBinary(binPath); err != nil {
 		return fmt.Errorf("failed to locate binary %s %v: %w", binPath, args, err)
@@ -129,7 +135,10 @@ func (r *BinariesRunner) prepareVegaArgs(runConf *config.RunConfig, isRestart bo
 	// if a node restart happens (not due protocol upgrade) and data node is present
 	// we need to make sure that they will start on the block that data node has already processed.
 	if isRestart && runConf.DataNode != nil {
-		latestSegment, err := latestDataNodeHistorySegment(runConf.DataNode.Binary.Path, runConf.DataNode.Binary.Args)
+		latestSegment, err := latestDataNodeHistorySegment(
+			r.cleanBinaryPath(runConf.DataNode.Binary.Path),
+			runConf.DataNode.Binary.Args,
+		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get latest history segment from data node: %w", err)
 		}

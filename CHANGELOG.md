@@ -9,6 +9,7 @@
 - [7361](https://github.com/vegaprotocol/vega/issues/7361) - Network history loading and current order set tracking - database requires database to be dropped
 - [6963](https://github.com/vegaprotocol/vega/issues/7382) - `IssueSignatures` is no longer a validator command and is now protected by the spam engine
 - [7445](https://github.com/vegaprotocol/vega/issues/7445) - Added rate limiting to `GRPC`, `Rest` and `GraphQL` `APIs`
+- [7614](https://github.com/vegaprotocol/vega/issues/7614) - Market parties added to snapshot state to ensure proper restoration
 - [7542](https://github.com/vegaprotocol/vega/issues/7542) - Add optional slippage factors to market proposal and use them to cap slippage component of maintenance margin
 
 ### 🗑️ Deprecation
@@ -74,6 +75,7 @@
 - [7577](https://github.com/vegaprotocol/vega/issues/7577) - Use correct trade size when calculating pending open volume
 - [7598](https://github.com/vegaprotocol/vega/issues/7598) - Set up log for rate limiter
 - [7607](https://github.com/vegaprotocol/vega/issues/7607) - Fix handling of removed transfers
+- [7622](https://github.com/vegaprotocol/vega/issues/7622) - Fix cleaning path for Visor when restarting data node
 
 ## 0.67.2
 

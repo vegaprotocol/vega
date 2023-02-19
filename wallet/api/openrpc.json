@@ -1084,7 +1084,8 @@
                   "name": "mainnet1",
                   "metadata": [
                     {
-                      "network": "mainnet"
+                      "key": "network",
+                      "value": "mainnet"
                     }
                   ]
                 },
@@ -1092,7 +1093,8 @@
                   "name": "fairground",
                   "metadata": [
                     {
-                      "network": "testnet"
+                      "key": "network",
+                      "value": "testnet"
                     }
                   ]
                 },
@@ -1134,7 +1136,8 @@
           "type": "object",
           "required": [
             "name",
-            "api"
+            "api",
+            "apps"
           ],
           "properties": {
             "name": {
@@ -3498,9 +3501,7 @@
         "type": "object",
         "description": "The API configuration for the network.",
         "required": [
-          "grpcConfig",
-          "graphQLConfig",
-          "restConfig"
+          "grpcConfig"
         ],
         "properties": {
           "grpcConfig": {

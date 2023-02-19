@@ -15,6 +15,7 @@ package risk
 import (
 	"context"
 	"errors"
+	"sort"
 	"sync"
 	"time"
 
@@ -23,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types/statevar"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"golang.org/x/exp/maps"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/risk Orderbook,AuctionState,TimeService,StateVarEngine,Model
@@ -88,6 +90,12 @@ type Engine struct {
 	positionFactor          num.Decimal
 	linearSlippageFactor    num.Decimal
 	quadraticSlippageFactor num.Decimal
+
+	// a map of margin levels events to be send
+	// should be flushed after the processing of every transaction
+	// partyId -> MarginLevelsEvent
+	marginLevelsUpdates map[string]*events.MarginLevels
+	updateMarginLevels  func(...*events.MarginLevels)
 }
 
 // NewEngine instantiate a new risk engine.
@@ -131,6 +139,7 @@ func NewEngine(log *logging.Logger,
 		positionFactor:          positionFactor,
 		linearSlippageFactor:    linearSlippageFactor,
 		quadraticSlippageFactor: quadraticSlippageFactor,
+		marginLevelsUpdates:     map[string]*events.MarginLevels{},
 	}
 	stateVarEngine.RegisterStateVariable(asset, mktID, RiskFactorStateVarName, FactorConverter{}, e.startRiskFactorsCalculation, []statevar.EventType{statevar.EventTypeMarketEnactment, statevar.EventTypeMarketUpdated}, e.updateRiskFactor)
 
@@ -142,7 +151,48 @@ func NewEngine(log *logging.Logger,
 		stateVarEngine.NewEvent(asset, mktID, statevar.EventTypeMarketEnactment)
 	}
 
+	e.updateMarginLevels = e.bufferMarginLevels
+	if e.StreamMarginLevelsVerbose {
+		e.updateMarginLevels = e.sendMarginLevels
+	}
+
 	return e
+}
+
+func (e *Engine) FlushMarginLevelsEvents() {
+	if e.StreamMarginLevelsVerbose || len(e.marginLevelsUpdates) <= 0 {
+		return
+	}
+
+	e.sendBufferedMarginLevels()
+}
+
+func (e *Engine) sendBufferedMarginLevels() {
+	parties := maps.Keys(e.marginLevelsUpdates)
+	sort.Strings(parties)
+	evts := make([]events.Event, 0, len(parties))
+
+	for _, v := range parties {
+		evts = append(evts, e.marginLevelsUpdates[v])
+	}
+
+	e.broker.SendBatch(evts)
+	e.marginLevelsUpdates = make(map[string]*events.MarginLevels, len(e.marginLevelsUpdates))
+}
+
+func (e *Engine) sendMarginLevels(m ...*events.MarginLevels) {
+	evts := make([]events.Event, 0, len(m))
+	for _, ml := range m {
+		evts = append(evts, ml)
+	}
+
+	e.broker.SendBatch(evts)
+}
+
+func (e *Engine) bufferMarginLevels(mls ...*events.MarginLevels) {
+	for _, m := range mls {
+		e.marginLevelsUpdates[m.PartyID()] = m
+	}
 }
 
 func (e *Engine) OnMarginScalingFactorsUpdate(sf *types.ScalingFactors) error {
@@ -190,7 +240,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 	revts := make([]events.Risk, 0, len(evts))
 	// parties with insufficient margin to meet required level, return the event passed as arg
 	low := []events.Margin{}
-	eventBatch := make([]events.Event, 0, len(evts))
+	eventBatch := make([]*events.MarginLevels, 0, len(evts))
 	// for now, we can assume a single asset for all events
 	rFactors := *e.factors
 	for _, evt := range evts {
@@ -234,7 +284,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 			margins:  levels,
 		})
 	}
-	e.broker.SendBatch(eventBatch)
+	e.updateMarginLevels(eventBatch...)
 	return revts, low
 }
 
@@ -272,7 +322,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	}
 
 	// propagate margins levels to the buffer
-	e.broker.Send(events.NewMarginLevelsEvent(ctx, *margins))
+	e.updateMarginLevels(events.NewMarginLevelsEvent(ctx, *margins))
 
 	// margins are sufficient, nothing to update
 	if curMarginBalance.GTE(margins.InitialMargin) {
@@ -357,7 +407,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				Asset:                  evt.Asset(),
 				Timestamp:              now,
 			}
-			e.broker.Send(events.NewMarginLevelsEvent(ctx, margins))
+			e.updateMarginLevels(events.NewMarginLevelsEvent(ctx, margins))
 			ret = append(ret, &marginChange{
 				Margin:   evt,
 				transfer: trnsfr,
@@ -395,7 +445,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		// case 1 -> nothing to do margins are sufficient
 		if curMargin.GTE(margins.SearchLevel) && curMargin.LT(margins.CollateralReleaseLevel) {
 			// propagate margins then continue
-			e.broker.Send(events.NewMarginLevelsEvent(ctx, *margins))
+			e.updateMarginLevels(events.NewMarginLevelsEvent(ctx, *margins))
 			continue
 		}
 
@@ -424,7 +474,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 			// collateral not relased in auction
 			if e.as.InAuction() && !e.as.CanLeave() {
 				// propagate margins then continue
-				e.broker.Send(events.NewMarginLevelsEvent(ctx, *margins))
+				e.updateMarginLevels(events.NewMarginLevelsEvent(ctx, *margins))
 				continue
 			}
 			trnsfr = &types.Transfer{
@@ -439,7 +489,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		}
 
 		// propage margins to the buffers
-		e.broker.Send(events.NewMarginLevelsEvent(ctx, *margins))
+		e.updateMarginLevels(events.NewMarginLevelsEvent(ctx, *margins))
 
 		risk := &marginChange{
 			Margin:   evt,
