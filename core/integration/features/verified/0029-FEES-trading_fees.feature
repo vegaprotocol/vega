@@ -509,7 +509,7 @@ Feature: Fees calculations
       | aux1    | ETH   | 100000000 |
       | aux2    | ETH   | 100000000 |
       | trader3 | ETH   | 10000000  |
-      | trader4 | ETH   | 22086     |
+      | trader4 | ETH   | 22207     |
       | lpprov  | ETH   | 100000000 |
 
     When the parties submit the following liquidity provision:
@@ -546,7 +546,7 @@ Feature: Fees calculations
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader3 | ETH   | ETH/DEC21 | 33888  | 9966613 |
-      | trader4 | ETH   | ETH/DEC21 | 21384  | 0       |
+      | trader4 | ETH   | ETH/DEC21 | 21384  | 121     |
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
@@ -556,7 +556,7 @@ Feature: Fees calculations
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3 | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | trader3-buy-1  |
       | trader4 | ETH/DEC21 | sell | 1      | 1002  | 1                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
-
+    
     And the following transfers should happen:
       | from    | to      | from account            | to account                       | market id | amount | asset |
       | trader4 | market  | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 6      | ETH   |
@@ -570,7 +570,7 @@ Feature: Fees calculations
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader3 | ETH   | ETH/DEC21 | 34129  | 9966378 |
-      | trader4 | ETH   | ETH/DEC21 | 21375  | 0       |
+      | trader4 | ETH   | ETH/DEC21 | 21496  | 0       |
 
   Scenario: S007, Testing fees to confirm fees are collected first and then margin (0029-FEES-002, 0029-FEES-008)
 

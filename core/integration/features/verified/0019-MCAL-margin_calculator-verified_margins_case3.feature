@@ -13,8 +13,8 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     And the parties deposit on asset's general account the following amount:
       | party      | asset | amount     |
       | party1     | ETH   | 1000000000 |
-      | sellSideMM | ETH   | 1000000000 |
-      | buySideMM  | ETH   | 1000000000 |
+      | sellSideMM | ETH   | 2000000000 |
+      | buySideMM  | ETH   | 2000000000 |
       | aux        | ETH   | 1000000000 |
       | aux2       | ETH   | 1000000000 |
       | lpprov     | ETH   | 1000000000 |
@@ -104,8 +104,8 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
 
     # CLOSEOUT ATTEMPT (FAILED, no buy-side in order book) BY TRADER
     When the parties place the following orders with ticks:
-      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | sell | 13     | 8000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party  | market id | side | volume | price   | resulting trades | type       | tif     |
+      | party1 | ETH/DEC19 | sell | 13     | 8000000 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
       | party1 | ETH   | ETH/DEC19 | 587600000 | 444000000 |
