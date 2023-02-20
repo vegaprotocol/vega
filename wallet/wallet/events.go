@@ -1,33 +1,33 @@
 package wallet
 
-type EventType int
+type EventType string
 
 const (
 	// WalletCreatedEventType is raised when a wallet has been created.
-	WalletCreatedEventType EventType = iota
+	WalletCreatedEventType EventType = "WALLET_CREATED"
 
 	// UnlockedWalletUpdatedEventType is raised when a wallet, that is already
 	// unlocked, has been updated.
-	UnlockedWalletUpdatedEventType
+	UnlockedWalletUpdatedEventType = "UNLOCKED_WALLET_UPDATED"
 
 	// LockedWalletUpdatedEventType is raised when a wallet that has not been
 	// unlocked, has been updated.
-	LockedWalletUpdatedEventType
+	LockedWalletUpdatedEventType = "LOCKED_WALLET_UPDATED"
 
 	// WalletRemovedEventType is raised when a wallet has been removed.
-	WalletRemovedEventType
+	WalletRemovedEventType = "WALLET_REMOVED"
 
 	// WalletRenamedEventType is raised when a wallet has been renamed.
-	WalletRenamedEventType
+	WalletRenamedEventType = "WALLET_RENAMED"
 
 	// WalletHasBeenLockedEventType is raised when the wallet has been locked,
 	// either by an external passphrase update, or a timeout.
-	WalletHasBeenLockedEventType
+	WalletHasBeenLockedEventType = "WALLET_HAS_BEEN_LOCKED"
 )
 
 type Event struct {
-	Type EventType
-	Data EventData
+	Type EventType `json:"type"`
+	Data EventData `json:"data,omitempty"`
 }
 
 type EventData interface {
