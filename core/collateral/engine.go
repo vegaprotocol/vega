@@ -1901,7 +1901,7 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 				lm = &types.LedgerEntry{
 					FromAccount:        acc.ToDetails(),
 					ToAccount:          to.Account.ToDetails(),
-					Amount:             parts,
+					Amount:             parts.Clone(),
 					Type:               req.Type,
 					Timestamp:          now,
 					FromAccountBalance: acc.Balance.Clone(),
