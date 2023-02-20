@@ -123,7 +123,7 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	err = h.spam.CheckSubmission(request, &stats)
 	if err != nil {
 		h.interactor.NotifyError(ctx, traceID, ApplicationError, fmt.Errorf("could not send transaction: %w", err))
-		return nil, applicationCancellationError(ErrTransactionBlockedBySpamRules)
+		return nil, applicationCancellationError(err)
 	}
 
 	// Sign the payload.

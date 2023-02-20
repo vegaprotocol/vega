@@ -2,6 +2,7 @@ package spam
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
@@ -41,11 +42,11 @@ func (s *Handler) getSpamStatisticsForChain(chainID string) map[string]*nodetype
 // checkVote because it has to be a little different...
 func (s *Handler) checkVote(propID string, st *nodetypes.VoteSpamStatistics) error {
 	if st.BannedUntil != nil {
-		return ErrPartyBanned
+		return fmt.Errorf("party is banned from submitting transactions of this type until %s", *st.BannedUntil)
 	}
 	v := st.Proposals[propID]
 	if v == st.MaxForEpoch {
-		return ErrPartyWillBeBanned
+		return fmt.Errorf("party has already submitted the maximum number of transactions of this type per epoch (%d)", st.MaxForEpoch)
 	}
 	st.Proposals[propID]++
 	return nil
@@ -53,11 +54,11 @@ func (s *Handler) checkVote(propID string, st *nodetypes.VoteSpamStatistics) err
 
 func (s *Handler) checkTxn(st *nodetypes.SpamStatistic) error {
 	if st.BannedUntil != nil {
-		return ErrPartyBanned
+		return fmt.Errorf("party is banned from submitting transactions of this type until %s", *st.BannedUntil)
 	}
 
 	if st.CountForEpoch == st.MaxForEpoch {
-		return ErrPartyWillBeBanned
+		return fmt.Errorf("party has already submitted the maximum number of transactions of this type per epoch (%d)", st.MaxForEpoch)
 	}
 
 	// increment the count by hand because the spam-stats endpoint only updates once a block
@@ -112,7 +113,7 @@ func (s *Handler) CheckSubmission(req *walletpb.SubmitTransactionRequest, newSta
 	}
 
 	if newStats.PoW.BannedUntil != nil {
-		return ErrPartyBannedPoW
+		return fmt.Errorf("party is banned from submitting all transactions until %s", *newStats.PoW.BannedUntil)
 	}
 
 	switch cmd := req.Command.(type) {
