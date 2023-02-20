@@ -1,11 +1,19 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	vgencoding "code.vegaprotocol.io/vega/libs/encoding"
 	"go.uber.org/zap"
+)
+
+var (
+	ErrInvalidLogLevelValue        = errors.New("the service log level is invalid")
+	ErrInvalidMaximumTokenDuration = errors.New("the maximum token duration is invalid")
+	ErrServerHostUnset             = errors.New("the service host is unset")
+	ErrServerPortUnset             = errors.New("the service port is unset")
 )
 
 type Config struct {
@@ -42,4 +50,27 @@ func DefaultConfig() *Config {
 			},
 		},
 	}
+}
+
+// Validate checks the values set in the server config file returning an error is anything is awry.
+func (c *Config) Validate() error {
+	if c.Server.Host == "" {
+		return ErrServerHostUnset
+	}
+
+	if c.Server.Port == 0 {
+		return ErrServerPortUnset
+	}
+
+	tokenExpiry := &vgencoding.Duration{}
+	if err := tokenExpiry.UnmarshalText([]byte(c.APIV1.MaximumTokenDuration.String())); err != nil {
+		return ErrInvalidMaximumTokenDuration
+	}
+
+	logLevel := &vgencoding.LogLevel{}
+	if err := logLevel.UnmarshalText([]byte(c.LogLevel.String())); err != nil {
+		return ErrInvalidLogLevelValue
+	}
+
+	return nil
 }

@@ -1,16 +1,9 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 
-	vgencoding "code.vegaprotocol.io/vega/libs/encoding"
-	"code.vegaprotocol.io/vega/wallet/service/v1"
-)
-
-var (
-	ErrInvalidLogLevelValue        = errors.New("The service log level is invalid")
-	ErrInvalidMaximumTokenDuration = errors.New("the maximum token duration is invalid")
+	v1 "code.vegaprotocol.io/vega/wallet/service/v1"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/store_mock.go -package mocks code.vegaprotocol.io/vega/wallet/service Store
@@ -67,26 +60,12 @@ func IsInitialised(store Store) (bool, error) {
 }
 
 func UpdateConfig(store Store, cfg *Config) error {
-	if err := checkConfig(cfg); err != nil {
+	if err := cfg.Validate(); err != nil {
 		return fmt.Errorf("the service configuration is invalid: %w", err)
 	}
 
 	if err := store.SaveConfig(cfg); err != nil {
 		return fmt.Errorf("could not save the service configuration: %w", err)
-	}
-
-	return nil
-}
-
-func checkConfig(cfg *Config) error {
-	tokenExpiry := &vgencoding.Duration{}
-	if err := tokenExpiry.UnmarshalText([]byte(cfg.APIV1.MaximumTokenDuration.String())); err != nil {
-		return ErrInvalidMaximumTokenDuration
-	}
-
-	logLevel := &vgencoding.LogLevel{}
-	if err := logLevel.UnmarshalText([]byte(cfg.LogLevel.String())); err != nil {
-		return ErrInvalidLogLevelValue
 	}
 
 	return nil

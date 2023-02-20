@@ -72,6 +72,7 @@
 - [7508](https://github.com/vegaprotocol/vega/issues/7508) - Assure transfer events always sent after margin recheck
 - [7492](https://github.com/vegaprotocol/vega/issues/7492) - Send market depth events at the end of each block
 - [7582](https://github.com/vegaprotocol/vega/issues/7582) - Validate transfer amount in `checkTx`
+- [7582](https://github.com/vegaprotocol/vega/issues/7625) - Add validation to wallet's server configuration
 - [7577](https://github.com/vegaprotocol/vega/issues/7577) - Use correct trade size when calculating pending open volume
 - [7598](https://github.com/vegaprotocol/vega/issues/7598) - Set up log for rate limiter
 - [7629](https://github.com/vegaprotocol/vega/issues/7629) - Handle error from `e.initialiseTree()` in the snapshot engine
