@@ -1195,8 +1195,8 @@ func (t *tradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v
 		positions []entities.Position
 		err       error
 	)
-	// TODO: better use a filter struct instead of having 4 different cases here
-	// By market and party
+	// TODO: better use a filter struct instead of having 4 different cases here.
+	// By market and party.
 	if req.PartyId != nil && req.MarketId != nil {
 		position, err := t.positionService.GetByMarketAndParty(ctx, *req.MarketId, *req.PartyId)
 		if err != nil {
@@ -1205,7 +1205,7 @@ func (t *tradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v
 		positions = append(positions, position)
 	}
 
-	// By market
+	// By market.
 	if req.PartyId == nil && req.MarketId != nil {
 		positions, err = t.positionService.GetByMarket(ctx, *req.MarketId)
 		if err != nil {
@@ -1213,7 +1213,7 @@ func (t *tradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v
 		}
 	}
 
-	// By party
+	// By party.
 	if req.PartyId != nil && req.MarketId == nil {
 		positions, err = t.positionService.GetByParty(ctx, entities.PartyID(*req.PartyId))
 		if err != nil {
@@ -1221,7 +1221,7 @@ func (t *tradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v
 		}
 	}
 
-	// All the positions
+	// All the positions.
 	if req.PartyId == nil && req.MarketId == nil {
 		positions, err = t.positionService.GetAll(ctx)
 		if err != nil {
