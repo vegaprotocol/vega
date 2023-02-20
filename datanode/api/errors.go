@@ -179,7 +179,7 @@ var (
 	// EthereumKeyRotationService...
 	ErrEthereumKeyRotationServiceGetPerNode = errors.New("failed to get ethereum key rotations for node")
 	ErrEthereumKeyRotationServiceGetAll     = errors.New("failed to get all ethereum key rotations")
-	// BlockService
+	// BlockService...
 	ErrBlockServiceGetLast = errors.New("failed to get last block")
 )
 
@@ -434,5 +434,5 @@ func formatE(err error, errs ...error) error {
 	}
 }
 
-// FormatE exports the formatE function (primarily for testing)
+// FormatE exports the formatE function (primarily for testing).
 var FormatE = formatE
