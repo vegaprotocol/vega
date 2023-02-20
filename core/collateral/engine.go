@@ -1082,7 +1082,6 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 		MarketPosition:  pos,
 		margin:          marAcc,
 		general:         genAcc,
-		lock:            nil,
 		bond:            bondAcc,
 		asset:           asset,
 		marketID:        marketID,

@@ -140,3 +140,25 @@ func (n *NodeMode) UnmarshalText(text []byte) error {
 func (n NodeMode) MarshalText() ([]byte, error) {
 	return []byte(n), nil
 }
+
+type DataNodeRetentionMode string
+
+const (
+	DataNodeRetentionModeStd         DataNodeRetentionMode = "standard"
+	DataNodeRetentionModeArchive     DataNodeRetentionMode = "archive"
+	DataNodeRetentionModeLite        DataNodeRetentionMode = "lite"
+	DataNodeRetentionModeUnsupported DataNodeRetentionMode = "unsupported"
+)
+
+func DataNodeRetentionModeFromString(s string) (DataNodeRetentionMode, error) {
+	switch DataNodeRetentionMode(s) {
+	case DataNodeRetentionModeStd:
+		return DataNodeRetentionModeStd, nil
+	case DataNodeRetentionModeArchive:
+		return DataNodeRetentionModeArchive, nil
+	case DataNodeRetentionModeLite:
+		return DataNodeRetentionModeLite, nil
+	default:
+		return DataNodeRetentionModeUnsupported, fmt.Errorf("%s is not a valid data node retention mode, expected [standard, archive, lite]", s)
+	}
+}

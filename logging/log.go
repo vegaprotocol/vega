@@ -247,6 +247,16 @@ func newLoggerFromConfig(config Config) *Logger {
 	return New(zaplogger, &zapconfig, config.Environment, "root")
 }
 
+func NewLoggerFromZapConfig(cfg zap.Config) *Logger {
+	zaplogger, err := cfg.Build()
+	if err != nil {
+		panic(err)
+	}
+	zaplogger = zaplogger.Named("root")
+	return New(zaplogger, &cfg, "production", "root")
+
+}
+
 // NewDevLogger creates a new logger suitable for development environments.
 func NewDevLogger() *Logger {
 	config := Config{

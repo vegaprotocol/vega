@@ -110,7 +110,10 @@ func NewSQLStoreBroker(
 	return b
 }
 
-func (b *SQLStoreBroker) Receive(ctx context.Context) error {
+func (b *SQLStoreBroker) Receive(ctx context.Context) (errr error) {
+	defer func() {
+		panic(fmt.Sprintf("%v", errr))
+	}()
 	if err := b.eventSource.Listen(); err != nil {
 		return err
 	}
