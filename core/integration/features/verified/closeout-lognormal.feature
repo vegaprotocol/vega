@@ -21,7 +21,7 @@ Feature: Closeout scenarios
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @EndBlock
-  Scenario: 2 parties get close-out at the same time. Distressed position gets taken over by LP, distressed order gets canceled (0005-COLL-002; 0012-POSR-001; 0012-POSR-002; 0012-POSR-004; 0012-POSR-005)
+  Scenario: 001, 2 parties get close-out at the same time. Distressed position gets taken over by LP, distressed order gets canceled (0005-COLL-002; 0012-POSR-001; 0012-POSR-002; 0012-POSR-004; 0012-POSR-005)
     # setup accounts, we are trying to closeout trader3 first and then trader2
 
     Given the insurance pool balance should be "0" for the market "ETH/DEC19"
@@ -142,7 +142,7 @@ Feature: Closeout scenarios
       | mark price | trading mode                    | auction trigger                            |
       | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS |
 
-  Scenario: Position becomes distressed upon exiting an auction (0012-POSR-007)
+  Scenario: 002, Position becomes distressed upon exiting an auction (0012-POSR-007)
     Given the insurance pool balance should be "0" for the market "ETH/DEC19"
     Given the parties deposit on asset's general account the following amount:
       | party      | asset | amount        |
@@ -210,3 +210,4 @@ Feature: Closeout scenarios
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC20 | 0      | 0       |
 
+  Scenario: 003, check the newly added "loss socialisation amount" (0007-POSN-014)
