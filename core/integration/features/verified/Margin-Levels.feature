@@ -197,3 +197,88 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
 #  | trader20 | USD   | ETH/DEC20 | 6985   | 2015    |
 
 
+Scenario: Assure initial margin requirement must be met
+    Given the parties deposit on asset's general account the following amount:
+      | party       | asset | amount        |
+      | lprov       | USD   | 1000000000000 |
+      | auxiliary1  | USD   | 1000000000000 |
+      | auxiliary2  | USD   | 1000000000000 |
+      | trader1     | USD   | 711           |
+      | trader2     | USD   | 712           |
+      | trader3     | USD   | 321           |
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lprov | ETH/DEC19 | 100000            | 0.00  | sell | ASK              | 100        | 55     | submission |
+      | lp1 | lprov | ETH/DEC19 | 100000            | 0.00  | buy  | BID              | 100        | 55     | amendmend  |
+    And the parties place the following orders:
+      | party      | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+      | auxiliary2 | ETH/DEC19 | buy  | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-5     |
+      | auxiliary1 | ETH/DEC19 | sell | 10     | 15    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1000  |
+      | auxiliary2 | ETH/DEC19 | buy  | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1     |
+      | auxiliary1 | ETH/DEC19 | sell | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1     |
+    
+    When the opening auction period ends for market "ETH/DEC19"
+    Then the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | open interest |
+      | 10         | TRADING_MODE_CONTINUOUS | 10            |
+
+    When the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | error               |
+      | trader1 | ETH/DEC19 | sell | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | margin check failed |
+      | trader2 | ETH/DEC19 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC |                     |
+    
+    When the parties deposit on asset's general account the following amount:
+      | party       | asset | amount        |
+      | trader1     | USD   | 1             |
+    And the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC19 | sell | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell | 9      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
+    # both parties end up with same margin levels and account balances
+    Then the parties should have the following margin levels:
+      | party    | market id | maintenance | search | initial | release |
+      | trader1  | ETH/DEC19 | 356         | 534    | 712     | 1068    |
+      | trader2  | ETH/DEC19 | 356         | 534    | 712     | 1068    |
+    And the parties should have the following account balances:
+      | party    | asset | market id | margin | general |
+      | trader1  | USD   | ETH/DEC19 | 712    |      0  |
+      | trader2  | USD   | ETH/DEC19 | 712    |      0  |
+
+    When the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | error               |
+      | trader3 | ETH/DEC19 | buy  | 20     | 15    | 0                | TYPE_LIMIT | TIF_FOK | margin check failed |
+
+    When the parties deposit on asset's general account the following amount:
+      | party       | asset | amount        |
+      | trader3     | USD   | 2             |
+    And the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | 
+      | trader3 | ETH/DEC19 | buy  | 20     | 15    | 3                | TYPE_LIMIT | TIF_FOK | 
+    Then the parties should have the following margin levels:
+      | party    | market id | maintenance | search | initial | release |
+      | trader1  | ETH/DEC19 | 356         | 534    | 712     | 1068    |
+      | trader2  | ETH/DEC19 | 356         | 534    | 712     | 1068    |
+      | trader3  | ETH/DEC19 | 161         | 241    | 322     | 483     |
+    And the parties should have the following account balances:
+      | party    | asset | market id | margin | general |
+      | trader1  | USD   | ETH/DEC19 | 712    |      0  |
+      | trader2  | USD   | ETH/DEC19 | 712    |      0  |
+      | trader3  | USD   | ETH/DEC19 | 322    |      1  |
+
+    When the network moves ahead "1" blocks
+    Then the parties should have the following profit and loss:
+          | party   | volume | unrealised pnl | realised pnl |
+          | trader1 | -10    | 0              | 0            |
+          | trader2 | -10    | 0              | 0            |
+          | trader3 | 20     | 0              | 0            |
+    And the parties should have the following margin levels:
+      | party    | market id | maintenance | search | initial | release |
+      | trader1  | ETH/DEC19 | 406         | 609    | 812     | 1218    |
+      | trader2  | ETH/DEC19 | 406         | 609    | 812     | 1218    |
+      | trader3  | ETH/DEC19 | 321         | 481    | 642     | 963     |
+    And the parties should have the following account balances:
+      | party    | asset | market id | margin | general |
+      | trader1  | USD   | ETH/DEC19 | 712    |      0  |
+      | trader2  | USD   | ETH/DEC19 | 712    |      0  |
+      | trader3  | USD   | ETH/DEC19 | 323    |      0  |
+
