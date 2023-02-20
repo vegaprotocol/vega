@@ -59,6 +59,7 @@ func NewBufferedEventSource(ctx context.Context, log *logging.Logger, config Buf
 
 		go func() {
 			ticker := time.NewTicker(1 * time.Minute)
+			defer ticker.Stop()
 			for {
 				select {
 				case <-ctx.Done():

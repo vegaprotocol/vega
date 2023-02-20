@@ -35,8 +35,7 @@ func newGen() *gen {
 // the events might be passed by value (interface values)
 // returns the more restrictive event object - once seq ID is set, it should be treated as RO.
 func (g *gen) setSequence(evts ...events.Event) []events.Event {
-	ln := uint64(len(evts))
-	if ln == 0 {
+	if len(evts) == 0 {
 		return nil
 	}
 	hash := evts[0].TraceID()
@@ -49,17 +48,21 @@ func (g *gen) setSequence(evts ...events.Event) []events.Event {
 		// if we're adding a new hash, check if we're up to 3, and remove it if needed
 		defer g.cleanID()
 	}
-	// so current == 1, sending 3 events -> map == 4
-	// sequences set are 1 + 0, 1 + 1, and 1 + 2 (so 1 through 3)
-	g.blockSeq[hash] += ln
-	g.mu.Unlock()
+	// defer call stack is LIFO, cleanID acquires a lock, so ensure we release it here first
+	defer g.mu.Unlock()
 	// set sequence ID to the next sequence ID available
 	ret := make([]events.Event, 0, len(evts))
 	// create slice of ids
-	for i, e := range evts {
-		e.SetSequenceID(cur + uint64(i))
+	for _, e := range evts {
+		e.SetSequenceID(cur)
+		// so if cur == 1 (new block), and we send 3 events with composite count of 1 -> cur == 4 (the next seq id to be set)
+		// if cur == 1, a composite count of 3 will send the event with seq ID 1, and set the next seq ID to be 1 + 3 == 4
+		// unpacking such an event leaves seq. ID 1, 2, and 3 available.
+		cur += e.CompositeCount()
 		ret = append(ret, e)
 	}
+	// update the mapk
+	g.blockSeq[hash] = cur
 	return ret
 }
 

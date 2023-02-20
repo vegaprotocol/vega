@@ -130,7 +130,13 @@ func (e *fanOutEventSource) sendEvents(ctx context.Context) {
 					prevBlock, prevSeq, event.BlockNr(), event.Sequence()))
 			}
 
-			prevBlock, prevSeq = event.BlockNr(), event.Sequence()
+			// if this is the first event, then this gives 0 + 1 for normal events, next will be 2
+			// composite event of 5 gives 0 + 5, the next sequence will be 6
+			prevSeq += event.CompositeCount()
+			if firstBlockAgain || (nextBlockFirstEvent && !firstBlockFirstEvent) {
+				prevSeq = event.CompositeCount()
+			}
+			prevBlock = event.BlockNr()
 
 			// Now get on with sending event to listeners
 			for _, evtCh := range e.eventChannels {

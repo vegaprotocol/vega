@@ -41,6 +41,7 @@
 - [7605](https://github.com/vegaprotocol/vega/issues/7605) - Return better error text when the wallet blocks a transaction due to spam rules
 - [7591](https://github.com/vegaprotocol/vega/issues/7591) - Add metadata and links to app to the network configuration
 - [7632](https://github.com/vegaprotocol/vega/issues/7632) - Make the wallet change events JSON friendly
+- [7601](https://github.com/vegaprotocol/vega/issues/7601) - introduce the expired orders event for optimisation.
 
 ### 🐛 Fixes
 - [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema

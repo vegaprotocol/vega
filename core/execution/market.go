@@ -3001,8 +3001,12 @@ func (m *Market) removeExpiredOrders(
 	defer timer.EngineTimeCounterAdd()
 
 	expired := []*types.Order{}
-	evts := []events.Event{}
-	for _, orderID := range m.expiringOrders.Expire(timestamp) {
+	toExp := m.expiringOrders.Expire(timestamp)
+	if len(toExp) == 0 {
+		return expired
+	}
+	ids := make([]string, 0, len(toExp))
+	for _, orderID := range toExp {
 		var order *types.Order
 		// The pegged expiry orders are copies and do not reflect the
 		// current state of the order, therefore we look it up
@@ -3035,9 +3039,11 @@ func (m *Market) removeExpiredOrders(
 		order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
 		order.Status = types.OrderStatusExpired
 		expired = append(expired, order)
-		evts = append(evts, events.NewOrderEvent(ctx, order))
+		ids = append(ids, orderID)
 	}
-	m.broker.SendBatch(evts)
+	if len(ids) > 0 {
+		m.broker.Send(events.NewExpiredOrdersEvent(ctx, m.mkt.ID, ids))
+	}
 
 	// If we have removed an expired order, do we need to reprice any
 	// or maybe notify the liquidity engine

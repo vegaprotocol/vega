@@ -27,9 +27,16 @@ type OrderEvent interface {
 	Order() *vega.Order
 }
 
+type ExpiredOrdersEvent interface {
+	events.Event
+	MarketID() string
+	OrderIDs() []string
+}
+
 type OrderStore interface {
 	Add(entities.Order) error
 	Flush(ctx context.Context) error
+	GetByMarketAndID(ctx context.Context, marketIDstr string, orderIDs []string) ([]entities.Order, error)
 }
 
 type Order struct {
@@ -44,15 +51,45 @@ func NewOrder(store OrderStore) *Order {
 }
 
 func (os *Order) Types() []events.Type {
-	return []events.Type{events.OrderEvent}
+	return []events.Type{
+		events.OrderEvent,
+		events.ExpiredOrdersEvent,
+	}
 }
 
 func (os *Order) Push(ctx context.Context, evt events.Event) error {
-	return os.consume(evt.(OrderEvent), evt.Sequence())
+	switch evt.Type() {
+	case events.OrderEvent:
+		return os.consume(evt.(OrderEvent), evt.Sequence())
+	case events.ExpiredOrdersEvent:
+		return os.expired(ctx, evt.(ExpiredOrdersEvent), evt.Sequence())
+	}
+	return nil
 }
 
 func (os *Order) Flush(ctx context.Context) error {
 	return os.store.Flush(ctx)
+}
+
+func (os *Order) expired(ctx context.Context, eo ExpiredOrdersEvent, seqNum uint64) error {
+	orders, err := os.store.GetByMarketAndID(ctx, eo.MarketID(), eo.OrderIDs())
+	if err != nil {
+		return err
+	}
+	txHash := entities.TxHash(eo.TxHash())
+	for _, o := range orders {
+		o.Status = entities.OrderStatusExpired
+		o.SeqNum = seqNum
+		o.UpdatedAt = os.vegaTime
+		o.VegaTime = os.vegaTime
+		o.TxHash = txHash
+		if err := os.store.Add(o); err != nil {
+			return errors.Wrap(os.store.Add(o), "adding order to database")
+		}
+		// the next order will be insterted as though it was the next event on the bus, with a new sequence number:
+		seqNum++
+	}
+	return nil
 }
 
 func (os *Order) consume(oe OrderEvent, seqNum uint64) error {

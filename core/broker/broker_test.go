@@ -836,6 +836,10 @@ func (e evt) StreamMessage() *eventspb.BusEvent {
 	return nil
 }
 
+func (e evt) CompositeCount() uint64 {
+	return 1
+}
+
 type waiter struct {
 	ch  chan struct{}
 	ctx context.Context
