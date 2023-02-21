@@ -79,6 +79,12 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 	var totalRowsCopied int64
 	var rowsCopied int64
 	var removedConstraintsAndIndexes *constraintsAndIndexes
+
+	historyTableLastTimestampMap, err := getLastHistoryTimestampMap(ctx, b.connPool, dbMetaData)
+	if err != nil {
+		return LoadResult{}, fmt.Errorf("failed to get last timestamp for history tables: %w", err)
+	}
+
 	for _, history := range contiguousHistory {
 		if removedConstraintsAndIndexes == nil {
 			constraintsSQL, err := b.removeConstraints(ctx, log, b.connPool)
@@ -116,7 +122,7 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 			}
 		}
 
-		rowsCopied, err = b.loadSnapshot(ctx, log, history, sourceDir, dbMetaData, b.connPool, withIndexesAndOrderTriggers)
+		rowsCopied, err = b.loadSnapshot(ctx, log, history, sourceDir, dbMetaData, b.connPool, withIndexesAndOrderTriggers, historyTableLastTimestampMap)
 		if err != nil {
 			return LoadResult{}, fmt.Errorf("failed to load history snapshot %s: %w", history, err)
 		}
@@ -129,7 +135,7 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 		return LoadResult{}, fmt.Errorf("failed to truncate current state tables: %w", err)
 	}
 
-	rowsCopied, err = b.loadSnapshot(ctx, log, currentStateSnapshot, sourceDir, dbMetaData, b.connPool, withIndexesAndOrderTriggers)
+	rowsCopied, err = b.loadSnapshot(ctx, log, currentStateSnapshot, sourceDir, dbMetaData, b.connPool, withIndexesAndOrderTriggers, historyTableLastTimestampMap)
 	totalRowsCopied += rowsCopied
 	if err != nil {
 		return LoadResult{}, fmt.Errorf("failed to load current state snapshot %s: %w", currentStateSnapshot, err)
@@ -256,7 +262,7 @@ type compressedFileMapping interface {
 }
 
 func (b *Service) loadSnapshot(ctx context.Context, loadLog LoadLog, snapshotData compressedFileMapping, copyFromDirectory string,
-	dbMetaData DatabaseMetadata, vegaDbConn *pgxpool.Pool, withIndexesAndOrderTriggers bool,
+	dbMetaData DatabaseMetadata, vegaDbConn *pgxpool.Pool, withIndexesAndOrderTriggers bool, historyTableLastTimestamps map[string]time.Time,
 ) (int64, error) {
 	compressedFilePath := filepath.Join(copyFromDirectory, snapshotData.CompressedFileName())
 	decompressedFilesDestination := filepath.Join(copyFromDirectory, snapshotData.UncompressedDataDir())
@@ -272,15 +278,15 @@ func (b *Service) loadSnapshot(ctx context.Context, loadLog LoadLog, snapshotDat
 	}
 
 	loadLog.Infof("copying %s into database", snapshotData.UncompressedDataDir())
-
+	startTime := time.Now()
 	rowsCopied, err := b.copyDataIntoDatabase(ctx, vegaDbConn, decompressedFilesDestination,
 		filepath.Join(b.snapshotsCopyFromPath, snapshotData.UncompressedDataDir()), dbMetaData,
-		withIndexesAndOrderTriggers)
+		withIndexesAndOrderTriggers, historyTableLastTimestamps)
 	if err != nil {
 		return 0, fmt.Errorf("failed to copy uncompressed data into the database %s : %w", snapshotData.UncompressedDataDir(), err)
 	}
-
-	loadLog.Infof("copied %d rows from %s into database", rowsCopied, snapshotData.UncompressedDataDir())
+	elapsed := time.Since(startTime)
+	loadLog.Infof("copied %d rows from %s into database in %s", rowsCopied, snapshotData.UncompressedDataDir(), elapsed.String())
 
 	return rowsCopied, nil
 }
@@ -312,6 +318,28 @@ func getLastPartitionColumnEntryForHistoryTable(ctx context.Context, vegaDbConn 
 	}
 
 	return time.Time{}, nil
+}
+
+func getLastHistoryTimestampMap(ctx context.Context, vegaDbConn *pgxpool.Pool, dbMetadata DatabaseMetadata) (map[string]time.Time, error) {
+	lastHistoryTimestampMap := make(map[string]time.Time)
+
+	conn, err := vegaDbConn.Acquire(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to acquire connection: %w", err)
+	}
+	defer conn.Release()
+
+	for table, metadata := range dbMetadata.TableNameToMetaData {
+		if metadata.PartitionColumn != "" {
+			lastPartitionTime, err := getLastPartitionColumnEntryForHistoryTable(ctx, conn, metadata)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get last partition column entry for history table %s: %w", table, err)
+			}
+			lastHistoryTimestampMap[table] = lastPartitionTime
+		}
+	}
+
+	return lastHistoryTimestampMap, nil
 }
 
 type constraintsAndIndexes struct {
@@ -390,7 +418,7 @@ func (b *Service) dropAllIndexes(ctx context.Context, loadLog LoadLog, vegaDbCon
 
 func (b *Service) copyDataIntoDatabase(ctx context.Context, pool *pgxpool.Pool, copyFromDir string,
 	databaseCopyFromDir string, dbMetaData DatabaseMetadata,
-	withIndexesAndOrderTriggers bool,
+	withIndexesAndOrderTriggers bool, historyTableLastTimestamps map[string]time.Time,
 ) (int64, error) {
 	files, err := os.ReadDir(copyFromDir)
 	if err != nil {
@@ -425,7 +453,7 @@ func (b *Service) copyDataIntoDatabase(ctx context.Context, pool *pgxpool.Pool, 
 					b.log.Errorf("failed to enable triggers prior to copying data into orders table, setting session replication role to DEFAULT failed: %w", err)
 				}
 			}
-			rowsCopied, err := b.copyTableDataIntoDatabase(ctx, dbMetaData.TableNameToMetaData[tableName], databaseCopyFromDir, vegaDbConn)
+			rowsCopied, err := b.copyTableDataIntoDatabase(ctx, dbMetaData.TableNameToMetaData[tableName], databaseCopyFromDir, vegaDbConn, historyTableLastTimestamps)
 			if err != nil {
 				return 0, fmt.Errorf("failed to copy data into table %s: %w", tableName, err)
 			}
@@ -445,14 +473,14 @@ func (b *Service) copyDataIntoDatabase(ctx context.Context, pool *pgxpool.Pool, 
 }
 
 func (b *Service) copyTableDataIntoDatabase(ctx context.Context, tableMetaData TableMetadata, databaseCopyFromDir string,
-	vegaDbConn *pgxpool.Conn,
+	vegaDbConn *pgxpool.Conn, historyTableLastTimestamps map[string]time.Time,
 ) (int64, error) {
 	var err error
 	var rowsCopied int64
 
 	snapshotFilePath := filepath.Join(databaseCopyFromDir, tableMetaData.Name)
 	if tableMetaData.Hypertable {
-		rowsCopied, err = b.copyHistoryTableDataIntoDatabase(ctx, tableMetaData, snapshotFilePath, vegaDbConn)
+		rowsCopied, err = b.copyHistoryTableDataIntoDatabase(ctx, tableMetaData, snapshotFilePath, vegaDbConn, historyTableLastTimestamps)
 		if err != nil {
 			return 0, fmt.Errorf("failed to copy history table data into database: %w", err)
 		}
@@ -474,14 +502,11 @@ func (b *Service) copyCurrentStateTableDataIntoDatabase(ctx context.Context, tab
 	return tag.RowsAffected(), nil
 }
 
-func (b *Service) copyHistoryTableDataIntoDatabase(ctx context.Context, tableMetaData TableMetadata, snapshotFilePath string, vegaDbConn *pgxpool.Conn) (int64, error) {
-	lastPartitionColumnEntry, err := getLastPartitionColumnEntryForHistoryTable(ctx, vegaDbConn, tableMetaData)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get last partition column entry for table %s: %w", tableMetaData.Name, err)
-	}
-
+func (b *Service) copyHistoryTableDataIntoDatabase(ctx context.Context, tableMetaData TableMetadata, snapshotFilePath string, vegaDbConn *pgxpool.Conn,
+	historyTableLastTimestamps map[string]time.Time,
+) (int64, error) {
 	partitionColumn := tableMetaData.PartitionColumn
-	timestampString, err := encodeTimestampToString(lastPartitionColumnEntry)
+	timestampString, err := encodeTimestampToString(historyTableLastTimestamps[tableMetaData.Name])
 	if err != nil {
 		return 0, fmt.Errorf("failed to encode timestamp into string: %w", err)
 	}
