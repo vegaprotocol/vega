@@ -95,6 +95,7 @@
 - [7607](https://github.com/vegaprotocol/vega/issues/7607) - Fix handling of removed transfers
 - [7622](https://github.com/vegaprotocol/vega/issues/7622) - Fix cleaning path for Visor when restarting data node
 - [7638](https://github.com/vegaprotocol/vega/issues/7638) - Add missing fields to position update resolver
+- [7647](https://github.com/vegaprotocol/vega/issues/7647) - Assure LP orders never trade on entry
 
 ## 0.67.2
 
