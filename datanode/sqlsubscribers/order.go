@@ -54,7 +54,8 @@ type Order struct {
 
 func NewOrder(store OrderStore, depthService MarketDepthService) *Order {
 	return &Order{
-		store: store,
+		store:        store,
+		depthService: depthService,
 	}
 }
 
