@@ -47,7 +47,7 @@ func testSpamPolicyBannedUtil(t *testing.T) {
 	for _, f := range policies {
 		s, req := getSimplePolicyStats(t, pubKey, f, banned)
 		err := p.CheckSubmission(req, s)
-		require.ErrorIs(t, err, spam.ErrPartyBanned)
+		require.Equal(t, err.Error(), "party is banned from submitting transactions of this type until forever")
 	}
 }
 
@@ -64,7 +64,7 @@ func testSpamPolicyWillGetBanned(t *testing.T) {
 	for _, f := range policies {
 		s, req := getSimplePolicyStats(t, pubKey, f, willBan)
 		err := p.CheckSubmission(req, s)
-		require.ErrorIs(t, err, spam.ErrPartyWillBeBanned)
+		require.Equal(t, err.Error(), "party has already submitted the maximum number of transactions of this type per epoch (100)")
 	}
 }
 
@@ -134,7 +134,7 @@ func testSpamPolicyPoWBan(t *testing.T) {
 
 		// we are at 88 so find to submit, but banned by PoW
 		err := p.CheckSubmission(req, s)
-		require.ErrorIs(t, err, spam.ErrPartyBannedPoW)
+		require.Equal(t, err.Error(), "party is banned from submitting all transactions until forever")
 	}
 }
 
@@ -151,7 +151,7 @@ func testSpamVotesSeparateProposals(t *testing.T) {
 
 	// we're at our max for the first proposal
 	err := p.CheckSubmission(req, s)
-	require.ErrorIs(t, err, spam.ErrPartyWillBeBanned)
+	require.Equal(t, err.Error(), "party has already submitted the maximum number of transactions of this type per epoch (100)")
 
 	// but can still submit against a different proposal
 	req = &walletpb.SubmitTransactionRequest{
@@ -199,7 +199,7 @@ func testOtherTransactionTypesNotBlock(t *testing.T) {
 	// but pow ban still applies
 	stats.PoW.BannedUntil = until
 	err = p.CheckSubmission(req, stats)
-	require.ErrorIs(t, err, spam.ErrPartyBannedPoW)
+	require.Equal(t, err.Error(), "party is banned from submitting all transactions until forever")
 }
 
 func getSimplePolicyStats(t *testing.T, pubKey, policy string, st nodetypes.SpamStatistic) (*nodetypes.SpamStatistics, *walletpb.SubmitTransactionRequest) {

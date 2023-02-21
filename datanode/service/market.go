@@ -18,7 +18,6 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 )
 
 var nilPagination = entities.OffsetPagination{}
@@ -32,15 +31,13 @@ type MarketStore interface {
 
 type Markets struct {
 	store     MarketStore
-	log       *logging.Logger
 	cache     map[entities.MarketID]*entities.Market
 	cacheLock sync.RWMutex
 }
 
-func NewMarkets(store MarketStore, log *logging.Logger) *Markets {
+func NewMarkets(store MarketStore) *Markets {
 	return &Markets{
 		store: store,
-		log:   log,
 		cache: make(map[entities.MarketID]*entities.Market),
 	}
 }

@@ -76,8 +76,8 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 209146 | 240854   | 50000 |
-      | party1 | USD   | ETH/MAR22 | 11415  | 99988585 | 0     |
-      | party2 | USD   | ETH/MAR22 | 51630  | 99948370 | 0     |
+      | party1 | USD   | ETH/MAR22 | 11415  | 99988585 |       |
+      | party2 | USD   | ETH/MAR22 | 51630  | 99948370 |       |
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | initial |
@@ -109,8 +109,8 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 209146 | 240854   | 50000 |
-      | party1 | USD   | ETH/MAR22 | 11415  | 99988585 | 0     |
-      | party2 | USD   | ETH/MAR22 | 264970 | 99734850 | 0     |
+      | party1 | USD   | ETH/MAR22 | 11415  | 99988585 |       |
+      | party2 | USD   | ETH/MAR22 | 264970 | 99734850 |       |
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
@@ -127,11 +127,11 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
 
     #check the requried balances
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general  | bond |
-      | party0 | USD   | ETH/MAR22 | 483322 | 0        | 0    |
-      | party1 | USD   | ETH/MAR22 | 107954 | 99891506 | 0    |
-      | party2 | USD   | ETH/MAR22 | 264970 | 99734930 | 0    |
-      | party3 | USD   | ETH/MAR22 | 28826  | 99971294 | 0    |
+      | party  | asset | market id | margin | general  |
+      | party0 | USD   | ETH/MAR22 | 483322 | 0        |
+      | party1 | USD   | ETH/MAR22 | 107954 | 99891506 |
+      | party2 | USD   | ETH/MAR22 | 264970 | 99734930 |
+      | party3 | USD   | ETH/MAR22 | 28826  | 99971294 |
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |

@@ -36,7 +36,7 @@ func PartiesDepositTheFollowingAssets(
 	for _, r := range parseDepositAssetTable(table) {
 		row := depositAssetRow{row: r}
 		amount := row.Amount()
-		_, err := collateralEngine.Deposit(
+		res, err := collateralEngine.Deposit(
 			ctx,
 			row.Party(),
 			row.Asset(),
@@ -52,13 +52,7 @@ func PartiesDepositTheFollowingAssets(
 		}
 		netDeposits.Add(netDeposits, amount)
 		// emit an event manually here as we're not going via the banking flow in integration tests
-		broker.Send(events.NewDepositEvent(ctx,
-			types.Deposit{
-				PartyID: row.Party(),
-				Asset:   row.Asset(),
-				Amount:  amount,
-				Status:  types.DepositStatusFinalized,
-			}))
+		broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{res}))
 	}
 	return nil
 }

@@ -15,11 +15,11 @@ package sqlsubscribers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
-	"github.com/pkg/errors"
 )
 
 type OracleSpecEvent interface {
@@ -34,13 +34,11 @@ type OracleSpecStore interface {
 type OracleSpec struct {
 	subscriber
 	store OracleSpecStore
-	log   *logging.Logger
 }
 
-func NewOracleSpec(store OracleSpecStore, log *logging.Logger) *OracleSpec {
+func NewOracleSpec(store OracleSpecStore) *OracleSpec {
 	return &OracleSpec{
 		store: store,
-		log:   log,
 	}
 }
 

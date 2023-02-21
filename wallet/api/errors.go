@@ -148,7 +148,6 @@ var (
 	ErrSpecifyingNetworkAndLastBlockDataIsNotSupported    = errors.New("specifying a network and the last block data is not supported")
 	ErrSpecifyingNetworkAndNodeAddressIsNotSupported      = errors.New("specifying a network and a node address is not supported")
 	ErrSubmissionBlockHeightIsRequired                    = errors.New("the submission block height is required")
-	ErrTransactionBlockedBySpamRules                      = errors.New("the transaction will break the network's spam rules")
 	ErrTransactionIsNotValidJSON                          = errors.New("the transaction is not valid JSON")
 	ErrTransactionIsRequired                              = errors.New("the transaction is required")
 	ErrTransactionsPerBlockLimitReached                   = errors.New("the transaction per block limit has been reached")

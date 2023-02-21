@@ -1824,13 +1824,11 @@ func testPeggedOrderExpiring2(t *testing.T) {
 	tm.market.OnTick(ctx, afterexpire)
 	t.Run("3 orders expired", func(t *testing.T) {
 		// First collect all the orders events
-		orders := []*types.Order{}
+		orders := []string{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
-			case *events.Order:
-				if evt.Order().Status == types.OrderStatusExpired {
-					orders = append(orders, mustOrderFromProto(evt.Order()))
-				}
+			case *events.ExpiredOrders:
+				orders = append(orders, evt.OrderIDs()...)
 			}
 		}
 		require.Len(t, orders, 2)
@@ -1932,12 +1930,12 @@ func testPeggedOrderOutputMessages(t *testing.T) {
 	require.NotEmpty(t, limitOrder)
 	// force reference price  checks result in more events
 	// assert.Equal(t, int(28), int(tm.orderEventCount))
-	assert.Equal(t, 32, int(tm.orderEventCount))
+	assert.Equal(t, 31, int(tm.orderEventCount))
 
 	limitOrder2 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user6", 1000, 80)
 	require.NotEmpty(t, limitOrder2)
 	// assert.Equal(t, int(35), int(tm.orderEventCount))
-	assert.Equal(t, 41, int(tm.orderEventCount))
+	assert.Equal(t, 39, int(tm.orderEventCount))
 }
 
 func testPeggedOrderOutputMessages2(t *testing.T) {
@@ -2004,25 +2002,25 @@ func testPeggedOrderOutputMessages2(t *testing.T) {
 	// Send normal order to unpark the pegged order
 	limitOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user2", 1000, 120)
 	require.NotEmpty(t, limitOrder)
-	assert.Equal(t, 19, int(tm.orderEventCount))
+	assert.Equal(t, 17, int(tm.orderEventCount))
 	assert.Equal(t, types.OrderStatusActive, confirmation.Order.Status)
 
 	// Cancel the normal order to park the pegged order
 	tm.market.CancelOrder(ctx, "user2", limitOrder, vgcrypto.RandomHash())
 	require.Equal(t, types.OrderStatusParked, confirmation.Order.Status)
-	assert.Equal(t, 25, int(tm.orderEventCount))
+	assert.Equal(t, 21, int(tm.orderEventCount))
 
 	// Send a new normal order to unpark the pegged order
 	limitOrder2 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user2", 1000, 80)
 	require.NotEmpty(t, limitOrder2)
 	require.Equal(t, types.OrderStatusActive, confirmation.Order.Status)
-	assert.Equal(t, 31, int(tm.orderEventCount))
+	assert.Equal(t, 25, int(tm.orderEventCount))
 
 	// Fill that order to park the pegged order
 	limitOrder3 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "user1", 1000, 80)
 	require.NotEmpty(t, limitOrder3)
 	require.Equal(t, types.OrderStatusActive, confirmation.Order.Status)
-	assert.Equal(t, 38, int(tm.orderEventCount))
+	assert.Equal(t, 32, int(tm.orderEventCount))
 	// assert.Equal(t, int(34), int(tm.orderEventCount))
 }
 
@@ -2173,13 +2171,11 @@ func testPeggedOrderExpiring(t *testing.T) {
 	tm.market.OnTick(ctx, now.Add(25*time.Minute))
 	t.Run("2 orders expired", func(t *testing.T) {
 		// First collect all the orders events
-		orders := []*types.Order{}
+		orders := []string{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
-			case *events.Order:
-				if evt.Order().Status == types.OrderStatusExpired {
-					orders = append(orders, mustOrderFromProto(evt.Order()))
-				}
+			case *events.ExpiredOrders:
+				orders = append(orders, evt.OrderIDs()...)
 			}
 		}
 
@@ -2822,13 +2818,11 @@ func TestGTTExpiredNotFilled(t *testing.T) {
 	tm.market.OnTick(ctx, now.Add(10*time.Second))
 	t.Run("1 order expired", func(t *testing.T) {
 		// First collect all the orders events
-		orders := []*types.Order{}
+		orders := []string{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
-			case *events.Order:
-				if evt.Order().Status == types.OrderStatusExpired {
-					orders = append(orders, mustOrderFromProto(evt.Order()))
-				}
+			case *events.ExpiredOrders:
+				orders = append(orders, evt.OrderIDs()...)
 			}
 		}
 		assert.Len(t, orders, 1)
@@ -2902,13 +2896,13 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	tm.market.OnTick(ctx, tm.now.Add(10*time.Second))
 	t.Run("1 order expired - the other matched", func(t *testing.T) {
 		// First collect all the orders events
-		orders := []*types.Order{}
+		orders := []string{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
+			case *events.ExpiredOrders:
+				orders = append(orders, evt.OrderIDs()...)
 			case *events.Order:
-				if evt.Order().Status == types.OrderStatusExpired {
-					orders = append(orders, mustOrderFromProto(evt.Order()))
-				} else {
+				if evt.Order().Status != types.OrderStatusExpired {
 					fmt.Printf("%s\n", evt.Order().Status)
 				}
 			}
@@ -2989,13 +2983,11 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	tm.market.OnTick(ctx, someTimeLater)
 	t.Run("5 orders expired", func(t *testing.T) {
 		// First collect all the orders events
-		orders := []*types.Order{}
+		orders := []string{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
-			case *events.Order:
-				if evt.Order().Status == types.OrderStatusExpired {
-					orders = append(orders, mustOrderFromProto(evt.Order()))
-				}
+			case *events.ExpiredOrders:
+				orders = append(orders, evt.OrderIDs()...)
 			}
 		}
 		require.Len(t, orders, 5)

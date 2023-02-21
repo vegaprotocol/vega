@@ -182,7 +182,7 @@ func (o *Observer[T]) logDebug(ip string, ref uint64, msg string) {
 }
 
 func (o *Observer[T]) logWarning(ip string, ref uint64, msg string) {
-	o.log.Debug(
+	o.log.Warn(
 		fmt.Sprintf("%s subscriber: %s", o.name, msg),
 		logging.Uint64("id", ref),
 		logging.String("ip-address", ip),

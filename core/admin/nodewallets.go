@@ -71,7 +71,7 @@ func NewNodeWallet(
 	}
 
 	return &NodeWallet{
-		log:                  log,
+		log:                  log.Named(nodeWalletNamedLogger),
 		nodeWallets:          nodeWallets,
 		registryLoader:       registryLoader,
 		nodeWalletPassphrase: nodeWalletPassphrase,
@@ -79,7 +79,7 @@ func NewNodeWallet(
 	}, nil
 }
 
-func (nw *NodeWallet) Reload(r *http.Request, args *NodeWalletArgs, reply *NodeWalletReloadReply) error {
+func (nw *NodeWallet) Reload(_ *http.Request, args *NodeWalletArgs, reply *NodeWalletReloadReply) error {
 	nw.log.Info("Reloading node wallet", logging.String("chain", args.Chain))
 
 	switch args.Chain {
@@ -151,7 +151,7 @@ func (nw *NodeWallet) Reload(r *http.Request, args *NodeWalletArgs, reply *NodeW
 	return fmt.Errorf("failed to reload wallet for non existing chain %q", args.Chain)
 }
 
-func (nw *NodeWallet) Show(r *http.Request, args *NodeWalletArgs, reply *Wallet) error {
+func (nw *NodeWallet) Show(_ *http.Request, args *NodeWalletArgs, reply *Wallet) error {
 	switch args.Chain {
 	case "vega":
 		*reply = newWallet(nw.nodeWallets.Vega)

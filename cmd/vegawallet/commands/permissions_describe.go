@@ -134,7 +134,7 @@ func PrintDescribePermissionsResult(w io.Writer, resp api.AdminDescribePermissio
 	if len(resp.Permissions.PublicKeys.AllowedKeys) != 0 {
 		str.Text("  Allowed keys: ").NextLine()
 		for _, k := range resp.Permissions.PublicKeys.AllowedKeys {
-			str.Text("    - ").WarningText(k).NextLine()
+			str.ListItem().Text("- ").WarningText(k).NextLine()
 		}
 	}
 }

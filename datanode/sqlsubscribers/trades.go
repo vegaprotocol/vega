@@ -16,11 +16,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/protos/vega"
-	"github.com/pkg/errors"
 )
 
 type TradeEvent interface {
@@ -36,13 +36,11 @@ type TradesStore interface {
 type TradeSubscriber struct {
 	subscriber
 	store TradesStore
-	log   *logging.Logger
 }
 
-func NewTradesSubscriber(store TradesStore, log *logging.Logger) *TradeSubscriber {
+func NewTradesSubscriber(store TradesStore) *TradeSubscriber {
 	return &TradeSubscriber{
 		store: store,
-		log:   log,
 	}
 }
 

@@ -1499,13 +1499,11 @@ func TestSubmit(t *testing.T) {
 		tm.market.OnTick(ctx, timeExpires)
 		t.Run("No orders except pegged order expired", func(t *testing.T) {
 			// First collect all the orders events
-			orders := []*types.Order{}
+			orders := []string{}
 			for _, e := range tm.events {
 				switch evt := e.(type) {
-				case *events.Order:
-					if evt.Order().Status == types.OrderStatusExpired {
-						orders = append(orders, mustOrderFromProto(evt.Order()))
-					}
+				case *events.ExpiredOrders:
+					orders = evt.OrderIDs()
 				}
 			}
 
@@ -2128,7 +2126,7 @@ func TestSubmit(t *testing.T) {
 				}
 			}
 
-			assert.Len(t, found, 2)
+			assert.Len(t, found, 1)
 
 			expected := []struct {
 				size   uint64
@@ -2136,12 +2134,6 @@ func TestSubmit(t *testing.T) {
 				ref    string
 				found  bool
 			}{
-				{
-					size:   expiringOrder.Size,
-					status: types.OrderStatusExpired,
-					ref:    expiringOrder.Reference,
-					found:  false,
-				},
 				{
 					size:   expiringOrder.Size,
 					status: types.OrderStatusActive,

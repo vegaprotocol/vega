@@ -16,14 +16,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
-	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNotary_Push(t *testing.T) {
@@ -33,7 +33,7 @@ func TestNotary_Push(t *testing.T) {
 	store := mocks.NewMockNotaryStore(ctrl)
 
 	store.EXPECT().Add(context.Background(), gomock.Any()).Times(1)
-	subscriber := sqlsubscribers.NewNotary(store, logging.NewTestLogger())
+	subscriber := sqlsubscribers.NewNotary(store)
 	err := subscriber.Push(context.Background(),
 		events.NewNodeSignatureEvent(context.Background(),
 			v1.NodeSignature{
@@ -57,6 +57,6 @@ func TestNotary_PushWrongEvent(t *testing.T) {
 	}()
 
 	store := mocks.NewMockNotaryStore(ctrl)
-	subscriber := sqlsubscribers.NewNotary(store, logging.NewTestLogger())
+	subscriber := sqlsubscribers.NewNotary(store)
 	subscriber.Push(context.Background(), events.NewOracleDataEvent(context.Background(), vegapb.OracleData{}))
 }

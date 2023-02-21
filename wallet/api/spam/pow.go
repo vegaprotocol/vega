@@ -9,8 +9,9 @@ import (
 )
 
 type txCounter struct {
-	// slice of maps from pubKey->nTxnSent where size is the numbers of past blocks a pow is valid for
-	// the transaction count for party p sent in block b is store[b%size][p].
+	// slice of maps from pubKey->nTxnSent where size is the numbers of past
+	// blocks a pow is valid for the transaction count for party p sent in
+	// block b is store[b%size][p].
 	store []map[string]uint32
 	size  int64
 
@@ -67,10 +68,7 @@ func (t *txCounter) resize(n int64) {
 
 	// transfer maps from old slice to new
 	nTransfer := n
-	if t.size < nTransfer {
-		nTransfer = t.size
-	}
-	if t.lastBlock < nTransfer {
+	if t.size < nTransfer || t.lastBlock < nTransfer {
 		nTransfer = t.size
 	}
 

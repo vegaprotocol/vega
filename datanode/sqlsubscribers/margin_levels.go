@@ -15,11 +15,11 @@ package sqlsubscribers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"github.com/pkg/errors"
 )
 
 type MarginLevelsEvent interface {
@@ -36,14 +36,12 @@ type MarginLevels struct {
 	subscriber
 	store         MarginLevelsStore
 	accountSource AccountSource
-	log           *logging.Logger
 }
 
-func NewMarginLevels(store MarginLevelsStore, accountSource AccountSource, log *logging.Logger) *MarginLevels {
+func NewMarginLevels(store MarginLevelsStore, accountSource AccountSource) *MarginLevels {
 	return &MarginLevels{
 		store:         store,
 		accountSource: accountSource,
-		log:           log,
 	}
 }
 

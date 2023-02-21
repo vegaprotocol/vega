@@ -93,7 +93,7 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
 
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general       | bond   |
-      | traderA | USD   | ETH/DEC20 | 13754  | 9999999985946 | 0      |
+      | traderA | USD   | ETH/DEC20 | 13754  | 9999999985946 |        |
       | traderB | USD   | ETH/DEC20 | 511138 | 2439156       | 150000 |
 
     When the parties place the following orders with ticks:
@@ -101,11 +101,11 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | traderC | ETH/DEC20 | sell | 120    | 45000000000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin        | general       | bond |
-      | traderA | USD   | ETH/DEC20 | 13754         | 9999999985946 | 0    |
-      | traderB | USD   | ETH/DEC20 | 0             | 0             | 0    |
+      | party   | asset | market id | margin        | general       |
+      | traderA | USD   | ETH/DEC20 | 13754         | 9999999985946 |
+      | traderB | USD   | ETH/DEC20 | 0             | 0             |
       # capping in action
-      | traderC | USD   | ETH/DEC20 | 1265600042684 | 8734403057610 | 0    |
+      | traderC | USD   | ETH/DEC20 | 1265600042684 | 8734403057610 |
 
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
