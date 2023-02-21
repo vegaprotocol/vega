@@ -14,13 +14,20 @@ package sqlsubscribers
 
 import (
 	"context"
-
-	"github.com/pkg/errors"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/pkg/errors"
 )
+
+type MarketDepthService interface {
+	AddOrder(order *types.Order, vegaTime time.Time, sequenceNumber uint64)
+	PublishAtEndOfBlock()
+}
 
 type OrderEvent interface {
 	events.Event
@@ -41,10 +48,11 @@ type OrderStore interface {
 
 type Order struct {
 	subscriber
-	store OrderStore
+	store        OrderStore
+	depthService MarketDepthService
 }
 
-func NewOrder(store OrderStore) *Order {
+func NewOrder(store OrderStore, depthService MarketDepthService) *Order {
 	return &Order{
 		store: store,
 	}
@@ -63,6 +71,8 @@ func (os *Order) Push(ctx context.Context, evt events.Event) error {
 		return os.consume(evt.(OrderEvent), evt.Sequence())
 	case events.ExpiredOrdersEvent:
 		return os.expired(ctx, evt.(ExpiredOrdersEvent), evt.Sequence())
+	case events.EndBlockEvent:
+		os.consumeEndBlock()
 	}
 	return nil
 }
@@ -83,6 +93,14 @@ func (os *Order) expired(ctx context.Context, eo ExpiredOrdersEvent, seqNum uint
 		o.UpdatedAt = os.vegaTime
 		o.VegaTime = os.vegaTime
 		o.TxHash = txHash
+
+		// to the depth service
+		torder, err := types.OrderFromProto(o.ToProto())
+		if err != nil {
+			panic(err)
+		}
+		os.depthService.AddOrder(torder, os.vegaTime, seqNum)
+
 		if err := os.store.Add(o); err != nil {
 			return errors.Wrap(os.store.Add(o), "adding order to database")
 		}
@@ -101,5 +119,16 @@ func (os *Order) consume(oe OrderEvent, seqNum uint64) error {
 	}
 	order.VegaTime = os.vegaTime
 
+	// then publish to the market depthService
+	torder, err := types.OrderFromProto(oe.Order())
+	if err != nil {
+		panic(err)
+	}
+	os.depthService.AddOrder(torder, os.vegaTime, seqNum)
+
 	return errors.Wrap(os.store.Add(order), "adding order to database")
+}
+
+func (os *Order) consumeEndBlock() {
+	os.depthService.PublishAtEndOfBlock()
 }

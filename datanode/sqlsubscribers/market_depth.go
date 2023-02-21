@@ -12,56 +12,56 @@
 
 package sqlsubscribers
 
-import (
-	"context"
-	"time"
+// import (
+// 	"context"
+// 	"time"
 
-	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/types"
-)
+// 	"code.vegaprotocol.io/vega/core/events"
+// 	"code.vegaprotocol.io/vega/core/types"
+// )
 
-type MarketDepthService interface {
-	AddOrder(order *types.Order, vegaTime time.Time, sequenceNumber uint64)
-	PublishAtEndOfBlock()
-}
+// type MarketDepthService interface {
+// 	AddOrder(order *types.Order, vegaTime time.Time, sequenceNumber uint64)
+// 	PublishAtEndOfBlock()
+// }
 
-type MarketDepth struct {
-	subscriber
-	depthService MarketDepthService
-}
+// type MarketDepth struct {
+// 	subscriber
+// 	depthService MarketDepthService
+// }
 
-// NewMarketDepth is the constructor to create a market depth subscriber.
-func NewMarketDepth(depthService MarketDepthService) *MarketDepth {
-	m := MarketDepth{
-		depthService: depthService,
-	}
+// // NewMarketDepth is the constructor to create a market depth subscriber.
+// func NewMarketDepth(depthService MarketDepthService) *MarketDepth {
+// 	m := MarketDepth{
+// 		depthService: depthService,
+// 	}
 
-	return &m
-}
+// 	return &m
+// }
 
-func (m *MarketDepth) Types() []events.Type {
-	return []events.Type{events.OrderEvent, events.EndBlockEvent}
-}
+// func (m *MarketDepth) Types() []events.Type {
+// 	return []events.Type{events.OrderEvent, events.EndBlockEvent}
+// }
 
-func (m *MarketDepth) Push(_ context.Context, evt events.Event) error {
-	switch evt.Type() {
-	case events.OrderEvent:
-		m.consumeOrder(evt.(OrderEvent))
-	case events.EndBlockEvent:
-		m.consumeEndBlock()
-	}
+// func (m *MarketDepth) Push(_ context.Context, evt events.Event) error {
+// 	switch evt.Type() {
+// 	case events.OrderEvent:
+// 		m.consumeOrder(evt.(OrderEvent))
+// 	case events.EndBlockEvent:
+// 		m.consumeEndBlock()
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-func (m *MarketDepth) consumeEndBlock() {
-	m.depthService.PublishAtEndOfBlock()
-}
+// func (m *MarketDepth) consumeEndBlock() {
+// 	m.depthService.PublishAtEndOfBlock()
+// }
 
-func (m *MarketDepth) consumeOrder(event OrderEvent) {
-	order, err := types.OrderFromProto(event.Order())
-	if err != nil {
-		panic(err)
-	}
-	m.depthService.AddOrder(order, m.vegaTime, event.Sequence())
-}
+// func (m *MarketDepth) consumeOrder(event OrderEvent) {
+// 	order, err := types.OrderFromProto(event.Order())
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	m.depthService.AddOrder(order, m.vegaTime, event.Sequence())
+// }
