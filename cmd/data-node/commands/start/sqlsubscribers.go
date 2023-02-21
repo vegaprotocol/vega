@@ -122,9 +122,8 @@ type SQLSubscribers struct {
 	keyRotationsSub         *sqlsubscribers.KeyRotation
 	ethereumKeyRotationsSub *sqlsubscribers.EthereumKeyRotation
 	nodeSub                 *sqlsubscribers.Node
-	// marketDepthSub          *sqlsubscribers.MarketDepth
-	pupSub  *sqlsubscribers.ProtocolUpgrade
-	snapSub *sqlsubscribers.SnapshotData
+	pupSub                  *sqlsubscribers.ProtocolUpgrade
+	snapSub                 *sqlsubscribers.SnapshotData
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -162,7 +161,6 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.multiSigSignerEventSub,
 		s.keyRotationsSub,
 		s.nodeSub,
-		// s.marketDepthSub,
 		s.ethereumKeyRotationsSub,
 		s.pupSub,
 		s.snapSub,
@@ -298,7 +296,6 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.keyRotationsSub = sqlsubscribers.NewKeyRotation(s.keyRotationsService)
 	s.ethereumKeyRotationsSub = sqlsubscribers.NewEthereumKeyRotation(s.ethereumKeyRotationsService)
 	s.nodeSub = sqlsubscribers.NewNode(s.nodeService)
-	// s.marketDepthSub = sqlsubscribers.NewMarketDepth(s.marketDepthService)
 	s.pupSub = sqlsubscribers.NewProtocolUpgrade(s.protocolUpgradeService)
 	s.snapSub = sqlsubscribers.NewSnapshotData(s.coreSnapshotService)
 }
