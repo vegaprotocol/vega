@@ -108,10 +108,6 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartiesShouldReceiveTheFollowingReward(execsetup.broker, table, epoch)
 	})
 
-	s.Step(`^the parties should have the following positions status:$`, func(table *godog.Table) error {
-		return steps.PartiesShouldHaveTheFollowingPositionStatus(execsetup.broker, table)
-	})
-
 	// Market steps
 	s.Step(`the simple risk model named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.TheSimpleRiskModel(marketConfig, name, table)
@@ -465,6 +461,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^set assets to permissive$`, func() error {
 		execsetup.assetsEngine.SetPermissive()
 		return nil
+	})
+
+	s.Step(`^the parties should have the following position changes for market "([^)]+)":$`, func(mkt string, table *godog.Table) error {
+		return steps.PartiesShouldHaveTheFollowingPositionStatus(execsetup.broker, market, table)
+	})
+
+	s.Step(`^the parties should have the following aggregated position changes for market "([^)]+)":$`, func(mkt string, table *godog.Table) error {
+		return steps.PartiesShouldHaveTheFollowingPositionStatusAgg(execsetup.broker, market, table)
 	})
 }
 
