@@ -206,14 +206,14 @@ func (b *BrokerStub) GetSettleDistressed() []events.SettleDistressed {
 	batch := b.GetImmBatch(events.SettleDistressedEvent)
 	ret := make([]events.SettleDistressed, 0, len(batch))
 	for _, e := range batch {
-		switch et.(type) {
+		switch et := e.(type) {
 		case *events.SettleDistressed:
 			ret = append(ret, *et)
 		case events.SettleDistressed:
 			ret = append(ret, et)
 		}
 	}
-	return et
+	return ret
 }
 
 func (b *BrokerStub) GetLossSocializationEvents() []events.LossSocialization {

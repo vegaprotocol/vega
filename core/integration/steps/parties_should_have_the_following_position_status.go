@@ -46,7 +46,7 @@ func positionEvents(broker *stubs.BrokerStub, table *godog.Table, market string,
 		if o.MarketID() != market {
 			continue
 		}
-		for _, p := range p.Parties() {
+		for _, p := range o.Parties() {
 			partyStatus[p] = proto.PositionStatus_POSITION_STATUS_ORDERS_CLOSED
 		}
 	}
@@ -56,7 +56,7 @@ func positionEvents(broker *stubs.BrokerStub, table *godog.Table, market string,
 		}
 		partyStatus[c.PartyID()] = proto.PositionStatus_POSITION_STATUS_CLOSED_OUT
 	}
-	losSoc := broker.GetLossSocializationEvents()
+	lossSoc := broker.GetLossSocializationEvents()
 	partyLSA := map[string]int64{}
 	for _, le := range lossSoc {
 		if le.MarketID() != market {
@@ -115,21 +115,21 @@ type positionStatusRow struct {
 }
 
 func (p positionStatusRow) HasStatus() bool {
-	return r.row.HasColumn("status")
+	return p.row.HasColumn("status")
 }
 
 func (p positionStatusRow) HasAmount() bool {
-	return r.row.HasColumn("amount")
+	return p.row.HasColumn("amount")
 }
 
 func (p positionStatusRow) Party() string {
-	return r.row.MustStr("party")
+	return p.row.MustStr("party")
 }
 
 func (p positionStatusRow) Status() proto.PositionStatus {
-	return r.row.MustPositionStatus("status")
+	return p.row.MustPositionStatus("status")
 }
 
 func (p positionStatusRow) Amount() int64 {
-	r.row.MustI64("amount")
+	return p.row.MustI64("amount")
 }

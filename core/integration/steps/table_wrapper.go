@@ -698,12 +698,12 @@ func PositionStatus(name string) (proto.PositionStatus, error) {
 	if len(name) == 0 {
 		return proto.PositionStatus_POSITION_STATUS_UNSPECIFIED, nil
 	}
-	value, ok := proto.PositionStatus(proto.PositionStatus_value[name])
+	value, ok := proto.PositionStatus_value[name]
 
 	if !ok {
 		return proto.PositionStatus_POSITION_STATUS_UNSPECIFIED, fmt.Errorf("invalid position status type %s", name)
 	}
-	return value, nil
+	return proto.PositionStatus(value), nil
 }
 
 func panicW(field string, err error) {
