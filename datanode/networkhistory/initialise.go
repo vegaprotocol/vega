@@ -12,7 +12,6 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
-	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
@@ -25,18 +24,24 @@ var ErrChainNotFound = errors.New("no chain found")
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/networkhistory_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/networkhistory NetworkHistory
 type NetworkHistory interface {
-	FetchHistorySegment(ctx context.Context, historySegmentID string) (store.SegmentIndexEntry, error)
-	LoadNetworkHistoryIntoDatanode(ctx context.Context, cfg sqlstore.ConnectionConfig) (snapshot.LoadResult, error)
+	FetchHistorySegment(ctx context.Context, historySegmentID string) (Segment, error)
+	LoadNetworkHistoryIntoDatanode(ctx context.Context, contiguousHistory ContiguousHistory, cfg sqlstore.ConnectionConfig, withIndexesAndOrderTriggers, verbose bool) (snapshot.LoadResult, error)
 	GetMostRecentHistorySegmentFromPeers(ctx context.Context, grpcAPIPorts []int) (*PeerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, error)
 	GetDatanodeBlockSpan(ctx context.Context) (sqlstore.DatanodeBlockSpan, error)
+	ListAllHistorySegments() ([]Segment, error)
 }
 
 func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg InitializationConfig, log *logging.Logger,
 	connCfg sqlstore.ConnectionConfig, networkHistoryService NetworkHistory,
-	grpcPorts []int,
+	grpcPorts []int, verboseMigration bool,
 ) error {
 	ctx, ctxCancelFn := context.WithTimeout(parentCtx, cfg.TimeOut.Duration)
 	defer ctxCancelFn()
+
+	currentSpan, err := networkHistoryService.GetDatanodeBlockSpan(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get datanode block span: %w", err)
+	}
 
 	var toSegmentID string
 	blocksToFetch := cfg.MinimumBlockCount
@@ -57,11 +62,6 @@ func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg Initial
 			logging.String("segment", mostRecentHistorySegment.String()), logging.String("peer", response.PeerAddr))
 
 		toSegmentID = mostRecentHistorySegment.HistorySegmentId
-
-		currentSpan, err := networkHistoryService.GetDatanodeBlockSpan(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get datanode block span: %w", err)
-		}
 
 		if currentSpan.HasData {
 			if currentSpan.ToHeight >= mostRecentHistorySegment.ToHeight {
@@ -97,9 +97,39 @@ func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg Initial
 	log.Infof("fetched %d blocks from network history", blocksFetched)
 
 	log.Infof("loading history into the datanode")
-	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanode(ctx, connCfg)
+	segments, err := networkHistoryService.ListAllHistorySegments()
 	if err != nil {
-		return fmt.Errorf("failed to load history into the datanode%w", err)
+		return fmt.Errorf("failed to list all history segments: %w", err)
+	}
+
+	contiguousHistories := GetContiguousHistories(segments)
+	if len(contiguousHistories) == 0 {
+		log.Infof("no network history available to load")
+		return nil
+	}
+
+	latestContiguousHistory := contiguousHistories[len(contiguousHistories)-1]
+	if currentSpan.ToHeight >= latestContiguousHistory.HeightTo {
+		log.Infof("datanode already contains the latest network history data")
+		return nil
+	}
+
+	to := latestContiguousHistory.HeightTo
+	from := latestContiguousHistory.HeightFrom
+	if currentSpan.HasData {
+		for _, segment := range latestContiguousHistory.SegmentsOldestFirst {
+			if segment.GetFromHeight() <= currentSpan.ToHeight && segment.GetToHeight() > currentSpan.ToHeight {
+				from = segment.GetFromHeight()
+				break
+			}
+		}
+	}
+
+	contiguousHistory := GetContiguousHistoryForSpan(contiguousHistories, from, to)
+
+	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanode(ctx, *contiguousHistory, connCfg, currentSpan.HasData, verboseMigration)
+	if err != nil {
+		return fmt.Errorf("failed to load history into the datanode: %w", err)
 	}
 	log.Infof("loaded history from height %d to %d into the datanode", loaded.LoadedFromHeight, loaded.LoadedToHeight)
 
@@ -136,11 +166,11 @@ type FetchResult struct {
 	PreviousHistorySegmentID string
 }
 
-func FromSegmentIndexEntry(s store.SegmentIndexEntry) FetchResult {
+func FromSegmentIndexEntry(s Segment) FetchResult {
 	return FetchResult{
-		HeightFrom:               s.HeightFrom,
-		HeightTo:                 s.HeightTo,
-		PreviousHistorySegmentID: s.PreviousHistorySegmentID,
+		HeightFrom:               s.GetFromHeight(),
+		HeightTo:                 s.GetToHeight(),
+		PreviousHistorySegmentID: s.GetPreviousHistorySegmentId(),
 	}
 }
 
@@ -176,7 +206,7 @@ type PeerResponse struct {
 }
 
 func GetMostRecentHistorySegmentFromPeersAddresses(ctx context.Context, peerAddresses []string,
-	swarmKey string,
+	swarmKeySeed string,
 	grpcAPIPorts []int,
 ) (*PeerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, error) {
 	const maxPeersToContact = 10
@@ -205,7 +235,7 @@ func GetMostRecentHistorySegmentFromPeersAddresses(ctx context.Context, peerAddr
 		return nil, nil, fmt.Errorf(strings.Join(errorMsgs, ","))
 	}
 
-	return SelectMostRecentHistorySegmentResponse(peerToResponse, swarmKey), peerToResponse, nil
+	return SelectMostRecentHistorySegmentResponse(peerToResponse, swarmKeySeed), peerToResponse, nil
 }
 
 func GetMostRecentHistorySegmentFromPeer(ctx context.Context, ip string, datanodeGrpcAPIPort int) (*v2.GetMostRecentNetworkHistorySegmentResponse, error) {
@@ -224,12 +254,12 @@ func GetMostRecentHistorySegmentFromPeer(ctx context.Context, ip string, datanod
 }
 
 // TODO this needs some thought as to the best strategy to select the response to avoid spoofing.
-func SelectMostRecentHistorySegmentResponse(peerToResponse map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, swarmKey string) *PeerResponse {
+func SelectMostRecentHistorySegmentResponse(peerToResponse map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, swarmKeySeed string) *PeerResponse {
 	responses := make([]PeerResponse, 0, len(peerToResponse))
 
 	highestResponseHeight := int64(0)
 	for peer, response := range peerToResponse {
-		if response.SwarmKey == swarmKey {
+		if response.SwarmKeySeed == swarmKeySeed {
 			responses = append(responses, PeerResponse{peer, response})
 
 			if response.Segment.ToHeight > highestResponseHeight {

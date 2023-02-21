@@ -18,7 +18,6 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 )
 
 var nilPagination = entities.OffsetPagination{}
@@ -27,20 +26,18 @@ type MarketStore interface {
 	Upsert(ctx context.Context, market *entities.Market) error
 	GetByID(ctx context.Context, marketID string) (entities.Market, error)
 	GetAll(ctx context.Context, pagination entities.OffsetPagination) ([]entities.Market, error)
-	GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination) ([]entities.Market, entities.PageInfo, error)
+	GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, includeSettled bool) ([]entities.Market, entities.PageInfo, error)
 }
 
 type Markets struct {
 	store     MarketStore
-	log       *logging.Logger
 	cache     map[entities.MarketID]*entities.Market
 	cacheLock sync.RWMutex
 }
 
-func NewMarkets(store MarketStore, log *logging.Logger) *Markets {
+func NewMarkets(store MarketStore) *Markets {
 	return &Markets{
 		store: store,
-		log:   log,
 		cache: make(map[entities.MarketID]*entities.Market),
 	}
 }
@@ -95,6 +92,6 @@ func (m *Markets) GetAll(ctx context.Context, pagination entities.OffsetPaginati
 	return data, nil
 }
 
-func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination) ([]entities.Market, entities.PageInfo, error) {
-	return m.store.GetAllPaged(ctx, marketID, pagination)
+func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, includeSettled bool) ([]entities.Market, entities.PageInfo, error) {
+	return m.store.GetAllPaged(ctx, marketID, pagination, includeSettled)
 }

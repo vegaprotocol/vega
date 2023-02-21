@@ -38,11 +38,11 @@ Feature: Fees rewards with multiple markets and assets
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring | default-eth-for-future |
-      | ETH/DEC22 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring | default-eth-for-future |
-      | BTC/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-2 | price-monitoring | default-eth-for-future |
-      | BTC/DEC22 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-2 | price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC22 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | BTC/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-2 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | BTC/DEC22 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-2 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
 
     Given the parties deposit on asset's general account the following amount:
       | party                                                            | asset | amount   |
@@ -232,13 +232,13 @@ Feature: Fees rewards with multiple markets and assets
       | lpprov | party1 | 1089  | 7    |
       | party2 | party1 | 1030  | 5    |
 
-    Then "party1" should have general account balance of "599979904" for asset "ETH"
+    Then "party1" should have general account balance of "599979308" for asset "ETH"
     Then "party2" should have general account balance of "599994774" for asset "ETH"
     Then "lp1" should have general account balance of "5999984128" for asset "ETH"
     Then "lp2" should have general account balance of "5999995630" for asset "ETH"
 
     Then "party1" should have general account balance of "299987176" for asset "BTC"
-    Then "party2" should have general account balance of "299986327" for asset "BTC"
+    Then "party2" should have general account balance of "299986599" for asset "BTC"
     Then "lp1" should have general account balance of "2999990841" for asset "BTC"
     Then "lp2" should have general account balance of "2999997067" for asset "BTC"
 

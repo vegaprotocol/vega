@@ -38,7 +38,7 @@ type TradingDataServiceClient interface {
 	Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*InfoResponse, error)
 	// Order
 	//
-	// Gets the current version of an order, or optionally provide a version ID to retrieve a given version.
+	// Gets the current version of an order, or optionally provide a version ID to retrieve a given version if order was amended.
 	GetOrder(ctx context.Context, in *GetOrderRequest, opts ...grpc.CallOption) (*GetOrderResponse, error)
 	// Orders list
 	//
@@ -52,26 +52,32 @@ type TradingDataServiceClient interface {
 	//
 	// Subscribe to a stream of orders
 	ObserveOrders(ctx context.Context, in *ObserveOrdersRequest, opts ...grpc.CallOption) (TradingDataService_ObserveOrdersClient, error)
+	// Deprecated: Do not use.
+	// Positions (deprecated)
+	//
+	// Get a list of positions by party (public key) using cursor based pagination
+	// Deprecated: use ListAllPositions instead
+	ListPositions(ctx context.Context, in *ListPositionsRequest, opts ...grpc.CallOption) (*ListPositionsResponse, error)
 	// Positions
 	//
 	// Get a list of positions by party (public key) using cursor based pagination
-	ListPositions(ctx context.Context, in *ListPositionsRequest, opts ...grpc.CallOption) (*ListPositionsResponse, error)
+	ListAllPositions(ctx context.Context, in *ListAllPositionsRequest, opts ...grpc.CallOption) (*ListAllPositionsResponse, error)
 	// Positions subscription
 	//
 	// Subscribe to a stream of positions
 	ObservePositions(ctx context.Context, in *ObservePositionsRequest, opts ...grpc.CallOption) (TradingDataService_ObservePositionsClient, error)
 	// Ledger entries
 	//
-	// Get ledger entries by asset, market, party, account type, transfer type within the given date range.
+	// List ledger entries by asset, market, party, account type and transfer type within the given date range.
 	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
 	// It returns a time series (implemented as a list of AggregateLedgerEntry structs), with a row for every time
 	// the summed ledger entries of the set of specified accounts changes.
-	// Listed queries should be limited to a single party from each side only. If no or more than one parties are provided
-	// for sending and receiving accounts - the query returns error.
+	// Listed entries should be limited to a single party from each side only. If zero or more than one party is provided
+	// for each of the sides - sending and receiving accounts, the query returns an error.
 	//
 	// Entries can be queried by:
-	//   - listing ledger entries with filtering on the sending account (market_id, asset_id, account_type)
-	//   - listing ledger entries with filtering on the receiving account (market_id, asset_id, account_type)
+	//   - listing ledger entries with filtering on the sending account (market ID, asset ID, account type)
+	//   - listing ledger entries with filtering on the receiving account (market ID, asset ID, account type)
 	//   - listing ledger entries with filtering on the sending AND receiving account
 	//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 	ListLedgerEntries(ctx context.Context, in *ListLedgerEntriesRequest, opts ...grpc.CallOption) (*ListLedgerEntriesResponse, error)
@@ -84,7 +90,7 @@ type TradingDataServiceClient interface {
 	ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (*ExportLedgerEntriesResponse, error)
 	//	Balances
 	//
-	// `ListBalanceChanges` is for querying the change in account balances over a period of time.
+	// `ListBalanceChanges` queries the change in account balances over a period of time.
 	//
 	// An account is defined as a set of (asset_id, type, party_id, market_id).
 	//   - Every account has an associated asset and type.
@@ -133,9 +139,9 @@ type TradingDataServiceClient interface {
 	//
 	// Get the current network limits (is bootstrapping finished, are proposals enabled etc..)
 	GetNetworkLimits(ctx context.Context, in *GetNetworkLimitsRequest, opts ...grpc.CallOption) (*GetNetworkLimitsResponse, error)
-	// Candles list
+	// Candle data
 	//
-	// Get candle data for a given candle ID
+	// Get candle data for a given candle ID. You can get a candle ID from the list candle intervals query
 	ListCandleData(ctx context.Context, in *ListCandleDataRequest, opts ...grpc.CallOption) (*ListCandleDataResponse, error)
 	// Candle updates
 	//
@@ -143,33 +149,33 @@ type TradingDataServiceClient interface {
 	ObserveCandleData(ctx context.Context, in *ObserveCandleDataRequest, opts ...grpc.CallOption) (TradingDataService_ObserveCandleDataClient, error)
 	// Candle intervals list
 	//
-	// Get all available intervals for a given market along with the corresponding candle id
+	// Get all available intervals for a given market along with the corresponding candle ID
 	ListCandleIntervals(ctx context.Context, in *ListCandleIntervalsRequest, opts ...grpc.CallOption) (*ListCandleIntervalsResponse, error)
 	// Votes list
 	//
-	// Get Votes for a Party ID using a cursor based pagination model
+	// Get votes for a party ID using a cursor based pagination model
 	ListVotes(ctx context.Context, in *ListVotesRequest, opts ...grpc.CallOption) (*ListVotesResponse, error)
 	// Votes subscription
 	//
 	// Subscribe to a stream of votes
 	ObserveVotes(ctx context.Context, in *ObserveVotesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveVotesClient, error)
-	// ERC20 add signer bundle
+	// ERC-20 add signer bundle
 	//
 	// List the signature bundle to add a particular validator to the signer list of the multisig contract
 	ListERC20MultiSigSignerAddedBundles(ctx context.Context, in *ListERC20MultiSigSignerAddedBundlesRequest, opts ...grpc.CallOption) (*ListERC20MultiSigSignerAddedBundlesResponse, error)
-	// ERC20 remove signer bundle
+	// ERC-20 remove signer bundle
 	//
 	// List the signatures bundle to remove a particular validator from signer list of the multisig contract
 	ListERC20MultiSigSignerRemovedBundles(ctx context.Context, in *ListERC20MultiSigSignerRemovedBundlesRequest, opts ...grpc.CallOption) (*ListERC20MultiSigSignerRemovedBundlesResponse, error)
-	// ERC20 list asset bundle
+	// ERC-20 list asset bundle
 	//
 	// Get the signatures bundle to allowlist an ERC20 token in the collateral bridge
 	GetERC20ListAssetBundle(ctx context.Context, in *GetERC20ListAssetBundleRequest, opts ...grpc.CallOption) (*GetERC20ListAssetBundleResponse, error)
-	// ERC20 set asset limit bundle
+	// ERC-20 set asset limit bundle
 	//
 	// Get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
 	GetERC20SetAssetLimitsBundle(ctx context.Context, in *GetERC20SetAssetLimitsBundleRequest, opts ...grpc.CallOption) (*GetERC20SetAssetLimitsBundleResponse, error)
-	// ERC20 withdrawal bundle
+	// ERC-20 withdrawal bundle
 	//
 	// Get the signature bundle to finalize a withdrawal on ethereum
 	GetERC20WithdrawalApproval(ctx context.Context, in *GetERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*GetERC20WithdrawalApprovalResponse, error)
@@ -187,11 +193,11 @@ type TradingDataServiceClient interface {
 	ObserveTrades(ctx context.Context, in *ObserveTradesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTradesClient, error)
 	// Oracle Spec
 	//
-	// Get an oracle spec by ID.
+	// Get an oracle spec by ID. Use the oracle spec list to query for oracle spec IDs
 	GetOracleSpec(ctx context.Context, in *GetOracleSpecRequest, opts ...grpc.CallOption) (*GetOracleSpecResponse, error)
 	// Oracle Spec list
 	//
-	// Get the oracle specs
+	// List specs for an oracle
 	ListOracleSpecs(ctx context.Context, in *ListOracleSpecsRequest, opts ...grpc.CallOption) (*ListOracleSpecsResponse, error)
 	// Oracle data list
 	//
@@ -199,7 +205,7 @@ type TradingDataServiceClient interface {
 	ListOracleData(ctx context.Context, in *ListOracleDataRequest, opts ...grpc.CallOption) (*ListOracleDataResponse, error)
 	// Market
 	//
-	// Get all markets using a cursor based pagination model
+	// Get information about a specific market using its ID. Use the market lists query to get a market's ID
 	GetMarket(ctx context.Context, in *GetMarketRequest, opts ...grpc.CallOption) (*GetMarketResponse, error)
 	// Markets list
 	//
@@ -247,7 +253,7 @@ type TradingDataServiceClient interface {
 	ListDeposits(ctx context.Context, in *ListDepositsRequest, opts ...grpc.CallOption) (*ListDepositsResponse, error)
 	// Withdrawal
 	//
-	// Get a withdrawal by its identifier
+	// Get a withdrawal by its ID. Use the withdrawls list query to get withdrawal IDs
 	GetWithdrawal(ctx context.Context, in *GetWithdrawalRequest, opts ...grpc.CallOption) (*GetWithdrawalResponse, error)
 	// Withdrawals list
 	//
@@ -255,7 +261,7 @@ type TradingDataServiceClient interface {
 	ListWithdrawals(ctx context.Context, in *ListWithdrawalsRequest, opts ...grpc.CallOption) (*ListWithdrawalsResponse, error)
 	// Asset
 	//
-	// Get a single asset using its identifier
+	// Get a single asset using its ID. Use the assets list query to get an asset's ID
 	GetAsset(ctx context.Context, in *GetAssetRequest, opts ...grpc.CallOption) (*GetAssetResponse, error)
 	// Assets list
 	//
@@ -355,15 +361,15 @@ type TradingDataServiceClient interface {
 	ListEthereumKeyRotations(ctx context.Context, in *ListEthereumKeyRotationsRequest, opts ...grpc.CallOption) (*ListEthereumKeyRotationsResponse, error)
 	// Vega Time
 	//
-	// Get the current time of the network
+	// Get the current time of the network, displayed as a Unix timestamp in nano seconds
 	GetVegaTime(ctx context.Context, in *GetVegaTimeRequest, opts ...grpc.CallOption) (*GetVegaTimeResponse, error)
 	// Protocol upgrade status
 	//
-	// Get status of protocol upgrades
+	// Get status of a protocol upgrade
 	GetProtocolUpgradeStatus(ctx context.Context, in *GetProtocolUpgradeStatusRequest, opts ...grpc.CallOption) (*GetProtocolUpgradeStatusResponse, error)
 	// Protocol upgrade proposals
 	//
-	// List protocol upgrades proposals, optionally filtering on status or approver.
+	// List protocol upgrade proposals, optionally filtering on status or approver.
 	ListProtocolUpgradeProposals(ctx context.Context, in *ListProtocolUpgradeProposalsRequest, opts ...grpc.CallOption) (*ListProtocolUpgradeProposalsResponse, error)
 	// Snapshots
 	//
@@ -381,6 +387,16 @@ type TradingDataServiceClient interface {
 	//
 	// List the addresses of all active network history peers
 	GetActiveNetworkHistoryPeerAddresses(ctx context.Context, in *GetActiveNetworkHistoryPeerAddressesRequest, opts ...grpc.CallOption) (*GetActiveNetworkHistoryPeerAddressesResponse, error)
+	// Network history status
+	//
+	// Retrieves information about the current state of network history
+	// Response contains the network history status
+	NetworkHistoryStatus(ctx context.Context, in *NetworkHistoryStatusRequest, opts ...grpc.CallOption) (*NetworkHistoryStatusResponse, error)
+	// Network history bootstrap peers
+	//
+	// Retrieves the nodes bootstrap peers
+	// Response contains the bootstrap peers
+	NetworkHistoryBootstrapPeers(ctx context.Context, in *NetworkHistoryBootstrapPeersRequest, opts ...grpc.CallOption) (*NetworkHistoryBootstrapPeersResponse, error)
 	// Ping
 	//
 	// Ping the data node
@@ -504,9 +520,19 @@ func (x *tradingDataServiceObserveOrdersClient) Recv() (*ObserveOrdersResponse, 
 	return m, nil
 }
 
+// Deprecated: Do not use.
 func (c *tradingDataServiceClient) ListPositions(ctx context.Context, in *ListPositionsRequest, opts ...grpc.CallOption) (*ListPositionsResponse, error) {
 	out := new(ListPositionsResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListPositions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListAllPositions(ctx context.Context, in *ListAllPositionsRequest, opts ...grpc.CallOption) (*ListAllPositionsResponse, error) {
+	out := new(ListAllPositionsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListAllPositions", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1509,6 +1535,24 @@ func (c *tradingDataServiceClient) GetActiveNetworkHistoryPeerAddresses(ctx cont
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) NetworkHistoryStatus(ctx context.Context, in *NetworkHistoryStatusRequest, opts ...grpc.CallOption) (*NetworkHistoryStatusResponse, error) {
+	out := new(NetworkHistoryStatusResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/NetworkHistoryStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) NetworkHistoryBootstrapPeers(ctx context.Context, in *NetworkHistoryBootstrapPeersRequest, opts ...grpc.CallOption) (*NetworkHistoryBootstrapPeersResponse, error) {
+	out := new(NetworkHistoryBootstrapPeersResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/NetworkHistoryBootstrapPeers", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	out := new(PingResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/Ping", in, out, opts...)
@@ -1538,7 +1582,7 @@ type TradingDataServiceServer interface {
 	Info(context.Context, *InfoRequest) (*InfoResponse, error)
 	// Order
 	//
-	// Gets the current version of an order, or optionally provide a version ID to retrieve a given version.
+	// Gets the current version of an order, or optionally provide a version ID to retrieve a given version if order was amended.
 	GetOrder(context.Context, *GetOrderRequest) (*GetOrderResponse, error)
 	// Orders list
 	//
@@ -1552,26 +1596,32 @@ type TradingDataServiceServer interface {
 	//
 	// Subscribe to a stream of orders
 	ObserveOrders(*ObserveOrdersRequest, TradingDataService_ObserveOrdersServer) error
+	// Deprecated: Do not use.
+	// Positions (deprecated)
+	//
+	// Get a list of positions by party (public key) using cursor based pagination
+	// Deprecated: use ListAllPositions instead
+	ListPositions(context.Context, *ListPositionsRequest) (*ListPositionsResponse, error)
 	// Positions
 	//
 	// Get a list of positions by party (public key) using cursor based pagination
-	ListPositions(context.Context, *ListPositionsRequest) (*ListPositionsResponse, error)
+	ListAllPositions(context.Context, *ListAllPositionsRequest) (*ListAllPositionsResponse, error)
 	// Positions subscription
 	//
 	// Subscribe to a stream of positions
 	ObservePositions(*ObservePositionsRequest, TradingDataService_ObservePositionsServer) error
 	// Ledger entries
 	//
-	// Get ledger entries by asset, market, party, account type, transfer type within the given date range.
+	// List ledger entries by asset, market, party, account type and transfer type within the given date range.
 	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
 	// It returns a time series (implemented as a list of AggregateLedgerEntry structs), with a row for every time
 	// the summed ledger entries of the set of specified accounts changes.
-	// Listed queries should be limited to a single party from each side only. If no or more than one parties are provided
-	// for sending and receiving accounts - the query returns error.
+	// Listed entries should be limited to a single party from each side only. If zero or more than one party is provided
+	// for each of the sides - sending and receiving accounts, the query returns an error.
 	//
 	// Entries can be queried by:
-	//   - listing ledger entries with filtering on the sending account (market_id, asset_id, account_type)
-	//   - listing ledger entries with filtering on the receiving account (market_id, asset_id, account_type)
+	//   - listing ledger entries with filtering on the sending account (market ID, asset ID, account type)
+	//   - listing ledger entries with filtering on the receiving account (market ID, asset ID, account type)
 	//   - listing ledger entries with filtering on the sending AND receiving account
 	//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 	ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error)
@@ -1584,7 +1634,7 @@ type TradingDataServiceServer interface {
 	ExportLedgerEntries(context.Context, *ExportLedgerEntriesRequest) (*ExportLedgerEntriesResponse, error)
 	//	Balances
 	//
-	// `ListBalanceChanges` is for querying the change in account balances over a period of time.
+	// `ListBalanceChanges` queries the change in account balances over a period of time.
 	//
 	// An account is defined as a set of (asset_id, type, party_id, market_id).
 	//   - Every account has an associated asset and type.
@@ -1633,9 +1683,9 @@ type TradingDataServiceServer interface {
 	//
 	// Get the current network limits (is bootstrapping finished, are proposals enabled etc..)
 	GetNetworkLimits(context.Context, *GetNetworkLimitsRequest) (*GetNetworkLimitsResponse, error)
-	// Candles list
+	// Candle data
 	//
-	// Get candle data for a given candle ID
+	// Get candle data for a given candle ID. You can get a candle ID from the list candle intervals query
 	ListCandleData(context.Context, *ListCandleDataRequest) (*ListCandleDataResponse, error)
 	// Candle updates
 	//
@@ -1643,33 +1693,33 @@ type TradingDataServiceServer interface {
 	ObserveCandleData(*ObserveCandleDataRequest, TradingDataService_ObserveCandleDataServer) error
 	// Candle intervals list
 	//
-	// Get all available intervals for a given market along with the corresponding candle id
+	// Get all available intervals for a given market along with the corresponding candle ID
 	ListCandleIntervals(context.Context, *ListCandleIntervalsRequest) (*ListCandleIntervalsResponse, error)
 	// Votes list
 	//
-	// Get Votes for a Party ID using a cursor based pagination model
+	// Get votes for a party ID using a cursor based pagination model
 	ListVotes(context.Context, *ListVotesRequest) (*ListVotesResponse, error)
 	// Votes subscription
 	//
 	// Subscribe to a stream of votes
 	ObserveVotes(*ObserveVotesRequest, TradingDataService_ObserveVotesServer) error
-	// ERC20 add signer bundle
+	// ERC-20 add signer bundle
 	//
 	// List the signature bundle to add a particular validator to the signer list of the multisig contract
 	ListERC20MultiSigSignerAddedBundles(context.Context, *ListERC20MultiSigSignerAddedBundlesRequest) (*ListERC20MultiSigSignerAddedBundlesResponse, error)
-	// ERC20 remove signer bundle
+	// ERC-20 remove signer bundle
 	//
 	// List the signatures bundle to remove a particular validator from signer list of the multisig contract
 	ListERC20MultiSigSignerRemovedBundles(context.Context, *ListERC20MultiSigSignerRemovedBundlesRequest) (*ListERC20MultiSigSignerRemovedBundlesResponse, error)
-	// ERC20 list asset bundle
+	// ERC-20 list asset bundle
 	//
 	// Get the signatures bundle to allowlist an ERC20 token in the collateral bridge
 	GetERC20ListAssetBundle(context.Context, *GetERC20ListAssetBundleRequest) (*GetERC20ListAssetBundleResponse, error)
-	// ERC20 set asset limit bundle
+	// ERC-20 set asset limit bundle
 	//
 	// Get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
 	GetERC20SetAssetLimitsBundle(context.Context, *GetERC20SetAssetLimitsBundleRequest) (*GetERC20SetAssetLimitsBundleResponse, error)
-	// ERC20 withdrawal bundle
+	// ERC-20 withdrawal bundle
 	//
 	// Get the signature bundle to finalize a withdrawal on ethereum
 	GetERC20WithdrawalApproval(context.Context, *GetERC20WithdrawalApprovalRequest) (*GetERC20WithdrawalApprovalResponse, error)
@@ -1687,11 +1737,11 @@ type TradingDataServiceServer interface {
 	ObserveTrades(*ObserveTradesRequest, TradingDataService_ObserveTradesServer) error
 	// Oracle Spec
 	//
-	// Get an oracle spec by ID.
+	// Get an oracle spec by ID. Use the oracle spec list to query for oracle spec IDs
 	GetOracleSpec(context.Context, *GetOracleSpecRequest) (*GetOracleSpecResponse, error)
 	// Oracle Spec list
 	//
-	// Get the oracle specs
+	// List specs for an oracle
 	ListOracleSpecs(context.Context, *ListOracleSpecsRequest) (*ListOracleSpecsResponse, error)
 	// Oracle data list
 	//
@@ -1699,7 +1749,7 @@ type TradingDataServiceServer interface {
 	ListOracleData(context.Context, *ListOracleDataRequest) (*ListOracleDataResponse, error)
 	// Market
 	//
-	// Get all markets using a cursor based pagination model
+	// Get information about a specific market using its ID. Use the market lists query to get a market's ID
 	GetMarket(context.Context, *GetMarketRequest) (*GetMarketResponse, error)
 	// Markets list
 	//
@@ -1747,7 +1797,7 @@ type TradingDataServiceServer interface {
 	ListDeposits(context.Context, *ListDepositsRequest) (*ListDepositsResponse, error)
 	// Withdrawal
 	//
-	// Get a withdrawal by its identifier
+	// Get a withdrawal by its ID. Use the withdrawls list query to get withdrawal IDs
 	GetWithdrawal(context.Context, *GetWithdrawalRequest) (*GetWithdrawalResponse, error)
 	// Withdrawals list
 	//
@@ -1755,7 +1805,7 @@ type TradingDataServiceServer interface {
 	ListWithdrawals(context.Context, *ListWithdrawalsRequest) (*ListWithdrawalsResponse, error)
 	// Asset
 	//
-	// Get a single asset using its identifier
+	// Get a single asset using its ID. Use the assets list query to get an asset's ID
 	GetAsset(context.Context, *GetAssetRequest) (*GetAssetResponse, error)
 	// Assets list
 	//
@@ -1855,15 +1905,15 @@ type TradingDataServiceServer interface {
 	ListEthereumKeyRotations(context.Context, *ListEthereumKeyRotationsRequest) (*ListEthereumKeyRotationsResponse, error)
 	// Vega Time
 	//
-	// Get the current time of the network
+	// Get the current time of the network, displayed as a Unix timestamp in nano seconds
 	GetVegaTime(context.Context, *GetVegaTimeRequest) (*GetVegaTimeResponse, error)
 	// Protocol upgrade status
 	//
-	// Get status of protocol upgrades
+	// Get status of a protocol upgrade
 	GetProtocolUpgradeStatus(context.Context, *GetProtocolUpgradeStatusRequest) (*GetProtocolUpgradeStatusResponse, error)
 	// Protocol upgrade proposals
 	//
-	// List protocol upgrades proposals, optionally filtering on status or approver.
+	// List protocol upgrade proposals, optionally filtering on status or approver.
 	ListProtocolUpgradeProposals(context.Context, *ListProtocolUpgradeProposalsRequest) (*ListProtocolUpgradeProposalsResponse, error)
 	// Snapshots
 	//
@@ -1881,6 +1931,16 @@ type TradingDataServiceServer interface {
 	//
 	// List the addresses of all active network history peers
 	GetActiveNetworkHistoryPeerAddresses(context.Context, *GetActiveNetworkHistoryPeerAddressesRequest) (*GetActiveNetworkHistoryPeerAddressesResponse, error)
+	// Network history status
+	//
+	// Retrieves information about the current state of network history
+	// Response contains the network history status
+	NetworkHistoryStatus(context.Context, *NetworkHistoryStatusRequest) (*NetworkHistoryStatusResponse, error)
+	// Network history bootstrap peers
+	//
+	// Retrieves the nodes bootstrap peers
+	// Response contains the bootstrap peers
+	NetworkHistoryBootstrapPeers(context.Context, *NetworkHistoryBootstrapPeersRequest) (*NetworkHistoryBootstrapPeersResponse, error)
 	// Ping
 	//
 	// Ping the data node
@@ -1915,6 +1975,9 @@ func (UnimplementedTradingDataServiceServer) ObserveOrders(*ObserveOrdersRequest
 }
 func (UnimplementedTradingDataServiceServer) ListPositions(context.Context, *ListPositionsRequest) (*ListPositionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPositions not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListAllPositions(context.Context, *ListAllPositionsRequest) (*ListAllPositionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAllPositions not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ObservePositions(*ObservePositionsRequest, TradingDataService_ObservePositionsServer) error {
 	return status.Errorf(codes.Unimplemented, "method ObservePositions not implemented")
@@ -2141,6 +2204,12 @@ func (UnimplementedTradingDataServiceServer) ListAllNetworkHistorySegments(conte
 func (UnimplementedTradingDataServiceServer) GetActiveNetworkHistoryPeerAddresses(context.Context, *GetActiveNetworkHistoryPeerAddressesRequest) (*GetActiveNetworkHistoryPeerAddressesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetActiveNetworkHistoryPeerAddresses not implemented")
 }
+func (UnimplementedTradingDataServiceServer) NetworkHistoryStatus(context.Context, *NetworkHistoryStatusRequest) (*NetworkHistoryStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NetworkHistoryStatus not implemented")
+}
+func (UnimplementedTradingDataServiceServer) NetworkHistoryBootstrapPeers(context.Context, *NetworkHistoryBootstrapPeersRequest) (*NetworkHistoryBootstrapPeersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NetworkHistoryBootstrapPeers not implemented")
+}
 func (UnimplementedTradingDataServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
@@ -2303,6 +2372,24 @@ func _TradingDataService_ListPositions_Handler(srv interface{}, ctx context.Cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).ListPositions(ctx, req.(*ListPositionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListAllPositions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAllPositionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListAllPositions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListAllPositions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListAllPositions(ctx, req.(*ListAllPositionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3704,6 +3791,42 @@ func _TradingDataService_GetActiveNetworkHistoryPeerAddresses_Handler(srv interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_NetworkHistoryStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NetworkHistoryStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).NetworkHistoryStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/NetworkHistoryStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).NetworkHistoryStatus(ctx, req.(*NetworkHistoryStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_NetworkHistoryBootstrapPeers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NetworkHistoryBootstrapPeersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).NetworkHistoryBootstrapPeers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/NetworkHistoryBootstrapPeers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).NetworkHistoryBootstrapPeers(ctx, req.(*NetworkHistoryBootstrapPeersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PingRequest)
 	if err := dec(in); err != nil {
@@ -3752,6 +3875,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListPositions",
 			Handler:    _TradingDataService_ListPositions_Handler,
+		},
+		{
+			MethodName: "ListAllPositions",
+			Handler:    _TradingDataService_ListAllPositions_Handler,
 		},
 		{
 			MethodName: "ListLedgerEntries",
@@ -3996,6 +4123,14 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetActiveNetworkHistoryPeerAddresses",
 			Handler:    _TradingDataService_GetActiveNetworkHistoryPeerAddresses_Handler,
+		},
+		{
+			MethodName: "NetworkHistoryStatus",
+			Handler:    _TradingDataService_NetworkHistoryStatus_Handler,
+		},
+		{
+			MethodName: "NetworkHistoryBootstrapPeers",
+			Handler:    _TradingDataService_NetworkHistoryBootstrapPeers_Handler,
 		},
 		{
 			MethodName: "Ping",

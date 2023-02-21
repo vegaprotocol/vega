@@ -77,7 +77,6 @@ func getTestEngine(t *testing.T, startTime time.Time) *testEngine {
 
 	engine := statevar.New(logger, conf, broker, topology, commander)
 	engine.OnTick(context.Background(), startTime)
-
 	return &testEngine{
 		engine:    engine,
 		topology:  topology,
@@ -122,6 +121,7 @@ func setupValidators(t *testing.T, numValidators int, startCalc func(string, typ
 	t.Helper()
 	validators := getValidators(t, now, numValidators)
 	allNodeIds := []string{"0", "1", "2", "3", "4"}
+	votingPower := map[string]int64{"0": 10, "1": 20, "2": 30, "3": 40, "4": 50}
 	for i, v := range validators {
 		err := generateStateVariableForValidator(t, v, startCalc, resultCallback)
 		require.NoError(t, err)
@@ -133,6 +133,10 @@ func setupValidators(t *testing.T, numValidators int, startCalc func(string, typ
 		v.topology.EXPECT().AllNodeIDs().Return(allNodeIds).AnyTimes()
 		v.commander.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 		v.topology.EXPECT().SelfNodeID().Return(allNodeIds[i]).AnyTimes()
+		v.topology.EXPECT().GetVotingPower(gomock.Any()).DoAndReturn(func(nodeID string) int64 {
+			return votingPower[nodeID]
+		}).AnyTimes()
+		v.topology.EXPECT().GetTotalVotingPower().Return(int64(100)).AnyTimes()
 	}
 	return validators
 }
@@ -329,7 +333,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 	}
 	require.Equal(t, 0, counter)
 
-	// send 5 results from non validator nodes, should be all ignored although it's for theh right event
+	// send 5 results from non validator nodes, should be all ignored although it's for the right event
 	for i := 5; i < 10; i++ {
 		iAsString := strconv.Itoa(i)
 
@@ -339,9 +343,11 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 	}
 	require.Equal(t, 0, counter)
 
-	// send bundles from 4/5 validators
-	for i := 0; i < len(validators)-1; i++ {
-		iAsString := strconv.Itoa(i)
+	// because the voting power for the validators is 10,20,30,40,50 - a majority is reached when the second and last validators
+	// send bundles from >2/3 of the voting power
+	submittingValidators := []string{"1", "4"}
+	for i := 0; i < len(submittingValidators); i++ {
+		iAsString := submittingValidators[i]
 
 		for j := 0; j < len(validators); j++ {
 			validators[j].engine.ProposedValueReceived(context.Background(), "asset_market_name", iAsString, "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", bundle)

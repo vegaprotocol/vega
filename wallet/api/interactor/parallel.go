@@ -109,7 +109,7 @@ func (i *ParallelInteractor) NotifySuccessfulRequest(ctx context.Context, traceI
 	}
 }
 
-func (i *ParallelInteractor) NotifySuccessfulTransaction(ctx context.Context, traceID, txHash, deserializedInputData, tx string, sentAt time.Time) {
+func (i *ParallelInteractor) NotifySuccessfulTransaction(ctx context.Context, traceID, txHash, deserializedInputData, tx string, sentAt time.Time, host string) {
 	if err := i.ensureCanProceed(ctx); err != nil {
 		return
 	}
@@ -127,11 +127,14 @@ func (i *ParallelInteractor) NotifySuccessfulTransaction(ctx context.Context, tr
 			Tx:                    tx,
 			TxHash:                txHash,
 			SentAt:                sentAt,
+			Node: SelectedNode{
+				Host: host,
+			},
 		},
 	}
 }
 
-func (i *ParallelInteractor) NotifyFailedTransaction(ctx context.Context, traceID, deserializedInputData, tx string, err error, sentAt time.Time) {
+func (i *ParallelInteractor) NotifyFailedTransaction(ctx context.Context, traceID, deserializedInputData, tx string, err error, sentAt time.Time, host string) {
 	if err := i.ensureCanProceed(ctx); err != nil {
 		return
 	}
@@ -149,6 +152,9 @@ func (i *ParallelInteractor) NotifyFailedTransaction(ctx context.Context, traceI
 			Tx:                    tx,
 			Error:                 err,
 			SentAt:                sentAt,
+			Node: SelectedNode{
+				Host: host,
+			},
 		},
 	}
 }
@@ -412,7 +418,7 @@ func (i *ParallelInteractor) waitForResponse(ctx context.Context, userResponseCh
 	}
 
 	if response.Name == CancelRequestName {
-		return Interaction{}, api.ErrUserCanceledTheRequest
+		return Interaction{}, api.ErrUserCancelledTheRequest
 	}
 
 	if response.Name != name {

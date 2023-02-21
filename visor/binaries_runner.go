@@ -34,11 +34,6 @@ import (
 
 const snapshotBlockHeightFlagName = "--snapshot.load-from-block-height"
 
-type versionCommandOutput struct {
-	Version string `json:"version"`
-	Hash    string `json:"hash"`
-}
-
 type BinariesRunner struct {
 	mut         sync.RWMutex
 	running     map[int]*exec.Cmd
@@ -58,23 +53,16 @@ func NewBinariesRunner(log *logging.Logger, binsFolder string, stopTimeout time.
 	}
 }
 
-func ensureBinaryVersion(binary, version string) error {
-	var output versionCommandOutput
-	if _, err := utils.ExecuteBinary(binary, []string{"version", "--output", "json"}, &output); err != nil {
-		return err
+func (r *BinariesRunner) cleanBinaryPath(binPath string) string {
+	if !filepath.IsAbs(binPath) {
+		return path.Join(r.binsFolder, binPath)
 	}
 
-	if output.Version != version {
-		return fmt.Errorf("wrong binary version provided - provided: %s, want: %s", output.Version, version)
-	}
-
-	return nil
+	return binPath
 }
 
 func (r *BinariesRunner) runBinary(ctx context.Context, binPath string, args []string) error {
-	if !filepath.IsAbs(binPath) {
-		binPath = path.Join(r.binsFolder, binPath)
-	}
+	binPath = r.cleanBinaryPath(binPath)
 
 	if err := utils.EnsureBinary(binPath); err != nil {
 		return fmt.Errorf("failed to locate binary %s %v: %w", binPath, args, err)
@@ -141,14 +129,38 @@ func (r *BinariesRunner) runBinary(ctx context.Context, binPath string, args []s
 	return nil
 }
 
-func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig) chan error {
+func (r *BinariesRunner) prepareVegaArgs(runConf *config.RunConfig, isRestart bool) (Args, error) {
+	args := Args(runConf.Vega.Binary.Args)
+
+	// if a node restart happens (not due protocol upgrade) and data node is present
+	// we need to make sure that they will start on the block that data node has already processed.
+	if isRestart && runConf.DataNode != nil {
+		latestSegment, err := latestDataNodeHistorySegment(
+			r.cleanBinaryPath(runConf.DataNode.Binary.Path),
+			runConf.DataNode.Binary.Args,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get latest history segment from data node: %w", err)
+		}
+
+		args.Set(snapshotBlockHeightFlagName, strconv.FormatUint(uint64(latestSegment.LatestSegment.Height), 10))
+		return args, nil
+	}
+
+	if r.releaseInfo != nil {
+		args.Set(snapshotBlockHeightFlagName, strconv.FormatUint(r.releaseInfo.UpgradeBlockHeight, 10))
+	}
+
+	return args, nil
+}
+
+func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig, isRestart bool) chan error {
 	eg, ctx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
-		// TODO consider moving this logic somewhere else
-		args := Args(runConf.Vega.Binary.Args)
-		if r.releaseInfo != nil {
-			args.Set(snapshotBlockHeightFlagName, strconv.FormatUint(r.releaseInfo.UpgradeBlockHeight, 10))
+		args, err := r.prepareVegaArgs(runConf, isRestart)
+		if err != nil {
+			return fmt.Errorf("failed to prepare args for Vega binary: %w", err)
 		}
 
 		return r.runBinary(ctx, runConf.Vega.Binary.Path, args)

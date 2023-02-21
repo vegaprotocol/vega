@@ -52,6 +52,48 @@ func TestEventFanOut(t *testing.T) {
 	assert.Equal(t, e2, <-evtCh2)
 }
 
+func TestCompositeFanOut(t *testing.T) {
+	tes := &testEventSource{
+		eventsCh: make(chan events.Event),
+		errorsCh: make(chan error),
+	}
+	c, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
+	ctx := vgcontext.WithBlockHeight(c, 1)
+	fos := broker.NewFanOutEventSource(tes, 20, 1)
+
+	evtCh1, _ := fos.Receive(ctx)
+
+	e1 := events.NewAssetEvent(ctx, types.Asset{ID: "a1"})
+	e2 := events.NewExpiredOrdersEvent(ctx, "foo", []string{
+		"party1",
+		"party2",
+		"party3",
+		"party4",
+	})
+	e3 := events.NewAssetEvent(ctx, types.Asset{ID: "a2"})
+	e4 := events.NewAssetEvent(ctx, types.Asset{ID: "a3"})
+	// set seq ID as expected
+	sID := uint64(1)
+	e1.SetSequenceID(sID)
+	sID += e1.CompositeCount()
+	e2.SetSequenceID(sID)
+	sID += e2.CompositeCount()
+	e3.SetSequenceID(sID)
+	sID += e3.CompositeCount()
+	e4.SetSequenceID(sID)
+
+	tes.eventsCh <- e1
+	tes.eventsCh <- e2
+	tes.eventsCh <- e3
+	tes.eventsCh <- e4
+
+	assert.Equal(t, e1, <-evtCh1)
+	assert.Equal(t, e2, <-evtCh1)
+	assert.Equal(t, e3, <-evtCh1)
+	assert.Equal(t, e4, <-evtCh1)
+}
+
 func TestCloseChannelsAndExitWithError(t *testing.T) {
 	tes := &testEventSource{
 		eventsCh: make(chan events.Event),

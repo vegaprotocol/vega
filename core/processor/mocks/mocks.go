@@ -589,6 +589,20 @@ func (mr *MockStatsMockRecorder) AddTotalTrades(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTotalTrades", reflect.TypeOf((*MockStats)(nil).AddTotalTrades), arg0)
 }
 
+// CurrentEventsInBatch mocks base method.
+func (m *MockStats) CurrentEventsInBatch() uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CurrentEventsInBatch")
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// CurrentEventsInBatch indicates an expected call of CurrentEventsInBatch.
+func (mr *MockStatsMockRecorder) CurrentEventsInBatch() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentEventsInBatch", reflect.TypeOf((*MockStats)(nil).CurrentEventsInBatch))
+}
+
 // CurrentOrdersInBatch mocks base method.
 func (m *MockStats) CurrentOrdersInBatch() uint64 {
 	m.ctrl.T.Helper()
@@ -785,6 +799,18 @@ func (m *MockStats) SetBlockDuration(arg0 uint64) {
 func (mr *MockStatsMockRecorder) SetBlockDuration(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBlockDuration", reflect.TypeOf((*MockStats)(nil).SetBlockDuration), arg0)
+}
+
+// SetEventsPerSecond mocks base method.
+func (m *MockStats) SetEventsPerSecond(arg0 uint64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetEventsPerSecond", arg0)
+}
+
+// SetEventsPerSecond indicates an expected call of SetEventsPerSecond.
+func (mr *MockStatsMockRecorder) SetEventsPerSecond(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEventsPerSecond", reflect.TypeOf((*MockStats)(nil).SetEventsPerSecond), arg0)
 }
 
 // SetHash mocks base method.
@@ -1410,6 +1436,20 @@ func (m *MockBanking) CancelTransferFunds(arg0 context.Context, arg1 *types.Canc
 func (mr *MockBankingMockRecorder) CancelTransferFunds(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelTransferFunds", reflect.TypeOf((*MockBanking)(nil).CancelTransferFunds), arg0, arg1)
+}
+
+// CheckTransfer mocks base method.
+func (m *MockBanking) CheckTransfer(arg0 *types.TransferBase) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckTransfer", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckTransfer indicates an expected call of CheckTransfer.
+func (mr *MockBankingMockRecorder) CheckTransfer(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckTransfer", reflect.TypeOf((*MockBanking)(nil).CheckTransfer), arg0)
 }
 
 // DepositBuiltinAsset mocks base method.

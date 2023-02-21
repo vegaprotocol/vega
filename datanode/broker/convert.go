@@ -127,6 +127,10 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.TransactionResultEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_SNAPSHOT_TAKEN:
 		return events.SnapthostTakenEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_ORDERS_CLOSED:
+		return events.DistressedOrdersEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_EXPIRED_ORDERS:
+		return events.ExpiredOrdersEventFromStream(ctx, be)
 	}
 
 	return nil

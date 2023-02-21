@@ -34,6 +34,8 @@ const (
                        tx_hash, vega_time, seq_num`
 
 	ordersFilterDateColumn = "vega_time"
+
+	OrdersTableName = "orders"
 )
 
 type Orders struct {
@@ -46,11 +48,11 @@ var ordersOrdering = TableOrdering{
 	ColumnOrdering{Name: "seq_num", Sorting: ASC},
 }
 
-func NewOrders(connectionSource *ConnectionSource, _ *logging.Logger) *Orders {
+func NewOrders(connectionSource *ConnectionSource) *Orders {
 	a := &Orders{
 		ConnectionSource: connectionSource,
 		batcher: NewMapBatcher[entities.OrderKey, entities.Order](
-			"orders",
+			OrdersTableName,
 			entities.OrderColumns),
 	}
 	return a
@@ -95,6 +97,39 @@ func (os *Orders) GetOrder(ctx context.Context, orderIDStr string, version *int3
 	}
 
 	return order, os.wrapE(err)
+}
+
+// GetByMarketAndID returns all orders with given IDs for a market.
+func (os *Orders) GetByMarketAndID(ctx context.Context, marketIDstr string, orderIDs []string) ([]entities.Order, error) {
+	if len(orderIDs) == 0 {
+		os.log.Warn("GetByMarketAndID called with an empty order slice",
+			logging.String("market ID", marketIDstr),
+		)
+		return nil, nil
+	}
+	defer metrics.StartSQLQuery("Orders", "GetByMarketAndID")()
+	marketID := entities.MarketID(marketIDstr)
+	// IDs := make([]entities.OrderID, 0, len(orderIDs))
+	IDs := make([]interface{}, 0, len(orderIDs))
+	in := make([]string, 0, len(orderIDs))
+	bindNum := 2
+	for _, o := range orderIDs {
+		IDs = append(IDs, entities.OrderID(o))
+		in = append(in, fmt.Sprintf("$%d", bindNum))
+		bindNum++
+	}
+	bind := make([]interface{}, 0, len(in)+1)
+	// set all bind vars
+	bind = append(bind, marketID)
+	bind = append(bind, IDs...)
+	// select directly from orders_live table, the current view searches in orders
+	// this is used to expire orders, which have to be, by definition, live. This table uses ID as its PK
+	// so this is a more optimal way of querying the data.
+	query := fmt.Sprintf(`SELECT %s from orders_live WHERE market_id=$1 AND id IN (%s)`, sqlOrderColumns, strings.Join(in, ", "))
+	orders := make([]entities.Order, 0, len(orderIDs))
+	err := pgxscan.Select(ctx, os.Connection, &orders, query, bind...)
+
+	return orders, os.wrapE(err)
 }
 
 // GetByMarket returns the last update of the all the orders in a particular market.

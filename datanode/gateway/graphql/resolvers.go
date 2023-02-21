@@ -27,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -374,6 +375,11 @@ func (r *VegaResolverRoot) OrderFilter() OrderFilterResolver {
 	return (*orderFilterResolver)(r)
 }
 
+// RewardSummaryFilter returns RewardSummaryFilterResolver implementation.
+func (r *VegaResolverRoot) RewardSummaryFilter() RewardSummaryFilterResolver {
+	return (*rewardSummaryFilterResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(ctx context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -480,6 +486,18 @@ func (r *myDepositResolver) CreditedTimestamp(ctx context.Context, obj *types.De
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) Positions(ctx context.Context, filter *v2.PositionsFilter, pagination *v2.Pagination) (*v2.PositionConnection, error) {
+	resp, err := r.tradingDataClientV2.ListAllPositions(ctx, &v2.ListAllPositionsRequest{
+		Filter:     filter,
+		Pagination: pagination,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Positions, nil
+}
 
 func (r *myQueryResolver) TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection,
 	pagination *v2.Pagination,
@@ -627,8 +645,8 @@ func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, n
 	res, err := r.tradingDataClientV2.ListERC20MultiSigSignerAddedBundles(
 		ctx, &v2.ListERC20MultiSigSignerAddedBundlesRequest{
 			NodeId:     nodeID,
-			Submitter:  fromPtr(submitter),
-			EpochSeq:   fromPtr(epochSeq),
+			Submitter:  ptr.UnBox(submitter),
+			EpochSeq:   ptr.UnBox(epochSeq),
 			Pagination: pagination,
 		})
 	if err != nil {
@@ -661,8 +679,8 @@ func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context,
 	res, err := r.tradingDataClientV2.ListERC20MultiSigSignerRemovedBundles(
 		ctx, &v2.ListERC20MultiSigSignerRemovedBundlesRequest{
 			NodeId:     nodeID,
-			Submitter:  fromPtr(submitter),
-			EpochSeq:   fromPtr(epochSeq),
+			Submitter:  ptr.UnBox(submitter),
+			EpochSeq:   ptr.UnBox(epochSeq),
 			Pagination: pagination,
 		})
 	if err != nil {
@@ -689,13 +707,6 @@ func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context,
 		Edges:    edges,
 		PageInfo: res.Bundles.PageInfo,
 	}, nil
-}
-
-func fromPtr[T any](ptr *T) (ret T) {
-	if ptr != nil {
-		ret = *ptr
-	}
-	return
 }
 
 func (r *myQueryResolver) Withdrawal(ctx context.Context, wid string) (*types.Withdrawal, error) {
@@ -970,24 +981,15 @@ func (r *myQueryResolver) CoreSnapshots(ctx context.Context, pagination *v2.Pagi
 	return resp.CoreSnapshots, nil
 }
 
-func (r *myQueryResolver) EpochRewardSummaries(ctx context.Context, fromEpoch *int, toEpoch *int, pagination *v2.Pagination) (*v2.EpochRewardSummaryConnection, error) {
-	var from, to *uint64
-	if fromEpoch != nil {
-		from = new(uint64)
-		if *fromEpoch < 0 {
-			return nil, errors.New("invalid fromEpoch for reward summary - must be positive")
-		}
-		*from = uint64(*fromEpoch)
+func (r *myQueryResolver) EpochRewardSummaries(
+	ctx context.Context,
+	filter *v2.RewardSummaryFilter,
+	pagination *v2.Pagination,
+) (*v2.EpochRewardSummaryConnection, error) {
+	req := v2.ListEpochRewardSummariesRequest{
+		Filter:     filter,
+		Pagination: pagination,
 	}
-	if toEpoch != nil {
-		to = new(uint64)
-		if *toEpoch < 0 {
-			return nil, errors.New("invalid toEpoch for reward summary - must be positive")
-		}
-		*to = uint64(*toEpoch)
-	}
-
-	req := v2.ListEpochRewardSummariesRequest{FromEpoch: to, ToEpoch: from, Pagination: pagination}
 	resp, err := r.tradingDataClientV2.ListEpochRewardSummaries(ctx, &req)
 	if err != nil {
 		return nil, err
@@ -1169,11 +1171,30 @@ func (r *myPartyResolver) TransfersConnection(
 	return r.r.transfersConnection(ctx, &party.Id, direction, pagination)
 }
 
-func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *types.Party, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error) {
+func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *types.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) (*v2.RewardsConnection, error) {
+	var from, to *uint64
+
+	if fromEpoch != nil {
+		from = new(uint64)
+		if *fromEpoch < 0 {
+			return nil, errors.New("invalid fromEpoch for reward query - must be positive")
+		}
+		*from = uint64(*fromEpoch)
+	}
+	if toEpoch != nil {
+		to = new(uint64)
+		if *toEpoch < 0 {
+			return nil, errors.New("invalid toEpoch for reward query - must be positive")
+		}
+		*to = uint64(*toEpoch)
+	}
+
 	req := v2.ListRewardsRequest{
 		PartyId:    party.Id,
 		AssetId:    assetID,
 		Pagination: pagination,
+		FromEpoch:  from,
+		ToEpoch:    to,
 	}
 	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req)
 	if err != nil {
@@ -1815,6 +1836,10 @@ func (r *positionUpdateResolver) UpdatedAt(ctx context.Context, obj *types.Posit
 	return updatedAt, nil
 }
 
+func (r *positionUpdateResolver) LossSocializationAmount(ctx context.Context, obj *types.Position) (string, error) {
+	return obj.LossSocialisationAmount, nil
+}
+
 // BEGIN: Position Resolver
 
 type myPositionResolver VegaResolverRoot
@@ -1846,6 +1871,10 @@ func (r *myPositionResolver) UnrealisedPnl(ctx context.Context, obj *types.Posit
 
 func (r *myPositionResolver) AverageEntryPrice(ctx context.Context, obj *types.Position) (string, error) {
 	return obj.AverageEntryPrice, nil
+}
+
+func (r *myPositionResolver) LossSocializationAmount(ctx context.Context, obj *types.Position) (string, error) {
+	return obj.LossSocialisationAmount, nil
 }
 
 func (r *myPositionResolver) Party(ctx context.Context, obj *types.Position) (*types.Party, error) {
@@ -1884,6 +1913,7 @@ func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID 
 		return nil, err
 	}
 
+	sCtx := stream.Context()
 	ch := make(chan *types.Delegation)
 	go func() {
 		defer func() {
@@ -1900,7 +1930,16 @@ func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID 
 				r.log.Error("delegations levls: stream closed", logging.Error(err))
 				break
 			}
-			ch <- dl.Delegation
+			select {
+			case ch <- dl.Delegation:
+				r.log.Debug("delegations: data sent")
+			case <-ctx.Done():
+				r.log.Error("delegations: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("delegations: stream closed by server")
+				break
+			}
 		}
 	}()
 
@@ -1917,6 +1956,7 @@ func (r *mySubscriptionResolver) Rewards(ctx context.Context, assetID, party *st
 		return nil, err
 	}
 
+	sCtx := stream.Context()
 	ch := make(chan *types.Reward)
 	go func() {
 		defer func() {
@@ -1933,7 +1973,16 @@ func (r *mySubscriptionResolver) Rewards(ctx context.Context, assetID, party *st
 				r.log.Error("reward details: stream closed", logging.Error(err))
 				break
 			}
-			ch <- rd.Reward
+			select {
+			case ch <- rd.Reward:
+				r.log.Debug("rewards: data sent")
+			case <-ctx.Done():
+				r.log.Error("rewards: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("rewards: stream closed by server")
+				break
+			}
 		}
 	}()
 
@@ -1950,6 +1999,7 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 		return nil, err
 	}
 
+	sCtx := stream.Context()
 	ch := make(chan *types.MarginLevels)
 	go func() {
 		defer func() {
@@ -1966,7 +2016,16 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 				r.log.Error("margin levls: stream closed", logging.Error(err))
 				break
 			}
-			ch <- m.MarginLevels
+			select {
+			case ch <- m.MarginLevels:
+				r.log.Debug("margin levels: data sent")
+			case <-ctx.Done():
+				r.log.Error("margin levels: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("margin levels: stream closed by server")
+				break
+			}
 		}
 	}()
 
@@ -2008,6 +2067,8 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 	}
 
 	c := make(chan []*v2.AccountBalance)
+	data := []*v2.AccountBalance{}
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2024,12 +2085,24 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 				break
 			}
 
+			// empty slice, but preserve cap to avoid excessive reallocation
+			data = data[:0]
 			if snapshot := a.GetSnapshot(); snapshot != nil {
-				c <- snapshot.Accounts
+				data = append(data, snapshot.Accounts...)
 			}
 
 			if updates := a.GetUpdates(); updates != nil {
-				c <- updates.Accounts
+				data = append(data, updates.Accounts...)
+			}
+			select {
+			case c <- data:
+				r.log.Debug("accounts: data sent")
+			case <-ctx.Done():
+				r.log.Error("accounts: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("accounts: stream closed by server")
+				break
 			}
 		}
 	}()
@@ -2048,6 +2121,8 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 	}
 
 	c := make(chan []*types.Order)
+	data := []*types.Order{}
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2063,11 +2138,22 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 				r.log.Error("orders: stream closed", logging.Error(err))
 				break
 			}
+			data = data[:0]
 			if snapshot := o.GetSnapshot(); snapshot != nil {
-				c <- snapshot.Orders
+				data = append(data, snapshot.Orders...)
 			}
 			if updates := o.GetUpdates(); updates != nil {
-				c <- updates.Orders
+				data = append(data, updates.Orders...)
+			}
+			select {
+			case c <- data:
+				r.log.Debug("orders: data sent")
+			case <-ctx.Done():
+				r.log.Error("orders: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("orders: stream closed by server")
+				break
 			}
 		}
 	}()
@@ -2086,6 +2172,7 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	}
 
 	c := make(chan []*types.Trade)
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2101,7 +2188,16 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 				r.log.Error("trades: stream closed", logging.Error(err))
 				break
 			}
-			c <- t.Trades
+			select {
+			case c <- t.Trades:
+				r.log.Debug("trades: data sent")
+			case <-ctx.Done():
+				r.log.Error("trades: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("trades: stream closed by server")
+				break
+			}
 		}
 	}()
 
@@ -2119,6 +2215,8 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 	}
 
 	c := make(chan []*types.Position)
+	data := []*types.Position{}
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2134,12 +2232,23 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 				r.log.Error("positions: stream closed", logging.Error(err))
 				break
 			}
+			data = data[:0]
 			if snapshot := t.GetSnapshot(); snapshot != nil {
-				c <- snapshot.Positions
+				data = append(data, snapshot.Positions...)
 			}
 
 			if updates := t.GetUpdates(); updates != nil {
-				c <- updates.Positions
+				data = append(data, updates.Positions...)
+			}
+			select {
+			case c <- data:
+				r.log.Debug("positions: data sent")
+			case <-ctx.Done():
+				r.log.Error("positions: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("positions: stream closed by server")
+				break
 			}
 		}
 	}()
@@ -2181,6 +2290,7 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 		return nil, err
 	}
 
+	sCtx := stream.Context()
 	c := make(chan *v2.Candle)
 	go func() {
 		defer func() {
@@ -2198,7 +2308,16 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 				break
 			}
 
-			c <- cdl.Candle
+			select {
+			case c <- cdl.Candle:
+				r.log.Debug("candles: data sent")
+			case <-ctx.Done():
+				r.log.Error("candles: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("candles: stream closed by server")
+				break
+			}
 		}
 	}()
 	return c, nil
@@ -2222,13 +2341,23 @@ func (r *mySubscriptionResolver) subscribeAllProposals(ctx context.Context) (<-c
 		return nil, err
 	}
 	output := make(chan *types.GovernanceData)
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
 			stream.CloseSend()
 			close(output)
 		}()
 		for data, err := stream.Recv(); !isStreamClosed(err, r.log); data, err = stream.Recv() {
-			output <- data.Data
+			select {
+			case output <- data.Data:
+				r.log.Debug("governance (all): data sent")
+			case <-ctx.Done():
+				r.log.Error("governance (all): stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("governance (all): stream closed by server")
+				break
+			}
 		}
 	}()
 	return output, nil
@@ -2241,6 +2370,7 @@ func (r *mySubscriptionResolver) subscribePartyProposals(ctx context.Context, pa
 	if err != nil {
 		return nil, err
 	}
+	sCtx := stream.Context()
 	output := make(chan *types.GovernanceData)
 	go func() {
 		defer func() {
@@ -2248,7 +2378,16 @@ func (r *mySubscriptionResolver) subscribePartyProposals(ctx context.Context, pa
 			close(output)
 		}()
 		for data, err := stream.Recv(); !isStreamClosed(err, r.log); data, err = stream.Recv() {
-			output <- data.Data
+			select {
+			case output <- data.Data:
+				r.log.Debug("governance (party): data sent")
+			case <-ctx.Done():
+				r.log.Error("governance (party): stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("governance (party): stream closed by server")
+				break
+			}
 		}
 	}()
 	return output, nil
@@ -2269,6 +2408,7 @@ func (r *mySubscriptionResolver) subscribeProposalVotes(ctx context.Context, pro
 	if err != nil {
 		return nil, err
 	}
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2279,7 +2419,16 @@ func (r *mySubscriptionResolver) subscribeProposalVotes(ctx context.Context, pro
 			if isStreamClosed(err, r.log) {
 				break
 			}
-			output <- ProposalVoteFromProto(data.Vote)
+			select {
+			case output <- ProposalVoteFromProto(data.Vote):
+				r.log.Debug("votes (proposal): data sent")
+			case <-ctx.Done():
+				r.log.Error("votes (proposal): stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("votes (proposal): stream closed by server")
+				break
+			}
 		}
 	}()
 	return output, nil
@@ -2293,6 +2442,7 @@ func (r *mySubscriptionResolver) subscribePartyVotes(ctx context.Context, partyI
 	if err != nil {
 		return nil, err
 	}
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2303,7 +2453,16 @@ func (r *mySubscriptionResolver) subscribePartyVotes(ctx context.Context, partyI
 			if isStreamClosed(err, r.log) {
 				break
 			}
-			output <- ProposalVoteFromProto(data.Vote)
+			select {
+			case output <- ProposalVoteFromProto(data.Vote):
+				r.log.Debug("votes (party): data sent")
+			case <-ctx.Done():
+				r.log.Error("votes (party): stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("votes (party): stream closed by server")
+				break
+			}
 		}
 	}()
 	return output, nil
@@ -2365,16 +2524,17 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 		}()
 
 		if batchSize == 0 {
-			r.busEvents(stream, out)
+			r.busEvents(ctx, stream, out)
 		} else {
-			r.busEventsWithBatch(int64(batchSize), stream, out)
+			r.busEventsWithBatch(ctx, int64(batchSize), stream, out)
 		}
 	}()
 
 	return out, nil
 }
 
-func (r *mySubscriptionResolver) busEvents(stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
+func (r *mySubscriptionResolver) busEvents(ctx context.Context, stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
+	sCtx := stream.Context()
 	for {
 		// receive batch
 		data, err := stream.Recv()
@@ -2385,12 +2545,21 @@ func (r *mySubscriptionResolver) busEvents(stream v2.TradingDataService_ObserveE
 			r.log.Error("Event bus stream error", logging.Error(err))
 			return
 		}
-		be := busEventFromProto(data.Events...)
-		out <- be
+		select {
+		case out <- busEventFromProto(data.Events...):
+			r.log.Debug("bus events: data sent")
+		case <-ctx.Done():
+			r.log.Debug("bus events: stream closed")
+			return
+		case <-sCtx.Done():
+			r.log.Debug("bus events: stream closed by server")
+			return
+		}
 	}
 }
 
-func (r *mySubscriptionResolver) busEventsWithBatch(batchSize int64, stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
+func (r *mySubscriptionResolver) busEventsWithBatch(ctx context.Context, batchSize int64, stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
+	sCtx := stream.Context()
 	poll := &v2.ObserveEventBusRequest{
 		BatchSize: batchSize,
 	}
@@ -2404,8 +2573,16 @@ func (r *mySubscriptionResolver) busEventsWithBatch(batchSize int64, stream v2.T
 			r.log.Error("Event bus stream error", logging.Error(err))
 			return
 		}
-		be := busEventFromProto(data.Events...)
-		out <- be
+		select {
+		case out <- busEventFromProto(data.Events...):
+			r.log.Debug("bus events: data sent")
+		case <-ctx.Done():
+			r.log.Debug("bus events: stream closed")
+			return
+		case <-sCtx.Done():
+			r.log.Debug("bus events: stream closed by server")
+			return
+		}
 		// send request for the next batch
 		if err := stream.SendMsg(poll); err != nil {
 			r.log.Error("Failed to poll next event batch", logging.Error(err))
@@ -2425,6 +2602,7 @@ func (r *mySubscriptionResolver) LiquidityProvisions(ctx context.Context, partyI
 	}
 
 	c := make(chan []*types.LiquidityProvision)
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2440,8 +2618,19 @@ func (r *mySubscriptionResolver) LiquidityProvisions(ctx context.Context, partyI
 				r.log.Error("orders: stream closed", logging.Error(err))
 				break
 			}
-			if lps := received.LiquidityProvisions; lps != nil {
-				c <- lps
+			lps := received.LiquidityProvisions
+			if len(lps) == 0 {
+				continue
+			}
+			select {
+			case c <- lps:
+				r.log.Debug("liquidity provisions: data sent")
+			case <-sCtx.Done():
+				r.log.Debug("liquidity provisions: stream closed by server")
+				break
+			case <-ctx.Done():
+				r.log.Debug("liquidity provisions: stream closed")
+				break
 			}
 		}
 	}()
@@ -2623,7 +2812,7 @@ func (r *myQueryResolver) GetMarketDataHistoryConnectionByID(ctx context.Context
 	return resp.GetMarketData(), nil
 }
 
-func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.MarketConnection, error) {
+func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pagination *v2.Pagination, includeSettled *bool) (*v2.MarketConnection, error) {
 	var marketID string
 
 	if id != nil {
@@ -2653,7 +2842,8 @@ func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pag
 	}
 
 	resp, err := r.tradingDataClientV2.ListMarkets(ctx, &v2.ListMarketsRequest{
-		Pagination: pagination,
+		Pagination:     pagination,
+		IncludeSettled: includeSettled,
 	})
 	if err != nil {
 		return nil, err

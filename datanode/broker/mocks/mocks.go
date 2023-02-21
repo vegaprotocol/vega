@@ -5,11 +5,11 @@
 package mocks
 
 import (
+	"code.vegaprotocol.io/vega/libs/broker"
 	context "context"
 	reflect "reflect"
 
 	events "code.vegaprotocol.io/vega/core/events"
-	broker "code.vegaprotocol.io/vega/datanode/broker"
 	gomock "github.com/golang/mock/gomock"
 )
 

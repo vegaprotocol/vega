@@ -66,7 +66,7 @@ func (v *Visor) installUpgradeFolder(ctx context.Context, folder, releaseTag str
 	assetsFetcher := github.NewAssetsFetcher(
 		conf.GithubRepositoryOwner,
 		conf.GithubRepository,
-		conf.Assets.ToSlice(),
+		conf.Assets.AssetsNames(),
 	)
 
 	if err := assetsFetcher.Download(ctx, releaseTag, folder); err != nil {
@@ -74,10 +74,10 @@ func (v *Visor) installUpgradeFolder(ctx context.Context, folder, releaseTag str
 	}
 
 	runConf.Name = releaseTag
-	runConf.Vega.Binary.Path = conf.Assets.Vega
+	runConf.Vega.Binary.Path = conf.Assets.Vega.GetBinaryPath()
 
 	if runConf.DataNode != nil {
-		runConf.DataNode.Binary.Path = conf.Assets.Vega
+		runConf.DataNode.Binary.Path = conf.Assets.DataNode.GetBinaryPath()
 
 		if len(runConf.DataNode.Binary.Args) != 0 && runConf.DataNode.Binary.Args[0] != vegaDataNodeStartCmdArgs[0] {
 			runConf.DataNode.Binary.Args = append(vegaDataNodeStartCmdArgs, runConf.DataNode.Binary.Args[1:]...)

@@ -19,7 +19,9 @@ import (
 	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/core/collateral"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
@@ -34,7 +36,7 @@ func PartiesDepositTheFollowingAssets(
 	for _, r := range parseDepositAssetTable(table) {
 		row := depositAssetRow{row: r}
 		amount := row.Amount()
-		_, err := collateralEngine.Deposit(
+		res, err := collateralEngine.Deposit(
 			ctx,
 			row.Party(),
 			row.Asset(),
@@ -49,6 +51,8 @@ func PartiesDepositTheFollowingAssets(
 			return errNoGeneralAccountForParty(row, err)
 		}
 		netDeposits.Add(netDeposits, amount)
+		// emit an event manually here as we're not going via the banking flow in integration tests
+		broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{res}))
 	}
 	return nil
 }

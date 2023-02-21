@@ -62,17 +62,18 @@ func NewCmdSignTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
 	handler := func(params api.AdminSignTransactionParams, log *zap.Logger) (api.AdminSignTransactionResult, error) {
 		vegaPaths := paths.New(rf.Home)
 
-		ws, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return api.AdminSignTransactionResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
 		ns, err := networkStore.InitialiseStore(vegaPaths)
 		if err != nil {
 			return api.AdminSignTransactionResult{}, fmt.Errorf("couldn't initialise network store: %w", err)
 		}
 
-		signTx := api.NewAdminSignTransaction(ws, ns, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+		signTx := api.NewAdminSignTransaction(walletStore, ns, func(hosts []string, retries uint64) (walletnode.Selector, error) {
 			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries)
 		})
 
@@ -291,5 +292,5 @@ func PrintSignTransactionResponse(w io.Writer, req api.AdminSignTransactionResul
 
 	str.BlueArrow().InfoText("Send a transaction").NextLine()
 	str.Text("To send a raw transaction, see the following transaction:").NextSection()
-	str.Code(fmt.Sprintf("%s raw_transaction send --help", os.Args[0])).NextSection()
+	str.Code(fmt.Sprintf("%s raw_transaction send --help", os.Args[0])).NextLine()
 }

@@ -16,6 +16,8 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/libs/subscribers"
+
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/blockchain"
@@ -51,7 +53,6 @@ import (
 	"code.vegaprotocol.io/vega/core/staking"
 	"code.vegaprotocol.io/vega/core/statevar"
 	"code.vegaprotocol.io/vega/core/stats"
-	"code.vegaprotocol.io/vega/core/subscribers"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
@@ -146,7 +147,7 @@ func newServices(
 		vegaPaths:        vegaPaths,
 	}
 
-	svcs.broker, err = broker.New(svcs.ctx, svcs.log, svcs.conf.Broker)
+	svcs.broker, err = broker.New(svcs.ctx, svcs.log, svcs.conf.Broker, stats.Blockchain)
 	if err != nil {
 		svcs.log.Error("unable to initialise broker", logging.Error(err))
 		return nil, err
@@ -171,7 +172,7 @@ func newServices(
 	svcs.genesisHandler = genesis.New(svcs.log, svcs.conf.Genesis)
 	svcs.genesisHandler.OnGenesisTimeLoaded(svcs.timeService.SetTimeNow)
 
-	svcs.eventService = subscribers.NewService(svcs.broker)
+	svcs.eventService = subscribers.NewService(svcs.log, svcs.broker, svcs.conf.Broker.EventBusClientBufferSize)
 	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.timeService, svcs.broker)
 	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
 
@@ -436,6 +437,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			{
 				Param:   netparams.TransferMaxCommandsPerEpoch,
 				Watcher: svcs.spam.OnMaxTransfersChanged,
+			},
+			{
+				Param:   netparams.SpamProtectionMinMultisigUpdates,
+				Watcher: svcs.spam.OnMinTokensForMultisigUpdatesChanged,
 			},
 		}
 	}

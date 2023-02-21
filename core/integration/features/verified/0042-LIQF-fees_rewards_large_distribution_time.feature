@@ -12,16 +12,16 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
     And the following network parameters are set:
-      | name                                                | value  |
-      | market.value.windowLength                           | 1h     |
-      | market.stake.target.timeWindow                      | 24h    |
-      | market.stake.target.scalingFactor                   | 1      |
-      | market.liquidity.targetstake.triggering.ratio       | 0      |
-      | market.liquidity.providers.fee.distributionTimeStep | 720h   |
+      | name                                                | value |
+      | market.value.windowLength                           | 1h    |
+      | market.stake.target.timeWindow                      | 24h   |
+      | market.stake.target.scalingFactor                   | 1     |
+      | market.liquidity.targetstake.triggering.ratio       | 0     |
+      | market.liquidity.providers.fee.distributionTimeStep | 720h  |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
-      | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
 
     Given the average block duration is "2"
 
@@ -61,12 +61,12 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
-      | buy  | 898   | 4     |
+      | buy  | 898   | 4      |
       | buy  | 900   | 1      |
-      | buy  | 999   | 7     |
-      | sell | 1001  | 7     |
+      | buy  | 999   | 7      |
+      | sell | 1001  | 7      |
       | sell | 1100  | 1      |
-      | sell | 1102  | 4     |
+      | sell | 1102  | 4      |
 
     #volume = ceiling(liquidity_obligation x liquidity-normalised-proportion / probability_of_trading / price)
     #for any price better than the bid price or better than the ask price it returns 0.5
@@ -80,11 +80,19 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
       | party | equity like share | average entry valuation |
       | lp1   | 1                 | 10000                   |
 
+
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
       | lp1    | USD   | ETH/MAR22 | 1320   | 999988680 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 2520   | 99997480  | 0     |
-      | party2 | USD   | ETH/MAR22 | 2520   | 99997480  | 0     |
+      | party1 | USD   | ETH/MAR22 | 1704   | 99998296  |       |
+      | party2 | USD   | ETH/MAR22 | 1692   | 99998308  |       |
+
+    # party1 margin = 11*1000*0.1 + 10*(1000-968) = 1420
+    # party2 margin = 11*1000*0.1 + 10*(1031-1000)= 1410
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | initial |
+      | party1 | ETH/MAR22 | 1420        | 1704    |
+      | party2 | ETH/MAR22 | 1410        | 1692    |
 
     Then the network moves ahead "1" blocks
 
@@ -102,8 +110,8 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
       | lp1    | USD   | ETH/MAR22 | 2870   | 999986742 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 1317   | 99998688  | 0     |
-      | party2 | USD   | ETH/MAR22 | 1932   | 99998411  | 0     |
+      | party1 | USD   | ETH/MAR22 | 1317   | 99998688  |       |
+      | party2 | USD   | ETH/MAR22 | 1932   | 99998411  |       |
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -126,7 +134,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
     # opening auction + time window
     Then time is updated to "2019-11-30T00:10:05Z"
 
-   # lp fee got cumulated since the distribution period is large
+    # lp fee got cumulated since the distribution period is large
     And the accumulated liquidity fees should be "20" for the market "ETH/MAR22"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"

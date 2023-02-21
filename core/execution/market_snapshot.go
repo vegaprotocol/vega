@@ -15,6 +15,7 @@ package execution
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
@@ -33,6 +34,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"golang.org/x/exp/maps"
 )
 
 func NewMarketFromSnapshot(
@@ -88,6 +90,8 @@ func NewMarketFromSnapshot(
 		positionFactor,
 		em.RiskFactorConsensusReached,
 		&types.RiskFactor{Market: mkt.ID, Short: em.ShortRiskFactor, Long: em.LongRiskFactor},
+		mkt.LinearSlippageFactor,
+		mkt.QuadraticSlippageFactor,
 	)
 
 	settleEngine := settlement.NewSnapshotEngine(
@@ -134,7 +138,7 @@ func NewMarketFromSnapshot(
 		broker:                     broker,
 		fee:                        feeEngine,
 		liquidity:                  liqEngine,
-		parties:                    map[string]struct{}{}, // parties will be restored on PostRestore
+		parties:                    map[string]struct{}{},
 		lMonitor:                   lMonitor,
 		tsCalc:                     tsCalc,
 		feeSplitter:                NewFeeSplitterFromSnapshot(em.FeeSplitter, now),
@@ -157,11 +161,21 @@ func NewMarketFromSnapshot(
 		stateVarEngine:             stateVarEngine,
 		settlementDataInMarket:     em.SettlementData,
 		lpPriceRange:               mkt.LPPriceRange,
+		linearSlippageFactor:       mkt.LinearSlippageFactor,
+		quadraticSlippageFactor:    mkt.QuadraticSlippageFactor,
+	}
+
+	for _, p := range em.Parties {
+		market.parties[p] = struct{}{}
 	}
 
 	market.assetDP = uint32(assetDetails.DecimalPlaces())
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
+	if em.SettlementData != nil {
+		// ensure oracle has the settlement data
+		market.tradableInstrument.Instrument.Product.RestoreSettlementData(em.SettlementData.Clone())
+	}
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 
 	if mkt.State == types.MarketStateTradingTerminated {
@@ -181,6 +195,9 @@ func (m *Market) getState() *types.ExecMarket {
 	if m.settlementDataInMarket != nil {
 		sp = m.settlementDataInMarket.Clone()
 	}
+
+	parties := maps.Keys(m.parties)
+	sort.Strings(parties)
 
 	em := &types.ExecMarket{
 		Market:                     m.mkt.DeepClone(),
@@ -203,6 +220,7 @@ func (m *Market) getState() *types.ExecMarket {
 		FeeSplitter:                m.feeSplitter.GetState(),
 		SettlementData:             sp,
 		NextMTM:                    m.nextMTM.UnixNano(),
+		Parties:                    parties,
 	}
 
 	return em

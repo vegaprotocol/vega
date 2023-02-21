@@ -114,6 +114,10 @@ func (f *Future) NotifyOnTradingTerminated(listener func(context.Context, bool))
 	f.tradingTerminationListener = listener
 }
 
+func (f *Future) RestoreSettlementData(settleData *num.Numeric) {
+	f.oracle.data.settlData = settleData
+}
+
 func (f *Future) ScaleSettlementDataToDecimalPlaces(price *num.Numeric, dp uint32) (*num.Uint, error) {
 	if !price.SupportDecimalPlaces(int64(dp)) {
 		return nil, ErrSettlementDataDecimalsNotSupportedByAsset

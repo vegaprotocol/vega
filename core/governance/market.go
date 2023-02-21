@@ -196,6 +196,8 @@ func buildMarketFromProposal(
 		},
 		LiquidityMonitoringParameters: definition.Changes.LiquidityMonitoringParameters,
 		LPPriceRange:                  definition.Changes.LpPriceRange,
+		LinearSlippageFactor:          definition.Changes.LinearSlippageFactor,
+		QuadraticSlippageFactor:       definition.Changes.QuadraticSlippageFactor,
 	}
 	if err := assignRiskModel(definition.Changes, market.TradableInstrument); err != nil {
 		return nil, types.ProposalErrorUnspecified, err
@@ -363,6 +365,20 @@ func validateAuctionDuration(proposedDuration time.Duration, netp NetParams) (ty
 	return types.ProposalErrorUnspecified, nil
 }
 
+func validateSlippageFactor(slippageFactor num.Decimal, isLinear bool) (types.ProposalError, error) {
+	err := types.ProposalErrorLinearSlippageOutOfRange
+	if !isLinear {
+		err = types.ProposalErrorQuadraticSlippageOutOfRange
+	}
+	if slippageFactor.IsNegative() {
+		return err, fmt.Errorf("proposal slippage factor has incorrect value, expected value in [0,1000000], got %s", slippageFactor.String())
+	}
+	if slippageFactor.GreaterThan(num.DecimalFromInt64(1000000)) {
+		return err, fmt.Errorf("proposal slippage factor has incorrect value, expected value in [0,1000000], got %s", slippageFactor.String())
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
 func validateLpPriceRange(lpPriceRange num.Decimal) (types.ProposalError, error) {
 	if lpPriceRange.IsZero() || lpPriceRange.IsNegative() || lpPriceRange.GreaterThan(num.DecimalFromInt64(100)) {
 		return types.ProposalErrorLpPriceRangeNonpositive, fmt.Errorf("proposal LP price range has incorrect value, expected value in (0,100], got %s", lpPriceRange.String())
@@ -395,7 +411,12 @@ func validateNewMarketChange(
 	if perr, err := validateLpPriceRange(terms.Changes.LpPriceRange); err != nil {
 		return perr, err
 	}
-
+	if perr, err := validateSlippageFactor(terms.Changes.LinearSlippageFactor, true); err != nil {
+		return perr, err
+	}
+	if perr, err := validateSlippageFactor(terms.Changes.QuadraticSlippageFactor, false); err != nil {
+		return perr, err
+	}
 	return types.ProposalErrorUnspecified, nil
 }
 
@@ -410,7 +431,12 @@ func validateUpdateMarketChange(terms *types.UpdateMarket, etu *enactmentTime) (
 	if perr, err := validateLpPriceRange(terms.Changes.LpPriceRange); err != nil {
 		return perr, err
 	}
-
+	if perr, err := validateSlippageFactor(terms.Changes.LinearSlippageFactor, true); err != nil {
+		return perr, err
+	}
+	if perr, err := validateSlippageFactor(terms.Changes.QuadraticSlippageFactor, false); err != nil {
+		return perr, err
+	}
 	return types.ProposalErrorUnspecified, nil
 }
 

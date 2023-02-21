@@ -14,9 +14,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.000001      | 0.00011407711613050422 | 0  | 0.016 | 2.0   |
     And the markets:
-      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring      | data source config          |
-      | ETH/DEC20 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 60               | default-none | my-price-monitoring   | default-eth-for-future |
-      | ETH/DEC21 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 60               | default-none | my-price-monitoring-2 | default-eth-for-future |
+      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring      | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC20 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 60               | default-none | my-price-monitoring   | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 60               | default-none | my-price-monitoring-2 | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 60    |
@@ -253,7 +253,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "110000" for the market "ETH/DEC20"
 
-    Scenario: Non-persistent order results in an auction (one trigger breached), orders placed during auction result in trade with indicative price outside the price monitoring bounds, hence auction get extended, additional orders resulting in more trades placed, auction concludes. (0032-PRIM-008)
+  Scenario: Non-persistent order results in an auction (one trigger breached), orders placed during auction result in trade with indicative price outside the price monitoring bounds, hence auction get extended, additional orders resulting in more trades placed, auction concludes. (0032-PRIM-008)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -360,7 +360,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | aux   | ETH/DEC20 | sell | 1      | 200000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC20 | buy  | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC |
       | aux   | ETH/DEC20 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC |
-    
+
     Then the network moves ahead "59" blocks
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
@@ -391,12 +391,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     When the parties place the following orders:
-      | party | market id | side | volume | price   | resulting trades | type       | tif     |
-      | aux   | ETH/DEC20 | buy  | 1      | 1       | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC20 | sell | 1      | 200000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC20 | buy  | 1      | 1000    | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC20 | sell | 1      | 1000    | 0                | TYPE_LIMIT | TIF_GTC |
-    
+      | party | market id | side | volume | price  | resulting trades | type       | tif     |
+      | aux   | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC20 | buy  | 1      | 1000   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 1      | 1000   | 0                | TYPE_LIMIT | TIF_GTC |
+
     Then the network moves ahead "59" blocks
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 

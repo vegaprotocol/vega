@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	vgencoding "code.vegaprotocol.io/vega/libs/encoding"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
@@ -43,29 +42,9 @@ func testUpdatingNetworkWithInvalidParamsFails(t *testing.T) {
 		{
 			name: "with empty network name",
 			params: api.AdminUpdateNetworkParams{
-				Name:        "",
-				Level:       "info",
-				TokenExpiry: "2m",
+				Name: "",
 			},
 			expectedError: api.ErrNetworkNameIsRequired,
-		},
-		{
-			name: "with invalid log level",
-			params: api.AdminUpdateNetworkParams{
-				Name:        vgrand.RandomStr(3),
-				Level:       vgrand.RandomStr(3),
-				TokenExpiry: "2m",
-			},
-			expectedError: api.ErrInvalidLogLevelValue,
-		},
-		{
-			name: "with invalid token expiry",
-			params: api.AdminUpdateNetworkParams{
-				Name:        vgrand.RandomStr(3),
-				Level:       "info",
-				TokenExpiry: "100",
-			},
-			expectedError: api.ErrInvalidTokenExpiryValue,
 		},
 	}
 
@@ -90,26 +69,18 @@ func testUpdatingNetworkWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	name := vgrand.RandomStr(5)
-	logLevel := &vgencoding.LogLevel{}
-	_ = logLevel.UnmarshalText([]byte("info"))
-	tokenExpiry := &vgencoding.Duration{}
-	_ = tokenExpiry.UnmarshalText([]byte("2m"))
 
 	// setup
 	handler := newUpdateNetworkHandler(t)
 	// -- expected calls
 	handler.networkStore.EXPECT().NetworkExists(name).Times(1).Return(true, nil)
 	handler.networkStore.EXPECT().SaveNetwork(&network.Network{
-		Name:        name,
-		LogLevel:    *logLevel,
-		TokenExpiry: *tokenExpiry,
+		Name: name,
 	}).Times(1).Return(nil)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdateNetworkParams{
-		Name:        name,
-		Level:       "info",
-		TokenExpiry: "2m",
+		Name: name,
 	})
 
 	// then
@@ -128,9 +99,7 @@ func testUpdatingNetworkThatDoesNotExistsFails(t *testing.T) {
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdateNetworkParams{
-		Name:        name,
-		Level:       "info",
-		TokenExpiry: "2m",
+		Name: name,
 	})
 
 	// then
@@ -150,9 +119,7 @@ func testAdminUpdateNetworkGettingInternalErrorDuringNetworkVerificationFails(t 
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdateNetworkParams{
-		Name:        name,
-		Level:       "info",
-		TokenExpiry: "2m",
+		Name: name,
 	})
 
 	// then
@@ -173,9 +140,7 @@ func testAdminUpdateNetworkGettingInternalErrorDuringNetworkSavingFails(t *testi
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdateNetworkParams{
-		Name:        name,
-		Level:       "info",
-		TokenExpiry: "2m",
+		Name: name,
 	})
 
 	// then

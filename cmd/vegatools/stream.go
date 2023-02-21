@@ -13,7 +13,7 @@ type streamCmd struct {
 	Address   string   `short:"a" long:"address" required:"true" description:"address of the grpc server"`
 	LogFormat string   `long:"log-format" default:"raw" description:"output stream data in specified format. Allowed values: raw (default), text, json"`
 	Reconnect bool     `short:"r" long:"reconnect" description:"if connection dies, attempt to reconnect"`
-	Type      []string `short:"t" long:"type" default:"ALL" description:"one or more event types to subscribe to (default=ALL)"`
+	Type      []string `short:"t" long:"type" default:"" description:"one or more event types to subscribe to (default=ALL)"`
 }
 
 func (opts *streamCmd) Execute(_ []string) error {

@@ -22,6 +22,8 @@ type TmNode struct {
 	node service.Service
 }
 
+const namedLogger = "tendermint"
+
 func NewTmNode(
 	conf blockchain.Config,
 	log *logging.Logger,
@@ -29,7 +31,7 @@ func NewTmNode(
 	app types.Application,
 	genesisDoc *tmtypes.GenesisDoc,
 ) (*TmNode, error) {
-	log = log.Named("tendermint")
+	log = log.Named(namedLogger)
 	log.SetLevel(conf.Tendermint.Level.Get())
 
 	config, err := loadConfig(homeDir)
@@ -72,7 +74,7 @@ func NewTmNode(
 	}
 
 	// create logger
-	logger := newTmLogger(log)
+	logger := &TmLogger{log.ToSugared()}
 
 	// create node
 	node, err := nm.NewNode(
@@ -118,12 +120,6 @@ func (t *TmNode) Stop() error {
 	return nil
 }
 
-func newTmLogger(log *logging.Logger) *TmLogger {
-	// return tmlog.MustNewDefaultLogger(tmlog.LogFormatPlain, tmlog.LogLevelInfo, false)
-	tmLogger := &TmLogger{log.ToSugared()}
-	return tmLogger
-}
-
 func loadConfig(homeDir string) (*config.Config, error) {
 	conf := config.DefaultConfig()
 	if err := viper.Unmarshal(conf); err != nil {
@@ -143,4 +139,8 @@ func loadConfig(homeDir string) (*config.Config, error) {
 func overwriteConfig(config *config.Config) {
 	config.Consensus.SkipTimeoutCommit = true
 	config.Consensus.CreateEmptyBlocks = true
+	// enforce using priority mempool
+	config.Mempool.Version = "v1"
+	// enforce compatibility
+	config.P2P.MaxPacketMsgPayloadSize = 16384
 }

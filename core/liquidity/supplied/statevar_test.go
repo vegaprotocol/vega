@@ -123,10 +123,6 @@ func TestGetProbability(t *testing.T) {
 	bOffsets, bProb := calculateBidRange(num.DecimalFromFloat(400), num.DecimalFromFloat(0.01), num.DecimalFromFloat(1), pOfT)
 	aOffsets, aProb := calculateAskRange(num.DecimalFromFloat(600), num.DecimalFromFloat(0.01), num.DecimalFromInt64(1), pOfT)
 
-	for i, d := range aOffsets {
-		println(i, "offset", d.String(), "prob", aProb[i].String())
-	}
-
 	pot := &probabilityOfTrading{
 		bidOffset:      bOffsets,
 		bidProbability: bProb,

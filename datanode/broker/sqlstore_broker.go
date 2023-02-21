@@ -18,11 +18,12 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
-	"github.com/pkg/errors"
 )
 
 type SQLBrokerSubscriber interface {
@@ -87,7 +88,7 @@ func NewSQLStoreBroker(
 ) *SQLStoreBroker {
 	b := &SQLStoreBroker{
 		config:                config,
-		log:                   log,
+		log:                   log.Named("sqlstore-broker"),
 		subscribers:           subs,
 		typeToSubs:            map[events.Type][]SQLBrokerSubscriber{},
 		eventSource:           eventsource,
@@ -133,8 +134,7 @@ func (b *SQLStoreBroker) Receive(ctx context.Context) error {
 		b.onBlockCommitted(ctx, b.chainID, b.lastBlock.Height, b.snapshotTaken)
 
 		if b.receivedProtocolUpgradeEvent {
-			b.protocolUpdateHandler.OnProtocolUpgradeEvent(ctx, b.chainID, b.lastBlock.Height)
-			return nil
+			return b.protocolUpdateHandler.OnProtocolUpgradeEvent(ctx, b.chainID, b.lastBlock.Height)
 		}
 	}
 }
@@ -261,6 +261,11 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 				}
 				b.slowTimeUpdateTicker.Reset(slowTimeUpdateThreshold)
 				betweenBlocks = true
+
+				if err = b.handleEvent(blockCtx, e); err != nil {
+					return nil, err
+				}
+
 			case events.BeginBlockEvent:
 				beginBlock := e.(entities.BeginBlockEvent)
 				return entities.BlockFromBeginBlock(beginBlock)

@@ -117,6 +117,8 @@ type Stats interface {
 	CurrentTradesInBatch() uint64
 	SetOrdersPerSecond(i uint64)
 	SetTradesPerSecond(i uint64)
+	CurrentEventsInBatch() uint64
+	SetEventsPerSecond(uint64)
 	// blockchain stats
 	IncTotalTxCurrentBatch()
 	IncHeight()
@@ -197,6 +199,7 @@ type Banking interface {
 	CancelTransferFunds(context.Context, *types.CancelTransferFunds) error
 	BridgeStopped(context.Context, bool, string, uint64, uint64, string) error
 	BridgeResumed(context.Context, bool, string, uint64, uint64, string) error
+	CheckTransfer(t *types.TransferBase) error
 }
 
 // NetworkParameters ...

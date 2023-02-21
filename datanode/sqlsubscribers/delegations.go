@@ -15,11 +15,11 @@ package sqlsubscribers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"github.com/pkg/errors"
 )
 
 type DelegationBalanceEvent interface {
@@ -34,16 +34,11 @@ type DelegationStore interface {
 type Delegation struct {
 	subscriber
 	store DelegationStore
-	log   *logging.Logger
 }
 
-func NewDelegation(
-	store DelegationStore,
-	log *logging.Logger,
-) *Delegation {
+func NewDelegation(store DelegationStore) *Delegation {
 	t := &Delegation{
 		store: store,
-		log:   log,
 	}
 	return t
 }

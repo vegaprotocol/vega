@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.68.0
+## Unreleased 0.69.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -14,6 +14,87 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
+
+## 0.68.0
+
+### 🚨 Breaking changes
+- [7304](https://github.com/vegaprotocol/vega/issues/7304) - In the `datanode` `GraphQL` schema, move `fromEpoch` and `toEpoch` into a new `filter` for `epochRewardSummaries` query. Also add `assetIds` and `marketIds` to the same filter.
+- [7419](https://github.com/vegaprotocol/vega/issues/7419) - Remove the deprecated headers with the `Grpc-Metadata-` prefix in `datanode` `API` and `REST` and `GraphQL` gateways.
+- [6963](https://github.com/vegaprotocol/vega/issues/6963) - Remove the legacy fields from network API
+- [7361](https://github.com/vegaprotocol/vega/issues/7361) - Network history loading and current order set tracking - database requires database to be dropped
+- [6963](https://github.com/vegaprotocol/vega/issues/7382) - `IssueSignatures` is no longer a validator command and is now protected by the spam engine
+- [7445](https://github.com/vegaprotocol/vega/issues/7445) - Added rate limiting to `GRPC`, `Rest` and `GraphQL` `APIs`
+- [7614](https://github.com/vegaprotocol/vega/issues/7614) - Market parties added to snapshot state to ensure proper restoration
+- [7542](https://github.com/vegaprotocol/vega/issues/7542) - Add optional slippage factors to market proposal and use them to cap slippage component of maintenance margin
+
+### 🗑️ Deprecation
+- [7385](https://github.com/vegaprotocol/vega/issues/7385) - Deprecating the `X-Vega-Connection` HTTP header in `datanode` `API` and `REST` and `GraphQL` gateways.
+
+### 🛠 Improvements
+- [7501](https://github.com/vegaprotocol/vega/issues/7501) - Make logs more clear
+- [7386](https://github.com/vegaprotocol/vega/issues/7386) - Add indexed filtering by command type to block explorer
+- [6962](https://github.com/vegaprotocol/vega/issues/6962) - Add a dedicated configuration for the wallet service
+- [7434](https://github.com/vegaprotocol/vega/issues/7434) - Update design architecture diagram
+- [7517](https://github.com/vegaprotocol/vega/issues/7517) - Archive and roll event buffer files
+- [7429](https://github.com/vegaprotocol/vega/issues/7429) - Do not mark wallet and network as incompatible when the patch version doesn't match
+- [6650](https://github.com/vegaprotocol/vega/issues/6650) - Add ability to filter rewards with `fromEpoch` and `toEpoch`
+- [7429](https://github.com/vegaprotocol/vega/issues/7359) - `vega wallet` will not send in a transaction if it will result in a party becoming banned
+- [7289](https://github.com/vegaprotocol/vega/issues/7289) - `positionsConnection` query added to `GraphQL`root query with filter for multiple parties and markets
+- [7454](https://github.com/vegaprotocol/vega/issues/7454) - Retention policies for new types do not honour the `lite` or `archive` when added after `init`
+- [7469](https://github.com/vegaprotocol/vega/issues/7469) - Sanitize `Prometheus` labels for `HTTP API` requests
+- [7495](https://github.com/vegaprotocol/vega/issues/7495) - Upgrade `tendermint` to 0.34.25
+- [7496](https://github.com/vegaprotocol/vega/issues/7496) - Enforce using priority `mempool` and max packet size in `tendermint config`
+- [5987](https://github.com/vegaprotocol/vega/issues/5987) - Pick up the wallet changes when the service is started
+- [7450](https://github.com/vegaprotocol/vega/issues/7450) - Positions API reporting close-out information and loss socialisation data.
+- [7538](https://github.com/vegaprotocol/vega/issues/7538) - Add node information to the wallet response when sending the transaction
+- [7550](https://github.com/vegaprotocol/vega/issues/7550) - Update feature tests to use specify explicitly linear and quadratic slippage factors
+- [7558](https://github.com/vegaprotocol/vega/issues/7558) - Add `hypertable` for rewards
+- [7509](https://github.com/vegaprotocol/vega/issues/7509) - Automatically reconcile account balance changes with transfer events after each integration test step
+- [7564](https://github.com/vegaprotocol/vega/issues/7564) - Add logging when database migrations are run
+- [7546](https://github.com/vegaprotocol/vega/issues/7546) - Visor automatically uses snapshot on core based on latest data node snapshot.
+- [7576](https://github.com/vegaprotocol/vega/issues/7576) - include the application version in the block hash
+- [7605](https://github.com/vegaprotocol/vega/issues/7605) - Return better error text when the wallet blocks a transaction due to spam rules
+- [7591](https://github.com/vegaprotocol/vega/issues/7591) - Add metadata and links to app to the network configuration
+- [7632](https://github.com/vegaprotocol/vega/issues/7632) - Make the wallet change events JSON friendly
+- [7601](https://github.com/vegaprotocol/vega/issues/7601) - introduce the expired orders event for optimisation.
+
+### 🐛 Fixes
+- [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema
+- [7462](https://github.com/vegaprotocol/vega/issues/7462) - Fix `BlockExplorer` `API` not returning details on transactions.
+- [7407](https://github.com/vegaprotocol/vega/issues/7407) - fix `ethereum` timestamp in stake linking in `graphql`
+- [7494](https://github.com/vegaprotocol/vega/issues/7494) - fix memory leak in event bus stream subscriber when consumer is slow
+- [7420](https://github.com/vegaprotocol/vega/issues/7420) - `clearFeeActivity` now clears fee activity
+- [7420](https://github.com/vegaprotocol/vega/issues/7420) - set seed nonce for joining and leaving signatures during begin block
+- [7420](https://github.com/vegaprotocol/vega/issues/7515) - protect `vegawallet` with recovers to shield against file system oddities
+- [7399](https://github.com/vegaprotocol/vega/issues/7399) - Fix issue where market cache not working after restoring from network history
+- [7410](https://github.com/vegaprotocol/vega/issues/7410) - Return underlying error when parsing a command failed in the wallet API version 2
+- [7169](https://github.com/vegaprotocol/vega/issues/7169) - Fix migration, account for existing position data
+- [7427](https://github.com/vegaprotocol/vega/issues/7427) - Fix nil pointer panic on settlement of restored markets.
+- [7438](https://github.com/vegaprotocol/vega/issues/7438) - Update JSON-RPC documentation with all wallet errors
+- [7451](https://github.com/vegaprotocol/vega/issues/7451) - Fix floating point consensus to use voting power rather than node count
+- [7399](https://github.com/vegaprotocol/vega/issues/7399) - Revert previous fix
+- [7399](https://github.com/vegaprotocol/vega/issues/7399) - Add option to filter out settled markets when listing markets in `API` requests
+- [7559](https://github.com/vegaprotocol/vega/issues/7559) - Workaround `leveldb` issue and open `db` in write mode when listing using `vega tools snapshot`
+- [7417](https://github.com/vegaprotocol/vega/issues/7417) - Missing entries in default data retention configuration for `datanode`
+- [7504](https://github.com/vegaprotocol/vega/issues/7504) - Fixed panic in collateral engine when trying to clear a market
+- [7468](https://github.com/vegaprotocol/vega/issues/7468) - `Datanode` network history load command only prompts when run from a terminal
+- [7164](https://github.com/vegaprotocol/vega/issues/7164) - The command `vega wallet transaction send` now returns verbose errors
+- [7514](https://github.com/vegaprotocol/vega/issues/7514) - Network names cannot contain `/`, `\` or start with a `.`
+- [7519](https://github.com/vegaprotocol/vega/issues/7519) - Fix memory leak and increased CPU usage when streaming data.
+- [7536](https://github.com/vegaprotocol/vega/issues/7536) - Ensure all errors are displayed when the wallet service cannot bind
+- [7540](https://github.com/vegaprotocol/vega/issues/7540) - Prevent the double appending of the `http` scheme when ensuring port binding
+- [7549](https://github.com/vegaprotocol/vega/issues/7549) - Switch proof-of-work ban error from an internal error to an application error on the wallet API
+- [7543](https://github.com/vegaprotocol/vega/issues/7543) - Initiate post-auction close out only when all the parked orders get redeployed
+- [7508](https://github.com/vegaprotocol/vega/issues/7508) - Assure transfer events always sent after margin recheck
+- [7492](https://github.com/vegaprotocol/vega/issues/7492) - Send market depth events at the end of each block
+- [7582](https://github.com/vegaprotocol/vega/issues/7582) - Validate transfer amount in `checkTx`
+- [7582](https://github.com/vegaprotocol/vega/issues/7625) - Add validation to wallet's server configuration
+- [7577](https://github.com/vegaprotocol/vega/issues/7577) - Use correct trade size when calculating pending open volume
+- [7598](https://github.com/vegaprotocol/vega/issues/7598) - Set up log for rate limiter
+- [7629](https://github.com/vegaprotocol/vega/issues/7629) - Handle error from `e.initialiseTree()` in the snapshot engine
+- [7607](https://github.com/vegaprotocol/vega/issues/7607) - Fix handling of removed transfers
+- [7622](https://github.com/vegaprotocol/vega/issues/7622) - Fix cleaning path for Visor when restarting data node
+- [7638](https://github.com/vegaprotocol/vega/issues/7638) - Add missing fields to position update resolver
 
 ## 0.67.2
 
@@ -88,6 +169,7 @@
 ### 🛠 Improvements
 - [7216](https://github.com/vegaprotocol/vega/issues/7216) - Support filtering by market for `ordersConnection` under party queries.
 - [7252](https://github.com/vegaprotocol/vega/issues/7252) - Add limits to `MarkPriceUpdateMaximumFrequency` network parameter
+- [7169](https://github.com/vegaprotocol/vega/issues/7169) - Handle events to update PnL on trade, instead of waiting for MTM settlements.
 
 ### 🐛 Fixes
 - [7207](https://github.com/vegaprotocol/vega/issues/7207) - Fix panic, return on error in pool configuration
@@ -99,7 +181,7 @@
 - [7253](https://github.com/vegaprotocol/vega/issues/7253) - improve the adjustment of delegator weight to avoid overflow
 - [7075](https://github.com/vegaprotocol/vega/issues/7075) - Remove unused expiry field in withdrawal
 
-##  0.65.1
+## 0.65.1
 
 ### 🛠 Improvements
 - [6574](https://github.com/vegaprotocol/vega/issues/6574) - Use same default for the probability of trading for floating point consensus as we do for the value between best bid and ask.

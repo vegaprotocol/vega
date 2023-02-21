@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -8,7 +9,6 @@ import (
 	"sort"
 	"strings"
 
-	vgencoding "code.vegaprotocol.io/vega/libs/encoding"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/paths"
 
@@ -17,16 +17,18 @@ import (
 
 const fileExt = ".toml"
 
+var (
+	ErrNetworkNameCannotBeEmpty      = errors.New("the network name cannot be empty")
+	ErrNetworkNameCannotStartWithDot = errors.New("the network name cannot start with a `.`")
+	ErrNetworkNameCannotContainSlash = errors.New("the network name cannot contain `\\` nor `/`")
+)
+
 type Store struct {
 	networksHome string
 }
 
 type networkFileContent struct {
-	LogLevel    vgencoding.LogLevel `json:"level"`
-	TokenExpiry vgencoding.Duration `json:"tokenExpiry"`
-	Port        int                 `json:"port"`
-	Host        string              `json:"host"`
-	API         network.APIConfig   `json:"api"`
+	API network.APIConfig `json:"api"`
 }
 
 func InitialiseStore(vegaPaths paths.Paths) (*Store, error) {
@@ -48,6 +50,10 @@ func (s *Store) ListNetworks() ([]string, error) {
 	}
 	networks := []string{}
 	for _, entry := range entries {
+		if err := ensureValidNetworkName(entry.Name()); err != nil {
+			continue
+		}
+
 		if strings.HasSuffix(entry.Name(), ".toml") {
 			networks = append(networks, s.fileNameToName(entry.Name()))
 		}
@@ -65,31 +71,35 @@ func (s *Store) GetNetworkPath(name string) string {
 }
 
 func (s *Store) NetworkExists(name string) (bool, error) {
+	if err := ensureValidNetworkName(name); err != nil {
+		return false, err
+	}
+
 	return vgfs.FileExists(s.GetNetworkPath(name))
 }
 
 func (s *Store) GetNetwork(name string) (*network.Network, error) {
+	if err := ensureValidNetworkName(name); err != nil {
+		return nil, err
+	}
+
 	nfc := &networkFileContent{}
 	if err := paths.ReadStructuredFile(s.nameToFilePath(name), &nfc); err != nil {
 		return nil, fmt.Errorf("couldn't read network configuration file: %w", err)
 	}
 	return &network.Network{
-		Name:        name,
-		LogLevel:    nfc.LogLevel,
-		TokenExpiry: nfc.TokenExpiry,
-		Port:        nfc.Port,
-		Host:        nfc.Host,
-		API:         nfc.API,
+		Name: name,
+		API:  nfc.API,
 	}, nil
 }
 
 func (s *Store) SaveNetwork(net *network.Network) error {
+	if err := ensureValidNetworkName(net.Name); err != nil {
+		return err
+	}
+
 	nfc := &networkFileContent{
-		LogLevel:    net.LogLevel,
-		TokenExpiry: net.TokenExpiry,
-		Port:        net.Port,
-		Host:        net.Host,
-		API:         net.API,
+		API: net.API,
 	}
 	if err := paths.WriteStructuredFile(s.nameToFilePath(net.Name), nfc); err != nil {
 		return fmt.Errorf("couldn't write network configuration file: %w", err)
@@ -98,6 +108,9 @@ func (s *Store) SaveNetwork(net *network.Network) error {
 }
 
 func (s *Store) DeleteNetwork(name string) error {
+	if err := ensureValidNetworkName(name); err != nil {
+		return err
+	}
 	path := s.GetNetworkPath(name)
 	return os.Remove(path)
 }
@@ -108,4 +121,19 @@ func (s *Store) nameToFilePath(network string) string {
 
 func (s *Store) fileNameToName(fileName string) string {
 	return fileName[:len(fileName)-len(fileExt)]
+}
+
+func ensureValidNetworkName(name string) error {
+	if name == "" {
+		return ErrNetworkNameCannotBeEmpty
+	}
+	if name[0] == '.' {
+		return ErrNetworkNameCannotStartWithDot
+	}
+
+	if strings.ContainsAny(name, "\\/") {
+		return ErrNetworkNameCannotContainSlash
+	}
+
+	return nil
 }

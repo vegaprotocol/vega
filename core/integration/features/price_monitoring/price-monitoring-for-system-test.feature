@@ -10,8 +10,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.000001      | 0.00011407711613050422 | 0  | 0.016 | 2.0   |
     And the markets:
-      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | data source config          |
-      | ETH/DEC20 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 6                | default-none | my-price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC20 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 6                | default-none | my-price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 6     |
@@ -32,7 +32,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
       | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
-     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price  | resulting trades | type       | tif     |
       | aux   | ETH/DEC20 | buy  | 1      | 2      | 0                | TYPE_LIMIT | TIF_GTC |
@@ -185,7 +185,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     # T + 12s
     When time is updated to "2020-10-16T00:00:55Z"
 
-     # Both triggers breached with persistent order -> auction with duration of 10s starts
+    # Both triggers breached with persistent order -> auction with duration of 10s starts
     Then the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 100650 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |

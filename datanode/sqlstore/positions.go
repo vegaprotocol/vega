@@ -15,6 +15,7 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -70,6 +71,27 @@ func (ps *Positions) GetByMarketAndParty(ctx context.Context,
 		marketID, partyID))
 }
 
+func (ps *Positions) GetByMarketAndParties(ctx context.Context, marketIDRaw string, partyIDsRaw []string) ([]entities.Position, error) {
+	marketID := entities.MarketID(marketIDRaw)
+	partyIDs := make([]interface{}, 0, len(partyIDsRaw))
+	in := make([]string, 0, len(partyIDsRaw))
+	bindNum := 2
+	for _, p := range partyIDsRaw {
+		partyIDs = append(partyIDs, entities.PartyID(p))
+		in = append(in, fmt.Sprintf("$%d", bindNum))
+		bindNum++
+	}
+	bind := make([]interface{}, 0, len(in)+1)
+	// set all bind vars
+	bind = append(bind, marketID)
+	bind = append(bind, partyIDs...)
+	positions := []entities.Position{}
+	// build the query
+	q := fmt.Sprintf(`SELECT * FROM positions_current WHERE market_id = $1 AND party_id IN (%s)`, strings.Join(in, ", "))
+	err := pgxscan.Select(ctx, ps.Connection, &positions, q, bind...)
+	return positions, err
+}
+
 func (ps *Positions) GetByMarket(ctx context.Context, marketID string) ([]entities.Position, error) {
 	defer metrics.StartSQLQuery("Positions", "GetByMarket")()
 	positions := []entities.Position{}
@@ -88,24 +110,61 @@ func (ps *Positions) GetByParty(ctx context.Context, partyID string) ([]entities
 	return positions, err
 }
 
-func (ps *Positions) GetByPartyConnection(ctx context.Context, partyIDRaw string, marketIDRaw string, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
+func stringToPartyID(s ...string) [][]byte {
+	partyIDs := make([][]byte, 0, len(s))
+	for _, v := range s {
+		if v == "" {
+			continue
+		}
+		id := entities.PartyID(v)
+		bs, err := id.Bytes()
+		if err != nil {
+			continue
+		}
+		partyIDs = append(partyIDs, bs)
+	}
+	return partyIDs
+}
+
+func stringToMarketID(s ...string) [][]byte {
+	marketIDs := make([][]byte, 0, len(s))
+	for _, v := range s {
+		if v == "" {
+			continue
+		}
+		id := entities.MarketID(v)
+		bs, err := id.Bytes()
+		if err != nil {
+			continue
+		}
+		marketIDs = append(marketIDs, bs)
+	}
+	return marketIDs
+}
+
+func (ps *Positions) GetByPartyConnection(ctx context.Context, partyIDRaw []string, marketIDRaw []string, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
 	var (
 		args     []interface{}
 		pageInfo entities.PageInfo
 		query    = `select * from positions_current`
 		where    string
-		partyID  = entities.PartyID(partyIDRaw)
-		marketID = entities.MarketID(marketIDRaw)
+		partyID  = stringToPartyID(partyIDRaw...)
+		marketID = stringToMarketID(marketIDRaw...)
 		err      error
 	)
 
-	if marketID == "" {
-		where = fmt.Sprintf(" where party_id=%s", nextBindVar(&args, partyID))
-	} else {
-		where = fmt.Sprintf(" where party_id=%s and market_id=%s", nextBindVar(&args, partyID), nextBindVar(&args, marketID))
+	if len(partyID) > 0 && len(marketID) == 0 {
+		where = fmt.Sprintf(" where party_id = ANY(%s::bytea[])", nextBindVar(&args, partyID))
+	} else if len(partyID) > 0 && len(marketID) > 0 {
+		where = fmt.Sprintf(" where party_id = ANY(%s::bytea[]) and market_id = ANY(%s::bytea[])", nextBindVar(&args, partyID), nextBindVar(&args, marketID))
+	} else if len(partyID) == 0 && len(marketID) > 0 {
+		where = fmt.Sprintf(" where market_id = ANY(%s::bytea[])", nextBindVar(&args, marketID))
 	}
 
-	query = fmt.Sprintf("%s %s", query, where)
+	if where != "" {
+		query = fmt.Sprintf("%s %s", query, where)
+	}
+
 	query, args, err = PaginateQuery[entities.PositionCursor](query, args, positionsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err

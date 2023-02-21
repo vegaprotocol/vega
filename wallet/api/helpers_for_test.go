@@ -63,20 +63,20 @@ func assertNetworkError(t *testing.T, errorDetails *jsonrpc.ErrorDetails, expect
 	assert.Equal(t, expectedErr.Error(), errorDetails.Data)
 }
 
-func assertUserRejectionError(t *testing.T, errorDetails *jsonrpc.ErrorDetails) {
+func assertUserRejectionError(t *testing.T, errorDetails *jsonrpc.ErrorDetails, expectedErr error) {
 	t.Helper()
 	require.NotNil(t, errorDetails)
 	assert.Equal(t, api.ErrorCodeRequestHasBeenRejected, errorDetails.Code)
 	assert.Equal(t, string(api.UserError), errorDetails.Message)
-	assert.Equal(t, api.ErrUserRejectedTheRequest.Error(), errorDetails.Data)
+	assert.Equal(t, expectedErr.Error(), errorDetails.Data)
 }
 
 func assertApplicationCancellationError(t *testing.T, errorDetails *jsonrpc.ErrorDetails) {
 	t.Helper()
 	require.NotNil(t, errorDetails)
-	assert.Equal(t, api.ErrorCodeRequestHasBeenCanceledByApplication, errorDetails.Code)
+	assert.Equal(t, api.ErrorCodeRequestHasBeenCancelledByApplication, errorDetails.Code)
 	assert.Equal(t, string(api.ApplicationError), errorDetails.Message)
-	assert.Equal(t, api.ErrApplicationCanceledTheRequest.Error(), errorDetails.Data)
+	assert.Equal(t, api.ErrApplicationCancelledTheRequest.Error(), errorDetails.Data)
 }
 
 func clientContextForTest() (context.Context, string) {

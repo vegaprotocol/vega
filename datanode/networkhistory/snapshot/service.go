@@ -18,10 +18,10 @@ type Service struct {
 	config   Config
 	connPool *pgxpool.Pool
 
-	createSnapshotLock       mutex.CtxMutex
-	snapshotsCopyFromPath    string
-	snapshotsCopyToPath      string
-	migrateDatabaseToVersion func(version int64) error
+	createSnapshotLock     mutex.CtxMutex
+	snapshotsCopyFromPath  string
+	snapshotsCopyToPath    string
+	migrateSchemaToVersion func(version int64) error
 }
 
 func NewSnapshotService(log *logging.Logger, config Config, connPool *pgxpool.Pool,
@@ -43,13 +43,13 @@ func NewSnapshotService(log *logging.Logger, config Config, connPool *pgxpool.Po
 	}
 
 	s := &Service{
-		log:                      log,
-		config:                   config,
-		connPool:                 connPool,
-		createSnapshotLock:       mutex.New(),
-		snapshotsCopyFromPath:    snapshotsCopyFromPath,
-		snapshotsCopyToPath:      snapshotsCopyToPath,
-		migrateDatabaseToVersion: migrateDatabaseToVersion,
+		log:                    log,
+		config:                 config,
+		connPool:               connPool,
+		createSnapshotLock:     mutex.New(),
+		snapshotsCopyFromPath:  snapshotsCopyFromPath,
+		snapshotsCopyToPath:    snapshotsCopyToPath,
+		migrateSchemaToVersion: migrateDatabaseToVersion,
 	}
 
 	err = os.MkdirAll(s.snapshotsCopyToPath, fs.ModePerm)

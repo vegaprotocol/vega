@@ -14,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/libp2p/go-libp2p-core/peer"
+
 	"code.vegaprotocol.io/vega/datanode/metrics"
 
 	"github.com/ipfs/kubo/repo"
@@ -62,20 +64,56 @@ type SegmentMetaData struct {
 	PreviousHistorySegmentID string
 }
 
+func (m SegmentMetaData) GetFromHeight() int64 {
+	return m.HeightFrom
+}
+
+func (m SegmentMetaData) GetToHeight() int64 {
+	return m.HeightTo
+}
+
+func (i SegmentIndexEntry) GetPreviousHistorySegmentId() string {
+	return i.PreviousHistorySegmentID
+}
+
 type SegmentIndexEntry struct {
 	SegmentMetaData
 	HistorySegmentID string
 }
 
+func (i SegmentIndexEntry) GetHistorySegmentId() string {
+	return i.HistorySegmentID
+}
+
+type IpfsNode struct {
+	IpfsId peer.ID
+	Addr   ma.Multiaddr
+}
+
+func (i IpfsNode) IpfsAddress() (ma.Multiaddr, error) {
+	ipfsProtocol, err := ma.NewMultiaddr(fmt.Sprintf("/p2p/%s", i.IpfsId))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new p2p multi address: %w", err)
+	}
+
+	return i.Addr.Encapsulate(ipfsProtocol), nil
+}
+
+type PeerConnection struct {
+	Local  IpfsNode
+	Remote IpfsNode
+}
+
 type Store struct {
-	log      *logging.Logger
-	cfg      Config
-	identity config.Identity
-	ipfsAPI  icore.CoreAPI
-	ipfsNode *core.IpfsNode
-	ipfsRepo repo.Repo
-	index    index
-	swarmKey string
+	log          *logging.Logger
+	cfg          Config
+	identity     config.Identity
+	ipfsAPI      icore.CoreAPI
+	ipfsNode     *core.IpfsNode
+	ipfsRepo     repo.Repo
+	index        index
+	swarmKeySeed string
+	swarmKey     string
 
 	indexPath  string
 	stagingDir string
@@ -144,9 +182,9 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 		return nil, fmt.Errorf("failed to create ipfs node configuration:%w", err)
 	}
 
-	p.swarmKey = cfg.GetSwarmKey(log, chainID)
+	p.swarmKeySeed = cfg.GetSwarmKeySeed(log, chainID)
 
-	p.ipfsNode, p.ipfsRepo, err = createIpfsNode(ctx, log, p.ipfsPath, ipfsCfg, p.swarmKey)
+	p.ipfsNode, p.ipfsRepo, p.swarmKey, err = createIpfsNode(ctx, log, p.ipfsPath, ipfsCfg, p.swarmKeySeed)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ipfs node:%w", err)
 	}
@@ -185,8 +223,42 @@ func (p *Store) GetSwarmKey() string {
 	return p.swarmKey
 }
 
-func (p *Store) GetPeerAddrs() []ma.Multiaddr {
-	addrs := make([]ma.Multiaddr, 0, 10)
+func (p *Store) GetSwarmKeySeed() string {
+	return p.swarmKeySeed
+}
+
+func (p *Store) GetLocalNode() (IpfsNode, error) {
+	localNodeMultiAddress, err := ma.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", p.cfg.SwarmPort))
+	if err != nil {
+		return IpfsNode{}, fmt.Errorf("failed to create default multi addr: %w", err)
+	}
+
+	localNode := IpfsNode{
+		IpfsId: p.ipfsNode.PeerHost.Network().LocalPeer(),
+		Addr:   localNodeMultiAddress,
+	}
+
+	connectedPeers := p.GetConnectedPeers()
+	if err != nil {
+		return IpfsNode{}, fmt.Errorf("failed to get connected peers: %w", err)
+	}
+
+	tcpProtocol := ma.ProtocolWithName("tcp")
+	for _, peer := range connectedPeers {
+		port, err := peer.Local.Addr.ValueForProtocol(tcpProtocol.Code)
+		if err == nil {
+			if port == strconv.Itoa(p.cfg.SwarmPort) {
+				localNode.Addr = peer.Local.Addr
+				break
+			}
+		}
+	}
+
+	return localNode, nil
+}
+
+func (p *Store) GetConnectedPeers() []PeerConnection {
+	peerConnections := make([]PeerConnection, 0, 10)
 
 	thisNode := p.ipfsNode.PeerHost.Network().LocalPeer()
 	peers := p.ipfsNode.PeerHost.Network().Peers()
@@ -198,11 +270,20 @@ func (p *Store) GetPeerAddrs() []ma.Multiaddr {
 
 		connections := p.ipfsNode.PeerHost.Network().ConnsToPeer(peer)
 		for _, conn := range connections {
-			addrs = append(addrs, conn.RemoteMultiaddr())
+			peerConnections = append(peerConnections, PeerConnection{
+				Local: IpfsNode{
+					IpfsId: conn.LocalPeer(),
+					Addr:   conn.LocalMultiaddr(),
+				},
+				Remote: IpfsNode{
+					IpfsId: conn.RemotePeer(),
+					Addr:   conn.RemoteMultiaddr(),
+				},
+			})
 		}
 	}
 
-	return addrs
+	return peerConnections
 }
 
 func (p *Store) ResetIndex() error {
@@ -350,7 +431,7 @@ func (p *Store) GetHighestBlockHeightEntry() (SegmentIndexEntry, error) {
 	return entry, nil
 }
 
-func (p *Store) ListAllHistorySegmentsOldestFirst() ([]SegmentIndexEntry, error) {
+func (p *Store) ListAllIndexEntriesOldestFirst() ([]SegmentIndexEntry, error) {
 	return p.index.ListAllEntriesOldestFirst()
 }
 
@@ -562,7 +643,10 @@ func (p *Store) removeOldHistorySegments(ctx context.Context) ([]SegmentIndexEnt
 				return nil, fmt.Errorf("failed to unpin segment:%w", err)
 			}
 
-			p.index.Remove(segment)
+			err = p.index.Remove(segment)
+			if err != nil {
+				return nil, fmt.Errorf("failed to remove segment from index: %w", err)
+			}
 
 			removedSegments = append(removedSegments, segment)
 		} else {
@@ -723,25 +807,26 @@ func loadPlugins(externalPluginsPath string) (*loader.PluginLoader, error) {
 	return plugins, nil
 }
 
-func generateSwarmKeyFile(swarmKey string, repoPath string) error {
+func generateSwarmKeyFile(swarmKeySeed string, repoPath string) (string, error) {
 	file, err := os.Create(filepath.Join(repoPath, "swarm.key"))
 	defer func() { _ = file.Close() }()
 	if err != nil {
-		return fmt.Errorf("failed to create swarm key file:%w", err)
+		return "", fmt.Errorf("failed to create swarm key file:%w", err)
 	}
 
 	key := make([]byte, 32)
 
-	copy(key, swarmKey)
+	copy(key, swarmKeySeed)
 	hx := hex.EncodeToString(key)
 
-	_, err = io.WriteString(file, fmt.Sprintf("/key/swarm/psk/1.0.0/\n/base16/\n%s\n", hx))
+	swarmKey := fmt.Sprintf("/key/swarm/psk/1.0.0/\n/base16/\n%s", hx)
+	_, err = io.WriteString(file, swarmKey)
 
 	if err != nil {
-		return fmt.Errorf("failed to write to file:%w", err)
+		return "", fmt.Errorf("failed to write to file:%w", err)
 	}
 
-	return nil
+	return swarmKey, nil
 }
 
 func createNode(ctx context.Context, log *logging.Logger, repoPath string) (*core.IpfsNode, repo.Repo, error) {
@@ -801,26 +886,31 @@ func printSwarmAddrs(node *core.IpfsNode, log *logging.Logger) {
 }
 
 func createIpfsNode(ctx context.Context, log *logging.Logger, repoPath string,
-	cfg *config.Config, swarmKey string,
-) (*core.IpfsNode, repo.Repo, error) {
+	cfg *config.Config, swarmKeySeed string,
+) (*core.IpfsNode, repo.Repo, string, error) {
 	// Only inits the repo if it does not already exist
 	err := fsrepo.Init(repoPath, cfg)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to initialise ipfs configuration:%w", err)
+		return nil, nil, "", fmt.Errorf("failed to initialise ipfs configuration:%w", err)
 	}
 
 	// Update to take account of any new bootstrap nodes
 	err = updateRepoConfig(repoPath, cfg)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to update ipfs configuration:%w", err)
+		return nil, nil, "", fmt.Errorf("failed to update ipfs configuration:%w", err)
 	}
 
-	err = generateSwarmKeyFile(swarmKey, repoPath)
+	swarmKey, err := generateSwarmKeyFile(swarmKeySeed, repoPath)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate swarm key file:%w", err)
+		return nil, nil, "", fmt.Errorf("failed to generate swarm key file:%w", err)
 	}
 
-	return createNode(ctx, log, repoPath)
+	node, repo, err := createNode(ctx, log, repoPath)
+	if err != nil {
+		return nil, nil, "", fmt.Errorf("failed to create node: %w", err)
+	}
+
+	return node, repo, swarmKey, nil
 }
 
 func (p *Store) addFileToIpfs(ctx context.Context, path string) (cid.Cid, error) {

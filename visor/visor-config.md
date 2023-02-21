@@ -93,6 +93,7 @@ If a custom mapping is provided, during the upgrade Visor uses the folder given 
 
 <dd>
 
+Allows you to define the assets that should be automatically downloaded from Github for a specific release.
 
 
 </dd>
@@ -121,6 +122,7 @@ restartsDelaySeconds = 5
 
 
 ## *AutoInstallConfig*
+Allows you to define the assets that should be automatically downloaded from GitHub for a specific release.
 
 
 ### Fields
@@ -132,8 +134,10 @@ restartsDelaySeconds = 5
 
 <dd>
 
+Whether or not autoinstall should be used
 
 
+Default value: <code>true</code>
 </dd>
 
 <dt>
@@ -142,8 +146,10 @@ restartsDelaySeconds = 5
 
 <dd>
 
+Owner of the repository from where the assets should be downloaded.
 
 
+Default value: <code>vegaprotocol</code>
 </dd>
 
 <dt>
@@ -152,8 +158,10 @@ restartsDelaySeconds = 5
 
 <dd>
 
+Name of the repository from where the assets should be downloaded.
 
 
+Default value: <code>vega</code>
 </dd>
 
 <dt>
@@ -162,10 +170,26 @@ restartsDelaySeconds = 5
 
 <dd>
 
-
+Definitions of the assets that should be downloaded from the GitHub repository.
 
 </dd>
 
+
+
+### Complete example
+
+
+```hcl
+[autoInstall]
+ enabled = true
+ repositoryOwner = "vegaprotocol"
+ repository = "vega"
+ [autoInstall.assets]
+  [autoInstall.assets.vega]
+   assset_name = "vega-darwin-amd64.zip"
+   binary_name = "vega"
+
+```
 
 
 </dl>
@@ -180,21 +204,55 @@ restartsDelaySeconds = 5
 
 <dl>
 <dt>
-	<code>vega</code>  <strong>string</strong>  - required
+	<code>vega</code>  <strong><a href="#asset">Asset</a></strong>  - required
 </dt>
 
 <dd>
 
-
+Allows you to define the name of the asset to be downloaded.
 
 </dd>
 
 <dt>
-	<code>data_node</code>  <strong>string</strong>  - optional
+	<code>data_node</code>  <strong><a href="#asset">Asset</a></strong>  - optional
 </dt>
 
 <dd>
 
+Allows you to define the name of the asset to be downloaded.
+
+</dd>
+
+
+
+</dl>
+
+---
+
+
+## *Asset*
+
+
+### Fields
+
+<dl>
+<dt>
+	<code>assset_name</code>  <strong>string</strong>  - required
+</dt>
+
+<dd>
+
+Name of the asset on Github.
+
+</dd>
+
+<dt>
+	<code>binary_name</code>  <strong>string</strong>  - optional
+</dt>
+
+<dd>
+
+Binary name definition can be used if the asset is a zip file and the binary is included inside of it.
 
 
 </dd>

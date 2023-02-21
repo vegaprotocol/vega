@@ -14,7 +14,6 @@ package rest
 
 import (
 	"net/http"
-	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/metrics"
@@ -48,20 +47,9 @@ func MetricCollectionMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 		end := time.Now()
 
-		uri := r.RequestURI
-
-		// Remove the first slash if it has one
-		if strings.Index(uri, "/") == 0 {
-			uri = uri[1:]
-		}
-		// Trim the URI down to something useful
-		if strings.Count(uri, "/") >= 1 {
-			uri = uri[:strings.Index(uri, "/")]
-		}
-
 		// Update the call count and timings in metrics
 		timetaken := end.Sub(start)
 
-		metrics.APIRequestAndTimeREST(uri, timetaken.Seconds())
+		metrics.APIRequestAndTimeREST(r.Method, r.RequestURI, timetaken.Seconds())
 	})
 }

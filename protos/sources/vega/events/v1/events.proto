@@ -420,6 +420,15 @@ message SettleDistressed {
   string price = 4;
 }
 
+// A distressed order contains the party IDs for all parties that were distressed and had their orders closed,
+// but did not need to be closed out after cancelling their orders
+message DistressedOrders {
+  // Market identifier for the event
+  string market_id = 1;
+  // Slice of Party identifiers (public keys) for the event
+  repeated string parties = 2;
+}
+
 // A market ticket event contains the time value for when a particular market was last processed on Vega
 message MarketTick {
   // Market identifier for the event
@@ -706,6 +715,11 @@ enum BusEventType {
   // Data node notifies that it is ready to upgrade
   BUS_EVENT_TYPE_PROTOCOL_UPGRADE_DATA_NODE_READY = 55;
 
+  // Event indicating parties had orders closed because they were distressed, but were not closed out.
+  BUS_EVENT_TYPE_DISTRESSED_ORDERS_CLOSED = 56;
+  // Event indicating parties had orders closed because they were distressed, but were not closed out.
+  BUS_EVENT_TYPE_EXPIRED_ORDERS = 57;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -827,6 +841,10 @@ message BusEvent {
     CoreSnapshotData core_snapshot_event = 153;
     // A core snapshot has been taken at the end of the block
     ProtocolUpgradeDataNodeReady protocol_upgrade_data_node_ready = 154;
+    // Parties that had their orders closed because they were distressed
+    DistressedOrders distressed_orders = 155;
+    // Orders that expired for a given market
+    ExpiredOrders expired_orders = 156;
 
     // Market tick events - See [MarketEvent](#vega.MarketEvent)
     MarketEvent market = 1001;
@@ -839,3 +857,9 @@ message BusEvent {
   string tx_hash = 6;
 }
 
+message ExpiredOrders {
+  // Market identifier for the event
+  string market_id = 1;
+  // Slice of expired order identifiers
+  repeated string order_ids = 2;
+}

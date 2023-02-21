@@ -2,8 +2,8 @@ Feature: Regression test for issue 596
 
   Background:
     Given the markets:
-      | id        | quote name | asset | auction duration | risk model                    | margin calculator         | fees         | data source config     | price monitoring |
-      | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-eth-for-future | default-none     |
+      | id        | quote name | asset | auction duration | risk model                    | margin calculator         | fees         | data source config     | price monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-eth-for-future | default-none     | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |

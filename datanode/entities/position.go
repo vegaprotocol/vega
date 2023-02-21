@@ -60,27 +60,67 @@ type Position struct {
 	Adjustment              decimal.Decimal // what a party was missing which triggered loss socialization
 	TxHash                  TxHash
 	VegaTime                time.Time
+	// keep track of trades that haven't been settled as separate fields
+	// these will be zeroed out once we process settlement events
+	PendingOpenVolume              int64
+	PendingRealisedPnl             decimal.Decimal
+	PendingUnrealisedPnl           decimal.Decimal
+	PendingAverageEntryPrice       decimal.Decimal
+	PendingAverageEntryMarketPrice decimal.Decimal
+	LossSocialisationAmount        decimal.Decimal
+	DistressedStatus               PositionStatus
 }
 
 func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
 	return Position{
-		MarketID:                marketID,
-		PartyID:                 partyID,
-		OpenVolume:              0,
-		RealisedPnl:             num.DecimalZero(),
-		UnrealisedPnl:           num.DecimalZero(),
-		AverageEntryPrice:       num.DecimalZero(),
-		AverageEntryMarketPrice: num.DecimalZero(),
-		Loss:                    num.DecimalZero(),
-		Adjustment:              num.DecimalZero(),
+		MarketID:                       marketID,
+		PartyID:                        partyID,
+		OpenVolume:                     0,
+		RealisedPnl:                    num.DecimalZero(),
+		UnrealisedPnl:                  num.DecimalZero(),
+		AverageEntryPrice:              num.DecimalZero(),
+		AverageEntryMarketPrice:        num.DecimalZero(),
+		Loss:                           num.DecimalZero(),
+		Adjustment:                     num.DecimalZero(),
+		PendingOpenVolume:              0,
+		PendingRealisedPnl:             num.DecimalZero(),
+		PendingUnrealisedPnl:           num.DecimalZero(),
+		PendingAverageEntryPrice:       num.DecimalZero(),
+		PendingAverageEntryMarketPrice: num.DecimalZero(),
+		LossSocialisationAmount:        num.DecimalZero(),
+		DistressedStatus:               PositionStatusUnspecified,
 	}
 }
 
+func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool) {
+	// we have to ensure that we know the price/position factor
+	size := int64(trade.Size)
+	if seller {
+		size *= -1
+	}
+	price, _ := num.DecimalFromString(trade.Price) // this is market price
+	opened, closed := CalculateOpenClosedVolume(p.PendingOpenVolume, size)
+	realisedPnlDelta := price.Sub(p.PendingAverageEntryPrice).Mul(num.DecimalFromInt64(closed))
+	p.PendingRealisedPnl = p.PendingRealisedPnl.Add(realisedPnlDelta)
+	p.PendingOpenVolume -= closed
+
+	priceUint, _ := num.UintFromDecimal(price)
+	p.PendingAverageEntryPrice = updateVWAP(p.PendingAverageEntryPrice, p.PendingOpenVolume, opened, priceUint.Clone())
+	p.PendingAverageEntryMarketPrice = updateVWAP(p.PendingAverageEntryMarketPrice, p.PendingOpenVolume, opened, priceUint)
+	p.PendingOpenVolume += opened
+	p.pendingMTM(price)
+}
+
+func (p *Position) UpdateOrdersClosed() {
+	p.DistressedStatus = PositionStatusOrdersClosed
+}
+
 func (p *Position) UpdateWithPositionSettlement(e positionSettlement) {
+	pf := e.PositionFactor()
 	for _, t := range e.Trades() {
-		openedVolume, closedVolume := calculateOpenClosedVolume(p.OpenVolume, t.Size())
+		openedVolume, closedVolume := CalculateOpenClosedVolume(p.OpenVolume, t.Size())
 		// Deal with any volume we have closed
-		realisedPnlDelta := num.DecimalFromUint(t.Price()).Sub(p.AverageEntryPrice).Mul(num.DecimalFromInt64(closedVolume)).Div(e.PositionFactor())
+		realisedPnlDelta := num.DecimalFromUint(t.Price()).Sub(p.AverageEntryPrice).Mul(num.DecimalFromInt64(closedVolume)).Div(pf)
 		p.RealisedPnl = p.RealisedPnl.Add(realisedPnlDelta)
 		p.OpenVolume -= closedVolume
 
@@ -89,8 +129,18 @@ func (p *Position) UpdateWithPositionSettlement(e positionSettlement) {
 		p.AverageEntryMarketPrice = updateVWAP(p.AverageEntryMarketPrice, p.OpenVolume, openedVolume, t.MarketPrice())
 		p.OpenVolume += openedVolume
 	}
-	p.mtm(e.Price(), e.PositionFactor())
+	p.mtm(e.Price(), pf)
 	p.TxHash = TxHash(e.TxHash())
+	p.syncPending()
+}
+
+func (p *Position) syncPending() {
+	// update pending fields to match current ones
+	p.PendingOpenVolume = p.OpenVolume
+	p.PendingRealisedPnl = p.RealisedPnl
+	p.PendingUnrealisedPnl = p.UnrealisedPnl
+	p.PendingAverageEntryPrice = p.AverageEntryPrice
+	p.PendingAverageEntryMarketPrice = p.AverageEntryMarketPrice
 }
 
 func (p *Position) UpdateWithLossSocialization(e lossSocialization) {
@@ -98,12 +148,15 @@ func (p *Position) UpdateWithLossSocialization(e lossSocialization) {
 
 	if amountLoss.IsNegative() {
 		p.Loss = p.Loss.Add(amountLoss)
+		p.LossSocialisationAmount = p.LossSocialisationAmount.Sub(amountLoss)
 	} else {
 		p.Adjustment = p.Adjustment.Add(amountLoss)
+		p.LossSocialisationAmount = p.LossSocialisationAmount.Add(amountLoss)
 	}
 
 	p.RealisedPnl = p.RealisedPnl.Add(amountLoss)
 	p.TxHash = TxHash(e.TxHash())
+	p.syncPending()
 }
 
 func (p *Position) UpdateWithSettleDistressed(e settleDistressed) {
@@ -115,6 +168,8 @@ func (p *Position) UpdateWithSettleDistressed(e settleDistressed) {
 	p.AverageEntryPrice = num.DecimalZero()
 	p.OpenVolume = 0
 	p.TxHash = TxHash(e.TxHash())
+	p.DistressedStatus = PositionStatusClosedOut
+	p.syncPending()
 }
 
 func (p *Position) UpdateWithSettleMarket(e settleMarket) {
@@ -126,6 +181,7 @@ func (p *Position) UpdateWithSettleMarket(e settleMarket) {
 	p.UnrealisedPnl = num.DecimalZero()
 	p.OpenVolume = 0
 	p.TxHash = TxHash(e.TxHash())
+	p.syncPending()
 }
 
 func (p *Position) ToProto() *vega.Position {
@@ -133,14 +189,18 @@ func (p *Position) ToProto() *vega.Position {
 	if !p.VegaTime.IsZero() {
 		timestamp = p.VegaTime.UnixNano()
 	}
+	// we use the pending values when converting to protos
+	// so trades are reflected as accurately as possible
 	return &vega.Position{
-		MarketId:          p.MarketID.String(),
-		PartyId:           p.PartyID.String(),
-		OpenVolume:        p.OpenVolume,
-		RealisedPnl:       p.RealisedPnl.Round(0).String(),
-		UnrealisedPnl:     p.UnrealisedPnl.Round(0).String(),
-		AverageEntryPrice: p.AverageEntryMarketPrice.Round(0).String(),
-		UpdatedAt:         timestamp,
+		MarketId:                p.MarketID.String(),
+		PartyId:                 p.PartyID.String(),
+		OpenVolume:              p.PendingOpenVolume,
+		RealisedPnl:             p.PendingRealisedPnl.Round(0).String(),
+		UnrealisedPnl:           p.PendingUnrealisedPnl.Round(0).String(),
+		AverageEntryPrice:       p.PendingAverageEntryMarketPrice.Round(0).String(),
+		UpdatedAt:               timestamp,
+		LossSocialisationAmount: p.LossSocialisationAmount.Round(0).String(),
+		PositionStatus:          vega.PositionStatus(p.DistressedStatus),
 	}
 }
 
@@ -170,7 +230,17 @@ func (p *Position) mtm(markPrice *num.Uint, positionFactor num.Decimal) {
 	p.UnrealisedPnl = openVolumeDec.Mul(markPriceDec.Sub(p.AverageEntryPrice)).Div(positionFactor)
 }
 
-func calculateOpenClosedVolume(currentOpenVolume, tradedVolume int64) (int64, int64) {
+func (p *Position) pendingMTM(price num.Decimal) {
+	if p.PendingOpenVolume == 0 {
+		p.PendingUnrealisedPnl = num.DecimalZero()
+		return
+	}
+
+	vol := num.DecimalFromInt64(p.PendingOpenVolume)
+	p.PendingUnrealisedPnl = vol.Mul(price.Sub(p.PendingAverageEntryPrice))
+}
+
+func CalculateOpenClosedVolume(currentOpenVolume, tradedVolume int64) (int64, int64) {
 	if currentOpenVolume != 0 && ((currentOpenVolume > 0) != (tradedVolume > 0)) {
 		var closedVolume int64
 		if absUint64(tradedVolume) > absUint64(currentOpenVolume) {
@@ -224,13 +294,17 @@ func (p Position) Key() PositionKey {
 
 var PositionColumns = []string{
 	"market_id", "party_id", "open_volume", "realised_pnl", "unrealised_pnl",
-	"average_entry_price", "average_entry_market_price", "loss", "adjustment", "tx_hash", "vega_time",
+	"average_entry_price", "average_entry_market_price", "loss", "adjustment", "tx_hash", "vega_time", "pending_open_volume",
+	"pending_realised_pnl", "pending_unrealised_pnl", "pending_average_entry_price", "pending_average_entry_market_price",
+	"loss_socialisation_amount", "distressed_status",
 }
 
 func (p Position) ToRow() []interface{} {
 	return []interface{}{
 		p.MarketID, p.PartyID, p.OpenVolume, p.RealisedPnl, p.UnrealisedPnl,
-		p.AverageEntryPrice, p.AverageEntryMarketPrice, p.Loss, p.Adjustment, p.TxHash, p.VegaTime,
+		p.AverageEntryPrice, p.AverageEntryMarketPrice, p.Loss, p.Adjustment, p.TxHash, p.VegaTime, p.PendingOpenVolume,
+		p.PendingRealisedPnl, p.PendingUnrealisedPnl, p.PendingAverageEntryPrice, p.PendingAverageEntryMarketPrice,
+		p.LossSocialisationAmount, p.DistressedStatus,
 	}
 }
 
@@ -245,7 +319,16 @@ func (p Position) Equal(q Position) bool {
 		p.Loss.Equal(q.Loss) &&
 		p.Adjustment.Equal(q.Adjustment) &&
 		p.TxHash == q.TxHash &&
-		p.VegaTime.Equal(q.VegaTime)
+		p.VegaTime.Equal(q.VegaTime) &&
+		p.PendingOpenVolume == q.PendingOpenVolume &&
+		p.PendingAverageEntryPrice.Equal(q.PendingAverageEntryPrice) &&
+		p.PendingAverageEntryMarketPrice.Equal(q.PendingAverageEntryMarketPrice) &&
+		p.PendingRealisedPnl.Equal(q.PendingRealisedPnl) &&
+		p.PendingUnrealisedPnl.Equal(q.PendingUnrealisedPnl)
+	// p.PendingUnrealisedPnl.Equal(q.PendingUnrealisedPnl) &&
+	// loss socialisation amount doesn't seem to work currently
+	// p.LossSocialisationAmount.Equal(q.LossSocialisationAmount) &&
+	// p.DistressedStatus == q.DistressedStatus
 }
 
 type PositionCursor struct {

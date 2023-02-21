@@ -14,8 +14,8 @@ Feature:  test 0038-OLIQ-008
       | 1.2           | 1.5            | 2              |
 
     And the markets:
-      | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring   | data source config     |
-      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future |
+      | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
 
     And the following network parameters are set:
       | name                                                   | value |
@@ -53,7 +53,7 @@ Feature:  test 0038-OLIQ-008
       | id  | party | market    | commitment amount | status        |
       | lp1 | lp    | ETH/DEC19 | 90000             | STATUS_ACTIVE |
 
-    # Observe that given specified pegs we should have an LP buy order placed at a price of 1 and sell order placed at a price of 3160, however, since both of these fall outside of price monitoring bounds the orders gets moved accordingly (0038-OLIQ-009)
+    # LP pegged order should be replaced with respect to LP_price_range rather than price_monitoring_bounds
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 170   | 530    |

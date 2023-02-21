@@ -14,18 +14,21 @@ package sqlstore_test
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 func addTestReward(t *testing.T,
@@ -94,8 +97,6 @@ func TestRewards(t *testing.T) {
 	party1 := addTestParty(t, ctx, ps, block)
 	party2 := addTestParty(t, ctx, ps, block)
 
-	party1ID := party1.ID.String()
-	asset1ID := asset1.ID.String()
 	party2ID := party2.ID.String()
 	asset2ID := asset2.ID.String()
 
@@ -112,35 +113,6 @@ func TestRewards(t *testing.T) {
 		actual, err := rs.GetAll(ctx)
 		require.NoError(t, err)
 		assertRewardsMatch(t, expected, actual)
-	})
-
-	t.Run("GetByParty", func(t *testing.T) {
-		expected := []entities.Reward{reward1, reward2}
-		actual, err := rs.GetByOffset(ctx, &party1ID, nil, nil)
-		require.NoError(t, err)
-		assertRewardsMatch(t, expected, actual)
-	})
-
-	t.Run("GetByAsset", func(t *testing.T) {
-		expected := []entities.Reward{reward1, reward3}
-		actual, err := rs.GetByOffset(ctx, nil, &asset1ID, nil)
-		require.NoError(t, err)
-		assertRewardsMatch(t, expected, actual)
-	})
-
-	t.Run("GetByAssetAndParty", func(t *testing.T) {
-		expected := []entities.Reward{reward1}
-		actual, err := rs.GetByOffset(ctx, &party1ID, &asset1ID, nil)
-		require.NoError(t, err)
-		assertRewardsMatch(t, expected, actual)
-	})
-
-	t.Run("GetPagination", func(t *testing.T) {
-		expected := []entities.Reward{reward4, reward3, reward2}
-		p := entities.OffsetPagination{Skip: 1, Limit: 3, Descending: true}
-		actual, err := rs.GetByOffset(ctx, nil, nil, &p)
-		require.NoError(t, err)
-		assert.Equal(t, expected, actual) // Explicitly check the order on this one
 	})
 
 	t.Run("GetSummary", func(t *testing.T) {
@@ -228,7 +200,9 @@ func TestEpochRewardSummary(t *testing.T) {
 
 	first := int32(1000)
 	pagination, _ := entities.NewCursorPagination(&first, nil, nil, nil, false)
-	summaries, _, _ := rs.GetEpochSummaries(ctx, nil, nil, pagination)
+	filter := entities.RewardSummaryFilter{}
+	summaries, _, err := rs.GetEpochSummaries(ctx, filter, pagination)
+	require.NoError(t, err)
 
 	// we expect to get all sumarries because we defined no from/to
 	// so 16 summaries
@@ -256,34 +230,52 @@ func TestEpochRewardSummary(t *testing.T) {
 
 	// now request with from = 1 with no to, expect the same result
 	from := uint64(1)
-	summaries, _, _ = rs.GetEpochSummaries(ctx, &from, nil, pagination)
+	filter = entities.RewardSummaryFilter{FromEpoch: &from}
+	summaries, _, _ = rs.GetEpochSummaries(ctx, filter, pagination)
 	require.Equal(t, 16, len(summaries))
 	verifyRewardsForEpoch(t, summaries, 1, asset1.ID.String(), asset2.ID.String())
 	verifyRewardsForEpoch(t, summaries, 2, asset1.ID.String(), asset2.ID.String())
 
 	// now request with from = nil and to = 2, expect the same result
 	to := uint64(2)
-	summaries, _, _ = rs.GetEpochSummaries(ctx, nil, &to, pagination)
+	filter = entities.RewardSummaryFilter{ToEpoch: &to}
+	summaries, _, _ = rs.GetEpochSummaries(ctx, filter, pagination)
 	require.Equal(t, 16, len(summaries))
 	verifyRewardsForEpoch(t, summaries, 1, asset1.ID.String(), asset2.ID.String())
 	verifyRewardsForEpoch(t, summaries, 2, asset1.ID.String(), asset2.ID.String())
 
 	// now request from = 2 to = nil expect only epoch 2
 	from = 2
-	summaries, _, _ = rs.GetEpochSummaries(ctx, &from, nil, pagination)
+	filter = entities.RewardSummaryFilter{FromEpoch: &from}
+	summaries, _, _ = rs.GetEpochSummaries(ctx, filter, pagination)
 	require.Equal(t, 8, len(summaries))
 	verifyRewardsForEpoch(t, summaries, 2, asset1.ID.String(), asset2.ID.String())
 
 	// now request to = 1 from = nil expect only epoch 1
 	to = 1
-	summaries, _, _ = rs.GetEpochSummaries(ctx, nil, &to, pagination)
+	filter = entities.RewardSummaryFilter{ToEpoch: &to}
+	summaries, _, _ = rs.GetEpochSummaries(ctx, filter, pagination)
 	require.Equal(t, 8, len(summaries))
 	verifyRewardsForEpoch(t, summaries, 1, asset1.ID.String(), asset2.ID.String())
 
 	// now request from = 1 and to = 1
 	from = 1
-	summaries, _, _ = rs.GetEpochSummaries(ctx, &from, &to, pagination)
+	filter = entities.RewardSummaryFilter{FromEpoch: &from, ToEpoch: &to}
+	summaries, _, _ = rs.GetEpochSummaries(ctx, filter, pagination)
 	require.Equal(t, 8, len(summaries))
+	verifyRewardsForEpoch(t, summaries, 1, asset1.ID.String(), asset2.ID.String())
+
+	// full filter
+	to = 2
+	filter = entities.RewardSummaryFilter{
+		FromEpoch: &from,
+		ToEpoch:   &to,
+		AssetIDs:  []entities.AssetID{asset1.ID, asset2.ID},
+		MarketIDs: []entities.MarketID{market1, market2},
+	}
+	summaries, _, err = rs.GetEpochSummaries(ctx, filter, pagination)
+	require.NoError(t, err)
+	require.Equal(t, 16, len(summaries))
 	verifyRewardsForEpoch(t, summaries, 1, asset1.ID.String(), asset2.ID.String())
 }
 
@@ -481,7 +473,7 @@ func testRewardsCursorPaginationNoPagination(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
 	assert.NoError(t, err)
 	assert.Equal(t, 10, len(got))
 	assert.Equal(t, int64(637), got[0].EpochID)
@@ -505,7 +497,7 @@ func testRewardsCursorPaginationFirstPage(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(637), got[0].EpochID)
@@ -529,7 +521,7 @@ func testRewardsCursorPaginationLastPage(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(757), got[0].EpochID)
@@ -555,7 +547,7 @@ func testRewardsCursorPaginationFirstPageAfter(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(737), got[0].EpochID)
@@ -580,7 +572,7 @@ func testRewardsCursorPaginationLastPageBefore(t *testing.T) {
 	before := entities.NewCursor(entities.RewardCursor{PartyID: partyID, AssetID: assetID, EpochID: 757}.String()).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(741), got[0].EpochID)
@@ -603,7 +595,7 @@ func testRewardsCursorPaginationNoPaginationNewestFirst(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
 	assert.NoError(t, err)
 	assert.Equal(t, 10, len(got))
 	assert.Equal(t, int64(1027), got[0].EpochID)
@@ -627,7 +619,7 @@ func testRewardsCursorPaginationFirstPageNewestFirst(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(1027), got[0].EpochID)
@@ -651,7 +643,7 @@ func testRewardsCursorPaginationLastPageNewestFirst(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(643), got[0].EpochID)
@@ -677,7 +669,7 @@ func testRewardsCursorPaginationFirstPageAfterNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(747), got[0].EpochID)
@@ -702,7 +694,7 @@ func testRewardsCursorPaginationLastPageBeforeNewestFirst(t *testing.T) {
 	before := entities.NewCursor(entities.RewardCursor{PartyID: partyID, AssetID: assetID, EpochID: 643}.String()).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(744), got[0].EpochID)
@@ -713,4 +705,145 @@ func testRewardsCursorPaginationLastPageBeforeNewestFirst(t *testing.T) {
 		StartCursor:     entities.NewCursor(entities.RewardCursor{PartyID: partyID, AssetID: assetID, EpochID: 744}.String()).Encode(),
 		EndCursor:       entities.NewCursor(entities.RewardCursor{PartyID: partyID, AssetID: assetID, EpochID: 737}.String()).Encode(),
 	}, pageInfo)
+}
+
+func Test_FilterRewardsQuery(t *testing.T) {
+	type args struct {
+		table    string
+		inFilter entities.RewardSummaryFilter
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantQuery string
+		wantArgs  []any
+		wantErr   assert.ErrorAssertionFunc
+	}{
+		{
+			name: "filter with all values",
+			args: args{
+				table: "test",
+				inFilter: entities.RewardSummaryFilter{
+					AssetIDs:  []entities.AssetID{"8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"},
+					MarketIDs: []entities.MarketID{"deadbeef"},
+					FromEpoch: toPtr(uint64(123)),
+					ToEpoch:   toPtr(uint64(124)),
+				},
+			},
+			wantQuery: ` WHERE asset_id = ANY($1) AND market_id = ANY($2) AND epoch_id >= $3 AND epoch_id <= $4`,
+			wantArgs: []any{
+				"8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa",
+				"deadbeef",
+				toPtr(uint64(123)),
+				toPtr(uint64(124)),
+			},
+			wantErr: assert.NoError,
+		}, {
+			name: "filter with no values",
+			args: args{
+				table:    "test",
+				inFilter: entities.RewardSummaryFilter{},
+			},
+			wantQuery: "",
+			wantArgs:  []any{},
+			wantErr:   assert.NoError,
+		}, {
+			name: "filter with only asset ids",
+			args: args{
+				table: "test",
+				inFilter: entities.RewardSummaryFilter{
+					AssetIDs: []entities.AssetID{"8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"},
+				},
+			},
+			wantQuery: ` WHERE asset_id = ANY($1)`,
+			wantArgs: []any{
+				"8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa",
+			},
+			wantErr: assert.NoError,
+		}, {
+			name: "filter with only market ids",
+			args: args{
+				table: "test",
+				inFilter: entities.RewardSummaryFilter{
+					MarketIDs: []entities.MarketID{"deadbeef"},
+				},
+			},
+			wantQuery: ` WHERE market_id = ANY($1)`,
+			wantArgs: []any{
+				"deadbeef",
+			},
+			wantErr: assert.NoError,
+		}, {
+			name: "filter with only from epoch",
+			args: args{
+				table: "test",
+				inFilter: entities.RewardSummaryFilter{
+					FromEpoch: toPtr(uint64(123)),
+				},
+			},
+			wantQuery: ` WHERE epoch_id >= $1`,
+			wantArgs: []any{
+				toPtr(uint64(123)),
+			},
+			wantErr: assert.NoError,
+		}, {
+			name: "filter with only to epoch",
+			args: args{
+				table: "test",
+				inFilter: entities.RewardSummaryFilter{
+					ToEpoch: toPtr(uint64(123)),
+				},
+			},
+			wantQuery: ` WHERE epoch_id <= $1`,
+			wantArgs: []any{
+				toPtr(uint64(123)),
+			},
+			wantErr: assert.NoError,
+		}, {
+			name: "filter with only from and to epoch",
+			args: args{
+				table: "test",
+				inFilter: entities.RewardSummaryFilter{
+					FromEpoch: toPtr(uint64(123)),
+					ToEpoch:   toPtr(uint64(124)),
+				},
+			},
+			wantQuery: ` WHERE epoch_id >= $1 AND epoch_id <= $2`,
+			wantArgs: []any{
+				toPtr(uint64(123)),
+				toPtr(uint64(124)),
+			},
+			wantErr: assert.NoError,
+		}, {
+			name: "filter with only asset ids and from epoch",
+			args: args{
+				table: "test",
+				inFilter: entities.RewardSummaryFilter{
+					AssetIDs:  []entities.AssetID{"8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"},
+					FromEpoch: toPtr(uint64(123)),
+				},
+			},
+			wantQuery: ` WHERE asset_id = ANY($1) AND epoch_id >= $2`,
+			wantArgs: []any{
+				"8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa",
+				toPtr(uint64(123)),
+			},
+			wantErr: assert.NoError,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, args, err := sqlstore.FilterRewardsQuery(tt.args.inFilter)
+			if !tt.wantErr(t, err, fmt.Sprintf("filterSQL(%v, %v)", tt.args.table, tt.args.inFilter)) {
+				return
+			}
+			assert.Equalf(t, tt.wantQuery, got, "filterSQL(%v, %v)", tt.args.table, tt.args.inFilter)
+			for i, arg := range args {
+				if reflect.TypeOf(arg).Kind() == reflect.Slice {
+					arg = hex.EncodeToString(arg.([][]uint8)[0])
+				}
+				assert.Equalf(t, tt.wantArgs[i], arg, "filterSQL(%v, %v)", tt.args.table, tt.args.inFilter)
+			}
+		})
+	}
 }

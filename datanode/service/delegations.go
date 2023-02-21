@@ -27,7 +27,6 @@ type delegationStore interface {
 }
 
 type Delegation struct {
-	log      *logging.Logger
 	store    delegationStore
 	observer utils.Observer[entities.Delegation]
 }
@@ -35,7 +34,6 @@ type Delegation struct {
 func NewDelegation(store delegationStore, log *logging.Logger) *Delegation {
 	return &Delegation{
 		store:    store,
-		log:      log,
 		observer: utils.NewObserver[entities.Delegation]("delegation", log, 10, 10),
 	}
 }

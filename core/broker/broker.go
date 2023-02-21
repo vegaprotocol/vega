@@ -18,23 +18,14 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/broker"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/logging"
 )
 
-// Subscriber interface allows pushing values to subscribers, can be set to
-// a Skip state (temporarily not receiving any events), or closed. Otherwise events are pushed
-//
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/subscriber_mock.go -package mocks code.vegaprotocol.io/vega/core/broker Subscriber
-type Subscriber interface {
-	Push(val ...events.Event)
-	Skip() <-chan struct{}
-	Closed() <-chan struct{}
-	C() chan<- []events.Event
-	Types() []events.Type
-	SetID(id int)
-	ID() int
-	Ack() bool
+type Stats interface {
+	IncrementEventCount(count uint64)
 }
 
 // Interface interface (horribly named) is declared here to provide a drop-in replacement for broker mocks used throughout
@@ -45,8 +36,8 @@ type Subscriber interface {
 type Interface interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
-	Subscribe(s Subscriber) int
-	SubscribeBatch(subs ...Subscriber)
+	Subscribe(s broker.Subscriber) int
+	SubscribeBatch(subs ...broker.Subscriber)
 	Unsubscribe(k int)
 	SetStreaming(on bool) bool
 }
@@ -64,7 +55,7 @@ type FileClientSend interface {
 }
 
 type subscription struct {
-	Subscriber
+	broker.Subscriber
 	required bool
 }
 
@@ -90,10 +81,11 @@ type Broker struct {
 	socketClient SocketClient
 	fileClient   FileClientSend
 	canStream    bool // whether not we should send events to the socketClient
+	stats        Stats
 }
 
 // New creates a new base broker.
-func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, error) {
+func New(ctx context.Context, log *logging.Logger, config Config, stats Stats) (*Broker, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
@@ -107,6 +99,7 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 		seqGen:    newGen(),
 		config:    config,
 		canStream: bool(config.Socket.Enabled),
+		stats:     stats,
 	}
 
 	if config.Socket.Enabled {
@@ -129,7 +122,7 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 	return b, nil
 }
 
-func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) {
+func (b *Broker) sendChannel(sub broker.Subscriber, evts []events.Event) {
 	// wait for a max of 1 second
 	timeout := time.NewTimer(time.Second)
 	defer func() {
@@ -150,7 +143,7 @@ func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) {
 	}
 }
 
-func (b *Broker) sendChannelSync(sub Subscriber, evts []events.Event) bool {
+func (b *Broker) sendChannelSync(sub broker.Subscriber, evts []events.Event) bool {
 	select {
 	case <-b.ctx.Done():
 		return false
@@ -251,12 +244,14 @@ func (b *Broker) SendBatch(events []events.Event) {
 	if len(events) == 0 {
 		return
 	}
+	b.stats.IncrementEventCount(uint64(len(events)))
 	evts := b.seqGen.setSequence(events...)
 	b.startSending(events[0].Type(), evts)
 }
 
 // Send sends an event to all subscribers.
 func (b *Broker) Send(event events.Event) {
+	b.stats.IncrementEventCount(1)
 	b.startSending(event.Type(), b.seqGen.setSequence(event))
 }
 
@@ -280,7 +275,7 @@ func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
 }
 
 // Subscribe registers a new subscriber, returning the key.
-func (b *Broker) Subscribe(s Subscriber) int {
+func (b *Broker) Subscribe(s broker.Subscriber) int {
 	b.mu.Lock()
 	k := b.subscribe(s)
 	s.SetID(k)
@@ -288,7 +283,7 @@ func (b *Broker) Subscribe(s Subscriber) int {
 	return k
 }
 
-func (b *Broker) SubscribeBatch(subs ...Subscriber) {
+func (b *Broker) SubscribeBatch(subs ...broker.Subscriber) {
 	b.mu.Lock()
 	for _, s := range subs {
 		k := b.subscribe(s)
@@ -297,7 +292,7 @@ func (b *Broker) SubscribeBatch(subs ...Subscriber) {
 	b.mu.Unlock()
 }
 
-func (b *Broker) subscribe(s Subscriber) int {
+func (b *Broker) subscribe(s broker.Subscriber) int {
 	k := b.getKey()
 	sub := subscription{
 		Subscriber: s,

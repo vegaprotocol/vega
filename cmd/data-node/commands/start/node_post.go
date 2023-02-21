@@ -25,6 +25,8 @@ type errStack []error
 func (l *NodeCommand) postRun(_ []string) error {
 	var werr errStack
 
+	postLog := l.Log.Named("postRun")
+
 	if l.embeddedPostgres != nil {
 		if err := l.embeddedPostgres.Stop(); err != nil {
 			werr = append(werr, errors.Wrap(err, "error closing embedded postgres in command"))
@@ -36,11 +38,11 @@ func (l *NodeCommand) postRun(_ []string) error {
 		}
 	}
 
-	l.Log.Info("Vega datanode shutdown complete",
+	postLog.Info("Vega datanode shutdown complete",
 		logging.String("version", l.Version),
 		logging.String("version-hash", l.VersionHash))
 
-	l.Log.Sync()
+	postLog.Sync()
 
 	if len(werr) == 0 {
 		// Prevent printing of empty error and exiting with non-zero code.

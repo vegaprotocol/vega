@@ -125,6 +125,7 @@ func (e *Engine) getMarketScores(ds *vegapb.DispatchStrategy, payoutAsset, funde
 func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint64) {
 	var (
 		transfersDone = []events.Event{}
+		doneIDs       = []string{}
 		tresps        = []*types.LedgerMovement{}
 		currentEpoch  = num.NewUint(newEpoch).ToDecimal()
 	)
@@ -159,7 +160,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 			v.Status = types.TransferStatusStopped
 			transfersDone = append(transfersDone,
 				events.NewRecurringTransferFundsEventWithReason(ctx, v, err.Error()))
-			e.deleteTransfer(v.ID)
+			doneIDs = append(doneIDs, v.ID)
 			continue
 		}
 
@@ -202,7 +203,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 			v.Status = types.TransferStatusStopped
 			transfersDone = append(transfersDone,
 				events.NewRecurringTransferFundsEventWithReason(ctx, v, err.Error()))
-			e.deleteTransfer(v.ID)
+			doneIDs = append(doneIDs, v.ID)
 			continue
 		}
 
@@ -212,7 +213,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 		if v.EndEpoch != nil && *v.EndEpoch == e.currentEpoch {
 			v.Status = types.TransferStatusDone
 			transfersDone = append(transfersDone, events.NewRecurringTransferFundsEvent(ctx, v))
-			e.deleteTransfer(v.ID)
+			doneIDs = append(doneIDs, v.ID)
 		}
 	}
 
@@ -221,6 +222,9 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 		e.broker.Send(events.NewLedgerMovements(ctx, tresps))
 	}
 	if len(transfersDone) > 0 {
+		for _, id := range doneIDs {
+			e.deleteTransfer(id)
+		}
 		// also set the state change
 		e.broker.SendBatch(transfersDone)
 	}

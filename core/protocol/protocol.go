@@ -15,7 +15,11 @@ package protocol
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/libs/subscribers"
+
 	"code.vegaprotocol.io/vega/core/spam"
+
+	"github.com/blang/semver"
 
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/blockchain"
@@ -28,11 +32,9 @@ import (
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
 	"code.vegaprotocol.io/vega/core/stats"
-	"code.vegaprotocol.io/vega/core/subscribers"
 	"code.vegaprotocol.io/vega/core/vegatime"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-	"github.com/blang/semver"
 )
 
 var Version = semver.MustParse("0.1.0")
@@ -48,6 +50,8 @@ type Protocol struct {
 	services *allServices
 }
 
+const namedLogger = "protocol"
+
 func New(
 	ctx context.Context,
 	confWatcher *config.Watcher,
@@ -61,6 +65,8 @@ func New(
 	vegaPaths paths.Paths,
 	stats *stats.Stats,
 ) (p *Protocol, err error) {
+	log = log.Named(namedLogger)
+
 	defer func() {
 		if err != nil {
 			log.Error("unable to start protocol", logging.Error(err))

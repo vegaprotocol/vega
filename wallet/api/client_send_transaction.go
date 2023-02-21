@@ -43,7 +43,7 @@ type ClientSendTransaction struct {
 	walletStore  WalletStore
 	interactor   Interactor
 	nodeSelector node.Selector
-	pow          ProofOfWork
+	spam         SpamHandler
 }
 
 func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
@@ -57,7 +57,7 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	txReader := strings.NewReader(params.RawTransaction)
 	request := &walletpb.SubmitTransactionRequest{}
 	if err := jsonpb.Unmarshal(txReader, request); err != nil {
-		return nil, invalidParams(ErrTransactionIsNotValidVegaCommand)
+		return nil, invalidParams(fmt.Errorf("the transaction is not a valid Vega command: %w", err))
 	}
 
 	if !connectedWallet.CanUseKey(params.PublicKey) {
@@ -96,7 +96,7 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 			return nil, internalError(ErrCouldNotSendTransaction)
 		}
 		if !approved {
-			return nil, userRejectionError()
+			return nil, userRejectionError(ErrUserRejectedSendingOfTransaction)
 		}
 	}
 
@@ -110,20 +110,31 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	}
 
 	h.interactor.Log(ctx, traceID, InfoLog, "Retrieving latest block information...")
-	lastBlockData, err := currentNode.LastBlock(ctx)
+	stats, err := currentNode.SpamStatistics(ctx, request.PubKey)
 	if err != nil {
 		h.interactor.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get the latest block from node: %w", err))
 		return nil, nodeCommunicationError(ErrCouldNotGetLastBlockInformation)
 	}
 	h.interactor.Log(ctx, traceID, SuccessLog, "Latest block information has been retrieved.")
 
-	if lastBlockData.ChainID == "" {
+	if stats.LastBlockHeight == 0 {
+		h.interactor.NotifyError(ctx, traceID, NetworkError, ErrCouldNotGetLastBlockInformation)
+		return nil, nodeCommunicationError(ErrCouldNotGetLastBlockInformation)
+	}
+
+	if stats.ChainID == "" {
 		h.interactor.NotifyError(ctx, traceID, NetworkError, ErrCouldNotGetChainIDFromNode)
 		return nil, nodeCommunicationError(ErrCouldNotGetChainIDFromNode)
 	}
 
+	err = h.spam.CheckSubmission(request, &stats)
+	if err != nil {
+		h.interactor.NotifyError(ctx, traceID, ApplicationError, fmt.Errorf("could not send transaction: %w", err))
+		return nil, applicationCancellationError(err)
+	}
+
 	// Sign the payload.
-	rawInputData := wcommands.ToInputData(request, lastBlockData.BlockHeight)
+	rawInputData := wcommands.ToInputData(request, stats.LastBlockHeight)
 	inputData, err := commands.MarshalInputData(rawInputData)
 	if err != nil {
 		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not marshal input data: %w", err))
@@ -131,7 +142,7 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	}
 
 	h.interactor.Log(ctx, traceID, InfoLog, "Signing the transaction...")
-	signature, err := w.SignTx(params.PublicKey, commands.BundleInputDataForSigning(inputData, lastBlockData.ChainID))
+	signature, err := w.SignTx(params.PublicKey, commands.BundleInputDataForSigning(inputData, stats.ChainID))
 	if err != nil {
 		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not sign the transaction: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)
@@ -147,8 +158,12 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 
 	// Generate the proof of work for the transaction.
 	h.interactor.Log(ctx, traceID, InfoLog, "Computing proof-of-work...")
-	tx.Pow, err = h.pow.Generate(params.PublicKey, &lastBlockData)
+	tx.Pow, err = h.spam.GenerateProofOfWork(params.PublicKey, &stats)
 	if err != nil {
+		if errors.Is(err, ErrTransactionsPerBlockLimitReached) || errors.Is(err, ErrBlockHeightTooHistoric) {
+			h.interactor.NotifyError(ctx, traceID, ApplicationError, fmt.Errorf("could not compute the proof-of-work: %w", err))
+			return nil, applicationCancellationError(err)
+		}
 		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not compute the proof-of-work: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)
 	}
@@ -159,11 +174,11 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	h.interactor.Log(ctx, traceID, InfoLog, "Sending the transaction...")
 	txHash, err := currentNode.SendTransaction(ctx, tx, params.SendingMode)
 	if err != nil {
-		h.interactor.NotifyFailedTransaction(ctx, traceID, protoToJSON(rawInputData), protoToJSON(tx), err, sentAt)
+		h.interactor.NotifyFailedTransaction(ctx, traceID, protoToJSON(rawInputData), protoToJSON(tx), err, sentAt, currentNode.Host())
 		return nil, networkErrorFromTransactionError(err)
 	}
 
-	h.interactor.NotifySuccessfulTransaction(ctx, traceID, txHash, protoToJSON(rawInputData), protoToJSON(tx), sentAt)
+	h.interactor.NotifySuccessfulTransaction(ctx, traceID, txHash, protoToJSON(rawInputData), protoToJSON(tx), sentAt, currentNode.Host())
 
 	return ClientSendTransactionResult{
 		ReceivedAt: receivedAt,
@@ -238,11 +253,11 @@ func validateSendTransactionParams(rawParams jsonrpc.Params) (ClientParsedSendTr
 	}, nil
 }
 
-func NewClientSendTransaction(walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, pow ProofOfWork) *ClientSendTransaction {
+func NewClientSendTransaction(walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, pow SpamHandler) *ClientSendTransaction {
 	return &ClientSendTransaction{
 		walletStore:  walletStore,
 		interactor:   interactor,
 		nodeSelector: nodeSelector,
-		pow:          pow,
+		spam:         pow,
 	}
 }

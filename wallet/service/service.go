@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"code.vegaprotocol.io/vega/wallet/network"
 	v1 "code.vegaprotocol.io/vega/wallet/service/v1"
 	v2 "code.vegaprotocol.io/vega/wallet/service/v2"
 	"github.com/julienschmidt/httprouter"
@@ -24,7 +23,7 @@ type Service struct {
 	apiV2 *v2.API
 }
 
-func NewService(log *zap.Logger, net *network.Network, apiV1 *v1.API, apiV2 *v2.API) *Service {
+func NewService(log *zap.Logger, cfg *Config, apiV1 *v1.API, apiV2 *v2.API) *Service {
 	s := &Service{
 		Router: httprouter.New(),
 		log:    log,
@@ -33,7 +32,7 @@ func NewService(log *zap.Logger, net *network.Network, apiV1 *v1.API, apiV2 *v2.
 	}
 
 	s.server = &http.Server{
-		Addr:    fmt.Sprintf("%s:%v", net.Host, net.Port),
+		Addr:    fmt.Sprintf("%s:%v", cfg.Server.Host, cfg.Server.Port),
 		Handler: cors.AllowAll().Handler(s),
 	}
 

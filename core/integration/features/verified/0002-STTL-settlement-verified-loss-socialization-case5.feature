@@ -2,8 +2,8 @@ Feature: Test loss socialization case 5
 
   Background:
     Given the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -14,7 +14,7 @@ Feature: Test loss socialization case 5
     Description: case 5 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
 
     # setup accounts
-    Given the initial insurance pool balance is "3000" for the markets:
+    Given the initial insurance pool balance is "3000" for all the markets
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount    |
       | sellSideProvider | BTC   | 100000000 |

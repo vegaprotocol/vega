@@ -16,11 +16,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
-	"code.vegaprotocol.io/vega/logging"
-	"github.com/golang/mock/gomock"
 )
 
 func Test_MarketUpdated_Push(t *testing.T) {
@@ -34,7 +34,7 @@ func shouldCallMarketSQLStoreUpdate(t *testing.T) {
 	store := mocks.NewMockMarketsStore(ctrl)
 
 	store.EXPECT().Upsert(context.Background(), gomock.Any()).Times(1)
-	subscriber := sqlsubscribers.NewMarketUpdated(store, logging.NewTestLogger())
+	subscriber := sqlsubscribers.NewMarketUpdated(store)
 	subscriber.Flush(context.Background())
 	subscriber.Push(context.Background(), events.NewMarketCreatedEvent(context.Background(), getTestMarket()))
 }

@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -135,6 +136,7 @@ func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	ctx := context.Background()
 	network := newNetwork(t)
 	passphrase := vgrand.RandomStr(5)
+	nodeHost := vgrand.RandomStr(5)
 	w, kp := walletWithKey(t)
 	hash := "hashy mchashface"
 
@@ -152,6 +154,7 @@ func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 			ChainID:                 vgrand.RandomStr(5),
 		}, nil)
 		node.EXPECT().SendTransaction(ctx, gomock.Any(), gomock.Any()).Times(1).Return(hash, nil)
+		node.EXPECT().Host().Times(1).Return(nodeHost)
 		return nodeSelector, nil
 	})
 
@@ -310,7 +313,7 @@ func testAdminSendingTransactionWithMalformedTransactionFails(t *testing.T) {
 	})
 
 	// then
-	assertInvalidParams(t, errorDetails, api.ErrTransactionIsNotValidVegaCommand)
+	assertInvalidParams(t, errorDetails, errors.New("the transaction is not a valid Vega command: unknown field \"bob\" in vega.wallet.v1.SubmitTransactionRequest"))
 	assert.Empty(t, result)
 }
 

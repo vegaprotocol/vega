@@ -86,7 +86,7 @@ func (n *Command) Run(
 	confWatcher *config.Watcher,
 	vegaPaths paths.Paths,
 	nodeWalletPassphrase, tmHome, networkURL, network string,
-	args []string,
+	log *logging.Logger,
 ) error {
 	n.Log.Info("starting vega",
 		logging.String("version", version.Get()),
@@ -99,15 +99,15 @@ func (n *Command) Run(
 	n.conf = confWatcher.Get()
 	n.vegaPaths = vegaPaths
 
-	if err := n.setupCommon(args); err != nil {
+	if err := n.setupCommon(); err != nil {
 		return err
 	}
 
-	if err := n.loadNodeWallets(args); err != nil {
+	if err := n.loadNodeWallets(); err != nil {
 		return err
 	}
 
-	if err := n.startBlockchainClients(args); err != nil {
+	if err := n.startBlockchainClients(); err != nil {
 		return err
 	}
 
@@ -137,7 +137,7 @@ func (n *Command) Run(
 				panic(r)
 			}
 		}()
-		if err := n.startBlockchain(tmHome, network, networkURL); err != nil {
+		if err := n.startBlockchain(log, tmHome, network, networkURL); err != nil {
 			errCh <- err
 		}
 		// start the nullblockchain if we are in that mode, it *needs* to be after we've started the gRPC server
@@ -270,7 +270,7 @@ func (n *Command) startAPIs() error {
 		}
 		n.adminServer = adminServer
 	} else {
-		adminServer, err := admin.NewNonValidatorServer(n.Log, n.conf.Admin, n.vegaPaths, n.protocol.GetProtocolUpgradeService())
+		adminServer, err := admin.NewNonValidatorServer(n.Log, n.conf.Admin, n.protocol.GetProtocolUpgradeService())
 		if err != nil {
 			return err
 		}
@@ -287,7 +287,7 @@ func (n *Command) startAPIs() error {
 	return nil
 }
 
-func (n *Command) startBlockchain(tmHome, network, networkURL string) error {
+func (n *Command) startBlockchain(log *logging.Logger, tmHome, network, networkURL string) error {
 	// make sure any env variable is resolved
 	tmHome = os.ExpandEnv(tmHome)
 	n.abciApp = newAppW(n.protocol.Abci())
@@ -296,7 +296,7 @@ func (n *Command) startBlockchain(tmHome, network, networkURL string) error {
 	case blockchain.ProviderTendermint:
 		var err error
 		// initialise the node
-		n.tmNode, err = n.startABCI(n.abciApp, tmHome, network, networkURL)
+		n.tmNode, err = n.startABCI(log, n.abciApp, tmHome, network, networkURL)
 		if err != nil {
 			return err
 		}
@@ -339,7 +339,7 @@ func (n *Command) startBlockchain(tmHome, network, networkURL string) error {
 	return nil
 }
 
-func (n *Command) setupCommon(_ []string) (err error) {
+func (n *Command) setupCommon() (err error) {
 	// this shouldn't happen, the context is initialized in here
 	if n.cancel != nil {
 		n.cancel()
@@ -359,7 +359,7 @@ func (n *Command) setupCommon(_ []string) (err error) {
 	conf := n.confWatcher.Get()
 
 	// reload logger with the setup from configuration
-	n.Log = logging.NewLoggerFromConfig(conf.Logging)
+	n.Log = logging.NewLoggerFromConfig(conf.Logging).Named(n.Log.GetName())
 
 	// enable pprof if necessary
 	if conf.Pprof.Enabled {
@@ -381,7 +381,7 @@ func (n *Command) setupCommon(_ []string) (err error) {
 	return err
 }
 
-func (n *Command) loadNodeWallets(_ []string) (err error) {
+func (n *Command) loadNodeWallets() (err error) {
 	// if we are a non-validator, nothing needs to be done here
 	if !n.conf.IsValidator() {
 		return nil
@@ -395,7 +395,7 @@ func (n *Command) loadNodeWallets(_ []string) (err error) {
 	return n.nodeWallets.Verify()
 }
 
-func (n *Command) startABCI(app types.Application, tmHome string, network string, networkURL string) (*abci.TmNode, error) {
+func (n *Command) startABCI(log *logging.Logger, app types.Application, tmHome string, network string, networkURL string) (*abci.TmNode, error) {
 	var (
 		genesisDoc *tmtypes.GenesisDoc
 		err        error
@@ -411,14 +411,14 @@ func (n *Command) startABCI(app types.Application, tmHome string, network string
 
 	return abci.NewTmNode(
 		n.conf.Blockchain,
-		n.Log,
+		log,
 		tmHome,
 		app,
 		genesisDoc,
 	)
 }
 
-func (n *Command) startBlockchainClients(_ []string) error {
+func (n *Command) startBlockchainClients() error {
 	// just intantiate the client here, we'll setup the actual impl later on
 	// when the null blockchain or tendermint is started.
 	n.blockchainClient = blockchain.NewClient()

@@ -122,7 +122,7 @@ func (l *WalletLoader) Import(sourceFilePath string, passphrase string) (*Wallet
 	return destWallet, data, nil
 }
 
-func newWallet(loader loader, store *storev1.Store, walletName, passphrase string) (*Wallet, error) {
+func newWallet(loader loader, store *storev1.FileStore, walletName, passphrase string) (*Wallet, error) {
 	ctx := context.Background()
 	if err := store.UnlockWallet(ctx, walletName, passphrase); err != nil {
 		return nil, fmt.Errorf("could not unlock the wallet %q: %w", walletName, err)

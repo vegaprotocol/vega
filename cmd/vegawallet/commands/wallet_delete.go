@@ -43,12 +43,13 @@ type RemoveWalletHandler func(api.AdminRemoveWalletParams) error
 
 func NewCmdDeleteWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminRemoveWalletParams) error {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		deleteWallet := api.NewAdminRemoveWallet(s)
+		deleteWallet := api.NewAdminRemoveWallet(walletStore)
 
 		_, errDetails := deleteWallet.Handle(context.Background(), params)
 		if errDetails != nil {
