@@ -32,7 +32,7 @@ Feature: Position resolution case 5 lognormal risk model
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book; 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001, 0013-ACCT-022
+  Scenario: 001 using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book; 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001, 0013-ACCT-022
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -242,3 +242,77 @@ Feature: Position resolution case 5 lognormal risk model
     # When a market is closed, the insurance pool account has its outstanding funds transferred to the [network treasury]
     And the network treasury balance should be "5470" for the asset "USD"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
+
+Scenario: 002 create a suicidal trade from "designatedLooser" to get closeout immediately after trade 
+
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party            | asset | amount        |
+      | sellSideProvider | USD   | 1000000000000 |
+      | buySideProvider  | USD   | 1000000000000 |
+      | designatedLooser | USD   | 22000         |
+      | aux              | USD   | 1000000000000 |
+      | aux2             | USD   | 1000000000000 |
+      | lpprov           | USD   | 1000000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | sell | ASK              | 50         | 100    | amendment  |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 10     | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | sell | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the mark price should be "150" for the market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    # insurance pool generation - setup orderbook
+    When the parties place the following orders with ticks:
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | sellSideProvider | ETH/DEC19 | sell | 290    | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+      | buySideProvider  | ETH/DEC19 | buy  | 100    | 140   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
+
+    And the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest |
+      | 150        | TRADING_MODE_CONTINUOUS | 731          | 9000           | 1             |
+    #target_stake = mark_price x max_oi x target_stake_scaling_factor x rf=150*10*1*0.4878731=731
+
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | volume | price |
+      | buy  | 10     | 1     |
+      | buy  | 225    | 40    |
+      | buy  | 100    | 140   |
+      | sell | 290    | 150   |
+      | sell | 36     | 250   |
+      | sell | 10     | 2000  |
+
+    Then the parties should have the following profit and loss:
+      | party | volume | unrealised pnl | realised pnl |
+      | aux   | 1      | 0              | 0            |
+      | aux2  | -1     | 0              | 0            |
+
+    # insurance pool generation - trade
+    When the parties place the following orders with ticks:
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+
+    Then the parties should have the following account balances:
+      | party            | asset | market id | margin | general |
+      | designatedLooser | USD   | ETH/DEC19 | 0      | 0       |
+
+    Then the parties should have the following margin levels:
+      | party            | market id | maintenance | search | initial | release |
+      | designatedLooser | ETH/DEC19 | 0           | 0      | 0       | 0       |
+
+    Then the parties should have the following profit and loss:
+      | party            | volume | unrealised pnl | realised pnl |
+      | designatedLooser | 0      | 0              | -17650       |
+      | sellSideProvider | -290   | 0              | 0            |
+     
+
+   
