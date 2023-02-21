@@ -1,6 +1,22 @@
 # Changelog
 
-## Unreleased 0.68.0
+## Unreleased 0.69.0
+
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [7535](https://github.com/vegaprotocol/vega/issues/7535) - Fix network history load takes an increasingly long time to complete
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.68.0
 
 ### 🚨 Breaking changes
 - [7304](https://github.com/vegaprotocol/vega/issues/7304) - In the `datanode` `GraphQL` schema, move `fromEpoch` and `toEpoch` into a new `filter` for `epochRewardSummaries` query. Also add `assetIds` and `marketIds` to the same filter.
@@ -79,7 +95,8 @@
 - [7629](https://github.com/vegaprotocol/vega/issues/7629) - Handle error from `e.initialiseTree()` in the snapshot engine
 - [7607](https://github.com/vegaprotocol/vega/issues/7607) - Fix handling of removed transfers
 - [7622](https://github.com/vegaprotocol/vega/issues/7622) - Fix cleaning path for Visor when restarting data node
-- [7535](https://github.com/vegaprotocol/vega/issues/7535) - Fix network history load takes an increasingly long time to complete
+- [7638](https://github.com/vegaprotocol/vega/issues/7638) - Add missing fields to position update resolver
+- [7647](https://github.com/vegaprotocol/vega/issues/7647) - Assure LP orders never trade on entry
 
 ## 0.67.2
 
