@@ -63,6 +63,7 @@ func (os *Order) Types() []events.Type {
 	return []events.Type{
 		events.OrderEvent,
 		events.ExpiredOrdersEvent,
+		events.EndBlockEvent,
 	}
 }
 
