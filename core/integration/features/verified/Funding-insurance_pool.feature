@@ -313,6 +313,8 @@ Scenario: 002 create a suicidal trade from "designatedLooser" to get closeout im
       | party            | volume | unrealised pnl | realised pnl |
       | designatedLooser | 0      | 0              | -17650       |
       | sellSideProvider | -290   | 0              | 0            |
+
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
      
 
    
