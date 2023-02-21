@@ -74,6 +74,10 @@ Feature: Position resolution case 5 lognormal risk model
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | volume | price |
       | buy  | 10     | 1     |
+      | buy  | 225    | 40    |
+      | buy  | 1      | 140   |
+      | sell | 290    | 150   |
+      | sell | 36     | 250   |
       | sell | 10     | 2000  |
 
     Then the parties should have the following profit and loss:
@@ -95,13 +99,18 @@ Feature: Position resolution case 5 lognormal risk model
       | designatedLooser | ETH/DEC19 | 47134       | 56560  | 70701   | 94268   |
 
     Then the order book should have the following volumes for market "ETH/DEC19":
-      | side | price | volume |
-      | buy  | 1     | 10     |
-      | buy  | 140   | 1      |
+     | side | volume | price |
+      | buy  | 10     | 1     |
+      | buy  | 225    | 40    |
+      | buy  | 1      | 140   |
+      | sell | 0      | 150   |
+      | sell | 0      | 250   |
+      | sell | 10     | 2000  |
+      | sell | 5      | 2100  |
 
     #designatedLooser has position of vol 290; price 150; calculated risk factor long: 0.336895684; risk factor short: 0.4878731
-    #what's on the order book to cover the position is shown above, which makes the exit price 13 =(1*10+140*1)/11, slippage per unit is 150-13=137
-    #margin level is PositionVol*(markPrice*RiskFactor+SlippagePerUnit) = 290*(150*0.336895684+137)=54384
+    #what's on the order book to cover the position is shown above, which makes the exit price 38.77118644 =(140*1+40*225+1*10)/236, slippage per unit is 150-38.77118644=111.2288136
+    #margin level is PositionVol*(markPrice*RiskFactor+SlippagePerUnit) = 290*(150*0.336895684+111.2288136)=46911.3182
 
     # insurance pool generation - modify order book
     Then the parties cancel the following orders:
