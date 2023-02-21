@@ -17,7 +17,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/pkg/errors"
@@ -37,13 +36,11 @@ type NotaryStore interface {
 type Notary struct {
 	subscriber
 	store NotaryStore
-	log   *logging.Logger
 }
 
-func NewNotary(store NotaryStore, log *logging.Logger) *Notary {
+func NewNotary(store NotaryStore) *Notary {
 	return &Notary{
 		store: store,
-		log:   log,
 	}
 }
 

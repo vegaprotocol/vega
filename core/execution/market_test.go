@@ -206,6 +206,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 		feeConfig        = fee.NewDefaultConfig()
 		liquidityConfig  = liquidity.NewDefaultConfig()
 	)
+	positionConfig.StreamPositionVerbose = true
 
 	oracleEngine := oracles.NewEngine(tm.log, oracles.NewDefaultConfig(), tm.timeService, tm.broker)
 
@@ -4470,6 +4471,12 @@ func TestOrderBook_ExpiredOrderTriggersReprice(t *testing.T) {
 			switch evt := e.(type) {
 			case *events.Order:
 				found[evt.Order().Id] = evt.Order()
+			case *events.ExpiredOrders:
+				for _, oid := range evt.OrderIDs() {
+					found[oid] = &proto.Order{
+						Status: types.OrderStatusExpired,
+					}
+				}
 			}
 		}
 
@@ -4890,9 +4897,11 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder2(t *testing.T) {
 		orders := []*types.Order{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
-			case *events.Order:
-				if evt.Order().Status == types.OrderStatusExpired {
-					orders = append(orders, mustOrderFromProto(evt.Order()))
+			case *events.ExpiredOrders:
+				for _, oid := range evt.OrderIDs() {
+					orders = append(orders, &types.Order{
+						ID: oid,
+					})
 				}
 			}
 		}

@@ -18,7 +18,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -34,16 +33,11 @@ type snapAdder interface {
 type SnapshotData struct {
 	subscriber
 	store snapAdder
-	log   *logging.Logger
 }
 
-func NewSnapshotData(
-	store snapAdder,
-	log *logging.Logger,
-) *SnapshotData {
+func NewSnapshotData(store snapAdder) *SnapshotData {
 	return &SnapshotData{
 		store: store,
-		log:   log,
 	}
 }
 

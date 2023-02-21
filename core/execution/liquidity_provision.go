@@ -36,6 +36,8 @@ func (m *Market) SubmitLiquidityProvision(
 	party, deterministicID string,
 ) (err error,
 ) {
+	defer m.onTxProcessed()
+
 	m.idgen = idgeneration.New(deterministicID)
 	defer func() { m.idgen = nil }()
 
@@ -205,6 +207,8 @@ func (m *Market) SubmitLiquidityProvision(
 
 // AmendLiquidityProvision forwards a LiquidityProvisionAmendment to the Liquidity Engine.
 func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string, deterministicID string) (err error) {
+	defer m.onTxProcessed()
+
 	m.idgen = idgeneration.New(deterministicID)
 	defer func() { m.idgen = nil }()
 
@@ -288,6 +292,8 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 
 // CancelLiquidityProvision forwards a LiquidityProvisionCancel to the Liquidity Engine.
 func (m *Market) CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party string) (err error) {
+	defer m.onTxProcessed()
+
 	if !m.canSubmitCommitment() {
 		return ErrCommitmentSubmissionNotAllowed
 	}

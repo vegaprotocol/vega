@@ -365,7 +365,6 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 	g.srv = grpc.NewServer(intercept)
 
 	coreProxySvc := &coreProxyService{
-		log:               g.log,
 		conf:              g.Config,
 		coreServiceClient: g.vegaCoreServiceClient,
 		eventObserver:     g.eventObserver,

@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/metrics"
-	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"github.com/pkg/errors"
@@ -35,7 +34,6 @@ type CoreServiceClient interface {
 // core service acts as a proxy to the trading service in core node.
 type coreProxyService struct {
 	protoapi.UnimplementedCoreServiceServer
-	log  *logging.Logger
 	conf Config
 
 	coreServiceClient CoreServiceClient

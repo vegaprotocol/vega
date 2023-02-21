@@ -29,6 +29,7 @@ func TestSignTransaction(t *testing.T) {
 	t.Run("Getting internal error during the review does not sign the transaction", testGettingInternalErrorDuringReviewDoesNotSignTransaction)
 	t.Run("No healthy node available does not sign the transaction", testNoHealthyNodeAvailableDoesNotSignTransaction)
 	t.Run("Failing to get spam statistics does not sign the transaction", testFailingToGetSpamStatsDoesNotSignTransaction)
+	t.Run("Failing spam check aborts signing the transaction", testFailingSpamChecksAbortsSigningTheTransaction)
 }
 
 func testSigningTransactionWithInvalidParamsFails(t *testing.T) {
@@ -427,7 +428,7 @@ func testFailingToGetSpamStatsDoesNotSignTransaction(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-func TestFailingSpamChecksAbortsSigningTheTransaction(t *testing.T) {
+func testFailingSpamChecksAbortsSigningTheTransaction(t *testing.T) {
 	// given
 	ctx, traceID := clientContextForTest()
 	hostname := vgrand.RandomStr(5)
@@ -482,7 +483,7 @@ func TestFailingSpamChecksAbortsSigningTheTransaction(t *testing.T) {
 	require.NotNil(t, errorDetails)
 	assert.Equal(t, api.ErrorCodeRequestHasBeenCancelledByApplication, errorDetails.Code)
 	assert.Equal(t, "Application error", errorDetails.Message)
-	assert.Equal(t, api.ErrTransactionBlockedBySpamRules.Error(), errorDetails.Data)
+	assert.Equal(t, assert.AnError.Error(), errorDetails.Data)
 	assert.Empty(t, result)
 }
 

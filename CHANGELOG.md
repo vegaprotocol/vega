@@ -9,14 +9,14 @@
 - [7361](https://github.com/vegaprotocol/vega/issues/7361) - Network history loading and current order set tracking - database requires database to be dropped
 - [6963](https://github.com/vegaprotocol/vega/issues/7382) - `IssueSignatures` is no longer a validator command and is now protected by the spam engine
 - [7445](https://github.com/vegaprotocol/vega/issues/7445) - Added rate limiting to `GRPC`, `Rest` and `GraphQL` `APIs`
+- [7614](https://github.com/vegaprotocol/vega/issues/7614) - Market parties added to snapshot state to ensure proper restoration
 - [7542](https://github.com/vegaprotocol/vega/issues/7542) - Add optional slippage factors to market proposal and use them to cap slippage component of maintenance margin
-
-
 
 ### 🗑️ Deprecation
 - [7385](https://github.com/vegaprotocol/vega/issues/7385) - Deprecating the `X-Vega-Connection` HTTP header in `datanode` `API` and `REST` and `GraphQL` gateways.
 
 ### 🛠 Improvements
+- [7501](https://github.com/vegaprotocol/vega/issues/7501) - Make logs more clear
 - [7386](https://github.com/vegaprotocol/vega/issues/7386) - Add indexed filtering by command type to block explorer
 - [6962](https://github.com/vegaprotocol/vega/issues/6962) - Add a dedicated configuration for the wallet service
 - [7434](https://github.com/vegaprotocol/vega/issues/7434) - Update design architecture diagram
@@ -38,6 +38,10 @@
 - [7564](https://github.com/vegaprotocol/vega/issues/7564) - Add logging when database migrations are run
 - [7546](https://github.com/vegaprotocol/vega/issues/7546) - Visor automatically uses snapshot on core based on latest data node snapshot.
 - [7576](https://github.com/vegaprotocol/vega/issues/7576) - include the application version in the block hash
+- [7605](https://github.com/vegaprotocol/vega/issues/7605) - Return better error text when the wallet blocks a transaction due to spam rules
+- [7591](https://github.com/vegaprotocol/vega/issues/7591) - Add metadata and links to app to the network configuration
+- [7632](https://github.com/vegaprotocol/vega/issues/7632) - Make the wallet change events JSON friendly
+- [7601](https://github.com/vegaprotocol/vega/issues/7601) - introduce the expired orders event for optimisation.
 
 ### 🐛 Fixes
 - [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema
@@ -68,7 +72,13 @@
 - [7543](https://github.com/vegaprotocol/vega/issues/7543) - Initiate post-auction close out only when all the parked orders get redeployed
 - [7508](https://github.com/vegaprotocol/vega/issues/7508) - Assure transfer events always sent after margin recheck
 - [7492](https://github.com/vegaprotocol/vega/issues/7492) - Send market depth events at the end of each block
-- [7580](https://github.com/vegaprotocol/vega/issues/7580) - Use the correct network parameter to value `Statistics.Pow.NumberOfPastBlocks`
+- [7582](https://github.com/vegaprotocol/vega/issues/7582) - Validate transfer amount in `checkTx`
+- [7582](https://github.com/vegaprotocol/vega/issues/7625) - Add validation to wallet's server configuration
+- [7577](https://github.com/vegaprotocol/vega/issues/7577) - Use correct trade size when calculating pending open volume
+- [7598](https://github.com/vegaprotocol/vega/issues/7598) - Set up log for rate limiter
+- [7629](https://github.com/vegaprotocol/vega/issues/7629) - Handle error from `e.initialiseTree()` in the snapshot engine
+- [7607](https://github.com/vegaprotocol/vega/issues/7607) - Fix handling of removed transfers
+- [7622](https://github.com/vegaprotocol/vega/issues/7622) - Fix cleaning path for Visor when restarting data node
 
 ## 0.67.2
 
@@ -166,7 +176,6 @@
 - [7195](https://github.com/vegaprotocol/vega/issues/7195) - Ignore oracle messages while market is in proposed state
 - [7198](https://github.com/vegaprotocol/vega/issues/7198) - Reduce `RAM` usage when tendermint calls list snapshot
 - [6996](https://github.com/vegaprotocol/vega/issues/6996) - Add Visor docs
-- [7577](https://github.com/vegaprotocol/vega/issues/7577) - Use correct trade size when calculating pending open volume
 
 ## 0.65.0
 

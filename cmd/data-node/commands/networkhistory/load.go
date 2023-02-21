@@ -76,7 +76,7 @@ func (cmd *loadCmd) Execute(args []string) error {
 	}
 
 	if hasSchema {
-		err = verifyChainID(log, cmd.SQLStore.ConnectionConfig, cmd.ChainID)
+		err = verifyChainID(cmd.SQLStore.ConnectionConfig, cmd.ChainID)
 		if err != nil {
 			if !errors.Is(err, networkhistory.ErrChainNotFound) {
 				return fmt.Errorf("failed to verify chain id:%w", err)

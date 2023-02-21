@@ -231,7 +231,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the network treasury balance should be "2000000000" for the asset "ETH"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
-  Scenario: Same as above, but the other market already terminated before the end of scenario, expecting 0 balances in per market insurance pools - all should go to per asset insurance pool (0002-STTL-additional-tests, 0005-COLL-002, 0015-INSR-002)
+  Scenario: Same as above, but the other market already terminated before the end of scenario, expecting 0 balances in per market insurance pools - all should go to per asset insurance pool (0002-STTL-additional-tests, 0005-COLL-002, 0015-INSR-002, 0032-PRIM-018)
 
     Given the initial insurance pool balance is "1000000000" for all the markets
     Given the parties deposit on asset's general account the following amount:
@@ -287,7 +287,9 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | aux2  | ETH/DEC21 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | aux1  | ETH/DEC21 | sell | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
+      | 100000     | TRADING_MODE_CONTINUOUS | 1       | 90001     | 110000    | 200000000    | 3000000000000  | 0             | 99900                 | 100000           | 100100                  |
 
     Then the network moves ahead "2" blocks
 
@@ -309,12 +311,16 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | name             | value |
       | prices.ETH.value | 70000 |
 
+    # settlement price is 70000 which is outside price monitoring bounds, and this will not trigger auction
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    Then the market state should be "STATE_SETTLED" for the market "ETH/DEC21"
     And the network moves ahead "1" blocks
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "1500000000" for the market "ETH/DEC19"
     And the network treasury balance should be "500000000" for the asset "ETH"
 
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
+
 
     When the parties place the following orders:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
@@ -608,4 +614,6 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the network treasury balance should be "25000000" for the asset "ETH"
     And the insurance pool balance should be "75000000" for the market "ETH/DEC19"
+
+
 

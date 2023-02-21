@@ -15,11 +15,11 @@ package sqlsubscribers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"github.com/pkg/errors"
 )
 
 type LiquidityProvisionEvent interface {
@@ -35,13 +35,11 @@ type LiquidityProvisionStore interface {
 type LiquidityProvision struct {
 	subscriber
 	store LiquidityProvisionStore
-	log   *logging.Logger
 }
 
-func NewLiquidityProvision(store LiquidityProvisionStore, log *logging.Logger) *LiquidityProvision {
+func NewLiquidityProvision(store LiquidityProvisionStore) *LiquidityProvision {
 	return &LiquidityProvision{
 		store: store,
-		log:   log,
 	}
 }
 

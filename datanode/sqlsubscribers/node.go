@@ -20,7 +20,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -51,13 +50,11 @@ type NodeStore interface {
 type Node struct {
 	subscriber
 	store NodeStore
-	log   *logging.Logger
 }
 
-func NewNode(store NodeStore, log *logging.Logger) *Node {
+func NewNode(store NodeStore) *Node {
 	return &Node{
 		store: store,
-		log:   log,
 	}
 }
 

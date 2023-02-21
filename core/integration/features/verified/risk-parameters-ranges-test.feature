@@ -372,70 +372,70 @@ Feature: test risk model parameter ranges
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR0  | 192073 | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR0  | 11986  | 49999999893293 | 0     |
-      | party2 | USD   | ETH/MAR0  | 47374  | 49999999589631 | 0     |
+      | party1 | USD   | ETH/MAR0  | 11986  | 49999999893293 |       |
+      | party2 | USD   | ETH/MAR0  | 47374  | 49999999589631 |       |
     # intial margin level for LP = 92*1000*1.2*3.5569036=392682
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR11 | 265987 | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR11 | 12595  | 49999999893293 | 0     |
-      | party2 | USD   | ETH/MAR11 | 65605  | 49999999589631 | 0     |
+      | party1 | USD   | ETH/MAR11 | 12595  | 49999999893293 |       |
+      | party2 | USD   | ETH/MAR11 | 65605  | 49999999589631 |       |
     # intial margin level for LP = 92*1000*1.2*4.9256840 =543796
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR12 | 36284  | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR12 | 7350   | 49999999893293 | 0     |
-      | party2 | USD   | ETH/MAR12 | 10286  | 49999999589631 | 0     |
+      | party1 | USD   | ETH/MAR12 | 7350   | 49999999893293 |       |
+      | party2 | USD   | ETH/MAR12 | 10286  | 49999999589631 |       |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR21 | 34     | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR21 | 1423   | 49999999893293 | 0     |
-      | party2 | USD   | ETH/MAR21 | 1423   | 49999999589631 | 0     |
+      | party1 | USD   | ETH/MAR21 | 1423   | 49999999893293 |       |
+      | party2 | USD   | ETH/MAR21 | 1423   | 49999999589631 |       |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR22 | 192073 | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR22 | 11986  | 49999999893293 | 0     |
-      | party2 | USD   | ETH/MAR22 | 47374  | 49999999589631 | 0     |
+      | party1 | USD   | ETH/MAR22 | 11986  | 49999999893293 |       |
+      | party2 | USD   | ETH/MAR22 | 47374  | 49999999589631 |       |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR31 | 192073 | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR31 | 11986  | 49999999893293 | 0     |
-      | party2 | USD   | ETH/MAR31 | 47374  | 49999999589631 | 0     |
+      | party1 | USD   | ETH/MAR31 | 11986  | 49999999893293 |       |
+      | party2 | USD   | ETH/MAR31 | 47374  | 49999999589631 |       |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR32 | 192073 | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR32 | 11986  | 49999999893293 | 0     |
-      | party2 | USD   | ETH/MAR32 | 47374  | 49999999589631 | 0     |
+      | party1 | USD   | ETH/MAR32 | 11986  | 49999999893293 |       |
+      | party2 | USD   | ETH/MAR32 | 47374  | 49999999589631 |       |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR41 | 192073 | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR41 | 11986  | 49999999893293 | 0     |
-      | party2 | USD   | ETH/MAR41 | 47374  | 49999999589631 | 0     |
+      | party1 | USD   | ETH/MAR41 | 11986  | 49999999893293 |       |
+      | party2 | USD   | ETH/MAR41 | 47374  | 49999999589631 |       |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR42 | 192073 | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR42 | 11986  | 49999999893293 | 0     |
-      | party2 | USD   | ETH/MAR42 | 47374  | 49999999589631 | 0     |
+      | party1 | USD   | ETH/MAR42 | 11986  | 49999999893293 |       |
+      | party2 | USD   | ETH/MAR42 | 47374  | 49999999589631 |       |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR43 | 192073 | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR43 | 11986  | 49999999893293 | 0     |
-      | party2 | USD   | ETH/MAR43 | 47374  | 49999999589631 | 0     |
+      | party1 | USD   | ETH/MAR43 | 11986  | 49999999893293 |       |
+      | party2 | USD   | ETH/MAR43 | 47374  | 49999999589631 |       |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR51 | 108    | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR51 | 1437   | 49999999893293 | 0     |
-      | party2 | USD   | ETH/MAR51 | 1437   | 49999999589631 | 0     |
+      | party1 | USD   | ETH/MAR51 | 1437   | 49999999893293 |       |
+      | party2 | USD   | ETH/MAR51 | 1437   | 49999999589631 |       |
 
   @Now
   Scenario: 002, test market ETH/MAR23 (tau=1)
@@ -495,8 +495,8 @@ Feature: test risk model parameter ranges
     And the parties should have the following account balances:
       | party  | asset | market id | margin    | general        | bond    |
       | party0 | USD   | ETH/MAR23 | 461953956 | 49999533046044 | 5000000 |
-      | party1 | USD   | ETH/MAR23 | 14558     | 49999999985442 | 0       |
-      | party2 | USD   | ETH/MAR23 | 1148316   | 49999998851684 | 0       |
+      | party1 | USD   | ETH/MAR23 | 14558     | 49999999985442 |         |
+      | party2 | USD   | ETH/MAR23 | 1148316   | 49999998851684 |         |
 
   # initial margin level for LP = 1000*9092*86.2176101*1.2=9.4e8
 
@@ -558,8 +558,8 @@ Feature: test risk model parameter ranges
     And the parties should have the following account balances:
       | party  | asset | market id | margin      | general        | bond   |
       | party0 | USD   | ETH/MAR52 | 20083423736 | 49979915976264 | 600000 |
-      | party1 | USD   | ETH/MAR52 | 133         | 49999999999867 | 0      |
-      | party2 | USD   | ETH/MAR52 | 7363922     | 49999992636078 | 0      |
+      | party1 | USD   | ETH/MAR52 | 133         | 49999999999867 |        |
+      | party2 | USD   | ETH/MAR52 | 7363922     | 49999992636078 |        |
 
 # initial margin level for LP = 10*114559*55787.2881561700*1.2=7.66e10
 
