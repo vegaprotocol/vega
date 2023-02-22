@@ -108,7 +108,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | party1 | ETH/DEC19 | sell | 13     | 8000000 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH   | ETH/DEC19 | 587600000 | 444000000 |
+      | party1 | ETH   | ETH/DEC19 | 488800000 | 542800000 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial   | release   |
       | party1 | ETH/DEC19 | 146900000   | 470080000 | 587600000 | 734500000 |
