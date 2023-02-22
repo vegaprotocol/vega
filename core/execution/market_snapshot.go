@@ -182,7 +182,7 @@ func NewMarketFromSnapshot(
 		market.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
 	}
 
-	if mkt.State == types.MarketStateSettled {
+	if em.Closed {
 		market.closed = true
 		stateVarEngine.UnregisterStateVariable(asset, mkt.ID)
 	}
