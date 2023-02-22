@@ -128,6 +128,13 @@ type Interactor interface {
 	// It returns true if the user approved the signing of the transaction,
 	// false otherwise.
 	RequestTransactionReviewForSigning(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
+
+	// RequestTransactionReviewForChecking is used to prompt the user to check of the
+	// transaction a third-party application wants to receive. The wallet doesn't
+	// check the transaction.
+	// It returns true if the user approved the transaction,
+	// false otherwise.
+	RequestTransactionReviewForChecking(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
 }
 
 // WorkflowType defines the type of interaction workflow that started by a
@@ -178,11 +185,16 @@ var (
 )
 
 type ClientAPI struct {
-	connectWallet   *ClientConnectWallet
-	getChainID      *ClientGetChainID
-	listKeys        *ClientListKeys
-	signTransaction *ClientSignTransaction
-	sendTransaction *ClientSendTransaction
+	checkTransaction *ClientCheckTransaction
+	connectWallet    *ClientConnectWallet
+	getChainID       *ClientGetChainID
+	listKeys         *ClientListKeys
+	signTransaction  *ClientSignTransaction
+	sendTransaction  *ClientSendTransaction
+}
+
+func (a *ClientAPI) CheckTransaction(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	return a.checkTransaction.Handle(ctx, rawParams, connectedWallet)
 }
 
 func (a *ClientAPI) ConnectWallet(ctx context.Context, hostname string) (wallet.Wallet, *jsonrpc.ErrorDetails) {
@@ -208,6 +220,7 @@ func (a *ClientAPI) SendTransaction(ctx context.Context, rawParams jsonrpc.Param
 func BuildClientAPI(walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, spam SpamHandler) (*ClientAPI, error) {
 	clientAPI := &ClientAPI{}
 
+	clientAPI.checkTransaction = NewClientCheckTransaction(walletStore, interactor, nodeSelector, spam)
 	clientAPI.connectWallet = NewConnectWallet(walletStore, interactor)
 	clientAPI.getChainID = NewGetChainID(nodeSelector)
 	clientAPI.listKeys = NewListKeys(walletStore, interactor)
@@ -229,6 +242,7 @@ func AdminAPI(
 ) (*jsonrpc.Dispatcher, error) {
 	walletAPI := jsonrpc.NewDispatcher(log)
 	walletAPI.RegisterMethod("admin.annotate_key", NewAdminAnnotateKey(walletStore))
+	walletAPI.RegisterMethod("admin.check_transaction", NewAdminCheckTransaction(walletStore, netStore, nodeSelectorBuilder))
 	walletAPI.RegisterMethod("admin.close_connection", NewAdminCloseConnection(connectionsManager))
 	walletAPI.RegisterMethod("admin.close_connections_to_hostname", NewAdminCloseConnectionsToHostname(connectionsManager))
 	walletAPI.RegisterMethod("admin.close_connections_to_wallet", NewAdminCloseConnectionsToWallet(connectionsManager))

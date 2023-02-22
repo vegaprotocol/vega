@@ -476,6 +476,21 @@ func (mr *MockInteractorMockRecorder) RequestPermissionsReview(arg0, arg1, arg2,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestPermissionsReview", reflect.TypeOf((*MockInteractor)(nil).RequestPermissionsReview), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
+// RequestTransactionReviewForChecking mocks base method.
+func (m *MockInteractor) RequestTransactionReviewForChecking(arg0 context.Context, arg1 string, arg2 byte, arg3, arg4, arg5, arg6 string, arg7 time.Time) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RequestTransactionReviewForChecking", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RequestTransactionReviewForChecking indicates an expected call of RequestTransactionReviewForChecking.
+func (mr *MockInteractorMockRecorder) RequestTransactionReviewForChecking(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestTransactionReviewForChecking", reflect.TypeOf((*MockInteractor)(nil).RequestTransactionReviewForChecking), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+}
+
 // RequestTransactionReviewForSending mocks base method.
 func (m *MockInteractor) RequestTransactionReviewForSending(arg0 context.Context, arg1 string, arg2 byte, arg3, arg4, arg5, arg6 string, arg7 time.Time) (bool, error) {
 	m.ctrl.T.Helper()

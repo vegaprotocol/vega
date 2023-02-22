@@ -15,6 +15,7 @@ import (
 type Node interface {
 	Host() string
 	Stop() error
+	CheckTransaction(context.Context, *commandspb.Transaction) error
 	SendTransaction(context.Context, *commandspb.Transaction, apipb.SubmitTransactionRequest_Type) (string, error)
 	Statistics(ctx context.Context) (nodetypes.Statistics, error)
 	LastBlock(context.Context) (nodetypes.LastBlock, error)
