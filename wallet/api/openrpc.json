@@ -944,13 +944,6 @@
           "schema": {
             "type": "string"
           }
-        },
-        {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
         }
       ],
       "result": {
@@ -971,10 +964,6 @@
             {
               "name": "newWallet",
               "value": "my-new-wallet-name"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             }
           ],
           "result": {
