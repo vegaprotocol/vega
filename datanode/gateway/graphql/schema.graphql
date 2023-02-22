@@ -2136,6 +2136,8 @@ type StakeLinking {
   finalizedAt: Timestamp
   "The transaction hash (ethereum) which initiated the link/unlink"
   txHash: String!
+  "The (ethereum) block height of the link/unlink"
+  blockHeight: String!
 }
 
 "Position status can change if a position is distressed"
