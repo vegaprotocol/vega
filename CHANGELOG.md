@@ -65,6 +65,7 @@
 - [7591](https://github.com/vegaprotocol/vega/issues/7591) - Add metadata and links to app to the network configuration
 - [7632](https://github.com/vegaprotocol/vega/issues/7632) - Make the wallet change events JSON friendly
 - [7601](https://github.com/vegaprotocol/vega/issues/7601) - introduce the expired orders event for optimisation.
+- [7655](https://github.com/vegaprotocol/vega/issues/7655) - Require initial margin level to be met on new orders
 
 ### 🐛 Fixes
 - [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema
