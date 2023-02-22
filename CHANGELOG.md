@@ -13,6 +13,7 @@
 
 ### 🐛 Fixes
 - [7535](https://github.com/vegaprotocol/vega/issues/7535) - Fix network history load takes an increasingly long time to complete
+- [7659](https://github.com/vegaprotocol/vega/issues/7659) - Tidy up REST documentation for consistency
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
