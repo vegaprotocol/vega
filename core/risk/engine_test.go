@@ -15,7 +15,6 @@ package risk_test
 import (
 	"context"
 	"fmt"
-	"math"
 	"testing"
 	"time"
 
@@ -214,7 +213,7 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
 			return markPrice.Clone(), nil
 		})
-	riskevt, _, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, nil)
+	riskevt, _, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice)
 	assert.Nil(t, riskevt)
 	assert.NotNil(t, err)
 	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
@@ -401,7 +400,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 		general: 100000,
 		market:  "ETH/DEC19",
 	}
-	riskevt, _, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, markPrice.Clone(), nil)
+	riskevt, _, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, markPrice.Clone())
 	assert.NotNil(t, riskevt)
 	if riskevt == nil {
 		t.Fatal("expecting non nil risk update")
@@ -507,7 +506,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 
 	previousMarkPrice := num.NewUint(103)
 
-	riskevt, _, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, previousMarkPrice, nil)
+	riskevt, _, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, previousMarkPrice)
 	assert.NotNil(t, riskevt)
 	if riskevt == nil {
 		t.Fatal("expecting non nil risk update")
@@ -612,7 +611,7 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 		general: 100000,
 		market:  marketID,
 	}
-	riskevt, _, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, markPrice.Clone(), nil)
+	riskevt, _, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, markPrice.Clone())
 	require.NotNil(t, riskevt)
 	require.Nil(t, err)
 
@@ -651,7 +650,7 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 		general: 100000,
 		market:  marketID,
 	}
-	riskevt, _, err = testE.UpdateMarginOnNewOrder(context.Background(), evt, markPrice.Clone(), nil)
+	riskevt, _, err = testE.UpdateMarginOnNewOrder(context.Background(), evt, markPrice.Clone())
 	require.NotNil(t, riskevt)
 	require.Nil(t, err)
 
@@ -689,66 +688,16 @@ func testInitialMarginRequirement(t *testing.T) {
 			return markPrice.Clone(), nil
 		})
 	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(3)
-	riskevt, _, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, nil)
+	riskevt, _, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice)
 	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
 	assert.Nil(t, riskevt)
 
 	evt.general = initialMargin
-	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, nil)
+	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice)
 	assert.NoError(t, err)
 	assert.NotNil(t, riskevt)
 	assert.True(t, riskevt.MarginLevels().InitialMargin.EQ(num.NewUint(initialMargin)))
 
-	// market order reducing the position allowed despite margin shortage
-	evt.general = initialMargin - 1
-	order := &types.Order{Type: types.OrderTypeMarket, Side: types.SideBuy, Remaining: uint64(math.Abs(float64(evt.size))) - 2}
-	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, order)
-	assert.NoError(t, err)
-	assert.NotNil(t, riskevt)
-	assert.True(t, riskevt.Transfer().MinAmount.IsZero())
-
-	// market order reducing the position and resulting in opposite position not allowed due to margin shortage
-	order = &types.Order{Type: types.OrderTypeMarket, Side: types.SideBuy, Remaining: uint64(math.Abs(float64(evt.size))) + 2}
-	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, order)
-	assert.Error(t, err)
-	assert.Nil(t, riskevt)
-
-	// market order with same side as the position not allowed due to margin shortage
-	order = &types.Order{Type: types.OrderTypeMarket, Side: types.SideSell, Remaining: 1}
-	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, order)
-	assert.Error(t, err)
-	assert.Nil(t, riskevt)
-
-	// limit order reducing the position allowed despite margin shortage
-	order = &types.Order{Type: types.OrderTypeLimit, Side: types.SideBuy, Remaining: uint64(math.Abs(float64(evt.size))) - 2}
-	evt.general = initialMargin - 1
-	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, order)
-	assert.NoError(t, err)
-	assert.NotNil(t, riskevt)
-	assert.True(t, riskevt.Transfer().MinAmount.IsZero())
-
-	// limit order reducing the position and resulting in opposite position not allowed due to margin shortage
-	order = &types.Order{Type: types.OrderTypeLimit, Side: types.SideBuy, Remaining: uint64(math.Abs(float64(evt.size))) + 2}
-	evt.buy = int64(order.Remaining)
-	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, order)
-	assert.Error(t, err)
-	assert.Nil(t, riskevt)
-
-	// limit order reducing the position and resulting in opposite position (if all other orders with the same side were to fill)
-	// not allowed due to margin shortage
-	order = &types.Order{Type: types.OrderTypeLimit, Side: types.SideBuy, Remaining: uint64(math.Abs(float64(evt.size)))}
-	evt.buy = int64(order.Remaining) + 1
-	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, order)
-	assert.Error(t, err)
-	assert.Nil(t, riskevt)
-
-	// limit order with same side as the position not allowed due to margin shortage
-	order = &types.Order{Type: types.OrderTypeLimit, Side: types.SideSell, Remaining: 1}
-	evt.buy = 0
-	evt.sell = int64(order.Remaining)
-	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice, order)
-	assert.Error(t, err)
-	assert.Nil(t, riskevt)
 }
 
 func getTestEngine(t *testing.T) *testEngine {

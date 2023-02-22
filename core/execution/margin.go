@@ -35,7 +35,7 @@ func (m *Market) calcMarginsLiquidityProvisionAmendContinuous(
 		return err
 	}
 
-	_, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, e, m.getLastTradedPrice(), nil)
+	_, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, e, m.getLastTradedPrice())
 	if err != nil {
 		return err
 	}
@@ -145,7 +145,7 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 	if err != nil {
 		return nil, nil, err
 	}
-	risk, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, pos, price.Clone(), order)
+	risk, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, pos, price.Clone())
 	if err != nil {
 		return nil, nil, err
 	}
