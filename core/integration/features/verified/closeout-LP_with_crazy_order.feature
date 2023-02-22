@@ -58,7 +58,7 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
 
     And the parties should have the following account balances:
       | party   | asset | market id | margin  | general | bond   |
-      | traderB | USD   | ETH/DEC20 | 3100000 | 0   | 0 |
+      | traderB | USD   | ETH/DEC20 | 3100000 | 0       | 0      |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search  | initial | release |
       | traderB | ETH/DEC20 | 700001245     | 1050001867 | 1400002490 | 2100003735 |
