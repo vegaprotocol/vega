@@ -267,10 +267,12 @@ Scenario: Assure initial margin requirement must be met
 
     When the network moves ahead "1" blocks
     Then the parties should have the following profit and loss:
-          | party   | volume | unrealised pnl | realised pnl |
-          | trader1 | -10    | 0              | 0            |
-          | trader2 | -10    | 0              | 0            |
-          | trader3 | 20     | 0              | 0            |
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader1 | -10    | 0              | 0            |
+      | trader2 | -10    | 0              | 0            |
+      | trader3 | 20     | 0              | 0            |
+    
+    # both parties end up with same margin levels and account balances
     And the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
       | trader1  | ETH/DEC19 | 406         | 609    | 812     | 1218    |
@@ -281,4 +283,70 @@ Scenario: Assure initial margin requirement must be met
       | trader1  | USD   | ETH/DEC19 | 712    |      0  |
       | trader2  | USD   | ETH/DEC19 | 712    |      0  |
       | trader3  | USD   | ETH/DEC19 | 323    |      0  |
+   
 
+    # party places a limit order that would reduce its exposure once it fills
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader3 | ETH/DEC19 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the parties should have the following margin levels:
+      | party    | market id | maintenance | initial |
+      | trader3  | ETH/DEC19 | 321         | 642     |
+    
+    When the parties place the following orders with ticks:
+      | party      | market id | side | volume | price | resulting trades | type       | tif     |
+      | auxiliary2 | ETH/DEC19 | buy  | 2      | 10    | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader3 | 19     | 0              | 0            |
+    And the parties should have the following margin levels:
+      | party    | market id | maintenance | initial |
+      | trader3  | ETH/DEC19 | 305         | 610     |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader3 | ETH/DEC19 | sell | 18     | 10    | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader3 | 18     | 0              | 0            |
+    And the parties should have the following margin levels:
+      | party    | market id | maintenance | initial |
+      | trader3  | ETH/DEC19 | 289         | 578     |
+
+    # position is long so extra buy order not allowed to skip margin check
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | error               |
+      | trader3 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | margin check failed |
+
+    # total order size now 20 which would flip the position if everything filled
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | error               |
+      | trader3 | ETH/DEC19 | sell | 3      | 10    | 0                | TYPE_LIMIT | TIF_GTC | margin check failed |
+
+    # position would get flipped if order got filled
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type        | tif     | error               |
+      | trader3 | ETH/DEC19 | sell | 19     | 0     | 0                | TYPE_MARKET | TIF_FOK | margin check failed |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type        | tif     |
+      | trader3 | ETH/DEC19 | sell | 1      | 0     | 1                | TYPE_MARKET | TIF_FOK |
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader3 | 17     | -85            | -5           |
+    And the parties should have the following margin levels:
+      | party    | market id | maintenance | initial |
+      | trader3  | ETH/DEC19 | 137         | 274     |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type        | tif     |
+      | trader3 | ETH/DEC19 | sell | 17     | 0     | 2                | TYPE_MARKET | TIF_FOK |
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader3 | 0      | 0              | -142           |
+    And the parties should have the following margin levels:
+      | party    | market id | maintenance | initial |
+      | trader3  | ETH/DEC19 | 61          | 122     |
+    And the parties should have the following account balances:
+      | party    | asset | market id | margin | general |
+      | trader3  | USD   | ETH/DEC19 | 181    |      0  |

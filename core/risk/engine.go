@@ -291,7 +291,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 // UpdateMarginOnNewOrder calculate the new margin requirement for a single order
 // this is intended to be used when a new order is created in order to ensure the
 // party margin account is at least at the InitialMargin level before the order is added to the book.
-func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, markPrice *num.Uint) (events.Risk, events.Margin, error) {
+func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, markPrice *num.Uint, ord *types.Order) (events.Risk, events.Margin, error) {
 	if evt == nil {
 		return nil, nil, nil
 	}
@@ -315,9 +315,11 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 
 	curMarginBalance := evt.MarginBalance()
 
-	// there's not enough monies in the accounts of the party,
-	// we break from here. The minimum requirement is INITIAL.
-	if num.Sum(curMarginBalance, evt.GeneralBalance()).LT(margins.InitialMargin) {
+	softMargin := orderReducesExposure(ord, evt)
+	if num.Sum(curMarginBalance, evt.GeneralBalance()).LT(margins.InitialMargin) && !softMargin {
+		// there's not enough monies in the accounts of the party
+		// and the order does not reduce party's exposure,
+		// we break from here. The minimum requirement is INITIAL.
 		return nil, nil, ErrInsufficientFundsForInitialMargin
 	}
 
@@ -330,7 +332,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	}
 
 	minAmount := num.UintZero()
-	if margins.MaintenanceMargin.GT(curMarginBalance) {
+	if margins.MaintenanceMargin.GT(curMarginBalance) && !softMargin {
 		minAmount.Sub(margins.MaintenanceMargin, curMarginBalance)
 	}
 
@@ -553,4 +555,33 @@ func (m marginChange) Transfer() *types.Transfer {
 
 func (m marginChange) MarginLevels() *types.MarginLevels {
 	return m.margins
+}
+
+func orderReducesExposure(ord *types.Order, pos events.Margin) bool {
+	if ord == nil || pos.Size() == 0 {
+		return false
+	}
+	// long position and short order
+	if pos.Size() > 0 && ord.Side == types.SideSell {
+		// market order reduces exposure and doesn't flip position to the other side
+		if pos.Size()-int64(ord.Remaining) >= 0 && ord.Type == types.OrderTypeMarket {
+			return true
+		}
+		// sum of all short limit orders wouldn't flip the position if filled (ord already included in pos)
+		if pos.Size()-pos.Sell() >= 0 {
+			return true
+		}
+	}
+	// short position and long order
+	if pos.Size() < 0 && ord.Side == types.SideBuy {
+		// market order reduces exposure and doesn't flip position to the other side
+		if pos.Size()+int64(ord.Remaining) <= 0 && ord.Type == types.OrderTypeMarket {
+			return true
+		}
+		// sum of all long limit orders wouldn't flip the position if filled (ord already included in pos)
+		if pos.Size()+pos.Buy() <= 0 {
+			return true
+		}
+	}
+	return false
 }
