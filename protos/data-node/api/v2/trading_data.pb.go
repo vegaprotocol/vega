@@ -15719,7 +15719,7 @@ type NetworkHistoryStatusResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The IPFS address of this node
+	// The IPFS address of the data node you're connecting to
 	IpfsAddress string `protobuf:"bytes,1,opt,name=ipfs_address,json=ipfsAddress,proto3" json:"ipfs_address,omitempty"`
 	// The swarm key
 	SwarmKey string `protobuf:"bytes,2,opt,name=swarm_key,json=swarmKey,proto3" json:"swarm_key,omitempty"`
