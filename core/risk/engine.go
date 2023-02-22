@@ -568,7 +568,7 @@ func orderReducesExposure(ord *types.Order, pos events.Margin) bool {
 			return true
 		}
 		// sum of all short limit orders wouldn't flip the position if filled (ord already included in pos)
-		if pos.Size()-pos.Sell() >= 0 {
+		if pos.Size()-pos.Sell() >= 0 && ord.Type == types.OrderTypeLimit {
 			return true
 		}
 	}
@@ -579,7 +579,7 @@ func orderReducesExposure(ord *types.Order, pos events.Margin) bool {
 			return true
 		}
 		// sum of all long limit orders wouldn't flip the position if filled (ord already included in pos)
-		if pos.Size()+pos.Buy() <= 0 {
+		if pos.Size()+pos.Buy() <= 0 && ord.Type == types.OrderTypeLimit {
 			return true
 		}
 	}
