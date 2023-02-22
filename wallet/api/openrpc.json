@@ -944,13 +944,6 @@
           "schema": {
             "type": "string"
           }
-        },
-        {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
         }
       ],
       "result": {
@@ -971,10 +964,6 @@
             {
               "name": "newWallet",
               "value": "my-new-wallet-name"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             }
           ],
           "result": {
@@ -1285,6 +1274,62 @@
                   ]
                 }
               }
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.rename_network",
+      "summary": "Renames a network",
+      "description": "This method renames a network in-place.\n\nIf the new name matches an existing network, it fails.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "network"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "network",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "newName",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Rename a network",
+          "params": [
+            {
+              "name": "network",
+              "value": "my-network"
+            },
+            {
+              "name": "newWallet",
+              "value": "my-new-network-name"
             }
           ],
           "result": {
