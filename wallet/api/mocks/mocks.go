@@ -294,6 +294,20 @@ func (mr *MockNetworkStoreMockRecorder) NetworkExists(arg0 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkExists", reflect.TypeOf((*MockNetworkStore)(nil).NetworkExists), arg0)
 }
 
+// RenameNetwork mocks base method.
+func (m *MockNetworkStore) RenameNetwork(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RenameNetwork", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RenameNetwork indicates an expected call of RenameNetwork.
+func (mr *MockNetworkStoreMockRecorder) RenameNetwork(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenameNetwork", reflect.TypeOf((*MockNetworkStore)(nil).RenameNetwork), arg0, arg1)
+}
+
 // SaveNetwork mocks base method.
 func (m *MockNetworkStore) SaveNetwork(arg0 *network.Network) error {
 	m.ctrl.T.Helper()

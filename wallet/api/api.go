@@ -44,6 +44,7 @@ type NetworkStore interface {
 	ListNetworks() ([]string, error)
 	GetNetworkPath(string) string
 	DeleteNetwork(string) error
+	RenameNetwork(currentName, newName string) error
 }
 
 type ConnectionsManager interface {

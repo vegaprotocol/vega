@@ -8,6 +8,7 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/paths"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/network"
 	v1 "code.vegaprotocol.io/vega/wallet/network/store/v1"
 	"github.com/stretchr/testify/assert"
@@ -27,36 +28,9 @@ func TestFileStoreV1(t *testing.T) {
 	t.Run("Getting networks path succeeds", testFileStoreV1GetNetworksPathSucceeds)
 	t.Run("Listing networks succeeds", testFileStoreV1ListingNetworksSucceeds)
 	t.Run("Deleting network succeeds", testFileStoreV1DeleteNetworkSucceeds)
-}
-
-func testFileStoreV1DeleteNetworkSucceeds(t *testing.T) {
-	vegaHome := newVegaHome(t)
-
-	// Create a network for us to delete
-	s, err := v1.InitialiseStore(vegaHome)
-	require.NoError(t, err)
-	assert.NotNil(t, s)
-
-	net := &network.Network{
-		Name: "test",
-	}
-
-	err = s.SaveNetwork(net)
-	require.NoError(t, err)
-
-	// Check it's really there
-	returnedNet, err := s.GetNetwork("test")
-	require.NoError(t, err)
-	assert.Equal(t, net, returnedNet)
-
-	// Now delete it
-	err = s.DeleteNetwork("test")
-	require.NoError(t, err)
-
-	// Check it's no longer there
-	returnedNet, err = s.GetNetwork("test")
-	require.Error(t, err)
-	assert.Nil(t, returnedNet)
+	t.Run("Renaming network succeeds", testFileStoreV1RenamingNetworkSucceeds)
+	t.Run("Renaming non-existing network fails", testFileStoreV1RenamingNonExistingNetworkFails)
+	t.Run("Renaming network with invalid name fails", testFileStoreV1RenamingNetworkWithInvalidNameFails)
 }
 
 func testNewStoreSucceeds(t *testing.T) {
@@ -291,7 +265,160 @@ func testFileStoreV1ListingNetworksSucceeds(t *testing.T) {
 	assert.Equal(t, []string{"toml"}, nets)
 }
 
-func initialiseFromPath(t *testing.T, vegaHome paths.Paths) *v1.Store {
+func testFileStoreV1DeleteNetworkSucceeds(t *testing.T) {
+	vegaHome := newVegaHome(t)
+
+	// Create a network for us to delete
+	s, err := v1.InitialiseStore(vegaHome)
+	require.NoError(t, err)
+	assert.NotNil(t, s)
+
+	net := &network.Network{
+		Name: "test",
+	}
+
+	err = s.SaveNetwork(net)
+	require.NoError(t, err)
+
+	// Check it's really there
+	returnedNet, err := s.GetNetwork("test")
+	require.NoError(t, err)
+	assert.Equal(t, net, returnedNet)
+
+	// Now delete it
+	err = s.DeleteNetwork("test")
+	require.NoError(t, err)
+
+	// Check it's no longer there
+	returnedNet, err = s.GetNetwork("test")
+	require.Error(t, err)
+	assert.Nil(t, returnedNet)
+}
+
+func testFileStoreV1RenamingNetworkSucceeds(t *testing.T) {
+	vegaHome := newVegaHome(t)
+
+	// Create a network for us to rename
+	s, err := v1.InitialiseStore(vegaHome)
+	require.NoError(t, err)
+	assert.NotNil(t, s)
+
+	// given
+	net := &network.Network{
+		Name: "test",
+	}
+
+	// when
+	err = s.SaveNetwork(net)
+
+	// then
+	require.NoError(t, err)
+	vgtest.AssertFileAccess(t, s.GetNetworkPath(net.Name))
+
+	// given
+	newName := vgrand.RandomStr(5)
+
+	// when
+	err = s.RenameNetwork(net.Name, newName)
+
+	// then
+	assert.NoError(t, err)
+	vgtest.AssertNoFile(t, s.GetNetworkPath(net.Name))
+	vgtest.AssertFileAccess(t, s.GetNetworkPath(newName))
+
+	// when
+	w1, err := s.GetNetwork(net.Name)
+
+	// then
+	assert.Error(t, err, api.ErrNetworkDoesNotExist)
+	assert.Nil(t, w1)
+
+	// when
+	w2, err := s.GetNetwork(newName)
+
+	// then
+	require.NoError(t, err)
+	assert.NotEmpty(t, w2)
+}
+
+func testFileStoreV1RenamingNonExistingNetworkFails(t *testing.T) {
+	vegaHome := newVegaHome(t)
+
+	// given
+	s, err := v1.InitialiseStore(vegaHome)
+	require.NoError(t, err)
+	assert.NotNil(t, s)
+
+	// given
+	unknownName := vgrand.RandomStr(5)
+	newName := vgrand.RandomStr(5)
+
+	// when
+	err = s.RenameNetwork(unknownName, newName)
+
+	// then
+	assert.ErrorIs(t, err, api.ErrNetworkDoesNotExist)
+	vgtest.AssertNoFile(t, s.GetNetworkPath(unknownName))
+	vgtest.AssertNoFile(t, s.GetNetworkPath(newName))
+}
+
+func testFileStoreV1RenamingNetworkWithInvalidNameFails(t *testing.T) {
+	vegaHome := newVegaHome(t)
+
+	// given
+	s, err := v1.InitialiseStore(vegaHome)
+	require.NoError(t, err)
+	assert.NotNil(t, s)
+
+	// given
+	net := &network.Network{
+		Name: "test",
+	}
+
+	// when
+	err = s.SaveNetwork(net)
+
+	// then
+	require.NoError(t, err)
+	vgtest.AssertFileAccess(t, s.GetNetworkPath(net.Name))
+
+	tcs := []struct {
+		name    string
+		newName string
+		err     error
+	}{
+		{
+			name:    "empty",
+			newName: "",
+			err:     v1.ErrNetworkNameCannotBeEmpty,
+		}, {
+			name:    "starting with a dot",
+			newName: ".start-with-dot",
+			err:     v1.ErrNetworkNameCannotStartWithDot,
+		}, {
+			name:    "containing slashes",
+			newName: "contains/multiple/slashes/",
+			err:     v1.ErrNetworkNameCannotContainSlash,
+		}, {
+			name:    "containing back-slashes",
+			newName: "contains\\multiple\\slashes\\",
+			err:     v1.ErrNetworkNameCannotContainSlash,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			// when
+			err := s.RenameNetwork(net.Name, tc.newName)
+
+			// then
+			require.ErrorIs(tt, err, tc.err)
+			vgtest.AssertNoFile(tt, s.GetNetworkPath(tc.newName))
+		})
+	}
+}
+
+func initialiseFromPath(t *testing.T, vegaHome paths.Paths) *v1.FileStore {
 	t.Helper()
 	s, err := v1.InitialiseStore(vegaHome)
 	if err != nil {
