@@ -2213,6 +2213,12 @@ type PositionUpdate {
 
   "RFC3339Nano time the position was updated"
   updatedAt: Timestamp
+
+  "The total amount of profit and loss that was not transferred due to loss socialisation"
+  lossSocializationAmount: String!
+
+  "Enum set if the position was closed out or orders were removed because party was distressed"
+  positionStatus: PositionStatus!
 }
 
 "An order in Vega, if active it will be on the order book for the market"
