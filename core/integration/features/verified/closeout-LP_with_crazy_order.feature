@@ -178,8 +178,11 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150000         | 112           |
 
     And the parties should have the following account balances:
+      | party   | asset | market id | margin | general       | 
+      | traderA | USD   | ETH/DEC21 | 13754  | 9999999985946 | 
+     
+    And the parties should have the following account balances:
       | party   | asset | market id | margin | general       | bond   |
-      | traderA | USD   | ETH/DEC21 | 13754  | 9999999985946 | 0      |
       | traderB | USD   | ETH/DEC21 | 511138 | 2439156       | 150000 |
 
     When the parties place the following orders with ticks:
@@ -187,10 +190,10 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | traderC | ETH/DEC21 | sell | 120    | 45000000000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin    | general       | bond |
-      | traderA | USD   | ETH/DEC21 | 13754     | 9999999985946 | 0    |
-      | traderB | USD   | ETH/DEC21 | 0         | 0             | 0    |
-      | traderC | USD   | ETH/DEC21 | 125493884 | 9999877606410 | 0    |
+      | party   | asset | market id | margin    | general       | 
+      | traderA | USD   | ETH/DEC21 | 13754     | 9999999985946 | 
+      | traderB | USD   | ETH/DEC21 | 0         | 0             | 
+      | traderC | USD   | ETH/DEC21 | 125493884 | 9999877606410 | 
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
@@ -236,7 +239,7 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search  | initial | release |
-      | traderB | ETH/DEC23 | 1449759     | 2174638 | 2899518 | 4349277 |
+      | traderB | ETH/DEC22 | 1449759     | 2174638 | 2899518 | 4349277 |
 
     # traderB has both LP pegged orders, limit order, and positions
     # margin for pegged orders long and short: max(76*3.5569036,5173*0.800728208)*350=1449758.457
@@ -279,9 +282,9 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150000         | 112           |
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general       | bond   |
-      | traderA | USD   | ETH/DEC22 | 13754  | 9999999985946 | 0      |
-      | traderB | USD   | ETH/DEC22 | 511138 | 2439156       | 150000 |
+      | party   | asset | market id | margin | general       | 
+      | traderA | USD   | ETH/DEC22 | 13754  | 9999999985946 | 
+      | traderB | USD   | ETH/DEC22 | 511138 | 2439156       | 
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price       | resulting trades | type       | tif     |
@@ -295,10 +298,10 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
     # margin_short= 13516.23368+627275918.7=627289434.9
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin     | general       | bond |
-      | traderA | USD   | ETH/DEC22 | 13754      | 9999999985946 | 0    |
-      | traderB | USD   | ETH/DEC22 | 0          | 0             | 0    |
-      | traderC | USD   | ETH/DEC22 | 1254554684 | 9998748545610 | 0    |
+      | party   | asset | market id | margin     | general       | 
+      | traderA | USD   | ETH/DEC22 | 13754      | 9999999985946 | 
+      | traderB | USD   | ETH/DEC22 | 0          | 0             | 
+      | traderC | USD   | ETH/DEC22 | 1254554684 | 9998748545610 | 
 
     And the market data for the market "ETH/DEC22" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
@@ -406,9 +409,9 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150000         | 112           |
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general       | bond   |
-      | traderA | USD   | ETH/DEC23 | 13754  | 9999999985946 | 0      |
-      | traderB | USD   | ETH/DEC23 | 511138 | 2439156       | 150000 |
+      | party   | asset | market id | margin | general       | 
+      | traderA | USD   | ETH/DEC23 | 13754  | 9999999985946 | 
+      | traderB | USD   | ETH/DEC23 | 511138 | 2439156       | 
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price       | resulting trades | type       | tif     |
@@ -436,10 +439,10 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
     # margin_short= 13516.23368+1207118.66=1220634.894
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin  | general       | bond   |
-      | traderA | USD   | ETH/DEC23 | 13754   | 9999999985946 | 0      |
-      | traderB | USD   | ETH/DEC23 | 2441270 | 509024        | 150000 |
-      | traderC | USD   | ETH/DEC23 | 42684   | 9999999957316 | 0      |
+      | party   | asset | market id | margin  | general       | 
+      | traderA | USD   | ETH/DEC23 | 13754   | 9999999985946 | 
+      | traderB | USD   | ETH/DEC23 | 2441270 | 509024        | 
+      | traderC | USD   | ETH/DEC23 | 42684   | 9999999957316 | 
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search  | initial | release |
@@ -462,9 +465,9 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | traderE | ETH/DEC23 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general | bond |
-      | traderD | USD   | ETH/DEC23 | 82     | 9918    | 0    |
-      | traderE | USD   | ETH/DEC23 | 4256   | 5743    | 0    |
+      | party   | asset | market id | margin | general | 
+      | traderD | USD   | ETH/DEC23 | 82     | 9918    | 
+      | traderE | USD   | ETH/DEC23 | 4256   | 5743    | 
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -473,9 +476,9 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
 
     #for traderD and E, zero position and zero orders results in all zero margin levels
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general | bond |
-      | traderD | USD   | ETH/DEC23 | 0      | 9999    | 0    |
-      | traderE | USD   | ETH/DEC23 | 0      | 9999    | 0    |
+      | party   | asset | market id | margin | general | 
+      | traderD | USD   | ETH/DEC23 | 0      | 9999    | 
+      | traderE | USD   | ETH/DEC23 | 0      | 9999    | 
 
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
