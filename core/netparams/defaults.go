@@ -25,9 +25,9 @@ import (
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
-const (
-	week = "168h0m0s"
-)
+// const (
+// 	week = "168h0m0s"
+// )
 
 var (
 	// Decimals.
