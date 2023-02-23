@@ -62,6 +62,7 @@ var (
 	fromEventsIntervalToHistoryTableDelta []map[string]tableDataSummary
 
 	snapshotsBackupDir string
+	eventsDir          string
 	eventsFile         string
 
 	networkHistoryService *networkhistory.Service
@@ -95,7 +96,7 @@ func TestMain(t *testing.M) {
 	}
 	defer os.RemoveAll(snapshotsBackupDir)
 
-	eventsDir, err := os.MkdirTemp("", "eventsdir")
+	eventsDir, err = os.MkdirTemp("", "eventsdir")
 	if err != nil {
 		panic(err)
 	}
@@ -1178,7 +1179,7 @@ type TestEventSource struct {
 }
 
 func newTestEventSource(onEvent func(events.Event, chan<- events.Event)) (*TestEventSource, error) {
-	evtSource, err := broker.NewFileEventSource(eventsFile, 0, 0, chainID)
+	evtSource, err := broker.NewBufferFilesEventSource(eventsDir, 0, 0, chainID)
 	if err != nil {
 		return nil, err
 	}
