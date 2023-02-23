@@ -493,9 +493,9 @@ func checkPriceMonitoring(parameters *protoTypes.PriceMonitoringParameters, pare
 			)
 		}
 
-		if probability <= 0 || probability >= 1 {
+		if probability <= 0.9 || probability >= 1 {
 			errs.AddForProperty(fmt.Sprintf("%s.price_monitoring_parameters.triggers.%d.probability", parentProperty, i),
-				errors.New("should be between 0 (exclusive) and 1 (exclusive)"),
+				errors.New("should be between 0.9 (exclusive) and 1 (exclusive)"),
 			)
 		}
 	}
