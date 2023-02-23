@@ -15,7 +15,7 @@ package genesis
 import (
 	"encoding/json"
 
-	tmtypes "github.com/tendermint/tendermint/types"
+	tmtypes "github.com/cometbft/cometbft/types"
 )
 
 func FromJSON(rawGenesisDoc []byte) (*tmtypes.GenesisDoc, *State, error) {

@@ -35,10 +35,10 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	snappb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
+	tmtypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/iavl"
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
-	tmtypes "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 )
 

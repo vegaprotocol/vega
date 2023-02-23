@@ -11,7 +11,7 @@ import (
 
 	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	gomock "github.com/golang/mock/gomock"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 )
 
 // MockBlockchain is a mock of Blockchain interface.

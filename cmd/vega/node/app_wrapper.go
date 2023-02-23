@@ -12,7 +12,7 @@
 
 package node
 
-import "github.com/tendermint/tendermint/abci/types"
+import "github.com/cometbft/cometbft/abci/types"
 
 type appW struct {
 	// this is the application currently in use
@@ -92,8 +92,10 @@ func (app *appW) ApplySnapshotChunk(
 	return app.impl.ApplySnapshotChunk(req)
 }
 
-func (app *appW) SetOption(
-	req types.RequestSetOption,
-) types.ResponseSetOption {
-	return app.impl.SetOption(req)
+func (app *appW) PrepareProposal(types.RequestPrepareProposal) types.ResponsePrepareProposal {
+	return types.ResponsePrepareProposal{}
+}
+
+func (app *appW) ProcessProposal(types.RequestProcessProposal) types.ResponseProcessProposal {
+	return types.ResponseProcessProposal{}
 }

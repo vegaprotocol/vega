@@ -24,8 +24,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	proto "code.vegaprotocol.io/vega/protos/vega"
-	tmtypes "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/encoding"
+	tmtypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/crypto/encoding"
 )
 
 var (

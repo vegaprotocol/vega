@@ -21,11 +21,11 @@ import (
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/mocks"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	abcitypes "github.com/cometbft/cometbft/abci/types"
+	types1 "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
-	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 func TestTopologyEthereumKeyRotate(t *testing.T) {

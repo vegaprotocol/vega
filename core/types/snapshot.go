@@ -22,8 +22,8 @@ import (
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"code.vegaprotocol.io/vega/libs/proto"
+	tmtypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/iavl"
-	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
 // StateProvider - not a huge fan of this interface being here, but it ensures that the state providers

@@ -19,8 +19,8 @@ import (
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/types"
 
+	abci "github.com/cometbft/cometbft/abci/types"
 	lru "github.com/hashicorp/golang-lru"
-	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 type (

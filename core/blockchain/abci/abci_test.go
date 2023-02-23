@@ -21,8 +21,8 @@ import (
 	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/txn"
+	"github.com/cometbft/cometbft/abci/types"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tendermint/abci/types"
 )
 
 type testTx struct {

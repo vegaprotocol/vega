@@ -19,7 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/core/blockchain"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 
-	"github.com/tendermint/tendermint/abci/types"
+	"github.com/cometbft/cometbft/abci/types"
 )
 
 func (app *App) Info(req types.RequestInfo) types.ResponseInfo {
@@ -192,8 +192,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 			Type: "tx",
 			Attributes: []types.EventAttribute{
 				{
-					Key:   []byte("submitter"),
-					Value: []byte(tx.PubKeyHex()),
+					Key:   "submitter",
+					Value: tx.PubKeyHex(),
 					Index: true,
 				},
 			},
@@ -202,8 +202,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 			Type: "command",
 			Attributes: []types.EventAttribute{
 				{
-					Key:   []byte("type"),
-					Value: []byte(tx.Command().String()),
+					Key:   "type",
+					Value: tx.Command().String(),
 					Index: true,
 				},
 			},
@@ -226,8 +226,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 	}
 	if len(market) > 0 {
 		commandAttributes = append(commandAttributes, types.EventAttribute{
-			Key:   []byte("market"),
-			Value: []byte(market),
+			Key:   "market",
+			Value: market,
 			Index: true,
 		})
 	}
@@ -241,8 +241,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 	}
 	if len(asset) > 0 {
 		commandAttributes = append(commandAttributes, types.EventAttribute{
-			Key:   []byte("asset"),
-			Value: []byte(asset),
+			Key:   "asset",
+			Value: asset,
 			Index: true,
 		})
 	}
@@ -253,8 +253,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 	}
 	if len(reference) > 0 {
 		commandAttributes = append(commandAttributes, types.EventAttribute{
-			Key:   []byte("reference"),
-			Value: []byte(reference),
+			Key:   "reference",
+			Value: reference,
 			Index: true,
 		})
 	}
@@ -265,8 +265,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 	}
 	if len(proposal) > 0 {
 		commandAttributes = append(commandAttributes, types.EventAttribute{
-			Key:   []byte("proposal"),
-			Value: []byte(proposal),
+			Key:   "proposal",
+			Value: proposal,
 			Index: true,
 		})
 	}

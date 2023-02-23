@@ -25,8 +25,8 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/cenkalti/backoff"
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/golang/protobuf/proto"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 const (

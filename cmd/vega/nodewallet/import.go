@@ -25,8 +25,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 
+	tmconfig "github.com/cometbft/cometbft/config"
 	"github.com/jessevdk/go-flags"
-	tmconfig "github.com/tendermint/tendermint/config"
 )
 
 var (

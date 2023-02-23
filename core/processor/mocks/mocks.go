@@ -19,7 +19,7 @@ import (
 	vega "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	gomock "github.com/golang/mock/gomock"
-	types0 "github.com/tendermint/tendermint/abci/types"
+	types0 "github.com/cometbft/cometbft/abci/types"
 )
 
 // MockTimeService is a mock of TimeService interface.

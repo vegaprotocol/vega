@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	tmTypes "github.com/tendermint/tendermint/abci/types"
+	tmTypes "github.com/cometbft/cometbft/abci/types"
 	"google.golang.org/protobuf/proto"
 
 	"code.vegaprotocol.io/vega/commands"

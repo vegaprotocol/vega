@@ -9,7 +9,7 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/tendermint/tendermint/abci/types"
+	types "github.com/cometbft/cometbft/abci/types"
 )
 
 // MockTimeService is a mock of TimeService interface.

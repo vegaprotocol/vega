@@ -16,7 +16,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/core/txn"
-	"github.com/tendermint/tendermint/abci/types"
+	"github.com/cometbft/cometbft/abci/types"
 )
 
 //nolint:interfacebloat

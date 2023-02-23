@@ -19,9 +19,9 @@ import (
 
 	"code.vegaprotocol.io/vega/core/validators"
 
+	abcitypes "github.com/cometbft/cometbft/abci/types"
+	types1 "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/golang/mock/gomock"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
-	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"code.vegaprotocol.io/vega/core/types"
 	vegactx "code.vegaprotocol.io/vega/libs/context"

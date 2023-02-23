@@ -49,9 +49,10 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
-	tmtypes "github.com/tendermint/tendermint/abci/types"
-	tmtypes1 "github.com/tendermint/tendermint/proto/tendermint/types"
-	tmtypesint "github.com/tendermint/tendermint/types"
+	tmtypes "github.com/cometbft/cometbft/abci/types"
+	tmtypes1 "github.com/cometbft/cometbft/proto/tendermint/types"
+	types1 "github.com/cometbft/cometbft/proto/tendermint/types"
+	tmtypesint "github.com/cometbft/cometbft/types"
 )
 
 const AppVersion = 1
@@ -729,13 +730,13 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 	}
 
 	// update max gas based on the network parameter
-	resp.ConsensusParamUpdates = &tmtypes.ConsensusParams{
-		Block: &tmtypes.BlockParams{
+	resp.ConsensusParamUpdates = &types1.ConsensusParams{
+		Block: &types1.BlockParams{
 			MaxGas:   int64(app.gastimator.OnBlockEnd()),
 			MaxBytes: tmtypesint.DefaultBlockParams().MaxBytes,
 		},
 		Version: &tmtypes1.VersionParams{
-			AppVersion: AppVersion,
+			App: AppVersion,
 		},
 	}
 	app.exec.BlockEnd(app.blockCtx)

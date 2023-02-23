@@ -23,7 +23,7 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"code.vegaprotocol.io/vega/libs/proto"
-	tmtypes "github.com/tendermint/tendermint/abci/types"
+	tmtypes "github.com/cometbft/cometbft/abci/types"
 )
 
 func (t *Topology) Name() types.CheckpointName {

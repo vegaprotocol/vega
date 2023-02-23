@@ -15,7 +15,7 @@ package tm
 import (
 	"encoding/base64"
 
-	tmcrypto "github.com/tendermint/tendermint/proto/tendermint/crypto"
+	tmcrypto "github.com/cometbft/cometbft/proto/tendermint/crypto"
 )
 
 func PubKeyToString(pubKey tmcrypto.PublicKey) string {

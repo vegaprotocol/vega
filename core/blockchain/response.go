@@ -12,7 +12,7 @@
 
 package blockchain
 
-import "github.com/tendermint/tendermint/abci/types"
+import "github.com/cometbft/cometbft/abci/types"
 
 const (
 	// AbciTxnValidationFailure ...

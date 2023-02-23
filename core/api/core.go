@@ -36,9 +36,9 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 
+	"github.com/cometbft/cometbft/libs/bytes"
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/libs/bytes"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc/codes"
 )
 
