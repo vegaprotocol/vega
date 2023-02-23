@@ -120,11 +120,13 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			} else {
 				svol, _ := num.UintFromDecimal(slippageVolume.Abs().Mul(e.positionFactor))
 				exitPrice, err = e.ob.GetCloseoutPrice(svol.Uint64(), types.SideBuy)
-				if err != nil && e.log.GetLevel() == logging.DebugLevel {
-					e.log.Debug("got non critical error from GetCloseoutPrice for Buy side",
-						logging.Error(err))
+				if err != nil {
+					noExit = true
+					if e.log.IsDebug() {
+						e.log.Debug("got non critical error from GetCloseoutPrice for Buy side",
+							logging.Error(err))
+					}
 				}
-				noExit = true
 			}
 			slippagePerUnit, negSlippage = num.UintZero().Delta(markPrice, exitPrice)
 		}
@@ -193,11 +195,13 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 				// convert back into vol * 10^pdp
 				svol, _ := num.UintFromDecimal(slippageVolume.Abs().Mul(e.positionFactor))
 				exitPrice, err = e.ob.GetCloseoutPrice(svol.Uint64(), types.SideSell)
-				if err != nil && e.log.GetLevel() == logging.DebugLevel {
-					e.log.Debug("got non critical error from GetCloseoutPrice for Sell side",
-						logging.Error(err))
+				if err != nil {
+					noExit = true
+					if e.log.IsDebug() {
+						e.log.Debug("got non critical error from GetCloseoutPrice for Sell side",
+							logging.Error(err))
+					}
 				}
-				noExit = true
 			}
 			// exitPrice - markPrice == -1*(markPrice - exitPrice)
 			slippagePerUnit, _ = num.UintZero().Delta(exitPrice, markPrice) // we don't care about neg/pos, we're using Abs() anyway
