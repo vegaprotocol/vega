@@ -46,6 +46,18 @@ func testUpdatingNetworkWithInvalidParamsFails(t *testing.T) {
 			},
 			expectedError: api.ErrNetworkNameIsRequired,
 		},
+		{
+			name: "without a single GRPC node",
+			params: api.AdminUpdateNetworkParams{
+				Name: "testnet",
+				API: network.APIConfig{
+					GRPC: network.GRPCConfig{
+						Hosts: []string{},
+					},
+				},
+			},
+			expectedError: network.ErrNetworkDoesNotHaveGRPCHostConfigured,
+		},
 	}
 
 	for _, tc := range tcs {
@@ -76,11 +88,25 @@ func testUpdatingNetworkWithValidParamsSucceeds(t *testing.T) {
 	handler.networkStore.EXPECT().NetworkExists(name).Times(1).Return(true, nil)
 	handler.networkStore.EXPECT().SaveNetwork(&network.Network{
 		Name: name,
+		API: network.APIConfig{
+			GRPC: network.GRPCConfig{
+				Hosts: []string{
+					"localhost:1234",
+				},
+			},
+		},
 	}).Times(1).Return(nil)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdateNetworkParams{
 		Name: name,
+		API: network.APIConfig{
+			GRPC: network.GRPCConfig{
+				Hosts: []string{
+					"localhost:1234",
+				},
+			},
+		},
 	})
 
 	// then
@@ -100,6 +126,13 @@ func testUpdatingNetworkThatDoesNotExistsFails(t *testing.T) {
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdateNetworkParams{
 		Name: name,
+		API: network.APIConfig{
+			GRPC: network.GRPCConfig{
+				Hosts: []string{
+					"localhost:1234",
+				},
+			},
+		},
 	})
 
 	// then
@@ -120,6 +153,13 @@ func testAdminUpdateNetworkGettingInternalErrorDuringNetworkVerificationFails(t 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdateNetworkParams{
 		Name: name,
+		API: network.APIConfig{
+			GRPC: network.GRPCConfig{
+				Hosts: []string{
+					"localhost:1234",
+				},
+			},
+		},
 	})
 
 	// then
@@ -141,6 +181,13 @@ func testAdminUpdateNetworkGettingInternalErrorDuringNetworkSavingFails(t *testi
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdateNetworkParams{
 		Name: name,
+		API: network.APIConfig{
+			GRPC: network.GRPCConfig{
+				Hosts: []string{
+					"localhost:1234",
+				},
+			},
+		},
 	})
 
 	// then
