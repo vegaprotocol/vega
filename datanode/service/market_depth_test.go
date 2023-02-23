@@ -432,7 +432,7 @@ func TestPartialMatchOrders(t *testing.T) {
 	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
 	assert.Equal(t, int64(1), mds.GetOrderCount("M"))
 
-	assert.Equal(t, uint64(1), mds.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, int(1), int(mds.GetVolumeAtPrice("M", types.SideBuy, 100)))
 	assert.Equal(t, uint64(1), mds.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
 

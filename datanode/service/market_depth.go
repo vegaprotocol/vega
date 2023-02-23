@@ -150,7 +150,7 @@ func (m *MarketDepth) AddOrder(order *types.Order, vegaTime time.Time, sequenceN
 		// so we need to create a new MarketDepth
 		md = &entities.MarketDepth{
 			MarketID:   order.MarketID,
-			LiveOrders: map[string]*types.Order{},
+			LiveOrders: map[string]*entities.SlimOrder{},
 		}
 		md.SequenceNumber = m.sequenceNumber
 		m.marketDepths[order.MarketID] = md
@@ -206,14 +206,6 @@ func (m *MarketDepth) ObserveDepthUpdates(ctx context.Context, retries int, mark
 /*****************************************************************************/
 /*                 FUNCTIONS TO HELP WITH UNIT TESTING                       */
 /*****************************************************************************/
-
-func (m *MarketDepth) GetAllOrders(market string) map[string]*types.Order {
-	md := m.marketDepths[market]
-	if md != nil {
-		return md.LiveOrders
-	}
-	return nil
-}
 
 // GetOrderCount returns the number of live orders for the given market.
 func (m *MarketDepth) GetOrderCount(market string) int64 {
