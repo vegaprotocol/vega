@@ -14,6 +14,7 @@
 - [7413](https://github.com/vegaprotocol/vega/issues/7413) - Add foreign block height to stake linkings in `GraphQL`
 
 ### 🐛 Fixes
+- [7596](https://github.com/vegaprotocol/vega/issues/7596) - Slippage factors not persisted in database
 - [7535](https://github.com/vegaprotocol/vega/issues/7535) - Fix network history load takes an increasingly long time to complete
 - [7517](https://github.com/vegaprotocol/vega/issues/7517) - Add buffer files event source 
 - [7659](https://github.com/vegaprotocol/vega/issues/7659) - Tidy up REST documentation for consistency

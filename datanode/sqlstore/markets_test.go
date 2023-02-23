@@ -384,8 +384,10 @@ func getTestMarket() *vega.Market {
 			Open:     0,
 			Close:    0,
 		},
-		PositionDecimalPlaces: 8,
-		LpPriceRange:          "0.95",
+		PositionDecimalPlaces:   8,
+		LpPriceRange:            "0.95",
+		LinearSlippageFactor:    "1.23",
+		QuadraticSlippageFactor: "5.67",
 	}
 }
 
