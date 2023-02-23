@@ -46,6 +46,9 @@ func NewTmNode(
 	if err := viper.Unmarshal(config); err != nil {
 		return nil, fmt.Errorf("decoding tendermint config: %v", err)
 	}
+
+	overwriteConfig(config)
+
 	if err := config.ValidateBasic(); err != nil {
 		return nil, fmt.Errorf("invalid tendermint configuration data: %v", err)
 	}
@@ -127,7 +130,6 @@ func loadConfig(homeDir string) (*config.Config, error) {
 	}
 
 	conf.SetRoot(homeDir)
-	overwriteConfig(conf)
 	if err := conf.ValidateBasic(); err != nil {
 		return nil, fmt.Errorf("error in config file: %w", err)
 	}
