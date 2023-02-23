@@ -28,6 +28,7 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | market.liquidity.stakeToCcyVolume       | 1     |
 
+  @Crazy
   Scenario: 001 Replicate a scenario from Lewis, linear slippage factor = 1e6, quadratic slippage factor = 1e6, 0019-MCAL-001, 0019-MCAL-002
     # 1. trader B made LP commitment 150,000
     # 2. trader C and A cross at 0.5 with size of 111, and this opens continuous trading (trade B is short)

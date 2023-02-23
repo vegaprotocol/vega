@@ -131,11 +131,11 @@ func testMarginLevelsTS(t *testing.T) {
 	assert.Equal(t, 1, len(resp))
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	// assert.EqualValues(t, 20, trans.Amount.Amount.Uint64())
-	assert.EqualValues(t, 44, trans.Amount.Amount.Uint64())
+	assert.EqualValues(t, 20, trans.Amount.Amount.Uint64())
+	// assert.EqualValues(t, 44, trans.Amount.Amount.Uint64())
 	// min = 15 so we go back to maintenance level
-	// assert.EqualValues(t, 15, trans.MinAmount.Uint64())
-	assert.EqualValues(t, 35, trans.MinAmount.Uint64())
+	assert.EqualValues(t, 15, trans.MinAmount.Uint64())
+	// assert.EqualValues(t, 35, trans.MinAmount.Uint64())
 	assert.Equal(t, types.TransferTypeMarginLow, trans.Type)
 }
 
@@ -165,11 +165,11 @@ func testMarginTopup(t *testing.T) {
 	assert.Equal(t, 1, len(resp))
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	// assert.EqualValues(t, 20, trans.Amount.Amount.Uint64())
-	assert.EqualValues(t, 44, trans.Amount.Amount.Uint64())
+	assert.EqualValues(t, 20, trans.Amount.Amount.Uint64())
+	// assert.EqualValues(t, 44, trans.Amount.Amount.Uint64())
 	// min = 15 so we go back to maintenance level
-	// assert.EqualValues(t, 15, trans.MinAmount.Uint64())
-	assert.EqualValues(t, 35, trans.MinAmount.Uint64())
+	assert.EqualValues(t, 15, trans.MinAmount.Uint64())
+	// assert.EqualValues(t, 35, trans.MinAmount.Uint64())
 	assert.Equal(t, types.TransferTypeMarginLow, trans.Type)
 }
 
@@ -247,8 +247,8 @@ func testMarginNoop(t *testing.T) {
 
 	evts := []events.Margin{evt}
 	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice)
-	// assert.Equal(t, 0, len(resp))
-	assert.Equal(t, 1, len(resp))
+	assert.Equal(t, 0, len(resp))
+	// assert.Equal(t, 1, len(resp))
 }
 
 func testMarginOverflow(t *testing.T) {
@@ -278,8 +278,8 @@ func testMarginOverflow(t *testing.T) {
 
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	// assert.EqualValues(t, 470, trans.Amount.Amount.Uint64())
-	assert.EqualValues(t, 446, trans.Amount.Amount.Uint64())
+	assert.EqualValues(t, 470, trans.Amount.Amount.Uint64())
+	// assert.EqualValues(t, 446, trans.Amount.Amount.Uint64())
 	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
 	assert.Equal(t, types.TransferTypeMarginHigh, trans.Type)
 }
@@ -315,8 +315,8 @@ func testMarginOverflowAuctionEnd(t *testing.T) {
 
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	// assert.EqualValues(t, 470, trans.Amount.Amount.Uint64())
-	assert.EqualValues(t, 446, trans.Amount.Amount.Uint64())
+	assert.EqualValues(t, 470, trans.Amount.Amount.Uint64())
+	// assert.EqualValues(t, 446, trans.Amount.Amount.Uint64())
 	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
 	assert.Equal(t, types.TransferTypeMarginHigh, trans.Type)
 }
@@ -418,10 +418,10 @@ func testMarginWithOrderInBook(t *testing.T) {
 	searchLevel, _ := mc.ScalingFactors.SearchLevel.Float64()
 	initialMargin, _ := mc.ScalingFactors.InitialMargin.Float64()
 	colRelease, _ := mc.ScalingFactors.CollateralRelease.Float64()
-	assert.EqualValues(t, 1786, margins.MaintenanceMargin.Uint64())
-	assert.Equal(t, uint64(1786*searchLevel), margins.SearchLevel.Uint64())
-	assert.Equal(t, uint64(1786*initialMargin), margins.InitialMargin.Uint64())
-	assert.Equal(t, uint64(1786*colRelease), margins.CollateralReleaseLevel.Uint64())
+	assert.EqualValues(t, 542, margins.MaintenanceMargin.Uint64())
+	assert.Equal(t, uint64(542*searchLevel), margins.SearchLevel.Uint64())
+	assert.Equal(t, uint64(542*initialMargin), margins.InitialMargin.Uint64())
+	assert.Equal(t, uint64(542*colRelease), margins.CollateralReleaseLevel.Uint64())
 }
 
 // testcase 1 from: https://drive.google.com/file/d/1B8-rLK2NB6rWvjzZX9sLtqOQzLz8s2ky/view
@@ -525,14 +525,14 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	initialMargin, _ := mc.ScalingFactors.InitialMargin.Float64()
 	colRelease, _ := mc.ScalingFactors.CollateralRelease.Float64()
 
-	// assert.Equal(t, uint64(277), margins.MaintenanceMargin.Uint64())
-	// assert.Equal(t, uint64(277*searchLevel), margins.SearchLevel.Uint64())
-	// assert.Equal(t, uint64(277*initialMargin), margins.InitialMargin.Uint64())
-	// assert.Equal(t, uint64(277*colRelease), margins.CollateralReleaseLevel.Uint64())
-	assert.Equal(t, uint64(2009), margins.MaintenanceMargin.Uint64())
-	assert.Equal(t, uint64(2009*searchLevel), margins.SearchLevel.Uint64())
-	assert.Equal(t, uint64(2009*initialMargin), margins.InitialMargin.Uint64())
-	assert.Equal(t, uint64(2009*colRelease), margins.CollateralReleaseLevel.Uint64())
+	assert.Equal(t, uint64(277), margins.MaintenanceMargin.Uint64())
+	assert.Equal(t, uint64(277*searchLevel), margins.SearchLevel.Uint64())
+	assert.Equal(t, uint64(277*initialMargin), margins.InitialMargin.Uint64())
+	assert.Equal(t, uint64(277*colRelease), margins.CollateralReleaseLevel.Uint64())
+	// assert.Equal(t, uint64(2009), margins.MaintenanceMargin.Uint64())
+	// assert.Equal(t, uint64(2009*searchLevel), margins.SearchLevel.Uint64())
+	// assert.Equal(t, uint64(2009*initialMargin), margins.InitialMargin.Uint64())
+	// assert.Equal(t, uint64(2009*colRelease), margins.CollateralReleaseLevel.Uint64())
 }
 
 func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
@@ -631,10 +631,10 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 	searchLevel, _ := mc.ScalingFactors.SearchLevel.Float64()
 	initialMargin, _ := mc.ScalingFactors.InitialMargin.Float64()
 	colRelease, _ := mc.ScalingFactors.CollateralRelease.Float64()
-	assert.EqualValues(t, 1786, margins.MaintenanceMargin.Uint64())
-	assert.Equal(t, uint64(1786*searchLevel), margins.SearchLevel.Uint64())
-	assert.Equal(t, uint64(1786*initialMargin), margins.InitialMargin.Uint64())
-	assert.Equal(t, uint64(1786*colRelease), margins.CollateralReleaseLevel.Uint64())
+	assert.EqualValues(t, 542, margins.MaintenanceMargin.Uint64())
+	assert.Equal(t, uint64(542*searchLevel), margins.SearchLevel.Uint64())
+	assert.Equal(t, uint64(542*initialMargin), margins.InitialMargin.Uint64())
+	assert.Equal(t, uint64(542*colRelease), margins.CollateralReleaseLevel.Uint64())
 
 	updatedRF := &types.RiskFactor{
 		Short: num.DecimalFromFloat(.12),
@@ -670,14 +670,10 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 	searchLevel, _ = updatedMC.ScalingFactors.SearchLevel.Float64()
 	initialMargin, _ = updatedMC.ScalingFactors.InitialMargin.Float64()
 	colRelease, _ = updatedMC.ScalingFactors.CollateralRelease.Float64()
-	// assert.EqualValues(t, 562, margins.MaintenanceMargin.Uint64())
-	// assert.Equal(t, uint64(562*searchLevel), margins.SearchLevel.Uint64())
-	// assert.Equal(t, uint64(562*initialMargin), margins.InitialMargin.Uint64())
-	// assert.Equal(t, uint64(562*colRelease), margins.CollateralReleaseLevel.Uint64())
-	assert.EqualValues(t, 1806, margins.MaintenanceMargin.Uint64())
-	assert.Equal(t, uint64(1806*searchLevel), margins.SearchLevel.Uint64())
-	assert.Equal(t, uint64(1806*initialMargin), margins.InitialMargin.Uint64())
-	assert.Equal(t, uint64(1806*colRelease), margins.CollateralReleaseLevel.Uint64())
+	assert.EqualValues(t, 562, margins.MaintenanceMargin.Uint64())
+	assert.Equal(t, uint64(562*searchLevel), margins.SearchLevel.Uint64())
+	assert.Equal(t, uint64(562*initialMargin), margins.InitialMargin.Uint64())
+	assert.Equal(t, uint64(562*colRelease), margins.CollateralReleaseLevel.Uint64())
 }
 
 func testInitialMarginRequirement(t *testing.T) {
