@@ -14,5 +14,6 @@ func NewCmdServiceConfig(w io.Writer, rf *RootFlags) *cobra.Command {
 	}
 
 	cmd.AddCommand(NewCmdLocateServiceConfig(w, rf))
+	cmd.AddCommand(NewCmdDescribeServiceConfig(w, rf))
 	return cmd
 }
