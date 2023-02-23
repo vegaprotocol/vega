@@ -153,6 +153,10 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | traderB | USD   | ETH/DEC23 | 2899818 | 50476        | 
       | traderC | USD   | ETH/DEC23 | 42684   | 9999999957316 | 
 
+       Then the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | traderB | ETH/DEC23 | 1220635     | 1830952| 2441270 | 3661905 |
+
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search  | initial | release |
       | traderB | ETH/DEC23 | 1220635     | 1830952 | 2441270 | 3661905 |
