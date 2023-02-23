@@ -145,7 +145,7 @@ func (cs *Candles) GetCandleIDForIntervalAndMarket(ctx context.Context, interval
 }
 
 func (cs *Candles) getIntervalToView(ctx context.Context) (map[string]string, error) {
-	query := fmt.Sprintf("SELECT view_name FROM timescaledb_information.continuous_aggregates where view_name like '%s%%'",
+	query := fmt.Sprintf("SELECT table_name AS view_name FROM INFORMATION_SCHEMA.views WHERE table_name LIKE '%s%%'",
 		candlesViewNamePrePend)
 	defer metrics.StartSQLQuery("Candles", "GetIntervalToView")()
 	rows, err := cs.Connection.Query(ctx, query)
@@ -202,6 +202,9 @@ func (cs *Candles) viewExistsForInterval(ctx context.Context, interval string) (
 	// Also check for existing Intervals that are specified differently but amount to the same thing  (i.e 7 days = 1 week)
 	existingIntervals := map[int64]string{}
 	for existingInterval := range intervalToView {
+		if existingInterval == "block" {
+			continue
+		}
 		seconds, err := cs.getIntervalSeconds(ctx, existingInterval)
 		if err != nil {
 			return false, "", fmt.Errorf("checking if view exists for interval:%w", err)

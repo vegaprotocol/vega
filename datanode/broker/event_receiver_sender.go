@@ -23,13 +23,13 @@ func NewEventReceiverSender(config Config, log *logging.Logger, chainID string) 
 	var eventsource eventReceiverSender
 	var err error
 	if config.UseEventFile {
-		absPath, err := filepath.Abs(config.FileEventSourceConfig.File)
+		absPath, err := filepath.Abs(config.FileEventSourceConfig.Directory)
 		if err != nil {
-			return nil, fmt.Errorf("unable to determine absolute path of file %s: %w", config.FileEventSourceConfig.File, err)
+			return nil, fmt.Errorf("unable to determine absolute path of file %s: %w", config.FileEventSourceConfig.Directory, err)
 		}
 
-		log.Infof("using file event source, event file: %s", absPath)
-		eventsource, err = NewFileEventSource(absPath, config.FileEventSourceConfig.TimeBetweenBlocks.Duration,
+		log.Infof("using buffer files event source, event files directory: %s", absPath)
+		eventsource, err = NewBufferFilesEventSource(absPath, config.FileEventSourceConfig.TimeBetweenBlocks.Duration,
 			config.FileEventSourceConfig.SendChannelBufferSize, chainID)
 
 		if err != nil {
