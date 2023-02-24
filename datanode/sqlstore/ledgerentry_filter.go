@@ -94,28 +94,56 @@ func accountFilterToDBQuery(af entities.AccountFilter, args *[]interface{}, pref
 
 	// Account types filtering
 	if len(af.AccountTypes) > 0 {
+		acTypes := getUniqueAccountTypes(af.AccountTypes)
+
 		if singleAccountFilter != "" {
-			singleAccountFilter = fmt.Sprintf(`%s AND %saccount_type=ANY(%s)`, singleAccountFilter, prefix, nextBindVar(args, af.AccountTypes))
+			singleAccountFilter = fmt.Sprintf(`%s AND %saccount_type=ANY(%s)`, singleAccountFilter, prefix, nextBindVar(args, acTypes))
 		} else {
-			singleAccountFilter = fmt.Sprintf(`%saccount_type=ANY(%s)`, prefix, nextBindVar(args, af.AccountTypes))
+			singleAccountFilter = fmt.Sprintf(`%saccount_type=ANY(%s)`, prefix, nextBindVar(args, acTypes))
 		}
 	}
 
 	return singleAccountFilter, args, nil
 }
 
+func getUniqueAccountTypes(accountTypes []vega.AccountType) []vega.AccountType {
+	accountTypesList := []vega.AccountType{}
+	accountTypesMap := map[vega.AccountType]struct{}{}
+	for _, at := range accountTypes {
+		_, ok := accountTypesMap[at]
+		if ok {
+			continue
+		}
+		accountTypesMap[at] = struct{}{}
+		accountTypesList = append(accountTypesList, at)
+	}
+
+	return accountTypesList
+}
+
 func transferTypeFilterToDBQuery(transferTypeFilter []entities.LedgerMovementType, args *[]interface{}) string {
 	transferTypeFilterString := ""
 	if len(transferTypeFilter) > 0 {
-		for i, transferType := range transferTypeFilter {
-			_, ok := vega.TransferType_name[int32(transferType)]
+		transferTypesMap := map[entities.LedgerMovementType]struct{}{}
+
+		for _, transferType := range transferTypeFilter {
+			_, ok := transferTypesMap[transferType]
+			if ok {
+				continue
+			}
+			transferTypesMap[transferType] = struct{}{}
+		}
+
+		for v := range transferTypesMap {
+			_, ok := vega.TransferType_name[int32(v)]
 			if !ok {
 				continue
 			}
 
-			transferTypeFilterString = fmt.Sprintf(`%stransfer_type=%s`, transferTypeFilterString, nextBindVar(args, transferType))
-			if i < len(transferTypeFilter)-1 {
-				transferTypeFilterString = fmt.Sprintf(`%s OR `, transferTypeFilterString)
+			if transferTypeFilterString == "" {
+				transferTypeFilterString = fmt.Sprintf(`%stransfer_type=%s`, transferTypeFilterString, nextBindVar(args, v))
+			} else {
+				transferTypeFilterString = fmt.Sprintf(`%s OR transfer_type=%s`, transferTypeFilterString, nextBindVar(args, v))
 			}
 		}
 	}
