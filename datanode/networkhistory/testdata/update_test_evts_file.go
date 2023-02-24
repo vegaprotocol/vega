@@ -26,7 +26,7 @@ func main() {
 		fmt.Printf("expected <source events file>")
 	}
 
-	sourceFile := os.Args[1]
+	sourceDir := os.Args[1]
 
 	fmt.Printf("creating target event file to height %d")
 
@@ -41,7 +41,7 @@ func main() {
 
 	config := broker.NewDefaultConfig()
 
-	fileEventSource, err := broker.NewFileEventSource(sourceFile, 0, config.FileEventSourceConfig.SendChannelBufferSize,
+	fileEventSource, err := broker.NewBufferFilesEventSource(sourceDir, 0, config.FileEventSourceConfig.SendChannelBufferSize,
 		"testnet-001")
 	if err != nil {
 		panic(err)
