@@ -2136,6 +2136,8 @@ type StakeLinking {
   finalizedAt: Timestamp
   "The transaction hash (ethereum) which initiated the link/unlink"
   txHash: String!
+  "The (ethereum) block height of the link/unlink"
+  blockHeight: String!
 }
 
 "Position status can change if a position is distressed"
@@ -3061,6 +3063,9 @@ enum Side {
 
 "The interval for trade candles when subscribing via Vega GraphQL, default is I15M"
 enum Interval {
+  "The block interval is not a fixed amount of time, rather it used to indicate grouping of events that occur in a single block. It is usually about a second."
+  INTERVAL_BLOCK
+
   "1 minute interval"
   INTERVAL_I1M
 

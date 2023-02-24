@@ -48,10 +48,9 @@ func NewDefaultConfig() Config {
 		SocketServerInboundBufferSize:  10000,
 		SocketServerOutboundBufferSize: 10000,
 		FileEventSourceConfig: FileEventSourceConfig{
-			File:                  "vega.evt",
+			Directory:             "events",
 			TimeBetweenBlocks:     encoding.Duration{Duration: 1 * time.Second},
 			SendChannelBufferSize: 1000,
-			IsBufferFile:          false,
 		},
 		UseEventFile:           false,
 		PanicOnError:           false,
@@ -68,10 +67,9 @@ func NewDefaultConfig() Config {
 }
 
 type FileEventSourceConfig struct {
-	File                  string            `long:"file" description:"the event file"`
+	Directory             string            `long:"directory" description:"the directory container the event files"`
 	TimeBetweenBlocks     encoding.Duration `string:"time-between-blocks" description:"the time between sending blocks"`
 	SendChannelBufferSize int               `long:"send-buffer-size" description:"size of channel buffer used to send events to broker "`
-	IsBufferFile          bool              `long:"is-buffer-file" description:"if true the source file is a data-node buffer file"`
 }
 
 type SocketConfig struct {
