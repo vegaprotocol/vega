@@ -87,6 +87,10 @@ func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck 
 		return "", nil, fmt.Errorf("could not retrieve the service configuration: %w", err)
 	}
 
+	if err := serviceCfg.Validate(); err != nil {
+		return "", nil, err
+	}
+
 	// Since we successfully retrieve the service configuration, we can update
 	// the log level to the specified one.
 	if err := updateLogLevel(logLevel, serviceCfg); err != nil {
@@ -321,8 +325,8 @@ func (s *Starter) ensureServiceIsInitialised(logger *zap.Logger) error {
 	return nil
 }
 
-func updateLogLevel(logLevel zap.AtomicLevel, networkCfg *Config) error {
-	parsedLevel, err := zap.ParseAtomicLevel(networkCfg.LogLevel.String())
+func updateLogLevel(logLevel zap.AtomicLevel, serviceCfg *Config) error {
+	parsedLevel, err := zap.ParseAtomicLevel(serviceCfg.LogLevel.String())
 	if err != nil {
 		return fmt.Errorf("invalid log level specified in the service configuration: %w", err)
 	}

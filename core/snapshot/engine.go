@@ -359,7 +359,9 @@ func (e *Engine) CheckLoaded() (bool, error) {
 		return true, e.applySnap(e.ctx)
 	}
 
-	e.initialiseTree()
+	if err := e.initialiseTree(); err != nil {
+		return false, err
+	}
 	versions := e.avl.AvailableVersions()
 	startHeight := e.StartHeight
 

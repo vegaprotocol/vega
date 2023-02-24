@@ -91,7 +91,6 @@ func (s *ProxyServer) Start() error {
 	grpcAddr := net.JoinHostPort(s.Node.IP, strconv.Itoa(s.Node.Port))
 	jsonPB := &JSONPb{
 		EmitDefaults: true,
-		Indent:       "  ", // formatted json output
 		OrigName:     false,
 	}
 

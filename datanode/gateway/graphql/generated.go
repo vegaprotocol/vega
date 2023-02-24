@@ -1209,13 +1209,15 @@ type ComplexityRoot struct {
 	}
 
 	PositionUpdate struct {
-		AverageEntryPrice func(childComplexity int) int
-		MarketId          func(childComplexity int) int
-		OpenVolume        func(childComplexity int) int
-		PartyId           func(childComplexity int) int
-		RealisedPnl       func(childComplexity int) int
-		UnrealisedPnl     func(childComplexity int) int
-		UpdatedAt         func(childComplexity int) int
+		AverageEntryPrice       func(childComplexity int) int
+		LossSocializationAmount func(childComplexity int) int
+		MarketId                func(childComplexity int) int
+		OpenVolume              func(childComplexity int) int
+		PartyId                 func(childComplexity int) int
+		PositionStatus          func(childComplexity int) int
+		RealisedPnl             func(childComplexity int) int
+		UnrealisedPnl           func(childComplexity int) int
+		UpdatedAt               func(childComplexity int) int
 	}
 
 	PriceLevel struct {
@@ -1502,6 +1504,7 @@ type ComplexityRoot struct {
 
 	StakeLinking struct {
 		Amount      func(childComplexity int) int
+		BlockHeight func(childComplexity int) int
 		FinalizedAt func(childComplexity int) int
 		Id          func(childComplexity int) int
 		Party       func(childComplexity int) int
@@ -2096,6 +2099,8 @@ type PositionResolver interface {
 }
 type PositionUpdateResolver interface {
 	OpenVolume(ctx context.Context, obj *vega.Position) (string, error)
+
+	LossSocializationAmount(ctx context.Context, obj *vega.Position) (string, error)
 }
 type PriceLevelResolver interface {
 	Volume(ctx context.Context, obj *vega.PriceLevel) (string, error)
@@ -2203,6 +2208,8 @@ type RewardSummaryResolver interface {
 type StakeLinkingResolver interface {
 	Timestamp(ctx context.Context, obj *v1.StakeLinking) (int64, error)
 	Party(ctx context.Context, obj *v1.StakeLinking) (*vega.Party, error)
+
+	BlockHeight(ctx context.Context, obj *v1.StakeLinking) (string, error)
 }
 type StatisticsResolver interface {
 	BlockHeight(ctx context.Context, obj *v13.Statistics) (string, error)
@@ -6903,6 +6910,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PositionUpdate.AverageEntryPrice(childComplexity), true
 
+	case "PositionUpdate.lossSocializationAmount":
+		if e.complexity.PositionUpdate.LossSocializationAmount == nil {
+			break
+		}
+
+		return e.complexity.PositionUpdate.LossSocializationAmount(childComplexity), true
+
 	case "PositionUpdate.marketId":
 		if e.complexity.PositionUpdate.MarketId == nil {
 			break
@@ -6923,6 +6937,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PositionUpdate.PartyId(childComplexity), true
+
+	case "PositionUpdate.positionStatus":
+		if e.complexity.PositionUpdate.PositionStatus == nil {
+			break
+		}
+
+		return e.complexity.PositionUpdate.PositionStatus(childComplexity), true
 
 	case "PositionUpdate.realisedPNL":
 		if e.complexity.PositionUpdate.RealisedPnl == nil {
@@ -8321,6 +8342,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.StakeLinking.Amount(childComplexity), true
+
+	case "StakeLinking.blockHeight":
+		if e.complexity.StakeLinking.BlockHeight == nil {
+			break
+		}
+
+		return e.complexity.StakeLinking.BlockHeight(childComplexity), true
 
 	case "StakeLinking.finalizedAt":
 		if e.complexity.StakeLinking.FinalizedAt == nil {
@@ -41226,6 +41254,8 @@ func (ec *executionContext) fieldContext_PartyStake_linkings(ctx context.Context
 				return ec.fieldContext_StakeLinking_finalizedAt(ctx, field)
 			case "txHash":
 				return ec.fieldContext_StakeLinking_txHash(ctx, field)
+			case "blockHeight":
+				return ec.fieldContext_StakeLinking_blockHeight(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type StakeLinking", field.Name)
 		},
@@ -42535,6 +42565,94 @@ func (ec *executionContext) fieldContext_PositionUpdate_updatedAt(ctx context.Co
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PositionUpdate_lossSocializationAmount(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PositionUpdate_lossSocializationAmount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PositionUpdate().LossSocializationAmount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PositionUpdate_lossSocializationAmount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PositionUpdate",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PositionUpdate_positionStatus(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PositionUpdate_positionStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PositionStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(vega.PositionStatus)
+	fc.Result = res
+	return ec.marshalNPositionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPositionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PositionUpdate_positionStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PositionUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type PositionStatus does not have child fields")
 		},
 	}
 	return fc, nil
@@ -51695,6 +51813,50 @@ func (ec *executionContext) fieldContext_StakeLinking_txHash(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _StakeLinking_blockHeight(ctx context.Context, field graphql.CollectedField, obj *v1.StakeLinking) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StakeLinking_blockHeight(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.StakeLinking().BlockHeight(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StakeLinking_blockHeight(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StakeLinking",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _StakeLinkingEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.StakeLinkingEdge) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_StakeLinkingEdge_node(ctx, field)
 	if err != nil {
@@ -51750,6 +51912,8 @@ func (ec *executionContext) fieldContext_StakeLinkingEdge_node(ctx context.Conte
 				return ec.fieldContext_StakeLinking_finalizedAt(ctx, field)
 			case "txHash":
 				return ec.fieldContext_StakeLinking_txHash(ctx, field)
+			case "blockHeight":
+				return ec.fieldContext_StakeLinking_blockHeight(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type StakeLinking", field.Name)
 		},
@@ -54155,6 +54319,10 @@ func (ec *executionContext) fieldContext_Subscription_positions(ctx context.Cont
 				return ec.fieldContext_PositionUpdate_averageEntryPrice(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_PositionUpdate_updatedAt(ctx, field)
+			case "lossSocializationAmount":
+				return ec.fieldContext_PositionUpdate_lossSocializationAmount(ctx, field)
+			case "positionStatus":
+				return ec.fieldContext_PositionUpdate_positionStatus(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PositionUpdate", field.Name)
 		},
@@ -72041,6 +72209,33 @@ func (ec *executionContext) _PositionUpdate(ctx context.Context, sel ast.Selecti
 
 			out.Values[i] = ec._PositionUpdate_updatedAt(ctx, field, obj)
 
+		case "lossSocializationAmount":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PositionUpdate_lossSocializationAmount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "positionStatus":
+
+			out.Values[i] = ec._PositionUpdate_positionStatus(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -75146,6 +75341,26 @@ func (ec *executionContext) _StakeLinking(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "blockHeight":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._StakeLinking_blockHeight(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

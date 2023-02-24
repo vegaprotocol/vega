@@ -1836,6 +1836,10 @@ func (r *positionUpdateResolver) UpdatedAt(ctx context.Context, obj *types.Posit
 	return updatedAt, nil
 }
 
+func (r *positionUpdateResolver) LossSocializationAmount(ctx context.Context, obj *types.Position) (string, error) {
+	return obj.LossSocialisationAmount, nil
+}
+
 // BEGIN: Position Resolver
 
 type myPositionResolver VegaResolverRoot

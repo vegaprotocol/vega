@@ -13,7 +13,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega/api/v1";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega core APIs";
-    version: "v0.68.0-dev";
+    version: "v0.69.0-dev";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz"
@@ -412,7 +412,7 @@ message PoWBlockState {
   // The number of transactions that can have their proof-of-work calculated with this block hash before
   // either the difficulty increases, or no more transactions can use this block hash
   uint64 tx_per_block = 7;
-  // Whether or not this block allows for increasing proof-of-work difficulty if the 
+  // Whether or not this block allows for increasing proof-of-work difficulty if the
   // tx-per-block-hash limit has been reached
   bool increasing_difficulty = 8;
 }

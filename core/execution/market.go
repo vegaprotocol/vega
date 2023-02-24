@@ -617,6 +617,10 @@ func (m *Market) Reject(ctx context.Context) error {
 	return nil
 }
 
+func (m *Market) onTxProcessed() {
+	m.risk.FlushMarginLevelsEvents()
+}
+
 // CanLeaveOpeningAuction checks if the market can leave the opening auction based on whether floating point consensus has been reached on all 3 vars.
 func (m *Market) CanLeaveOpeningAuction() bool {
 	boundFactorsInitialised := m.pMonitor.IsBoundFactorsInitialised()
@@ -633,6 +637,8 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 	if m.mkt.State != types.MarketStateProposed {
 		return ErrCannotStartOpeningAuctionForMarketNotInProposedState
 	}
+
+	defer m.onTxProcessed()
 
 	// now we start the opening auction
 	if m.as.AuctionStart() {
@@ -658,23 +664,6 @@ func (m *Market) GetID() string {
 }
 
 func (m *Market) PostRestore(ctx context.Context) error {
-	pps := m.position.Parties()
-	peggedOrder := m.peggedOrders.parked
-	parties := make(map[string]struct{}, len(pps)+len(peggedOrder))
-
-	for _, p := range pps {
-		parties[p] = struct{}{}
-	}
-
-	for _, o := range m.peggedOrders.parked {
-		parties[o.Party] = struct{}{}
-	}
-
-	for _, p := range m.liquidity.GetPending() {
-		parties[p] = struct{}{}
-	}
-	m.parties = parties
-
 	// tell the matching engine about the markets price factor so it can finish restoring orders
 	m.matching.RestoreWithMarketPriceFactor(m.priceFactor)
 	return nil
@@ -683,6 +672,8 @@ func (m *Market) PostRestore(ctx context.Context) error {
 // OnTick notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
 func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
+	defer m.onTxProcessed()
+
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "OnTick")
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -747,6 +738,8 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 }
 
 func (m *Market) blockEnd(ctx context.Context) {
+	defer m.onTxProcessed()
+
 	// MTM if enough time has elapsed, we are not in auction, and we have a non-zero mark price.
 	// we MTM in leaveAuction before deploying LP orders like we did before, but we do update nextMTM there
 	var tID string
@@ -1352,6 +1345,8 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
 	idgen IDGenerator,
 	orderID string,
 ) (oc *types.OrderConfirmation, _ error) {
+	defer m.onTxProcessed()
+
 	m.idgen = idgen
 	defer func() { m.idgen = nil }()
 
@@ -2278,6 +2273,8 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 }
 
 func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.OrderCancellationConfirmation, error) {
+	defer m.onTxProcessed()
+
 	if !m.canTrade() {
 		return nil, ErrTradingNotAllowed
 	}
@@ -2354,6 +2351,8 @@ func (m *Market) CancelOrderWithIDGenerator(
 	partyID, orderID string,
 	idgen IDGenerator,
 ) (oc *types.OrderCancellationConfirmation, _ error) {
+	defer m.onTxProcessed()
+
 	m.idgen = idgen
 	defer func() { m.idgen = nil }()
 
@@ -2474,6 +2473,8 @@ func (m *Market) AmendOrderWithIDGenerator(
 	idgen IDGenerator,
 ) (oc *types.OrderConfirmation, _ error,
 ) {
+	defer m.onTxProcessed()
+
 	m.idgen = idgen
 	defer func() { m.idgen = nil }()
 
@@ -3000,8 +3001,12 @@ func (m *Market) removeExpiredOrders(
 	defer timer.EngineTimeCounterAdd()
 
 	expired := []*types.Order{}
-	evts := []events.Event{}
-	for _, orderID := range m.expiringOrders.Expire(timestamp) {
+	toExp := m.expiringOrders.Expire(timestamp)
+	if len(toExp) == 0 {
+		return expired
+	}
+	ids := make([]string, 0, len(toExp))
+	for _, orderID := range toExp {
 		var order *types.Order
 		// The pegged expiry orders are copies and do not reflect the
 		// current state of the order, therefore we look it up
@@ -3034,9 +3039,11 @@ func (m *Market) removeExpiredOrders(
 		order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
 		order.Status = types.OrderStatusExpired
 		expired = append(expired, order)
-		evts = append(evts, events.NewOrderEvent(ctx, order))
+		ids = append(ids, orderID)
 	}
-	m.broker.SendBatch(evts)
+	if len(ids) > 0 {
+		m.broker.Send(events.NewExpiredOrdersEvent(ctx, m.mkt.ID, ids))
+	}
 
 	// If we have removed an expired order, do we need to reprice any
 	// or maybe notify the liquidity engine

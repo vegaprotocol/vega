@@ -36,6 +36,8 @@ func (m *Market) SubmitLiquidityProvision(
 	party, deterministicID string,
 ) (err error,
 ) {
+	defer m.onTxProcessed()
+
 	m.idgen = idgeneration.New(deterministicID)
 	defer func() { m.idgen = nil }()
 
@@ -205,6 +207,8 @@ func (m *Market) SubmitLiquidityProvision(
 
 // AmendLiquidityProvision forwards a LiquidityProvisionAmendment to the Liquidity Engine.
 func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string, deterministicID string) (err error) {
+	defer m.onTxProcessed()
+
 	m.idgen = idgeneration.New(deterministicID)
 	defer func() { m.idgen = nil }()
 
@@ -288,6 +292,8 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 
 // CancelLiquidityProvision forwards a LiquidityProvisionCancel to the Liquidity Engine.
 func (m *Market) CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party string) (err error) {
+	defer m.onTxProcessed()
+
 	if !m.canSubmitCommitment() {
 		return ErrCommitmentSubmissionNotAllowed
 	}
@@ -499,13 +505,14 @@ func (m *Market) repriceLiquidityOrder(side types.Side, reference types.PeggedRe
 
 func (m *Market) adjustPrice(side types.Side, referencePrice, offset, minLpPrice, maxLpPrice *num.Uint) *num.Uint {
 	offsetPrice := m.applyOffset(side, referencePrice, offset)
-	if offsetPrice.LT(minLpPrice) {
+	if offsetPrice.GTE(minLpPrice) && offsetPrice.LTE(maxLpPrice) {
+		return offsetPrice
+	}
+
+	if side == types.SideBuy {
 		return minLpPrice
 	}
-	if offsetPrice.GT(maxLpPrice) {
-		return maxLpPrice
-	}
-	return offsetPrice
+	return maxLpPrice
 }
 
 func (m *Market) applyOffset(side types.Side, referencePrice, offset *num.Uint) *num.Uint {
@@ -547,10 +554,21 @@ func (m *Market) computeValidLPVolumeRange(bestStaticBid, bestStaticAsk *num.Uin
 	if lb.IsNegative() || lb.IsZero() {
 		lb = m.minValidPrice()
 	}
-
 	if lb.GTE(ub) {
-		// if we ended up with overlapping upper and lower bound we set the upper bound to lower bound plus one.
-		ub = ub.Add(lb, num.UintOne())
+		// if we ended up with overlapping upper and lower bound we set the upper bound to lower bound plus one tick.
+		ub = ub.Add(lb, m.priceFactor)
+	}
+
+	// we can't have lower bound >= best static ask as then a buy order with that price would trade on entry
+	// so place it one tick to the left
+	if lb.GTE(bestStaticAsk) {
+		lb = num.UintZero().Sub(bestStaticAsk, m.priceFactor)
+	}
+
+	// we can't have upper bound <= best static bid as then a sell order with that price would trade on entry
+	// so place it one tick to the right
+	if ub.LTE(bestStaticBid) {
+		ub = num.UintZero().Add(bestStaticBid, m.priceFactor)
 	}
 
 	return lb, ub

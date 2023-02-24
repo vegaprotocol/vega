@@ -15,6 +15,7 @@ package execution
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
@@ -33,6 +34,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"golang.org/x/exp/maps"
 )
 
 func NewMarketFromSnapshot(
@@ -136,7 +138,7 @@ func NewMarketFromSnapshot(
 		broker:                     broker,
 		fee:                        feeEngine,
 		liquidity:                  liqEngine,
-		parties:                    map[string]struct{}{}, // parties will be restored on PostRestore
+		parties:                    map[string]struct{}{},
 		lMonitor:                   lMonitor,
 		tsCalc:                     tsCalc,
 		feeSplitter:                NewFeeSplitterFromSnapshot(em.FeeSplitter, now),
@@ -163,6 +165,10 @@ func NewMarketFromSnapshot(
 		quadraticSlippageFactor:    mkt.QuadraticSlippageFactor,
 	}
 
+	for _, p := range em.Parties {
+		market.parties[p] = struct{}{}
+	}
+
 	market.assetDP = uint32(assetDetails.DecimalPlaces())
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
@@ -176,7 +182,7 @@ func NewMarketFromSnapshot(
 		market.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
 	}
 
-	if mkt.State == types.MarketStateSettled {
+	if em.Closed {
 		market.closed = true
 		stateVarEngine.UnregisterStateVariable(asset, mkt.ID)
 	}
@@ -189,6 +195,9 @@ func (m *Market) getState() *types.ExecMarket {
 	if m.settlementDataInMarket != nil {
 		sp = m.settlementDataInMarket.Clone()
 	}
+
+	parties := maps.Keys(m.parties)
+	sort.Strings(parties)
 
 	em := &types.ExecMarket{
 		Market:                     m.mkt.DeepClone(),
@@ -211,6 +220,8 @@ func (m *Market) getState() *types.ExecMarket {
 		FeeSplitter:                m.feeSplitter.GetState(),
 		SettlementData:             sp,
 		NextMTM:                    m.nextMTM.UnixNano(),
+		Parties:                    parties,
+		Closed:                     m.closed,
 	}
 
 	return em
