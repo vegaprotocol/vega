@@ -255,7 +255,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 		levels.MarketID = e.mktID
 
 		curMargin := evt.MarginBalance()
-		if num.Sum(curMargin, evt.GeneralBalance()).LT(levels.MaintenanceMargin) {
+		if num.Sum(curMargin, evt.GeneralBalance()).LT(levels.InitialMargin) {
 			low = append(low, evt)
 			continue
 		}

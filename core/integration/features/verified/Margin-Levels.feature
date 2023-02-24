@@ -206,6 +206,7 @@ Scenario: Assure initial margin requirement must be met
       | trader1     | USD   | 711           |
       | trader2     | USD   | 712           |
       | trader3     | USD   | 321           |
+      | trader4     | USD   | 40            |
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lprov | ETH/DEC19 | 100000            | 0.00  | sell | ASK              | 100        | 55     | submission |
@@ -254,6 +255,8 @@ Scenario: Assure initial margin requirement must be met
     And the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | 
       | trader3 | ETH/DEC19 | buy  | 20     | 15    | 3                | TYPE_LIMIT | TIF_FOK | 
+    # trader2 maintenance margin = 10 * 10 * 3.556903591 = 356
+    # trader3 maintenance margin = 20 * 10 * 0.801225765 = 161
     Then the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
       | trader1  | ETH/DEC19 | 356         | 534    | 712     | 1068    |
@@ -270,7 +273,7 @@ Scenario: Assure initial margin requirement must be met
       | party   | volume | unrealised pnl | realised pnl |
       | trader1 | -10    | 0              | 0            |
       | trader2 | -10    | 0              | 0            |
-      | trader3 | 20     | 0              | 0            |
+      | trader3 |  20    | 0              | 0            |
     
     # both parties end up with same margin levels and account balances
     And the parties should have the following margin levels:
@@ -283,7 +286,6 @@ Scenario: Assure initial margin requirement must be met
       | trader1  | USD   | ETH/DEC19 | 712    |      0  |
       | trader2  | USD   | ETH/DEC19 | 712    |      0  |
       | trader3  | USD   | ETH/DEC19 | 323    |      0  |
-   
 
     # party places a limit order that would reduce its exposure once it fills
     When the parties place the following orders with ticks:
@@ -350,3 +352,25 @@ Scenario: Assure initial margin requirement must be met
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3  | USD   | ETH/DEC19 | 181    |      0  |
+
+    And the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode                    | auction trigger           | target stake | supplied stake |
+      | 1          | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1067         | 100000         |
+
+    # assure initial margin required to post order in auction
+    When the parties place the following orders with ticks:
+      | party      | market id | side | volume | price | resulting trades | type       | tif     | error                |
+      | trader4    | ETH/DEC19 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | margin check failed  |
+  
+    When the parties deposit on asset's general account the following amount:
+      | party       | asset | amount        |
+      | trader4     | USD   | 32            |
+    Then the parties place the following orders with ticks:
+      | party      | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader4    | ETH/DEC19 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties should have the following margin levels:
+      | party    | market id | maintenance | initial |
+      | trader4  | ETH/DEC19 | 36          | 72      |
+    And the parties should have the following account balances:
+      | party    | asset | market id | margin | general |
+      | trader4  | USD   | ETH/DEC19 | 72     |      0  |

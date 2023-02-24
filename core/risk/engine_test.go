@@ -681,14 +681,29 @@ func testInitialMarginRequirement(t *testing.T) {
 		general: initialMargin - 1,
 		market:  "ETH/DEC19",
 	}
-	eng.tsvc.EXPECT().GetTimeNow().Times(9)
-	eng.as.EXPECT().InAuction().Times(9).Return(false)
-	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(9).
+	eng.tsvc.EXPECT().GetTimeNow().Times(4)
+	eng.as.EXPECT().InAuction().Times(2).Return(false)
+	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(2).
 		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
 			return markPrice.Clone(), nil
 		})
-	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(3)
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
 	riskevt, _, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice)
+	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
+	assert.Nil(t, riskevt)
+
+	evt.general = initialMargin
+	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice)
+	assert.NoError(t, err)
+	assert.NotNil(t, riskevt)
+	assert.True(t, riskevt.MarginLevels().InitialMargin.EQ(num.NewUint(initialMargin)))
+
+	eng.as.EXPECT().InAuction().Times(2).Return(true)
+	eng.as.EXPECT().CanLeave().Times(2).Return(false)
+	eng.orderbook.EXPECT().GetIndicativePrice().Times(2).Return(markPrice.Clone())
+
+	evt.general = initialMargin - 1
+	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice)
 	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
 	assert.Nil(t, riskevt)
 

@@ -319,6 +319,7 @@ func TestMarginRequirementSkippedWhenReducingExposure(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
 	party3 := "party3"
+	party4 := "party4"
 	auxParty, auxParty2 := "auxParty", "auxParty2"
 	now := time.Unix(10, 0)
 	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
@@ -328,6 +329,7 @@ func TestMarginRequirementSkippedWhenReducingExposure(t *testing.T) {
 	addAccount(t, tm, party1)
 	addAccountWithAmount(tm, party2, 3000)
 	addAccountWithAmount(tm, party3, 1990)
+	addAccountWithAmount(tm, party4, 80)
 	addAccount(t, tm, auxParty)
 	addAccount(t, tm, auxParty2)
 	addAccountWithAmount(tm, "lpprov", 100000000)
@@ -358,8 +360,6 @@ func TestMarginRequirementSkippedWhenReducingExposure(t *testing.T) {
 		require.NotNil(t, conf)
 		require.NoError(t, err)
 	}
-	mktD := tm.market.GetMarketData()
-	fmt.Printf("TS: %s\nSS: %s\n", mktD.TargetStake, mktD.SuppliedStake)
 	lp := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(30000000),
@@ -372,37 +372,23 @@ func TestMarginRequirementSkippedWhenReducingExposure(t *testing.T) {
 		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "lpprov", vgcrypto.RandomHash()))
+
+	party4Order := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, party4, types.SideBuy, party4, 1, uint64(500))
+	confirmation, err := tm.market.SubmitOrder(ctx, party4Order)
+	require.ErrorContains(t, err, "margin")
+
 	now = now.Add(time.Second * 2) // opening auction is 1 second, move time ahead by 2 seconds so we leave auction
 	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(ctx, vgcrypto.RandomHash()), now)
 
 	posSize := uint64(10)
-	matchingPrice := num.NewUint(1000)
-	party2Order := &types.Order{
-		Type:        types.OrderTypeLimit,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Side:        types.SideSell,
-		Party:       party2,
-		MarketID:    tm.market.GetID(),
-		Price:       matchingPrice,
-		Size:        posSize,
-		Remaining:   posSize,
-	}
-	confirmation, err := tm.market.SubmitOrder(ctx, party2Order)
+	matchingPrice := uint64(1000)
+	party2Order := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, party2, types.SideSell, party2, posSize, matchingPrice)
+	confirmation, err = tm.market.SubmitOrder(ctx, party2Order)
 	require.NoError(t, err)
 	require.NotNil(t, confirmation)
 
-	// other side of the instant match
-	party3Order := &types.Order{
-		Type:        types.OrderTypeMarket,
-		TimeInForce: types.OrderTimeInForceIOC,
-		Side:        types.SideBuy,
-		Party:       party3,
-		MarketID:    tm.market.GetID(),
-		Price:       num.UintZero(),
-		Size:        posSize,
-		Remaining:   posSize,
-	}
+	party3Order := getMarketOrder(tm, now, types.OrderTypeMarket, types.OrderTimeInForceIOC, party3, types.SideBuy, party3, posSize, matchingPrice)
 
 	confirmation, err = tm.market.SubmitOrder(ctx, party3Order)
 	require.NoError(t, err)
@@ -445,12 +431,12 @@ func TestMarginRequirementSkippedWhenReducingExposure(t *testing.T) {
 	changeSizeTo(party2Order, posSize-2)
 	party2Order.Type = types.OrderTypeLimit
 	party2Order.TimeInForce = types.OrderTimeInForceGTC
-	party2Order.Price = num.UintZero().Sub(matchingPrice, num.NewUint(501))
+	party2Order.Price = num.UintZero().Sub(num.NewUint(matchingPrice), num.NewUint(501))
 
 	changeSizeTo(party3Order, posSize-2)
 	party3Order.Type = types.OrderTypeLimit
 	party3Order.TimeInForce = types.OrderTimeInForceGTC
-	party3Order.Price = num.UintZero().Add(matchingPrice, num.NewUint(501))
+	party3Order.Price = num.UintZero().Add(num.NewUint(matchingPrice), num.NewUint(501))
 
 	conf, err = tm.market.SubmitOrder(ctx, party2Order)
 	require.NoError(t, err)
