@@ -508,7 +508,7 @@ Feature: Fees calculations
       | aux1    | ETH   | 100000000 |
       | aux2    | ETH   | 100000000 |
       | trader3 | ETH   | 10000000  |
-      | trader4 | ETH   | 22086     |
+      | trader4 | ETH   | 24307     |
       | lpprov  | ETH   | 100000000 |
 
     Then the parties place the following orders:
@@ -544,7 +544,7 @@ Feature: Fees calculations
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader3 | ETH   | ETH/DEC21 | 24000  | 9976501 |
-      | trader4 | ETH   | ETH/DEC21 | 11364  | 0       |
+      | trader4 | ETH   | ETH/DEC21 | 13464  | 121     |
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
@@ -568,7 +568,7 @@ Feature: Fees calculations
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader3 | ETH   | ETH/DEC21 | 26329  | 9974178 |
-      | trader4 | ETH   | ETH/DEC21 | 11254  | 0       |
+      | trader4 | ETH   | ETH/DEC21 | 13475  | 0       |
 
   Scenario: Testing fees to confirm fees are collected first and then margin
 
