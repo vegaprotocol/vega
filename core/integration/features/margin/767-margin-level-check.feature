@@ -11,7 +11,7 @@ Feature: Regression test for issue 767
   Scenario: Traders place orders meeting the maintenance margin, but not the initial margin requirements, and can close out
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount  |
-      | edd    | BTC   | 1000    |
+      | edd    | BTC   | 1026    |
       | barney | BTC   | 1000    |
       | party1 | BTC   | 1000000 |
       | party2 | BTC   | 1000000 |
@@ -44,34 +44,34 @@ Feature: Regression test for issue 767
       | party2 | party2-1  |
 
     When the parties place the following orders with ticks:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | edd    | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | edd    | ETH/DEC19 | sell | 20     | 102   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | edd    | ETH/DEC19 | sell | 10     | 103   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
-      | edd    | ETH/DEC19 | sell | 15     | 104   | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
-      | edd    | ETH/DEC19 | sell | 30     | 105   | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
-      | barney | ETH/DEC19 | buy  | 20     | 99    | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
-      | barney | ETH/DEC19 | buy  | 12     | 98    | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
-      | barney | ETH/DEC19 | buy  | 14     | 97    | 0                | TYPE_LIMIT | TIF_GTC | ref-8     |
-      | barney | ETH/DEC19 | buy  | 20     | 96    | 0                | TYPE_LIMIT | TIF_GTC | ref-9     |
-      | barney | ETH/DEC19 | buy  | 5      | 95    | 0                | TYPE_LIMIT | TIF_GTC | ref-10    |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | edd    | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell | 20     | 102   | 0                | TYPE_LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell | 10     | 103   | 0                | TYPE_LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell | 15     | 104   | 0                | TYPE_LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell | 30     | 105   | 0                | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  | 20     | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  | 12     | 98    | 0                | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  | 14     | 97    | 0                | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  | 20     | 96    | 0                | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  | 5      | 95    | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | edd    | BTC   | ETH/DEC19 | 848    | 152     |
+      | edd    | BTC   | ETH/DEC19 | 848    | 178     |
       | barney | BTC   | ETH/DEC19 | 594    | 406     |
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | edd   | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | edd    | BTC   | ETH/DEC19 | 1000   | 0       |
+      | edd    | BTC   | ETH/DEC19 | 1026   | 0       |
       | barney | BTC   | ETH/DEC19 | 594    | 406     |
-    And the cumulated balance for all accounts should be worth "3102000"
+    And the cumulated balance for all accounts should be worth "3102026"
     When the parties place the following orders with ticks:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | edd   | ETH/DEC19 | buy  | 115    | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | edd   | ETH/DEC19 | buy  | 115    | 100   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | edd    | BTC   | ETH/DEC19 | 1000   | 0       |
+      | edd    | BTC   | ETH/DEC19 | 1026   | 0       |
       | barney | BTC   | ETH/DEC19 | 594    | 406     |
-    And the cumulated balance for all accounts should be worth "3102000"
+    And the cumulated balance for all accounts should be worth "3102026"
