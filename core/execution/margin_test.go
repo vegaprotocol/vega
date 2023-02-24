@@ -374,7 +374,7 @@ func TestMarginRequirementSkippedWhenReducingExposure(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "lpprov", vgcrypto.RandomHash()))
 
 	party4Order := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, party4, types.SideBuy, party4, 1, uint64(500))
-	confirmation, err := tm.market.SubmitOrder(ctx, party4Order)
+	_, err = tm.market.SubmitOrder(ctx, party4Order)
 	require.ErrorContains(t, err, "margin")
 
 	now = now.Add(time.Second * 2) // opening auction is 1 second, move time ahead by 2 seconds so we leave auction
@@ -384,7 +384,7 @@ func TestMarginRequirementSkippedWhenReducingExposure(t *testing.T) {
 	posSize := uint64(10)
 	matchingPrice := uint64(1000)
 	party2Order := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, party2, types.SideSell, party2, posSize, matchingPrice)
-	confirmation, err = tm.market.SubmitOrder(ctx, party2Order)
+	confirmation, err := tm.market.SubmitOrder(ctx, party2Order)
 	require.NoError(t, err)
 	require.NotNil(t, confirmation)
 

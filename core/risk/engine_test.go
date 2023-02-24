@@ -712,7 +712,6 @@ func testInitialMarginRequirement(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, riskevt)
 	assert.True(t, riskevt.MarginLevels().InitialMargin.EQ(num.NewUint(initialMargin)))
-
 }
 
 func getTestEngine(t *testing.T) *testEngine {
