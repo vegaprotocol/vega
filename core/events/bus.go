@@ -73,6 +73,9 @@ type Event interface {
 	SetSequenceID(s uint64)
 	BlockNr() int64
 	StreamMessage() *eventspb.BusEvent
+	// used for events like ExpiredOrders. It is used to increment the sequence ID by the number of records
+	// this event will produce to ensure history tables using time + sequence number to function properly.
+	CompositeCount() uint64
 }
 
 const (
@@ -135,6 +138,7 @@ const (
 	CoreSnapshotEvent
 	ProtocolUpgradeDataNodeReadyEvent
 	DistressedOrdersClosedEvent
+	ExpiredOrdersEvent
 )
 
 var (
@@ -204,6 +208,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_SNAPSHOT_TAKEN:                   CoreSnapshotEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_DATA_NODE_READY: ProtocolUpgradeDataNodeReadyEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_ORDERS_CLOSED:         DistressedOrdersClosedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_EXPIRED_ORDERS:                   ExpiredOrdersEvent,
 
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
@@ -265,6 +270,7 @@ var (
 		CoreSnapshotEvent:                 eventspb.BusEventType_BUS_EVENT_TYPE_SNAPSHOT_TAKEN,
 		ProtocolUpgradeDataNodeReadyEvent: eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_DATA_NODE_READY,
 		DistressedOrdersClosedEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_ORDERS_CLOSED,
+		ExpiredOrdersEvent:                eventspb.BusEventType_BUS_EVENT_TYPE_EXPIRED_ORDERS,
 	}
 
 	eventStrings = map[Type]string{
@@ -325,6 +331,7 @@ var (
 		CoreSnapshotEvent:                 "CoreSnapshotEvent",
 		ProtocolUpgradeDataNodeReadyEvent: "UpgradeDataNodeEvent",
 		DistressedOrdersClosedEvent:       "DistressedOrdersClosedEvent",
+		ExpiredOrdersEvent:                "ExpiredOrdersEvent",
 	}
 )
 
@@ -342,6 +349,11 @@ func newBase(ctx context.Context, t Type) *Base {
 		blockNr: h,
 		et:      t,
 	}
+}
+
+// CompositeCount on the base event will default to 1.
+func (b Base) CompositeCount() uint64 {
+	return 1
 }
 
 // TraceID returns the... traceID obviously.

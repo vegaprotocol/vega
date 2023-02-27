@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TradingDataServiceClient interface {
-	// Accounts
+	// Accounts list
 	//
 	// Returns a list of accounts matching the supplied filter, including their current balances.
 	// If a given account has never had a balance, it will be absent from the list.
@@ -44,7 +44,7 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of orders that match the given filters
 	ListOrders(ctx context.Context, in *ListOrdersRequest, opts ...grpc.CallOption) (*ListOrdersResponse, error)
-	// Order history
+	// Order history list
 	//
 	// List all versions of an order in the order history
 	ListOrderVersions(ctx context.Context, in *ListOrderVersionsRequest, opts ...grpc.CallOption) (*ListOrderVersionsResponse, error)
@@ -58,7 +58,7 @@ type TradingDataServiceClient interface {
 	// Get a list of positions by party (public key) using cursor based pagination
 	// Deprecated: use ListAllPositions instead
 	ListPositions(ctx context.Context, in *ListPositionsRequest, opts ...grpc.CallOption) (*ListPositionsResponse, error)
-	// Positions
+	// Positions list
 	//
 	// Get a list of positions by party (public key) using cursor based pagination
 	ListAllPositions(ctx context.Context, in *ListAllPositionsRequest, opts ...grpc.CallOption) (*ListAllPositionsResponse, error)
@@ -66,7 +66,7 @@ type TradingDataServiceClient interface {
 	//
 	// Subscribe to a stream of positions
 	ObservePositions(ctx context.Context, in *ObservePositionsRequest, opts ...grpc.CallOption) (TradingDataService_ObservePositionsClient, error)
-	// Ledger entries
+	// Ledger entries list
 	//
 	// List ledger entries by asset, market, party, account type and transfer type within the given date range.
 	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
@@ -159,7 +159,7 @@ type TradingDataServiceClient interface {
 	//
 	// Subscribe to a stream of votes
 	ObserveVotes(ctx context.Context, in *ObserveVotesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveVotesClient, error)
-	// ERC-20 add signer bundle
+	// ERC-20 list add signer bundle
 	//
 	// List the signature bundle to add a particular validator to the signer list of the multisig contract
 	ListERC20MultiSigSignerAddedBundles(ctx context.Context, in *ListERC20MultiSigSignerAddedBundlesRequest, opts ...grpc.CallOption) (*ListERC20MultiSigSignerAddedBundlesResponse, error)
@@ -289,7 +289,7 @@ type TradingDataServiceClient interface {
 	ObserveGovernance(ctx context.Context, in *ObserveGovernanceRequest, opts ...grpc.CallOption) (TradingDataService_ObserveGovernanceClient, error)
 	// Delegation list
 	//
-	// List delegations
+	// List the token delegations on the network
 	ListDelegations(ctx context.Context, in *ListDelegationsRequest, opts ...grpc.CallOption) (*ListDelegationsResponse, error)
 	// Delegation events subscription
 	//
@@ -339,11 +339,11 @@ type TradingDataServiceClient interface {
 	//
 	// Retrieve staking informations for a given party
 	GetStake(ctx context.Context, in *GetStakeRequest, opts ...grpc.CallOption) (*GetStakeResponse, error)
-	// Risk Factors
+	// Risk factors
 	//
-	// Get Risk Factor data for a given market
+	// Get risk factor data for a given market
 	GetRiskFactors(ctx context.Context, in *GetRiskFactorsRequest, opts ...grpc.CallOption) (*GetRiskFactorsResponse, error)
-	// Event Bus
+	// Event bus subscription
 	//
 	// Subscribe to a stream of events from the core
 	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (TradingDataService_ObserveEventBusClient, error)
@@ -367,11 +367,11 @@ type TradingDataServiceClient interface {
 	//
 	// Get status of a protocol upgrade
 	GetProtocolUpgradeStatus(ctx context.Context, in *GetProtocolUpgradeStatusRequest, opts ...grpc.CallOption) (*GetProtocolUpgradeStatusResponse, error)
-	// Protocol upgrade proposals
+	// Protocol upgrade proposals list
 	//
 	// List protocol upgrade proposals, optionally filtering on status or approver.
 	ListProtocolUpgradeProposals(ctx context.Context, in *ListProtocolUpgradeProposalsRequest, opts ...grpc.CallOption) (*ListProtocolUpgradeProposalsResponse, error)
-	// Snapshots
+	// Snapshots list
 	//
 	// List core snapshots taken
 	ListCoreSnapshots(ctx context.Context, in *ListCoreSnapshotsRequest, opts ...grpc.CallOption) (*ListCoreSnapshotsResponse, error)
@@ -379,11 +379,11 @@ type TradingDataServiceClient interface {
 	//
 	// Get the network's most recently history segment
 	GetMostRecentNetworkHistorySegment(ctx context.Context, in *GetMostRecentNetworkHistorySegmentRequest, opts ...grpc.CallOption) (*GetMostRecentNetworkHistorySegmentResponse, error)
-	// Network history all segments
+	// Network history all segments list
 	//
-	// List all history segments stored by this node
+	// List all history segments stored by the data node you're connected to
 	ListAllNetworkHistorySegments(ctx context.Context, in *ListAllNetworkHistorySegmentsRequest, opts ...grpc.CallOption) (*ListAllNetworkHistorySegmentsResponse, error)
-	// Network history peer addresses
+	// Network history peer addresses list
 	//
 	// List the addresses of all active network history peers
 	GetActiveNetworkHistoryPeerAddresses(ctx context.Context, in *GetActiveNetworkHistoryPeerAddressesRequest, opts ...grpc.CallOption) (*GetActiveNetworkHistoryPeerAddressesResponse, error)
@@ -394,7 +394,7 @@ type TradingDataServiceClient interface {
 	NetworkHistoryStatus(ctx context.Context, in *NetworkHistoryStatusRequest, opts ...grpc.CallOption) (*NetworkHistoryStatusResponse, error)
 	// Network history bootstrap peers
 	//
-	// Retrieves the nodes bootstrap peers
+	// Retrieves the bootstrap peers for data nodes.
 	// Response contains the bootstrap peers
 	NetworkHistoryBootstrapPeers(ctx context.Context, in *NetworkHistoryBootstrapPeersRequest, opts ...grpc.CallOption) (*NetworkHistoryBootstrapPeersResponse, error)
 	// Ping
@@ -1566,7 +1566,7 @@ func (c *tradingDataServiceClient) Ping(ctx context.Context, in *PingRequest, op
 // All implementations must embed UnimplementedTradingDataServiceServer
 // for forward compatibility
 type TradingDataServiceServer interface {
-	// Accounts
+	// Accounts list
 	//
 	// Returns a list of accounts matching the supplied filter, including their current balances.
 	// If a given account has never had a balance, it will be absent from the list.
@@ -1588,7 +1588,7 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of orders that match the given filters
 	ListOrders(context.Context, *ListOrdersRequest) (*ListOrdersResponse, error)
-	// Order history
+	// Order history list
 	//
 	// List all versions of an order in the order history
 	ListOrderVersions(context.Context, *ListOrderVersionsRequest) (*ListOrderVersionsResponse, error)
@@ -1602,7 +1602,7 @@ type TradingDataServiceServer interface {
 	// Get a list of positions by party (public key) using cursor based pagination
 	// Deprecated: use ListAllPositions instead
 	ListPositions(context.Context, *ListPositionsRequest) (*ListPositionsResponse, error)
-	// Positions
+	// Positions list
 	//
 	// Get a list of positions by party (public key) using cursor based pagination
 	ListAllPositions(context.Context, *ListAllPositionsRequest) (*ListAllPositionsResponse, error)
@@ -1610,7 +1610,7 @@ type TradingDataServiceServer interface {
 	//
 	// Subscribe to a stream of positions
 	ObservePositions(*ObservePositionsRequest, TradingDataService_ObservePositionsServer) error
-	// Ledger entries
+	// Ledger entries list
 	//
 	// List ledger entries by asset, market, party, account type and transfer type within the given date range.
 	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
@@ -1703,7 +1703,7 @@ type TradingDataServiceServer interface {
 	//
 	// Subscribe to a stream of votes
 	ObserveVotes(*ObserveVotesRequest, TradingDataService_ObserveVotesServer) error
-	// ERC-20 add signer bundle
+	// ERC-20 list add signer bundle
 	//
 	// List the signature bundle to add a particular validator to the signer list of the multisig contract
 	ListERC20MultiSigSignerAddedBundles(context.Context, *ListERC20MultiSigSignerAddedBundlesRequest) (*ListERC20MultiSigSignerAddedBundlesResponse, error)
@@ -1833,7 +1833,7 @@ type TradingDataServiceServer interface {
 	ObserveGovernance(*ObserveGovernanceRequest, TradingDataService_ObserveGovernanceServer) error
 	// Delegation list
 	//
-	// List delegations
+	// List the token delegations on the network
 	ListDelegations(context.Context, *ListDelegationsRequest) (*ListDelegationsResponse, error)
 	// Delegation events subscription
 	//
@@ -1883,11 +1883,11 @@ type TradingDataServiceServer interface {
 	//
 	// Retrieve staking informations for a given party
 	GetStake(context.Context, *GetStakeRequest) (*GetStakeResponse, error)
-	// Risk Factors
+	// Risk factors
 	//
-	// Get Risk Factor data for a given market
+	// Get risk factor data for a given market
 	GetRiskFactors(context.Context, *GetRiskFactorsRequest) (*GetRiskFactorsResponse, error)
-	// Event Bus
+	// Event bus subscription
 	//
 	// Subscribe to a stream of events from the core
 	ObserveEventBus(TradingDataService_ObserveEventBusServer) error
@@ -1911,11 +1911,11 @@ type TradingDataServiceServer interface {
 	//
 	// Get status of a protocol upgrade
 	GetProtocolUpgradeStatus(context.Context, *GetProtocolUpgradeStatusRequest) (*GetProtocolUpgradeStatusResponse, error)
-	// Protocol upgrade proposals
+	// Protocol upgrade proposals list
 	//
 	// List protocol upgrade proposals, optionally filtering on status or approver.
 	ListProtocolUpgradeProposals(context.Context, *ListProtocolUpgradeProposalsRequest) (*ListProtocolUpgradeProposalsResponse, error)
-	// Snapshots
+	// Snapshots list
 	//
 	// List core snapshots taken
 	ListCoreSnapshots(context.Context, *ListCoreSnapshotsRequest) (*ListCoreSnapshotsResponse, error)
@@ -1923,11 +1923,11 @@ type TradingDataServiceServer interface {
 	//
 	// Get the network's most recently history segment
 	GetMostRecentNetworkHistorySegment(context.Context, *GetMostRecentNetworkHistorySegmentRequest) (*GetMostRecentNetworkHistorySegmentResponse, error)
-	// Network history all segments
+	// Network history all segments list
 	//
-	// List all history segments stored by this node
+	// List all history segments stored by the data node you're connected to
 	ListAllNetworkHistorySegments(context.Context, *ListAllNetworkHistorySegmentsRequest) (*ListAllNetworkHistorySegmentsResponse, error)
-	// Network history peer addresses
+	// Network history peer addresses list
 	//
 	// List the addresses of all active network history peers
 	GetActiveNetworkHistoryPeerAddresses(context.Context, *GetActiveNetworkHistoryPeerAddressesRequest) (*GetActiveNetworkHistoryPeerAddressesResponse, error)
@@ -1938,7 +1938,7 @@ type TradingDataServiceServer interface {
 	NetworkHistoryStatus(context.Context, *NetworkHistoryStatusRequest) (*NetworkHistoryStatusResponse, error)
 	// Network history bootstrap peers
 	//
-	// Retrieves the nodes bootstrap peers
+	// Retrieves the bootstrap peers for data nodes.
 	// Response contains the bootstrap peers
 	NetworkHistoryBootstrapPeers(context.Context, *NetworkHistoryBootstrapPeersRequest) (*NetworkHistoryBootstrapPeersResponse, error)
 	// Ping

@@ -717,6 +717,9 @@ enum BusEventType {
 
   // Event indicating parties had orders closed because they were distressed, but were not closed out.
   BUS_EVENT_TYPE_DISTRESSED_ORDERS_CLOSED = 56;
+  // Event indicating parties had orders closed because they were distressed, but were not closed out.
+  BUS_EVENT_TYPE_EXPIRED_ORDERS = 57;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -840,6 +843,8 @@ message BusEvent {
     ProtocolUpgradeDataNodeReady protocol_upgrade_data_node_ready = 154;
     // Parties that had their orders closed because they were distressed
     DistressedOrders distressed_orders = 155;
+    // Orders that expired for a given market
+    ExpiredOrders expired_orders = 156;
 
     // Market tick events - See [MarketEvent](#vega.MarketEvent)
     MarketEvent market = 1001;
@@ -852,3 +857,9 @@ message BusEvent {
   string tx_hash = 6;
 }
 
+message ExpiredOrders {
+  // Market identifier for the event
+  string market_id = 1;
+  // Slice of expired order identifiers
+  repeated string order_ids = 2;
+}

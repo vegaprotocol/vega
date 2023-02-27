@@ -596,7 +596,7 @@ func testFailingSpamChecksAbortsTheTransaction(t *testing.T) {
 	require.NotNil(t, errorDetails)
 	assert.Equal(t, api.ErrorCodeRequestHasBeenCancelledByApplication, errorDetails.Code)
 	assert.Equal(t, "Application error", errorDetails.Message)
-	assert.Equal(t, api.ErrTransactionBlockedBySpamRules.Error(), errorDetails.Data)
+	assert.Equal(t, assert.AnError.Error(), errorDetails.Data)
 	assert.Empty(t, result)
 }
 

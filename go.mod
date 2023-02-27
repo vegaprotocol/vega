@@ -376,7 +376,7 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.uber.org/atomic v1.10.0
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
+	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.7.0 // indirect
 	golang.org/x/net v0.4.0 // indirect

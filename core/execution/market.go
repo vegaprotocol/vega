@@ -1444,24 +1444,11 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		}
 	}
 
-	oldPos, ok := m.position.GetPositionByPartyID(order.Party)
 	// Register order as potential positions
 	pos := m.position.RegisterOrder(ctx, order)
-	checkMargin := true
-	if !isPegged && ok {
-		oldVol, newVol := pos.Size()+pos.Buy()-pos.Sell(), oldPos.Size()+pos.Buy()-pos.Sell()
-		if oldVol < 0 {
-			oldVol = -oldVol
-		}
-		if newVol < 0 {
-			newVol = -newVol
-		}
-		// check margin if the new volume is greater, or the same (implying long to short, or short to long)
-		checkMargin = oldVol <= newVol
-	}
 
 	// Perform check and allocate margin unless the order is (partially) closing the party position
-	if checkMargin {
+	if !pos.OrderReducesExposure(order) {
 		if err := m.checkMarginForOrder(ctx, pos, order); err != nil {
 			if m.log.GetLevel() <= logging.DebugLevel {
 				m.log.Debug("Unable to check/add margin for party",
@@ -2737,7 +2724,7 @@ func (m *Market) amendOrder(
 	// is already on the book, not rollback will be needed, the margin
 	// will be updated later on for sure.
 
-	// akways update margin, even for price/size decrease
+	// always update margin, even for price/size decrease
 	if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
 		// Undo the position registering
 		_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
@@ -3001,8 +2988,12 @@ func (m *Market) removeExpiredOrders(
 	defer timer.EngineTimeCounterAdd()
 
 	expired := []*types.Order{}
-	evts := []events.Event{}
-	for _, orderID := range m.expiringOrders.Expire(timestamp) {
+	toExp := m.expiringOrders.Expire(timestamp)
+	if len(toExp) == 0 {
+		return expired
+	}
+	ids := make([]string, 0, len(toExp))
+	for _, orderID := range toExp {
 		var order *types.Order
 		// The pegged expiry orders are copies and do not reflect the
 		// current state of the order, therefore we look it up
@@ -3035,9 +3026,11 @@ func (m *Market) removeExpiredOrders(
 		order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
 		order.Status = types.OrderStatusExpired
 		expired = append(expired, order)
-		evts = append(evts, events.NewOrderEvent(ctx, order))
+		ids = append(ids, orderID)
 	}
-	m.broker.SendBatch(evts)
+	if len(ids) > 0 {
+		m.broker.Send(events.NewExpiredOrdersEvent(ctx, m.mkt.ID, ids))
+	}
 
 	// If we have removed an expired order, do we need to reprice any
 	// or maybe notify the liquidity engine

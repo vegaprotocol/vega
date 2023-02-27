@@ -46,6 +46,9 @@ func NewTmNode(
 	if err := viper.Unmarshal(config); err != nil {
 		return nil, fmt.Errorf("decoding tendermint config: %v", err)
 	}
+
+	overwriteConfig(config)
+
 	if err := config.ValidateBasic(); err != nil {
 		return nil, fmt.Errorf("invalid tendermint configuration data: %v", err)
 	}
@@ -127,7 +130,6 @@ func loadConfig(homeDir string) (*config.Config, error) {
 	}
 
 	conf.SetRoot(homeDir)
-	overwriteConfig(conf)
 	if err := conf.ValidateBasic(); err != nil {
 		return nil, fmt.Errorf("error in config file: %w", err)
 	}
@@ -137,7 +139,7 @@ func loadConfig(homeDir string) (*config.Config, error) {
 
 // we want to force validators to skip timeout on commit so they don't wait after consensus has been reached.
 func overwriteConfig(config *config.Config) {
-	config.Consensus.SkipTimeoutCommit = true
+	config.Consensus.TimeoutCommit = 0
 	config.Consensus.CreateEmptyBlocks = true
 	// enforce using priority mempool
 	config.Mempool.Version = "v1"

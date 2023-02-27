@@ -1,6 +1,29 @@
 # Changelog
 
-## Unreleased 0.68.0
+## Unreleased 0.69.0
+
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [6942](https://github.com/vegaprotocol/vega/issues/6942) - Add `admin.rename_network` with `vega wallet network rename`
+- [7656](https://github.com/vegaprotocol/vega/issues/7656) - Add `vega wallet service config locate` CLI that returns the location of the service configuration file.
+- [7656](https://github.com/vegaprotocol/vega/issues/7656) - Add `vega wallet service config describe` CLI that display the service configuration.
+- [7656](https://github.com/vegaprotocol/vega/issues/7656) - Add `vega wallet service config reset` CLI that reset the service configuration to its default state.
+- [7288](https://github.com/vegaprotocol/vega/issues/7288) - Add `block` interval for trade candles
+- [7413](https://github.com/vegaprotocol/vega/issues/7413) - Add foreign block height to stake linkings in `GraphQL`
+
+### 🐛 Fixes
+- [7535](https://github.com/vegaprotocol/vega/issues/7535) - Fix network history load takes an increasingly long time to complete
+- [7517](https://github.com/vegaprotocol/vega/issues/7517) - Add buffer files event source 
+- [7659](https://github.com/vegaprotocol/vega/issues/7659) - Tidy up REST documentation for consistency
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.68.0
 
 ### 🚨 Breaking changes
 - [7304](https://github.com/vegaprotocol/vega/issues/7304) - In the `datanode` `GraphQL` schema, move `fromEpoch` and `toEpoch` into a new `filter` for `epochRewardSummaries` query. Also add `assetIds` and `marketIds` to the same filter.
@@ -40,7 +63,11 @@
 - [7564](https://github.com/vegaprotocol/vega/issues/7564) - Add logging when database migrations are run
 - [7546](https://github.com/vegaprotocol/vega/issues/7546) - Visor automatically uses snapshot on core based on latest data node snapshot.
 - [7576](https://github.com/vegaprotocol/vega/issues/7576) - include the application version in the block hash
+- [7605](https://github.com/vegaprotocol/vega/issues/7605) - Return better error text when the wallet blocks a transaction due to spam rules
 - [7591](https://github.com/vegaprotocol/vega/issues/7591) - Add metadata and links to app to the network configuration
+- [7632](https://github.com/vegaprotocol/vega/issues/7632) - Make the wallet change events JSON friendly
+- [7601](https://github.com/vegaprotocol/vega/issues/7601) - introduce the expired orders event for optimisation.
+- [7655](https://github.com/vegaprotocol/vega/issues/7655) - Require initial margin level to be met on new orders
 
 ### 🐛 Fixes
 - [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema
@@ -72,10 +99,14 @@
 - [7508](https://github.com/vegaprotocol/vega/issues/7508) - Assure transfer events always sent after margin recheck
 - [7492](https://github.com/vegaprotocol/vega/issues/7492) - Send market depth events at the end of each block
 - [7582](https://github.com/vegaprotocol/vega/issues/7582) - Validate transfer amount in `checkTx`
+- [7582](https://github.com/vegaprotocol/vega/issues/7625) - Add validation to wallet's server configuration
 - [7577](https://github.com/vegaprotocol/vega/issues/7577) - Use correct trade size when calculating pending open volume
 - [7598](https://github.com/vegaprotocol/vega/issues/7598) - Set up log for rate limiter
+- [7629](https://github.com/vegaprotocol/vega/issues/7629) - Handle error from `e.initialiseTree()` in the snapshot engine
 - [7607](https://github.com/vegaprotocol/vega/issues/7607) - Fix handling of removed transfers
 - [7622](https://github.com/vegaprotocol/vega/issues/7622) - Fix cleaning path for Visor when restarting data node
+- [7638](https://github.com/vegaprotocol/vega/issues/7638) - Add missing fields to position update resolver
+- [7647](https://github.com/vegaprotocol/vega/issues/7647) - Assure LP orders never trade on entry
 
 ## 0.67.2
 

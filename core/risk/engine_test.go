@@ -88,7 +88,8 @@ func TestUpdateMargins(t *testing.T) {
 	t.Run("Update Margin with orders in book 2", testMarginWithOrderInBook2)
 	t.Run("Update Margin with orders in book after parameters update", testMarginWithOrderInBookAfterParamsUpdate)
 	t.Run("Top up fail on new order", testMarginTopupOnOrderFailInsufficientFunds)
-	t.Run("Margin not released in auction ", testMarginNotReleasedInAuction)
+	t.Run("Margin not released in auction", testMarginNotReleasedInAuction)
+	t.Run("Initial margin requirement must be met", testInitialMarginRequirement)
 }
 
 func testMarginLevelsTS(t *testing.T) {
@@ -215,7 +216,7 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 	riskevt, _, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice)
 	assert.Nil(t, riskevt)
 	assert.NotNil(t, err)
-	assert.Error(t, err, risk.ErrInsufficientFundsForMaintenanceMargin.Error())
+	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
 }
 
 func testMarginNoop(t *testing.T) {
@@ -661,6 +662,56 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 	assert.Equal(t, uint64(562*searchLevel), margins.SearchLevel.Uint64())
 	assert.Equal(t, uint64(562*initialMargin), margins.InitialMargin.Uint64())
 	assert.Equal(t, uint64(562*colRelease), margins.CollateralReleaseLevel.Uint64())
+}
+
+func testInitialMarginRequirement(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+	_, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
+
+	initialMargin := uint64(96)
+
+	evt := testMargin{
+		party:   "party1",
+		size:    -4,
+		price:   1000,
+		asset:   "ETH",
+		margin:  0,
+		general: initialMargin - 1,
+		market:  "ETH/DEC19",
+	}
+	eng.tsvc.EXPECT().GetTimeNow().Times(4)
+	eng.as.EXPECT().InAuction().Times(2).Return(false)
+	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(2).
+		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
+			return markPrice.Clone(), nil
+		})
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
+	riskevt, _, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice)
+	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
+	assert.Nil(t, riskevt)
+
+	evt.general = initialMargin
+	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice)
+	assert.NoError(t, err)
+	assert.NotNil(t, riskevt)
+	assert.True(t, riskevt.MarginLevels().InitialMargin.EQ(num.NewUint(initialMargin)))
+
+	eng.as.EXPECT().InAuction().Times(2).Return(true)
+	eng.as.EXPECT().CanLeave().Times(2).Return(false)
+	eng.orderbook.EXPECT().GetIndicativePrice().Times(2).Return(markPrice.Clone())
+
+	evt.general = initialMargin - 1
+	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice)
+	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
+	assert.Nil(t, riskevt)
+
+	evt.general = initialMargin
+	riskevt, _, err = eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice)
+	assert.NoError(t, err)
+	assert.NotNil(t, riskevt)
+	assert.True(t, riskevt.MarginLevels().InitialMargin.EQ(num.NewUint(initialMargin)))
 }
 
 func getTestEngine(t *testing.T) *testEngine {
