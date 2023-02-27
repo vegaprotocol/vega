@@ -14,6 +14,7 @@ package gql
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -38,6 +39,10 @@ func (s *stakeLinkingResolver) FinalizedAt(_ context.Context, obj *eventspb.Stak
 		return nil, nil
 	}
 	return ptr.From(obj.FinalizedAt), nil
+}
+
+func (s *stakeLinkingResolver) BlockHeight(_ context.Context, obj *eventspb.StakeLinking) (string, error) {
+	return fmt.Sprintf("%d", obj.BlockHeight), nil
 }
 
 type partyStakeResolver VegaResolverRoot

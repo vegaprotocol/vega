@@ -10,21 +10,11 @@ import (
 )
 
 type AdminUpdateNetworkParams struct {
-	Name string `json:"name"`
-	API  struct {
-		GRPCConfig struct {
-			Hosts   []string `json:"hosts"`
-			Retries uint64   `json:"retries"`
-		} `json:"grpcConfig"`
-		RESTConfig struct {
-			Hosts []string `json:"hosts"`
-		} `json:"restConfig"`
-		GraphQLConfig struct {
-			Hosts []string `json:"hosts"`
-		} `json:"graphQLConfig"`
-	} `json:"api"`
+	Name     string             `json:"name"`
+	Metadata []network.Metadata `json:"metadata"`
+	API      network.APIConfig  `json:"api"`
+	Apps     network.AppsConfig `json:"apps"`
 }
-
 type AdminUpdateNetwork struct {
 	networkStore NetworkStore
 }
@@ -61,21 +51,18 @@ func validateUpdateNetworkParams(rawParams jsonrpc.Params) (network.Network, err
 		return network.Network{}, ErrNetworkNameIsRequired
 	}
 
-	return network.Network{
-		Name: params.Name,
-		API: network.APIConfig{
-			GRPC: network.GRPCConfig{
-				Hosts:   params.API.GRPCConfig.Hosts,
-				Retries: params.API.GRPCConfig.Retries,
-			},
-			REST: network.RESTConfig{
-				Hosts: params.API.RESTConfig.Hosts,
-			},
-			GraphQL: network.GraphQLConfig{
-				Hosts: params.API.GraphQLConfig.Hosts,
-			},
-		},
-	}, nil
+	net := network.Network{
+		Name:     params.Name,
+		Metadata: params.Metadata,
+		API:      params.API,
+		Apps:     params.Apps,
+	}
+
+	if err := net.EnsureCanConnectGRPCNode(); err != nil {
+		return network.Network{}, err
+	}
+
+	return net, nil
 }
 
 func NewAdminUpdateNetwork(

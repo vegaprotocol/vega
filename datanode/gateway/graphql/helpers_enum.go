@@ -20,6 +20,8 @@ import (
 
 func convertDataNodeIntervalToProto(interval string) (types.Interval, error) {
 	switch interval {
+	case "block":
+		return types.Interval_INTERVAL_BLOCK, nil
 	case "1 minute":
 		return types.Interval_INTERVAL_I1M, nil
 	case "5 minutes":

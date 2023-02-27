@@ -120,6 +120,7 @@ var (
 	ErrNetworkAlreadyExists                               = errors.New("a network with the same name already exists")
 	ErrNetworkConfigurationDoesNotHaveGRPCNodes           = errors.New("the network does not have gRPC hosts configured")
 	ErrNetworkDoesNotExist                                = errors.New("the network does not exist")
+	ErrNetworkIsRequired                                  = errors.New("the network is required")
 	ErrNetworkNameIsRequired                              = errors.New("the network name is required")
 	ErrNetworkOrNodeAddressIsRequired                     = errors.New("a network or a node address is required")
 	ErrNetworkSourceIsRequired                            = errors.New("a network source is required")

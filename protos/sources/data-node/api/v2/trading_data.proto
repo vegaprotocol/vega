@@ -16,14 +16,14 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.68.0";
+    version: "v0.69.0-dev";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz/datanode/rest"
 };
 
 service TradingDataService {
-    // Accounts
+    // Accounts list
     //
     // Returns a list of accounts matching the supplied filter, including their current balances.
     // If a given account has never had a balance, it will be absent from the list.
@@ -50,7 +50,7 @@ service TradingDataService {
     // Get a list of orders that match the given filters
     rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
 
-    // Order history
+    // Order history list
     //
     // List all versions of an order in the order history
     rpc ListOrderVersions(ListOrderVersionsRequest) returns (ListOrderVersionsResponse);
@@ -68,7 +68,7 @@ service TradingDataService {
         option deprecated = true;
     };
 
-    // Positions
+    // Positions list
     //
     // Get a list of positions by party (public key) using cursor based pagination
     rpc ListAllPositions(ListAllPositionsRequest) returns (ListAllPositionsResponse);
@@ -78,7 +78,7 @@ service TradingDataService {
     // Subscribe to a stream of positions
     rpc ObservePositions(ObservePositionsRequest) returns (stream ObservePositionsResponse);
 
-    // Ledger entries
+    // Ledger entries list
     //
     // List ledger entries by asset, market, party, account type and transfer type within the given date range.
     // This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
@@ -93,6 +93,8 @@ service TradingDataService {
     //   - listing ledger entries with filtering on the sending AND receiving account
     //   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
     rpc ListLedgerEntries(ListLedgerEntriesRequest) returns (ListLedgerEntriesResponse) {}
+
+    // Ledger entries export
 
     // Export ledger entries records ledger entries to a csv file.
     // May or may not contain a date range - if no date range is provided, list all records for all times.
@@ -188,7 +190,7 @@ service TradingDataService {
     // Subscribe to a stream of votes
     rpc ObserveVotes(ObserveVotesRequest) returns (stream ObserveVotesResponse);
 
-    // ERC-20 add signer bundle
+    // ERC-20 list add signer bundle
     //
     // List the signature bundle to add a particular validator to the signer list of the multisig contract
     rpc ListERC20MultiSigSignerAddedBundles(ListERC20MultiSigSignerAddedBundlesRequest) returns (ListERC20MultiSigSignerAddedBundlesResponse);
@@ -350,7 +352,7 @@ service TradingDataService {
 
     // Delegation list
     //
-    // List delegations
+    // List the token delegations on the network
     rpc ListDelegations(ListDelegationsRequest) returns (ListDelegationsResponse);
 
     // Delegation events subscription
@@ -413,12 +415,12 @@ service TradingDataService {
     // Retrieve staking informations for a given party
     rpc GetStake(GetStakeRequest) returns (GetStakeResponse);
 
-    // Risk Factors
+    // Risk factors
     //
-    // Get Risk Factor data for a given market
+    // Get risk factor data for a given market
     rpc GetRiskFactors(GetRiskFactorsRequest) returns (GetRiskFactorsResponse);
 
-    // Event Bus
+    // Event bus subscription
     //
     // Subscribe to a stream of events from the core
     rpc ObserveEventBus(stream ObserveEventBusRequest) returns (stream ObserveEventBusResponse);
@@ -448,12 +450,12 @@ service TradingDataService {
     // Get status of a protocol upgrade
     rpc GetProtocolUpgradeStatus(GetProtocolUpgradeStatusRequest) returns (GetProtocolUpgradeStatusResponse);
 
-    // Protocol upgrade proposals
+    // Protocol upgrade proposals list
     //
     // List protocol upgrade proposals, optionally filtering on status or approver.
     rpc ListProtocolUpgradeProposals(ListProtocolUpgradeProposalsRequest) returns (ListProtocolUpgradeProposalsResponse);
 
-    // Snapshots
+    // Snapshots list
     //
     // List core snapshots taken
     rpc ListCoreSnapshots(ListCoreSnapshotsRequest) returns (ListCoreSnapshotsResponse);
@@ -470,12 +472,12 @@ service TradingDataService {
     // Get the network's most recently history segment
     rpc GetMostRecentNetworkHistorySegment(GetMostRecentNetworkHistorySegmentRequest) returns (GetMostRecentNetworkHistorySegmentResponse);
 
-    // Network history all segments
+    // Network history all segments list
     //
-    // List all history segments stored by this node
+    // List all history segments stored by the data node you're connected to
     rpc ListAllNetworkHistorySegments(ListAllNetworkHistorySegmentsRequest) returns (ListAllNetworkHistorySegmentsResponse);
 
-    // Network history peer addresses
+    // Network history peer addresses list
     //
     // List the addresses of all active network history peers
     rpc GetActiveNetworkHistoryPeerAddresses(GetActiveNetworkHistoryPeerAddressesRequest) returns (GetActiveNetworkHistoryPeerAddressesResponse);
@@ -488,7 +490,7 @@ service TradingDataService {
 
     // Network history bootstrap peers
     //
-    // Retrieves the nodes bootstrap peers
+    // Retrieves the bootstrap peers for data nodes.
     // Response contains the bootstrap peers
     rpc NetworkHistoryBootstrapPeers(NetworkHistoryBootstrapPeersRequest) returns (NetworkHistoryBootstrapPeersResponse);
 
@@ -1431,7 +1433,7 @@ message ERC20MultiSigSignerAddedBundle {
 
 }
 
-// Request for removing a signature bundle from the signer list of the multisig contract for a particular validator 
+// Request for removing a signature bundle from the signer list of the multisig contract for a particular validator
 message ListERC20MultiSigSignerRemovedBundlesRequest {
     // The node ID of the validator of which a signature bundle is required
     string node_id = 1;
@@ -1446,7 +1448,7 @@ message ListERC20MultiSigSignerRemovedBundlesRequest {
     Pagination pagination = 4;
 }
 
-// Response when removing a signature bundle from the signer list of the multisig contract for a particular validator 
+// Response when removing a signature bundle from the signer list of the multisig contract for a particular validator
 message ListERC20MultiSigSignerRemovedBundlesResponse {
     // List of signer bundle data parts for that validator
     ERC20MultiSigSignerRemovedConnection bundles = 1;
@@ -1608,7 +1610,7 @@ message TradeConnection {
     PageInfo page_info = 2;
 }
 
-// List of trades 
+// List of trades
 message TradeEdge {
     // Trade data
     vega.Trade node = 1;
@@ -2784,7 +2786,7 @@ message NetworkHistoryStatusRequest {}
 
 // Response containing the status of network history
 message NetworkHistoryStatusResponse {
-    // The IPFS address of this node
+    // The IPFS address of the data node you're connecting to
     string ipfs_address = 1;
     // The swarm key
     string swarm_key = 2;
