@@ -72,34 +72,24 @@ type condition func(string) (bool, error)
 // suits the processing of the filters.
 // OracleSpec allows the existence of one and only one.
 func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, error) {
-	signersFromSpec := []*types.Signer{}
+	filtersFromSpec := []*types.DataSourceSpecFilter{}
 	if originalSpec.Spec != nil {
 		if originalSpec.Spec.Data != nil {
-			src := *originalSpec.Spec.Data
-
-			signersFromSpec = src.GetSigners()
+			filtersFromSpec = originalSpec.Spec.Data.GetFilters()
 		}
 	}
 
-	if len(signersFromSpec) == 0 {
-		return nil, ErrMissingSigners
-	}
-
-	signers := map[string]struct{}{}
-	for _, pk := range signersFromSpec {
-		signers[pk.String()] = struct{}{}
-	}
-
-	filtersFromSpec := originalSpec.Spec.Data.GetFilters()
 	if len(filtersFromSpec) == 0 {
 		return nil, ErrAtLeastOneFilterIsRequired
 	}
 
+	builtIn := false
 	typedFilters := map[string]*filter{}
 	for _, f := range filtersFromSpec {
 		if types.DataSourceSpecPropertyKeyIsEmpty(f.Key) {
 			return nil, ErrMissingPropertyKey
 		}
+
 		if len(f.Key.Name) == 0 {
 			return nil, ErrMissingPropertyName
 		}
@@ -114,8 +104,11 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 			return nil, err
 		}
 
-		typedFilter, ok := typedFilters[f.Key.Name]
+		if strings.HasPrefix(f.Key.Name, "vegaprotocol.builtin") && f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
+			builtIn = true
+		}
 
+		typedFilter, ok := typedFilters[f.Key.Name]
 		var dp uint64
 		if f.Key.NumberDecimalPlaces != nil {
 			dp = *f.Key.NumberDecimalPlaces
@@ -135,6 +128,26 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 		}
 
 		typedFilter.conditions = append(typedFilter.conditions, conditions...)
+	}
+
+	signers := map[string]struct{}{}
+	if !builtIn {
+		signersFromSpec := []*types.Signer{}
+		if originalSpec.Spec != nil {
+			if originalSpec.Spec.Data != nil {
+				src := *originalSpec.Spec.Data
+
+				signersFromSpec = src.GetSigners()
+			}
+		}
+
+		if len(signersFromSpec) == 0 {
+			return nil, ErrMissingSigners
+		}
+
+		for _, pk := range signersFromSpec {
+			signers[pk.String()] = struct{}{}
+		}
 	}
 
 	os := &OracleSpec{
