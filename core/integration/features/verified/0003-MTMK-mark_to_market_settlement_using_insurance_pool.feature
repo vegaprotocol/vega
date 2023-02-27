@@ -35,6 +35,15 @@ Feature: Test mark to market settlement with insurance pool
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
+    And the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1100         | 0              | 1             |
+
+    #LP got closed out
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | initial | search | release |
+      | lpprov | ETH/DEC19 | 0           | 0       | 0      | 0       |
+   
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
