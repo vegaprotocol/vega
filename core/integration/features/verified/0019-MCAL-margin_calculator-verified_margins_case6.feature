@@ -34,6 +34,9 @@ Feature: CASE-6: Trader submits short order that will trade - new formula & zero
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "10300000" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    And the market data for the market "ETH/DEC19" should be:
+      |mark price| trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      |10300000  | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 20600000     | 0              | 1             |
 
     # setting mark price
     And the parties place the following orders:
