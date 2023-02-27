@@ -20,6 +20,7 @@
 - [7535](https://github.com/vegaprotocol/vega/issues/7535) - Fix network history load takes an increasingly long time to complete
 - [7517](https://github.com/vegaprotocol/vega/issues/7517) - Add buffer files event source 
 - [7659](https://github.com/vegaprotocol/vega/issues/7659) - Tidy up REST documentation for consistency
+- [7563](https://github.com/vegaprotocol/vega/issues/7563) - Let the wallet work again with null `blockchain`
 - [7692](https://github.com/vegaprotocol/vega/issues/7692) - Fix network history load hanging after protocol upgrade
 
 

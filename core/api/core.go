@@ -16,6 +16,8 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"math"
+	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -685,8 +687,22 @@ func (s *coreService) GetSpamStatistics(ctx context.Context, req *protoapi.GetSp
 
 	spamStats := &protoapi.SpamStatistics{}
 	// Spam engine is not set when NullBlockChain is used
-	if s.spamEngine != nil {
+	if s.spamEngine != nil && !reflect.ValueOf(s.spamEngine).IsNil() {
 		spamStats = s.spamEngine.GetSpamStatistics(req.PartyId)
+	} else {
+		defaultStats := &protoapi.SpamStatistic{
+			MaxForEpoch:       math.MaxUint64,
+			MinTokensRequired: "0",
+		}
+		spamStats.Delegations = defaultStats
+		spamStats.NodeAnnouncements = defaultStats
+		spamStats.Proposals = defaultStats
+		spamStats.IssueSignatures = defaultStats
+		spamStats.Transfers = defaultStats
+		spamStats.Votes = &protoapi.VoteSpamStatistics{
+			Statistics:  []*protoapi.VoteSpamStatistic{},
+			MaxForEpoch: math.MaxUint64,
+		}
 	}
 
 	// Noop PoW Engine is used for NullBlockChain so this should be safe
