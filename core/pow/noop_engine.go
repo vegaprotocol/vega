@@ -14,7 +14,9 @@ package pow
 
 import (
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	"github.com/ethereum/go-ethereum/common/math"
 )
 
 type NoopEngine struct {
@@ -53,5 +55,20 @@ func (e *NoopEngine) BlockData() (uint64, string) {
 }
 
 func (e *NoopEngine) GetSpamStatistics(_ string) *protoapi.PoWStatistic {
-	return &protoapi.PoWStatistic{}
+	var expected uint64
+	return &protoapi.PoWStatistic{
+		NumberOfPastBlocks: 500,
+		BlockStates: []*protoapi.PoWBlockState{
+			{
+				BlockHeight:          e.blockHeight,
+				BlockHash:            e.blockHash,
+				TransactionsSeen:     0,
+				ExpectedDifficulty:   &expected,
+				HashFunction:         crypto.Sha3,
+				Difficulty:           0,
+				TxPerBlock:           math.MaxUint64,
+				IncreasingDifficulty: true,
+			},
+		},
+	}
 }
