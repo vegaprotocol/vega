@@ -240,7 +240,8 @@ func (l *NodeCommand) preRun([]string) (err error) {
 		return err
 	}
 
-	var eventSource broker.EventReceiver
+	var rawEventSource broker.RawEventReceiver = eventReceiverSender
+
 	if l.conf.Broker.UseBufferedEventSource {
 		bufferFilePath, err := l.vegaPaths.CreateStatePathFor(paths.DataNodeEventBufferHome)
 		if err != nil {
@@ -254,7 +255,7 @@ func (l *NodeCommand) preRun([]string) (err error) {
 			return err
 		}
 
-		eventSource, err = broker.NewBufferedEventSource(l.ctx, l.Log, l.conf.Broker.BufferedEventSourceConfig, eventReceiverSender,
+		rawEventSource, err = broker.NewBufferedEventSource(l.ctx, l.Log, l.conf.Broker.BufferedEventSourceConfig, eventReceiverSender,
 			bufferFilePath, archiveFilesPath)
 		if err != nil {
 			preLog.Error("unable to initialise file buffered event source", logging.Error(err))
@@ -262,6 +263,8 @@ func (l *NodeCommand) preRun([]string) (err error) {
 		}
 	}
 
+	var eventSource broker.EventReceiver
+	eventSource = broker.NewDeserializer(rawEventSource)
 	eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SQLStore.FanOutBufferSize, 2)
 
 	var onBlockCommittedHandler func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool)
