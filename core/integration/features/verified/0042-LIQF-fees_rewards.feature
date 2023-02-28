@@ -23,7 +23,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | network.markPriceUpdateMaximumFrequency             | 0s    |
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 0.5                    | 0                         |
 
     Given the average block duration is "2"
 
