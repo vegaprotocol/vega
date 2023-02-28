@@ -18,6 +18,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 var nilPagination = entities.OffsetPagination{}
@@ -33,12 +34,14 @@ type Markets struct {
 	store     MarketStore
 	cache     map[entities.MarketID]*entities.Market
 	cacheLock sync.RWMutex
+	sf        map[entities.MarketID]num.Decimal
 }
 
 func NewMarkets(store MarketStore) *Markets {
 	return &Markets{
 		store: store,
 		cache: make(map[entities.MarketID]*entities.Market),
+		sf:    map[entities.MarketID]num.Decimal{},
 	}
 }
 
@@ -52,6 +55,7 @@ func (m *Markets) Initialise(ctx context.Context) error {
 	}
 	for i := 0; i < len(all); i++ {
 		m.cache[all[i].ID] = &all[i]
+		m.sf[all[i].ID] = num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(int64(all[i].PositionDecimalPlaces)))
 	}
 	return nil
 }
@@ -62,6 +66,13 @@ func (m *Markets) Upsert(ctx context.Context, market *entities.Market) error {
 	}
 	m.cacheLock.Lock()
 	m.cache[market.ID] = market
+	if market.State == entities.MarketStateSettled || market.State == entities.MarketStateRejected {
+		// a settled or rejected market can be safely removed from this map.
+		delete(m.sf, market.ID)
+	} else {
+		// just in case this gets updated, or the market is new.
+		m.sf[market.ID] = num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(int64(market.PositionDecimalPlaces)))
+	}
 	m.cacheLock.Unlock()
 	return nil
 }
@@ -75,6 +86,13 @@ func (m *Markets) GetByID(ctx context.Context, marketID string) (entities.Market
 		return entities.Market{}, fmt.Errorf("no such market: %v", marketID)
 	}
 	return *data, nil
+}
+
+func (m *Markets) GetMarketScalingFactor(ctx context.Context, marketID string) (num.Decimal, bool) {
+	m.cacheLock.RLock()
+	defer m.cacheLock.RUnlock()
+	pf, ok := m.sf[entities.MarketID(marketID)]
+	return pf, ok
 }
 
 func (m *Markets) GetAll(ctx context.Context, pagination entities.OffsetPagination) ([]entities.Market, error) {
