@@ -241,8 +241,8 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
     # margin for short position: min(112*9000000000000000, 50*(112*1e1+112^2*1e3))+112*50*3.55690359157934000 =627275918.7
    
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general | bond   |
-      | traderB | USD   | ETH/DEC22 | 3100294 | 0 | 0 |
+      | party   | asset | market id | margin  | general | bond   |
+      | traderB | USD   | ETH/DEC22 | 3100294 | 0       | 0      |
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search    | initial    | release    |
