@@ -74,15 +74,21 @@ type PositionStore interface {
 	Flush(ctx context.Context) error
 }
 
-type Position struct {
-	subscriber
-	store PositionStore
-	mutex sync.Mutex
+type MarketSvc interface {
+	GetMarketScalingFactor(ctx context.Context, marketID string) (num.Decimal, bool)
 }
 
-func NewPosition(store PositionStore) *Position {
+type Position struct {
+	subscriber
+	store  PositionStore
+	mktSvc MarketSvc
+	mutex  sync.Mutex
+}
+
+func NewPosition(store PositionStore, mktSvc MarketSvc) *Position {
 	t := &Position{
-		store: store,
+		store:  store,
+		mktSvc: mktSvc,
 	}
 	return t
 }
@@ -142,11 +148,15 @@ func (p *Position) handleTradeEvent(ctx context.Context, event tradeEvent) error
 	trade := event.Trade()
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
+	sf, ok := p.mktSvc.GetMarketScalingFactor(ctx, trade.MarketId)
+	if !ok {
+		fmt.Errorf("failed to get market scaling factor for market %s", trade.MarketId)
+	}
 	buyer, seller := p.getPositionsByTrade(ctx, trade)
-	buyer.UpdateWithTrade(trade, false)
+	buyer.UpdateWithTrade(trade, false, sf)
 	// this can't really result in an error...
 	_ = p.updatePosition(ctx, buyer)
-	seller.UpdateWithTrade(trade, true)
+	seller.UpdateWithTrade(trade, true, sf)
 	return p.updatePosition(ctx, seller)
 }
 
