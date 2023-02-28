@@ -25,7 +25,7 @@ Feature: Position resolution case 5 lognormal risk model
 
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec20Oracle     | 1e6                    | 1e6                       |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec20Oracle     | 0.74667                | 0                       |
 
     And the following network parameters are set:
       | name                                    | value |
@@ -151,10 +151,10 @@ Feature: Position resolution case 5 lognormal risk model
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general      |
       | designatedLooser | USD   | ETH/DEC19 | 0      | 0            |
-      | sellSideProvider | USD   | ETH/DEC19 | 853949 | 999999148951 |
-      | buySideProvider  | USD   | ETH/DEC19 | 72966  | 999999932820 |
+      | sellSideProvider | USD   | ETH/DEC19 | 83564  | 999999919336 |
+      | buySideProvider  | USD   | ETH/DEC19 | 66216  | 999999939570 |
       | aux              | USD   | ETH/DEC19 | 1088   | 999999998902 |
-      | aux2             | USD   | ETH/DEC19 | 2896   | 999999997114 |
+      | aux2             | USD   | ETH/DEC19 | 289      | 999999999721 |
 
     # check margin levels
     Then the parties should have the following margin levels:
@@ -181,8 +181,8 @@ Feature: Position resolution case 5 lognormal risk model
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general      |
-      | buySideProvider  | USD   | ETH/DEC19 | 72966  | 999999932820 |
-      | sellSideProvider | USD   | ETH/DEC19 | 853949 | 999999148951 |
+      | buySideProvider  | USD   | ETH/DEC19 | 66216  | 999999939570 |
+      | sellSideProvider | USD   | ETH/DEC19 | 83564  | 999999919336 |
 
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -197,8 +197,8 @@ Feature: Position resolution case 5 lognormal risk model
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general      |
-      | buySideProvider  | USD   | ETH/DEC19 | 67146  | 999999932820 |
-      | sellSideProvider | USD   | ETH/DEC19 | 859769 | 999999148951 |
+      | buySideProvider  | USD   | ETH/DEC19 | 60396  | 999999939570 |
+      | sellSideProvider | USD   | ETH/DEC19 | 64666  | 999999944054 |
 
     # Double entry accounting is maintained at all points
     # i.e. every transfer event has a source account and destination account and the balance of the source account before the transfer equals to the balance of source account minus the transfer amount after the transfer and balance of the destination account before the transfer plus the transfer amount equals to the balance of the destination account after the transfer.
@@ -218,14 +218,11 @@ Feature: Position resolution case 5 lognormal risk model
       | aux              | 0      | 0              | -30          |
       | aux2             | 0      | 0              | 30           |
 
-    # MTM: buySideProvider's unrealised pnl has been updated from 34800 to 28980, which is 291*(140-120)=5820=34800-28980,
-    # MTM: buySideProvider's margin account has been updated from 81259 to 75439, which is 291*(140-120)=5820
-
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general       |
       | designatedLooser | USD   | ETH/DEC19 | 0      | 0             |
-      | sellSideProvider | USD   | ETH/DEC19 | 859769 | 999999148951  |
-      | buySideProvider  | USD   | ETH/DEC19 | 67146  | 999999932820  |
+      | sellSideProvider | USD   | ETH/DEC19 | 64666  | 999999944054  |
+      | buySideProvider  | USD   | ETH/DEC19 | 60396  | 999999939570  |
       | aux              | USD   | ETH/DEC19 | 1108   | 999999998862  |
       | aux2             | USD   | ETH/DEC19 | 0      | 1000000000018 |
 
