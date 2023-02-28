@@ -150,7 +150,7 @@ func (p *Position) handleTradeEvent(ctx context.Context, event tradeEvent) error
 	defer p.mutex.Unlock()
 	sf, ok := p.mktSvc.GetMarketScalingFactor(ctx, trade.MarketId)
 	if !ok {
-		fmt.Errorf("failed to get market scaling factor for market %s", trade.MarketId)
+		return fmt.Errorf("failed to get market scaling factor for market %s", trade.MarketId)
 	}
 	buyer, seller := p.getPositionsByTrade(ctx, trade)
 	buyer.UpdateWithTrade(trade, false, sf)
