@@ -15,6 +15,7 @@
 - [7656](https://github.com/vegaprotocol/vega/issues/7656) - Add `vega wallet service config reset` CLI that reset the service configuration to its default state.
 - [7288](https://github.com/vegaprotocol/vega/issues/7288) - Add `block` interval for trade candles
 - [7413](https://github.com/vegaprotocol/vega/issues/7413) - Add foreign block height to stake linkings in `GraphQL`
+- [7675](https://github.com/vegaprotocol/vega/issues/7675) - Migrate to comet `bft`
 
 ### 🐛 Fixes
 - [7535](https://github.com/vegaprotocol/vega/issues/7535) - Fix network history load takes an increasingly long time to complete
