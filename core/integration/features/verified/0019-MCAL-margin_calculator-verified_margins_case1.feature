@@ -13,8 +13,8 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
     And the parties deposit on asset's general account the following amount:
       | party      | asset | amount     |
       | party1     | ETH   | 1000000000 |
-      | sellSideMM | ETH   | 1000000000 |
-      | buySideMM  | ETH   | 1000000000 |
+      | sellSideMM | ETH   | 2000000000 |
+      | buySideMM  | ETH   | 2000000000 |
       | aux        | ETH   | 1000000000 |
       | aux2       | ETH   | 1000000000 |
       | lpprov     | ETH   | 1000000000 |
@@ -128,8 +128,8 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
     # FULL CLOSEOUT BY TRADER
     When the parties place the following orders with ticks:
-      | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | sell | 13     | 16500000 | 3                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party  | market id | side | volume | price    | resulting trades | type       | tif     |
+      | party1 | ETH/DEC19 | sell | 13     | 16500000 | 3                | TYPE_LIMIT | TIF_GTC |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       |

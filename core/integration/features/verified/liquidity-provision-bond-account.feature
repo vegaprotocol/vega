@@ -37,7 +37,9 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the following network parameters are set:
       | name                                  | value |
       | market.liquidity.bondPenaltyParameter | 0.2   |
-
+    And the parties deposit on asset's general account the following amount:
+      | party  | asset | amount    |
+      | party0 | USD   | 12500    |
     And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
@@ -75,7 +77,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     # check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
-      | party0 | USD   | ETH/MAR22 | 209146 | 240854   | 50000 |
+      | party0 | USD   | ETH/MAR22 | 209146 | 253354   | 50000 |
       | party1 | USD   | ETH/MAR22 | 11415  | 99988585 |       |
       | party2 | USD   | ETH/MAR22 | 51630  | 99948370 |       |
     #check the margin levels
@@ -108,7 +110,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
-      | party0 | USD   | ETH/MAR22 | 209146 | 240854   | 50000 |
+      | party0 | USD   | ETH/MAR22 | 209146 | 253354   | 50000 |
       | party1 | USD   | ETH/MAR22 | 11415  | 99988585 |       |
       | party2 | USD   | ETH/MAR22 | 264970 | 99734850 |       |
     #check the margin levels
@@ -123,15 +125,15 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | party0 | ETH/MAR22 | sell | 70     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party0-sell-3 |
       | party1 | ETH/MAR22 | buy  | 100    | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party1-buy-4  |
 
-    And the insurance pool balance should be "16958" for the market "ETH/MAR22"
+    And the insurance pool balance should be "11458" for the market "ETH/MAR22"
 
     #check the requried balances
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general  |
-      | party0 | USD   | ETH/MAR22 | 483322 | 0        |
-      | party1 | USD   | ETH/MAR22 | 107954 | 99891506 |
-      | party2 | USD   | ETH/MAR22 | 264970 | 99734930 |
-      | party3 | USD   | ETH/MAR22 | 28826  | 99971294 |
+      | party  | asset | market id | margin | general  | bond |
+      | party0 | USD   | ETH/MAR22 | 501322 | 0        | 0    |
+      | party1 | USD   | ETH/MAR22 | 107954 | 99891506 |      |
+      | party2 | USD   | ETH/MAR22 | 264970 | 99734930 |      |
+      | party3 | USD   | ETH/MAR22 | 28826  | 99971294 |      |
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |

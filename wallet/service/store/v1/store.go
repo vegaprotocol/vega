@@ -108,3 +108,7 @@ func (s *Store) SaveConfig(config *service.Config) error {
 	}
 	return nil
 }
+
+func (s *Store) GetServiceConfigsPath() string {
+	return s.configFilePath
+}

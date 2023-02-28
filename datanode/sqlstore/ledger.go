@@ -321,7 +321,7 @@ func createDynamicQuery(filterQueries [3]string, closeOnAccountFilters entities.
 	if filterQueries[2] != "" {
 		tableName = tableNameTransferType
 		if whereClause != "" {
-			whereClause = fmt.Sprintf("%s AND %s", whereClause, filterQueries[2])
+			whereClause = fmt.Sprintf("%s AND (%s)", whereClause, filterQueries[2])
 		} else {
 			whereClause = fmt.Sprintf("WHERE %s", filterQueries[2])
 		}

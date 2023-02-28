@@ -1901,7 +1901,7 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 				lm = &types.LedgerEntry{
 					FromAccount:        acc.ToDetails(),
 					ToAccount:          to.Account.ToDetails(),
-					Amount:             parts,
+					Amount:             parts.Clone(),
 					Type:               req.Type,
 					Timestamp:          now,
 					FromAccountBalance: acc.Balance.Clone(),
@@ -2672,21 +2672,6 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc *num.Uint)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 
-	return nil
-}
-
-// DecrementBalance will decrement the balance of a given account
-// using the given value.
-func (e *Engine) DecrementBalance(ctx context.Context, id string, dec *num.Uint) error {
-	acc, ok := e.accs[id]
-	if !ok {
-		return fmt.Errorf("account does not exist: %s", id)
-	}
-	acc.Balance.Sub(acc.Balance, dec)
-	if acc.Type != types.AccountTypeExternal {
-		e.state.updateAccs(e.hashableAccs)
-		e.broker.Send(events.NewAccountEvent(ctx, *acc))
-	}
 	return nil
 }
 

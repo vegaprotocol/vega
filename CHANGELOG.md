@@ -10,6 +10,9 @@
 
 ### 🛠 Improvements
 - [6942](https://github.com/vegaprotocol/vega/issues/6942) - Add `admin.rename_network` with `vega wallet network rename`
+- [7656](https://github.com/vegaprotocol/vega/issues/7656) - Add `vega wallet service config locate` CLI that returns the location of the service configuration file.
+- [7656](https://github.com/vegaprotocol/vega/issues/7656) - Add `vega wallet service config describe` CLI that display the service configuration.
+- [7656](https://github.com/vegaprotocol/vega/issues/7656) - Add `vega wallet service config reset` CLI that reset the service configuration to its default state.
 - [7288](https://github.com/vegaprotocol/vega/issues/7288) - Add `block` interval for trade candles
 - [7413](https://github.com/vegaprotocol/vega/issues/7413) - Add foreign block height to stake linkings in `GraphQL`
 - [7675](https://github.com/vegaprotocol/vega/issues/7675) - Migrate to comet `bft`
@@ -18,7 +21,8 @@
 - [7535](https://github.com/vegaprotocol/vega/issues/7535) - Fix network history load takes an increasingly long time to complete
 - [7517](https://github.com/vegaprotocol/vega/issues/7517) - Add buffer files event source 
 - [7659](https://github.com/vegaprotocol/vega/issues/7659) - Tidy up REST documentation for consistency
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7563](https://github.com/vegaprotocol/vega/issues/7563) - Let the wallet work again with null `blockchain`
+- [7692](https://github.com/vegaprotocol/vega/issues/7692) - Fix network history load hanging after protocol upgrade
 
 
 ## 0.68.0
@@ -63,6 +67,7 @@
 - [7591](https://github.com/vegaprotocol/vega/issues/7591) - Add metadata and links to app to the network configuration
 - [7632](https://github.com/vegaprotocol/vega/issues/7632) - Make the wallet change events JSON friendly
 - [7601](https://github.com/vegaprotocol/vega/issues/7601) - introduce the expired orders event for optimisation.
+- [7655](https://github.com/vegaprotocol/vega/issues/7655) - Require initial margin level to be met on new orders
 
 ### 🐛 Fixes
 - [7422](https://github.com/vegaprotocol/vega/issues/7422) - Fix missing `priceMonitoringParameters` and `liquidityMonitoringParameters` in `GraphQL` schema

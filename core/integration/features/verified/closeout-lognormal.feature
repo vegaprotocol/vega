@@ -29,9 +29,9 @@ Feature: Closeout scenarios
     Given the parties deposit on asset's general account the following amount:
       | party      | asset | amount        |
       | auxiliary1 | USD   | 1000000000000 |
-      | auxiliary2 | USD   | 1000000000000 |
+      | auxiliary2 | USD   | 1000000000000 | 
       | trader2    | USD   | 2000          |
-      | trader3    | USD   | 90            |
+      | trader3    | USD   | 162           |
       | lprov      | USD   | 1000000000000 |
       | closer     | USD   | 1000000000000 |
 
@@ -96,7 +96,7 @@ Feature: Closeout scenarios
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC19 | 642    | 1358    |
-      | trader3 | USD   | ETH/DEC19 | 90     | 0       |
+      | trader3 | USD   | ETH/DEC19 | 162    | 0       |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
@@ -120,8 +120,7 @@ Feature: Closeout scenarios
     #trader3 is closed out
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC19 | 2089   | 0       |
-    #| trader2 | USD   | ETH/DEC19 | 642    | 1358    |
+      | trader2 | USD   | ETH/DEC19 | 2161   | 0       |
     #trader2 has enough balance to maintain their position of 10 long, but not the order
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
@@ -133,7 +132,7 @@ Feature: Closeout scenarios
     # So they made a bit of profit
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC19 | 2089   | 0       |
+      | trader2 | USD   | ETH/DEC19 | 2161   | 0       |
       | trader3 | USD   | ETH/DEC19 | 0      | 0       |
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
@@ -143,9 +142,8 @@ Feature: Closeout scenarios
       | party      | volume | unrealised pnl | realised pnl |
       | auxiliary1 | -10    | -900           | 0            |
       | auxiliary2 | 0      | 0              | 900          |
-      | trader2    | 10     | 500            | -411         |
-      | trader3    | 0      | 0              | -90          |
-      #| lprov      | 10     | 500            | -411         |
+      | trader2    | 10     | 500            | -339         |
+      | trader3    | 0      | 0              | -162          |
       | lprov      | 0      | 0              | 0            |
     And the mark price should be "100" for the market "ETH/DEC19"
 
