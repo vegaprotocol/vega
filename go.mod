@@ -85,8 +85,8 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.1
 	github.com/wk8/go-ordered-map/v2 v2.0.0
 	golang.org/x/sync v0.1.0
-	golang.org/x/sys v0.4.0
-	golang.org/x/term v0.4.0
+	golang.org/x/sys v0.5.0
+	golang.org/x/term v0.5.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
@@ -380,8 +380,8 @@ require (
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.7.0 // indirect
-	golang.org/x/net v0.5.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/tools v0.4.0 // indirect
 	gonum.org/v1/gonum v0.12.0 // indirect
 	google.golang.org/genproto v0.0.0-20221118155620-16455021b5e6 // indirect
@@ -395,6 +395,6 @@ require (
 replace (
 	github.com/fergusstrange/embedded-postgres => github.com/vegaprotocol/embedded-postgres v1.13.1-0.20221123183204-2e7a2feee5bb
 	github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.3.1-uint256
-	github.com/tendermint/tendermint => github.com/cometbft/cometbft v0.34.27-alpha.2
+	github.com/tendermint/tendermint => github.com/cometbft/cometbft v0.34.27
 	github.com/tendermint/tm-db => github.com/cometbft/cometbft-db v0.6.7
 )
