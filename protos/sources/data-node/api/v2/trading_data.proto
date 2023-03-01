@@ -16,7 +16,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.68.0";
+    version: "v0.68.1";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz/datanode/rest"
@@ -1431,7 +1431,7 @@ message ERC20MultiSigSignerAddedBundle {
 
 }
 
-// Request for removing a signature bundle from the signer list of the multisig contract for a particular validator 
+// Request for removing a signature bundle from the signer list of the multisig contract for a particular validator
 message ListERC20MultiSigSignerRemovedBundlesRequest {
     // The node ID of the validator of which a signature bundle is required
     string node_id = 1;
@@ -1446,7 +1446,7 @@ message ListERC20MultiSigSignerRemovedBundlesRequest {
     Pagination pagination = 4;
 }
 
-// Response when removing a signature bundle from the signer list of the multisig contract for a particular validator 
+// Response when removing a signature bundle from the signer list of the multisig contract for a particular validator
 message ListERC20MultiSigSignerRemovedBundlesResponse {
     // List of signer bundle data parts for that validator
     ERC20MultiSigSignerRemovedConnection bundles = 1;
@@ -1608,7 +1608,7 @@ message TradeConnection {
     PageInfo page_info = 2;
 }
 
-// List of trades 
+// List of trades
 message TradeEdge {
     // Trade data
     vega.Trade node = 1;
