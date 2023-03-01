@@ -73,7 +73,7 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		return nil, invalidParams(errs)
 	}
 
-	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
+	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID, TransactionReviewWorkflow); err != nil {
 		return nil, requestNotPermittedError(err)
 	}
 	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)

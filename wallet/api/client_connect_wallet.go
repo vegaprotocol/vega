@@ -32,7 +32,7 @@ type ClientConnectWallet struct {
 func (h *ClientConnectWallet) Handle(ctx context.Context, hostname string) (wallet.Wallet, *jsonrpc.ErrorDetails) {
 	traceID := jsonrpc.TraceIDFromContext(ctx)
 
-	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
+	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID, WalletConnectionWorkflow); err != nil {
 		return nil, requestNotPermittedError(err)
 	}
 	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)

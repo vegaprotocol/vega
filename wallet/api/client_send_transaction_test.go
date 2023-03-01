@@ -174,7 +174,7 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	handler := newSendTransactionHandler(t)
 
 	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID, api.TransactionReviewWorkflow).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
 	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
@@ -257,8 +257,8 @@ func testRefusingSendingOfTransactionDoesNotSendTransaction(t *testing.T) {
 	// -- expected calls
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
 	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(false, nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID, api.TransactionReviewWorkflow).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
@@ -294,8 +294,8 @@ func testCancellingTheReviewDoesNotSendTransaction(t *testing.T) {
 	// setup
 	handler := newSendTransactionHandler(t)
 	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID, api.TransactionReviewWorkflow).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
 	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(false, api.ErrUserCloseTheConnection)
 
@@ -333,8 +333,8 @@ func testInterruptingTheRequestDoesNotSendTransaction(t *testing.T) {
 	// setup
 	handler := newSendTransactionHandler(t)
 	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID, api.TransactionReviewWorkflow).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
 	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(false, api.ErrRequestInterrupted)
 	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
@@ -373,8 +373,8 @@ func testGettingInternalErrorDuringReviewDoesNotSendTransaction(t *testing.T) {
 	// setup
 	handler := newSendTransactionHandler(t)
 	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID, api.TransactionReviewWorkflow).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
 	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(false, assert.AnError)
 	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("requesting the transaction review failed: %w", assert.AnError)).Times(1)
@@ -413,8 +413,8 @@ func testNoHealthyNodeAvailableDoesNotSendTransaction(t *testing.T) {
 	// setup
 	handler := newSendTransactionHandler(t)
 	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID, api.TransactionReviewWorkflow).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
 	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(nil, assert.AnError)
@@ -458,8 +458,8 @@ func testFailingToGetSpamStatsDoesNotSendTransaction(t *testing.T) {
 	// setup
 	handler := newSendTransactionHandler(t)
 	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID, api.TransactionReviewWorkflow).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
 	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
@@ -509,8 +509,8 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 	// setup
 	handler := newSendTransactionHandler(t)
 	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID, api.TransactionReviewWorkflow).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
 	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
@@ -575,7 +575,7 @@ func testFailingSpamChecksAbortsTheTransaction(t *testing.T) {
 	handler := newSendTransactionHandler(t)
 
 	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID, api.TransactionReviewWorkflow).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
 	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)

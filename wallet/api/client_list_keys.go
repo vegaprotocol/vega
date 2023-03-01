@@ -53,7 +53,7 @@ func (h *ClientListKeys) Handle(ctx context.Context, connectedWallet ConnectedWa
 }
 
 func (h *ClientListKeys) updatePublicKeysPermissions(ctx context.Context, traceID string, connectedWallet *ConnectedWallet) *jsonrpc.ErrorDetails {
-	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
+	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID, PermissionRequestWorkflow); err != nil {
 		return requestNotPermittedError(err)
 	}
 	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)

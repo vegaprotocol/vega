@@ -24,7 +24,7 @@ type SequentialInteractor struct {
 	isProcessingRequest atomic.Bool
 }
 
-func (i *SequentialInteractor) NotifyInteractionSessionBegan(_ context.Context, traceID string) error {
+func (i *SequentialInteractor) NotifyInteractionSessionBegan(_ context.Context, traceID string, workflow api.WorkflowType) error {
 	// We reject all incoming request as long as there is a request being
 	// processed.
 	if !i.isProcessingRequest.CompareAndSwap(false, true) {
@@ -34,7 +34,9 @@ func (i *SequentialInteractor) NotifyInteractionSessionBegan(_ context.Context, 
 	i.receptionChan <- Interaction{
 		TraceID: traceID,
 		Name:    InteractionSessionBeganName,
-		Data:    InteractionSessionBegan{},
+		Data: InteractionSessionBegan{
+			Workflow: string(workflow),
+		},
 	}
 
 	return nil
