@@ -24,7 +24,7 @@ type SequentialInteractor struct {
 	isProcessingRequest atomic.Bool
 }
 
-func (i *SequentialInteractor) NotifyInteractionSessionBegan(_ context.Context, traceID string, workflow api.WorkflowType) error {
+func (i *SequentialInteractor) NotifyInteractionSessionBegan(_ context.Context, traceID string, workflow api.WorkflowType, numberOfSteps uint8) error {
 	// We reject all incoming request as long as there is a request being
 	// processed.
 	if !i.isProcessingRequest.CompareAndSwap(false, true) {
@@ -35,7 +35,8 @@ func (i *SequentialInteractor) NotifyInteractionSessionBegan(_ context.Context, 
 		TraceID: traceID,
 		Name:    InteractionSessionBeganName,
 		Data: InteractionSessionBegan{
-			Workflow: string(workflow),
+			Workflow:             string(workflow),
+			MaximumNumberOfSteps: numberOfSteps,
 		},
 	}
 
@@ -67,7 +68,7 @@ func (i *SequentialInteractor) NotifyError(ctx context.Context, traceID string, 
 	}
 }
 
-func (i *SequentialInteractor) NotifySuccessfulTransaction(ctx context.Context, traceID, txHash, deserializedInputData, tx string, sentAt time.Time, host string) {
+func (i *SequentialInteractor) NotifySuccessfulTransaction(ctx context.Context, traceID string, stepNumber uint8, txHash, deserializedInputData, tx string, sentAt time.Time, host string) {
 	if err := ctx.Err(); err != nil {
 		return
 	}
@@ -87,7 +88,7 @@ func (i *SequentialInteractor) NotifySuccessfulTransaction(ctx context.Context, 
 	}
 }
 
-func (i *SequentialInteractor) NotifyFailedTransaction(ctx context.Context, traceID, deserializedInputData, tx string, err error, sentAt time.Time, host string) {
+func (i *SequentialInteractor) NotifyFailedTransaction(ctx context.Context, traceID string, stepNumber uint8, deserializedInputData, tx string, err error, sentAt time.Time, host string) {
 	if err := ctx.Err(); err != nil {
 		return
 	}
@@ -107,7 +108,7 @@ func (i *SequentialInteractor) NotifyFailedTransaction(ctx context.Context, trac
 	}
 }
 
-func (i *SequentialInteractor) NotifySuccessfulRequest(ctx context.Context, traceID string, message string) {
+func (i *SequentialInteractor) NotifySuccessfulRequest(ctx context.Context, traceID string, stepNumber uint8, message string) {
 	if err := ctx.Err(); err != nil {
 		return
 	}
@@ -136,7 +137,7 @@ func (i *SequentialInteractor) Log(ctx context.Context, traceID string, t api.Lo
 	}
 }
 
-func (i *SequentialInteractor) RequestWalletConnectionReview(ctx context.Context, traceID, hostname string) (string, error) {
+func (i *SequentialInteractor) RequestWalletConnectionReview(ctx context.Context, traceID string, stepNumber uint8, hostname string) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", api.ErrRequestInterrupted
 	}
@@ -162,7 +163,7 @@ func (i *SequentialInteractor) RequestWalletConnectionReview(ctx context.Context
 	return decision.ConnectionApproval, nil
 }
 
-func (i *SequentialInteractor) RequestWalletSelection(ctx context.Context, traceID, hostname string, availableWallets []string) (string, error) {
+func (i *SequentialInteractor) RequestWalletSelection(ctx context.Context, traceID string, stepNumber uint8, hostname string, availableWallets []string) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", api.ErrRequestInterrupted
 	}
@@ -189,7 +190,7 @@ func (i *SequentialInteractor) RequestWalletSelection(ctx context.Context, trace
 	return selectedWallet.Wallet, nil
 }
 
-func (i *SequentialInteractor) RequestPassphrase(ctx context.Context, traceID, wallet string) (string, error) {
+func (i *SequentialInteractor) RequestPassphrase(ctx context.Context, traceID string, stepNumber uint8, wallet string) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", api.ErrRequestInterrupted
 	}
@@ -214,7 +215,7 @@ func (i *SequentialInteractor) RequestPassphrase(ctx context.Context, traceID, w
 	return enteredPassphrase.Passphrase, nil
 }
 
-func (i *SequentialInteractor) RequestPermissionsReview(ctx context.Context, traceID, hostname, wallet string, perms map[string]string) (bool, error) {
+func (i *SequentialInteractor) RequestPermissionsReview(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet string, perms map[string]string) (bool, error) {
 	if err := ctx.Err(); err != nil {
 		return false, api.ErrRequestInterrupted
 	}
@@ -241,7 +242,7 @@ func (i *SequentialInteractor) RequestPermissionsReview(ctx context.Context, tra
 	return approval.Approved, nil
 }
 
-func (i *SequentialInteractor) RequestTransactionReviewForSending(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error) {
+func (i *SequentialInteractor) RequestTransactionReviewForSending(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error) {
 	if err := ctx.Err(); err != nil {
 		return false, api.ErrRequestInterrupted
 	}
@@ -270,7 +271,7 @@ func (i *SequentialInteractor) RequestTransactionReviewForSending(ctx context.Co
 	return approval.Approved, nil
 }
 
-func (i *SequentialInteractor) RequestTransactionReviewForSigning(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error) {
+func (i *SequentialInteractor) RequestTransactionReviewForSigning(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error) {
 	if err := ctx.Err(); err != nil {
 		return false, api.ErrRequestInterrupted
 	}

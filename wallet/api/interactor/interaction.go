@@ -264,7 +264,8 @@ type SelectedWallet struct {
 // is the first notification to be emitted and is always emitted when a request
 // comes in.
 type InteractionSessionBegan struct {
-	Workflow string `json:"workflow"`
+	Workflow             string `json:"workflow"`
+	MaximumNumberOfSteps uint8  `json:"maximumNumberOfSteps"`
 }
 
 // InteractionSessionEnded is a notification that is emitted when the interaction
