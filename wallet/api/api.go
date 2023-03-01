@@ -33,6 +33,7 @@ type WalletStore interface {
 	DeleteWallet(ctx context.Context, name string) error
 	RenameWallet(ctx context.Context, currentName, newName string) error
 	GetWalletPath(name string) string
+	IsWalletAlreadyUnlocked(ctx context.Context, name string) (bool, error)
 }
 
 // NetworkStore is the component used to retrieve and update the networks from the
@@ -103,7 +104,7 @@ type Interactor interface {
 
 	// RequestWalletSelection is used to trigger the selection of the wallet the
 	// user wants to use for the specified hostname.
-	RequestWalletSelection(ctx context.Context, traceID, hostname string, availableWallets []string) (SelectedWallet, error)
+	RequestWalletSelection(ctx context.Context, traceID, hostname string, availableWallets []string) (string, error)
 
 	// RequestPassphrase is used to request to the user the passphrase of a wallet.
 	// It's primarily used by requests that update the wallet.
@@ -165,12 +166,6 @@ var (
 	ErrorLog   LogType = "Error"
 	SuccessLog LogType = "Success"
 )
-
-// SelectedWallet holds the result of the wallet selection from the user.
-type SelectedWallet struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
-}
 
 type ClientAPI struct {
 	connectWallet   *ClientConnectWallet

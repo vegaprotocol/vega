@@ -16,7 +16,10 @@ import (
 )
 
 func TestConnectWallet(t *testing.T) {
-	t.Run("Connecting to a wallet with valid params succeeds", testConnectingToWalletWithValidParamsSucceeds)
+	t.Run("Connecting to one of the existing wallet with valid params succeeds", testConnectingToOneOfMultipleWalletsWithValidParamsSucceeds)
+	t.Run("Connecting to the only wallet with valid params succeeds", testConnectingToTheOnlyWalletWithValidParamsSucceeds)
+	t.Run("Connecting to one of the existing wallet when already unlocked skips the passphrase", testConnectingToOneOfMultipleWalletsWhenAlreadyUnlockedSkipsPassphrase)
+	t.Run("Connecting to the only wallet when already unlocked skips the passphrase", testConnectingToTheOnlyWalletWhenAlreadyUnlockedSkipsPassphrase)
 	t.Run("Connecting to a connected wallet disconnects the previous one and generates a new token", testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken)
 	t.Run("Connecting to a wallet without wallets fails", testConnectingWalletWithoutWalletsFails)
 	t.Run("Getting internal error during the wallet listing does not connect to a wallet", testGettingInternalErrorDuringWalletListingDoesNotConnectToWallet)
@@ -28,12 +31,17 @@ func TestConnectWallet(t *testing.T) {
 	t.Run("Interrupting the request during the wallet selection does not connect to a wallet", testInterruptingTheRequestDuringWalletSelectionDoesNotConnectToWallet)
 	t.Run("Getting internal error during the wallet selection does not connect to a wallet", testGettingInternalErrorDuringWalletSelectionDoesNotConnectToWallet)
 	t.Run("Selecting a non-existing wallet does not connect to a wallet", testSelectingNonExistingWalletDoesNotConnectToWallet)
+	t.Run("Getting internal error during the wallet lock state verification does not connect to a wallet", testGettingInternalErrorDuringWalletLockStateVerificationDoesNotConnectToWallet)
+	t.Run("Getting internal error during the passphrase request does not connect to a wallet", testGettingInternalErrorDuringPassphraseRequestDoesNotConnectToWallet)
+	t.Run("Cancelling the passphrase request does not connect to a wallet", testCancellingThePassphraseRequestDoesNotConnectToWallet)
+	t.Run("Interrupting the request during the passphrase request does not connect to a wallet", testInterruptingTheRequestDuringPassphraseRequestDoesNotConnectToWallet)
+	t.Run("Getting internal error during the wallet unlocking does not connect to a wallet", testGettingInternalErrorDuringWalletUnlockingDoesNotConnectToWallet)
 	t.Run("Getting internal error during the wallet verification does not connect to a wallet", testGettingInternalErrorDuringWalletVerificationDoesNotConnectToWallet)
 	t.Run("Using the wrong passphrase does not connect to a wallet", testUsingWrongPassphraseDoesNotConnectToWallet)
 	t.Run("Getting internal error during the wallet retrieval does not connect to a wallet", testGettingInternalErrorDuringWalletRetrievalDoesNotConnectToWallet)
 }
 
-func testConnectingToWalletWithValidParamsSucceeds(t *testing.T) {
+func testConnectingToOneOfMultipleWalletsWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx, traceID := clientContextForTest()
 	hostname := vgrand.RandomStr(5) + ".xyz"
@@ -56,16 +64,123 @@ func testConnectingToWalletWithValidParamsSucceeds(t *testing.T) {
 	// -- expected calls
 	handler := newConnectWalletHandler(t)
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedSelectedWallet.Name()).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedSelectedWallet.Name()).Times(1).Return(false, nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(availableWallets, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedSelectedWallet.Name()).Times(1).Return(expectedSelectedWallet, nil)
 	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedSelectedWallet.Name(), passphrase).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
-	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, availableWallets).Times(1).Return(api.SelectedWallet{
-		Wallet:     expectedSelectedWallet.Name(),
-		Passphrase: passphrase,
-	}, nil)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, availableWallets).Times(1).Return(expectedSelectedWallet.Name(), nil)
+	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, expectedSelectedWallet.Name()).Times(1).Return(passphrase, nil)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
+
+	// when
+	token, errorDetails := handler.Handle(ctx, hostname)
+
+	// then
+	require.Nil(t, errorDetails)
+	assert.NotEmpty(t, token)
+}
+
+func testConnectingToTheOnlyWalletWithValidParamsSucceeds(t *testing.T) {
+	// given
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5) + ".xyz"
+	expectedPermissions := wallet.Permissions{
+		PublicKeys: wallet.PublicKeysPermission{
+			Access:      wallet.ReadAccess,
+			AllowedKeys: []string{},
+		},
+	}
+	onlyWallet := walletWithPerms(t, hostname, expectedPermissions)
+
+	passphrase := vgrand.RandomStr(5)
+	availableWallets := []string{onlyWallet.Name()}
+
+	// setup
+	// -- expected calls
+	handler := newConnectWalletHandler(t)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, onlyWallet.Name()).Times(1).Return(false, nil)
+	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(availableWallets, nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, onlyWallet.Name()).Times(1).Return(onlyWallet, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, onlyWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, onlyWallet.Name()).Times(1).Return(passphrase, nil)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
+
+	// when
+	token, errorDetails := handler.Handle(ctx, hostname)
+
+	// then
+	require.Nil(t, errorDetails)
+	assert.NotEmpty(t, token)
+}
+
+func testConnectingToOneOfMultipleWalletsWhenAlreadyUnlockedSkipsPassphrase(t *testing.T) {
+	// given
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5) + ".xyz"
+	expectedPermissions := wallet.Permissions{
+		PublicKeys: wallet.PublicKeysPermission{
+			Access:      wallet.ReadAccess,
+			AllowedKeys: []string{},
+		},
+	}
+	expectedSelectedWallet := walletWithPerms(t, hostname, expectedPermissions)
+	nonSelectedWallet := walletWithPerms(t, hostname, wallet.Permissions{})
+
+	availableWallets := []string{
+		expectedSelectedWallet.Name(),
+		nonSelectedWallet.Name(),
+	}
+
+	// setup
+	// -- expected calls
+	handler := newConnectWalletHandler(t)
+	handler.walletStore.EXPECT().WalletExists(ctx, expectedSelectedWallet.Name()).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedSelectedWallet.Name()).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(availableWallets, nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedSelectedWallet.Name()).Times(1).Return(expectedSelectedWallet, nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, availableWallets).Times(1).Return(expectedSelectedWallet.Name(), nil)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
+
+	// when
+	token, errorDetails := handler.Handle(ctx, hostname)
+
+	// then
+	require.Nil(t, errorDetails)
+	assert.NotEmpty(t, token)
+}
+
+func testConnectingToTheOnlyWalletWhenAlreadyUnlockedSkipsPassphrase(t *testing.T) {
+	// given
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5) + ".xyz"
+	expectedPermissions := wallet.Permissions{
+		PublicKeys: wallet.PublicKeysPermission{
+			Access:      wallet.ReadAccess,
+			AllowedKeys: []string{},
+		},
+	}
+	onlyWallet := walletWithPerms(t, hostname, expectedPermissions)
+
+	availableWallets := []string{onlyWallet.Name()}
+
+	// setup
+	// -- expected calls
+	handler := newConnectWalletHandler(t)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, onlyWallet.Name()).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(availableWallets, nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, onlyWallet.Name()).Times(1).Return(onlyWallet, nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
 
 	// when
@@ -99,16 +214,15 @@ func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedSelectedWallet.Name()).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedSelectedWallet.Name()).Times(1).Return(false, nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(availableWallets, nil)
 	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedSelectedWallet.Name(), passphrase).Times(1).Return(nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedSelectedWallet.Name()).Times(1).Return(expectedSelectedWallet, nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
-	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, availableWallets).Times(1).Return(api.SelectedWallet{
-		Wallet:     expectedSelectedWallet.Name(),
-		Passphrase: passphrase,
-	}, nil)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, availableWallets).Times(1).Return(expectedSelectedWallet.Name(), nil)
+	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, expectedSelectedWallet.Name()).Times(1).Return(passphrase, nil)
 	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
 
 	// when
@@ -120,17 +234,14 @@ func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t
 
 	// setup
 	// -- expected calls
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedSelectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedSelectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(availableWallets, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedSelectedWallet.Name(), passphrase).Times(1).Return(nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedSelectedWallet.Name()).Times(1).Return(expectedSelectedWallet, nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
-	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, availableWallets).Times(1).Return(api.SelectedWallet{
-		Wallet:     expectedSelectedWallet.Name(),
-		Passphrase: passphrase,
-	}, nil)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, availableWallets).Times(1).Return(expectedSelectedWallet.Name(), nil)
 	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
 
 	// when
@@ -287,7 +398,7 @@ func testCancellingTheWalletSelectionDoesNotConnectToWallet(t *testing.T) {
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{}, api.ErrUserCloseTheConnection)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return("", api.ErrUserCloseTheConnection)
 
 	// when
 	result, errorDetails := handler.Handle(ctx, hostname)
@@ -311,7 +422,7 @@ func testInterruptingTheRequestDuringWalletSelectionDoesNotConnectToWallet(t *te
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{}, api.ErrRequestInterrupted)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return("", api.ErrRequestInterrupted)
 	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
 
 	// when
@@ -336,7 +447,7 @@ func testGettingInternalErrorDuringWalletSelectionDoesNotConnectToWallet(t *test
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{}, assert.AnError)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return("", assert.AnError)
 	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("requesting the wallet selection failed: %w", assert.AnError)).Times(1)
 
 	// when
@@ -363,10 +474,7 @@ func testSelectingNonExistingWalletDoesNotConnectToWallet(t *testing.T) {
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(cancelCtx, traceID).Times(1)
 	handler.interactor.EXPECT().RequestWalletConnectionReview(cancelCtx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(cancelCtx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.interactor.EXPECT().RequestWalletSelection(cancelCtx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{
-		Wallet:     nonExistingWallet,
-		Passphrase: vgrand.RandomStr(4),
-	}, nil)
+	handler.interactor.EXPECT().RequestWalletSelection(cancelCtx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(nonExistingWallet, nil)
 	handler.walletStore.EXPECT().WalletExists(cancelCtx, nonExistingWallet).Times(1).Return(false, nil)
 	handler.interactor.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, api.ErrWalletDoesNotExist).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
 		// Once everything has been called once, we cancel the handler to break the loop.
@@ -395,10 +503,7 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotConnectToWallet(t *test
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{
-		Wallet:     wallet1.Name(),
-		Passphrase: vgrand.RandomStr(5),
-	}, nil)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(wallet1.Name(), nil)
 	handler.walletStore.EXPECT().WalletExists(ctx, wallet1.Name()).Times(1).Return(false, assert.AnError)
 	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError)).Times(1)
 
@@ -426,11 +531,10 @@ func testUsingWrongPassphraseDoesNotConnectToWallet(t *testing.T) {
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(cancelCtx, traceID).Times(1)
 	handler.interactor.EXPECT().RequestWalletConnectionReview(cancelCtx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(cancelCtx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.interactor.EXPECT().RequestWalletSelection(cancelCtx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{
-		Wallet:     wallet1.Name(),
-		Passphrase: passphrase,
-	}, nil)
+	handler.interactor.EXPECT().RequestWalletSelection(cancelCtx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(wallet1.Name(), nil)
+	handler.interactor.EXPECT().RequestPassphrase(cancelCtx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
 	handler.walletStore.EXPECT().WalletExists(cancelCtx, wallet1.Name()).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(cancelCtx, wallet1.Name()).Times(1).Return(false, nil)
 	handler.walletStore.EXPECT().UnlockWallet(cancelCtx, wallet1.Name(), passphrase).Times(1).Return(wallet.ErrWrongPassphrase)
 	handler.interactor.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, wallet.ErrWrongPassphrase).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
 		// Once everything has been called once, we cancel the handler to break the loop.
@@ -442,6 +546,146 @@ func testUsingWrongPassphraseDoesNotConnectToWallet(t *testing.T) {
 
 	// then
 	assertRequestInterruptionError(t, errorDetails)
+	assert.Empty(t, result)
+}
+
+func testGettingInternalErrorDuringWalletLockStateVerificationDoesNotConnectToWallet(t *testing.T) {
+	// given
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5) + ".xyz"
+	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{})
+	wallet2 := walletWithPerms(t, hostname, wallet.Permissions{})
+
+	// setup
+	handler := newConnectWalletHandler(t)
+	// -- expected calls
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(wallet1.Name(), nil)
+	handler.walletStore.EXPECT().WalletExists(ctx, wallet1.Name()).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, wallet1.Name()).Times(1).Return(false, assert.AnError)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not verify whether the wallet is already unlock or not: %w", assert.AnError)).Times(1)
+
+	// when
+	result, errorDetails := handler.Handle(ctx, hostname)
+
+	// then
+	assertInternalError(t, errorDetails, api.ErrCouldNotConnectToWallet)
+	assert.Empty(t, result)
+}
+
+func testGettingInternalErrorDuringPassphraseRequestDoesNotConnectToWallet(t *testing.T) {
+	// given
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5) + ".xyz"
+	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{})
+	wallet2 := walletWithPerms(t, hostname, wallet.Permissions{})
+
+	// setup
+	handler := newConnectWalletHandler(t)
+	// -- expected calls
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(wallet1.Name(), nil)
+	handler.walletStore.EXPECT().WalletExists(ctx, wallet1.Name()).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, wallet1.Name()).Times(1).Return(false, nil)
+	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return("", assert.AnError)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("requesting the wallet passphrase failed: %w", assert.AnError)).Times(1)
+
+	// when
+	result, errorDetails := handler.Handle(ctx, hostname)
+
+	// then
+	assertInternalError(t, errorDetails, api.ErrCouldNotConnectToWallet)
+	assert.Empty(t, result)
+}
+
+func testInterruptingTheRequestDuringPassphraseRequestDoesNotConnectToWallet(t *testing.T) {
+	// given
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5) + ".xyz"
+	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{})
+	wallet2 := walletWithPerms(t, hostname, wallet.Permissions{})
+
+	// setup
+	handler := newConnectWalletHandler(t)
+	// -- expected calls
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(wallet1.Name(), nil)
+	handler.walletStore.EXPECT().WalletExists(ctx, wallet1.Name()).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, wallet1.Name()).Times(1).Return(false, nil)
+	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return("", api.ErrRequestInterrupted)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
+
+	// when
+	result, errorDetails := handler.Handle(ctx, hostname)
+
+	// then
+	assertRequestInterruptionError(t, errorDetails)
+	assert.Empty(t, result)
+}
+
+func testCancellingThePassphraseRequestDoesNotConnectToWallet(t *testing.T) {
+	// given
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5) + ".xyz"
+	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{})
+	wallet2 := walletWithPerms(t, hostname, wallet.Permissions{})
+
+	// setup
+	handler := newConnectWalletHandler(t)
+	// -- expected calls
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(wallet1.Name(), nil)
+	handler.walletStore.EXPECT().WalletExists(ctx, wallet1.Name()).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, wallet1.Name()).Times(1).Return(false, nil)
+	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return("", api.ErrUserCloseTheConnection)
+
+	// when
+	result, errorDetails := handler.Handle(ctx, hostname)
+
+	// then
+	assertConnectionClosedError(t, errorDetails)
+	assert.Empty(t, result)
+}
+
+func testGettingInternalErrorDuringWalletUnlockingDoesNotConnectToWallet(t *testing.T) {
+	// given
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5) + ".xyz"
+	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{})
+	wallet2 := walletWithPerms(t, hostname, wallet.Permissions{})
+	passphrase := vgrand.RandomStr(5)
+
+	// setup
+	handler := newConnectWalletHandler(t)
+	// -- expected calls
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
+	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(wallet1.Name(), nil)
+	handler.walletStore.EXPECT().WalletExists(ctx, wallet1.Name()).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, wallet1.Name()).Times(1).Return(false, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, wallet1.Name(), passphrase).Times(1).Return(assert.AnError)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not unlock the wallet: %w", assert.AnError)).Times(1)
+
+	// when
+	result, errorDetails := handler.Handle(ctx, hostname)
+
+	// then
+	assertInternalError(t, errorDetails, api.ErrCouldNotConnectToWallet)
 	assert.Empty(t, result)
 }
 
@@ -460,11 +704,10 @@ func testGettingInternalErrorDuringWalletVerificationDoesNotConnectToWallet(t *t
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{
-		Wallet:     wallet1.Name(),
-		Passphrase: passphrase,
-	}, nil)
+	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(wallet1.Name(), nil)
 	handler.walletStore.EXPECT().WalletExists(ctx, wallet1.Name()).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, wallet1.Name()).Times(1).Return(false, nil)
 	handler.walletStore.EXPECT().UnlockWallet(ctx, wallet1.Name(), passphrase).Times(1).Return(nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(nil, assert.AnError)
 	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError)).Times(1)

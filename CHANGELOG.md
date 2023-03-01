@@ -16,6 +16,8 @@
 - [7288](https://github.com/vegaprotocol/vega/issues/7288) - Add `block` interval for trade candles
 - [7413](https://github.com/vegaprotocol/vega/issues/7413) - Add foreign block height to stake linkings in `GraphQL`
 - [7675](https://github.com/vegaprotocol/vega/issues/7675) - Migrate to comet `bft`
+- [5967](https://github.com/vegaprotocol/vega/issues/5967) - Do not ask for wallet passphrase if it has already been unlocked.
+- [5967](https://github.com/vegaprotocol/vega/issues/5967) - Preselect the wallet during connection is there is only one.
 
 ### 🐛 Fixes
 - [7535](https://github.com/vegaprotocol/vega/issues/7535) - Fix network history load takes an increasingly long time to complete

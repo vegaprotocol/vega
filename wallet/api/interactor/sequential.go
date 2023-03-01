@@ -160,9 +160,9 @@ func (i *SequentialInteractor) RequestWalletConnectionReview(ctx context.Context
 	return decision.ConnectionApproval, nil
 }
 
-func (i *SequentialInteractor) RequestWalletSelection(ctx context.Context, traceID, hostname string, availableWallets []string) (api.SelectedWallet, error) {
+func (i *SequentialInteractor) RequestWalletSelection(ctx context.Context, traceID, hostname string, availableWallets []string) (string, error) {
 	if err := ctx.Err(); err != nil {
-		return api.SelectedWallet{}, api.ErrRequestInterrupted
+		return "", api.ErrRequestInterrupted
 	}
 
 	i.receptionChan <- Interaction{
@@ -176,18 +176,15 @@ func (i *SequentialInteractor) RequestWalletSelection(ctx context.Context, trace
 
 	interaction, err := i.waitForResponse(ctx, traceID, SelectedWalletName)
 	if err != nil {
-		return api.SelectedWallet{}, err
+		return "", err
 	}
 
 	selectedWallet, ok := interaction.Data.(SelectedWallet)
 	if !ok {
-		return api.SelectedWallet{}, InvalidResponsePayloadError(SelectedWalletName)
+		return "", InvalidResponsePayloadError(SelectedWalletName)
 	}
 
-	return api.SelectedWallet{
-		Wallet:     selectedWallet.Wallet,
-		Passphrase: selectedWallet.Passphrase,
-	}, nil
+	return selectedWallet.Wallet, nil
 }
 
 func (i *SequentialInteractor) RequestPassphrase(ctx context.Context, traceID, wallet string) (string, error) {
