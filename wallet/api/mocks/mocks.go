@@ -397,17 +397,17 @@ func (mr *MockInteractorMockRecorder) NotifyFailedTransaction(arg0, arg1, arg2, 
 }
 
 // NotifyInteractionSessionBegan mocks base method.
-func (m *MockInteractor) NotifyInteractionSessionBegan(arg0 context.Context, arg1 string) error {
+func (m *MockInteractor) NotifyInteractionSessionBegan(arg0 context.Context, arg1 string, arg2 api.WorkflowType) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NotifyInteractionSessionBegan", arg0, arg1)
+	ret := m.ctrl.Call(m, "NotifyInteractionSessionBegan", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // NotifyInteractionSessionBegan indicates an expected call of NotifyInteractionSessionBegan.
-func (mr *MockInteractorMockRecorder) NotifyInteractionSessionBegan(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockInteractorMockRecorder) NotifyInteractionSessionBegan(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyInteractionSessionBegan", reflect.TypeOf((*MockInteractor)(nil).NotifyInteractionSessionBegan), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyInteractionSessionBegan", reflect.TypeOf((*MockInteractor)(nil).NotifyInteractionSessionBegan), arg0, arg1, arg2)
 }
 
 // NotifyInteractionSessionEnded mocks base method.

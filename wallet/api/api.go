@@ -70,7 +70,7 @@ type Interactor interface {
 	// NotifyInteractionSessionBegan notifies the beginning of an interaction
 	// session.
 	// A session is scoped to a request.
-	NotifyInteractionSessionBegan(ctx context.Context, traceID string) error
+	NotifyInteractionSessionBegan(ctx context.Context, traceID string, workflow WorkflowType) error
 
 	// NotifyInteractionSessionEnded notifies the end of an interaction
 	// session.
@@ -129,6 +129,16 @@ type Interactor interface {
 	// false otherwise.
 	RequestTransactionReviewForSigning(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
 }
+
+// WorkflowType defines the type of interaction workflow that started by a
+// method.
+type WorkflowType string
+
+var (
+	WalletConnectionWorkflow  WorkflowType = "WALLET_CONNECTION"
+	TransactionReviewWorkflow WorkflowType = "TRANSACTION_REVIEW"
+	PermissionRequestWorkflow WorkflowType = "PERMISSION_REQUEST"
+)
 
 // ErrorType defines the type of error that is sent to the user, for fine
 // grain error management and reporting.
