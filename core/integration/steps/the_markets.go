@@ -176,6 +176,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		// update product -> use type switch even though currently only futures exist
 		switch ti := existing.TradableInstrument.Instrument.Product.(type) {
 		case *types.InstrumentFuture:
+			filters := settleSpec.ExternalDataSourceSpec.Spec.Data.GetFilters()
 			futureUp := &types.UpdateFutureProduct{
 				QuoteName: ti.Future.QuoteName,
 				DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
@@ -183,7 +184,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 				).SetOracleConfig(
 					&types.DataSourceSpecConfiguration{
 						Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
-						Filters: settleSpec.ExternalDataSourceSpec.Spec.Data.GetFilters(),
+						Filters: filters,
 					},
 				),
 				DataSourceSpecForTradingTermination: *types.NewDataSourceDefinition(
@@ -191,7 +192,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 				).SetOracleConfig(
 					&types.DataSourceSpecConfiguration{
 						Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
-						Filters: settleSpec.ExternalDataSourceSpec.Spec.Data.GetFilters(),
+						Filters: filters,
 					},
 				),
 				DataSourceSpecBinding: types.DataSourceSpecBindingForFutureFromProto(&proto.DataSourceSpecToFutureBinding{

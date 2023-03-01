@@ -24,6 +24,8 @@
 - [7563](https://github.com/vegaprotocol/vega/issues/7563) - Let the wallet work again with null `blockchain`
 - [7692](https://github.com/vegaprotocol/vega/issues/7692) - Fix network history load hanging after protocol upgrade
 - [7713](https://github.com/vegaprotocol/vega/issues/7713) - Fix PnL values on trade in the positions API
+- [7673](https://github.com/vegaprotocol/vega/issues/7673) - Accept internal data sources without signers
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
 ## 0.68.0
