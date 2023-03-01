@@ -208,9 +208,9 @@ func (i *ParallelInteractor) RequestWalletConnectionReview(ctx context.Context, 
 	return decision.ConnectionApproval, nil
 }
 
-func (i *ParallelInteractor) RequestWalletSelection(ctx context.Context, traceID, hostname string, availableWallets []string) (api.SelectedWallet, error) {
+func (i *ParallelInteractor) RequestWalletSelection(ctx context.Context, traceID, hostname string, availableWallets []string) (string, error) {
 	if err := i.ensureCanProceed(ctx); err != nil {
-		return api.SelectedWallet{}, err
+		return "", err
 	}
 
 	i.mu.Lock()
@@ -229,18 +229,15 @@ func (i *ParallelInteractor) RequestWalletSelection(ctx context.Context, traceID
 
 	interaction, err := i.waitForResponse(ctx, session.userResponseChan, traceID, SelectedWalletName)
 	if err != nil {
-		return api.SelectedWallet{}, err
+		return "", err
 	}
 
 	selectedWallet, ok := interaction.Data.(SelectedWallet)
 	if !ok {
-		return api.SelectedWallet{}, InvalidResponsePayloadError(SelectedWalletName)
+		return "", InvalidResponsePayloadError(SelectedWalletName)
 	}
 
-	return api.SelectedWallet{
-		Wallet:     selectedWallet.Wallet,
-		Passphrase: selectedWallet.Wallet,
-	}, nil
+	return selectedWallet.Wallet, nil
 }
 
 func (i *ParallelInteractor) RequestPassphrase(ctx context.Context, traceID, wallet string) (string, error) {

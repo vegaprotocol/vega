@@ -254,11 +254,9 @@ type EnteredPassphrase struct {
 	Passphrase string `json:"passphrase"`
 }
 
-// SelectedWallet contains required information needed when the user need to
-// choose a wallet and unlock it.
+// SelectedWallet contains the wallet chosen by the user for a given action.
 type SelectedWallet struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
+	Wallet string `json:"wallet"`
 }
 
 // InteractionSessionBegan is a notification that is emitted when the interaction

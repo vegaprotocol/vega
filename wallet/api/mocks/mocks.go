@@ -98,6 +98,21 @@ func (mr *MockWalletStoreMockRecorder) GetWalletPath(arg0 interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWalletPath", reflect.TypeOf((*MockWalletStore)(nil).GetWalletPath), arg0)
 }
 
+// IsWalletAlreadyUnlocked mocks base method.
+func (m *MockWalletStore) IsWalletAlreadyUnlocked(arg0 context.Context, arg1 string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsWalletAlreadyUnlocked", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsWalletAlreadyUnlocked indicates an expected call of IsWalletAlreadyUnlocked.
+func (mr *MockWalletStoreMockRecorder) IsWalletAlreadyUnlocked(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsWalletAlreadyUnlocked", reflect.TypeOf((*MockWalletStore)(nil).IsWalletAlreadyUnlocked), arg0, arg1)
+}
+
 // ListWallets mocks base method.
 func (m *MockWalletStore) ListWallets(arg0 context.Context) ([]string, error) {
 	m.ctrl.T.Helper()
@@ -507,10 +522,10 @@ func (mr *MockInteractorMockRecorder) RequestWalletConnectionReview(arg0, arg1, 
 }
 
 // RequestWalletSelection mocks base method.
-func (m *MockInteractor) RequestWalletSelection(arg0 context.Context, arg1, arg2 string, arg3 []string) (api.SelectedWallet, error) {
+func (m *MockInteractor) RequestWalletSelection(arg0 context.Context, arg1, arg2 string, arg3 []string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RequestWalletSelection", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(api.SelectedWallet)
+	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
