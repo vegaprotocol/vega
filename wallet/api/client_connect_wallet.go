@@ -32,7 +32,7 @@ type ClientConnectWallet struct {
 func (h *ClientConnectWallet) Handle(ctx context.Context, hostname string) (wallet.Wallet, *jsonrpc.ErrorDetails) {
 	traceID := jsonrpc.TraceIDFromContext(ctx)
 
-	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID, WalletConnectionWorkflow); err != nil {
+	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID, WalletConnectionWorkflow, 4); err != nil {
 		return nil, requestNotPermittedError(err)
 	}
 	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
@@ -49,7 +49,7 @@ func (h *ClientConnectWallet) Handle(ctx context.Context, hostname string) (wall
 
 	var approval preferences.ConnectionApproval
 	for {
-		rawApproval, err := h.interactor.RequestWalletConnectionReview(ctx, traceID, hostname)
+		rawApproval, err := h.interactor.RequestWalletConnectionReview(ctx, traceID, 1, hostname)
 		if err != nil {
 			if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 				return nil, errDetails
@@ -80,7 +80,7 @@ func (h *ClientConnectWallet) Handle(ctx context.Context, hostname string) (wall
 
 		var walletName string
 		if len(availableWallets) > 1 {
-			selectedWallet, err := h.interactor.RequestWalletSelection(ctx, traceID, hostname, availableWallets)
+			selectedWallet, err := h.interactor.RequestWalletSelection(ctx, traceID, 2, hostname, availableWallets)
 			if err != nil {
 				if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 					return nil, errDetails
@@ -111,7 +111,7 @@ func (h *ClientConnectWallet) Handle(ctx context.Context, hostname string) (wall
 		}
 
 		if !alreadyUnlocked {
-			walletPassphrase, err := h.interactor.RequestPassphrase(ctx, traceID, walletName)
+			walletPassphrase, err := h.interactor.RequestPassphrase(ctx, traceID, 3, walletName)
 			if err != nil {
 				if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 					return nil, errDetails
@@ -140,7 +140,7 @@ func (h *ClientConnectWallet) Handle(ctx context.Context, hostname string) (wall
 		break
 	}
 
-	h.interactor.NotifySuccessfulRequest(ctx, traceID, WalletConnectionSuccessfullyEstablished)
+	h.interactor.NotifySuccessfulRequest(ctx, traceID, 4, WalletConnectionSuccessfullyEstablished)
 
 	return loadedWallet, nil
 }

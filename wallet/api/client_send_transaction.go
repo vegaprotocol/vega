@@ -79,7 +79,7 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		return nil, invalidParams(errs)
 	}
 
-	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID, TransactionReviewWorkflow); err != nil {
+	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID, TransactionReviewWorkflow, 2); err != nil {
 		return nil, requestNotPermittedError(err)
 	}
 	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
@@ -87,7 +87,7 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	receivedAt := time.Now()
 
 	if connectedWallet.RequireInteraction() {
-		approved, err := h.interactor.RequestTransactionReviewForSending(ctx, traceID, connectedWallet.Hostname(), connectedWallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
+		approved, err := h.interactor.RequestTransactionReviewForSending(ctx, traceID, 1, connectedWallet.Hostname(), connectedWallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
 		if err != nil {
 			if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 				return nil, errDetails
@@ -174,11 +174,11 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	h.interactor.Log(ctx, traceID, InfoLog, "Sending the transaction...")
 	txHash, err := currentNode.SendTransaction(ctx, tx, params.SendingMode)
 	if err != nil {
-		h.interactor.NotifyFailedTransaction(ctx, traceID, protoToJSON(rawInputData), protoToJSON(tx), err, sentAt, currentNode.Host())
+		h.interactor.NotifyFailedTransaction(ctx, traceID, 2, protoToJSON(rawInputData), protoToJSON(tx), err, sentAt, currentNode.Host())
 		return nil, networkErrorFromTransactionError(err)
 	}
 
-	h.interactor.NotifySuccessfulTransaction(ctx, traceID, txHash, protoToJSON(rawInputData), protoToJSON(tx), sentAt, currentNode.Host())
+	h.interactor.NotifySuccessfulTransaction(ctx, traceID, 2, txHash, protoToJSON(rawInputData), protoToJSON(tx), sentAt, currentNode.Host())
 
 	return ClientSendTransactionResult{
 		ReceivedAt: receivedAt,
