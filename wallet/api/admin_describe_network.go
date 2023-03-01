@@ -68,6 +68,18 @@ func (h *AdminDescribeNetwork) Handle(_ context.Context, rawParams jsonrpc.Param
 	resp.Apps.Explorer = n.Apps.Explorer
 	resp.Apps.Console = n.Apps.Console
 	resp.Metadata = n.Metadata
+
+	// make sure nil maps come through as empty slices
+	if resp.API.GRPCConfig.Hosts == nil {
+		resp.API.GRPCConfig.Hosts = []string{}
+	}
+	if resp.API.GraphQLConfig.Hosts == nil {
+		resp.API.GraphQLConfig.Hosts = []string{}
+	}
+	if resp.API.RESTConfig.Hosts == nil {
+		resp.API.RESTConfig.Hosts = []string{}
+	}
+
 	return resp, nil
 }
 
