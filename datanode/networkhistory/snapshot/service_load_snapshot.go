@@ -260,7 +260,8 @@ func (b *Service) loadSnapshot(ctx context.Context, loadLog LoadLog, snapshotDat
 	decompressedFilesDestination := filepath.Join(copyFromDirectory, snapshotData.UncompressedDataDir())
 	defer func() {
 		_ = os.RemoveAll(compressedFilePath)
-		_ = os.RemoveAll(decompressedFilesDestination)
+
+		//_ = os.RemoveAll(decompressedFilesDestination)
 	}()
 
 	loadLog.Infof("decompressing %s", snapshotData.CompressedFileName())
