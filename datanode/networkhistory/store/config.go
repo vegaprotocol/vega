@@ -8,8 +8,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/ipfs/kubo/config"
-	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/peer"
 	uuid "github.com/satori/go.uuid"
 )
 
