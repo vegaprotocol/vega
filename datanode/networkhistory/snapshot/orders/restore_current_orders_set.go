@@ -18,6 +18,7 @@ func RestoreCurrentOrdersSet(ctx context.Context, conn sqlstore.Connection) erro
   FROM orders
   WHERE current = true
   GROUP BY id
+  HAVING COUNT(id) > 1
 )
 UPDATE orders o
     SET current = CASE
