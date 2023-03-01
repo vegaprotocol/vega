@@ -15,6 +15,12 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.68.1
+
+### 🐛 Fixes
+- [7732](https://github.com/vegaprotocol/vega/issues/7732) - Fix panic when amending orders
+
+
 ## 0.68.0
 
 ### 🚨 Breaking changes
