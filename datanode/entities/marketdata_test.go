@@ -13,8 +13,11 @@
 package entities_test
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -314,4 +317,50 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 			assert.True(tt, tc.want.Equal(*got))
 		})
 	}
+}
+
+func TestPriceMonitoringBound_MarshalJSON(t *testing.T) {
+	min, _ := num.UintFromString("1", 10)
+	max, _ := num.UintFromString("2", 10)
+	ref, _ := num.UintFromString("3", 10)
+
+	bounds := &entities.PriceMonitoringBound{
+		MinValidPrice: min,
+		MaxValidPrice: max,
+		Trigger: entities.PriceMonitoringTrigger{
+			Horizon:          100,
+			Probability:      decimal.NewFromFloat(0.5),
+			AuctionExtension: 200,
+		},
+		ReferencePrice: ref,
+	}
+
+	bs, err := json.Marshal(bounds)
+	require.NoError(t, err)
+
+	want := []byte(`{"minValidPrice":"1","maxValidPrice":"2","trigger":{"horizon":100,"probability":"0.5","auctionExtension":200},"referencePrice":"3"}`)
+	assert.Equal(t, want, bs)
+}
+
+func TestPriceMonitoringBound_UnmarshalJSON(t *testing.T) {
+	bs := []byte(`{"minValidPrice":"1","maxValidPrice":"2","trigger":{"horizon":100,"probability":"0.5","auctionExtension":200},"referencePrice":"3"}`)
+	var bounds entities.PriceMonitoringBound
+	err := json.Unmarshal(bs, &bounds)
+	require.NoError(t, err)
+
+	min, _ := num.UintFromString("1", 10)
+	max, _ := num.UintFromString("2", 10)
+	ref, _ := num.UintFromString("3", 10)
+
+	want := entities.PriceMonitoringBound{
+		MinValidPrice: min,
+		MaxValidPrice: max,
+		Trigger: entities.PriceMonitoringTrigger{
+			Horizon:          100,
+			Probability:      decimal.NewFromFloat(0.5),
+			AuctionExtension: 200,
+		},
+		ReferencePrice: ref,
+	}
+	assert.Equal(t, want, bounds)
 }

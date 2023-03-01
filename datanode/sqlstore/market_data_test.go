@@ -26,6 +26,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/num"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"github.com/shopspring/decimal"
@@ -86,6 +88,12 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 	assert.Equal(t, 0, rowCount)
 
 	block := addTestBlock(t, ctx, bs)
+	min, ok := num.UintFromString("1", 10)
+	require.False(t, ok)
+	max, ok := num.UintFromString("2", 10)
+	require.False(t, ok)
+	ref, ok := num.UintFromString("3", 10)
+	require.False(t, ok)
 
 	err = md.Add(&entities.MarketData{
 		Market:            entities.MarketID("deadbeef"),
@@ -93,7 +101,19 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 		MarketState:       "STATE_ACTIVE",
 		AuctionTrigger:    "AUCTION_TRIGGER_LIQUIDITY",
 		ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
-		VegaTime:          block.VegaTime,
+		PriceMonitoringBounds: []*entities.PriceMonitoringBound{
+			{
+				MinValidPrice: min,
+				MaxValidPrice: max,
+				Trigger: entities.PriceMonitoringTrigger{
+					Horizon:          100,
+					Probability:      decimal.NewFromFloat(0.5),
+					AuctionExtension: 200,
+				},
+				ReferencePrice: ref,
+			},
+		},
+		VegaTime: block.VegaTime,
 	})
 	require.NoError(t, err)
 
@@ -116,6 +136,9 @@ func getLatestMarketData(t *testing.T) {
 
 	marketID := entities.MarketID("8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 
+	min, _ := num.UintFromString("1", 10)
+	max, _ := num.UintFromString("2", 10)
+	ref, _ := num.UintFromString("3", 10)
 	want := entities.MarketData{
 		MarkPrice:             mustParseDecimal(t, "999992587"),
 		BestBidPrice:          mustParseDecimal(t, "1000056152"),
@@ -140,8 +163,19 @@ func getLatestMarketData(t *testing.T) {
 		ExtensionTrigger:      "AUCTION_TRIGGER_UNSPECIFIED",
 		TargetStake:           mustParseDecimal(t, "67499499622"),
 		SuppliedStake:         mustParseDecimal(t, "50000000000"),
-		PriceMonitoringBounds: nil,
-		MarketValueProxy:      "194290093211464.7413030152957024",
+		PriceMonitoringBounds: []*entities.PriceMonitoringBound{
+			{
+				MinValidPrice: min,
+				MaxValidPrice: max,
+				Trigger: entities.PriceMonitoringTrigger{
+					Horizon:          100,
+					Probability:      decimal.NewFromFloat(0.5),
+					AuctionExtension: 200,
+				},
+				ReferencePrice: ref,
+			},
+		},
+		MarketValueProxy: "194290093211464.7413030152957024",
 		LiquidityProviderFeeShares: []*entities.LiquidityProviderFeeShare{
 			{
 				Party:                 "af2bb48edd738353fcd7a2b6cea4821dd2382ec95497954535278dfbfff7b5b5",

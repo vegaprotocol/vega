@@ -104,7 +104,7 @@ type PriceMonitoringTrigger struct {
 
 func (trigger PriceMonitoringTrigger) Equals(other PriceMonitoringTrigger) bool {
 	return trigger.Horizon == other.Horizon &&
-		trigger.Probability == other.Probability &&
+		trigger.Probability.Equal(other.Probability) &&
 		trigger.AuctionExtension == other.AuctionExtension
 }
 
@@ -123,7 +123,7 @@ type PriceMonitoringBound struct {
 	ReferencePrice *num.Uint              `json:"referencePrice"`
 }
 
-func (bound PriceMonitoringBound) Equals(other PriceMonitoringBound) bool {
+func (bound *PriceMonitoringBound) Equals(other PriceMonitoringBound) bool {
 	minValidPricesMatch := false
 	maxValidPricesMatch := false
 	referencePricesMatch := false
@@ -150,6 +150,57 @@ func (bound PriceMonitoringBound) Equals(other PriceMonitoringBound) bool {
 		maxValidPricesMatch &&
 		bound.Trigger.Equals(other.Trigger) &&
 		referencePricesMatch
+}
+
+func (bound *PriceMonitoringBound) MarshalJSON() ([]byte, error) {
+	out := struct {
+		MinValidPrice  string                 `json:"minValidPrice"`
+		MaxValidPrice  string                 `json:"maxValidPrice"`
+		Trigger        PriceMonitoringTrigger `json:"trigger"`
+		ReferencePrice string                 `json:"referencePrice"`
+	}{
+		MinValidPrice:  bound.MinValidPrice.String(),
+		MaxValidPrice:  bound.MaxValidPrice.String(),
+		Trigger:        bound.Trigger,
+		ReferencePrice: bound.ReferencePrice.String(),
+	}
+
+	return json.Marshal(out)
+}
+
+func (bound *PriceMonitoringBound) UnmarshalJSON(bytes []byte) error {
+	var in struct {
+		MinValidPrice  string                 `json:"minValidPrice"`
+		MaxValidPrice  string                 `json:"maxValidPrice"`
+		Trigger        PriceMonitoringTrigger `json:"trigger"`
+		ReferencePrice string                 `json:"referencePrice"`
+	}
+
+	if err := json.Unmarshal(bytes, &in); err != nil {
+		return err
+	}
+
+	minValidPx, err := num.UintFromString(in.MinValidPrice, 10)
+	if err {
+		return fmt.Errorf("MinValidPrice %s is not valid", in.MinValidPrice)
+	}
+
+	maxValidPx, err := num.UintFromString(in.MaxValidPrice, 10)
+	if err {
+		return fmt.Errorf("MaxValidPrice %s is not valid", in.MaxValidPrice)
+	}
+
+	refPx, err := num.UintFromString(in.ReferencePrice, 10)
+	if err {
+		return fmt.Errorf("ReferencePrice %s is not valid", in.ReferencePrice)
+	}
+
+	bound.MinValidPrice = minValidPx
+	bound.MaxValidPrice = maxValidPx
+	bound.Trigger = in.Trigger
+	bound.ReferencePrice = refPx
+
+	return nil
 }
 
 type LiquidityProviderFeeShare struct {
