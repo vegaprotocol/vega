@@ -33,6 +33,7 @@ type WalletStore interface {
 	DeleteWallet(ctx context.Context, name string) error
 	RenameWallet(ctx context.Context, currentName, newName string) error
 	GetWalletPath(name string) string
+	IsWalletAlreadyUnlocked(ctx context.Context, name string) (bool, error)
 }
 
 // NetworkStore is the component used to retrieve and update the networks from the
@@ -69,7 +70,7 @@ type Interactor interface {
 	// NotifyInteractionSessionBegan notifies the beginning of an interaction
 	// session.
 	// A session is scoped to a request.
-	NotifyInteractionSessionBegan(ctx context.Context, traceID string) error
+	NotifyInteractionSessionBegan(ctx context.Context, traceID string, workflow WorkflowType, numberOfSteps uint8) error
 
 	// NotifyInteractionSessionEnded notifies the end of an interaction
 	// session.
@@ -77,14 +78,14 @@ type Interactor interface {
 	NotifyInteractionSessionEnded(ctx context.Context, traceID string)
 
 	// NotifySuccessfulTransaction is used to report a successful transaction.
-	NotifySuccessfulTransaction(ctx context.Context, traceID, txHash, deserializedInputData, tx string, sentAt time.Time, host string)
+	NotifySuccessfulTransaction(ctx context.Context, traceID string, stepNumber uint8, txHash, deserializedInputData, tx string, sentAt time.Time, host string)
 
 	// NotifyFailedTransaction is used to report a failed transaction.
-	NotifyFailedTransaction(ctx context.Context, traceID, deserializedInputData, tx string, err error, sentAt time.Time, host string)
+	NotifyFailedTransaction(ctx context.Context, traceID string, stepNumber uint8, deserializedInputData, tx string, err error, sentAt time.Time, host string)
 
 	// NotifySuccessfulRequest is used to notify the user the request is
 	// successful.
-	NotifySuccessfulRequest(ctx context.Context, traceID string, message string)
+	NotifySuccessfulRequest(ctx context.Context, traceID string, stepNumber uint8, message string)
 
 	// NotifyError is used to report errors to the user.
 	NotifyError(ctx context.Context, traceID string, t ErrorType, err error)
@@ -99,35 +100,45 @@ type Interactor interface {
 	// RequestWalletConnectionReview is used to trigger a user review of
 	// the wallet connection requested by the specified hostname.
 	// It returns the type of connection approval chosen by the user.
-	RequestWalletConnectionReview(ctx context.Context, traceID, hostname string) (string, error)
+	RequestWalletConnectionReview(ctx context.Context, traceID string, stepNumber uint8, hostname string) (string, error)
 
 	// RequestWalletSelection is used to trigger the selection of the wallet the
 	// user wants to use for the specified hostname.
-	RequestWalletSelection(ctx context.Context, traceID, hostname string, availableWallets []string) (SelectedWallet, error)
+	RequestWalletSelection(ctx context.Context, traceID string, stepNumber uint8, hostname string, availableWallets []string) (string, error)
 
 	// RequestPassphrase is used to request to the user the passphrase of a wallet.
 	// It's primarily used by requests that update the wallet.
-	RequestPassphrase(ctx context.Context, traceID, wallet string) (string, error)
+	RequestPassphrase(ctx context.Context, traceID string, stepNumber uint8, wallet string) (string, error)
 
 	// RequestPermissionsReview is used to trigger a user review of the permissions
 	// requested by the specified hostname.
 	// It returns true if the user approved the requested permissions, false
 	// otherwise.
-	RequestPermissionsReview(ctx context.Context, traceID, hostname, wallet string, perms map[string]string) (bool, error)
+	RequestPermissionsReview(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet string, perms map[string]string) (bool, error)
 
 	// RequestTransactionReviewForSending is used to trigger a user review of the
 	// transaction a third-party application wants to send.
 	// It returns true if the user approved the sending of the transaction,
 	// false otherwise.
-	RequestTransactionReviewForSending(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
+	RequestTransactionReviewForSending(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
 
 	// RequestTransactionReviewForSigning is used to trigger a user review of the
 	// transaction a third-party application wants to sign. The wallet doesn't
 	// send the transaction.
 	// It returns true if the user approved the signing of the transaction,
 	// false otherwise.
-	RequestTransactionReviewForSigning(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
+	RequestTransactionReviewForSigning(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
 }
+
+// WorkflowType defines the type of interaction workflow that started by a
+// method.
+type WorkflowType string
+
+var (
+	WalletConnectionWorkflow  WorkflowType = "WALLET_CONNECTION"
+	TransactionReviewWorkflow WorkflowType = "TRANSACTION_REVIEW"
+	PermissionRequestWorkflow WorkflowType = "PERMISSION_REQUEST"
+)
 
 // ErrorType defines the type of error that is sent to the user, for fine
 // grain error management and reporting.
@@ -165,12 +176,6 @@ var (
 	ErrorLog   LogType = "Error"
 	SuccessLog LogType = "Success"
 )
-
-// SelectedWallet holds the result of the wallet selection from the user.
-type SelectedWallet struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
-}
 
 type ClientAPI struct {
 	connectWallet   *ClientConnectWallet
