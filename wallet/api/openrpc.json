@@ -1186,7 +1186,7 @@
               },
               "apps": {
                 "console": "console.vega.xyz",
-                "tokenDApp": "token.vega.xyz",
+                "governance": "governance.vega.xyz",
                 "explorer": "explorer.vega.xyz"
               }
             }
@@ -3604,7 +3604,7 @@
           "console": {
             "type": "string"
           },
-          "tokenDApp": {
+          "governance": {
             "type": "string"
           },
           "explorer": {
