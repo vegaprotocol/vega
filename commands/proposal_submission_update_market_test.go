@@ -2361,7 +2361,12 @@ func testUpdateMarketFutureMarketSubmissionWithExternalTradingTerminationNoPubli
 														Name: "trading.terminated",
 														Type: datapb.PropertyKey_TYPE_BOOLEAN,
 													},
-													Conditions: []*datapb.Condition{},
+													Conditions: []*datapb.Condition{
+														{
+															Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+															Value:    fmt.Sprintf("%d", time.Now().Add(time.Hour*24*365).UnixNano()),
+														},
+													},
 												},
 											},
 										},

@@ -14,14 +14,24 @@
 - [7656](https://github.com/vegaprotocol/vega/issues/7656) - Add `vega wallet service config describe` CLI that display the service configuration.
 - [7656](https://github.com/vegaprotocol/vega/issues/7656) - Add `vega wallet service config reset` CLI that reset the service configuration to its default state.
 - [7288](https://github.com/vegaprotocol/vega/issues/7288) - Add `block` interval for trade candles
+- [7696](https://github.com/vegaprotocol/vega/issues/7696) - Cache `ListMarket` store queries
 - [7413](https://github.com/vegaprotocol/vega/issues/7413) - Add foreign block height to stake linkings in `GraphQL`
+- [7675](https://github.com/vegaprotocol/vega/issues/7675) - Migrate to comet `bft`
+- [5967](https://github.com/vegaprotocol/vega/issues/5967) - Do not ask for wallet passphrase if it has already been unlocked.
+- [5967](https://github.com/vegaprotocol/vega/issues/5967) - Preselect the wallet during connection is there is only one.
+- [7723](https://github.com/vegaprotocol/vega/issues/7723) - Make the `SessionBegan` interaction easy to identify using a `WorkflowType`
+- [7724](https://github.com/vegaprotocol/vega/issues/7724) - Add steps number to interactions to convey a progression feeling.
 
 ### 🐛 Fixes
 - [7535](https://github.com/vegaprotocol/vega/issues/7535) - Fix network history load takes an increasingly long time to complete
 - [7517](https://github.com/vegaprotocol/vega/issues/7517) - Add buffer files event source 
+- [7720](https://github.com/vegaprotocol/vega/issues/7720) - Return an empty slice instead of nil when describing a wallet network 
 - [7659](https://github.com/vegaprotocol/vega/issues/7659) - Tidy up REST documentation for consistency
 - [7563](https://github.com/vegaprotocol/vega/issues/7563) - Let the wallet work again with null `blockchain`
 - [7692](https://github.com/vegaprotocol/vega/issues/7692) - Fix network history load hanging after protocol upgrade
+- [7713](https://github.com/vegaprotocol/vega/issues/7713) - Fix PnL values on trade in the positions API
+- [7673](https://github.com/vegaprotocol/vega/issues/7673) - Accept internal data sources without signers
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
 ## 0.68.0

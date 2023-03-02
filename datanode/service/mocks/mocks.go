@@ -126,21 +126,6 @@ func (m *MockMarketStore) EXPECT() *MockMarketStoreMockRecorder {
 	return m.recorder
 }
 
-// GetAll mocks base method.
-func (m *MockMarketStore) GetAll(arg0 context.Context, arg1 entities.OffsetPagination) ([]entities.Market, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", arg0, arg1)
-	ret0, _ := ret[0].([]entities.Market)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAll indicates an expected call of GetAll.
-func (mr *MockMarketStoreMockRecorder) GetAll(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockMarketStore)(nil).GetAll), arg0, arg1)
-}
-
 // GetAllPaged mocks base method.
 func (m *MockMarketStore) GetAllPaged(arg0 context.Context, arg1 string, arg2 entities.CursorPagination, arg3 bool) ([]entities.Market, entities.PageInfo, error) {
 	m.ctrl.T.Helper()
