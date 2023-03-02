@@ -21,12 +21,58 @@ import (
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
+	"golang.org/x/exp/maps"
 )
+
+type cacheKey struct {
+	forwardOffset  int32
+	backwardOffset int32
+	forwardCursor  string
+	backwardCursor string
+	newestFirst    bool
+	marketID       string
+	includeSettled bool
+}
+
+type cacheValue struct {
+	markets  []entities.Market
+	pageInfo entities.PageInfo
+}
+
+func newCacheKey(marketID string, pagination entities.CursorPagination, includeSettled bool) cacheKey {
+	k := cacheKey{
+		marketID:       marketID,
+		newestFirst:    pagination.NewestFirst,
+		includeSettled: includeSettled,
+	}
+
+	if pagination.Forward != nil {
+		if pagination.Forward.Limit != nil {
+			k.forwardOffset = *pagination.Forward.Limit
+		}
+		if pagination.Forward.Cursor != nil {
+			k.forwardCursor = pagination.Forward.Cursor.Value()
+		}
+	}
+
+	if pagination.Backward != nil {
+		if pagination.Backward.Limit != nil {
+			k.backwardOffset = *pagination.Backward.Limit
+		}
+		if pagination.Backward.Cursor != nil {
+			k.backwardCursor = pagination.Backward.Cursor.Value()
+		}
+	}
+
+	return k
+}
 
 type Markets struct {
 	*ConnectionSource
-	cache     map[string]entities.Market
-	cacheLock sync.Mutex
+	cache        map[string]entities.Market
+	cacheLock    sync.Mutex
+	allCache     map[cacheKey]cacheValue
+	allCacheLock sync.Mutex
 }
 
 var marketOrdering = TableOrdering{
@@ -43,6 +89,7 @@ func NewMarkets(connectionSource *ConnectionSource) *Markets {
 	return &Markets{
 		ConnectionSource: connectionSource,
 		cache:            make(map[string]entities.Market),
+		allCache:         make(map[cacheKey]cacheValue),
 	}
 }
 
@@ -78,6 +125,10 @@ set
 		m.cacheLock.Lock()
 		defer m.cacheLock.Unlock()
 		delete(m.cache, market.ID.String())
+
+		m.allCacheLock.Lock()
+		defer m.allCacheLock.Unlock()
+		maps.Clear(m.allCache)
 	})
 
 	return nil
@@ -108,23 +159,14 @@ order by id, vega_time desc
 	return market, m.wrapE(err)
 }
 
-func (m *Markets) GetAll(ctx context.Context, pagination entities.OffsetPagination) ([]entities.Market, error) {
-	var markets []entities.Market
-	query := fmt.Sprintf(`select %s
-from markets_current
-where state != 'STATE_REJECTED'
-order by id, vega_time desc
-`, sqlMarketsColumns)
-
-	query, _ = orderAndPaginateQuery(query, nil, pagination)
-
-	defer metrics.StartSQLQuery("Markets", "GetAll")()
-	err := pgxscan.Select(ctx, m.Connection, &markets, query)
-
-	return markets, err
-}
-
 func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, includeSettled bool) ([]entities.Market, entities.PageInfo, error) {
+	key := newCacheKey(marketID, pagination, includeSettled)
+	m.allCacheLock.Lock()
+	defer m.allCacheLock.Unlock()
+	if value, ok := m.allCache[key]; ok {
+		return value.markets, value.pageInfo, nil
+	}
+
 	if marketID != "" {
 		market, err := m.GetByID(ctx, marketID)
 		if err != nil {
@@ -166,5 +208,7 @@ func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination e
 	}
 
 	markets, pageInfo = entities.PageEntities[*v2.MarketEdge](markets, pagination)
+
+	m.allCache[key] = cacheValue{markets: markets, pageInfo: pageInfo}
 	return markets, pageInfo, nil
 }
