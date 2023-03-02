@@ -200,6 +200,7 @@ type RequestWalletSelection struct {
 // It should be answered by an interactor.EnteredPassphrase response.
 type RequestPassphrase struct {
 	Wallet string `json:"wallet"`
+	Reason string `json:"reason"`
 }
 
 // RequestPermissionsReview is a review request emitted when a third-party

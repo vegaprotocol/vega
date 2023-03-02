@@ -10,7 +10,10 @@ import (
 	"code.vegaprotocol.io/vega/wallet/wallet"
 )
 
-const WalletConnectionSuccessfullyEstablished = "The connection to the wallet has been successfully established."
+const (
+	WalletConnectionSuccessfullyEstablished = "The connection to the wallet has been successfully established."
+	PassphraseRequestReasonUnlockWallet     = "The application wants to unlock the wallet."
+)
 
 type ClientConnectWallet struct {
 	walletStore WalletStore
@@ -111,7 +114,7 @@ func (h *ClientConnectWallet) Handle(ctx context.Context, hostname string) (wall
 		}
 
 		if !alreadyUnlocked {
-			walletPassphrase, err := h.interactor.RequestPassphrase(ctx, traceID, 3, walletName)
+			walletPassphrase, err := h.interactor.RequestPassphrase(ctx, traceID, 3, walletName, PassphraseRequestReasonUnlockWallet)
 			if err != nil {
 				if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 					return nil, errDetails

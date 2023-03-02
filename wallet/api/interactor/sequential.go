@@ -190,7 +190,7 @@ func (i *SequentialInteractor) RequestWalletSelection(ctx context.Context, trace
 	return selectedWallet.Wallet, nil
 }
 
-func (i *SequentialInteractor) RequestPassphrase(ctx context.Context, traceID string, stepNumber uint8, wallet string) (string, error) {
+func (i *SequentialInteractor) RequestPassphrase(ctx context.Context, traceID string, stepNumber uint8, wallet, reason string) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", api.ErrRequestInterrupted
 	}
@@ -200,6 +200,7 @@ func (i *SequentialInteractor) RequestPassphrase(ctx context.Context, traceID st
 		Name:    RequestPassphraseName,
 		Data: RequestPassphrase{
 			Wallet: wallet,
+			Reason: reason,
 		},
 	}
 

@@ -108,7 +108,7 @@ type Interactor interface {
 
 	// RequestPassphrase is used to request to the user the passphrase of a wallet.
 	// It's primarily used by requests that update the wallet.
-	RequestPassphrase(ctx context.Context, traceID string, stepNumber uint8, wallet string) (string, error)
+	RequestPassphrase(ctx context.Context, traceID string, stepNumber uint8, wallet, reason string) (string, error)
 
 	// RequestPermissionsReview is used to trigger a user review of the permissions
 	// requested by the specified hostname.

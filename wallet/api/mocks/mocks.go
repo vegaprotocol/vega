@@ -447,18 +447,18 @@ func (mr *MockInteractorMockRecorder) NotifySuccessfulTransaction(arg0, arg1, ar
 }
 
 // RequestPassphrase mocks base method.
-func (m *MockInteractor) RequestPassphrase(arg0 context.Context, arg1 string, arg2 byte, arg3 string) (string, error) {
+func (m *MockInteractor) RequestPassphrase(arg0 context.Context, arg1 string, arg2 byte, arg3, arg4 string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RequestPassphrase", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "RequestPassphrase", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // RequestPassphrase indicates an expected call of RequestPassphrase.
-func (mr *MockInteractorMockRecorder) RequestPassphrase(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockInteractorMockRecorder) RequestPassphrase(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestPassphrase", reflect.TypeOf((*MockInteractor)(nil).RequestPassphrase), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestPassphrase", reflect.TypeOf((*MockInteractor)(nil).RequestPassphrase), arg0, arg1, arg2, arg3, arg4)
 }
 
 // RequestPermissionsReview mocks base method.
