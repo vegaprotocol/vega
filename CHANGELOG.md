@@ -17,6 +17,7 @@
 - [7696](https://github.com/vegaprotocol/vega/issues/7696) - Cache `ListMarket` store queries
 - [7413](https://github.com/vegaprotocol/vega/issues/7413) - Add foreign block height to stake linkings in `GraphQL`
 - [7675](https://github.com/vegaprotocol/vega/issues/7675) - Migrate to comet `bft`
+- [7722](https://github.com/vegaprotocol/vega/issues/7722) - Send a reason for a passphrase request through the wallet's `interactor`
 - [5967](https://github.com/vegaprotocol/vega/issues/5967) - Do not ask for wallet passphrase if it has already been unlocked.
 - [5967](https://github.com/vegaprotocol/vega/issues/5967) - Preselect the wallet during connection is there is only one.
 - [7723](https://github.com/vegaprotocol/vega/issues/7723) - Make the `SessionBegan` interaction easy to identify using a `WorkflowType`
