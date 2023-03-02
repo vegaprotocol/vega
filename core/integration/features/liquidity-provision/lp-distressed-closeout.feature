@@ -111,7 +111,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | mark price | trading mode                    | target stake | supplied stake | open interest |
       | 1055       | TRADING_MODE_MONITORING_AUCTION | 2954         | 0              | 28            |
 
-    # TODO: Investigate - LP should get liquidated at this point as there's now enough volume on the book to do so
+    # TODO: raise a bug - LP should get liquidated at this point as there's now enough volume on the book to do so
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party0 | -17    | -90            | 0            |
