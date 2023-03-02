@@ -104,8 +104,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party3 | ETH/DEC21 | buy  | 474    | 1055  | 1                | TYPE_LIMIT | TIF_FOK |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 0      | 0       | 0    |
-    And the insurance pool balance should be "5724" for the market "ETH/DEC21"
+      | party0 | ETH   | ETH/DEC21 | 1782   | 0       | 0    |
+    And the insurance pool balance should be "3942" for the market "ETH/DEC21"
 
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status           |
