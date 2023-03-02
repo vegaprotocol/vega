@@ -29,7 +29,9 @@ type FileStore struct {
 }
 
 type networkFileContent struct {
-	API network.APIConfig `json:"api"`
+	API      network.APIConfig  `json:"api"`
+	Apps     network.AppsConfig `json:"apps"`
+	Metadata []network.Metadata `json:"metadata"`
 }
 
 func InitialiseStore(vegaPaths paths.Paths) (*FileStore, error) {
@@ -89,8 +91,14 @@ func (s *FileStore) GetNetwork(name string) (*network.Network, error) {
 		return nil, fmt.Errorf("couldn't read network configuration file: %w", err)
 	}
 	return &network.Network{
-		Name: name,
-		API:  nfc.API,
+		Name:     name,
+		Metadata: nfc.Metadata,
+		API:      nfc.API,
+		Apps: network.AppsConfig{
+			Console:    nfc.Apps.Console,
+			Governance: nfc.Apps.Governance,
+			Explorer:   nfc.Apps.Explorer,
+		},
 	}, nil
 }
 

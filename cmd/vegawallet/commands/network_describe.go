@@ -111,8 +111,9 @@ func PrintDescribeNetworkResponse(w io.Writer, resp api.AdminDescribeNetworkResu
 
 	str.NextLine().Text("Network").NextLine()
 	str.Text("  Name: ").WarningText(resp.Name).NextLine()
-	if len(resp.Metadata) != 0 {
-		str.Text("  Metadata: ").NextLine()
+	str.Text("  Metadata: ")
+	if len(resp.Metadata) > 0 {
+		str.NextLine()
 		padding := 0
 		for _, m := range resp.Metadata {
 			keyLen := len(m.Key)
@@ -122,17 +123,19 @@ func PrintDescribeNetworkResponse(w io.Writer, resp api.AdminDescribeNetworkResu
 		}
 
 		for _, m := range resp.Metadata {
-			str.WarningText(fmt.Sprintf("%-*s", padding, m.Key)).Text(" | ").WarningText(m.Value).NextLine()
+			str.ListItem().WarningText(fmt.Sprintf("%-*s", padding, m.Key)).Text(" | ").WarningText(m.Value).NextLine()
 		}
+		str.NextLine()
+	} else {
+		str.DangerText(" <not set>").NextSection()
 	}
-	str.NextSection()
 
-	str.NextLine().Text("Applications").NextLine()
+	str.NextLine().Text("Linked applications").NextLine()
 	str.ListItem().Text("- Console: ")
 	PrintDescribeNetworkWithValueNotSet(str, resp.Apps.Console)
-	str.ListItem().Text("- Governance: ").WarningText(resp.Apps.Governance)
+	str.ListItem().Text("- Governance: ")
 	PrintDescribeNetworkWithValueNotSet(str, resp.Apps.Governance)
-	str.ListItem().Text("- Explorer: ").WarningText(resp.Apps.Explorer)
+	str.ListItem().Text("- Explorer: ")
 	PrintDescribeNetworkWithValueNotSet(str, resp.Apps.Explorer)
 	str.NextSection()
 
