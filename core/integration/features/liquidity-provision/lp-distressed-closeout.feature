@@ -147,9 +147,23 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | mark price | trading mode            | target stake | supplied stake | open interest |
       | 1055       | TRADING_MODE_CONTINUOUS | 2954         | 6000           | 28            |
 
+    # add another MTM 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC21 | buy  | 1      | 1055  | 1                | TYPE_LIMIT | TIF_FOK |
+
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance |
+      | party0 | ETH/DEC21 | 2287        |
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | bond |
+      | party0 | ETH   | ETH/DEC21 | 388    | 0       | 0    |
+
+    Then the network moves ahead "1" blocks
+    # add another MTM 
+    When the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | ETH/DEC21 | buy  | 1      | 1056  | 1                | TYPE_LIMIT | TIF_FOK |
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance |
