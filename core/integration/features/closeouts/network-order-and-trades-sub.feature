@@ -4,7 +4,7 @@ Feature: Ensure network party are generated
 
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e3                    | 1e3                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -16,7 +16,7 @@ Feature: Ensure network party are generated
       | party            | asset | amount        |
       | sellSideProvider | BTC   | 1000000000000 |
       | buySideProvider  | BTC   | 1000000000000 |
-      | designatedLooser | BTC   | 12000         |
+      | designatedLoser  | BTC   | 12000         |
       | aux              | BTC   | 1000000000000 |
       | aux2             | BTC   | 1000000000000 |
 
@@ -35,7 +35,7 @@ Feature: Ensure network party are generated
     # insurance pool generation - trade
     When the parties place the following orders "1" blocks apart:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | designatedLoser  | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     # insurance pool generation - modify order book
@@ -60,5 +60,5 @@ Feature: Ensure network party are generated
     # check the network trade happened
     Then the following network trades should be executed:
       | party            | aggressor side | volume |
-      | designatedLooser | buy            | 290    |
+      | designatedLoser  | buy            | 290    |
       | buySideProvider  | sell           | 290    |
