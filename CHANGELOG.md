@@ -3,7 +3,7 @@
 ## Unreleased 0.69.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7710](https://github.com/vegaprotocol/vega/issues/7710) - Rename "token dApp" to "governance"
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -

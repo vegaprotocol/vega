@@ -34,9 +34,9 @@ type GraphQLConfig struct {
 }
 
 type AppsConfig struct {
-	Console   string `json:"console"`
-	TokenDApp string `json:"tokenDApp"`
-	Explorer  string `json:"explorer"`
+	Console    string `json:"console"`
+	Governance string `json:"governance"`
+	Explorer   string `json:"explorer"`
 }
 
 type Metadata struct {
