@@ -107,6 +107,10 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | id  | party  | market    | commitment amount | status           |
       | lp1 | party0 | ETH/DEC21 | 5000              | STATUS_CANCELLED |
 
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode                    | target stake | supplied stake | open interest |
+      | 1055       | TRADING_MODE_MONITORING_AUCTION | 2954         | 0              | 28            |
+
     # TODO: Investigate - LP should get liquidated at this point as there's now enough volume on the book to do so
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
@@ -126,7 +130,33 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
 
     # Make sure that at no point fees get distributed since the LP has been closed out
     Then the network moves ahead "12" blocks
+
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode                    | target stake | supplied stake | open interest |
+      | 1055       | TRADING_MODE_MONITORING_AUCTION | 2954         | 0              | 28            |
+
     And the accumulated liquidity fees should be "23" for the market "ETH/DEC21"
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp2 | party1 | ETH/DEC21 | 6000              | 0.001 | buy  | BID              | 500        | 10     | submission |
+      | lp2 | party1 | ETH/DEC21 | 6000              | 0.001 | sell | ASK              | 500        | 10     | amendment  |
+
+    Then the network moves ahead "1" blocks
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest |
+      | 1055       | TRADING_MODE_CONTINUOUS | 2954         | 6000           | 28            |
+
+    When the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | ETH/DEC21 | buy  | 1      | 1055  | 1                | TYPE_LIMIT | TIF_FOK |
+
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance |
+      | party0 | ETH/DEC21 | 2287        |
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | bond |
+      | party0 | ETH   | ETH/DEC21 | 388    | 0       | 0    |
 
   Scenario: 002, LP gets distressed after auction
     Given the simple risk model named "simple-risk-model-2":
