@@ -2025,10 +2025,10 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 
 	m.zeroOutNetwork(ctx, closedMPs, &no, distressedPartiesFees)
 
+	m.confirmMTM(ctx, false)
 	// swipe all accounts and stuff
 	m.finalizePartiesCloseOut(ctx, closed, closedMPs)
 
-	m.confirmMTM(ctx, false)
 	m.recheckMargin(ctx, m.position.Positions())
 
 	return orderUpdates, nil
