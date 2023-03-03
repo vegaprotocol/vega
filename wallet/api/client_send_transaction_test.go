@@ -298,6 +298,7 @@ func testCancellingTheReviewDoesNotSendTransaction(t *testing.T) {
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
 	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, uint8(1), hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(false, api.ErrUserCloseTheConnection)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ApplicationError, api.ErrConnectionClosed)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{

@@ -84,6 +84,7 @@ func (i *SequentialInteractor) NotifySuccessfulTransaction(ctx context.Context, 
 			Node: SelectedNode{
 				Host: host,
 			},
+			StepNumber: stepNumber,
 		},
 	}
 }
@@ -104,6 +105,7 @@ func (i *SequentialInteractor) NotifyFailedTransaction(ctx context.Context, trac
 			Node: SelectedNode{
 				Host: host,
 			},
+			StepNumber: stepNumber,
 		},
 	}
 }
@@ -117,7 +119,8 @@ func (i *SequentialInteractor) NotifySuccessfulRequest(ctx context.Context, trac
 		TraceID: traceID,
 		Name:    RequestSucceededName,
 		Data: RequestSucceeded{
-			Message: message,
+			Message:    message,
+			StepNumber: stepNumber,
 		},
 	}
 }
@@ -146,7 +149,8 @@ func (i *SequentialInteractor) RequestWalletConnectionReview(ctx context.Context
 		TraceID: traceID,
 		Name:    RequestWalletConnectionReviewName,
 		Data: RequestWalletConnectionReview{
-			Hostname: hostname,
+			Hostname:   hostname,
+			StepNumber: stepNumber,
 		},
 	}
 
@@ -174,6 +178,7 @@ func (i *SequentialInteractor) RequestWalletSelection(ctx context.Context, trace
 		Data: RequestWalletSelection{
 			Hostname:         hostname,
 			AvailableWallets: availableWallets,
+			StepNumber:       stepNumber,
 		},
 	}
 
@@ -199,8 +204,9 @@ func (i *SequentialInteractor) RequestPassphrase(ctx context.Context, traceID st
 		TraceID: traceID,
 		Name:    RequestPassphraseName,
 		Data: RequestPassphrase{
-			Wallet: wallet,
-			Reason: reason,
+			Wallet:     wallet,
+			Reason:     reason,
+			StepNumber: stepNumber,
 		},
 	}
 
@@ -228,6 +234,7 @@ func (i *SequentialInteractor) RequestPermissionsReview(ctx context.Context, tra
 			Hostname:    hostname,
 			Wallet:      wallet,
 			Permissions: perms,
+			StepNumber:  stepNumber,
 		},
 	}
 
@@ -257,6 +264,7 @@ func (i *SequentialInteractor) RequestTransactionReviewForSending(ctx context.Co
 			PublicKey:   pubKey,
 			Transaction: transaction,
 			ReceivedAt:  receivedAt,
+			StepNumber:  stepNumber,
 		},
 	}
 
@@ -286,6 +294,7 @@ func (i *SequentialInteractor) RequestTransactionReviewForSigning(ctx context.Co
 			PublicKey:   pubKey,
 			Transaction: transaction,
 			ReceivedAt:  receivedAt,
+			StepNumber:  stepNumber,
 		},
 	}
 
