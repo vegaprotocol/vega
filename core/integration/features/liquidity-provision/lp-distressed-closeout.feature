@@ -278,7 +278,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party0 | ETH   | ETH/DEC21 | 0      | 0       | 0    |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party0 | 0      | 0              | -2173        |
+      | party0 | 0      | 0              | -880         |
     And the accumulated liquidity fees should be "24" for the market "ETH/DEC21"
 
     # assure that closing out one LP doesn't prevent fees from being fully distributed
@@ -409,13 +409,24 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | sell | 1055  | 10     |
       | sell | 1100  | 1      |
       | sell | 1200  | 100    |
+    And the accumulated liquidity fees should be "17" for the market "ETH/DEC21"
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC21 | buy  | 5      | 1055  | 1                | TYPE_LIMIT | TIF_FOK |
+    Then the following trades should be executed:
+      | buyer   | price | size | seller  |
+      | party3  | 1055  | 5    | party0  |
+      | network | 1055  | 5    | party10 |
+      | network | 1100  | 1    | party2  |
+      | network | 1200  | 11   | party6  |
+      | party0  | 1151  | 17   | network |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
       | party0 | ETH   | ETH/DEC21 | 0      | 0       | 0    |
-    And the insurance pool balance should be "4702" for the market "ETH/DEC21"
+    And the insurance pool balance should be "4848" for the market "ETH/DEC21"
+    # party0 only able to cover portion of the fees due to excessive bond slashing
+    And the accumulated liquidity fees should be "23" for the market "ETH/DEC21"
+
     Then the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
       | buy  | 900   | 1      |
@@ -427,14 +438,15 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     #lp1(party0) is closed-out, some of the sell orders had been used for close-out trade
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
-      | party0  | 0      | 0              | -2636        |
+      | party0  | 0      | 0              | -1316        |
       | party10 | -5     | 0              | 0            |
 
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status           |
       | lp1 | party0 | ETH/DEC21 | 5000              | STATUS_CANCELLED |
 
-    And the accumulated liquidity fees should be "45" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "23" for the market "ETH/DEC21"
+  
     # Make sure that at no point fees get distributed since the LP has been closed out
     Then the network moves ahead "12" blocks
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
@@ -442,4 +454,3 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
       | 1055       | TRADING_MODE_CONTINUOUS | 1       | 981       | 1130      | 2954         | 5000           | 28            | 990                   | 1095             | 1200                    |
-
