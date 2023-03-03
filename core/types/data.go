@@ -39,7 +39,7 @@ func DataSourceSpecFilterFromProto(protoFilter *datapb.Filter) *DataSourceSpecFi
 	}
 
 	if protoFilter.Key != nil {
-		filter.Key = DataSourceSpecPropertyKeyFromProto(protoFilter.Key)
+		*filter.Key = *DataSourceSpecPropertyKeyFromProto(protoFilter.Key)
 	}
 
 	filter.Conditions = DataSourceSpecConditionsFromProto(protoFilter.Conditions)
@@ -245,11 +245,16 @@ type DataSourceSpecPropertyKey struct {
 }
 
 func (k DataSourceSpecPropertyKey) String() string {
+	var dp string
+	if k.NumberDecimalPlaces != nil {
+		dp = strconv.FormatUint(*k.NumberDecimalPlaces, 10)
+	}
+
 	return fmt.Sprintf(
 		"name(%s) type(%s) decimals(%s)",
 		k.Name,
 		k.Type.String(),
-		strconv.FormatUint(*k.NumberDecimalPlaces, 10),
+		dp,
 	)
 }
 

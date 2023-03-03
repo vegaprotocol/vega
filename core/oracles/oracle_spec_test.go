@@ -27,6 +27,7 @@ import (
 
 func TestOracleSpec(t *testing.T) {
 	t.Run("Creating without required public keys fails", testOracleSpecCreatingWithoutPubKeysFails)
+	t.Run("Creating builtin oracle without pubkeys succeeeds", testBuiltInOracleSpecCreatingWithoutPubKeysSucceeds)
 	t.Run("Creating without filters fails", testOracleSpecCreatingWithoutFiltersFails)
 	t.Run("Creating with filters but without key fails", testOracleSpecCreatingWithFiltersWithoutKeyFails)
 	t.Run("Creating with filters but without property name fails", testOracleSpecCreatingWithFiltersWithoutPropertyNameFails)
@@ -74,6 +75,37 @@ func testOracleSpecCreatingWithoutPubKeysFails(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, "signers are required", err.Error())
 	assert.Nil(t, oracleSpec)
+}
+
+func testBuiltInOracleSpecCreatingWithoutPubKeysSucceeds(t *testing.T) {
+	// given
+	spec := types.ExternalDataSourceSpec{
+		Spec: &types.DataSourceSpec{
+			Data: types.NewDataSourceDefinition(
+				vegapb.DataSourceDefinitionTypeExt,
+			).SetOracleConfig(
+				&types.DataSourceSpecConfiguration{
+					Signers: []*types.Signer{},
+					Filters: []*types.DataSourceSpecFilter{
+						{
+							Key: &types.DataSourceSpecPropertyKey{
+								Name: "vegaprotocol.builtin.timestamp",
+								Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+							},
+							Conditions: []*types.DataSourceSpecCondition{},
+						},
+					},
+				},
+			),
+		},
+	}
+
+	// when
+	oracleSpec, err := oracles.NewOracleSpec(spec)
+
+	// then
+	require.NoError(t, err)
+	assert.NotNil(t, oracleSpec)
 }
 
 func testOracleSpecCreatingWithoutFiltersFails(t *testing.T) {

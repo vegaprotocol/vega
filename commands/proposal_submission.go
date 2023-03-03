@@ -649,6 +649,12 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 		// For now check only for oracle type for external data source. Add a check for Oracle type data later when other sources are added.
 		o := tp.External.GetOracle()
 
+		// First check if the oracle is builtin
+		filters := o.Filters
+		if isBuiltInSpec(filters) {
+			return checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty)
+		}
+
 		signers := o.Signers
 		if len(signers) == 0 {
 			errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers", parentProperty, name), ErrIsRequired)
@@ -663,11 +669,6 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 			} else if address := signer.GetSignerETHAddress(); address != nil && !common.IsHexAddress(address.Address) {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidEthereumAddress)
 			}
-		}
-
-		filters := o.Filters
-		if isBuiltInSpec(filters) {
-			return checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty)
 		}
 
 		errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty))

@@ -39,7 +39,7 @@ Feature: Position resolution case 5 lognormal risk model
       | party            | asset | amount        |
       | sellSideProvider | USD   | 1000000000000 |
       | buySideProvider  | USD   | 1000000000000 |
-      | designatedLooser | USD   | 21600         |
+      | designatedLooser | USD   | 22000         |
       | aux              | USD   | 1000000000000 |
       | aux2             | USD   | 1000000000000 |
       | lpprov           | USD   | 1000000000000 |
@@ -74,6 +74,10 @@ Feature: Position resolution case 5 lognormal risk model
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | volume | price |
       | buy  | 10     | 1     |
+      | buy  | 225    | 40    |
+      | buy  | 1      | 140   |
+      | sell | 290    | 150   |
+      | sell | 36     | 250   |
       | sell | 10     | 2000  |
 
     Then the parties should have the following profit and loss:
@@ -88,20 +92,25 @@ Feature: Position resolution case 5 lognormal risk model
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | USD   | ETH/DEC19 | 17250  | 0       |
+      | designatedLooser | USD   | ETH/DEC19 | 17650  | 0       |
 
     Then the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
       | designatedLooser | ETH/DEC19 | 47134       | 56560  | 70701   | 94268   |
 
     Then the order book should have the following volumes for market "ETH/DEC19":
-      | side | price | volume |
-      | buy  | 1     | 10     |
-      | buy  | 140   | 1      |
+     | side | volume | price |
+      | buy  | 10     | 1     |
+      | buy  | 225    | 40    |
+      | buy  | 1      | 140   |
+      | sell | 0      | 150   |
+      | sell | 0      | 250   |
+      | sell | 10     | 2000  |
+      | sell | 5      | 2100  |
 
     #designatedLooser has position of vol 290; price 150; calculated risk factor long: 0.336895684; risk factor short: 0.4878731
-    #what's on the order book to cover the position is shown above, which makes the exit price 13 =(1*10+140*1)/11, slippage per unit is 150-13=137
-    #margin level is PositionVol*(markPrice*RiskFactor+SlippagePerUnit) = 290*(150*0.336895684+137)=54384
+    #what's on the order book to cover the position is shown above, which makes the exit price 38.77118644 =(140*1+40*225+1*10)/236, slippage per unit is 150-38.77118644=111.2288136
+    #margin level is PositionVol*(markPrice*RiskFactor+SlippagePerUnit) = 290*(150*0.336895684+111.2288136)=46911.3182
 
     # insurance pool generation - modify order book
     Then the parties cancel the following orders:
@@ -133,7 +142,7 @@ Feature: Position resolution case 5 lognormal risk model
     # check positions
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
-      | designatedLooser | 0      | 0              | -17250       |
+      | designatedLooser | 0      | 0              | -17650       |
       | sellSideProvider | -291   | 2900           | 0            |
       | buySideProvider  | 291    | 5800           | 0            |
       | aux              | 1      | -10            | 0            |
@@ -164,11 +173,11 @@ Feature: Position resolution case 5 lognormal risk model
       | designatedLooser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC19 | 3480   | USD   |
       | designatedLooser |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 | 0      | USD   |
       | market           | buySideProvider | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC19 | 0      | USD   |
-      | designatedLooser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 10870  | USD   |
+      | designatedLooser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 11270  | USD   |
       | market           | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 5800   | USD   |
       | market           | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 5800   | USD   |
 
-    And the insurance pool balance should be "5070" for the market "ETH/DEC19"
+    And the insurance pool balance should be "5470" for the market "ETH/DEC19"
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general      |
@@ -184,7 +193,7 @@ Feature: Position resolution case 5 lognormal risk model
       | mark price | trading mode            | target stake | supplied stake | open interest |
       | 120        | TRADING_MODE_CONTINUOUS | 340728       | 9000           | 291           |
 
-    And the insurance pool balance should be "5070" for the market "ETH/DEC19"
+    And the insurance pool balance should be "5470" for the market "ETH/DEC19"
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general      |
@@ -203,7 +212,7 @@ Feature: Position resolution case 5 lognormal risk model
 
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
-      | designatedLooser | 0      | 0              | -17250       |
+      | designatedLooser | 0      | 0              | -17650       |
       | sellSideProvider | -291   | 8720           | 0            |
       | buySideProvider  | 291    | -20            | 0            |
       | aux              | 0      | 0              | -30          |
@@ -220,7 +229,7 @@ Feature: Position resolution case 5 lognormal risk model
       | aux              | USD   | ETH/DEC19 | 1108   | 999999998862  |
       | aux2             | USD   | ETH/DEC19 | 0      | 1000000000018 |
 
-    And the insurance pool balance should be "5070" for the market "ETH/DEC19"
+    And the insurance pool balance should be "5470" for the market "ETH/DEC19"
     When the oracles broadcast data signed with "0xCAFECAFE":
       | name               | value |
       | trading.terminated | true  |
@@ -231,5 +240,5 @@ Feature: Position resolution case 5 lognormal risk model
       | prices.ETH.value | 80    |
 
     # When a market is closed, the insurance pool account has its outstanding funds transferred to the [network treasury]
-    And the network treasury balance should be "5070" for the asset "USD"
+    And the network treasury balance should be "5470" for the asset "USD"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"

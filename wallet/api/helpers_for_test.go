@@ -148,6 +148,16 @@ func newNetwork(t *testing.T) network.Network {
 				},
 				Retries: 5,
 			},
+			REST: network.RESTConfig{
+				Hosts: []string{
+					"http://n01.localtest.vega.xyz:3097",
+				},
+			},
+			GraphQL: network.GraphQLConfig{
+				Hosts: []string{
+					"http://n01.localtest.vega.xyz:3087",
+				},
+			},
 		},
 	}
 }
