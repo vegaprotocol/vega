@@ -2649,7 +2649,7 @@ func (m *Market) amendOrder(
 			// Do not amend in place, the amend could be something
 			// not supported for an amend in place, and not pass
 			// the validation of the order book
-			cancellation, err := m.matching.CancelOrder(amendedOrder)
+			cancellation, err := m.matching.CancelOrder(existingOrder)
 			if cancellation == nil || err != nil {
 				m.log.Panic("Failure to cancel order from matching engine",
 					logging.String("party-id", amendedOrder.Party),
