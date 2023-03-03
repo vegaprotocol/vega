@@ -328,6 +328,7 @@ func testCancelingTheReviewDoesNotConnectToWallet(t *testing.T) {
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID, api.WalletConnectionWorkflow, uint8(4)).Times(1).Return(nil)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, uint8(1), hostname).Times(1).Return("", api.ErrUserCloseTheConnection)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ApplicationError, api.ErrConnectionClosed).Times(1)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name()}, nil)
 
 	// when
@@ -399,6 +400,7 @@ func testCancellingTheWalletSelectionDoesNotConnectToWallet(t *testing.T) {
 	handler.interactor.EXPECT().RequestWalletConnectionReview(ctx, traceID, uint8(1), hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
 	handler.interactor.EXPECT().RequestWalletSelection(ctx, traceID, uint8(2), hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return("", api.ErrUserCloseTheConnection)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ApplicationError, api.ErrConnectionClosed).Times(1)
 
 	// when
 	result, errorDetails := handler.Handle(ctx, hostname)
@@ -476,10 +478,13 @@ func testSelectingNonExistingWalletDoesNotConnectToWallet(t *testing.T) {
 	handler.walletStore.EXPECT().ListWallets(cancelCtx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
 	handler.interactor.EXPECT().RequestWalletSelection(cancelCtx, traceID, uint8(2), hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(nonExistingWallet, nil)
 	handler.walletStore.EXPECT().WalletExists(cancelCtx, nonExistingWallet).Times(1).Return(false, nil)
-	handler.interactor.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, api.ErrWalletDoesNotExist).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
-		// Once everything has been called once, we cancel the handler to break the loop.
-		cancelFn()
-	})
+	gomock.InOrder(
+		handler.interactor.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, api.ErrWalletDoesNotExist).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
+			// Once everything has been called once, we cancel the handler to break the loop.
+			cancelFn()
+		}),
+		handler.interactor.EXPECT().NotifyError(cancelCtx, traceID, api.ApplicationError, api.ErrRequestInterrupted).Times(1),
+	)
 
 	// when
 	result, errorDetails := handler.Handle(cancelCtx, hostname)
@@ -532,14 +537,17 @@ func testUsingWrongPassphraseDoesNotConnectToWallet(t *testing.T) {
 	handler.interactor.EXPECT().RequestWalletConnectionReview(cancelCtx, traceID, uint8(1), hostname).Times(1).Return(string(preferences.ApprovedOnlyThisTime), nil)
 	handler.walletStore.EXPECT().ListWallets(cancelCtx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
 	handler.interactor.EXPECT().RequestWalletSelection(cancelCtx, traceID, uint8(2), hostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(wallet1.Name(), nil)
-	handler.interactor.EXPECT().RequestPassphrase(cancelCtx, traceID, uint8(3), wallet1.Name(), api.PassphraseRequestReasonUnlockWallet).Times(1).Return(passphrase, nil)
 	handler.walletStore.EXPECT().WalletExists(cancelCtx, wallet1.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(cancelCtx, wallet1.Name()).Times(1).Return(false, nil)
 	handler.walletStore.EXPECT().UnlockWallet(cancelCtx, wallet1.Name(), passphrase).Times(1).Return(wallet.ErrWrongPassphrase)
-	handler.interactor.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, wallet.ErrWrongPassphrase).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
-		// Once everything has been called once, we cancel the handler to break the loop.
-		cancelFn()
-	})
+	handler.interactor.EXPECT().RequestPassphrase(cancelCtx, traceID, uint8(3), wallet1.Name(), api.PassphraseRequestReasonUnlockWallet).Times(1).Return(passphrase, nil)
+	gomock.InOrder(
+		handler.interactor.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, wallet.ErrWrongPassphrase).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
+			// Once everything has been called once, we cancel the handler to break the loop.
+			cancelFn()
+		}),
+		handler.interactor.EXPECT().NotifyError(cancelCtx, traceID, api.ApplicationError, api.ErrRequestInterrupted).Times(1),
+	)
 
 	// when
 	result, errorDetails := handler.Handle(cancelCtx, hostname)
@@ -650,6 +658,7 @@ func testCancellingThePassphraseRequestDoesNotConnectToWallet(t *testing.T) {
 	handler.walletStore.EXPECT().WalletExists(ctx, wallet1.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, wallet1.Name()).Times(1).Return(false, nil)
 	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, uint8(3), wallet1.Name(), api.PassphraseRequestReasonUnlockWallet).Times(1).Return("", api.ErrUserCloseTheConnection)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ApplicationError, api.ErrConnectionClosed).Times(1)
 
 	// when
 	result, errorDetails := handler.Handle(ctx, hostname)
