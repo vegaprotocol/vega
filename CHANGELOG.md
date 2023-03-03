@@ -37,7 +37,7 @@
 - [7713](https://github.com/vegaprotocol/vega/issues/7713) - Fix PnL values on trade in the positions API
 - [7673](https://github.com/vegaprotocol/vega/issues/7673) - Accept internal data sources without signers
 - [7483](https://github.com/vegaprotocol/vega/issues/7483) - Fix market data history returning 0 values for price monitoring bounds
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7732](https://github.com/vegaprotocol/vega/issues/7732) - Fix panic when amending orders
 
 
 ## 0.68.0
