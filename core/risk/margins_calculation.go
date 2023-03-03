@@ -108,6 +108,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			slippageVolume  = num.MaxD(openVolume, num.DecimalZero())
 			slippagePerUnit = num.UintZero()
 			negSlippage     bool
+			noExit          bool
 		)
 		if slippageVolume.IsPositive() {
 			var (
@@ -123,6 +124,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 					e.log.Debug("got non critical error from GetCloseoutPrice for Buy side",
 						logging.Error(err))
 				}
+				noExit = true
 			}
 			slippagePerUnit, negSlippage = num.UintZero().Delta(markPrice, exitPrice)
 		}
@@ -147,12 +149,25 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			//
 			// maintenance_margin_long_open_orders = buy_orders * [ quantitative_model.risk_factors_long ] . [ Product.value(market_observable) ]
 			//
+			// if we don't have an exit price, the min() part of the formula above =
+			//
+			// mark_price * (slippage_volume * market.maxSlippageFraction[1] + slippage_volume^2 * market.maxSlippageFraction[2])
+			// changing the formula to:
+			// maintenance_margin_long_open_position =
+			//	max(
+			//		mark_price * (slippage_volume * market.linearSlippageFactor + slippage_volume^2 * market.quadraticSlippageFactor),
+			//		0
+			//	) + slippage_volume * [quantitative_model.risk_factors_long] . [ Product.value(market_observable) ]
+			minV := mPriceDec.Mul(e.linearSlippageFactor.Mul(slippageVolume).Add(e.quadraticSlippageFactor.Mul(slippageVolume.Mul(slippageVolume))))
+			if !noExit {
+				minV = num.MinD(
+					slip,
+					minV,
+				)
+			}
 			maintenanceMarginLongOpenPosition := num.MaxD(
 				num.DecimalZero(),
-				num.MinD(
-					slip,
-					mPriceDec.Mul(e.linearSlippageFactor.Mul(slippageVolume).Add(e.quadraticSlippageFactor.Mul(slippageVolume.Mul(slippageVolume)))),
-				),
+				minV,
 			).Add(slippageVolume.Mul(rf.Long).Mul(mPriceDec))
 			maintenanceMarginLongOpenOrders := bDec.Mul(rf.Long).Mul(mPriceDec)
 			marginMaintenanceLng = maintenanceMarginLongOpenPosition.Add(maintenanceMarginLongOpenOrders)
@@ -164,6 +179,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 		var (
 			slippageVolume  = num.MinD(openVolume, num.DecimalZero())
 			slippagePerUnit = num.UintZero()
+			noExit          = false
 		)
 		// slippageVolume would be negative we abs it in the next phase
 		if slippageVolume.IsNegative() {
@@ -181,6 +197,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 					e.log.Debug("got non critical error from GetCloseoutPrice for Sell side",
 						logging.Error(err))
 				}
+				noExit = true
 			}
 			// exitPrice - markPrice == -1*(markPrice - exitPrice)
 			slippagePerUnit, _ = num.UintZero().Delta(exitPrice, markPrice) // we don't care about neg/pos, we're using Abs() anyway
@@ -202,15 +219,27 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			//
 			// maintenance_margin_short_open_orders = abs(sell_orders) * [ quantitative_model.risk_factors_short ] . [ Product.value(market_observable) ]
 			//
+			// again the same applies here if the exit_price is invalid (+Infinity, or some other error):
+			// we replace the min part in the formula above, ignoring abs(slippage_volume) * slippage_per_unit:
+			// 		max(
+			//			mark_price * market.maxSlippageFraction[1] + abs(slippage_volume)^2 * market.maxSlippageFraction[2])
+			//			0
+			//		) + abs(slippage_volume) * [ quantitative_model.risk_factors_short ] . [ Product.value(market_observable) ]
+			//
+			// maintenance_margin_short_open_orders = abs(sell_orders) * [ quantitative_model.risk_factors_short ] . [ Product.value(market_observable) ]
 			absSlippageVolume := slippageVolume.Abs()
 			linearSlippage := absSlippageVolume.Mul(e.linearSlippageFactor)
 			quadraticSlipage := absSlippageVolume.Mul(absSlippageVolume).Mul(e.quadraticSlippageFactor)
+			minV := mPriceDec.Mul(linearSlippage.Add(quadraticSlipage))
+			if !noExit {
+				minV = num.MinD(
+					absSlippageVolume.Mul(slippagePerUnit.ToDecimal()),
+					minV,
+				)
+			}
 			maintenanceMarginShortOpenPosition := num.MaxD(
 				num.DecimalZero(),
-				num.MinD(
-					absSlippageVolume.Mul(slippagePerUnit.ToDecimal()),
-					mPriceDec.Mul(linearSlippage.Add(quadraticSlipage)),
-				),
+				minV,
 			).Add(absSlippageVolume.Mul(mPriceDec).Mul(rf.Short))
 			maintenanceMarginShortOpenOrders := sDec.Abs().Mul(mPriceDec).Mul(rf.Short)
 			marginMaintenanceSht = maintenanceMarginShortOpenPosition.Add(maintenanceMarginShortOpenOrders)
