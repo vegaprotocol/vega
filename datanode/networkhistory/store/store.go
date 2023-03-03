@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/peer"
 
 	"code.vegaprotocol.io/vega/datanode/metrics"
 
